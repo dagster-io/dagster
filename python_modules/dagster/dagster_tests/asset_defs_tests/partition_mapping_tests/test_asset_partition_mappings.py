@@ -611,7 +611,7 @@ def test_partition_mapping_with_asset_deps():
         specs=[asset_1, asset_2], partitions_def=DailyPartitionsDefinition(start_date="2023-08-15")
     )
     def multi_asset_1():
-        return
+        pass
 
     @multi_asset(
         specs=[asset_3, asset_4], partitions_def=DailyPartitionsDefinition(start_date="2023-08-15")
@@ -637,7 +637,6 @@ def test_partition_mapping_with_asset_deps():
         AssetKey("asset_1"): asset_1_partition_mapping,
         AssetKey("asset_2"): asset_2_partition_mapping,
     }
-
 
 def test_conflicting_mappings_with_asset_deps():
     asset_1 = AssetSpec(asset_key="asset_1")

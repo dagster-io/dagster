@@ -30,7 +30,7 @@ from dagster._core.definitions.data_version import (
     extract_data_version_from_entry,
 )
 from dagster._core.definitions.dependency import OpNode
-from dagster._core.definitions.events import AssetKey, AssetLineageInfo
+from dagster._core.definitions.events import AssetKey, AssetLineageInfo, CoercibleToAssetKey
 from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.job_base import IJob
 from dagster._core.definitions.job_definition import JobDefinition
@@ -39,7 +39,6 @@ from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partition_mapping import (
-    PartitionMapping,
     infer_partition_mapping,
 )
 from dagster._core.definitions.policy import RetryPolicy
@@ -958,23 +957,23 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                 storage_id, data_version, event.run_id, event.timestamp
             )
 
-    def partition_mapping_for_input(self, input_name: str) -> Optional[PartitionMapping]:
-        asset_layer = self.job_def.asset_layer
-        upstream_asset_key = asset_layer.asset_key_for_input(self.node_handle, input_name)
-        if upstream_asset_key:
-            upstream_asset_partitions_def = asset_layer.partitions_def_for_asset(upstream_asset_key)
-            assets_def = asset_layer.assets_def_for_node(self.node_handle)
-            partitions_def = assets_def.partitions_def if assets_def else None
-            explicit_partition_mapping = self.job_def.asset_layer.partition_mapping_for_node_input(
-                self.node_handle, upstream_asset_key
-            )
-            return infer_partition_mapping(
-                explicit_partition_mapping,
-                partitions_def,
-                upstream_asset_partitions_def,
-            )
-        else:
-            return None
+    # def partition_mapping_for_input(self, input_name: str) -> Optional[PartitionMapping]:
+    #     asset_layer = self.job_def.asset_layer
+    #     upstream_asset_key = asset_layer.asset_key_for_input(self.node_handle, input_name)
+    #     if upstream_asset_key:
+    #         upstream_asset_partitions_def = asset_layer.partitions_def_for_asset(upstream_asset_key)
+    #         assets_def = asset_layer.assets_def_for_node(self.node_handle)
+    #         partitions_def = assets_def.partitions_def if assets_def else None
+    #         explicit_partition_mapping = self.job_def.asset_layer.partition_mapping_for_node_input(
+    #             self.node_handle, upstream_asset_key
+    #         )
+    #         return infer_partition_mapping(
+    #             explicit_partition_mapping,
+    #             partitions_def,
+    #             upstream_asset_partitions_def,
+    #         )
+    #     else:
+    #         return None
 
     def _get_input_asset_event(self, key: AssetKey) -> Optional["EventLogRecord"]:
         event = self.instance.get_latest_data_version_record(key)
@@ -1044,8 +1043,22 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             and asset_layer.partitions_def_for_asset(upstream_asset_key) is not None
         )
 
-    def asset_partition_key_range_for_input(self, input_name: str) -> PartitionKeyRange:
-        subset = self.asset_partitions_subset_for_input(input_name)
+    # def asset_partition_key_range_for_input(self, input_name: str) -> PartitionKeyRange:
+    #     subset = self.asset_partitions_subset_for_input(input_name)
+    #     partition_key_ranges = subset.get_partition_key_ranges(
+    #         dynamic_partitions_store=self.instance
+    #     )
+
+    #     if len(partition_key_ranges) != 1:
+    #         check.failed(
+    #             "Tried to access asset partition key range, but there are "
+    #             f"({len(partition_key_ranges)}) key ranges associated with this input.",
+    #         )
+
+    #     return partition_key_ranges[0]
+
+    def asset_partition_key_range_for_asset(self, asset: CoercibleToAssetKey) -> PartitionKeyRange:
+        subset = self.asset_partitions_subset_for_asset(asset)
         partition_key_ranges = subset.get_partition_key_ranges(
             dynamic_partitions_store=self.instance
         )
@@ -1062,13 +1075,25 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         self, input_name: str, *, require_valid_partitions: bool = True
     ) -> PartitionsSubset:
         asset_layer = self.job_def.asset_layer
-        assets_def = asset_layer.assets_def_for_node(self.node_handle)
         upstream_asset_key = asset_layer.asset_key_for_input(self.node_handle, input_name)
 
         if upstream_asset_key is not None:
-            upstream_asset_partitions_def = asset_layer.partitions_def_for_asset(upstream_asset_key)
+            return self.asset_partitions_subset_for_asset(upstream_asset_key)
 
-            if upstream_asset_partitions_def is not None:
+        # this check message isn't quite accurate - it's really that the input doesn't correspond to an asset
+        check.failed("The input has no asset partitions")
+
+    def asset_partitions_subset_for_asset(
+        self, asset: CoercibleToAssetKey, *, require_valid_partitions: bool = True
+    ) -> PartitionsSubset:
+        asset_layer = self.job_def.asset_layer
+        assets_def = asset_layer.assets_def_for_node(self.node_handle)
+        asset_key = AssetKey.from_coercible(asset)
+
+        if asset_layer.has_assets_def_for_asset(asset_key):
+            asset_partitions_def = asset_layer.partitions_def_for_asset(asset_key)
+
+            if asset_partitions_def is not None:
                 partitions_def = assets_def.partitions_def if assets_def else None
                 partitions_subset = (
                     partitions_def.empty_subset().with_partition_key_range(
@@ -1078,16 +1103,14 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                     else None
                 )
                 partition_mapping = infer_partition_mapping(
-                    asset_layer.partition_mapping_for_node_input(
-                        self.node_handle, upstream_asset_key
-                    ),
+                    asset_layer.partition_mapping_for_node_input(self.node_handle, asset_key),
                     partitions_def,
-                    upstream_asset_partitions_def,
+                    asset_partitions_def,
                 )
                 mapped_partitions_result = (
                     partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
                         partitions_subset,
-                        upstream_asset_partitions_def,
+                        asset_partitions_def,
                         dynamic_partitions_store=self.instance,
                     )
                 )
@@ -1100,21 +1123,36 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                         f"Partition key range {self.asset_partition_key_range} in"
                         f" {self.node_handle.name} depends on invalid partition keys"
                         f" {mapped_partitions_result.required_but_nonexistent_partition_keys} in"
-                        f" upstream asset {upstream_asset_key}"
+                        f" asset {asset_key}"
                     )
 
                 return mapped_partitions_result.partitions_subset
 
-        check.failed("The input has no asset partitions")
+        check.failed("The asset has no partitions")
 
-    def asset_partition_key_for_input(self, input_name: str) -> str:
-        start, end = self.asset_partition_key_range_for_input(input_name)
+    # def asset_partition_key_for_input(self, input_name: str) -> Union[str, MultiPartitionKey]:
+    #     asset_layer = self.job_def.asset_layer
+    #     upstream_asset_key = asset_layer.asset_key_for_input(self.node_handle, input_name)
+    #     if upstream_asset_key is not None:
+    #         start, end = self.asset_partition_key_range_for_asset(upstream_asset_key)
+    #     else:
+    #         check.failed(f"No asset corresponds to input '{input_name}' or step '{self.step.key}'")
+    #     if start == end:
+    #         return start
+    #     else:
+    #         check.failed(
+    #             f"Tried to access partition key for input '{input_name}' of step '{self.step.key}',"
+    #             f" but the step input has a partition range: '{start}' to '{end}'."
+    #         )
+
+    def asset_partition_key_for_asset(self, asset: CoercibleToAssetKey) -> str:
+        start, end = self.asset_partition_key_range_for_asset(asset)
         if start == end:
             return start
         else:
             check.failed(
-                f"Tried to access partition key for input '{input_name}' of step '{self.step.key}',"
-                f" but the step input has a partition range: '{start}' to '{end}'."
+                f"Tried to access partition key for asset '{asset}' of step '{self.step.key}',"
+                f" but the asset has a partition range: '{start}' to '{end}'."
             )
 
     def _partitions_def_for_output(self, output_name: str) -> Optional[PartitionsDefinition]:
@@ -1157,71 +1195,67 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         - The output asset is not partitioned with a TimeWindowPartitionsDefinition or a
           MultiPartitionsDefinition with one time-partitioned dimension.
         """
-        partitions_def = self._partitions_def_for_output(output_name)
-
-        if not partitions_def:
-            raise ValueError(
-                "Tried to get asset partitions for an output that does not correspond to a "
-                "partitioned asset."
-            )
-
-        if not has_one_dimension_time_window_partitioning(partitions_def):
-            raise ValueError(
-                "Tried to get asset partitions for an output that correponds to a partitioned "
-                "asset that is not time-partitioned."
-            )
-
-        partitions_def = cast(
-            Union[TimeWindowPartitionsDefinition, MultiPartitionsDefinition], partitions_def
+        asset_info = self.job_def.asset_layer.asset_info_for_output(
+            node_handle=self.node_handle, output_name=output_name
         )
-        partition_key_range = self.asset_partition_key_range_for_output(output_name)
-        return TimeWindow(
-            # mypy thinks partitions_def is <nothing> here because ????
-            partitions_def.time_window_for_partition_key(partition_key_range.start).start,
-            partitions_def.time_window_for_partition_key(partition_key_range.end).end,
-        )
+        if asset_info:
+            return self.asset_partitions_time_window_for_asset(asset_info.key)
 
-    def asset_partitions_time_window_for_input(self, input_name: str) -> TimeWindow:
-        """The time window for the partitions of the asset correponding to the given input.
+        raise ValueError("The provided output does not correspond to an asset.")
+
+    # def asset_partitions_time_window_for_input(self, input_name: str) -> TimeWindow:
+    #     """The time window for the partitions of the asset corresponding to the given input.
+
+    #     Raises an error if either of the following are true:
+    #     - The input asset has no partitioning.
+    #     - The input asset is not partitioned with a TimeWindowPartitionsDefinition or a
+    #       MultiPartitionsDefinition with one time-partitioned dimension.
+    #     """
+    #     asset_layer = self.job_def.asset_layer
+    #     upstream_asset_key = asset_layer.asset_key_for_input(self.node_handle, input_name)
+
+    #     if upstream_asset_key is not None:
+    #         return self.asset_partitions_time_window_for_asset(upstream_asset_key)
+
+    #     raise ValueError("The provided input does not correspond to an asset.")
+
+    def asset_partitions_time_window_for_asset(self, asset: CoercibleToAssetKey) -> TimeWindow:
+        """The time window for the partitions of the asset.
 
         Raises an error if either of the following are true:
-        - The input asset has no partitioning.
-        - The input asset is not partitioned with a TimeWindowPartitionsDefinition or a
+        - The asset has no partitioning.
+        - The asset is not partitioned with a TimeWindowPartitionsDefinition or a
           MultiPartitionsDefinition with one time-partitioned dimension.
         """
         asset_layer = self.job_def.asset_layer
-        upstream_asset_key = asset_layer.asset_key_for_input(self.node_handle, input_name)
+        asset_key = AssetKey.from_coercible(asset)
 
-        if upstream_asset_key is None:
-            raise ValueError("The input has no corresponding asset")
+        if asset_layer.has_assets_def_for_asset(asset_key):
+            raise ValueError("The provided asset key does not correspond to an asset.")
 
-        upstream_asset_partitions_def = asset_layer.partitions_def_for_asset(upstream_asset_key)
+        asset_partitions_def = asset_layer.partitions_def_for_asset(asset_key)
 
-        if not upstream_asset_partitions_def:
+        if not asset_partitions_def:
             raise ValueError(
                 "Tried to get asset partitions for an input that does not correspond to a "
                 "partitioned asset."
             )
 
-        if not has_one_dimension_time_window_partitioning(upstream_asset_partitions_def):
+        if not has_one_dimension_time_window_partitioning(asset_partitions_def):
             raise ValueError(
-                "Tried to get asset partitions for an input that correponds to a partitioned "
+                "Tried to get asset partitions for an input that corresponds to a partitioned "
                 "asset that is not time-partitioned."
             )
 
-        upstream_asset_partitions_def = cast(
+        asset_partitions_def = cast(
             Union[TimeWindowPartitionsDefinition, MultiPartitionsDefinition],
-            upstream_asset_partitions_def,
+            asset_partitions_def,
         )
-        partition_key_range = self.asset_partition_key_range_for_input(input_name)
+        partition_key_range = self.asset_partition_key_range_for_asset(asset)
 
         return TimeWindow(
-            upstream_asset_partitions_def.time_window_for_partition_key(
-                partition_key_range.start
-            ).start,
-            upstream_asset_partitions_def.time_window_for_partition_key(
-                partition_key_range.end
-            ).end,
+            asset_partitions_def.time_window_for_partition_key(partition_key_range.start).start,
+            asset_partitions_def.time_window_for_partition_key(partition_key_range.end).end,
         )
 
     def get_type_loader_context(self) -> "DagsterTypeLoaderContext":

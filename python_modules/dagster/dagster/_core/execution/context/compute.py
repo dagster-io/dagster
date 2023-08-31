@@ -28,6 +28,7 @@ from dagster._core.definitions.events import (
     AssetKey,
     AssetMaterialization,
     AssetObservation,
+    CoercibleToAssetKey,
     ExpectationResult,
     UserEvent,
 )
@@ -39,7 +40,6 @@ from dagster._core.definitions.step_launcher import StepLauncher
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.errors import (
     DagsterInvalidPropertyError,
-    DagsterInvariantViolationError,
 )
 from dagster._core.events import DagsterEvent
 from dagster._core.instance import DagsterInstance
@@ -261,6 +261,21 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         """The partition key for the current run.
 
         Raises an error if the current run is not a partitioned run.
+
+        Examples:
+            .. code-block:: python
+
+                partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+                @asset(
+                    partitions_def=partitions_def
+                )
+                def my_asset(context: AssetExecutionContext):
+                    context.log.info(context.partition_key)
+
+                # materializing the 2023-08-21 partition of this asset will log:
+                #   "2023-08-21"
+
         """
         return self._step_execution_context.partition_key
 
@@ -269,8 +284,23 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     def partition_key_range(self) -> PartitionKeyRange:
         """The range of partition keys for the current run.
 
-        If run is for a single partition key, return a `PartitionKeyRange` with the same start and
+        If run is for a single partition key, returns a `PartitionKeyRange` with the same start and
         end. Raises an error if the current run is not a partitioned run.
+
+        Examples:
+            .. code-block:: python
+
+                partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+                @asset(
+                    partitions_def=partitions_def
+                )
+                def my_asset(context: AssetExecutionContext):
+                    context.log.info(context.partition_key_range)
+
+                # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+                #   PartitionKeyRange(start="2023-08-21", end="2023-08-25")
+
         """
         return self._step_execution_context.asset_partition_key_range
 
@@ -281,6 +311,21 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
         Raises an error if the current run is not a partitioned run, or if the job's partition
         definition is not a TimeWindowPartitionsDefinition.
+
+        Examples:
+            .. code-block:: python
+
+                partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+                @asset(
+                    partitions_def=partitions_def
+                )
+                def my_asset(context: AssetExecutionContext):
+                    context.log.info(context.partition_time_window)
+
+                # materializing the 2023-08-21 partition of this asset will log:
+                #   TimeWindow("2023-08-21", "2023-08-22")
+
         """
         return self._step_execution_context.partition_time_window
 
@@ -530,6 +575,274 @@ class OpExecutionContext(AbstractComputeExecutionContext):
             return key
 
     @public
+    def partition_key_for_asset(
+        self, asset: CoercibleToAssetKey, is_dependency: bool = False
+    ) -> Union[str, MultiPartitionKey]:
+        """Returns the partition key of the provided asset.
+
+        Args:
+            asset (Union[AssetKey, str]): The asset to get the partition key for
+            is_dependency (bool): If the asset is a self-dependent asset, you can set is_dependency=True to
+                fetch the partition key of the asset as an upstream dependency
+
+        Examples:
+            .. code-block:: python
+
+                partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+                @asset(
+                    partitions_def=partitions_def
+                )
+                def upstream_asset(context: AssetExecutionContext):
+                    context.log.info(context.partition_key_for_asset("upstream_asset"))
+
+                # materializing the 2023-08-21 partition of this asset will log:
+                #   "2023-08-21"
+
+                @asset(
+                    partitions_def=partitions_def,
+                )
+                def downstream_asset(context: AssetExecutionContext, upstream_asset):
+                    context.log.info(context.partition_key_for_asset("upstream_asset"))
+                    context.log.info(context.partition_key_for_asset("downstream_asset"))
+
+                # materializing the 2023-08-21 partition of this asset will log:
+                #   "2023-08-21"
+                #   "2023-08-21"
+
+                @asset(
+                    partitions_def=partitions_def,
+                    ins={
+                        "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                    }
+                )
+                def self_dependent_asset(context: AssetExecutionContext, self_dependent_asset):
+                    context.log.info(context.partition_key_for_asset("self_dependent_asset", is_dependency=True))
+                    context.log.info(context.partition_key_for_asset("self_dependent_asset"))
+
+                # materializing the 2023-08-21 partition of this asset will log:
+                #   "2023-08-20"
+                #   "2023-08-21"
+
+        """
+        return self._step_execution_context.partition_key_for_asset(
+            asset, is_dependency=is_dependency
+        )
+
+    @public
+    def partitions_time_window_for_asset(
+        self, asset: CoercibleToAssetKey, is_dependency: bool = False
+    ) -> TimeWindow:
+        """The time window for the partitions of the provided asset.
+
+        Raises an error if either of the following are true:
+        - The asset has no partitioning.
+        - The asset is not partitioned with a TimeWindowPartitionsDefinition or a
+        MultiPartitionsDefinition with one time-partitioned dimension.
+
+        Args:
+            asset (Union[AssetKey, str]): The asset to get the partition time window for
+            is_dependency (bool): If the asset is a self-dependent asset, you can set is_dependency=True to
+                fetch the partition time window of the asset as an upstream dependency
+
+
+        Examples:
+            .. code-block:: python
+
+                partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+                @asset(
+                    partitions_def=partitions_def
+                )
+                def upstream_asset(context: AssetExecutionContext):
+                    context.log.info(context.partitions_time_window_for_asset("upstream_asset"))
+
+                # materializing the 2023-08-21 partition of this asset will log:
+                #   TimeWindow("2023-08-21", "2023-08-22")
+
+                @asset(
+                    partitions_def=partitions_def,
+                )
+                def downstream_asset(context: AssetExecutionContext, upstream_asset):
+                    context.log.info(context.partitions_time_window_for_asset("upstream_asset"))
+                    context.log.info(context.partitions_time_window_for_asset("downstream_asset"))
+
+                # materializing the 2023-08-21 partition of this asset will log:
+                #   TimeWindow("2023-08-21", "2023-08-22")
+                #   TimeWindow("2023-08-21", "2023-08-22")
+
+                @asset(
+                    partitions_def=partitions_def,
+                    ins={
+                        "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                    }
+                )
+                def self_dependent_asset(context: AssetExecutionContext, self_dependent_asset):
+                    context.log.info(context.partitions_time_window_for_asset("self_dependent_asset", is_dependency=True))
+                    context.log.info(context.partitions_time_window_for_asset("self_dependent_asset"))
+
+                # materializing the 2023-08-21 partition of this asset will log:
+                #   TimeWindow("2023-08-20", "2023-08-21")
+                #   TimeWindow("2023-08-21", "2023-08-22")
+
+        """
+        return self._step_execution_context.asset_partitions_time_window_for_asset(
+            asset, is_dependency=is_dependency
+        )
+
+    @public
+    def partition_key_range_for_asset(
+        self, asset: CoercibleToAssetKey, is_dependency: bool = False
+    ) -> PartitionKeyRange:
+        """Return the PartitionKeyRange for the provided asset. Errors if there is more or less than one.
+
+        If you want to write your asset to support running a backfill of several partitions in a single run,
+        you can use partition_key_range_for_asset to get the range of partitions being materialized
+        by the backfill.
+
+        Args:
+            asset (Union[AssetKey, str]): The asset to get the partition key range for
+            is_dependency (bool): If the asset is a self-dependent asset, you can set is_dependency=True to
+                fetch the partition key range of the asset as an upstream dependency
+
+
+        Examples:
+            .. code-block:: python
+
+                partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+                @asset(
+                    partitions_def=partitions_def
+                )
+                def upstream_asset(context: AssetExecutionContext):
+                    context.log.info(context.partition_key_range_for_asset("upstream_asset"))
+
+                # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+                #   PartitionKeyRange(start="2023-08-21", end="2023-08-25")
+
+                @asset(
+                    partitions_def=partitions_def,
+                )
+                def downstream_asset(context: AssetExecutionContext, upstream_asset):
+                    context.log.info(context.partition_key_range_for_asset("upstream_asset"))
+                    context.log.info(context.partition_key_range_for_asset("downstream_asset"))
+
+                # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+                #   PartitionKeyRange(start="2023-08-21", end="2023-08-25")
+                #   PartitionKeyRange(start="2023-08-21", end="2023-08-25")
+
+                @asset(
+                    partitions_def=partitions_def,
+                    ins={
+                        "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                    }
+                )
+                def self_dependent_asset(context: AssetExecutionContext, self_dependent_asset):
+                    context.log.info(context.partition_key_range_for_asset("self_dependent_asset", is_dependency=True))
+                    context.log.info(context.partition_key_range_for_asset("self_dependent_asset"))
+
+                # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+                #   PartitionKeyRange(start="2023-08-20", end="2023-08-24")
+                #   PartitionKeyRange(start="2023-08-21", end="2023-08-25")
+
+        """
+        return self._step_execution_context.partition_key_range_for_asset(
+            asset, is_dependency=is_dependency
+        )
+
+    @public
+    def partitions_def_for_asset(self, asset: CoercibleToAssetKey) -> PartitionsDefinition:
+        """The PartitionsDefinition of the provided asset.
+
+        Args:
+            asset (Union[AssetKey, str]): The asset to get the partition time window for
+
+        Examples:
+            .. code-block:: python
+
+                partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+                @asset(
+                    partitions_def=partitions_def
+                )
+                def upstream_asset(context: AssetExecutionContext):
+                    context.log.info(context.partitions_def_for_asset("upstream_asset"))
+
+                # materializing the 2023-08-21 partition of this asset will log:
+                #   DailyPartitionsDefinition("2023-08-20")
+
+                @asset(
+                    partitions_def=partitions_def,
+                )
+                def downstream_asset(context: AssetExecutionContext, upstream_asset):
+                    context.log.info(context.partitions_def_for_asset("upstream_asset"))
+                    context.log.info(context.partitions_def_for_asset("downstream_asset"))
+
+                # materializing the 2023-08-21 partition of this asset will log:
+                #   DailyPartitionsDefinition("2023-08-20")
+                #   DailyPartitionsDefinition("2023-08-20")
+
+        """
+        return self._step_execution_context.partitions_def_for_asset(asset)
+
+    @public
+    def partition_keys_for_asset(
+        self, asset: CoercibleToAssetKey, is_dependency: bool = False
+    ) -> Sequence[str]:
+        """Returns a list of the partition keys of the provided asset.
+
+        If you want to write your asset to support running a backfill of several partitions in a single run,
+        you acn use partition_keys_for_asset to get all of the partitions being materialized
+        by the backfill.
+
+        Args:
+            asset (Union[AssetKey, str]): The asset to get the partition keys for
+            is_dependency (bool): If the asset is a self-dependent asset, you can set is_dependency=True to
+                fetch the partition keys of the asset as an upstream dependency.
+
+        Examples:
+            .. code-block:: python
+
+                partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+                @asset(
+                    partitions_def=partitions_def
+                )
+                def upstream_asset(context: AssetExecutionContext):
+                    context.log.info(context.partition_keys_for_asset("upstream_asset"))
+
+                # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+                #   ["2023-08-21", "2023-08-22", "2023-08-23", "2023-08-24", "2023-08-25"]
+
+                @asset(
+                    partitions_def=partitions_def,
+                )
+                def downstream_asset(context: AssetExecutionContext, upstream_asset):
+                    context.log.info(context.partition_keys_for_asset("upstream_asset"))
+                    context.log.info(context.partition_keys_for_asset("downstream_asset"))
+
+                # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+                #   ["2023-08-21", "2023-08-22", "2023-08-23", "2023-08-24", "2023-08-25"]
+                #   ["2023-08-21", "2023-08-22", "2023-08-23", "2023-08-24", "2023-08-25"]
+
+                @asset(
+                    partitions_def=partitions_def,
+                    ins={
+                        "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                    }
+                )
+                def self_dependent_asset(context: AssetExecutionContext, self_dependent_asset):
+                    context.log.info(context.partition_keys_for_asset("self_dependent_asset", is_dependency=True))
+                    context.log.info(context.partition_keys_for_asset("self_dependent_asset"))
+
+                # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+                #   ["2023-08-20", "2023-08-21", "2023-08-22", "2023-08-23", "2023-08-24"]
+                #   ["2023-08-21", "2023-08-22", "2023-08-23", "2023-08-24", "2023-08-25"]
+
+        """
+        return self._step_execution_context.partition_keys_for_asset(asset)
+
+    @public
     @experimental
     def get_asset_provenance(self, asset_key: AssetKey) -> Optional[DataProvenance]:
         """Return the provenance information for the most recent materialization of an asset.
@@ -567,113 +880,165 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         )
         return asset_checks_def.spec
 
-    ### Partition methods
+    # *********************************************************************************************
+    # deprecated
+    # *********************************************************************************************
 
     @deprecated(breaking_version="2.0", additional_warn_text="Use `partition_key_range` instead.")
     @public
     @property
     def asset_partition_key_range(self) -> PartitionKeyRange:
-        """The range of partition keys for the current run.
+        """Deprecated. Use partition_key_range property instead.
+
+        The range of partition keys for the current run.
 
         If run is for a single partition key, return a `PartitionKeyRange` with the same start and
         end. Raises an error if the current run is not a partitioned run.
         """
         return self.partition_key_range
 
+    @deprecated(
+        breaking_version="2.0",
+        additional_warn_text="Use `partition_key` or `partition_key_for_asset` instead.",
+    )
     @public
-    def asset_partition_key_for_output(self, output_name: str = "result") -> str:
-        """Returns the asset partition key for the given output. Defaults to "result", which is the
+    def asset_partition_key_for_output(
+        self, output_name: str = "result"
+    ) -> Union[str, MultiPartitionKey]:
+        """Deprecated. Use partition_key or partition_key_for_asset instead.
+
+        Returns the asset partition key for the given output. Defaults to "result", which is the
         name of the default output.
         """
-        return self._step_execution_context.asset_partition_key_for_output(output_name)
+        asset_key = self.asset_key_for_output(output_name)
+        return self.partition_key_for_asset(asset_key)
 
+    @deprecated(
+        breaking_version="2.0", additional_warn_text="Use `partition_key_for_asset` instead."
+    )
     @public
     def asset_partition_key_for_input(self, input_name: str) -> str:
-        """Returns the partition key of the upstream asset corresponding to the given input."""
-        return self._step_execution_context.asset_partition_key_for_input(input_name)
+        """Deprecated. Use partition_key_for_asset instead.
 
+        Returns the partition key of the upstream asset corresponding to the given input.
+        """
+        asset_key = self.asset_key_for_input(input_name)
+        return self.partition_key_for_asset(asset_key, is_dependency=True)
+
+    @deprecated(
+        breaking_version="2.0",
+        additional_warn_text="Use `partitions_time_window_for_asset` instead.",
+    )
     @public
     def asset_partitions_time_window_for_output(self, output_name: str = "result") -> TimeWindow:
-        """The time window for the partitions of the output asset.
+        """Deprecated. Use partitions_time_window_for_asset instead.
+
+        The time window for the partitions of the output asset.
 
         Raises an error if either of the following are true:
         - The output asset has no partitioning.
         - The output asset is not partitioned with a TimeWindowPartitionsDefinition or a
         MultiPartitionsDefinition with one time-partitioned dimension.
         """
-        return self._step_execution_context.asset_partitions_time_window_for_output(output_name)
+        asset_key = self.asset_key_for_output(output_name)
+        return self.partitions_time_window_for_asset(asset_key)
 
+    @deprecated(
+        breaking_version="2.0",
+        additional_warn_text="Use `partitions_time_window_for_asset` instead.",
+    )
     @public
     def asset_partitions_time_window_for_input(self, input_name: str = "result") -> TimeWindow:
-        """The time window for the partitions of the input asset.
+        """Deprecated. Use partitions_time_window_for_asset instead.
+
+        The time window for the partitions of the input asset.
 
         Raises an error if either of the following are true:
         - The input asset has no partitioning.
         - The input asset is not partitioned with a TimeWindowPartitionsDefinition or a
         MultiPartitionsDefinition with one time-partitioned dimension.
         """
-        return self._step_execution_context.asset_partitions_time_window_for_input(input_name)
+        asset_key = self.asset_key_for_input(input_name)
+        return self.partitions_time_window_for_asset(asset_key, is_dependency=True)
 
+    @deprecated(
+        breaking_version="2.0",
+        additional_warn_text=(
+            "Use `partition_key_range` or `partition_key_range_for_asset` instead."
+        ),
+    )
     @public
     def asset_partition_key_range_for_output(
         self, output_name: str = "result"
     ) -> PartitionKeyRange:
-        """Return the PartitionKeyRange for the corresponding output. Errors if not present."""
-        return self._step_execution_context.asset_partition_key_range_for_output(output_name)
+        """Deprecated. Use partition_key_range property or partition_key_range_for_asset instead.
 
+        Return the PartitionKeyRange for the corresponding output. Errors if not present.
+        """
+        asset_key = self.asset_key_for_output(output_name)
+        return self.partition_key_range_for_asset(asset_key)
+
+    @deprecated(
+        breaking_version="2.0", additional_warn_text="Use `partition_key_range_for_asset` instead."
+    )
     @public
     def asset_partition_key_range_for_input(self, input_name: str) -> PartitionKeyRange:
-        """Return the PartitionKeyRange for the corresponding input. Errors if there is more or less than one."""
-        return self._step_execution_context.asset_partition_key_range_for_input(input_name)
+        """Deprecated. Use partition_key_range_for_asset instead.
 
+        Return the PartitionKeyRange for the corresponding input. Errors if there is more or less than one.
+        """
+        asset_key = self.asset_key_for_input(input_name)
+        return self.partition_key_range_for_asset(asset_key, is_dependency=True)
+
+    @deprecated(
+        breaking_version="2.0",
+        additional_warn_text="Use `partitions_def` or `partitions_def_for_asset` instead.",
+    )
     @public
     def asset_partitions_def_for_output(self, output_name: str = "result") -> PartitionsDefinition:
-        """The PartitionsDefinition on the upstream asset corresponding to this input."""
+        """Deprecated. Use partitions_def property or partitions_def_for_asset instead.
+
+        The PartitionsDefinition on the upstream asset corresponding to this input.
+        """
         asset_key = self.asset_key_for_output(output_name)
-        result = self._step_execution_context.job_def.asset_layer.partitions_def_for_asset(
-            asset_key
-        )
-        if result is None:
-            raise DagsterInvariantViolationError(
-                f"Attempting to access partitions def for asset {asset_key}, but it is not"
-                " partitioned"
-            )
+        return self.partitions_def_for_asset(asset_key)
 
-        return result
-
+    @deprecated(
+        breaking_version="2.0", additional_warn_text="Use `partitions_def_for_asset` instead."
+    )
     @public
     def asset_partitions_def_for_input(self, input_name: str) -> PartitionsDefinition:
-        """The PartitionsDefinition on the upstream asset corresponding to this input."""
+        """Deprecated. Use partitions_def_for_asset instead.
+
+        The PartitionsDefinition on the upstream asset corresponding to this input.
+        """
         asset_key = self.asset_key_for_input(input_name)
-        result = self._step_execution_context.job_def.asset_layer.partitions_def_for_asset(
-            asset_key
-        )
-        if result is None:
-            raise DagsterInvariantViolationError(
-                f"Attempting to access partitions def for asset {asset_key}, but it is not"
-                " partitioned"
-            )
+        return self.partitions_def_for_asset(asset_key)
 
-        return result
-
+    @deprecated(
+        breaking_version="2.0", additional_warn_text="Use `partition_keys_for_asset` instead."
+    )
     @public
     def asset_partition_keys_for_output(self, output_name: str = "result") -> Sequence[str]:
-        """Returns a list of the partition keys for the given output."""
-        return self.asset_partitions_def_for_output(output_name).get_partition_keys_in_range(
-            self._step_execution_context.asset_partition_key_range_for_output(output_name),
-            dynamic_partitions_store=self.instance,
-        )
+        """Deprecated. Use partition_keys_for_asset instead.
 
+        Returns a list of the partition keys for the given output.
+        """
+        asset_key = self.asset_key_for_output(output_name)
+        return self.partition_keys_for_asset(asset_key)
+
+    @deprecated(
+        breaking_version="2.0", additional_warn_text="Use `partition_keys_for_asset` instead."
+    )
     @public
     def asset_partition_keys_for_input(self, input_name: str) -> Sequence[str]:
-        """Returns a list of the partition keys of the upstream asset corresponding to the
+        """Deprecated. Use partition_keys_for_asset instead.
+
+        Returns a list of the partition keys of the upstream asset corresponding to the
         given input.
         """
-        return list(
-            self._step_execution_context.asset_partitions_subset_for_input(
-                input_name
-            ).get_partition_keys()
-        )
+        asset_key = self.asset_key_for_input(input_name)
+        return self.partition_keys_for_asset(asset_key, is_dependency=True)
 
 
 # actually forking the object type for assets is tricky for users in the cases of:
