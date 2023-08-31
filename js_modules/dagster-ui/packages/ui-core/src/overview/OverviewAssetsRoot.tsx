@@ -222,7 +222,7 @@ function VirtualRow({height, start, group}: RowProps) {
     group.assets,
   ]);
 
-  const {liveDataByNode} = useLiveDataForAssetKeys(assetKeys);
+  const {liveDataByNode} = useLiveDataForAssetKeys(assetKeys, true);
 
   const statuses = React.useMemo(() => {
     type assetType = typeof group['assets'][0];
@@ -297,32 +297,39 @@ function VirtualRow({height, start, group}: RowProps) {
 
   const {containerProps, viewport} = useViewport();
 
+  const isBatchStillLoading = assetKeys.length !== Object.keys(liveDataByNode).length;
+
   return (
     <Row $height={height} $start={start}>
       <RowGrid border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}>
         <Cell>
-          <Box flex={{direction: 'column', gap: 2}}>
-            <Box flex={{direction: 'row', gap: 8}}>
-              <Icon name="asset_group" />
-              {group.groupName ? (
-                <Link
-                  style={{fontWeight: 700}}
-                  to={workspacePathFromAddress(repoAddress, `/asset-groups/${group.groupName}`)}
-                >
-                  {group.groupName}
-                </Link>
-              ) : (
-                UNGROUPED_ASSETS
-              )}
+          <Box flex={{direction: 'row', justifyContent: 'space-between', grow: 1}}>
+            <Box flex={{direction: 'column', gap: 2, grow: 1}}>
+              <Box flex={{direction: 'row', gap: 8}}>
+                <Icon name="asset_group" />
+                {group.groupName ? (
+                  <Link
+                    style={{fontWeight: 700}}
+                    to={workspacePathFromAddress(repoAddress, `/asset-groups/${group.groupName}`)}
+                  >
+                    {group.groupName}
+                  </Link>
+                ) : (
+                  UNGROUPED_ASSETS
+                )}
+              </Box>
+              <div {...containerProps}>
+                <RepositoryLinkWrapper maxWidth={viewport.width}>
+                  <RepositoryLink repoAddress={repoAddress} showRefresh={false} />
+                </RepositoryLinkWrapper>
+              </div>
             </Box>
-            <div {...containerProps}>
-              <RepositoryLinkWrapper maxWidth={viewport.width}>
-                <RepositoryLink repoAddress={repoAddress} showRefresh={false} />
-              </RepositoryLinkWrapper>
-            </div>
+            <Box flex={{direction: 'column', justifyContent: 'center'}}>
+              {isBatchStillLoading ? <Spinner purpose="body-text" /> : null}
+            </Box>
           </Box>
         </Cell>
-        <Cell isLoading={!!statuses.loading}>
+        <Cell>
           {statuses.missing.length ? (
             <SelectOnHover
               assets={statuses.missing}
@@ -352,7 +359,7 @@ function VirtualRow({height, start, group}: RowProps) {
             0
           )}
         </Cell>
-        <Cell isLoading={!!statuses.loading}>
+        <Cell>
           {statuses.failed.length ? (
             <SelectOnHover
               assets={statuses.failed}
@@ -384,7 +391,7 @@ function VirtualRow({height, start, group}: RowProps) {
             0
           )}
         </Cell>
-        <Cell isLoading={!!statuses.loading}>
+        <Cell>
           {statuses.inprogress.length ? (
             <SelectOnHover
               assets={statuses.inprogress}
@@ -404,7 +411,7 @@ function VirtualRow({height, start, group}: RowProps) {
             0
           )}
         </Cell>
-        <Cell isLoading={!!statuses.loading}>
+        <Cell>
           {statuses.successful.length ? (
             <SelectOnHover
               assets={statuses.successful}
@@ -448,16 +455,10 @@ const RowGrid = styled(Box)`
   }
 `;
 
-const Cell = ({children, isLoading}: {children: React.ReactNode; isLoading?: boolean}) => {
+const Cell = ({children}: {children: React.ReactNode}) => {
   return (
     <RowCell style={{color: Colors.Gray900}}>
-      {isLoading ? (
-        <Box flex={{justifyContent: 'center', alignItems: 'center'}} style={{height: '82px'}}>
-          <Spinner purpose="body-text" />
-        </Box>
-      ) : (
-        <Box flex={{direction: 'row', alignItems: 'center', grow: 1}}>{children}</Box>
-      )}
+      <Box flex={{direction: 'row', alignItems: 'center', grow: 1}}>{children}</Box>
     </RowCell>
   );
 };
