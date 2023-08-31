@@ -57,6 +57,13 @@ one_asset_self_dependency_hourly = [
     )
 ]
 
+one_asset_self_dependency_hourly_many_partitions = [
+    asset_def(
+        "asset1",
+        partitions_def=HourlyPartitionsDefinition(start_date="2015-01-01-00:00"),
+        deps={"asset1": TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)},
+    )
+]
 
 one_asset_self_dependency = [
     asset_def(
@@ -155,6 +162,14 @@ hourly_with_daily_downstream_nonexistent_upstream_partitions_not_allowed = [
 
 
 exotic_partition_mapping_scenarios = {
+    "self_dependency_never_materialized_many_partitions": AssetReconciliationScenario(
+        assets=one_asset_self_dependency_hourly_many_partitions,
+        unevaluated_runs=[],
+        expected_run_requests=[
+            run_request(asset_keys=["asset1"], partition_key="2015-01-01-00:00")
+        ],
+        current_time=create_pendulum_time(year=2015, month=4, day=1, hour=0),
+    ),
     "fan_in_partitions_none_materialized": AssetReconciliationScenario(
         assets=two_assets_in_sequence_fan_in_partitions,
         unevaluated_runs=[],
