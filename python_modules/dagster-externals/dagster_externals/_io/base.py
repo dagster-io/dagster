@@ -4,8 +4,8 @@ import time
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from io import StringIO
-from threading import Event, Thread
-from typing import Iterator, List, TypeVar
+from threading import Event, Lock, Thread
+from typing import Generic, Iterator, Sequence, TypeVar
 
 from .._protocol import (
     ExternalExecutionContextData,
@@ -49,56 +49,72 @@ class ExternalExecutionParamLoader(ABC):
         ...
 
 
-class ExternalExecutionBlobStoreMessageWriter(ABC):
-    interval: int
-    max_chunk_size: int
-    buffer: List[ExternalExecutionMessage]
-    counter: int
+T_BlobStoreMessageWriterChannel = TypeVar(
+    "T_BlobStoreMessageWriterChannel", bound="ExternalExecutionBlobStoreMessageWriterChannel"
+)
 
-    def __init__(self, *, interval: int = 10):
+
+class ExternalExecutionBlobStoreMessageWriter(
+    ExternalExecutionMessageWriter[T_BlobStoreMessageWriterChannel]
+):
+    def __init__(self, *, interval: float = 10):
         self.interval = interval
-        self.buffer = []
-        self.counter = 1
 
     @contextmanager
-    def setup(self, params: ExternalExecutionParams) -> Iterator[None]:
-        self.set_params(params)
-        thread = None
-        is_task_complete = Event()
-        try:
-            thread = Thread(target=self.writer_thread, args=(is_task_complete,), daemon=True)
-            thread.start()
-            yield
-        finally:
-            is_task_complete.set()
-            if thread:
-                thread.join()
-
-    def write_message(self, message: ExternalExecutionMessage) -> None:
-        self.buffer.append(message)
-
-    def write_messages_chunk(self, index: int) -> None:
-        payload = "\n".join([json.dumps(message) for message in self.buffer])
-        self.upload_messages_chunk(StringIO(payload), index)
+    def open(self, params: ExternalExecutionParams) -> Iterator[T_BlobStoreMessageWriterChannel]:
+        channel = self.make_channel(params)
+        with channel.buffered_upload_loop():
+            yield channel
 
     @abstractmethod
-    def set_params(self, params: ExternalExecutionParams) -> None:
+    def make_channel(self, params: ExternalExecutionParams) -> T_BlobStoreMessageWriterChannel:
         ...
+
+
+class ExternalExecutionBlobStoreMessageWriterChannel(ExternalExecutionMessageWriterChannel):
+    def __init__(self, *, interval: float = 10):
+        self._interval = interval
+        self._lock = Lock()
+        self._buffer = []
+        self._counter = 1
+
+    def write_message(self, message: ExternalExecutionMessage) -> None:
+        with self._lock:
+            self._buffer.append(message)
+
+    def flush_messages(self) -> Sequence[ExternalExecutionMessage]:
+        with self._lock:
+            messages = list(self._buffer)
+            self._buffer.clear()
+            return messages
 
     @abstractmethod
     def upload_messages_chunk(self, payload: StringIO, index: int) -> None:
         ...
 
-    def writer_thread(self, is_task_complete: Event) -> None:
+    @contextmanager
+    def buffered_upload_loop(self) -> Iterator[None]:
+        thread = None
+        is_task_complete = Event()
+        try:
+            thread = Thread(target=self._upload_loop, args=(is_task_complete,), daemon=True)
+            thread.start()
+            yield
+        finally:
+            is_task_complete.set()
+            if thread:
+                thread.join(timeout=60)
+
+    def _upload_loop(self, is_task_complete: Event) -> None:
         start_or_last_upload = datetime.datetime.now()
         while True:
-            num_pending = len(self.buffer)
+            num_pending = len(self._buffer)
             now = datetime.datetime.now()
             if num_pending == 0 and is_task_complete.is_set():
                 break
-            elif is_task_complete.is_set() or (now - start_or_last_upload).seconds > self.interval:
-                self.write_messages_chunk(self.counter)
+            elif is_task_complete.is_set() or (now - start_or_last_upload).seconds > self._interval:
+                payload = "\n".join([json.dumps(message) for message in self.flush_messages()])
+                self.upload_messages_chunk(StringIO(payload), self._counter)
                 start_or_last_upload = now
-                self.buffer.clear()
-                self.counter += 1
+                self._counter += 1
             time.sleep(1)

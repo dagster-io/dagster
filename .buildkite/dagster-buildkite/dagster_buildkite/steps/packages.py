@@ -352,15 +352,6 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
 
 LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec("python_modules/automation"),
-    PackageSpec(
-        "python_modules/dagster-externals",
-        env_vars=[
-            "AWS_ACCOUNT_ID",
-            "AWS_ACCESS_KEY_ID",
-            "AWS_SECRET_ACCESS_KEY",
-            "BUILDKITE_SECRETS_BUCKET",
-        ],
-    ),
     PackageSpec("python_modules/dagster-webserver", pytest_extra_cmds=ui_extra_cmds),
     PackageSpec(
         "python_modules/dagster",

@@ -36,9 +36,11 @@ setup(
         "typing_extensions>=4.4.0",
     ],
     extras_require={
-        "s3": ["boto3", "botocore"],
         "test": [
             f"dagster{pin}",
+            "boto3",
+            "botocore",
+            "moto[s3,server]",
         ],
     },
     zip_safe=False,

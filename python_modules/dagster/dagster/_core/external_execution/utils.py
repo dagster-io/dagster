@@ -79,10 +79,10 @@ class ExternalExecutionFileMessageReader(ExternalExecutionMessageReader):
 
 
 class ExternalExecutionBlobStoreMessageReader(ExternalExecutionMessageReader):
-    interval: int
+    interval: float
     counter: int
 
-    def __init__(self, interval: int = 10):
+    def __init__(self, interval: float = 10):
         self.interval = interval
         self.counter = 1
 
