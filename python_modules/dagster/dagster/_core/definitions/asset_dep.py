@@ -27,19 +27,13 @@ class AssetDep(
 
     def __new__(
         cls,
-        asset: Union[  # TODO - rename asset_key? seems incorrect, since it can alo be an asset def, source asset, or asset spec
-            CoercibleToAssetKey, AssetSpec, AssetsDefinition, SourceAsset
-        ],
+        asset: Union[CoercibleToAssetKey, AssetSpec, AssetsDefinition, SourceAsset],
         partition_mapping: Optional[PartitionMapping] = None,
     ):
-        from .decorators.asset_decorator import (
-            asset_key_from_coercible_or_definition,
-        )
-
         if isinstance(asset, AssetSpec):
             asset_key = asset.asset_key
         else:
-            asset_key = asset_key_from_coercible_or_definition(asset)
+            asset_key = AssetKey.from_coercible_or_definition(asset)
 
         return super().__new__(
             cls,
