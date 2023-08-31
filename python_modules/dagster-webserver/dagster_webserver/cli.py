@@ -133,7 +133,7 @@ DEFAULT_POOL_RECYCLE = 3600  # 1 hr
 )
 @click.option(
     "--log-level",
-    help="Set the log level for the uvicorn web server.",
+    help="Set the log level for the web server.",
     show_default=True,
     default="warning",
     type=click.Choice(
@@ -170,7 +170,11 @@ def dagster_webserver(
     if suppress_warnings:
         os.environ["PYTHONWARNINGS"] = "ignore"
 
-    configure_loggers()
+    dagster_log_level = log_level.upper()
+    if dagster_log_level == "TRACE":  # uvicorn-specific level
+        dagster_log_level = "DEBUG"
+
+    configure_loggers(log_level=dagster_log_level)
     logger = logging.getLogger(WEBSERVER_LOGGER_NAME)
 
     if sys.argv[0].endswith("dagit"):
