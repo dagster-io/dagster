@@ -631,6 +631,7 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
     num_skipped: int
     num_discarded: int
     run_ids: Set[str] = set()
+    rule_snapshots: Optional[Sequence[AutoMaterializeRuleSnapshot]] = None
 
     @staticmethod
     def from_rule_evaluation_results(
@@ -644,6 +645,11 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
         num_discarded: int,
         dynamic_partitions_store: "DynamicPartitionsStore",
     ) -> "AutoMaterializeAssetEvaluation":
+        auto_materialize_policy = asset_graph.auto_materialize_policies_by_key.get(asset_key)
+
+        if not auto_materialize_policy:
+            check.failed(f"Expected auto materialize policy on asset {asset_key}")
+
         partitions_def = asset_graph.get_partitions_def(asset_key)
         if partitions_def is None:
             return AutoMaterializeAssetEvaluation(
@@ -655,6 +661,7 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
                 num_requested=num_requested,
                 num_skipped=num_skipped,
                 num_discarded=num_discarded,
+                rule_snapshots=auto_materialize_policy.rule_snapshots,
             )
         else:
             return AutoMaterializeAssetEvaluation(
@@ -675,6 +682,7 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
                 num_requested=num_requested,
                 num_skipped=num_skipped,
                 num_discarded=num_discarded,
+                rule_snapshots=auto_materialize_policy.rule_snapshots,
             )
 
 
