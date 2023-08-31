@@ -3186,6 +3186,7 @@ type AssetCheck {
   description: String
   severity: AssetCheckSeverity!
   executions(limit: Int!, cursor: String): [AssetCheckExecution!]!
+  executionForLatestMaterialization: AssetCheckExecution
 }
 
 enum AssetCheckSeverity {
