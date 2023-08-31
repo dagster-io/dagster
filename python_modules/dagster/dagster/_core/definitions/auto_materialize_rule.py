@@ -442,7 +442,6 @@ class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOut
                 unreconciled_ancestors.update(
                     context.instance_queryer.get_root_unreconciled_ancestors(
                         asset_partition=parent,
-                        respect_materialization_data_versions=context.daemon_context.respect_materialization_data_versions,
                     )
                 )
             if unreconciled_ancestors:
