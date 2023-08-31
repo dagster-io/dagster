@@ -409,6 +409,8 @@ class AssetDaemonContext:
         to_materialize.difference_update(to_discard)
         to_skip.difference_update(to_discard)
 
+        print("wtf", self.asset_graph.auto_materialize_policies_by_key)
+
         return (
             AutoMaterializeAssetEvaluation.from_rule_evaluation_results(
                 asset_key=asset_key,

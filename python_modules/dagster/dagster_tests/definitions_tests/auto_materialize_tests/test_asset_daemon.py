@@ -19,7 +19,10 @@ def instance():
 
 @pytest.mark.parametrize(
     "scenario_item",
-    list(ASSET_RECONCILIATION_SCENARIOS.items()),
+    [
+        (name, scenario.with_implicit_auto_materialize_policies())
+        for name, scenario in list(ASSET_RECONCILIATION_SCENARIOS.items())
+    ],
     ids=list(ASSET_RECONCILIATION_SCENARIOS.keys()),
 )
 def test_reconcile_with_external_asset_graph(scenario_item, instance):

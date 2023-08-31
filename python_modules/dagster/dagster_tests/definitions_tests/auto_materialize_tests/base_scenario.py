@@ -15,6 +15,7 @@ from typing import (
     Set,
     Tuple,
     Union,
+    AbstractSet,
 )
 
 import mock
@@ -184,15 +185,6 @@ class AssetReconciliationScenario(
         expected_evaluations: Optional[Sequence[AssetEvaluationSpec]] = None,
         requires_respect_materialization_data_versions: bool = False,
     ) -> "AssetReconciliationScenario":
-        # If any asset already has existent auto materialize policies, do not override to contain
-        # implicit auto materialize policies. If none have auto materialize policies (old reconciliation
-        # scenario format) then add implicit auto materialize policies to all assets.
-        if assets and not any(
-            a.auto_materialize_policies_by_key
-            for a in [asset for asset in assets if isinstance(asset, AssetsDefinition)]
-        ):
-            assets = with_implicit_auto_materialize_policy(assets, AssetGraph.from_assets(assets))
-
         return super(AssetReconciliationScenario, cls).__new__(
             cls,
             unevaluated_runs=unevaluated_runs,
@@ -209,6 +201,40 @@ class AssetReconciliationScenario(
             code_locations=code_locations,
             expected_evaluations=expected_evaluations,
             requires_respect_materialization_data_versions=requires_respect_materialization_data_versions,
+        )
+
+    def with_implicit_auto_materialize_policies(self) -> "AssetReconciliationScenario":
+        assets_with_implicit_policies = self.assets
+        if self.assets:
+            asset_graph = AssetGraph.from_assets(self.assets)
+            target_asset_keys = (
+                self.asset_selection.resolve(asset_graph)
+                if self.asset_selection
+                else asset_graph.materializable_asset_keys
+            )
+            assets_with_implicit_policies = with_implicit_auto_materialize_policies(
+                self.assets, asset_graph, target_asset_keys
+            )
+
+        return AssetReconciliationScenario(
+            unevaluated_runs=self.unevaluated_runs,
+            assets=assets_with_implicit_policies,
+            between_runs_delta=self.between_runs_delta,
+            evaluation_delta=self.evaluation_delta,
+            cursor_from=(
+                self.cursor_from.with_implicit_auto_materialize_policies()
+                if self.cursor_from
+                else None
+            ),
+            current_time=self.current_time,
+            asset_selection=self.asset_selection,
+            active_backfill_targets=self.active_backfill_targets,
+            dagster_runs=self.dagster_runs,
+            event_log_entries=self.event_log_entries,
+            expected_run_requests=self.expected_run_requests,
+            code_locations=self.code_locations,
+            expected_evaluations=self.expected_evaluations,
+            requires_respect_materialization_data_versions=self.requires_respect_materialization_data_versions,
         )
 
     def _get_code_location_origin(
@@ -249,6 +275,7 @@ class AssetReconciliationScenario(
 
             @repository
             def repo():
+                print([asset1.auto_materialize_policies_by_key for asset1 in self.assets])
                 return self.assets
 
             # add any runs to the instance
@@ -643,20 +670,25 @@ def observable_source_asset_def(
     return _observable
 
 
-def with_implicit_auto_materialize_policy(
-    assets_defs: Sequence[Union[SourceAsset, AssetsDefinition]], asset_graph: AssetGraph
+def with_implicit_auto_materialize_policies(
+    assets_defs: Sequence[Union[SourceAsset, AssetsDefinition]],
+    asset_graph: AssetGraph,
+    targeted_assets: Optional[AbstractSet[AssetKey]] = None,
 ) -> Sequence[AssetsDefinition]:
-    """Note: this should be implemented in core dagster at some point, and this implementation is
-    a lazy hack.
+    """Accepts a list of assets, adding implied auto-materialize policies to targeted assets
+    if policies do not exist.
     """
     ret = []
     for assets_def in assets_defs:
         if (
             isinstance(assets_def, AssetsDefinition)
-            and not assets_def.auto_materialize_policies_by_key.keys()
+            and not assets_def.auto_materialize_policies_by_key
         ):
+            targeted_keys = (
+                assets_def.keys & targeted_assets if targeted_assets else assets_def.keys
+            )
             auto_materialize_policies_by_key = {}
-            for key in assets_def.keys:
+            for key in targeted_keys:
                 policy = get_implicit_auto_materialize_policy(key, asset_graph)
                 if policy:
                     auto_materialize_policies_by_key[key] = policy
