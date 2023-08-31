@@ -282,6 +282,7 @@ export type AssetMetadataEntry = MetadataEntry & {
 
 export type AssetNode = {
   __typename: 'AssetNode';
+  assetChecks: Array<AssetCheck>;
   assetKey: AssetKey;
   assetMaterializationUsedData: Array<MaterializationUpstreamDataVersion>;
   assetMaterializations: Array<MaterializationEvent>;
@@ -4795,6 +4796,7 @@ export const buildAssetNode = (
   relationshipsToOmit.add('AssetNode');
   return {
     __typename: 'AssetNode',
+    assetChecks: overrides && overrides.hasOwnProperty('assetChecks') ? overrides.assetChecks! : [],
     assetKey:
       overrides && overrides.hasOwnProperty('assetKey')
         ? overrides.assetKey!

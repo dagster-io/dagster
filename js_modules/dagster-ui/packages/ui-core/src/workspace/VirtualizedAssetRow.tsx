@@ -4,7 +4,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {buildAssetNodeStatusContent} from '../asset-graph/AssetNode';
+import {buildAssetNodeStatusContent} from '../asset-graph/AssetNodeStatusContent';
 import {AssetRunLink} from '../asset-graph/AssetRunLinking';
 import {MISSING_LIVE_DATA, toGraphId, tokenForAssetKey} from '../asset-graph/Utils';
 import {useLiveDataForAssetKeys} from '../asset-graph/useLiveDataForAssetKeys';

@@ -41,6 +41,15 @@ export type AssetGraphLiveQuery = {
       runId: string;
     }>;
     assetObservations: Array<{__typename: 'ObservationEvent'; timestamp: string; runId: string}>;
+    assetChecks: Array<{
+      __typename: 'AssetCheck';
+      severity: Types.AssetCheckSeverity;
+      executionForLatestMaterialization: {
+        __typename: 'AssetCheckExecution';
+        id: string;
+        status: Types.AssetCheckExecutionResolvedStatus;
+      } | null;
+    }>;
     freshnessInfo: {__typename: 'AssetFreshnessInfo'; currentMinutesLate: number | null} | null;
     staleCauses: Array<{
       __typename: 'StaleCause';

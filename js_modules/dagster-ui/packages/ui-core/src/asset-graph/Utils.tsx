@@ -1,7 +1,14 @@
 import {pathVerticalDiagonal, pathHorizontalDiagonal} from '@vx/shape';
 
 import {featureEnabled, FeatureFlag} from '../app/Flags';
-import {Maybe, RunStatus, StaleCauseCategory, StaleStatus} from '../graphql/types';
+import {
+  AssetCheckExecutionResolvedStatus,
+  AssetCheckSeverity,
+  Maybe,
+  RunStatus,
+  StaleCauseCategory,
+  StaleStatus,
+} from '../graphql/types';
 
 import {
   AssetNodeKeyFragment,
@@ -153,6 +160,10 @@ export interface LiveDataForNode {
     numPartitions: number;
     numFailed: number;
   } | null;
+  assetChecks: {
+    severity: AssetCheckSeverity;
+    executionForLatestMaterialization: {status: AssetCheckExecutionResolvedStatus};
+  }[];
 }
 
 export const MISSING_LIVE_DATA: LiveDataForNode = {
@@ -209,6 +220,7 @@ export const buildLiveDataForNode = (
         ? latestRunForAsset.status
         : null,
     lastObservation,
+    assetChecks: assetNode.assetChecks,
     staleStatus: assetNode.staleStatus,
     staleCauses: assetNode.staleCauses,
     stepKey: stepKeyForAsset(assetNode),
