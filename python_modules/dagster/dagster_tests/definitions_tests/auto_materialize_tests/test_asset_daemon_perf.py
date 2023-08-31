@@ -6,6 +6,7 @@ import tempfile
 import time
 from typing import AbstractSet, NamedTuple, Optional, Sequence, Tuple
 
+import dagster._check as check
 import pytest
 from dagster import (
     AssetKey,
@@ -35,6 +36,8 @@ from dagster._core.types.dagster_type import Nothing
 from dagster._utils import file_relative_path
 
 from .base_scenario import with_implicit_auto_materialize_policies
+
+logger = logging.getLogger("dagster.test_asset_daemon_perf")
 
 
 class RandomAssets(NamedTuple):
@@ -120,10 +123,16 @@ class InstanceSnapshot(NamedTuple):
     n_runs: int = 1
     randomize_runs: bool = False
     partition_keys_to_backfill: Optional[Sequence[str]] = None
+    partition_range_to_single_run_backfill: Optional[PartitionKeyRange] = None
 
     @property
     def name(self) -> str:
-        if self.partition_keys_to_backfill:
+        if self.partition_range_to_single_run_backfill:
+            partition_keys = check.not_none(
+                self.assets.asset_partitions_def
+            ).get_partition_keys_in_range(self.partition_range_to_single_run_backfill)
+            runs_str = f"{len(partition_keys)}_partition_range"
+        elif self.partition_keys_to_backfill:
             runs_str = f"{len(self.partition_keys_to_backfill)}_partition_keys"
         else:
             runs_str = (
@@ -151,6 +160,18 @@ class InstanceSnapshot(NamedTuple):
                         )
 
                 if self.assets.asset_partitions_def:
+                    if self.partition_range_to_single_run_backfill:
+                        start = self.partition_range_to_single_run_backfill.start
+                        end = self.partition_range_to_single_run_backfill.end
+                        materialize_to_memory(
+                            [multi_asset],
+                            instance=instance,
+                            tags={
+                                "dagster/asset_partition_range_start": start,
+                                "dagster/asset_partition_range_end": end,
+                            },
+                        )
+
                     for partition_key in self.partition_keys_to_backfill or []:
                         materialize_to_memory(
                             [multi_asset],
@@ -223,7 +244,9 @@ class PerfScenario(NamedTuple):
 
     def do_scenario(self: "PerfScenario"):
         if not os.path.exists(self.snapshot.path):
+            logger.info("Creating snapshot")
             self.snapshot.create()
+            logger.info("Done creating snapshot")
 
         repo = self.get_repository()
         with tempfile.TemporaryDirectory() as temp_dir, tarfile.open(self.snapshot.path) as tf:
@@ -245,6 +268,9 @@ class PerfScenario(NamedTuple):
 
                 end = time.time()
                 execution_time_seconds = end - start
+                logger.info(
+                    f"Perf scenario {self.name} finished in {execution_time_seconds} seconds"
+                )
                 assert execution_time_seconds < self.max_execution_time_seconds
 
 
@@ -300,8 +326,17 @@ all_daily_partitioned_500_assets_20_partition_keys = InstanceSnapshot(
     partition_keys_to_backfill=[f"2020-01-{i+1:02}" for i in range(20)],
 )
 
-# 100 assets, all hourly partitioned
+
 hourly_partitions_def = HourlyPartitionsDefinition(start_date="2020-01-01-00:00")
+
+# 2 assets, all hourly partitioned
+all_hourly_partitioned_2_assets = RandomAssets(
+    name="all_hourly_partitioned_2_assets",
+    n_assets=2,
+    asset_partitions_def=hourly_partitions_def,
+)
+
+# 100 assets, all hourly partitioned
 all_hourly_partitioned_100_assets = RandomAssets(
     name="all_hourly_partitioned_100_assets",
     n_assets=100,
@@ -315,6 +350,14 @@ all_hourly_partitioned_100_assets_100_partition_keys = InstanceSnapshot(
     assets=all_hourly_partitioned_100_assets,
     partition_keys_to_backfill=hourly_partitions_def.get_partition_keys_in_range(
         PartitionKeyRange("2020-01-01-00:00", "2020-01-05-03:00")
+    ),
+)
+
+# TODO VERIFY THIS IS ACTUALLY 1000
+all_hourly_partitioned_2_assets_1000_partition_keys = InstanceSnapshot(
+    assets=all_hourly_partitioned_2_assets,
+    partition_range_to_single_run_backfill=PartitionKeyRange(
+        "2016-01-01-00:00", "2023-01-01-03:00"
     ),
 )
 
@@ -367,6 +410,11 @@ perf_scenarios = [
         snapshot=all_hourly_partitioned_100_assets_2_partition_keys,
         n_freshness_policies=100,
         max_execution_time_seconds=30,
+    ),
+    PerfScenario(
+        snapshot=all_hourly_partitioned_2_assets_1000_partition_keys,
+        n_freshness_policies=0,
+        max_execution_time_seconds=120,
     ),
 ]
 
