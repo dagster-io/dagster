@@ -312,7 +312,7 @@ class AssetDaemonContext:
             - The set of AssetKeyPartitionKeys that should be discarded.
         """
         auto_materialize_policy = check.not_none(
-            self.get_implicit_auto_materialize_policy(asset_key)
+            self.asset_graph.auto_materialize_policies_by_key.get(asset_key)
         )
 
         # the results of evaluating individual rules
