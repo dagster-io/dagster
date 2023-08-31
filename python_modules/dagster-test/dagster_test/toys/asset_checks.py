@@ -50,7 +50,7 @@ def slow_check():
     check_specs=[
         AssetCheckSpec(
             name="random_fail_check",
-            asset_key="asset_with_check_in_same_op",
+            asset="asset_with_check_in_same_op",
             description=(
                 "An ERROR check calculated in the same op with the asset. It fails half the time."
             ),

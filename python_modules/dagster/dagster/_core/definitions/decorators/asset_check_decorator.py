@@ -10,11 +10,8 @@ from dagster._core.definitions.asset_checks import (
     AssetChecksDefinitionInputOutputProps,
 )
 from dagster._core.definitions.assets import AssetsDefinition
-from dagster._core.definitions.decorators.asset_decorator import (
-    asset_key_from_coercible_or_definition,
-    build_asset_ins,
-)
-from dagster._core.definitions.events import CoercibleToAssetKey
+from dagster._core.definitions.decorators.asset_decorator import build_asset_ins
+from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.output import Out
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.source_asset import SourceAsset
@@ -100,7 +97,7 @@ def asset_check(
     def inner(fn: AssetCheckFunction) -> AssetChecksDefinition:
         check.callable_param(fn, "fn")
         resolved_name = name or fn.__name__
-        asset_key = asset_key_from_coercible_or_definition(asset) if asset is not None else None
+        asset_key = AssetKey.from_coercible_or_definition(asset) if asset is not None else None
 
         out = Out(dagster_type=None)
         input_tuples_by_asset_key = build_asset_ins(
@@ -122,7 +119,7 @@ def asset_check(
         spec = AssetCheckSpec(
             name=resolved_name,
             description=description,
-            asset_key=resolved_asset_key,
+            asset=resolved_asset_key,
             severity=severity,
         )
 

@@ -1189,22 +1189,9 @@ def _make_asset_keys(
 
     deps_asset_keys: Set[AssetKey] = set()
     for dep in deps:
-        deps_asset_keys.add(asset_key_from_coercible_or_definition(dep))
+        deps_asset_keys.add(AssetKey.from_coercible_or_definition(dep))
 
     return deps_asset_keys
-
-
-def asset_key_from_coercible_or_definition(
-    arg: Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]
-) -> AssetKey:
-    if isinstance(arg, AssetsDefinition):
-        # this will error if the AssetsDefinition is a multi_asset, but we should have caught that
-        # earlier in execution
-        return arg.key
-    elif isinstance(arg, SourceAsset):
-        return arg.key
-    else:
-        return AssetKey.from_coercible(arg)
 
 
 def _validate_and_assign_output_names_to_check_specs(
