@@ -101,6 +101,7 @@ export function PagePagination(props: {currentPageIndex: number; totalPageCount:
             href={{
               query: {...query, page: currentPageIndex},
             }}
+            legacyBehavior
           >
             <a className="inline-flex items-center border-t-2 border-transparent pr-1 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700">
               {/* Heroicon name: arrow-narrow-left */}
