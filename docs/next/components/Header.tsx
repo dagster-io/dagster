@@ -260,7 +260,7 @@ const Header = ({openMobileDocsMenu}) => {
               Sign in
             </a>
             <a
-              href="https://dagster.io//dagster.cloud/signup"
+              href="https://dagster.cloud/signup"
               className="px-6 py-2 border text-lg border-gable-green cursor-pointer bg-transparent hover:bg-gable-green hover:text-white inline-flex gap-2 leading-8 items-center rounded-full whitespace-nowrap transition"
             >
               Try Dagster Cloud
