@@ -12,7 +12,6 @@ import {
   TestAssetCheck,
   testAssetKey,
   testLatestMaterializationTimeStamp,
-  testLatestMaterializationRunId,
   TestAssetCheckWarning,
   TestAssetCheckNoExecutions,
 } from '../__fixtures__/AssetChecks.fixtures';
@@ -36,7 +35,6 @@ const Component = ({mocks}: {mocks: MockedResponse[]}) => {
           <AssetChecks
             assetKey={testAssetKey}
             lastMaterializationTimestamp={testLatestMaterializationTimeStamp.toString()}
-            lastMaterializationRunId={testLatestMaterializationRunId.toString()}
           />
         </AssetFeatureProvider>
       </MockedProvider>
