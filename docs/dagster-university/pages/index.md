@@ -50,5 +50,6 @@ title: Dagster University Course Content
     - [What are schedules?](/dagster-essentials/lesson-7/what-are-schedules)
     - [Practice: Create a weekly_update_job](/dagster-essentials/lesson-7/coding-practice-weekly-update-job)
     - [Creating a schedule](/dagster-essentials/lesson-7/creating-a-schedule)
+    - [Practice: Create a weekly_update_schedule](/dagster-essentials/lesson-7/coding-practice-weekly-update-schedule)
     - [Updating the Definitions object](/dagster-essentials/lesson-7/updating-the-definitions-object)
     - [Jobs and schedules in the Dagster UI](/dagster-essentials/lesson-7/jobs-schedules-dagster-ui)
