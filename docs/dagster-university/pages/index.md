@@ -74,3 +74,12 @@ title: Dagster University Course Content
     - [Updating the Definitions object](/dagster-essentials/lesson-9/updating-the-definitions-object)
     - [Sensors in the Dagster UI](/dagster-essentials/lesson-9/sensors-dagster-ui)
     - [Enabling the sensor](/dagster-essentials/lesson-9/enabling-the-sensor)
+  - Extra credit: Metadata
+    - [Overview](/dagster-essentials/extra-credit/overview)
+    - [What's metadata?](/dagster-essentials/extra-credit/whats-metadata)
+    - [Definition metadata - Asset descriptions](/dagster-essentials/extra-credit/definition-metadata-asset-descriptions)
+    - [Definition metadata - Asset groups](/dagster-essentials/extra-credit/definition-metadata-asset-groups)
+    - [Practice: Grouping assets](/dagster-essentials/extra-credit/coding-practice-grouping-assets)
+    - [Materialization metadata](/dagster-essentials/extra-credit/materialization-metadata)
+    - [Practice: Add metadata to taxi_zones_file](/dagster-essentials/extra-credit/coding-practice-metadata-taxi-zones-file)
+    - [Asset metadata as Markdown](/dagster-essentials/extra-credit/asset-metadata-as-markdown)
