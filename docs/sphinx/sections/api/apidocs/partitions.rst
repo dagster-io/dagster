@@ -52,6 +52,10 @@ Partition Mapping
 
 .. autoclass:: MultiPartitionMapping
 
+Backfill Policy (Experimental)
+==============================
+
+.. autoclass:: BackfillPolicy
 
 Partitioned Config
 ==================
