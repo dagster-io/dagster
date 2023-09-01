@@ -21,10 +21,19 @@ from pydantic import Field, validator
 
 try:
     from pydantic import model_validator
-except:
+except ImportError:
     from pydantic import root_validator
 
-    model_validator = root_validator
+    def model_validator(mode="before"):
+        def _decorate(func):
+            return (
+                root_validator(pre=True)(func)
+                if mode == "before"
+                else root_validator(post=False)(func)
+            )
+
+        return _decorate
+
 
 try:
     import snowflake.connector
@@ -278,7 +287,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
             )
         return v
 
-    @model_validator
+    @model_validator(mode="before")
     def validate_authentication(cls, values):
         auths_set = 0
         auths_set += 1 if values.get("password") is not None else 0
