@@ -83,6 +83,9 @@ except ImportError:
         pass
 
 
+USING_PYDANTIC_2 = int(pydantic.__version__.split(".")[0]) >= 2
+
+
 from abc import ABC, abstractmethod
 
 from pydantic import BaseModel
@@ -181,8 +184,10 @@ class MakeConfigCacheable(BaseModel):
         # Necessary to allow for caching decorators
         arbitrary_types_allowed = True
         # Avoid pydantic reading a cached property class as part of the schema
-        ignored_types = (cached_property,)
-        keep_untouched = (cached_property,)
+        if USING_PYDANTIC_2:
+            ignored_types = (cached_property,)
+        else:
+            keep_untouched = (cached_property,)
         # Ensure the class is serializable, for caching purposes
         frozen = True
 
@@ -330,7 +335,7 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
             if field.is_required() and key not in modified_data:
                 modified_data[key] = None
         super().__init__(**modified_data)
-        if int(pydantic.__version__.split(".")[0]) >= 2:
+        if USING_PYDANTIC_2:
             self.__dict__ = ensure_env_vars_set(self.__dict__, modified_data)
 
     def _convert_to_config_dictionary(self) -> Mapping[str, Any]:
