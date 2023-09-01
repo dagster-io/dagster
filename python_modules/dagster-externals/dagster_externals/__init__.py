@@ -13,6 +13,9 @@ from dagster_externals._io.default import (
 from dagster_externals._io.env import (
     ExternalExecutionEnvContextLoader as ExternalExecutionEnvContextLoader,
 )
+from dagster_externals._io.s3 import (
+    ExternalExecutionS3MessageWriter as ExternalExecutionS3MessageWriter,
+)
 from dagster_externals._protocol import (
     DAGSTER_EXTERNALS_ENV_KEYS as DAGSTER_EXTERNALS_ENV_KEYS,
     ExternalExecutionContextData as ExternalExecutionContextData,
