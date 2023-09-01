@@ -1,11 +1,18 @@
+from contextlib import contextmanager
+from typing import Iterator, cast
+
 from .._protocol import (
     ExternalExecutionContextData,
+    ExternalExecutionParams,
 )
-from .._util import param_from_env_var
+from .._util import assert_env_param_type
 from .base import ExternalExecutionContextLoader
 
 
 class ExternalExecutionEnvContextLoader(ExternalExecutionContextLoader):
-    def load_context(self) -> ExternalExecutionContextData:
-        data = param_from_env_var("context")
-        return data["context_data"]
+    @contextmanager
+    def load_context(
+        self, params: ExternalExecutionParams
+    ) -> Iterator["ExternalExecutionContextData"]:
+        data = assert_env_param_type(params, "data", dict, self.__class__)
+        yield cast(ExternalExecutionContextData, data)

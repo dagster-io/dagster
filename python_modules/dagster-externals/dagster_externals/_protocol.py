@@ -3,6 +3,8 @@ from typing import Any, Mapping, Optional, Sequence
 from typing_extensions import Final, TypeAlias, TypedDict
 
 ExternalExecutionExtras: TypeAlias = Mapping[str, Any]
+ExternalExecutionParams: TypeAlias = Mapping[str, Any]
+
 
 ENV_KEY_PREFIX: Final = "DAGSTER_EXTERNALS_"
 

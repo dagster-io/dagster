@@ -19,6 +19,7 @@ from dagster_externals._protocol import (
     ExternalExecutionDataProvenance as ExternalExecutionDataProvenance,
     ExternalExecutionExtras as ExternalExecutionExtras,
     ExternalExecutionMessage as ExternalExecutionMessage,
+    ExternalExecutionParams as ExternalExecutionParams,
     ExternalExecutionPartitionKeyRange as ExternalExecutionPartitionKeyRange,
     ExternalExecutionTimeWindow as ExternalExecutionTimeWindow,
 )

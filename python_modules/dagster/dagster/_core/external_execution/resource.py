@@ -1,21 +1,19 @@
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Iterator, Mapping, Optional
+from typing import TYPE_CHECKING, Iterator, Mapping, Optional
 
 from dagster_externals import (
     DAGSTER_EXTERNALS_ENV_KEYS,
     ExternalExecutionExtras,
+    ExternalExecutionParams,
     encode_env_var,
 )
-from typing_extensions import TypeAlias
 
 from dagster._config.pythonic_config import ConfigurableResource
 from dagster._core.execution.context.compute import OpExecutionContext
 
 if TYPE_CHECKING:
     from dagster._core.external_execution.context import ExternalExecutionOrchestrationContext
-
-ExternalExecutionParams: TypeAlias = Mapping[str, Any]
 
 
 class ExternalExecutionResource(ConfigurableResource, ABC):
