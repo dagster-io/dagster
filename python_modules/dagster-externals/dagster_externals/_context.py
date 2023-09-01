@@ -7,6 +7,7 @@ from typing_extensions import Self
 from ._io.base import (
     ExternalExecutionContextLoader,
     ExternalExecutionMessageWriter,
+    ExternalExecutionMessageWriterChannel,
     ExternalExecutionParamLoader,
 )
 from ._io.default import (
@@ -51,11 +52,10 @@ def init_dagster_externals(
         context_loader = context_loader or ExternalExecutionFileContextLoader()
         message_writer = message_writer or ExternalExecutionFileMessageWriter()
         stack = ExitStack()
-        stack.enter_context(context_loader.setup(context_params))
-        stack.enter_context(message_writer.setup(messages_params))
+        context_data = stack.enter_context(context_loader.load_context(context_params))
+        message_channel = stack.enter_context(message_writer.open(messages_params))
         atexit.register(stack.__exit__, None, None, None)
-        data = context_loader.load_context()
-        context = ExternalExecutionContext(data, message_writer)
+        context = ExternalExecutionContext(context_data, message_channel)
     else:
         emit_orchestration_inactive_warning()
         context = get_mock()
@@ -84,14 +84,16 @@ class ExternalExecutionContext:
         return cls._instance
 
     def __init__(
-        self, data: ExternalExecutionContextData, message_writer: ExternalExecutionMessageWriter
+        self,
+        data: ExternalExecutionContextData,
+        message_channel: ExternalExecutionMessageWriterChannel,
     ) -> None:
         self._data = data
-        self.message_writer = message_writer
+        self.message_channel = message_channel
 
-    def _send_message(self, method: str, params: Optional[Mapping[str, Any]] = None) -> None:
+    def _write_message(self, method: str, params: Optional[Mapping[str, Any]] = None) -> None:
         message = ExternalExecutionMessage(method=method, params=params)
-        self.message_writer.write_message(message)
+        self.message_channel.write_message(message)
 
     # ########################
     # ##### PUBLIC API
@@ -194,7 +196,7 @@ class ExternalExecutionContext:
         asset_key = assert_param_type(asset_key, str, "report_asset_metadata", "asset_key")
         label = assert_param_type(label, str, "report_asset_metadata", "label")
         value = assert_param_json_serializable(value, "report_asset_metadata", "value")
-        self._send_message(
+        self._write_message(
             "report_asset_metadata", {"asset_key": asset_key, "label": label, "value": value}
         )
 
@@ -203,11 +205,11 @@ class ExternalExecutionContext:
         data_version = assert_param_type(
             data_version, str, "report_asset_data_version", "data_version"
         )
-        self._send_message(
+        self._write_message(
             "report_asset_data_version", {"asset_key": asset_key, "data_version": data_version}
         )
 
     def log(self, message: str, level: str = "info") -> None:
         message = assert_param_type(message, str, "log", "asset_key")
         level = assert_param_value(level, ["info", "warning", "error"], "log", "level")
-        self._send_message("log", {"message": message, "level": level})
+        self._write_message("log", {"message": message, "level": level})

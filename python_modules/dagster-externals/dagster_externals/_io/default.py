@@ -3,15 +3,15 @@ from contextlib import contextmanager
 from typing import Iterator, Optional
 
 from .._protocol import (
-    DAGSTER_EXTERNALS_ENV_KEYS,
     ExternalExecutionContextData,
     ExternalExecutionMessage,
     ExternalExecutionParams,
 )
-from .._util import DagsterExternalsError, param_from_env_var
+from .._util import assert_env_param_type, param_from_env_var
 from .base import (
     ExternalExecutionContextLoader,
     ExternalExecutionMessageWriter,
+    ExternalExecutionMessageWriterChannel,
     ExternalExecutionParamLoader,
 )
 
@@ -20,58 +20,33 @@ class ExternalExecutionFileContextLoader(ExternalExecutionContextLoader):
     _path: Optional[str] = None
 
     @contextmanager
-    def setup(self, params: ExternalExecutionParams) -> Iterator[None]:
-        self._validate_path_params(params)
-        self._path = params["path"]
-        yield
-
-    def _validate_path_params(self, params: ExternalExecutionParams) -> None:
-        try:
-            assert isinstance(params.get("path"), str)
-        except AssertionError:
-            raise DagsterExternalsError(_validation_error_message(self, "context"))
-
-    @property
-    def path(self) -> str:
-        assert self._path is not None
-        return self._path
-
-    def load_context(self) -> ExternalExecutionContextData:
-        with open(self.path, "r") as f:
-            return json.load(f)
+    def load_context(
+        self, params: ExternalExecutionParams
+    ) -> Iterator[ExternalExecutionContextData]:
+        path = assert_env_param_type(params, "path", str, self.__class__)
+        with open(path, "r") as f:
+            data = json.load(f)
+        yield data
 
 
 class ExternalExecutionFileMessageWriter(ExternalExecutionMessageWriter):
     _path: Optional[str] = None
 
     @contextmanager
-    def setup(self, params: ExternalExecutionParams) -> Iterator[None]:
-        self._validate_path_params(params)
-        self._path = params["path"]
-        yield
+    def open(
+        self, params: ExternalExecutionParams
+    ) -> Iterator["ExternalExecutionFileMessageChannel"]:
+        path = assert_env_param_type(params, "path", str, self.__class__)
+        yield ExternalExecutionFileMessageChannel(path)
 
-    def _validate_path_params(self, params: ExternalExecutionParams) -> None:
-        try:
-            assert isinstance(params.get("path"), str)
-        except AssertionError:
-            raise DagsterExternalsError(_validation_error_message(self, "context"))
 
-    @property
-    def path(self) -> str:
-        assert self._path is not None
-        return self._path
+class ExternalExecutionFileMessageChannel(ExternalExecutionMessageWriterChannel):
+    def __init__(self, path: str):
+        self._path = path
 
     def write_message(self, message: ExternalExecutionMessage) -> None:
-        with open(self.path, "a") as f:
+        with open(self._path, "a") as f:
             f.write(json.dumps(message) + "\n")
-
-
-def _validation_error_message(obj: object, param: str) -> str:
-    return (
-        f"`{obj.__class__.__name__}` requires a `path` key in the"
-        f" {DAGSTER_EXTERNALS_ENV_KEYS[param]} environment variable be a JSON"
-        " object with a string `path` property."
-    )
 
 
 class ExternalExecutionEnvVarParamLoader(ExternalExecutionParamLoader):

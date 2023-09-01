@@ -3,12 +3,13 @@ import json
 import os
 import warnings
 import zlib
-from typing import TYPE_CHECKING, Any, Optional, Sequence, TypeVar
+from typing import TYPE_CHECKING, Any, Optional, Sequence, Type, TypeVar
 
 from ._protocol import (
     ENV_KEY_PREFIX,
     ExternalExecutionContextData,
     ExternalExecutionExtras,
+    ExternalExecutionParams,
 )
 
 if TYPE_CHECKING:
@@ -70,6 +71,18 @@ def assert_param_type(value: T, expected_type: Any, method: str, param: str) -> 
         raise DagsterExternalsError(
             f"Invalid type for parameter `{param}` of `{method}`. Expected `{expected_type}`, got"
             f" `{type(value)}`."
+        )
+    return value
+
+
+def assert_env_param_type(
+    env_params: ExternalExecutionParams, key: str, expected_type: Type[T], cls: Type
+) -> T:
+    value = env_params.get(key)
+    if not isinstance(value, expected_type):
+        raise DagsterExternalsError(
+            f"Invalid type for parameter `{key}` passed from orchestration side to"
+            f" `{cls.__name__}`. Expected `{expected_type}`, got `{type(value)}`."
         )
     return value
 

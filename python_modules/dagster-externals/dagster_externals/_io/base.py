@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from typing import Iterator
+from typing import Generic, Iterator, TypeVar
 
 from .._protocol import (
     ExternalExecutionContextData,
@@ -10,20 +10,25 @@ from .._protocol import (
 
 
 class ExternalExecutionContextLoader(ABC):
-    @contextmanager
-    def setup(self, params: ExternalExecutionParams) -> Iterator[None]:
-        yield
-
     @abstractmethod
-    def load_context(self) -> ExternalExecutionContextData:
+    @contextmanager
+    def load_context(
+        self, params: ExternalExecutionParams
+    ) -> Iterator[ExternalExecutionContextData]:
         ...
 
 
-class ExternalExecutionMessageWriter(ABC):
-    @contextmanager
-    def setup(self, params: ExternalExecutionParams) -> Iterator[None]:
-        yield
+T_MessageChannel = TypeVar("T_MessageChannel", bound="ExternalExecutionMessageWriterChannel")
 
+
+class ExternalExecutionMessageWriter(ABC, Generic[T_MessageChannel]):
+    @abstractmethod
+    @contextmanager
+    def open(self, params: ExternalExecutionParams) -> Iterator[T_MessageChannel]:
+        ...
+
+
+class ExternalExecutionMessageWriterChannel(ABC, Generic[T_MessageChannel]):
     @abstractmethod
     def write_message(self, message: ExternalExecutionMessage) -> None:
         ...
