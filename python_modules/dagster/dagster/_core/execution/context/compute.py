@@ -449,9 +449,10 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @public
     @property
     def asset_key(self) -> AssetKey:
+        """The AssetKey for the current asset. In a multi_asset, use asset_key_for_output instead."""
         if self.has_assets_def and len(self.assets_def.keys_by_output_name.keys()) > 1:
-            check.failed(
-                "Cannot call `context.asset_key` on a multi_asset. Use"
+            raise DagsterInvariantViolationError(
+                "Cannot call `context.asset_key` in a multi_asset. Use"
                 " `context.asset_key_for_output` instead."
             )
         return self.asset_key_for_output()
