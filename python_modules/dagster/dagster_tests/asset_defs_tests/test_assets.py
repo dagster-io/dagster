@@ -1663,7 +1663,7 @@ def test_return_materialization():
     def logged(context: AssetExecutionContext):
         context.log_event(
             AssetMaterialization(
-                asset_key=context.asset_key_for_output(),
+                asset_key=context.asset_key,
                 metadata={"one": 1},
             )
         )

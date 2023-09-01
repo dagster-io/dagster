@@ -86,7 +86,7 @@ def _asset_keys_for_node(result, node_name):
 def test_single_asset_job():
     @asset
     def asset1(context):
-        assert context.asset_key_for_output() == AssetKey(["asset1"])
+        assert context.asset_key == AssetKey(["asset1"])
         return 1
 
     job = build_assets_job("a", [asset1])
@@ -854,7 +854,7 @@ def test_graph_asset_group_name_for_multiple_assets():
 def test_execute_graph_asset():
     @op(out={"x": Out(), "y": Out()})
     def x_op(context):
-        assert context.asset_key_for_output("x") == AssetKey("x_asset")
+        assert context.asset_key == AssetKey("x_asset")
         return 1, 2
 
     @graph(out={"x": GraphOut(), "y": GraphOut()})
