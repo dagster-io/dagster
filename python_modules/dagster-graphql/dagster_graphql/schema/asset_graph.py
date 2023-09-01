@@ -599,8 +599,6 @@ class GrapheneAssetNode(graphene.ObjectType):
     ) -> Any:  # (GrapheneAssetStaleStatus)
         if partition:
             self._validate_partitions_existence()
-        # The status loader does not support querying for the stale status of a
-        # partitioned asset without specifying a partition, so we return here.
         return self.stale_status_loader.get_status(self._external_asset_node.asset_key, partition)
 
     def resolve_staleStatusByPartition(

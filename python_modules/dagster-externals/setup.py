@@ -38,7 +38,10 @@ setup(
     extras_require={
         "test": [
             f"dagster{pin}",
-        ]
+            "boto3",
+            "botocore",
+            "moto[s3,server]",
+        ],
     },
     zip_safe=False,
     entry_points={"console_scripts": ["dagster-graphql = dagster_graphql.cli:main"]},
