@@ -153,10 +153,11 @@ class ModelFieldCompat:
 
 def model_fields(model: Type[BaseModel]) -> Dict[str, ModelFieldCompat]:
     """Returns a dictionary of fields for a given pydantic model."""
-    return {
-        k: ModelFieldCompat(v)
-        for k, v in (getattr(model, "model_fields", getattr(model, "__fields__"))).items()
-    }
+    fields = getattr(model, "model_fields", None)
+    if not fields:
+        fields = getattr(model, "__fields__")
+
+    return {k: ModelFieldCompat(v) for k, v in fields.items()}
 
 
 class OldConfigWrapper:
