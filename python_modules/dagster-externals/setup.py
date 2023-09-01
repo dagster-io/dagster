@@ -32,13 +32,13 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_external_tests*"]),
-    install_requires=[
-        "typing_extensions>=4.4.0",
-    ],
     extras_require={
         "test": [
             f"dagster{pin}",
-        ]
+            "boto3",
+            "botocore",
+            "moto[s3,server]",
+        ],
     },
     zip_safe=False,
     entry_points={"console_scripts": ["dagster-graphql = dagster_graphql.cli:main"]},

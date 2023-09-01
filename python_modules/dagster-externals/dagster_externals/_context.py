@@ -2,8 +2,6 @@ import atexit
 from contextlib import ExitStack
 from typing import Any, ClassVar, Mapping, Optional, Sequence
 
-from typing_extensions import Self
-
 from ._io.base import (
     ExternalExecutionContextLoader,
     ExternalExecutionMessageWriter,
@@ -64,18 +62,18 @@ def init_dagster_externals(
 
 
 class ExternalExecutionContext:
-    _instance: ClassVar[Optional[Self]] = None
+    _instance: ClassVar[Optional["ExternalExecutionContext"]] = None
 
     @classmethod
     def is_initialized(cls) -> bool:
         return cls._instance is not None
 
     @classmethod
-    def set(cls, context: Self) -> None:
+    def set(cls, context: "ExternalExecutionContext") -> None:
         cls._instance = context
 
     @classmethod
-    def get(cls) -> Self:
+    def get(cls) -> "ExternalExecutionContext":
         if cls._instance is None:
             raise Exception(
                 "ExternalExecutionContext has not been initialized. You must call"

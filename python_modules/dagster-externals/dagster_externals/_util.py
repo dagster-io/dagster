@@ -87,6 +87,18 @@ def assert_env_param_type(
     return value
 
 
+def assert_opt_env_param_type(
+    env_params: ExternalExecutionParams, key: str, expected_type: Type[T], cls: Type
+) -> Optional[T]:
+    value = env_params.get(key)
+    if value is not None and not isinstance(value, expected_type):
+        raise DagsterExternalsError(
+            f"Invalid type for parameter `{key}` passed from orchestration side to"
+            f" `{cls.__name__}`. Expected `Optional[{expected_type}]`, got `{type(value)}`."
+        )
+    return value
+
+
 def assert_param_value(value: T, expected_values: Sequence[T], method: str, param: str) -> T:
     if value not in expected_values:
         raise DagsterExternalsError(
