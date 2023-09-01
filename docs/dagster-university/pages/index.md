@@ -64,3 +64,13 @@ title: Dagster University Course Content
     - [Practice: Partition the trips_by_week asset](/dagster-essentials/lesson-8/coding-practice-partition-trips-by-week)
     - [Partitions and backfills in the Dagster UI](/dagster-essentials/lesson-8/partitions-backfills-dagster-ui)
     - [Recap](/dagster-essentials/lesson-8/recap)
+  - Lesson 9: Sensors
+    - [Overview](/dagster-essentials/lesson-9/overview)
+    - [What's a sensor?](/dagster-essentials/lesson-9/whats-a-sensor)
+    - [Configuring asset creation](/dagster-essentials/lesson-9/configuring-asset-creation)
+    - [Creating an asset triggered by a sensor](/dagster-essentials/lesson-9/creating-an-asset-triggered-by-a-sensor)
+    - [Creating a job](/dagster-essentials/lesson-9/creating-a-job)
+    - [Building the sensor](/dagster-essentials/lesson-9/building-the-sensor)
+    - [Updating the Definitions object](/dagster-essentials/lesson-9/updating-the-definitions-object)
+    - [Sensors in the Dagster UI](/dagster-essentials/lesson-9/sensors-dagster-ui)
+    - [Enabling the sensor](/dagster-essentials/lesson-9/enabling-the-sensor)
