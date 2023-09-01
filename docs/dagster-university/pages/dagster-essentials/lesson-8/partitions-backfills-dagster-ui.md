@@ -59,9 +59,9 @@ Now that you've created your partitions, used those partitions in the assets, an
 *
 ---
 * {% width="60%" %}
-  To begin the backfill, click ******************************Launch backfill****************************** in the popup window from the last section. By default, the date range will be the entire date range.
+  To begin the backfill, click **Launch backfill** in the popup window from the last section. By default, the date range will be the entire date range.
 
-  Next, click ****************************************Overview > Backfills**************************************** to view the backfill’s information.
+  Next, click **Overview > Backfills** to view the backfill’s information.
 
 * ![The Backfills tab in the Dagster UI](/images/dagster-essentials/lesson-8/ui-backfills-tab.png) {% rowspan=2 %}
 {% /table %}
@@ -81,7 +81,7 @@ Now that you've created your partitions, used those partitions in the assets, an
 *
 ---
 * {% width="60%" %}
-  Navigate back to the ****************************************Global Asset Lineage**************************************** page (**************************************************Assets > Asset lineage).**************************************************
+  Navigate back to the **Global Asset Lineage** page (**Assets > Asset lineage).**
 
   In the asset graph, you’ll see the status of the partitioned and non-partitioned assets has been updated.
 
