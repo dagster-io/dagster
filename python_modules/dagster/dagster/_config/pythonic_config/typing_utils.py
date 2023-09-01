@@ -60,13 +60,6 @@ class LateBoundTypesForResourceTypeChecking:
 class BaseConfigMeta(ModelMetaclass):
     def __new__(cls, name, bases, namespaces, **kwargs) -> Any:
         annotations = namespaces.get("__annotations__", {})
-        # for field in annotations:
-        #     if not field.startswith("__"):
-        #         # Check if the annotation is a ResourceDependency
-        #         if annotations[field] == str:
-        #             annotations[field] = Union[str, EnvVar]
-
-        # namespaces["__annotations__"] = annotations
 
         # Need try/catch because DagsterType may not be loaded when some of the base Config classes are
         # being created
@@ -118,7 +111,6 @@ class BaseResourceMeta(BaseConfigMeta):
                     get_origin(annotations[field])
                     == LateBoundTypesForResourceTypeChecking.get_resource_rep_type()
                 ):
-                    # arg = get_args(annotations[field])[0]
                     # If so, we treat it as a Union of a PartialResource and a Resource
                     # for Pydantic's sake.
                     annotations[field] = Annotated[Any, "resource_dependency"]
