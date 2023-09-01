@@ -419,18 +419,21 @@ class CachingStaleStatusResolver:
 
     @cached_method
     def _get_stale_causes(self, key: "AssetKeyPartitionKey") -> Sequence[StaleCause]:
-        current_version = self._get_current_data_version(key=key)
-        if current_version == NULL_DATA_VERSION or self.asset_graph.is_source(key.asset_key):
-            return []
         # Querying for the stale status of a partitioned asset without specifying a partition key
         # is strictly speaking undefined, but we return an empty list here (from which FRESH status
         # is inferred) for backcompat.
-        elif self.asset_graph.is_partitioned(key.asset_key) and not key.partition_key:
+        if self.asset_graph.is_partitioned(key.asset_key) and not key.partition_key:
+            return []
+        elif self.asset_graph.is_source(key.asset_key):
             return []
         else:
-            return sorted(
-                self._get_stale_causes_materialized(key=key), key=lambda cause: cause.sort_key
-            )
+            current_version = self._get_current_data_version(key=key)
+            if current_version == NULL_DATA_VERSION:
+                return []
+            else:
+                return sorted(
+                    self._get_stale_causes_materialized(key=key), key=lambda cause: cause.sort_key
+                )
 
     def _is_dep_updated(self, provenance: DataProvenance, dep_key: "AssetKeyPartitionKey") -> bool:
         if dep_key.partition_key is None:
