@@ -1111,9 +1111,18 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                     else None
                 )
 
-                if (
+                is_resulting_asset = (
+                    assets_def and asset_key in assets_def.keys_by_output_name.values()
+                )
+                is_upstream_asset = (
                     assets_def and asset_key in assets_def.keys_by_input_name.values()
-                ) or is_dependency:
+                )
+
+                get_partition_subset_as_upstream_asset = (
+                    is_upstream_asset and not is_resulting_asset
+                ) or (is_upstream_asset and is_resulting_asset and is_dependency)
+
+                if get_partition_subset_as_upstream_asset:
                     partition_mapping = infer_partition_mapping(
                         asset_layer.partition_mapping_for_node_input(self.node_handle, asset_key),
                         partitions_def,
