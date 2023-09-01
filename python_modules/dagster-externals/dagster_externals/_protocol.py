@@ -1,12 +1,10 @@
-from typing import Any, Mapping, Optional, Sequence
+from typing import Any, Mapping, Optional, Sequence, TypedDict
 
-from typing_extensions import Final, TypeAlias, TypedDict
-
-ExternalExecutionExtras: TypeAlias = Mapping[str, Any]
-ExternalExecutionParams: TypeAlias = Mapping[str, Any]
+ExternalExecutionExtras = Mapping[str, Any]
+ExternalExecutionParams = Mapping[str, Any]
 
 
-ENV_KEY_PREFIX: Final = "DAGSTER_EXTERNALS_"
+ENV_KEY_PREFIX = "DAGSTER_EXTERNALS_"
 
 
 def _param_name_to_env_key(key: str) -> str:
@@ -15,7 +13,7 @@ def _param_name_to_env_key(key: str) -> str:
 
 # ##### PARAMETERS
 
-DAGSTER_EXTERNALS_ENV_KEYS: Final = {
+DAGSTER_EXTERNALS_ENV_KEYS = {
     k: _param_name_to_env_key(k) for k in ("is_orchestration_active", "context", "messages")
 }
 
