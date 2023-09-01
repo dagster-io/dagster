@@ -113,6 +113,7 @@ class InstigationLogger(logging.Logger):
                 },
             )
             record.msg = " - ".join([self._repository_name, self._name, message])
+            record.args = tuple()
         return record
 
     def makeRecord(self, name, level, fn, lno, msg, args, exc_info, func, extra, sinfo):
