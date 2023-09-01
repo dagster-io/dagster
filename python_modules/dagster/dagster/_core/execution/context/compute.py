@@ -448,6 +448,11 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
     @public
     @property
+    def asset_key(self) -> AssetKey:
+        return self.asset_key_for_output()
+
+    @public
+    @property
     def has_assets_def(self) -> bool:
         """If there is a backing AssetsDefinition for what is currently executing."""
         assets_def = self.job_def.asset_layer.assets_def_for_node(self.node_handle)
