@@ -6,7 +6,7 @@ lesson: "9"
 
 # Enabling the sensor
 
-As sensors are turned off by default, you'll need to enable it to be able to use it. In this section, we'll walk you through turning the sensor on in the Dagster UI.
+As sensors are turned off by default, you'll need to enable the sensor to be able to use it. In this section, we'll walk you through turning the sensor on in the Dagster UI.
 
 {% table %}
 * Step one
