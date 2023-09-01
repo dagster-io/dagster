@@ -449,6 +449,11 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @public
     @property
     def asset_key(self) -> AssetKey:
+        if self.has_assets_def and len(self.assets_def.keys_by_output_name.keys()) > 1:
+            check.failed(
+                "Cannot call `context.asset_key` on a multi_asset. Use"
+                " `context.asset_key_for_output` instead."
+            )
         return self.asset_key_for_output()
 
     @public
