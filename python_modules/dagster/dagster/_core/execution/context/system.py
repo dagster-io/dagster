@@ -1059,8 +1059,10 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     #     return partition_key_ranges[0]
 
-    def asset_partition_key_range_for_asset(self, asset: CoercibleToAssetKey) -> PartitionKeyRange:
-        subset = self.asset_partitions_subset_for_asset(asset)
+    def asset_partition_key_range_for_asset(
+        self, asset: CoercibleToAssetKey, is_dependency: bool = False
+    ) -> PartitionKeyRange:
+        subset = self.asset_partitions_subset_for_asset(asset, is_dependency=is_dependency)
         partition_key_ranges = subset.get_partition_key_ranges(
             dynamic_partitions_store=self.instance
         )
@@ -1080,13 +1082,17 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         upstream_asset_key = asset_layer.asset_key_for_input(self.node_handle, input_name)
 
         if upstream_asset_key is not None:
-            return self.asset_partitions_subset_for_asset(upstream_asset_key)
+            return self.asset_partitions_subset_for_asset(upstream_asset_key, is_dependency=True)
 
         # this check message isn't quite accurate - it's really that the input doesn't correspond to an asset
         check.failed("The input has no asset partitions")
 
     def asset_partitions_subset_for_asset(
-        self, asset: CoercibleToAssetKey, *, require_valid_partitions: bool = True
+        self,
+        asset: CoercibleToAssetKey,
+        *,
+        require_valid_partitions: bool = True,
+        is_dependency: bool = False,
     ) -> PartitionsSubset:
         asset_layer = self.job_def.asset_layer
         assets_def = asset_layer.assets_def_for_node(self.node_handle)
@@ -1105,11 +1111,9 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                     else None
                 )
 
-                if assets_def and asset_key in assets_def.keys_by_input_name.values():
-                    # TODO - need to add logic here to figure out if the asset is an input or an output
-                    # if it's an input then we need to do partition mapping
-                    # if it's an output then we do not need to do partition mapping
-                    # should be able to use the asset layer or assetedefinition?
+                if (
+                    assets_def and asset_key in assets_def.keys_by_input_name.values()
+                ) or is_dependency:
                     partition_mapping = infer_partition_mapping(
                         asset_layer.partition_mapping_for_node_input(self.node_handle, asset_key),
                         partitions_def,
@@ -1154,8 +1158,10 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
     #             f" but the step input has a partition range: '{start}' to '{end}'."
     #         )
 
-    def asset_partition_key_for_asset(self, asset: CoercibleToAssetKey) -> str:
-        start, end = self.asset_partition_key_range_for_asset(asset)
+    def asset_partition_key_for_asset(
+        self, asset: CoercibleToAssetKey, is_dependency: bool = False
+    ) -> str:
+        start, end = self.asset_partition_key_range_for_asset(asset, is_dependency=is_dependency)
         if start == end:
             return start
         else:
@@ -1228,7 +1234,9 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     #     raise ValueError("The provided input does not correspond to an asset.")
 
-    def asset_partitions_time_window_for_asset(self, asset: CoercibleToAssetKey) -> TimeWindow:
+    def asset_partitions_time_window_for_asset(
+        self, asset: CoercibleToAssetKey, is_dependency: bool = False
+    ) -> TimeWindow:
         """The time window for the partitions of the asset.
 
         Raises an error if either of the following are true:
@@ -1260,7 +1268,9 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             Union[TimeWindowPartitionsDefinition, MultiPartitionsDefinition],
             asset_partitions_def,
         )
-        partition_key_range = self.asset_partition_key_range_for_asset(asset)
+        partition_key_range = self.asset_partition_key_range_for_asset(
+            asset, is_dependency=is_dependency
+        )
 
         return TimeWindow(
             asset_partitions_def.time_window_for_partition_key(partition_key_range.start).start,
