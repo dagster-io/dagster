@@ -146,7 +146,7 @@ describe('BackfillPage', () => {
     expect(screen.getByText('Asset name')).toBeVisible();
 
     expect(getByText(detailRow, 'Jan 1, 1970, 12:16:40 AM')).toBeVisible();
-    expect(getByText(detailRow, 'In Progress')).toBeVisible();
+    expect(getByText(detailRow, 'In progress')).toBeVisible();
 
     const assetARow = await screen.findByTestId('backfill-asset-row-assetA');
     // Check if the correct data is displayed
