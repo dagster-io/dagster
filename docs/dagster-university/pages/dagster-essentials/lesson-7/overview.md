@@ -1,5 +1,5 @@
 ---
-title: "Lesson 7: "
+title: "Lesson 7: Overview"
 module: "dagster_essentials"
 lesson: "7"
 ---
