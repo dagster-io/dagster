@@ -32,9 +32,6 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_external_tests*"]),
-    install_requires=[
-        "typing_extensions>=4.4.0",
-    ],
     extras_require={
         "test": [
             f"dagster{pin}",
