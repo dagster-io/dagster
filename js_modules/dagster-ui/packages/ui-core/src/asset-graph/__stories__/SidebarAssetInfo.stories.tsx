@@ -17,6 +17,10 @@ import {
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
 import {SIDEBAR_ASSET_QUERY, SidebarAssetInfo} from '../SidebarAssetInfo';
 import {GraphNode} from '../Utils';
+import {
+  LiveDataForNodeMaterialized,
+  LiveDataForNodeMaterializedWithChecks,
+} from '../__fixtures__/AssetNode.fixtures';
 import {SidebarAssetQuery} from '../types/SidebarAssetInfo.types';
 
 // eslint-disable-next-line import/no-default-export
@@ -261,6 +265,17 @@ export const AssetWithGraphName = () => {
       <SidebarAssetInfo
         graphNode={buildGraphNodeMock({graphName: 'op_graph'})}
         liveData={undefined}
+      />
+    </TestContainer>
+  );
+};
+
+export const AssetWithAssetChecks = () => {
+  return (
+    <TestContainer>
+      <SidebarAssetInfo
+        graphNode={buildGraphNodeMock({})}
+        liveData={LiveDataForNodeMaterializedWithChecks}
       />
     </TestContainer>
   );

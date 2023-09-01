@@ -1,4 +1,11 @@
-import {RunStatus, StaleStatus, StaleCause, StaleCauseCategory} from '../../graphql/types';
+import {
+  RunStatus,
+  StaleStatus,
+  StaleCause,
+  StaleCauseCategory,
+  AssetCheckSeverity,
+  AssetCheckExecutionResolvedStatus,
+} from '../../graphql/types';
 import {LiveDataForNode} from '../Utils';
 import {AssetNodeFragment} from '../types/AssetNode.types';
 
@@ -153,6 +160,73 @@ export const LiveDataForNodeMaterialized: LiveDataForNode = {
   assetChecks: [],
   freshnessInfo: null,
   partitionStats: null,
+};
+
+export const LiveDataForNodeMaterializedWithChecks: LiveDataForNode = {
+  stepKey: 'asset1',
+  unstartedRunIds: [],
+  inProgressRunIds: [],
+  lastMaterialization: {
+    __typename: 'MaterializationEvent',
+    runId: 'ABCDEF',
+    timestamp: TIMESTAMP,
+  },
+  lastMaterializationRunStatus: null,
+  lastObservation: null,
+  runWhichFailedToMaterialize: null,
+  staleStatus: StaleStatus.FRESH,
+  staleCauses: [],
+  assetChecks: [
+    {
+      name: 'check_1',
+      severity: AssetCheckSeverity.WARN,
+      executionForLatestMaterialization: {
+        runId: '1234',
+        status: AssetCheckExecutionResolvedStatus.FAILED,
+      },
+    },
+    {
+      name: 'check_2',
+      severity: AssetCheckSeverity.ERROR,
+      executionForLatestMaterialization: {
+        runId: '1234',
+        status: AssetCheckExecutionResolvedStatus.FAILED,
+      },
+    },
+    {
+      name: 'check_3',
+      severity: AssetCheckSeverity.WARN,
+      executionForLatestMaterialization: {
+        runId: '1234',
+        status: AssetCheckExecutionResolvedStatus.IN_PROGRESS,
+      },
+    },
+    {
+      name: 'check_4',
+      severity: AssetCheckSeverity.WARN,
+      executionForLatestMaterialization: {
+        runId: '1234',
+        status: AssetCheckExecutionResolvedStatus.SKIPPED,
+      },
+    },
+    {
+      name: 'check_5',
+      severity: AssetCheckSeverity.WARN,
+      executionForLatestMaterialization: {
+        runId: '1234',
+        status: AssetCheckExecutionResolvedStatus.SUCCEEDED,
+      },
+    },
+  ],
+  freshnessInfo: null,
+  partitionStats: null,
+};
+
+export const LiveDataForNodeMaterializedWithChecksOk: LiveDataForNode = {
+  ...LiveDataForNodeMaterializedWithChecks,
+  assetChecks: LiveDataForNodeMaterializedWithChecks.assetChecks.filter(
+    (c) => c.severity !== AssetCheckSeverity.ERROR,
+  ),
 };
 
 export const LiveDataForNodeMaterializedAndStale: LiveDataForNode = {
@@ -631,6 +705,18 @@ export const AssetNodeScenariosBase = [
     liveData: LiveDataForNodeFailedAndOverdue,
     definition: AssetNodeFragmentBasic,
     expectedText: ['Failed, Overdue', 'Jan'],
+  },
+  {
+    title: 'Materialized with Checks (Ok)',
+    liveData: LiveDataForNodeMaterializedWithChecksOk,
+    definition: AssetNodeFragmentBasic,
+    expectedText: ['Materialized', 'Checks'],
+  },
+  {
+    title: 'Materialized with Checks (Failed)',
+    liveData: LiveDataForNodeMaterializedWithChecks,
+    definition: AssetNodeFragmentBasic,
+    expectedText: ['Materialized', 'Checks'],
   },
 ];
 

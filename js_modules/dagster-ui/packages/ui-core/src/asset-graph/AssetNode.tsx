@@ -152,7 +152,7 @@ const AssetCheckIconsOrdered: {type: AssetCheckIconType; content: React.ReactNod
   },
   {
     type: AssetCheckExecutionResolvedStatus.SKIPPED,
-    content: <Icon name="check_circle" color={Colors.Green700} />,
+    content: <Icon name="dot" color={Colors.Gray500} />,
   },
   {
     type: AssetCheckExecutionResolvedStatus.SUCCEEDED,

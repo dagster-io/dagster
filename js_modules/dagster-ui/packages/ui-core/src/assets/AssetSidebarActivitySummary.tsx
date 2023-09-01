@@ -1,6 +1,5 @@
-import qs from 'querystring';
-
 import {Body, Box, Colors, Icon, Spinner, Table} from '@dagster-io/ui-components';
+import qs from 'qs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
