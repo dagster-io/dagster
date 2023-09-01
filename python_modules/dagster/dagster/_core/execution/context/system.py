@@ -1098,7 +1098,9 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         assets_def = asset_layer.assets_def_for_node(self.node_handle)
         asset_key = AssetKey.from_coercible(asset)
 
-        if asset_layer.has_assets_def_for_asset(asset_key):
+        if asset_layer.has_assets_def_for_asset(asset_key) or (
+            asset_layer.source_assets_by_key.get(asset_key, None) is not None
+        ):
             asset_partitions_def = asset_layer.partitions_def_for_asset(asset_key)
 
             if asset_partitions_def is not None:
@@ -1150,7 +1152,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                     return mapped_partitions_result.partitions_subset
                 else:
                     return partitions_subset
-        check.failed("The asset has no partitions")
+        check.failed(f"The asset {asset} has no partitions")
 
     # def asset_partition_key_for_input(self, input_name: str) -> Union[str, MultiPartitionKey]:
     #     asset_layer = self.job_def.asset_layer
