@@ -43,3 +43,5 @@ In this lesson, we’ll cover two types of metadata: definition and **materializ
 Using definition metadata to describe assets can make it easy to provide context for your team and your future self. This metadata could be descriptions of the assets, the types of assets, and how they fit into the larger picture of your organization’s data.
 
 Then, at runtime, you can use metadata to surface information about the materialization such as how many records were processed or when the materialization occurred.
+
+We'll start by discussing definition metadata, where we'll walk you through adding descriptions to assets and adding them to groups.
