@@ -75,6 +75,7 @@ class GrapheneAssetCheckEvaluation(graphene.ObjectType):
         self.severity = evaluation_data.severity
 
 
+
 class GrapheneAssetCheckExecution(graphene.ObjectType):
     id = graphene.NonNull(graphene.String)
     runId = graphene.NonNull(graphene.String)

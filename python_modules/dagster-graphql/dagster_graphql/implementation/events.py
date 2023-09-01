@@ -424,7 +424,8 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
             assetKey=data.asset_key, checkName=data.check_name, **basic_params
         )
     elif dagster_event.event_type == DagsterEventType.ASSET_CHECK_EVALUATION:
-        from  ..schema.asset_checks import GrapheneAssetCheckEvaluation
+        from ..schema.asset_checks import GrapheneAssetCheckEvaluation
+
         evaluation = GrapheneAssetCheckEvaluation(event_record)
         return GrapheneAssetCheckEvaluationEvent(evaluation=evaluation, **basic_params)
 
