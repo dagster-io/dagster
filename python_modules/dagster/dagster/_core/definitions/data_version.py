@@ -403,16 +403,19 @@ class CachingStaleStatusResolver:
 
     @cached_method
     def _get_status(self, key: "AssetKeyPartitionKey") -> StaleStatus:
-        current_version = self._get_current_data_version(key=key)
-        if current_version == NULL_DATA_VERSION:
-            return StaleStatus.MISSING
-        elif self.asset_graph.is_partitioned(key.asset_key) and not key.partition_key:
-            return StaleStatus.FRESH
-        elif self.asset_graph.is_source(key.asset_key):
+        # The status loader does not support querying for the stale status of a
+        # partitioned asset without specifying a partition, so we return here.
+        if self.asset_graph.is_partitioned(key.asset_key) and not key.partition_key:
             return StaleStatus.FRESH
         else:
-            causes = self._get_stale_causes(key=key)
-            return StaleStatus.FRESH if len(causes) == 0 else StaleStatus.STALE
+            current_version = self._get_current_data_version(key=key)
+            if current_version == NULL_DATA_VERSION:
+                return StaleStatus.MISSING
+            elif self.asset_graph.is_source(key.asset_key):
+                return StaleStatus.FRESH
+            else:
+                causes = self._get_stale_causes(key=key)
+                return StaleStatus.FRESH if len(causes) == 0 else StaleStatus.STALE
 
     @cached_method
     def _get_stale_causes(self, key: "AssetKeyPartitionKey") -> Sequence[StaleCause]:
