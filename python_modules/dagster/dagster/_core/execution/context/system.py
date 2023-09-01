@@ -661,6 +661,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             node_handle=self.node_handle, input_name=name
         )
         asset_partitions_subset = (
+            # TODO - need to solve the self partition issue with method refactor
             self.asset_partitions_subset_for_input(name)
             if self.has_asset_partitions_for_input(name)
             else None
@@ -931,6 +932,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             # Input name will be none if this is an internal dep
             input_name = self.job_def.asset_layer.input_for_asset_key(self.node_handle, key)
             # Exclude AllPartitionMapping for now to avoid huge queries
+            # TODO - need to solve the self dependent partition issue with the method refactors
             if input_name and self.has_asset_partitions_for_input(input_name):
                 subset = self.asset_partitions_subset_for_input(
                     input_name, require_valid_partitions=False
@@ -1103,36 +1105,38 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                     else None
                 )
 
-                # TODO - need to add logic here to figure out if the asset is an input or an output
-                # if it's an input then we need to do partition mapping
-                # if it's an output then we do not need to do partition mapping
-                # should be able to use the asset layer or assetedefinition?
-                partition_mapping = infer_partition_mapping(
-                    asset_layer.partition_mapping_for_node_input(self.node_handle, asset_key),
-                    partitions_def,
-                    asset_partitions_def,
-                )
-                mapped_partitions_result = (
-                    partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
-                        partitions_subset,
+                if assets_def and asset_key in assets_def.keys_by_input_name.values():
+                    # TODO - need to add logic here to figure out if the asset is an input or an output
+                    # if it's an input then we need to do partition mapping
+                    # if it's an output then we do not need to do partition mapping
+                    # should be able to use the asset layer or assetedefinition?
+                    partition_mapping = infer_partition_mapping(
+                        asset_layer.partition_mapping_for_node_input(self.node_handle, asset_key),
+                        partitions_def,
                         asset_partitions_def,
-                        dynamic_partitions_store=self.instance,
                     )
-                )
-
-                if (
-                    require_valid_partitions
-                    and mapped_partitions_result.required_but_nonexistent_partition_keys
-                ):
-                    raise DagsterInvariantViolationError(
-                        f"Partition key range {self.asset_partition_key_range} in"
-                        f" {self.node_handle.name} depends on invalid partition keys"
-                        f" {mapped_partitions_result.required_but_nonexistent_partition_keys} in"
-                        f" asset {asset_key}"
+                    mapped_partitions_result = (
+                        partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
+                            partitions_subset,
+                            asset_partitions_def,
+                            dynamic_partitions_store=self.instance,
+                        )
                     )
 
-                return mapped_partitions_result.partitions_subset
+                    if (
+                        require_valid_partitions
+                        and mapped_partitions_result.required_but_nonexistent_partition_keys
+                    ):
+                        raise DagsterInvariantViolationError(
+                            f"Partition key range {self.asset_partition_key_range} in"
+                            f" {self.node_handle.name} depends on invalid partition keys"
+                            f" {mapped_partitions_result.required_but_nonexistent_partition_keys} in"
+                            f" asset {asset_key}"
+                        )
 
+                    return mapped_partitions_result.partitions_subset
+                else:
+                    return partitions_subset
         check.failed("The asset has no partitions")
 
     # def asset_partition_key_for_input(self, input_name: str) -> Union[str, MultiPartitionKey]:

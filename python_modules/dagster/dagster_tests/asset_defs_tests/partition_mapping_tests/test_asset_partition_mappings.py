@@ -624,6 +624,9 @@ def test_partition_mapping_with_asset_deps():
             context.asset_partition_key_for_input("asset_2"), "%Y-%m-%d"
         )
 
+        # first_testing = context.partition_key_for_asset("asset_2")
+        # testing = context.partition_key_for_asset("asset_3")
+
         current_partition_key = datetime.strptime(context.partition_key, "%Y-%m-%d")
 
         assert current_partition_key - asset_1_key == timedelta(days=1)
