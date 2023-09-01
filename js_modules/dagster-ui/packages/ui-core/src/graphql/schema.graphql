@@ -869,8 +869,11 @@ enum AssetCheckExecutionResolvedStatus {
 
 type AssetCheckEvaluation {
   timestamp: Float!
+  checkName: String!
+  assetKey: AssetKey!
   targetMaterialization: AssetCheckEvaluationTargetMaterializationData
   metadataEntries: [MetadataEntry!]!
+  success: Boolean
 }
 
 type AssetCheckEvaluationTargetMaterializationData {

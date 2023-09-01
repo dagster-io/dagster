@@ -10,18 +10,16 @@ import {
   StaleStatus,
 } from '../graphql/types';
 
-import {
-  AssetNodeKeyFragment,
-  AssetNodeLiveFragment,
-  AssetNodeLiveMaterializationFragment,
-  AssetNodeLiveFreshnessInfoFragment,
-  AssetNodeLiveObservationFragment,
-} from './types/AssetNode.types';
+import {AssetNodeKeyFragment} from './types/AssetNode.types';
 import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
 import {
   AssetLatestInfoFragment,
   AssetLatestInfoRunFragment,
   AssetGraphLiveQuery,
+  AssetNodeLiveFragment,
+  AssetNodeLiveFreshnessInfoFragment,
+  AssetNodeLiveMaterializationFragment,
+  AssetNodeLiveObservationFragment,
 } from './types/useLiveDataForAssetKeys.types';
 
 type AssetNode = AssetNodeForGraphQueryFragment;
@@ -161,8 +159,12 @@ export interface LiveDataForNode {
     numFailed: number;
   } | null;
   assetChecks: {
+    name: string;
     severity: AssetCheckSeverity;
-    executionForLatestMaterialization: {status: AssetCheckExecutionResolvedStatus};
+    executionForLatestMaterialization: {
+      runId: string;
+      status: AssetCheckExecutionResolvedStatus;
+    } | null;
   }[];
 }
 
@@ -177,6 +179,7 @@ export const MISSING_LIVE_DATA: LiveDataForNode = {
   partitionStats: null,
   staleStatus: null,
   staleCauses: [],
+  assetChecks: [],
   stepKey: '',
 };
 

@@ -6,7 +6,6 @@ import {useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {AssetKeyInput} from '../graphql/types';
 import {useDidLaunchEvent} from '../runs/RunUtils';
 
-import {ASSET_NODE_LIVE_FRAGMENT} from './AssetNode';
 import {observeAssetEventsInRuns} from './AssetRunLogObserver';
 import {buildLiveData, tokenForAssetKey} from './Utils';
 import {
@@ -120,6 +119,68 @@ export const ASSET_LATEST_INFO_FRAGMENT = gql`
     status
     endTime
     id
+  }
+`;
+
+const ASSET_NODE_LIVE_FRAGMENT = gql`
+  fragment AssetNodeLiveFragment on AssetNode {
+    id
+    opNames
+    repository {
+      id
+    }
+    assetKey {
+      path
+    }
+    assetMaterializations(limit: 1) {
+      ...AssetNodeLiveMaterialization
+    }
+    assetObservations(limit: 1) {
+      ...AssetNodeLiveObservation
+    }
+    assetChecks {
+      name
+      severity
+      executionForLatestMaterialization {
+        id
+        runId
+        status
+      }
+    }
+    freshnessInfo {
+      ...AssetNodeLiveFreshnessInfo
+    }
+    staleStatus
+    staleCauses {
+      key {
+        path
+      }
+      reason
+      category
+      dependency {
+        path
+      }
+    }
+    partitionStats {
+      numMaterialized
+      numMaterializing
+      numPartitions
+      numFailed
+    }
+  }
+
+  fragment AssetNodeLiveFreshnessInfo on AssetFreshnessInfo {
+    currentMinutesLate
+  }
+
+  fragment AssetNodeLiveMaterialization on MaterializationEvent {
+    timestamp
+    runId
+  }
+
+  fragment AssetNodeLiveObservation on ObservationEvent {
+    timestamp
+    runId
   }
 `;
 

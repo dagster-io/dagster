@@ -10,7 +10,11 @@ import {AssetPartitionStatusDot} from '../assets/AssetPartitionList';
 import {AssetPartitionStatus} from '../assets/AssetPartitionStatus';
 import {OverdueLineagePopover, isAssetOverdue} from '../assets/OverdueTag';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
-import {AssetKeyInput} from '../graphql/types';
+import {
+  AssetCheckExecutionResolvedStatus,
+  AssetCheckSeverity,
+  AssetKeyInput,
+} from '../graphql/types';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 
 import {AssetLatestRunSpinner, AssetRunLink} from './AssetRunLinking';
@@ -190,6 +194,13 @@ export function _buildAssetNodeStatusContent({
 
   const materializingRunId = inProgressRunIds[0] || unstartedRunIds[0];
   const overdue = isAssetOverdue(liveData);
+  const checksFailed = liveData.assetChecks.some(
+    (c) =>
+      (c.executionForLatestMaterialization?.status === AssetCheckExecutionResolvedStatus.FAILED &&
+        c.severity === AssetCheckSeverity.ERROR) ||
+      c.executionForLatestMaterialization?.status ===
+        AssetCheckExecutionResolvedStatus.EXECUTION_FAILED,
+  );
 
   if (materializingRunId) {
     // Note: this value is undefined for unpartitioned assets
@@ -279,7 +290,7 @@ export function _buildAssetNodeStatusContent({
     </span>
   ) : undefined;
 
-  if (runWhichFailedToMaterialize || overdue) {
+  if (runWhichFailedToMaterialize || overdue || checksFailed) {
     return {
       case: StatusCase.LATE_OR_FAILED,
       background: Colors.Red50,
@@ -305,7 +316,9 @@ export function _buildAssetNodeStatusContent({
             </OverdueLineagePopover>
           ) : runWhichFailedToMaterialize ? (
             <span style={{color: Colors.Red700}}>Failed</span>
-          ) : undefined}
+          ) : (
+            <span style={{color: Colors.Red700}}>Materialized</span>
+          )}
 
           {expanded && <SpacerDot />}
 

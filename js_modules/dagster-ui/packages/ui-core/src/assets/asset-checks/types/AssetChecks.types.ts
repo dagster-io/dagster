@@ -154,7 +154,7 @@ export type AssetChecksQuery = {
                   }
               >;
             } | null;
-          }>;
+          } | null;
         }>;
       };
 };

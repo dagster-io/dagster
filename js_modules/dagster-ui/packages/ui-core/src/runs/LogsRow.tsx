@@ -187,6 +187,22 @@ export const LOGS_ROW_STRUCTURED_FRAGMENT = gql`
       externalStdoutUrl
       externalStderrUrl
     }
+    ... on AssetCheckEvaluationEvent {
+      evaluation {
+        checkName
+        success
+        timestamp
+        assetKey {
+          path
+        }
+        targetMaterialization {
+          timestamp
+        }
+        metadataEntries {
+          ...MetadataEntryFragment
+        }
+      }
+    }
   }
 
   ${METADATA_ENTRY_FRAGMENT}

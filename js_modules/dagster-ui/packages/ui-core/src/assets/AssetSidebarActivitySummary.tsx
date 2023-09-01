@@ -1,4 +1,6 @@
-import {Body, Box, Colors, Icon, Spinner} from '@dagster-io/ui-components';
+import qs from 'querystring';
+
+import {Body, Box, Colors, Icon, Spinner, Table} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -16,6 +18,7 @@ import {CurrentRunsBanner} from './CurrentRunsBanner';
 import {FailedRunSinceMaterializationBanner} from './FailedRunSinceMaterializationBanner';
 import {LatestMaterializationMetadata} from './LastMaterializationMetadata';
 import {OverdueTag, freshnessPolicyDescription} from './OverdueTag';
+import {AssetCheckStatusTag} from './asset-checks/AssetCheckStatusTag';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {useGroupedEvents} from './groupByPartition';
 import {useRecentAssetEvents} from './useRecentAssetEvents';
@@ -165,6 +168,41 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
           columnCount={1}
         />
       </SidebarSection>
+      {liveData && liveData.assetChecks.length > 0 && (
+        <SidebarSection title="Checks">
+          <Box padding={{horizontal: 24, vertical: 12}}>
+            <Link to={assetDetailsPathForKey(asset.assetKey, {view: 'checks'})}>
+              View all check details
+            </Link>
+          </Box>
+
+          <Table $compact>
+            <tbody>
+              {liveData.assetChecks.map((check) => (
+                <tr key={check.name}>
+                  <td style={{paddingLeft: 24}}>{check.name}</td>
+                  <td>
+                    {check.executionForLatestMaterialization === null ? (
+                      <AssetCheckStatusTag notChecked={true} />
+                    ) : (
+                      <Link
+                        to={`/runs/${check.executionForLatestMaterialization.runId}?${qs.stringify({
+                          logs: check.name,
+                        })}`}
+                      >
+                        <AssetCheckStatusTag
+                          severity={check.severity}
+                          status={check.executionForLatestMaterialization.status}
+                        />
+                      </Link>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </SidebarSection>
+      )}
     </>
   );
 };

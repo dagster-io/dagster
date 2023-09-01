@@ -81,6 +81,7 @@ export const LiveDataForNodeRunStartedNotMaterializing: LiveDataForNode = {
   runWhichFailedToMaterialize: null,
   staleStatus: null,
   staleCauses: [],
+  assetChecks: [],
   freshnessInfo: null,
   partitionStats: null,
 };
@@ -95,6 +96,7 @@ export const LiveDataForNodeRunStartedMaterializing: LiveDataForNode = {
   runWhichFailedToMaterialize: null,
   staleStatus: null,
   staleCauses: [],
+  assetChecks: [],
   freshnessInfo: null,
   partitionStats: null,
 };
@@ -114,6 +116,7 @@ export const LiveDataForNodeRunFailed: LiveDataForNode = {
   },
   staleStatus: null,
   staleCauses: [],
+  assetChecks: [],
   freshnessInfo: null,
   partitionStats: null,
 };
@@ -128,6 +131,7 @@ export const LiveDataForNodeNeverMaterialized: LiveDataForNode = {
   runWhichFailedToMaterialize: null,
   staleStatus: StaleStatus.MISSING,
   staleCauses: [],
+  assetChecks: [],
   freshnessInfo: null,
   partitionStats: null,
 };
@@ -146,6 +150,7 @@ export const LiveDataForNodeMaterialized: LiveDataForNode = {
   runWhichFailedToMaterialize: null,
   staleStatus: StaleStatus.FRESH,
   staleCauses: [],
+  assetChecks: [],
   freshnessInfo: null,
   partitionStats: null,
 };
@@ -164,6 +169,7 @@ export const LiveDataForNodeMaterializedAndStale: LiveDataForNode = {
   runWhichFailedToMaterialize: null,
   staleStatus: StaleStatus.STALE,
   staleCauses: [MockStaleReasonCode],
+  assetChecks: [],
   freshnessInfo: null,
   partitionStats: null,
 };
@@ -182,6 +188,7 @@ export const LiveDataForNodeMaterializedAndStaleAndOverdue: LiveDataForNode = {
   runWhichFailedToMaterialize: null,
   staleStatus: StaleStatus.STALE,
   staleCauses: [MockStaleReasonCode],
+  assetChecks: [],
   freshnessInfo: {
     __typename: 'AssetFreshnessInfo',
     currentMinutesLate: 12,
@@ -203,6 +210,7 @@ export const LiveDataForNodeMaterializedAndStaleAndFresh: LiveDataForNode = {
   runWhichFailedToMaterialize: null,
   staleStatus: StaleStatus.STALE,
   staleCauses: [MockStaleReasonCode, MockStaleReasonData],
+  assetChecks: [],
   freshnessInfo: {
     __typename: 'AssetFreshnessInfo',
     currentMinutesLate: 0,
@@ -224,6 +232,7 @@ export const LiveDataForNodeMaterializedAndFresh: LiveDataForNode = {
   runWhichFailedToMaterialize: null,
   staleStatus: StaleStatus.FRESH,
   staleCauses: [],
+  assetChecks: [],
   freshnessInfo: {
     __typename: 'AssetFreshnessInfo',
     currentMinutesLate: 0,
@@ -245,6 +254,7 @@ export const LiveDataForNodeMaterializedAndOverdue: LiveDataForNode = {
   runWhichFailedToMaterialize: null,
   staleStatus: StaleStatus.FRESH,
   staleCauses: [],
+  assetChecks: [],
   freshnessInfo: {
     __typename: 'AssetFreshnessInfo',
     currentMinutesLate: 12,
@@ -267,6 +277,7 @@ export const LiveDataForNodeFailedAndOverdue: LiveDataForNode = {
   },
   staleStatus: StaleStatus.FRESH,
   staleCauses: [],
+  assetChecks: [],
   freshnessInfo: {
     __typename: 'AssetFreshnessInfo',
     currentMinutesLate: 12,
@@ -284,6 +295,7 @@ export const LiveDataForNodeSourceNeverObserved: LiveDataForNode = {
   runWhichFailedToMaterialize: null,
   staleStatus: StaleStatus.MISSING,
   staleCauses: [],
+  assetChecks: [],
   freshnessInfo: null,
 
   partitionStats: null,
@@ -299,6 +311,7 @@ export const LiveDataForNodeSourceObservationRunning: LiveDataForNode = {
   runWhichFailedToMaterialize: null,
   staleStatus: StaleStatus.MISSING,
   staleCauses: [],
+  assetChecks: [],
   freshnessInfo: null,
   partitionStats: null,
 };
@@ -316,6 +329,7 @@ export const LiveDataForNodeSourceObservedUpToDate: LiveDataForNode = {
   runWhichFailedToMaterialize: null,
   staleStatus: StaleStatus.FRESH,
   staleCauses: [],
+  assetChecks: [],
   freshnessInfo: null,
 
   partitionStats: null,
@@ -335,6 +349,7 @@ export const LiveDataForNodePartitionedSomeMissing: LiveDataForNode = {
   runWhichFailedToMaterialize: null,
   staleStatus: StaleStatus.FRESH,
   staleCauses: [],
+  assetChecks: [],
   freshnessInfo: null,
   partitionStats: {
     numMaterialized: 6,
@@ -358,6 +373,7 @@ export const LiveDataForNodePartitionedSomeFailed: LiveDataForNode = {
   runWhichFailedToMaterialize: null,
   staleStatus: StaleStatus.FRESH,
   staleCauses: [],
+  assetChecks: [],
   freshnessInfo: null,
   partitionStats: {
     numMaterialized: 6,
@@ -381,6 +397,7 @@ export const LiveDataForNodePartitionedNoneMissing: LiveDataForNode = {
   runWhichFailedToMaterialize: null,
   staleStatus: StaleStatus.FRESH,
   staleCauses: [],
+  assetChecks: [],
   freshnessInfo: null,
   partitionStats: {
     numMaterialized: 1500,
@@ -400,6 +417,7 @@ export const LiveDataForNodePartitionedNeverMaterialized: LiveDataForNode = {
   runWhichFailedToMaterialize: null,
   staleStatus: StaleStatus.MISSING,
   staleCauses: [],
+  assetChecks: [],
   freshnessInfo: null,
   partitionStats: {
     numMaterialized: 0,
@@ -419,6 +437,7 @@ export const LiveDataForNodePartitionedMaterializing: LiveDataForNode = {
   runWhichFailedToMaterialize: null,
   staleStatus: StaleStatus.MISSING,
   staleCauses: [],
+  assetChecks: [],
   freshnessInfo: null,
   partitionStats: {
     numMaterialized: 0,
@@ -442,6 +461,7 @@ export const LiveDataForNodePartitionedStale: LiveDataForNode = {
   runWhichFailedToMaterialize: null,
   staleStatus: StaleStatus.STALE,
   staleCauses: [MockStaleReasonData],
+  assetChecks: [],
   freshnessInfo: null,
   partitionStats: {
     numMaterialized: 1500,
@@ -465,6 +485,7 @@ export const LiveDataForNodePartitionedOverdue: LiveDataForNode = {
   runWhichFailedToMaterialize: null,
   staleStatus: StaleStatus.FRESH,
   staleCauses: [],
+  assetChecks: [],
   freshnessInfo: {
     __typename: 'AssetFreshnessInfo',
     currentMinutesLate: 12,
@@ -491,6 +512,7 @@ export const LiveDataForNodePartitionedFresh: LiveDataForNode = {
   runWhichFailedToMaterialize: null,
   staleStatus: StaleStatus.FRESH,
   staleCauses: [],
+  assetChecks: [],
   freshnessInfo: {
     __typename: 'AssetFreshnessInfo',
     currentMinutesLate: 0,
@@ -518,6 +540,7 @@ export const LiveDataForNodePartitionedLatestRunFailed: LiveDataForNode = {
   },
   staleStatus: null,
   staleCauses: [],
+  assetChecks: [],
   freshnessInfo: null,
   partitionStats: {
     numMaterialized: 1495,

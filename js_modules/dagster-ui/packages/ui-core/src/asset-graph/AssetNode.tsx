@@ -1,13 +1,17 @@
 import {gql} from '@apollo/client';
-import {Box, Colors, FontFamily, Icon, Tooltip} from '@dagster-io/ui-components';
+import {Box, Colors, FontFamily, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
+import countBy from 'lodash/countBy';
 import isEqual from 'lodash/isEqual';
 import React from 'react';
+import {Link} from 'react-router-dom';
 import styled, {CSSObject} from 'styled-components';
 
 import {withMiddleTruncation} from '../app/Util';
 import {PartitionCountTags} from '../assets/AssetNodePartitionCounts';
 import {StaleReasonsTags} from '../assets/Stale';
+import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetComputeKindTag} from '../graph/OpTags';
+import {AssetCheckExecutionResolvedStatus, AssetCheckSeverity} from '../graphql/types';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 
 import {buildAssetNodeStatusContent} from './AssetNodeStatusContent';
@@ -65,6 +69,9 @@ export const AssetNode: React.FC<{
           {isSource && !definition.isObservable ? null : (
             <AssetNodeStatusRow definition={definition} liveData={liveData} />
           )}
+          {(liveData?.assetChecks || []).length > 0 && (
+            <AssetNodeChecksRow definition={definition} liveData={liveData} />
+          )}
           <AssetComputeKindTag definition={definition} style={{right: -2, paddingTop: 7}} />
         </AssetNodeBox>
       </AssetNodeContainer>
@@ -81,26 +88,19 @@ const AssetTopTags: React.FC<{
   </Box>
 );
 
-const AssetNodeStatusBox: React.FC<{background: string; children: React.ReactNode}> = ({
-  background,
-  children,
-}) => (
-  <Box
-    padding={{horizontal: 8}}
-    style={{
-      borderBottomLeftRadius: 6,
-      borderBottomRightRadius: 6,
-      whiteSpace: 'nowrap',
-      lineHeight: '12px',
-      fontSize: 12,
-      height: 24,
-    }}
-    flex={{justifyContent: 'space-between', alignItems: 'center', gap: 6}}
-    background={background}
-  >
-    {children}
-  </Box>
-);
+const AssetNodeRowBox = styled(Box)`
+  white-space: nowrap;
+  line-height: 12px;
+  font-size: 12px;
+  height: 24px;
+  a:hover {
+    text-decoration: none;
+  }
+  &:last-child {
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
+  }
+`;
 
 interface StatusRowProps {
   definition: AssetNodeFragment;
@@ -113,7 +113,99 @@ const AssetNodeStatusRow: React.FC<StatusRowProps> = ({definition, liveData}) =>
     definition,
     liveData,
   });
-  return <AssetNodeStatusBox background={background}>{content}</AssetNodeStatusBox>;
+  return (
+    <AssetNodeRowBox
+      background={background}
+      padding={{horizontal: 8}}
+      flex={{justifyContent: 'space-between', alignItems: 'center', gap: 6}}
+    >
+      {content}
+    </AssetNodeRowBox>
+  );
+};
+
+type AssetCheckIconType =
+  | Exclude<
+      AssetCheckExecutionResolvedStatus,
+      AssetCheckExecutionResolvedStatus.FAILED | AssetCheckExecutionResolvedStatus.EXECUTION_FAILED
+    >
+  | 'NOT_EVALUATED'
+  | 'WARN'
+  | 'ERROR';
+
+const AssetCheckIconsOrdered: {type: AssetCheckIconType; content: React.ReactNode}[] = [
+  {
+    type: AssetCheckExecutionResolvedStatus.IN_PROGRESS,
+    content: <Spinner purpose="caption-text" />,
+  },
+  {
+    type: 'NOT_EVALUATED',
+    content: <Icon name="changes_present" color={Colors.Gray700} />,
+  },
+  {
+    type: 'ERROR',
+    content: <Icon name="cancel" color={Colors.Red700} />,
+  },
+  {
+    type: 'WARN',
+    content: <Icon name="warning_outline" color={Colors.Yellow700} />,
+  },
+  {
+    type: AssetCheckExecutionResolvedStatus.SKIPPED,
+    content: <Icon name="check_circle" color={Colors.Green700} />,
+  },
+  {
+    type: AssetCheckExecutionResolvedStatus.SUCCEEDED,
+    content: <Icon name="check_circle" color={Colors.Green700} />,
+  },
+];
+
+const AssetNodeChecksRow: React.FC<{
+  definition: AssetNodeFragment;
+  liveData: LiveDataForNode | undefined;
+}> = ({definition, liveData}) => {
+  if (!liveData || !liveData.assetChecks.length) {
+    return <span />;
+  }
+
+  const byIconType = countBy(liveData.assetChecks, (c) => {
+    const status = c.executionForLatestMaterialization?.status;
+    const value: AssetCheckIconType =
+      status === undefined
+        ? 'NOT_EVALUATED'
+        : status === AssetCheckExecutionResolvedStatus.FAILED
+        ? c.severity === AssetCheckSeverity.WARN
+          ? 'WARN'
+          : 'ERROR'
+        : status === AssetCheckExecutionResolvedStatus.EXECUTION_FAILED
+        ? 'ERROR'
+        : status;
+    return value;
+  });
+
+  return (
+    <AssetNodeRowBox
+      padding={{horizontal: 8}}
+      flex={{justifyContent: 'space-between', alignItems: 'center', gap: 6}}
+      border={{side: 'top', width: 1, color: Colors.KeylineGray}}
+      background={Colors.Gray50}
+    >
+      Checks
+      <Link
+        to={assetDetailsPathForKey(definition.assetKey, {view: 'checks'})}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <Box flex={{gap: 6, alignItems: 'center'}}>
+          {AssetCheckIconsOrdered.filter((a) => byIconType[a.type]).map((icon) => (
+            <Box flex={{gap: 2, alignItems: 'center'}} key={icon.type}>
+              {icon.content}
+              {byIconType[icon.type]}
+            </Box>
+          ))}
+        </Box>
+      </Link>
+    </AssetNodeRowBox>
+  );
 };
 
 export const AssetNodeMinimal: React.FC<{
@@ -124,6 +216,7 @@ export const AssetNodeMinimal: React.FC<{
   const {isSource, assetKey} = definition;
   const {border, background} = buildAssetNodeStatusContent({assetKey, definition, liveData});
   const displayName = assetKey.path[assetKey.path.length - 1]!;
+
   return (
     <AssetInsetForHoverEffect>
       <MinimalAssetNodeContainer $selected={selected}>
@@ -141,8 +234,8 @@ export const AssetNodeMinimal: React.FC<{
           >
             <div
               style={{
-                position: 'absolute',
                 top: '50%',
+                position: 'absolute',
                 transform: 'translate(8px, -16px)',
               }}
             >
@@ -157,66 +250,6 @@ export const AssetNodeMinimal: React.FC<{
     </AssetInsetForHoverEffect>
   );
 };
-
-export const ASSET_NODE_LIVE_FRAGMENT = gql`
-  fragment AssetNodeLiveFragment on AssetNode {
-    id
-    opNames
-    repository {
-      id
-    }
-    assetKey {
-      path
-    }
-    assetMaterializations(limit: 1) {
-      ...AssetNodeLiveMaterialization
-    }
-    assetObservations(limit: 1) {
-      ...AssetNodeLiveObservation
-    }
-    assetChecks {
-      severity
-      executionForLatestMaterialization {
-        id
-        status
-      }
-    }
-    freshnessInfo {
-      ...AssetNodeLiveFreshnessInfo
-    }
-    staleStatus
-    staleCauses {
-      key {
-        path
-      }
-      reason
-      category
-      dependency {
-        path
-      }
-    }
-    partitionStats {
-      numMaterialized
-      numMaterializing
-      numPartitions
-      numFailed
-    }
-  }
-
-  fragment AssetNodeLiveFreshnessInfo on AssetFreshnessInfo {
-    currentMinutesLate
-  }
-
-  fragment AssetNodeLiveMaterialization on MaterializationEvent {
-    timestamp
-    runId
-  }
-
-  fragment AssetNodeLiveObservation on ObservationEvent {
-    timestamp
-    runId
-  }
-`;
 
 // Note: This fragment should only contain fields that are needed for
 // useAssetGraphData and the Asset DAG. Some pages of Dagster UI request this
@@ -318,6 +351,8 @@ const Name = styled.div<{$isSource: boolean}>`
   display: flex;
   gap: 4px;
   background: ${(p) => (p.$isSource ? Colors.Gray100 : Colors.Blue50)};
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
 `;
 
 const MinimalAssetNodeContainer = styled(AssetNodeContainer)`

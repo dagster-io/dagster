@@ -424,7 +424,9 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
             assetKey=data.asset_key, checkName=data.check_name, **basic_params
         )
     elif dagster_event.event_type == DagsterEventType.ASSET_CHECK_EVALUATION:
-        return GrapheneAssetCheckEvaluationEvent(evaluation=event_record, **basic_params)
+        from  ..schema.asset_checks import GrapheneAssetCheckEvaluation
+        evaluation = GrapheneAssetCheckEvaluation(event_record)
+        return GrapheneAssetCheckEvaluationEvent(evaluation=evaluation, **basic_params)
 
     else:
         raise Exception(f"Unknown DAGSTER_EVENT type {dagster_event.event_type} found in logs")

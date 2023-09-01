@@ -130,6 +130,8 @@ export type AssetCheckExecutionsArgs = {
 
 export type AssetCheckEvaluation = {
   __typename: 'AssetCheckEvaluation';
+  assetKey: AssetKey;
+  checkName: Scalars['String'];
   metadataEntries: Array<MetadataEntry>;
   severity: AssetCheckSeverity;
   targetMaterialization: Maybe<AssetCheckEvaluationTargetMaterializationData>;
@@ -4435,6 +4437,13 @@ export const buildAssetCheckEvaluation = (
   relationshipsToOmit.add('AssetCheckEvaluation');
   return {
     __typename: 'AssetCheckEvaluation',
+    assetKey:
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKey')
+        ? ({} as AssetKey)
+        : buildAssetKey({}, relationshipsToOmit),
+    checkName: overrides && overrides.hasOwnProperty('checkName') ? overrides.checkName! : 'sed',
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     severity:
