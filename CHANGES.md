@@ -27,7 +27,7 @@
 
 ### Experimental
 
-- New APIs for defining and executing checks on software-defined assets. These APIs are very early and subject to change. The corresponding UI has limited functionality. [Docs](<[https://docs.dagster.io](https://docs.dagster.io/_apidocs/)/_apidocs/asset-checks>)
+- New APIs for defining and executing checks on software-defined assets. These APIs are very early and subject to change. The corresponding UI has limited functionality. [Docs](https://docs.dagster.io/_apidocs/asset-checks)
 - Adds a new auto-materialize skip rule `AutoMaterializeRule.skip_on_not_all_parents_updated` that enforces that an asset can only be materialized if all parents have been materialized since the asset's last materialization.
 - Exposed an auto-materialize skip rule – `AutoMaterializeRule.skip_on_parent_missing` –which is already part of the behavior of the default auto-materialize policy.
 - Auto-materialize evaluation history will now be stored for 1 month, instead of 1 week.
