@@ -151,7 +151,7 @@ def scope_add_downstream_assets():
             with open("survey_responses.json", "w", encoding="utf8") as f:
                 f.write(json.dumps(survey_responses, indent=2))
 
-        # only run the airbyte syncs necessary to materialize survey_responses_file
+        # only run the Fivetran syncs necessary to materialize survey_responses_file
         my_upstream_job = define_asset_job(
             "my_upstream_job",
             AssetSelection.keys("survey_responses_file")
