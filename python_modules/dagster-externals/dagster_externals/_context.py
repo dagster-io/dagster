@@ -3,22 +3,22 @@ from contextlib import ExitStack
 from typing import Any, ClassVar, Mapping, Optional, Sequence
 
 from ._io.base import (
-    ExternalExecutionContextLoader,
-    ExternalExecutionMessageWriter,
-    ExternalExecutionMessageWriterChannel,
-    ExternalExecutionParamLoader,
+    ExtContextLoader,
+    ExtMessageWriter,
+    ExtMessageWriterChannel,
+    ExtParamLoader,
 )
 from ._io.default import (
-    ExternalExecutionEnvVarParamLoader,
-    ExternalExecutionFileContextLoader,
-    ExternalExecutionFileMessageWriter,
+    ExtEnvVarParamLoader,
+    ExtFileContextLoader,
+    ExtFileMessageWriter,
 )
 from ._protocol import (
-    ExternalExecutionContextData,
-    ExternalExecutionDataProvenance,
-    ExternalExecutionMessage,
-    ExternalExecutionPartitionKeyRange,
-    ExternalExecutionTimeWindow,
+    ExtContextData,
+    ExtDataProvenance,
+    ExtMessage,
+    ExtPartitionKeyRange,
+    ExtTimeWindow,
 )
 from ._util import (
     assert_defined_asset_property,
@@ -30,67 +30,66 @@ from ._util import (
     assert_single_asset,
     emit_orchestration_inactive_warning,
     get_mock,
-    is_dagster_orchestration_active,
+    launched_by_ext_client,
 )
 
 
-def init_dagster_externals(
+def init_dagster_ext(
     *,
-    context_loader: Optional[ExternalExecutionContextLoader] = None,
-    message_writer: Optional[ExternalExecutionMessageWriter] = None,
-    param_loader: Optional[ExternalExecutionParamLoader] = None,
-) -> "ExternalExecutionContext":
-    if ExternalExecutionContext.is_initialized():
-        return ExternalExecutionContext.get()
+    context_loader: Optional[ExtContextLoader] = None,
+    message_writer: Optional[ExtMessageWriter] = None,
+    param_loader: Optional[ExtParamLoader] = None,
+) -> "ExtContext":
+    if ExtContext.is_initialized():
+        return ExtContext.get()
 
-    if is_dagster_orchestration_active():
-        param_loader = param_loader or ExternalExecutionEnvVarParamLoader()
+    if launched_by_ext_client():
+        param_loader = param_loader or ExtEnvVarParamLoader()
         context_params = param_loader.load_context_params()
         messages_params = param_loader.load_messages_params()
-        context_loader = context_loader or ExternalExecutionFileContextLoader()
-        message_writer = message_writer or ExternalExecutionFileMessageWriter()
+        context_loader = context_loader or ExtFileContextLoader()
+        message_writer = message_writer or ExtFileMessageWriter()
         stack = ExitStack()
         context_data = stack.enter_context(context_loader.load_context(context_params))
         message_channel = stack.enter_context(message_writer.open(messages_params))
         atexit.register(stack.__exit__, None, None, None)
-        context = ExternalExecutionContext(context_data, message_channel)
+        context = ExtContext(context_data, message_channel)
     else:
         emit_orchestration_inactive_warning()
         context = get_mock()
-    ExternalExecutionContext.set(context)
+    ExtContext.set(context)
     return context
 
 
-class ExternalExecutionContext:
-    _instance: ClassVar[Optional["ExternalExecutionContext"]] = None
+class ExtContext:
+    _instance: ClassVar[Optional["ExtContext"]] = None
 
     @classmethod
     def is_initialized(cls) -> bool:
         return cls._instance is not None
 
     @classmethod
-    def set(cls, context: "ExternalExecutionContext") -> None:
+    def set(cls, context: "ExtContext") -> None:
         cls._instance = context
 
     @classmethod
-    def get(cls) -> "ExternalExecutionContext":
+    def get(cls) -> "ExtContext":
         if cls._instance is None:
             raise Exception(
-                "ExternalExecutionContext has not been initialized. You must call"
-                " `init_dagster_externals()`."
+                "ExtContext has not been initialized. You must call `init_dagster_ext()`."
             )
         return cls._instance
 
     def __init__(
         self,
-        data: ExternalExecutionContextData,
-        message_channel: ExternalExecutionMessageWriterChannel,
+        data: ExtContextData,
+        message_channel: ExtMessageWriterChannel,
     ) -> None:
         self._data = data
         self.message_channel = message_channel
 
     def _write_message(self, method: str, params: Optional[Mapping[str, Any]] = None) -> None:
-        message = ExternalExecutionMessage(method=method, params=params)
+        message = ExtMessage(method=method, params=params)
         self.message_channel.write_message(message)
 
     # ########################
@@ -113,7 +112,7 @@ class ExternalExecutionContext:
         return asset_keys
 
     @property
-    def provenance(self) -> Optional[ExternalExecutionDataProvenance]:
+    def provenance(self) -> Optional[ExtDataProvenance]:
         provenance_by_asset_key = assert_defined_asset_property(
             self._data["provenance_by_asset_key"], "provenance"
         )
@@ -121,7 +120,7 @@ class ExternalExecutionContext:
         return list(provenance_by_asset_key.values())[0]
 
     @property
-    def provenance_by_asset_key(self) -> Mapping[str, Optional[ExternalExecutionDataProvenance]]:
+    def provenance_by_asset_key(self) -> Mapping[str, Optional[ExtDataProvenance]]:
         provenance_by_asset_key = assert_defined_asset_property(
             self._data["provenance_by_asset_key"], "provenance_by_asset_key"
         )
@@ -154,14 +153,14 @@ class ExternalExecutionContext:
         return partition_key
 
     @property
-    def partition_key_range(self) -> Optional["ExternalExecutionPartitionKeyRange"]:
+    def partition_key_range(self) -> Optional["ExtPartitionKeyRange"]:
         partition_key_range = assert_defined_partition_property(
             self._data["partition_key_range"], "partition_key_range"
         )
         return partition_key_range
 
     @property
-    def partition_time_window(self) -> Optional["ExternalExecutionTimeWindow"]:
+    def partition_time_window(self) -> Optional["ExtTimeWindow"]:
         # None is a valid value for partition_time_window, but we check that a partition key range
         # is defined.
         assert_defined_partition_property(

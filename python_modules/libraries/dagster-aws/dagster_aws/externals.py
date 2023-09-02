@@ -6,19 +6,19 @@ import boto3
 import dagster._check as check
 from botocore.exceptions import ClientError
 from dagster._core.external_execution.resource import (
-    ExternalExecutionParams,
+    ExtParams,
 )
-from dagster._core.external_execution.utils import ExternalExecutionBlobStoreMessageReader
+from dagster._core.external_execution.utils import ExtBlobStoreMessageReader
 
 
-class ExternalExecutionS3MessageReader(ExternalExecutionBlobStoreMessageReader):
+class ExtS3MessageReader(ExtBlobStoreMessageReader):
     def __init__(self, *, interval: int = 10, bucket: str, client: boto3.client):
         super().__init__(interval=interval)
         self.bucket = check.str_param(bucket, "bucket")
         self.key_prefix = "".join(random.choices(string.ascii_letters, k=30))
         self.client = client
 
-    def get_params(self) -> ExternalExecutionParams:
+    def get_params(self) -> ExtParams:
         return {"bucket": self.bucket, "key_prefix": self.key_prefix}
 
     def download_messages_chunk(self, index: int) -> Optional[str]:

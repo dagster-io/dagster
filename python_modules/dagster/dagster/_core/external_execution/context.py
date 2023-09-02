@@ -1,11 +1,11 @@
 from typing import Any, Optional
 
 from dagster_externals import (
-    ExternalExecutionContextData,
-    ExternalExecutionDataProvenance,
-    ExternalExecutionExtras,
-    ExternalExecutionMessage,
-    ExternalExecutionTimeWindow,
+    ExtContextData,
+    ExtDataProvenance,
+    ExtExtras,
+    ExtMessage,
+    ExtTimeWindow,
 )
 
 import dagster._check as check
@@ -17,14 +17,12 @@ from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.execution.context.invocation import BoundOpExecutionContext
 
 
-class ExternalExecutionOrchestrationContext:
-    def __init__(
-        self, *, context: OpExecutionContext, extras: Optional[ExternalExecutionExtras]
-    ) -> None:
+class ExtOrchestrationContext:
+    def __init__(self, *, context: OpExecutionContext, extras: Optional[ExtExtras]) -> None:
         self._context = context
         self._extras = extras
 
-    def get_data(self) -> ExternalExecutionContextData:
+    def get_data(self) -> ExtContextData:
         return build_external_execution_context_data(self._context, self._extras)
 
     # ########################
@@ -32,7 +30,7 @@ class ExternalExecutionOrchestrationContext:
     # ########################
 
     # Type ignores because we currently validate in individual handlers
-    def handle_message(self, message: ExternalExecutionMessage) -> None:
+    def handle_message(self, message: ExtMessage) -> None:
         if message["method"] == "report_asset_metadata":
             self._handle_report_asset_metadata(**message["params"])  # type: ignore
         elif message["method"] == "report_asset_data_version":
@@ -60,8 +58,8 @@ class ExternalExecutionOrchestrationContext:
 
 def build_external_execution_context_data(
     context: OpExecutionContext,
-    extras: Optional[ExternalExecutionExtras],
-) -> "ExternalExecutionContextData":
+    extras: Optional[ExtExtras],
+) -> "ExtContextData":
     asset_keys = (
         [_convert_asset_key(key) for key in sorted(context.selected_asset_keys)]
         if context.has_assets_def
@@ -86,7 +84,7 @@ def build_external_execution_context_data(
     partition_key = context.partition_key if context.has_partition_key else None
     partition_time_window = context.partition_time_window if context.has_partition_key else None
     partition_key_range = context.partition_key_range if context.has_partition_key else None
-    return ExternalExecutionContextData(
+    return ExtContextData(
         asset_keys=asset_keys,
         code_version_by_asset_key=code_version_by_asset_key,
         provenance_by_asset_key=provenance_by_asset_key,
@@ -110,11 +108,11 @@ def _convert_asset_key(asset_key: AssetKey) -> str:
 
 def _convert_data_provenance(
     provenance: Optional[DataProvenance],
-) -> Optional["ExternalExecutionDataProvenance"]:
+) -> Optional["ExtDataProvenance"]:
     return (
         None
         if provenance is None
-        else ExternalExecutionDataProvenance(
+        else ExtDataProvenance(
             code_version=provenance.code_version,
             input_data_versions={
                 _convert_asset_key(k): v.value for k, v in provenance.input_data_versions.items()
@@ -126,8 +124,8 @@ def _convert_data_provenance(
 
 def _convert_time_window(
     time_window: TimeWindow,
-) -> "ExternalExecutionTimeWindow":
-    return ExternalExecutionTimeWindow(
+) -> "ExtTimeWindow":
+    return ExtTimeWindow(
         start=time_window.start.isoformat(),
         end=time_window.end.isoformat(),
     )
@@ -135,8 +133,8 @@ def _convert_time_window(
 
 def _convert_partition_key_range(
     partition_key_range: PartitionKeyRange,
-) -> "ExternalExecutionTimeWindow":
-    return ExternalExecutionTimeWindow(
+) -> "ExtTimeWindow":
+    return ExtTimeWindow(
         start=partition_key_range.start,
         end=partition_key_range.end,
     )

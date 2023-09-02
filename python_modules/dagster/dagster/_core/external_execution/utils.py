@@ -7,26 +7,24 @@ from contextlib import contextmanager
 from threading import Event, Thread
 from typing import TYPE_CHECKING, Iterator, Mapping, Optional
 
-from dagster_externals import DAGSTER_EXTERNALS_ENV_KEYS, ExternalExecutionParams, encode_env_var
+from dagster_externals import DAGSTER_EXTERNALS_ENV_KEYS, ExtParams, encode_env_var
 
 from dagster._core.external_execution.resource import (
-    ExternalExecutionContextInjector,
-    ExternalExecutionMessageReader,
+    ExtContextInjector,
+    ExtMessageReader,
 )
 from dagster._utils import tail_file
 
 if TYPE_CHECKING:
-    from dagster._core.external_execution.context import ExternalExecutionOrchestrationContext
+    from dagster._core.external_execution.context import ExtOrchestrationContext
 
 
-class ExternalExecutionFileContextInjector(ExternalExecutionContextInjector):
+class ExtFileContextInjector(ExtContextInjector):
     def __init__(self, path: str):
         self._path = path
 
     @contextmanager
-    def inject_context(
-        self, context: "ExternalExecutionOrchestrationContext"
-    ) -> Iterator[ExternalExecutionParams]:
+    def inject_context(self, context: "ExtOrchestrationContext") -> Iterator[ExtParams]:
         with open(self._path, "w") as input_stream:
             json.dump(context.get_data(), input_stream)
         try:
@@ -36,24 +34,24 @@ class ExternalExecutionFileContextInjector(ExternalExecutionContextInjector):
                 os.remove(self._path)
 
 
-class ExternalExecutionEnvContextInjector(ExternalExecutionContextInjector):
+class ExtEnvContextInjector(ExtContextInjector):
     @contextmanager
     def inject_context(
         self,
-        context: "ExternalExecutionOrchestrationContext",
-    ) -> Iterator[ExternalExecutionParams]:
+        context: "ExtOrchestrationContext",
+    ) -> Iterator[ExtParams]:
         yield {"data": context.get_data()}
 
 
-class ExternalExecutionFileMessageReader(ExternalExecutionMessageReader):
+class ExtFileMessageReader(ExtMessageReader):
     def __init__(self, path: str):
         self._path = path
 
     @contextmanager
     def read_messages(
         self,
-        context: "ExternalExecutionOrchestrationContext",
-    ) -> Iterator[ExternalExecutionParams]:
+        context: "ExtOrchestrationContext",
+    ) -> Iterator[ExtParams]:
         is_task_complete = Event()
         thread = None
         try:
@@ -71,14 +69,14 @@ class ExternalExecutionFileMessageReader(ExternalExecutionMessageReader):
                 thread.join()
 
     def _reader_thread(
-        self, context: "ExternalExecutionOrchestrationContext", is_resource_complete: Event
+        self, context: "ExtOrchestrationContext", is_resource_complete: Event
     ) -> None:
         for line in tail_file(self._path, lambda: is_resource_complete.is_set()):
             message = json.loads(line)
             context.handle_message(message)
 
 
-class ExternalExecutionBlobStoreMessageReader(ExternalExecutionMessageReader):
+class ExtBlobStoreMessageReader(ExtMessageReader):
     interval: float
     counter: int
 
@@ -89,8 +87,8 @@ class ExternalExecutionBlobStoreMessageReader(ExternalExecutionMessageReader):
     @contextmanager
     def read_messages(
         self,
-        context: "ExternalExecutionOrchestrationContext",
-    ) -> Iterator[ExternalExecutionParams]:
+        context: "ExtOrchestrationContext",
+    ) -> Iterator[ExtParams]:
         with self.setup():
             is_task_complete = Event()
             thread = None
@@ -115,16 +113,14 @@ class ExternalExecutionBlobStoreMessageReader(ExternalExecutionMessageReader):
         yield
 
     @abstractmethod
-    def get_params(self) -> ExternalExecutionParams:
+    def get_params(self) -> ExtParams:
         ...
 
     @abstractmethod
     def download_messages_chunk(self, index: int) -> Optional[str]:
         ...
 
-    def _reader_thread(
-        self, context: "ExternalExecutionOrchestrationContext", is_task_complete: Event
-    ) -> None:
+    def _reader_thread(self, context: "ExtOrchestrationContext", is_task_complete: Event) -> None:
         start_or_last_download = datetime.datetime.now()
         while True:
             now = datetime.datetime.now()
@@ -142,7 +138,7 @@ class ExternalExecutionBlobStoreMessageReader(ExternalExecutionMessageReader):
 
 
 def io_params_as_env_vars(
-    context_injector_params: ExternalExecutionParams, message_reader_params: ExternalExecutionParams
+    context_injector_params: ExtParams, message_reader_params: ExtParams
 ) -> Mapping[str, str]:
     return {
         DAGSTER_EXTERNALS_ENV_KEYS["context"]: encode_env_var(context_injector_params),

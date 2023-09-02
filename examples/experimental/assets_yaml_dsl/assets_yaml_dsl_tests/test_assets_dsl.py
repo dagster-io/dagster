@@ -5,7 +5,7 @@ from assets_yaml_dsl.pure_assets_dsl.assets_dsl import from_asset_entries
 from dagster import AssetsDefinition
 from dagster._core.definitions.events import AssetKey
 from dagster._core.execution.context.invocation import build_asset_context
-from dagster._core.external_execution.subprocess import SubprocessExecutionResource
+from dagster._core.external_execution.subprocess import ExtSubprocess
 
 
 def assets_defs_from_yaml(yaml_string) -> List[AssetsDefinition]:
@@ -69,7 +69,7 @@ assets:
     assert assets_defs
     assert len(assets_defs) == 1
     assets_def = assets_defs[0]
-    assets_def(context=build_asset_context(), subprocess_resource=SubprocessExecutionResource())
+    assets_def(context=build_asset_context(), ext_subprocess=ExtSubprocess())
 
 
 def test_basic_group() -> None:

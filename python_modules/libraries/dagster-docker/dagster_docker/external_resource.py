@@ -6,21 +6,21 @@ from typing import Iterator, Mapping, Optional, Sequence, Tuple, Union
 import docker
 from dagster import OpExecutionContext
 from dagster._core.external_execution.context import (
-    ExternalExecutionOrchestrationContext,
+    ExtOrchestrationContext,
 )
 from dagster._core.external_execution.resource import (
-    ExternalExecutionContextInjector,
-    ExternalExecutionMessageReader,
-    ExternalExecutionResource,
+    ExtClient,
+    ExtContextInjector,
+    ExtMessageReader,
 )
 from dagster._core.external_execution.utils import (
-    ExternalExecutionFileContextInjector,
-    ExternalExecutionFileMessageReader,
+    ExtFileContextInjector,
+    ExtFileMessageReader,
     io_params_as_env_vars,
 )
 from dagster_externals import (
-    DagsterExternalsError,
-    ExternalExecutionExtras,
+    ExtError,
+    ExtExtras,
 )
 from pydantic import Field
 from typing_extensions import TypeAlias
@@ -32,7 +32,7 @@ _CONTEXT_SOURCE_FILENAME = "context"
 _MESSAGE_SINK_FILENAME = "messages"
 
 
-class DockerExecutionResource(ExternalExecutionResource):
+class ExtDocker(ExtClient):
     env: Optional[Mapping[str, str]] = Field(
         default=None,
         description="An optional dict of environment variables to pass to the subprocess.",
@@ -52,14 +52,14 @@ class DockerExecutionResource(ExternalExecutionResource):
         command: Union[str, Sequence[str]],
         *,
         context: OpExecutionContext,
-        extras: Optional[ExternalExecutionExtras] = None,
-        context_source: Optional[ExternalExecutionContextInjector] = None,
-        message_sink: Optional[ExternalExecutionMessageReader] = None,
+        extras: Optional[ExtExtras] = None,
+        context_source: Optional[ExtContextInjector] = None,
+        message_sink: Optional[ExtMessageReader] = None,
         env: Optional[Mapping[str, str]] = None,
         volumes: Optional[Mapping[str, Mapping[str, str]]] = None,
         registry: Optional[Mapping[str, str]] = None,
     ) -> None:
-        external_context = ExternalExecutionOrchestrationContext(context=context, extras=extras)
+        external_context = ExtOrchestrationContext(context=context, extras=extras)
         with self._setup_io(external_context, context_source, message_sink) as (io_env, io_volumes):
             client = docker.client.from_env()
             if registry:
@@ -90,26 +90,24 @@ class DockerExecutionResource(ExternalExecutionResource):
 
                 result = container.wait()
                 if result["StatusCode"] != 0:
-                    raise DagsterExternalsError(
-                        f"Container exited with non-zero status code: {result}"
-                    )
+                    raise ExtError(f"Container exited with non-zero status code: {result}")
             finally:
                 container.stop()
 
     @contextmanager
     def _setup_io(
         self,
-        external_context: ExternalExecutionOrchestrationContext,
-        context_injector: Optional[ExternalExecutionContextInjector],
-        message_reader: Optional[ExternalExecutionMessageReader],
+        external_context: ExtOrchestrationContext,
+        context_injector: Optional[ExtContextInjector],
+        message_reader: Optional[ExtMessageReader],
     ) -> Iterator[Tuple[Mapping[str, str], VolumeMapping]]:
         with ExitStack() as stack:
             if context_injector is None or message_reader is None:
                 tempdir = stack.enter_context(tempfile.TemporaryDirectory())
-                context_injector = context_injector or ExternalExecutionFileContextInjector(
+                context_injector = context_injector or ExtFileContextInjector(
                     os.path.join(tempdir, _CONTEXT_SOURCE_FILENAME)
                 )
-                message_reader = message_reader or ExternalExecutionFileMessageReader(
+                message_reader = message_reader or ExtFileMessageReader(
                     os.path.join(tempdir, _MESSAGE_SINK_FILENAME)
                 )
                 volumes = {tempdir: {"bind": tempdir, "mode": "rw"}}

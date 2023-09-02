@@ -12,7 +12,7 @@ except ImportError:
 
 from dagster import AssetKey, AssetsDefinition, asset, file_relative_path, multi_asset
 from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.external_execution.subprocess import SubprocessExecutionResource
+from dagster._core.external_execution.subprocess import ExtSubprocess
 
 
 def load_yaml(relative_path: str) -> Dict[str, Any]:
@@ -86,13 +86,11 @@ def assets_defs_from_stock_assets(stock_assets: StockAssets) -> List[AssetsDefin
     ticker_specs = [spec_for_stock_info(stock_info) for stock_info in stock_assets.stock_infos]
 
     @multi_asset(specs=ticker_specs)
-    def fetch_the_tickers(
-        context: AssetExecutionContext, subprocess_resource: SubprocessExecutionResource
-    ):
+    def fetch_the_tickers(context: AssetExecutionContext, ext_subprocess: ExtSubprocess):
         python_executable = shutil.which("python")
         assert python_executable is not None
         script_path = file_relative_path(__file__, "user_scripts/fetch_the_tickers.py")
-        subprocess_resource.run(
+        ext_subprocess.run(
             command=[python_executable, script_path], context=context, extras={"tickers": tickers}
         )
 

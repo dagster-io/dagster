@@ -8,44 +8,42 @@ from threading import Event, Lock, Thread
 from typing import Generic, Iterator, Sequence, TypeVar
 
 from .._protocol import (
-    ExternalExecutionContextData,
-    ExternalExecutionMessage,
-    ExternalExecutionParams,
+    ExtContextData,
+    ExtMessage,
+    ExtParams,
 )
 
 
-class ExternalExecutionContextLoader(ABC):
+class ExtContextLoader(ABC):
     @abstractmethod
     @contextmanager
-    def load_context(
-        self, params: ExternalExecutionParams
-    ) -> Iterator[ExternalExecutionContextData]:
+    def load_context(self, params: ExtParams) -> Iterator[ExtContextData]:
         ...
 
 
-T_MessageChannel = TypeVar("T_MessageChannel", bound="ExternalExecutionMessageWriterChannel")
+T_MessageChannel = TypeVar("T_MessageChannel", bound="ExtMessageWriterChannel")
 
 
-class ExternalExecutionMessageWriter(ABC, Generic[T_MessageChannel]):
+class ExtMessageWriter(ABC, Generic[T_MessageChannel]):
     @abstractmethod
     @contextmanager
-    def open(self, params: ExternalExecutionParams) -> Iterator[T_MessageChannel]:
+    def open(self, params: ExtParams) -> Iterator[T_MessageChannel]:
         ...
 
 
-class ExternalExecutionMessageWriterChannel(ABC, Generic[T_MessageChannel]):
+class ExtMessageWriterChannel(ABC, Generic[T_MessageChannel]):
     @abstractmethod
-    def write_message(self, message: ExternalExecutionMessage) -> None:
+    def write_message(self, message: ExtMessage) -> None:
         ...
 
 
-class ExternalExecutionParamLoader(ABC):
+class ExtParamLoader(ABC):
     @abstractmethod
-    def load_context_params(self) -> ExternalExecutionParams:
+    def load_context_params(self) -> ExtParams:
         ...
 
     @abstractmethod
-    def load_messages_params(self) -> ExternalExecutionParams:
+    def load_messages_params(self) -> ExtParams:
         ...
 
 
@@ -54,35 +52,33 @@ T_BlobStoreMessageWriterChannel = TypeVar(
 )
 
 
-class ExternalExecutionBlobStoreMessageWriter(
-    ExternalExecutionMessageWriter[T_BlobStoreMessageWriterChannel]
-):
+class ExternalExecutionBlobStoreMessageWriter(ExtMessageWriter[T_BlobStoreMessageWriterChannel]):
     def __init__(self, *, interval: float = 10):
         self.interval = interval
 
     @contextmanager
-    def open(self, params: ExternalExecutionParams) -> Iterator[T_BlobStoreMessageWriterChannel]:
+    def open(self, params: ExtParams) -> Iterator[T_BlobStoreMessageWriterChannel]:
         channel = self.make_channel(params)
         with channel.buffered_upload_loop():
             yield channel
 
     @abstractmethod
-    def make_channel(self, params: ExternalExecutionParams) -> T_BlobStoreMessageWriterChannel:
+    def make_channel(self, params: ExtParams) -> T_BlobStoreMessageWriterChannel:
         ...
 
 
-class ExternalExecutionBlobStoreMessageWriterChannel(ExternalExecutionMessageWriterChannel):
+class ExternalExecutionBlobStoreMessageWriterChannel(ExtMessageWriterChannel):
     def __init__(self, *, interval: float = 10):
         self._interval = interval
         self._lock = Lock()
         self._buffer = []
         self._counter = 1
 
-    def write_message(self, message: ExternalExecutionMessage) -> None:
+    def write_message(self, message: ExtMessage) -> None:
         with self._lock:
             self._buffer.append(message)
 
-    def flush_messages(self) -> Sequence[ExternalExecutionMessage]:
+    def flush_messages(self) -> Sequence[ExtMessage]:
         with self._lock:
             messages = list(self._buffer)
             self._buffer.clear()

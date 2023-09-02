@@ -1,6 +1,6 @@
 from typing import IO, Any, Optional
 
-from .._protocol import ExternalExecutionParams
+from .._protocol import ExtParams
 from .._util import assert_env_param_type, assert_opt_env_param_type, assert_param_type
 from .base import (
     ExternalExecutionBlobStoreMessageWriter,
@@ -8,7 +8,7 @@ from .base import (
 )
 
 
-class ExternalExecutionS3MessageWriter(ExternalExecutionBlobStoreMessageWriter):
+class ExtS3MessageWriter(ExternalExecutionBlobStoreMessageWriter):
     # client is a boto3.client("s3") object
     def __init__(self, client: Any, *, interval: float = 10):
         super().__init__(interval=interval)
@@ -19,7 +19,7 @@ class ExternalExecutionS3MessageWriter(ExternalExecutionBlobStoreMessageWriter):
 
     def make_channel(
         self,
-        params: ExternalExecutionParams,
+        params: ExtParams,
     ) -> "ExternalExecutionS3MessageChannel":
         bucket = assert_env_param_type(params, "bucket", str, self.__class__)
         key_prefix = assert_opt_env_param_type(params, "key_prefix", str, self.__class__)
