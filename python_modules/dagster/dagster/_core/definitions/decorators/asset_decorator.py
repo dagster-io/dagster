@@ -839,6 +839,7 @@ def build_asset_ins(
             input_manager_key = None
             dagster_type = NoValueSentinel
 
+        # if the ins= isn't provided, we don't get the key prefix?
         asset_key = asset_key or AssetKey(list(filter(None, [*(key_prefix or []), input_name])))
 
         ins_by_asset_key[asset_key] = (

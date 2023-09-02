@@ -48,6 +48,30 @@ def test_asset_check_decorator_name():
     assert _check.name == "check1"
 
 
+def test_asset_check_with_prefix():
+    @asset(key_prefix="prefix")
+    def asset1():
+        ...
+
+    @asset_check(asset=asset1)
+    def my_check():
+        ...
+
+    assert my_check.asset_key == AssetKey(["prefix", "asset1"])
+
+
+def test_asset_check_input_with_prefix():
+    @asset(key_prefix="prefix")
+    def asset1():
+        ...
+
+    @asset_check()
+    def my_check(asset1):
+        ...
+
+    assert my_check.asset_key == AssetKey(["prefix", "asset1"])
+
+
 def test_execute_asset_and_check():
     @asset
     def asset1():
