@@ -42,7 +42,9 @@ class GrapheneAssetCheckEvaluationTargetMaterializationData(graphene.ObjectType)
 
 
 class GrapheneAssetCheckEvaluation(graphene.ObjectType):
-    timestamp = graphene.NonNull(graphene.Float)
+    timestamp = graphene.Field(
+        graphene.NonNull(graphene.Float), description="When the check evaluation was stored"
+    )
     targetMaterialization = graphene.Field(GrapheneAssetCheckEvaluationTargetMaterializationData)
     metadataEntries = non_null_list(GrapheneMetadataEntry)
 
@@ -72,6 +74,9 @@ class GrapheneAssetCheckExecution(graphene.ObjectType):
     runId = graphene.NonNull(graphene.String)
     status = graphene.NonNull(GrapheneAssetCheckExecutionResolvedStatus)
     evaluation = graphene.Field(GrapheneAssetCheckEvaluation)
+    timestamp = graphene.Field(
+        graphene.NonNull(graphene.Float), description="When the check run started"
+    )
 
     class Meta:
         name = "AssetCheckExecution"
@@ -90,6 +95,7 @@ class GrapheneAssetCheckExecution(graphene.ObjectType):
             if execution.evaluation_event
             else None
         )
+        self.timestamp = execution.create_timestamp
 
 
 GrapheneAssetCheckSeverity = graphene.Enum.from_enum(AssetCheckSeverity)
