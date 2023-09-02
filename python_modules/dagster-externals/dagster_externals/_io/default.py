@@ -31,12 +31,12 @@ class ExtFileMessageWriter(ExtMessageWriter):
     _path: Optional[str] = None
 
     @contextmanager
-    def open(self, params: ExtParams) -> Iterator["ExternalExecutionFileMessageChannel"]:
+    def open(self, params: ExtParams) -> Iterator["ExtFileMessageChannel"]:
         path = assert_env_param_type(params, "path", str, self.__class__)
-        yield ExternalExecutionFileMessageChannel(path)
+        yield ExtFileMessageChannel(path)
 
 
-class ExternalExecutionFileMessageChannel(ExtMessageWriterChannel):
+class ExtFileMessageChannel(ExtMessageWriterChannel):
     def __init__(self, path: str):
         self._path = path
 

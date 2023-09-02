@@ -48,11 +48,11 @@ class ExtParamLoader(ABC):
 
 
 T_BlobStoreMessageWriterChannel = TypeVar(
-    "T_BlobStoreMessageWriterChannel", bound="ExternalExecutionBlobStoreMessageWriterChannel"
+    "T_BlobStoreMessageWriterChannel", bound="ExtBlobStoreMessageWriterChannel"
 )
 
 
-class ExternalExecutionBlobStoreMessageWriter(ExtMessageWriter[T_BlobStoreMessageWriterChannel]):
+class ExtBlobStoreMessageWriter(ExtMessageWriter[T_BlobStoreMessageWriterChannel]):
     def __init__(self, *, interval: float = 10):
         self.interval = interval
 
@@ -67,7 +67,7 @@ class ExternalExecutionBlobStoreMessageWriter(ExtMessageWriter[T_BlobStoreMessag
         ...
 
 
-class ExternalExecutionBlobStoreMessageWriterChannel(ExtMessageWriterChannel):
+class ExtBlobStoreMessageWriterChannel(ExtMessageWriterChannel):
     def __init__(self, *, interval: float = 10):
         self._interval = interval
         self._lock = Lock()
