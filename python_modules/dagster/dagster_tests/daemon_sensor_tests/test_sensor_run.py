@@ -1,6 +1,7 @@
 import random
 import string
 import time
+import logging
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack
 from typing import Any
@@ -533,7 +534,19 @@ def instance_sensor():
 
 @sensor(job=the_job)
 def logging_sensor(context):
-    context.log.info("hello hello")
+    class Handler(logging.Handler):
+        def handle(self, record):
+            try:
+                self.message = record.getMessage()
+            except TypeError:
+                self.message = "error"
+
+    handler = Handler()
+    context.log.addHandler(handler)
+    context.log.info("hello %s", "hello")
+    context.log.info(handler.message)
+    context.log.removeHandler(handler)
+
     return SkipReason()
 
 
@@ -2840,9 +2853,9 @@ def test_sensor_logging(executor, instance, workspace_context, external_repo):
     tick = ticks[0]
     assert tick.log_key
     records = get_instigation_log_records(instance, tick.log_key)
-    assert len(records) == 1
-    record = records[0]
-    assert record[DAGSTER_META_KEY]["orig_message"] == "hello hello"
+    assert len(records) == 2
+    assert records[0][DAGSTER_META_KEY]["orig_message"] == "hello hello"
+    assert records[1][DAGSTER_META_KEY]["orig_message"].endswith("hello hello")
     instance.compute_log_manager.delete_logs(log_key=tick.log_key)
 
 
