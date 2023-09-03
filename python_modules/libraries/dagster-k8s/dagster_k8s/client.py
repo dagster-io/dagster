@@ -670,13 +670,23 @@ class DagsterKubernetesClient:
         # us with invalid JSON as the quotes have been switched to '
         #
         # https://github.com/kubernetes-client/python/issues/811
-        return self.core_api.read_namespaced_pod_log(
-            name=pod_name,
-            namespace=namespace,
-            container=container_name,
-            _preload_content=False,
-            **kwargs,
-        ).data.decode("utf-8")
+
+        try:
+            return self.core_api.read_namespaced_pod_log(
+                name=pod_name,
+                namespace=namespace,
+                container=container_name,
+                _preload_content=False,
+                **kwargs,
+            ).data.decode("utf-8")
+
+        except kubernetes.client.ApiException as exc:
+            self.logger(
+                f'Could not retrieve logs of container "{container_name}" in pod "{pod_name}".\n'
+                f"Exception: {exc}"
+            )
+
+            return ""
 
     def _get_container_status_str(self, container_status):
         state = container_status.state
