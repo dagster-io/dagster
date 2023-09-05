@@ -17,10 +17,7 @@ import {
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
 import {SIDEBAR_ASSET_QUERY, SidebarAssetInfo} from '../SidebarAssetInfo';
 import {GraphNode} from '../Utils';
-import {
-  LiveDataForNodeMaterialized,
-  LiveDataForNodeMaterializedWithChecks,
-} from '../__fixtures__/AssetNode.fixtures';
+import {LiveDataForNodeMaterializedWithChecks} from '../__fixtures__/AssetNode.fixtures';
 import {SidebarAssetQuery} from '../types/SidebarAssetInfo.types';
 
 // eslint-disable-next-line import/no-default-export
