@@ -32,7 +32,7 @@ When building your own project, it should:
   - We provide out-of-the-box connections to most popular cloud data warehouses. However, you can turn [any Python connection or object into a resource](https://docs.dagster.io/concepts/resources#using-bare-python-objects-as-resources).
   - If you aren’t going to use company data, you can continue using DuckDB.
 - Perform some transformations on the data, either using cloud compute or in-memory computations.
-  - If you’re interested in using dbt, check out o[ur dbt integration](https://docs.dagster.io/integrations/dbt/reference#loading-dbt-models-from-a-dbt-project)!
+  - If you’re interested in using dbt, check out [our dbt integration](https://docs.dagster.io/integrations/dbt/reference#loading-dbt-models-from-a-dbt-project)!
 - Partition your assets and try backfilling historical data
 - Make a report using the data
 
