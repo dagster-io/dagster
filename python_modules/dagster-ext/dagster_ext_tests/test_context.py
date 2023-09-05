@@ -37,6 +37,18 @@ def _assert_undefined(context, key) -> None:
         getattr(context, key)
 
 
+def _assert_unknown_asset_key(context, method, *args, **kwargs) -> None:
+    with pytest.raises(DagsterExtError, match="Invalid asset key"):
+        getattr(context, method)(*args, **kwargs)
+
+
+def _assert_undefined_asset_key(context, method, *args, **kwargs) -> None:
+    with pytest.raises(
+        DagsterExtError, match=f"Calling `{method}` without passing an asset key is undefined"
+    ):
+        getattr(context, method)(*args, **kwargs)
+
+
 def test_no_asset_context():
     context = _make_external_execution_context()
 
@@ -67,6 +79,11 @@ def test_single_asset_context():
     assert context.code_version_by_asset_key == {"foo": "beta"}
     assert context.provenance == foo_provenance
     assert context.provenance_by_asset_key == {"foo": foo_provenance}
+    context.report_asset_metadata("bar", "baz")
+    context.report_asset_data_version("bar")
+
+    _assert_unknown_asset_key(context, "report_asset_metadata", "bar", "baz", asset_key="fake")
+    _assert_unknown_asset_key(context, "report_asset_data_version", "bar", asset_key="fake")
 
 
 def test_multi_asset_context():
@@ -91,6 +108,11 @@ def test_multi_asset_context():
     assert context.code_version_by_asset_key == {"foo": "beta", "bar": "gamma"}
     _assert_undefined(context, "provenance")
     assert context.provenance_by_asset_key == {"foo": foo_provenance, "bar": bar_provenance}
+
+    _assert_undefined_asset_key(context, "report_asset_metadata", "bar", "baz")
+    _assert_unknown_asset_key(context, "report_asset_metadata", "bar", "baz", asset_key="fake")
+    _assert_undefined_asset_key(context, "report_asset_data_version", "bar")
+    _assert_unknown_asset_key(context, "report_asset_data_version", "bar", asset_key="fake")
 
 
 def test_no_partition_context():
