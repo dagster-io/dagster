@@ -21,11 +21,13 @@ from dagster import (
     PartitionsDefinition,
     SourceAsset,
     SpecificPartitionsPartitionMapping,
+    StaticPartitionMapping,
     StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
     WeeklyPartitionsDefinition,
     define_asset_job,
     graph,
+    instance_for_test,
     materialize,
     op,
 )
@@ -35,7 +37,11 @@ from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.partition import DefaultPartitionsSubset, PartitionsSubset
+from dagster._core.definitions.partition import (
+    DefaultPartitionsSubset,
+    DynamicPartitionsDefinition,
+    PartitionsSubset,
+)
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partition_mapping import (
     PartitionMapping,
@@ -700,3 +706,40 @@ def test_self_dependent_partition_mapping_with_asset_deps():
         assert current_partition_key - asset_1_key == timedelta(days=1)
 
     materialize([the_multi_asset], partition_key="2023-08-20")
+
+
+def test_dynamic_partition_mapping_with_asset_deps():
+    partitions_def = DynamicPartitionsDefinition(name="fruits")
+
+    asset_1 = AssetSpec(
+        asset_key="asset_1",
+    )
+    asset_2 = AssetSpec(
+        asset_key="asset_2",
+        deps=[
+            AssetDep(
+                asset=asset_1,
+                partition_mapping=StaticPartitionMapping({"apple": "orange"}),
+            ),
+        ],
+    )
+
+    @multi_asset(partitions_def=partitions_def)
+    def asset_1_multi_asset(context: AssetExecutionContext):
+        return
+
+    @multi_asset(specs=[asset_2], partitions_def=partitions_def)
+    def asset_2_multi_asset(context: AssetExecutionContext):
+        # TODO - fails... sure why yet
+        context.asset_partition_key_for_input("asset_1")
+
+        # assert current_partition_key - asset_1_key == timedelta(days=1)
+
+    with instance_for_test() as instance:
+        instance.add_dynamic_partitions("fruits", ["apple"])
+        materialize([asset_1_multi_asset], partition_key="apple", instance=instance)
+
+        instance.add_dynamic_partitions("fruits", ["orange"])
+        materialize(
+            [asset_1_multi_asset, asset_2_multi_asset], partition_key="orange", instance=instance
+        )

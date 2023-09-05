@@ -1,9 +1,10 @@
-from typing import TYPE_CHECKING, AbstractSet, Any, Iterable, Mapping, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, Any, Iterable, Mapping, NamedTuple, Optional, Union
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.source_asset import SourceAsset
+from dagster._core.errors import DagsterInvariantViolationError
 
 from .auto_materialize_policy import AutoMaterializePolicy
 from .events import (
@@ -23,7 +24,7 @@ class AssetSpec(
         "_AssetSpec",
         [
             ("asset_key", PublicAttr[AssetKey]),
-            ("deps", PublicAttr[AbstractSet["AssetDep"]]),
+            ("deps", PublicAttr[Iterable["AssetDep"]]),
             ("description", PublicAttr[Optional[str]]),
             ("metadata", PublicAttr[Optional[Mapping[str, Any]]]),
             ("group_name", PublicAttr[Optional[str]]),
@@ -76,14 +77,28 @@ class AssetSpec(
     ):
         from dagster._core.definitions.asset_dep import AssetDep
 
-        dep_set = set()
+        dep_set = {}
         if deps:
-            dep_set = {AssetDep(dep) if not isinstance(dep, AssetDep) else dep for dep in deps}
+            for dep in deps:
+                if not isinstance(dep, AssetDep):
+                    asset_dep = AssetDep(dep)
+                else:
+                    asset_dep = dep
+
+                # we cannot do deduplication via a set because MultiPartitionMappings have an internal
+                # dictionary that cannot be hashed. Instead deduplicate by making a dictionary and checking
+                # for existing keys.
+                if asset_dep.asset_key in dep_set.keys():
+                    raise DagsterInvariantViolationError(
+                        f"Cannot set a dependency on asset {asset_dep.asset_key} more than once for"
+                        f" AssetSpec {asset_key}"
+                    )
+                dep_set[asset_dep.asset_key] = asset_dep
 
         return super().__new__(
             cls,
             asset_key=AssetKey.from_coercible(asset_key),
-            deps=dep_set,
+            deps=list(dep_set.values()),
             description=check.opt_str_param(description, "description"),
             metadata=check.opt_mapping_param(metadata, "metadata", key_type=str),
             skippable=check.bool_param(skippable, "skippable"),

@@ -1,6 +1,10 @@
+from datetime import datetime, timedelta
+
 import pytest
 from dagster import (
     AllPartitionMapping,
+    AssetExecutionContext,
+    AssetKey,
     DailyPartitionsDefinition,
     DynamicPartitionsDefinition,
     IdentityPartitionMapping,
@@ -11,8 +15,12 @@ from dagster import (
     StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
     WeeklyPartitionsDefinition,
+    materialize,
+    multi_asset,
 )
 from dagster._check import CheckError
+from dagster._core.definitions.asset_dep import AssetDep
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.partition import DefaultPartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partition_mapping import (
@@ -719,3 +727,99 @@ def test_error_multipartitions_mapping():
                 )
             }
         ).get_upstream_mapped_partitions_result_for_partitions(weekly_abc.empty_subset(), daily_123)
+
+
+def test_multi_partition_mapping_with_asset_deps():
+    asset_1 = AssetSpec(asset_key="asset_1")
+    asset_2 = AssetSpec(asset_key="asset_2")
+
+    asset_1_partition_mapping = MultiPartitionMapping(
+        {
+            "123": DimensionPartitionMapping(
+                dimension_name="123",
+                partition_mapping=IdentityPartitionMapping(),
+            ),
+            "time": DimensionPartitionMapping(
+                dimension_name="time",
+                partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
+            ),
+        }
+    )
+    asset_2_partition_mapping = MultiPartitionMapping(
+        {
+            "123": DimensionPartitionMapping(
+                dimension_name="123",
+                partition_mapping=IdentityPartitionMapping(),
+            ),
+            "time": DimensionPartitionMapping(
+                dimension_name="time",
+                partition_mapping=TimeWindowPartitionMapping(start_offset=-2, end_offset=-2),
+            ),
+        }
+    )
+
+    asset_3 = AssetSpec(
+        asset_key="asset_3",
+        deps=[
+            AssetDep(
+                asset=asset_1,
+                partition_mapping=asset_1_partition_mapping,
+            ),
+            AssetDep(
+                asset=asset_2,
+                partition_mapping=asset_2_partition_mapping,
+            ),
+        ],
+    )
+    asset_4 = AssetSpec(
+        asset_key="asset_4",
+        deps=[
+            AssetDep(
+                asset=asset_1,
+                partition_mapping=asset_1_partition_mapping,
+            ),
+            AssetDep(
+                asset=asset_2,
+                partition_mapping=asset_2_partition_mapping,
+            ),
+        ],
+    )
+
+    partitions_def = MultiPartitionsDefinition(
+        {
+            "123": StaticPartitionsDefinition(["1", "2", "3"]),
+            "time": DailyPartitionsDefinition("2023-01-01"),
+        }
+    )
+
+    @multi_asset(specs=[asset_1, asset_2], partitions_def=partitions_def)
+    def multi_asset_1():
+        return
+
+    @multi_asset(specs=[asset_3, asset_4], partitions_def=partitions_def)
+    def multi_asset_2(context: AssetExecutionContext):
+        asset_1_key = datetime.strptime(
+            context.asset_partition_key_for_input("asset_1").keys_by_dimension["time"], "%Y-%m-%d"
+        )
+        asset_2_key = datetime.strptime(
+            context.asset_partition_key_for_input("asset_2").keys_by_dimension["time"], "%Y-%m-%d"
+        )
+
+        current_partition_key = datetime.strptime(
+            context.partition_key.keys_by_dimension["time"], "%Y-%m-%d"
+        )
+
+        assert current_partition_key - asset_1_key == timedelta(days=1)
+        assert current_partition_key - asset_2_key == timedelta(days=2)
+
+        return
+
+    materialize(
+        [multi_asset_1, multi_asset_2],
+        partition_key=MultiPartitionKey({"123": "1", "time": "2023-08-05"}),
+    )
+
+    assert multi_asset_2.partition_mappings == {
+        AssetKey("asset_1"): asset_1_partition_mapping,
+        AssetKey("asset_2"): asset_2_partition_mapping,
+    }
