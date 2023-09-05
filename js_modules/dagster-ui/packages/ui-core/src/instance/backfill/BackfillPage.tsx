@@ -13,6 +13,7 @@ import {
   ButtonLink,
   DialogBody,
   NonIdealState,
+  Heading,
 } from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
@@ -21,7 +22,6 @@ import React from 'react';
 import {Link, useParams} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {showCustomAlert} from '../../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
 import {QueryRefreshCountdown, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
@@ -35,6 +35,7 @@ import {TruncatedTextWithFullTextOnHover} from '../../nav/getLeftNavItemsForOpti
 import {RunFilterToken, runsPathWithFilters} from '../../runs/RunsFilterInput';
 import {testId} from '../../testing/testId';
 import {numberFormatter} from '../../ui/formatters';
+import {BackfillStatusTagForPage} from '../BackfillStatusTagForPage';
 
 import {
   BackfillStatusesByAssetQuery,
@@ -178,7 +179,7 @@ export const BackfillPage = () => {
               />
             }
           />
-          <Detail label="Status" detail={<StatusLabel backfill={backfill} />} />
+          <Detail label="Status" detail={<BackfillStatusTagForPage backfill={backfill} />} />
         </Box>
         <Table>
           <thead>
@@ -273,13 +274,13 @@ export const BackfillPage = () => {
     <Page>
       <PageHeader
         title={
-          <div style={{fontSize: '18px'}}>
+          <Heading>
             <Link to="/overview/backfills" style={{color: Colors.Gray700}}>
               Backfills
             </Link>
             {' / '}
             {backfillId}
-          </div>
+          </Heading>
         }
         right={isInProgress ? <QueryRefreshCountdown refreshState={refreshState} /> : null}
       />
@@ -294,38 +295,6 @@ const Detail = ({label, detail}: {label: JSX.Element | string; detail: JSX.Eleme
     <div>{detail}</div>
   </Box>
 );
-
-const StatusLabel = ({backfill}: {backfill: PartitionBackfillFragment}) => {
-  function errorState(status: string) {
-    return (
-      <Box margin={{bottom: 12}}>
-        <TagButton
-          onClick={() =>
-            backfill.error &&
-            showCustomAlert({title: 'Error', body: <PythonErrorInfo error={backfill.error} />})
-          }
-        >
-          <Tag intent="danger">{status}</Tag>
-        </TagButton>
-      </Box>
-    );
-  }
-  switch (backfill.status) {
-    case BulkActionStatus.REQUESTED:
-      return <Tag>In Progress</Tag>;
-
-    case BulkActionStatus.CANCELING:
-      return errorState('Canceling');
-    case BulkActionStatus.CANCELED:
-      return errorState('Canceled');
-    case BulkActionStatus.FAILED:
-      return errorState('Failed');
-    case BulkActionStatus.COMPLETED:
-      return <Tag intent="success">Completed</Tag>;
-    default:
-      return <Tag>{backfill.status}</Tag>;
-  }
-};
 
 function StatusBar({
   targeted,
@@ -540,15 +509,3 @@ const formatDuration = (duration: number) => {
   }
   return result.trim();
 };
-
-const TagButton = styled.button`
-  border: none;
-  background: none;
-  cursor: pointer;
-  padding: 0;
-  margin: 0;
-
-  :focus {
-    outline: none;
-  }
-`;

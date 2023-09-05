@@ -33,6 +33,7 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {workspacePathFromAddress, workspacePipelinePath} from '../workspace/workspacePath';
 
+import {BackfillStatusTagForPage} from './BackfillStatusTagForPage';
 import {
   PartitionStatusesForBackfillFragment,
   SingleBackfillCountsQuery,
@@ -448,12 +449,16 @@ export const BackfillStatusTag = ({
   backfill,
   counts,
 }: {
-  backfill: Pick<BackfillTableFragment, 'status' | 'error' | 'partitionNames'>;
+  backfill: BackfillTableFragment;
   counts: {[status: string]: number} | null;
 }) => {
+  if (backfill.isAssetBackfill) {
+    return <BackfillStatusTagForPage backfill={backfill} />;
+  }
+
   switch (backfill.status) {
     case BulkActionStatus.REQUESTED:
-      return <Tag>In Progress</Tag>;
+      return <Tag>In progress</Tag>;
     case BulkActionStatus.FAILED:
       return (
         <Box margin={{bottom: 12}}>
