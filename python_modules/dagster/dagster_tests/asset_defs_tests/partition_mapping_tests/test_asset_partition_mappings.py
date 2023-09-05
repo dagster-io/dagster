@@ -1,5 +1,5 @@
 import inspect
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
 
 from dagster import (
@@ -568,8 +568,6 @@ def test_identity_partition_mapping():
 
 
 def test_partition_mapping_with_asset_deps():
-    from datetime import datetime, timedelta
-
     asset_1 = AssetSpec(asset_key="asset_1")
     asset_2 = AssetSpec(asset_key="asset_2")
     asset_3 = AssetSpec(
@@ -624,3 +622,27 @@ def test_partition_mapping_with_asset_deps():
         return
 
     materialize([multi_asset_1, multi_asset_2], partition_key="2023-08-20")
+
+
+def test_self_dependent_partition_mapping_with_asset_deps():
+    asset_1 = AssetSpec(
+        asset_key="asset_1",
+        deps=[
+            AssetDep(
+                asset="asset_1",
+                partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
+            ),
+        ],
+    )
+
+    @multi_asset(specs=[asset_1], partitions_def=DailyPartitionsDefinition(start_date="2023-08-15"))
+    def the_multi_asset(context: AssetExecutionContext):
+        asset_1_key = datetime.strptime(
+            context.asset_partition_key_for_input("asset_1"), "%Y-%m-%d"
+        )
+
+        current_partition_key = datetime.strptime(context.partition_key, "%Y-%m-%d")
+
+        assert current_partition_key - asset_1_key == timedelta(days=1)
+
+    materialize([the_multi_asset], partition_key="2023-08-20")
