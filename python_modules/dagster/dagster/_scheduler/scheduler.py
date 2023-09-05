@@ -245,12 +245,12 @@ def launch_scheduled_runs(
     # Remove any schedule states that were previously created with AUTOMATICALLY_RUNNING
     # and can no longer be found in the workspace (so that if they are later added
     # back again, their timestamps will start at the correct place)
-    states_to_delete = {
+    states_to_delete = [
         schedule_state
         for selector_id, schedule_state in all_schedule_states.items()
         if selector_id not in schedules
         and schedule_state.status == InstigatorStatus.AUTOMATICALLY_RUNNING
-    }
+    ]
     for state in states_to_delete:
         location_name = state.origin.external_repository_origin.code_location_origin.location_name
         # don't clean up auto running state if its location is an error state
