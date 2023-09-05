@@ -1995,3 +1995,29 @@ def test_asset_spec_deps():
         )
         def use_internal_deps():
             ...
+
+
+def test_asset_key_on_context():
+    @asset
+    def test_asset_key_on_context(context: AssetExecutionContext):
+        assert context.asset_key == AssetKey(["test_asset_key_on_context"])
+
+    @asset(key_prefix=["a_prefix"])
+    def test_asset_key_on_context_with_prefix(context: AssetExecutionContext):
+        assert context.asset_key == AssetKey(["a_prefix", "test_asset_key_on_context_with_prefix"])
+
+    materialize([test_asset_key_on_context, test_asset_key_on_context_with_prefix])
+
+
+def test_multi_asset_asset_key_on_context():
+    @multi_asset(
+        outs={
+            "my_string_asset": AssetOut(),
+            "my_int_asset": AssetOut(),
+        }
+    )
+    def asset_key_context(context: AssetExecutionContext):
+        return context.asset_key, 12
+
+    with pytest.raises(DagsterInvariantViolationError):
+        materialize([asset_key_context])
