@@ -12,7 +12,7 @@ class SchedulerType(str, Enum):
 
 
 class SchedulerConfig(BaseModel):
-    customScheduler: Optional[ConfigurableClass]
+    customScheduler: Optional[ConfigurableClass] = None
 
     class Config:
         extra = Extra.forbid

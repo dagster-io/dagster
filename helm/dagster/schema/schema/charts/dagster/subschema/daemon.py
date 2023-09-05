@@ -21,8 +21,8 @@ class TagConcurrencyLimitConfig(BaseModel):
 
 
 class TagConcurrencyLimit(BaseModel):
+    value: Optional[Union[str, TagConcurrencyLimitConfig]] = None
     key: str
-    value: Optional[Union[str, TagConcurrencyLimitConfig]]
     limit: int
 
     class Config:
@@ -30,19 +30,19 @@ class TagConcurrencyLimit(BaseModel):
 
 
 class QueuedRunCoordinatorConfig(BaseModel):
-    maxConcurrentRuns: Optional[IntSource]
-    tagConcurrencyLimits: Optional[List[TagConcurrencyLimit]]
-    dequeueIntervalSeconds: Optional[IntSource]
-    dequeueNumWorkers: Optional[IntSource]
-    dequeueUseThreads: Optional[bool]
+    maxConcurrentRuns: Optional[IntSource] = None
+    tagConcurrencyLimits: Optional[List[TagConcurrencyLimit]] = None
+    dequeueIntervalSeconds: Optional[IntSource] = None
+    dequeueNumWorkers: Optional[IntSource] = None
+    dequeueUseThreads: Optional[bool] = None
 
     class Config:
         extra = Extra.forbid
 
 
 class RunCoordinatorConfig(BaseModel):
-    queuedRunCoordinator: Optional[QueuedRunCoordinatorConfig]
-    customRunCoordinator: Optional[ConfigurableClass]
+    queuedRunCoordinator: Optional[QueuedRunCoordinatorConfig] = None
+    customRunCoordinator: Optional[ConfigurableClass] = None
 
 
 class RunCoordinator(BaseModel):
@@ -63,18 +63,21 @@ class RunCoordinator(BaseModel):
 
 
 class Sensors(BaseModel):
+    numWorkers: Optional[int] = None
+    numSubmitWorkers: Optional[int] = None
     useThreads: bool
-    numWorkers: Optional[int]
-    numSubmitWorkers: Optional[int]
 
 
 class Schedules(BaseModel):
+    numWorkers: Optional[int] = None
+    numSubmitWorkers: Optional[int] = None
     useThreads: bool
-    numWorkers: Optional[int]
-    numSubmitWorkers: Optional[int]
 
 
 class Daemon(BaseModel):
+    schedulerName: Optional[str] = None
+    volumeMounts: Optional[List[kubernetes.VolumeMount]] = None
+    volumes: Optional[List[kubernetes.Volume]] = None
     enabled: bool
     image: kubernetes.Image
     runCoordinator: RunCoordinator
@@ -98,9 +101,6 @@ class Daemon(BaseModel):
     runRetries: Dict[str, Any]
     sensors: Sensors
     schedules: Schedules
-    schedulerName: Optional[str]
-    volumeMounts: Optional[List[kubernetes.VolumeMount]]
-    volumes: Optional[List[kubernetes.Volume]]
 
     class Config:
         extra = Extra.forbid

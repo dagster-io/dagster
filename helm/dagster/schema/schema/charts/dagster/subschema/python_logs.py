@@ -16,9 +16,9 @@ class PythonLogLevel(str, Enum):
 
 
 class PythonLogs(BaseModel):
-    pythonLogLevel: Optional[PythonLogLevel]
-    managedPythonLoggers: Optional[List[str]]
-    dagsterHandlerConfig: Optional[Dict[str, Any]]
+    pythonLogLevel: Optional[PythonLogLevel] = None
+    managedPythonLoggers: Optional[List[str]] = None
+    dagsterHandlerConfig: Optional[Dict[str, Any]] = None
 
     class Config:
         extra = Extra.forbid

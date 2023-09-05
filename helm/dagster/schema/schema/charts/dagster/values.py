@@ -7,7 +7,7 @@ from ..utils import kubernetes
 from . import subschema
 
 
-class DagsterHelmValues(BaseModel):
+class DagsterHelmValues(BaseModel, extra="allow"):
     __doc__ = "@" + "generated"
 
     dagsterWebserver: subschema.Webserver

@@ -43,9 +43,9 @@ class FlowerIngressConfiguration(BaseModel):
     succeedingPaths: List[IngressPath]
 
 
-class Ingress(BaseModel):
+class Ingress(BaseModel, extra="allow"):
+    apiVersion: Optional[str] = None
     enabled: bool
-    apiVersion: Optional[str]
     labels: kubernetes.Labels
     annotations: kubernetes.Annotations
     flower: FlowerIngressConfiguration

@@ -6,6 +6,7 @@ from schema.charts.dagster.subschema.global_ import Global
 from schema.charts.dagster.subschema.service_account import ServiceAccount
 from schema.charts.dagster.values import DagsterHelmValues
 from schema.charts.dagster_user_deployments.values import DagsterUserDeploymentsHelmValues
+from schema.charts.utils import kubernetes
 from schema.utils.helm_template import HelmTemplate
 
 
@@ -110,7 +111,7 @@ def test_service_account_does_not_render(template: HelmTemplate, capfd):
 
 def test_service_account_annotations(template: HelmTemplate):
     service_account_name = "service-account-name"
-    service_account_annotations = {"hello": "world"}
+    service_account_annotations = kubernetes.Annotations({"hello": "world"})
     service_account_values = DagsterHelmValues.construct(
         serviceAccount=ServiceAccount.construct(
             name=service_account_name, create=True, annotations=service_account_annotations
@@ -124,14 +125,14 @@ def test_service_account_annotations(template: HelmTemplate):
     service_account_template = service_account_templates[0]
 
     assert service_account_template.metadata.name == service_account_name
-    assert service_account_template.metadata.annotations == service_account_annotations
+    assert service_account_template.metadata.annotations == dict(service_account_annotations.root)
 
 
 def test_standalone_subchart_service_account_annotations(
     standalone_subchart_template: HelmTemplate,
 ):
     service_account_name = "service-account-name"
-    service_account_annotations = {"hello": "world"}
+    service_account_annotations = kubernetes.Annotations({"hello": "world"})
     service_account_values = DagsterUserDeploymentsHelmValues.construct(
         serviceAccount=ServiceAccount.construct(
             name=service_account_name, create=True, annotations=service_account_annotations
@@ -145,4 +146,4 @@ def test_standalone_subchart_service_account_annotations(
     service_account_template = service_account_templates[0]
 
     assert service_account_template.metadata.name == service_account_name
-    assert service_account_template.metadata.annotations == service_account_annotations
+    assert service_account_template.metadata.annotations == dict(service_account_annotations.root)

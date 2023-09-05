@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel, Extra
+from pydantic import BaseModel, Extra, RootModel
 
 from .utils import (
     BaseModel as BaseModelWithNullableRequiredFields,
@@ -9,9 +9,7 @@ from .utils import (
 )
 
 
-class Annotations(BaseModel):
-    __root__: Dict[str, str]
-
+class Annotations(RootModel[Dict[str, str]]):
     class Config:
         schema_extra = {
             "$ref": create_definition_ref(
@@ -50,49 +48,39 @@ class ExternalImage(Image):
 
 
 class Service(BaseModel):
+    annotations: Optional[Annotations] = None
     type: str
     port: int
-    annotations: Optional[Annotations]
 
     class Config:
         extra = Extra.forbid
 
 
-class NodeSelector(BaseModel):
-    __root__: Dict[str, str]
-
+class NodeSelector(RootModel[Dict[str, str]]):
     class Config:
         schema_extra = {
             "$ref": create_definition_ref("io.k8s.api.core.v1.PodSpec/properties/nodeSelector")
         }
 
 
-class Affinity(BaseModel):
-    __root__: Dict[str, Any]
-
+class Affinity(RootModel[Dict[str, Any]]):
     class Config:
         schema_extra = {"$ref": create_definition_ref("io.k8s.api.core.v1.Affinity")}
 
 
-class Tolerations(BaseModel):
-    __root__: List[Dict[str, Any]]
-
+class Tolerations(RootModel[List[Dict[str, Any]]]):
     class Config:
         schema_extra = {
             "$ref": create_definition_ref("io.k8s.api.core.v1.PodSpec/properties/tolerations")
         }
 
 
-class PodSecurityContext(BaseModel):
-    __root__: Dict[str, Any]
-
+class PodSecurityContext(RootModel[Dict[str, Any]]):
     class Config:
         schema_extra = {"$ref": create_definition_ref("io.k8s.api.core.v1.PodSecurityContext")}
 
 
-class SecurityContext(BaseModel):
-    __root__: Dict[str, Any]
-
+class SecurityContext(RootModel[Dict[str, Any]]):
     class Config:
         schema_extra = {"$ref": create_definition_ref("io.k8s.api.core.v1.SecurityContext")}
 
@@ -102,9 +90,7 @@ class InitContainer(BaseModel):
         schema_extra = {"$ref": create_definition_ref("io.k8s.api.core.v1.Container")}
 
 
-class Resources(BaseModel):
-    __root__: Dict[str, Any]
-
+class Resources(RootModel[Dict[str, Any]]):
     class Config:
         schema_extra = {"$ref": create_definition_ref("io.k8s.api.core.v1.ResourceRequirements")}
 
@@ -114,12 +100,12 @@ class LivenessProbe(BaseModel):
         schema_extra = {"$ref": create_definition_ref("io.k8s.api.core.v1.Probe")}
 
 
-class ReadinessProbe(BaseModel):
+class ReadinessProbe(BaseModel, extra="allow"):
     class Config:
         schema_extra = {"$ref": create_definition_ref("io.k8s.api.core.v1.Probe")}
 
 
-class StartupProbe(BaseModel):
+class StartupProbe(BaseModel, extra="allow"):
     enabled: bool = True
 
     class Config:
@@ -128,27 +114,27 @@ class StartupProbe(BaseModel):
         }
 
 
-class SecretRef(BaseModel):
+class SecretRef(BaseModel, extra="allow"):
     class Config:
         schema_extra = {"$ref": create_definition_ref("io.k8s.api.core.v1.LocalObjectReference")}
 
 
-class SecretEnvSource(BaseModel):
+class SecretEnvSource(BaseModel, extra="allow"):
     class Config:
         schema_extra = {"$ref": create_definition_ref("io.k8s.api.core.v1.SecretEnvSource")}
 
 
-class ConfigMapEnvSource(BaseModel):
+class ConfigMapEnvSource(BaseModel, extra="allow"):
     class Config:
         schema_extra = {"$ref": create_definition_ref("io.k8s.api.core.v1.ConfigMapEnvSource")}
 
 
-class VolumeMount(BaseModel):
+class VolumeMount(BaseModel, extra="allow"):
     class Config:
         schema_extra = {"$ref": create_definition_ref("io.k8s.api.core.v1.VolumeMount")}
 
 
-class Volume(BaseModel):
+class Volume(BaseModel, extra="allow"):
     class Config:
         schema_extra = {"$ref": create_definition_ref("io.k8s.api.core.v1.Volume")}
 

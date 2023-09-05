@@ -48,6 +48,7 @@ from schema.charts.dagster.subschema.run_launcher import (
 )
 from schema.charts.dagster.subschema.telemetry import Telemetry
 from schema.charts.dagster.values import DagsterHelmValues
+from schema.charts.utils import kubernetes
 from schema.utils.helm_template import HelmTemplate
 
 
@@ -120,21 +121,26 @@ def test_k8s_run_launcher_config(template: HelmTemplate):
     env_secrets = [{"name": "secret"}]
     env_vars = ["ENV_VAR"]
     volume_mounts = [
-        {
-            "mountPath": "/opt/dagster/dagster_home/dagster.yaml",
-            "name": "dagster-instance",
-            "subPath": "dagster.yaml",
-        },
-        {
-            "name": "test-volume",
-            "mountPath": "/opt/dagster/test_mount_path/volume_mounted_file.yaml",
-            "subPath": "volume_mounted_file.yaml",
-        },
+        kubernetes.VolumeMount.construct(
+            mountPath="/opt/dagster/dagster_home/dagster.yaml",
+            name="dagster-instance",
+            subPath="dagster.yaml",
+        ),
+        kubernetes.VolumeMount.construct(
+            name="test-volume",
+            mountPath="/opt/dagster/test_mount_path/volume_mounted_file.yaml",
+            subPath="volume_mounted_file.yaml",
+        ),
     ]
 
     volumes = [
-        {"name": "test-volume", "configMap": {"name": "test-volume-configmap"}},
-        {"name": "test-pvc", "persistentVolumeClaim": {"claimName": "my_claim", "readOnly": False}},
+        kubernetes.Volume.construct(
+            name="test-volume", configMap={"name": "test-volume-configmap"}
+        ),
+        kubernetes.Volume.construct(
+            name="test-pvc",
+            persistentVolumeClaim={"claimName": "my_claim", "readOnly": False},
+        ),
     ]
 
     labels = {"my_label_key": "my_label_value"}
@@ -174,8 +180,8 @@ def test_k8s_run_launcher_config(template: HelmTemplate):
         secret["name"] for secret in env_secrets
     ]
     assert run_launcher_config["config"]["env_vars"] == env_vars
-    assert run_launcher_config["config"]["volume_mounts"] == volume_mounts
-    assert run_launcher_config["config"]["volumes"] == volumes
+    assert run_launcher_config["config"]["volume_mounts"] == [dict(v) for v in volume_mounts]
+    assert run_launcher_config["config"]["volumes"] == [dict(v) for v in volumes]
     assert run_launcher_config["config"]["labels"] == labels
 
     assert "fail_pod_on_run_failure" not in run_launcher_config["config"]
@@ -302,7 +308,9 @@ def test_k8s_run_launcher_scheduler_name(template: HelmTemplate):
 
 
 def test_k8s_run_launcher_security_context(template: HelmTemplate):
-    sacred_rites_of_debugging = {"capabilities": {"add": ["SYS_PTRACE"]}}
+    sacred_rites_of_debugging = kubernetes.SecurityContext(
+        {"capabilities": {"add": ["SYS_PTRACE"]}}
+    )
     helm_values = DagsterHelmValues.construct(
         runLauncher=RunLauncher.construct(
             type=RunLauncherType.K8S,
@@ -327,7 +335,7 @@ def test_k8s_run_launcher_security_context(template: HelmTemplate):
 
     run_launcher_config = instance["run_launcher"]
 
-    assert run_launcher_config["config"]["security_context"] == sacred_rites_of_debugging
+    assert run_launcher_config["config"]["security_context"] == dict(sacred_rites_of_debugging.root)
 
 
 def test_k8s_run_launcher_raw_k8s_config(template: HelmTemplate):

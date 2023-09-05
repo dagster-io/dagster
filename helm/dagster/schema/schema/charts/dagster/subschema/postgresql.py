@@ -10,6 +10,7 @@ class Service(BaseModel):
 
 
 class PostgreSQL(BaseModel):
+    postgresqlScheme: Optional[str] = None
     image: ExternalImage
     enabled: bool
     postgresqlHost: str
@@ -17,5 +18,4 @@ class PostgreSQL(BaseModel):
     postgresqlPassword: str
     postgresqlDatabase: str
     postgresqlParams: dict
-    postgresqlScheme: Optional[str]
     service: Service

@@ -59,6 +59,7 @@ def test_ingress(template_function, webserver_field, output, model, api_version)
     }
 
     template = template_function(output, model)
+
     helm_values = DagsterHelmValues.construct(
         ingress=Ingress.construct(
             enabled=True, apiVersion=api_version, **webserver_kwargs  # type: ignore

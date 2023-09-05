@@ -10,34 +10,34 @@ class UserDeploymentIncludeConfigInLaunchedRuns(BaseModel):
 
 
 ReadinessProbeWithEnabled = create_model(
-    "ReadinessProbeWithEnabled", __base__=(kubernetes.ReadinessProbe), enabled=(bool)
+    "ReadinessProbeWithEnabled", __base__=(kubernetes.ReadinessProbe), enabled=(bool, ...)
 )
 
 
 class UserDeployment(BaseModel):
     name: str
     image: kubernetes.Image
-    dagsterApiGrpcArgs: Optional[List[str]]
-    codeServerArgs: Optional[List[str]]
-    includeConfigInLaunchedRuns: Optional[UserDeploymentIncludeConfigInLaunchedRuns]
     port: int
-    env: Optional[Union[Dict[str, str], List[kubernetes.EnvVar]]]
-    envConfigMaps: Optional[List[kubernetes.ConfigMapEnvSource]]
-    envSecrets: Optional[List[kubernetes.SecretEnvSource]]
-    annotations: Optional[kubernetes.Annotations]
-    nodeSelector: Optional[kubernetes.NodeSelector]
-    affinity: Optional[kubernetes.Affinity]
-    tolerations: Optional[kubernetes.Tolerations]
-    podSecurityContext: Optional[kubernetes.PodSecurityContext]
-    securityContext: Optional[kubernetes.SecurityContext]
-    resources: Optional[kubernetes.Resources]
-    livenessProbe: Optional[kubernetes.LivenessProbe]
-    readinessProbe: Optional[ReadinessProbeWithEnabled]
-    startupProbe: Optional[kubernetes.StartupProbe]
-    labels: Optional[Dict[str, str]]
-    volumeMounts: Optional[List[kubernetes.VolumeMount]]
-    volumes: Optional[List[kubernetes.Volume]]
-    schedulerName: Optional[str]
+    dagsterApiGrpcArgs: Optional[List[str]] = None
+    codeServerArgs: Optional[List[str]] = None
+    includeConfigInLaunchedRuns: Optional[UserDeploymentIncludeConfigInLaunchedRuns] = None
+    env: Optional[Union[Dict[str, str], List[kubernetes.EnvVar]]] = None
+    envConfigMaps: Optional[List[kubernetes.ConfigMapEnvSource]] = None
+    envSecrets: Optional[List[kubernetes.SecretEnvSource]] = None
+    annotations: Optional[kubernetes.Annotations] = None
+    nodeSelector: Optional[kubernetes.NodeSelector] = None
+    affinity: Optional[kubernetes.Affinity] = None
+    tolerations: Optional[kubernetes.Tolerations] = None
+    podSecurityContext: Optional[kubernetes.PodSecurityContext] = None
+    securityContext: Optional[kubernetes.SecurityContext] = None
+    resources: Optional[kubernetes.Resources] = None
+    livenessProbe: Optional[kubernetes.LivenessProbe] = None
+    readinessProbe: Optional[ReadinessProbeWithEnabled] = None
+    startupProbe: Optional[kubernetes.StartupProbe] = None
+    labels: Optional[Dict[str, str]] = None
+    volumeMounts: Optional[List[kubernetes.VolumeMount]] = None
+    volumes: Optional[List[kubernetes.Volume]] = None
+    schedulerName: Optional[str] = None
 
 
 class UserDeployments(BaseModel):

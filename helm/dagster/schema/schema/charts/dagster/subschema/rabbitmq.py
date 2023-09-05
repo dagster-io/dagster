@@ -1,4 +1,5 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
+from typing_extensions import Literal
 
 from ...utils.kubernetes import ExternalImage
 
@@ -13,7 +14,7 @@ class Service(BaseModel):
 
 
 class VolumePermissions(BaseModel):
-    enabled: bool = Field(default=True, const=True)
+    enabled: Literal[True] = True
     image: ExternalImage
 
 
