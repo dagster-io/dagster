@@ -6,6 +6,7 @@ from dagster._core.definitions.asset_check_evaluation import (
     AssetCheckEvaluationPlanned,
     AssetCheckEvaluationTargetMaterializationData,
 )
+from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.event_api import EventLogRecord
@@ -31,7 +32,6 @@ query GetAssetChecksQuery($assetKey: AssetKeyInput!, $checkName: String) {
                     path
                 }
                 description
-                severity
             }
         }
     }
@@ -48,6 +48,7 @@ query GetAssetChecksQuery($assetKey: AssetKeyInput!, $checkName: String) {
                     runId
                     status
                     evaluation {
+                        severity
                         timestamp
                         targetMaterialization {
                             storageId
@@ -174,7 +175,6 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                             "path": ["asset_1"],
                         },
                         "description": "asset_1 check",
-                        "severity": "ERROR",
                     }
                 ]
             }
@@ -250,6 +250,7 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                     target_materialization_data=AssetCheckEvaluationTargetMaterializationData(
                         storage_id=42, run_id="bizbuz", timestamp=3.3
                     ),
+                    severity=AssetCheckSeverity.ERROR,
                 ),
                 timestamp=evaluation_timestamp,
             )
@@ -271,6 +272,7 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                                 "status": "SUCCEEDED",
                                 "evaluation": {
                                     "timestamp": evaluation_timestamp,
+                                    "severity": "ERROR",
                                     "targetMaterialization": {
                                         "storageId": 42,
                                         "runId": "bizbuz",
@@ -309,6 +311,7 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                     target_materialization_data=AssetCheckEvaluationTargetMaterializationData(
                         storage_id=42, run_id="bizbuz", timestamp=3.3
                     ),
+                    severity=AssetCheckSeverity.ERROR,
                 ),
             )
         )
@@ -483,6 +486,7 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                         run_id=materialization_record.event_log_entry.run_id,
                         timestamp=materialization_record.event_log_entry.timestamp,
                     ),
+                    severity=AssetCheckSeverity.ERROR,
                 ),
             )
         )

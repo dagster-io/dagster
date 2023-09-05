@@ -121,7 +121,6 @@ export type AssetCheck = {
   executionForLatestMaterialization: Maybe<AssetCheckExecution>;
   executions: Array<AssetCheckExecution>;
   name: Scalars['String'];
-  severity: AssetCheckSeverity;
 };
 
 export type AssetCheckExecutionsArgs = {
@@ -132,6 +131,7 @@ export type AssetCheckExecutionsArgs = {
 export type AssetCheckEvaluation = {
   __typename: 'AssetCheckEvaluation';
   metadataEntries: Array<MetadataEntry>;
+  severity: AssetCheckSeverity;
   targetMaterialization: Maybe<AssetCheckEvaluationTargetMaterializationData>;
   timestamp: Scalars['Float'];
 };
@@ -4423,10 +4423,6 @@ export const buildAssetCheck = (
         : buildAssetCheckExecution({}, relationshipsToOmit),
     executions: overrides && overrides.hasOwnProperty('executions') ? overrides.executions! : [],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'dignissimos',
-    severity:
-      overrides && overrides.hasOwnProperty('severity')
-        ? overrides.severity!
-        : AssetCheckSeverity.ERROR,
   };
 };
 
@@ -4440,6 +4436,10 @@ export const buildAssetCheckEvaluation = (
     __typename: 'AssetCheckEvaluation',
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
+    severity:
+      overrides && overrides.hasOwnProperty('severity')
+        ? overrides.severity!
+        : AssetCheckSeverity.ERROR,
     targetMaterialization:
       overrides && overrides.hasOwnProperty('targetMaterialization')
         ? overrides.targetMaterialization!

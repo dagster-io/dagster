@@ -185,7 +185,10 @@ const AssetCheckDetailModalImpl = ({
                     )}
                   </td>
                   <td>
-                    <AssetCheckStatusTag status={execution.status} severity={check.severity} />
+                    <AssetCheckStatusTag
+                      status={execution.status}
+                      severity={execution.evaluation?.severity}
+                    />
                   </td>
                   <td>
                     <MetadataCell metadataEntries={execution.evaluation?.metadataEntries} />
@@ -249,6 +252,7 @@ export const ASSET_CHECK_EXECUTION_FRAGMENT = gql`
     runId
     status
     evaluation {
+      severity
       timestamp
       targetMaterialization {
         timestamp
@@ -274,7 +278,6 @@ export const ASSET_CHECK_DETAILS_QUERY = gql`
         checks {
           name
           description
-          severity
           executions(limit: $limit, cursor: $cursor) {
             ...AssetCheckExecutionFragment
           }

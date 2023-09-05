@@ -45,7 +45,7 @@ from dagster._core.definitions import (
     ScheduleDefinition,
     SourceAsset,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckSeverity, AssetCheckSpec
+from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_sensor_definition import AssetSensorDefinition
 from dagster._core.definitions.assets_job import is_base_asset_job_name
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
@@ -1085,7 +1085,7 @@ class ExternalAssetCheck(
             ("name", str),
             ("asset_key", AssetKey),
             ("description", Optional[str]),
-            ("severity", AssetCheckSeverity),
+            ("in_critical_path", bool),
         ],
     )
 ):
@@ -1095,15 +1095,15 @@ class ExternalAssetCheck(
         cls,
         name: str,
         asset_key: AssetKey,
-        description: Optional[str] = None,
-        severity: AssetCheckSeverity = AssetCheckSeverity.WARN,
+        description: Optional[str],
+        in_critical_path: bool,
     ):
         return super(ExternalAssetCheck, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
             asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
             description=check.opt_str_param(description, "description"),
-            severity=check.inst_param(severity, "severity", AssetCheckSeverity),
+            in_critical_path=check.bool_param(in_critical_path, "in_critical_path"),
         )
 
     @classmethod
@@ -1112,7 +1112,7 @@ class ExternalAssetCheck(
             name=spec.name,
             asset_key=spec.asset_key,
             description=spec.description,
-            severity=spec.severity,
+            in_critical_path=spec.in_critical_path,
         )
 
 

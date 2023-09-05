@@ -29,15 +29,17 @@ def random_fail_check():
 
 @asset_check(
     asset=checked_asset,
-    severity=AssetCheckSeverity.ERROR,
+    in_critical_path=True,
     description="A severe check that fails half the time.",
 )
 def severe_random_fail_check():
     random.seed(time.time())
-    return AssetCheckResult(
+    yield AssetCheckResult(
         success=random.choice([False, True]),
         metadata={"timestamp": MetadataValue.float(time.time())},
+        severity=AssetCheckSeverity.ERROR,
     )
+    raise Exception("This check failed!")
 
 
 @asset_check(
@@ -50,6 +52,7 @@ def always_fail():
             "foo": MetadataValue.text("bar"),
             "asset_key": MetadataValue.asset(checked_asset.key),
         },
+        severity=AssetCheckSeverity.WARN,
     )
 
 
@@ -68,7 +71,6 @@ def slow_check():
             description=(
                 "An ERROR check calculated in the same op with the asset. It fails half the time."
             ),
-            severity=AssetCheckSeverity.ERROR,
         )
     ],
 )
@@ -95,8 +97,8 @@ def exception_check():
 
 @asset_check(
     asset=check_exception_asset,
-    severity=AssetCheckSeverity.ERROR,
     description="A severe check that hits an exception half the time.",
+    in_critical_path=True,
 )
 def severe_exception_check():
     random.seed(time.time())

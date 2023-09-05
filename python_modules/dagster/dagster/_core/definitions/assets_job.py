@@ -22,7 +22,6 @@ from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.selector.subset_selector import AssetSelectionData
 from dagster._utils.merger import merge_dicts
 
-from .asset_check_spec import AssetCheckSeverity, AssetCheckSpec
 from .asset_checks import AssetChecksDefinition
 from .asset_layer import AssetLayer
 from .assets import AssetsDefinition
@@ -53,6 +52,8 @@ ASSET_BASE_JOB_PREFIX = "__ASSET_JOB"
 
 if TYPE_CHECKING:
     from dagster._core.definitions.run_config import RunConfig
+
+    from .asset_check_spec import AssetCheckSpec
 
 
 def is_base_asset_job_name(name: str) -> bool:
@@ -539,7 +540,7 @@ def _get_blocking_asset_check_output_handles_by_asset_key(
         defaultdict(set)
     )
     for node_output_handle, check_spec in check_specs_by_node_output_handle.items():
-        if check_spec.severity == AssetCheckSeverity.ERROR:
+        if check_spec.in_critical_path:
             blocking_asset_check_output_handles_by_asset_key[check_spec.asset_key].add(
                 node_output_handle
             )

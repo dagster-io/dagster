@@ -6,6 +6,7 @@ from dagster._core.definitions.asset_check_evaluation import (
     AssetCheckEvaluation,
     AssetCheckEvaluationTargetMaterializationData,
 )
+from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.events import (
     AssetKey,
     CoercibleToAssetKey,
@@ -30,6 +31,7 @@ class AssetCheckResult(
             ("asset_key", PublicAttr[Optional[AssetKey]]),
             ("check_name", PublicAttr[Optional[str]]),
             ("metadata", PublicAttr[Mapping[str, MetadataValue]]),
+            ("severity", PublicAttr[AssetCheckSeverity]),
         ],
     )
 ):
@@ -46,6 +48,9 @@ class AssetCheckResult(
             Arbitrary metadata about the asset.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
             list, and one of the data classes returned by a MetadataValue static method.
+        severity (AssetCheckSeverity):
+            Severity of the check. Defaults to ERROR.
+
     """
 
     def __new__(
@@ -55,6 +60,7 @@ class AssetCheckResult(
         asset_key: Optional[CoercibleToAssetKey] = None,
         check_name: Optional[str] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
+        severity: AssetCheckSeverity = AssetCheckSeverity.ERROR,
     ):
         normalized_metadata = normalize_metadata(
             check.opt_mapping_param(metadata, "metadata", key_type=str),
@@ -65,6 +71,7 @@ class AssetCheckResult(
             check_name=check.opt_str_param(check_name, "check_name"),
             success=check.bool_param(success, "success"),
             metadata=normalized_metadata,
+            severity=check.inst_param(severity, "severity", AssetCheckSeverity),
         )
 
     def to_asset_check_evaluation(
@@ -136,4 +143,5 @@ class AssetCheckResult(
             success=self.success,
             metadata=self.metadata,
             target_materialization_data=target_materialization_data,
+            severity=self.severity,
         )
