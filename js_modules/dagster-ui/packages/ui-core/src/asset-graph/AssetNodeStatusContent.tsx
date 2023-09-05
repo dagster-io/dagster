@@ -35,20 +35,7 @@ export enum StatusCase {
   PARTITIONS_MATERIALIZED = 'PARTITIONS_MATERIALIZED',
 }
 
-type AssetNodeStatusContent = {
-  case: StatusCase;
-  background: string;
-  border: string;
-  content: React.ReactNode;
-
-  numPartitions?: number;
-  numMissing?: number;
-  numFailed?: number;
-  numMaterialized?: number;
-  numMaterializing?: number;
-};
-
-const LOADING_STATUS_CONTENT: AssetNodeStatusContent = {
+const LOADING_STATUS_CONTENT = {
   case: StatusCase.LOADING,
   background: Colors.Gray100,
   border: Colors.Gray300,
@@ -72,7 +59,7 @@ export function buildAssetNodeStatusContent({
   definition,
   liveData,
   expanded,
-}: StatusContentArgs): AssetNodeStatusContent {
+}: StatusContentArgs) {
   return definition.isSource
     ? _buildSourceAssetNodeStatusContent({
         assetKey,
@@ -92,7 +79,7 @@ export function _buildSourceAssetNodeStatusContent({
   definition,
   liveData,
   expanded,
-}: StatusContentArgs): AssetNodeStatusContent {
+}: StatusContentArgs) {
   if (!liveData) {
     return LOADING_STATUS_CONTENT;
   }
@@ -180,7 +167,7 @@ export function _buildAssetNodeStatusContent({
   definition,
   liveData,
   expanded,
-}: StatusContentArgs): AssetNodeStatusContent {
+}: StatusContentArgs) {
   if (!liveData) {
     return LOADING_STATUS_CONTENT;
   }
