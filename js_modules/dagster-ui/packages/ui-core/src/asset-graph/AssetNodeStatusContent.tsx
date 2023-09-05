@@ -35,8 +35,10 @@ export enum StatusCase {
   PARTITIONS_MATERIALIZED = 'PARTITIONS_MATERIALIZED',
 }
 
+export type AssetNodeStatusContent = ReturnType<typeof buildAssetNodeStatusContent>;
+
 const LOADING_STATUS_CONTENT = {
-  case: StatusCase.LOADING,
+  case: StatusCase.LOADING as const,
   background: Colors.Gray100,
   border: Colors.Gray300,
   content: (
@@ -89,7 +91,7 @@ export function _buildSourceAssetNodeStatusContent({
 
   if (materializingRunId) {
     return {
-      case: StatusCase.SOURCE_OBSERVING,
+      case: StatusCase.SOURCE_OBSERVING as const,
       background: Colors.Gray100,
       border: Colors.Gray300,
       content: (
@@ -106,7 +108,7 @@ export function _buildSourceAssetNodeStatusContent({
   }
   if (liveData?.lastObservation) {
     return {
-      case: StatusCase.SOURCE_OBSERVED,
+      case: StatusCase.SOURCE_OBSERVED as const,
       background: Colors.Gray100,
       border: Colors.Gray300,
       content: (
@@ -134,7 +136,7 @@ export function _buildSourceAssetNodeStatusContent({
   }
   if (definition.isObservable) {
     return {
-      case: StatusCase.SOURCE_NEVER_OBSERVED,
+      case: StatusCase.SOURCE_NEVER_OBSERVED as const,
       background: Colors.Gray100,
       border: Colors.Gray300,
       content: (
@@ -155,7 +157,7 @@ export function _buildSourceAssetNodeStatusContent({
   }
 
   return {
-    case: StatusCase.SOURCE_NO_STATE,
+    case: StatusCase.SOURCE_NO_STATE as const,
     background: Colors.Gray100,
     border: Colors.Gray300,
     content: <span>–</span>,
@@ -194,7 +196,7 @@ export function _buildAssetNodeStatusContent({
     const numMaterializing = liveData.partitionStats?.numMaterializing;
 
     return {
-      case: StatusCase.MATERIALIZING,
+      case: StatusCase.MATERIALIZING as const,
       background: Colors.Blue50,
       border: Colors.Blue500,
       numMaterializing,
@@ -231,10 +233,10 @@ export function _buildAssetNodeStatusContent({
     ];
     const statusCase =
       overdue || numFailed
-        ? StatusCase.PARTITIONS_FAILED
+        ? (StatusCase.PARTITIONS_FAILED as const)
         : numMissing
-        ? StatusCase.PARTITIONS_MISSING
-        : StatusCase.PARTITIONS_MATERIALIZED;
+        ? (StatusCase.PARTITIONS_MISSING as const)
+        : (StatusCase.PARTITIONS_MATERIALIZED as const);
 
     return {
       case: statusCase,
@@ -279,7 +281,7 @@ export function _buildAssetNodeStatusContent({
 
   if (runWhichFailedToMaterialize || overdue || checksFailed) {
     return {
-      case: StatusCase.LATE_OR_FAILED,
+      case: StatusCase.LATE_OR_FAILED as const,
       background: Colors.Red50,
       border: Colors.Red500,
       content: (
@@ -328,7 +330,7 @@ export function _buildAssetNodeStatusContent({
 
   if (!lastMaterialization) {
     return {
-      case: StatusCase.NEVER_MATERIALIZED,
+      case: StatusCase.NEVER_MATERIALIZED as const,
       background: Colors.Yellow50,
       border: Colors.Yellow500,
       content: (
@@ -348,7 +350,7 @@ export function _buildAssetNodeStatusContent({
   }
 
   return {
-    case: StatusCase.MATERIALIZED,
+    case: StatusCase.MATERIALIZED as const,
     background: Colors.Green50,
     border: Colors.Green500,
     content: (
