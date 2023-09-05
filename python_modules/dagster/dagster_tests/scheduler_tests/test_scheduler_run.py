@@ -528,7 +528,7 @@ def always_running_schedule(context):
 
 
 @schedule(
-    cron_schedule="@daily",
+    cron_schedule=["@daily", "0 0 * * 5"],
     job_name="the_job",
     execution_timezone="UTC",
     default_status=DefaultScheduleStatus.STOPPED,
