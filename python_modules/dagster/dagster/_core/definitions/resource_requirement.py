@@ -224,11 +224,12 @@ def ensure_requirements_satisfied(
     # Error if resource defs don't provide the correct resource key
     for requirement in requirements:
         if not requirement.resources_contain_key(resource_defs):
+            requirement_expected_type_name = requirement.expected_type.__name__
             raise DagsterInvalidDefinitionError(
                 f"{requirement.describe_requirement()} was not provided. Please"
-                f" provide a {requirement.expected_type} to key '{requirement.key}', or change"
+                f" provide a {requirement_expected_type_name} to key '{requirement.key}', or change"
                 " the required key to one of the following keys which points to an"
-                f" {requirement.expected_type}:"
+                f" {requirement_expected_type_name}:"
                 f" {requirement.keys_of_expected_type(resource_defs)}"
             )
 
