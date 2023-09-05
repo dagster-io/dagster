@@ -7,11 +7,8 @@ from dagster_ext._io.base import (
     ExtMessageWriter as ExtMessageWriter,
 )
 from dagster_ext._io.default import (
-    ExtFileContextLoader as ExtFileContextLoader,
-    ExtFileMessageWriter as ExtFileMessageWriter,
-)
-from dagster_ext._io.env import (
-    ExtEnvContextLoader as ExtEnvContextLoader,
+    ExtDefaultContextLoader as ExtDefaultContextLoader,
+    ExtDefaultMessageWriter as ExtDefaultMessageWriter,
 )
 from dagster_ext._io.s3 import (
     ExtS3MessageWriter as ExtS3MessageWriter,

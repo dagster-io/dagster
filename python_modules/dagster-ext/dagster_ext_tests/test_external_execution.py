@@ -58,15 +58,9 @@ def external_script() -> Iterator[str]:
 
         from dagster_ext import (
             ExtContext,
-            ExtEnvContextLoader,
             init_dagster_ext,
         )
         from dagster_ext._io.s3 import ExtS3MessageWriter
-
-        if os.getenv("CONTEXT_INJECTOR_SPEC") == "user/env":
-            context_loader = ExtEnvContextLoader()
-        else:
-            context_loader = None  # use default
 
         if os.getenv("MESSAGE_READER_SPEC") == "user/s3":
             import boto3
@@ -78,7 +72,7 @@ def external_script() -> Iterator[str]:
         else:
             message_writer = None  # use default
 
-        init_dagster_ext(context_loader=context_loader, message_writer=message_writer)
+        init_dagster_ext(message_writer=message_writer)
         context = ExtContext.get()
         context.log("hello world")
         time.sleep(0.1)  # sleep to make sure that we encompass multiple intervals for blob store IO

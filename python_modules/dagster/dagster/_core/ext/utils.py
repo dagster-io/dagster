@@ -7,7 +7,13 @@ from contextlib import contextmanager
 from threading import Event, Thread
 from typing import TYPE_CHECKING, Iterator, Mapping, Optional
 
-from dagster_ext import DAGSTER_EXT_ENV_KEYS, ExtParams, encode_env_var
+from dagster_ext import (
+    DAGSTER_EXT_ENV_KEYS,
+    ExtDefaultContextLoader,
+    ExtParams,
+    encode_env_var,
+)
+from dagster_ext._io.default import ExtDefaultMessageWriter
 
 from dagster._core.ext.resource import (
     ExtContextInjector,
@@ -28,7 +34,7 @@ class ExtFileContextInjector(ExtContextInjector):
         with open(self._path, "w") as input_stream:
             json.dump(context.get_data(), input_stream)
         try:
-            yield {"path": self._path}
+            yield {ExtDefaultContextLoader.FILE_PATH_KEY: self._path}
         finally:
             if os.path.exists(self._path):
                 os.remove(self._path)
@@ -40,7 +46,7 @@ class ExtEnvContextInjector(ExtContextInjector):
         self,
         context: "ExtOrchestrationContext",
     ) -> Iterator[ExtParams]:
-        yield {"data": context.get_data()}
+        yield {ExtDefaultContextLoader.DIRECT_KEY: context.get_data()}
 
 
 class ExtFileMessageReader(ExtMessageReader):
@@ -60,7 +66,7 @@ class ExtFileMessageReader(ExtMessageReader):
                 target=self._reader_thread, args=(context, is_task_complete), daemon=True
             )
             thread.start()
-            yield {"path": self._path}
+            yield {ExtDefaultMessageWriter.FILE_PATH_KEY: self._path}
         finally:
             is_task_complete.set()
             if os.path.exists(self._path):

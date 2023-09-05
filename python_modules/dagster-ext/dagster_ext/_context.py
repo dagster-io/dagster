@@ -9,9 +9,9 @@ from ._io.base import (
     ExtParamLoader,
 )
 from ._io.default import (
+    ExtDefaultContextLoader,
+    ExtDefaultMessageWriter,
     ExtEnvVarParamLoader,
-    ExtFileContextLoader,
-    ExtFileMessageWriter,
 )
 from ._protocol import (
     ExtContextData,
@@ -48,8 +48,8 @@ def init_dagster_ext(
         param_loader = param_loader or ExtEnvVarParamLoader()
         context_params = param_loader.load_context_params()
         messages_params = param_loader.load_messages_params()
-        context_loader = context_loader or ExtFileContextLoader()
-        message_writer = message_writer or ExtFileMessageWriter()
+        context_loader = context_loader or ExtDefaultContextLoader()
+        message_writer = message_writer or ExtDefaultMessageWriter()
         stack = ExitStack()
         context_data = stack.enter_context(context_loader.load_context(context_params))
         message_channel = stack.enter_context(message_writer.open(messages_params))
