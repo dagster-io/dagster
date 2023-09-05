@@ -274,8 +274,49 @@ def _define_cluster_log_conf() -> Field:
     )
 
 
+def _define_workspace_storage_info() -> Field:
+    return Field(
+        Shape(
+            fields={
+                "destination": Field(
+                    String,
+                    description=(
+                        "The path to the directory in the workspace where the notebook is located."
+                    ),
+                    is_required=True,
+                )
+            }
+        ),
+        description="Workspace storage information",
+    )
+
+
+def _define_volumes_storage_info() -> Field:
+    return Field(
+        Shape(
+            fields={
+                "destination": Field(
+                    String,
+                    description=(
+                        "The path to the directory in the workspace where the notebook is located."
+                    ),
+                    is_required=True,
+                )
+            }
+        ),
+        description="Workspace storage information",
+    )
+
+
 def _define_init_script():
-    return Selector({"dbfs": _define_dbfs_storage_info(), "s3": _define_s3_storage_info()})
+    return Selector(
+        {
+            "dbfs": _define_dbfs_storage_info(),
+            "s3": _define_s3_storage_info(),
+            "workspace": _define_workspace_storage_info(),
+            "volumes": _define_volumes_storage_info(),
+        }
+    )
 
 
 def _define_node_types() -> Field:
