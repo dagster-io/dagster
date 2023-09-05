@@ -15,6 +15,7 @@ from typing import (
 )
 
 from dagster import (
+    AssetCheckSpec,
     AssetKey,
     AssetsDefinition,
     AssetSelection,
@@ -507,6 +508,24 @@ def default_description_fn(dbt_resource_props: Mapping[str, Any], display_raw_sq
     if display_raw_sql:
         description_sections.append(f"#### Raw SQL:\n```\n{code_block}\n```")
     return "\n\n".join(filter(None, description_sections))
+
+
+def is_asset_check_from_dbt_resource_props(dbt_resource_props: Mapping[str, Any]) -> bool:
+    return dbt_resource_props["meta"].get("dagster", {}).get("asset_check", False)
+
+
+def default_asset_check_fn(
+    asset_key: AssetKey, dbt_resource_props: Mapping[str, Any]
+) -> Optional[AssetCheckSpec]:
+    is_asset_check = is_asset_check_from_dbt_resource_props(dbt_resource_props)
+    if not is_asset_check:
+        return None
+
+    return AssetCheckSpec(
+        name=dbt_resource_props["name"],
+        asset=asset_key,
+        description=dbt_resource_props["description"],
+    )
 
 
 def default_code_version_fn(dbt_resource_props: Mapping[str, Any]) -> str:

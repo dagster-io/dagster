@@ -20,6 +20,8 @@ from typing import (
 import dateutil.parser
 import orjson
 from dagster import (
+    AssetCheckResult,
+    AssetCheckSeverity,
     AssetObservation,
     AssetsDefinition,
     ConfigurableResource,
@@ -29,12 +31,16 @@ from dagster import (
 )
 from dagster._annotations import public
 from dagster._core.errors import DagsterInvalidPropertyError
-from dbt.contracts.results import NodeStatus
+from dbt.contracts.results import NodeStatus, TestStatus
 from dbt.node_types import NodeType
 from pydantic import Field, validator
 from typing_extensions import Literal
 
-from ..asset_utils import get_manifest_and_translator_from_dbt_assets, output_name_fn
+from ..asset_utils import (
+    get_manifest_and_translator_from_dbt_assets,
+    is_asset_check_from_dbt_resource_props,
+    output_name_fn,
+)
 from ..dagster_dbt_translator import DagsterDbtTranslator
 from ..dbt_manifest import DbtManifestParam, validate_manifest
 from ..errors import DagsterDbtCliRuntimeError
@@ -76,7 +82,7 @@ class DbtCliEventMessage:
         self,
         manifest: DbtManifestParam,
         dagster_dbt_translator: DagsterDbtTranslator = DagsterDbtTranslator(),
-    ) -> Iterator[Union[Output, AssetObservation]]:
+    ) -> Iterator[Union[Output, AssetObservation, AssetCheckResult]]:
         """Convert a dbt CLI event to a set of corresponding Dagster events.
 
         Args:
@@ -85,9 +91,10 @@ class DbtCliEventMessage:
                 linking dbt nodes to Dagster assets.
 
         Returns:
-            Iterator[Union[Output, AssetObservation]]: A set of corresponding Dagster events.
-                - AssetMaterializations for refables (e.g. models, seeds, snapshots.)
-                - AssetObservations for test results.
+            Iterator[Union[Output, AssetObservation, AssetCheckResult]]: A set of corresponding Dagster events.
+                - Output for refables (e.g. models, seeds, snapshots.)
+                - AssetObservation for dbt test results that are not enabled as asset checks.
+                - AssetCheckResult for dbt test results that are enabled as asset checks.
         """
         if self.raw_event["info"]["level"] == "debug":
             return
@@ -126,18 +133,29 @@ class DbtCliEventMessage:
             upstream_unique_ids: List[str] = manifest["parent_map"][unique_id]
 
             for upstream_unique_id in upstream_unique_ids:
-                upstream_node_info: Dict[str, Any] = manifest["nodes"].get(
+                test_resource_props = manifest["nodes"][unique_id]
+                upstream_resource_props: Dict[str, Any] = manifest["nodes"].get(
                     upstream_unique_id
                 ) or manifest["sources"].get(upstream_unique_id)
-                upstream_asset_key = dagster_dbt_translator.get_asset_key(upstream_node_info)
+                upstream_asset_key = dagster_dbt_translator.get_asset_key(upstream_resource_props)
 
-                yield AssetObservation(
-                    asset_key=upstream_asset_key,
-                    metadata={
-                        "unique_id": unique_id,
-                        "status": node_status,
-                    },
-                )
+                is_test_successful = node_status == TestStatus.Pass
+                metadata = {"unique_id": unique_id, "status": node_status}
+                severity = AssetCheckSeverity(test_resource_props["config"]["severity"].upper())
+
+                if is_asset_check_from_dbt_resource_props(test_resource_props):
+                    yield AssetCheckResult(
+                        success=is_test_successful,
+                        asset_key=upstream_asset_key,
+                        check_name=event_node_info["node_name"],
+                        metadata=metadata,
+                        severity=severity,
+                    )
+                else:
+                    yield AssetObservation(
+                        asset_key=upstream_asset_key,
+                        metadata=metadata,
+                    )
 
 
 @dataclass
@@ -262,13 +280,14 @@ class DbtCliInvocation:
         return self.process.wait() == 0
 
     @public
-    def stream(self) -> Iterator[Union[Output, AssetObservation]]:
+    def stream(self) -> Iterator[Union[Output, AssetObservation, AssetCheckResult]]:
         """Stream the events from the dbt CLI process and convert them to Dagster events.
 
         Returns:
-            Iterator[Union[Output, AssetObservation]]: A set of corresponding Dagster events.
+            Iterator[Union[Output, AssetObservation, AssetCheckResult]]: A set of corresponding Dagster events.
                 - Output for refables (e.g. models, seeds, snapshots.)
-                - AssetObservations for test results.
+                - AssetObservation for dbt test results that are not enabled as asset checks.
+                - AssetCheckResult for dbt test results that are enabled as asset checks.
 
         Examples:
             .. code-block:: python

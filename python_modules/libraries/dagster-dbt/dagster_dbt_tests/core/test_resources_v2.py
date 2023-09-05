@@ -7,6 +7,7 @@ from typing import List, Optional, Union
 
 import pytest
 from dagster import (
+    AssetCheckResult,
     AssetObservation,
     FloatMetadataValue,
     Output,
@@ -47,11 +48,11 @@ def test_dbt_cli(global_config_flags: List[str], command: str) -> None:
     assert dbt_cli_invocation.target_path.joinpath("dbt.log").exists()
 
 
-@pytest.mark.parametrize("manifest", [manifest, manifest_path, os.fspath(manifest_path)])
+@pytest.mark.parametrize("manifest", [None, manifest, manifest_path, os.fspath(manifest_path)])
 def test_dbt_cli_manifest_argument(manifest: DbtManifestParam) -> None:
     dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR)
 
-    assert dbt.cli(["run"]).is_successful()
+    assert dbt.cli(["run"], manifest=manifest).is_successful()
 
 
 def test_dbt_cli_project_dir_path() -> None:
@@ -318,7 +319,8 @@ def test_dbt_cli_op_execution() -> None:
                 "resource_type": "model",
                 "node_status": "failure",
                 "node_finished_at": "2024-01-01T00:00:00Z",
-            }
+                "meta": {},
+            },
         },
         {
             "node_info": {
@@ -326,21 +328,24 @@ def test_dbt_cli_op_execution() -> None:
                 "resource_type": "macro",
                 "node_status": "success",
                 "node_finished_at": "2024-01-01T00:00:00Z",
-            }
+                "meta": {},
+            },
         },
         {
             "node_info": {
                 "unique_id": "a.b.c",
                 "resource_type": "model",
                 "node_status": "failure",
-            }
+                "meta": {},
+            },
         },
         {
             "node_info": {
                 "unique_id": "a.b.c",
                 "resource_type": "test",
                 "node_status": "success",
-            }
+                "meta": {},
+            },
         },
     ],
     ids=[
@@ -369,9 +374,11 @@ def test_to_default_asset_output_events() -> None:
             "node_info": {
                 "unique_id": "a.b.c",
                 "resource_type": "model",
+                "node_name": "node_name",
                 "node_status": "success",
                 "node_started_at": "2024-01-01T00:00:00Z",
                 "node_finished_at": "2024-01-01T00:01:00Z",
+                "meta": {},
             }
         },
     }
@@ -387,26 +394,28 @@ def test_to_default_asset_output_events() -> None:
     }
 
 
-def test_to_default_asset_observation_events() -> None:
+@pytest.mark.parametrize("is_asset_check", [False, True])
+def test_dbt_tests_to_events(is_asset_check: bool) -> None:
     manifest = {
         "nodes": {
-            "a.b.c.d": {
+            "model.a": {
                 "resource_type": "model",
                 "config": {},
-                "name": "model",
-            }
+                "name": "model.a",
+            },
+            "test.a": {
+                "resource_type": "test",
+                "config": {
+                    "severity": "ERROR",
+                },
+                "name": "test.a",
+                "meta": {"dagster": {"asset_check": is_asset_check}},
+            },
         },
-        "sources": {
-            "a.b.c.d.e": {
-                "resource_type": "source",
-                "source_name": "test",
-                "name": "source",
-            }
-        },
+        "sources": {},
         "parent_map": {
-            "a.b.c": [
-                "a.b.c.d",
-                "a.b.c.d.e",
+            "test.a": [
+                "model.a",
             ]
         },
     }
@@ -414,16 +423,19 @@ def test_to_default_asset_observation_events() -> None:
         "info": {"level": "info"},
         "data": {
             "node_info": {
-                "unique_id": "a.b.c",
+                "unique_id": "test.a",
                 "resource_type": "test",
+                "node_name": "node_name.test.a",
                 "node_status": "success",
                 "node_finished_at": "2024-01-01T00:00:00Z",
-            }
+            },
         },
     }
     asset_events = list(
         DbtCliEventMessage(raw_event=raw_event).to_default_asset_events(manifest=manifest)
     )
 
-    assert len(asset_events) == 2
-    assert all(isinstance(e, AssetObservation) for e in asset_events)
+    expected_event_type = AssetCheckResult if is_asset_check else AssetObservation
+
+    assert len(asset_events) == 1
+    assert all(isinstance(e, expected_event_type) for e in asset_events)
