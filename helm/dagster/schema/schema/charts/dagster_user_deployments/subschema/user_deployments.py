@@ -10,7 +10,7 @@ class UserDeploymentIncludeConfigInLaunchedRuns(BaseModel):
 
 
 ReadinessProbeWithEnabled = create_model(
-    "ReadinessProbeWithEnabled", __base__=(kubernetes.ReadinessProbe), enabled=(bool, ...)
+    "ReadinessProbeWithEnabled", __base__=(kubernetes.ReadinessProbe), enabled=(bool, True)
 )
 
 

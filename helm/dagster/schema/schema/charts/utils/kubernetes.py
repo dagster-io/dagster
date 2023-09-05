@@ -34,8 +34,8 @@ class PullPolicy(str, Enum):
 
 
 class Image(BaseModelWithNullableRequiredFields):
+    tag: Optional[Union[str, int]] = None
     repository: str
-    tag: Optional[Union[str, int]]
     pullPolicy: PullPolicy
 
     @property
