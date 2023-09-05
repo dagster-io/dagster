@@ -15,5 +15,5 @@ if __name__ == "__main__":
 
     client = SomeSqlClient()
     client.query(sql)
-    context.report_asset_metadata(context.asset_key, "sql", sql)
+    context.report_asset_metadata("sql", sql)
     context.log(f"Ran {sql}")

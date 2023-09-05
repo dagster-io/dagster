@@ -31,6 +31,7 @@ from ._util import (
     emit_orchestration_inactive_warning,
     get_mock,
     is_dagster_orchestration_active,
+    resolve_optionally_passed_asset_key,
 )
 
 
@@ -189,16 +190,22 @@ class ExtContext:
 
     # ##### WRITE
 
-    def report_asset_metadata(self, asset_key: str, label: str, value: Any) -> None:
-        asset_key = assert_param_type(asset_key, str, "report_asset_metadata", "asset_key")
+    def report_asset_metadata(
+        self, label: str, value: Any, asset_key: Optional[str] = None
+    ) -> None:
+        asset_key = resolve_optionally_passed_asset_key(
+            self._data, asset_key, "report_asset_metadata"
+        )
         label = assert_param_type(label, str, "report_asset_metadata", "label")
         value = assert_param_json_serializable(value, "report_asset_metadata", "value")
         self._write_message(
             "report_asset_metadata", {"asset_key": asset_key, "label": label, "value": value}
         )
 
-    def report_asset_data_version(self, asset_key: str, data_version: str) -> None:
-        asset_key = assert_param_type(asset_key, str, "report_asset_data_version", "asset_key")
+    def report_asset_data_version(self, data_version: str, asset_key: Optional[str] = None) -> None:
+        asset_key = resolve_optionally_passed_asset_key(
+            self._data, asset_key, "report_asset_data_version"
+        )
         data_version = assert_param_type(
             data_version, str, "report_asset_data_version", "data_version"
         )

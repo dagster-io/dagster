@@ -82,8 +82,8 @@ def external_script() -> Iterator[str]:
         context = ExtContext.get()
         context.log("hello world")
         time.sleep(0.1)  # sleep to make sure that we encompass multiple intervals for blob store IO
-        context.report_asset_metadata("foo", "bar", context.get_extra("bar"))
-        context.report_asset_data_version("foo", "alpha")
+        context.report_asset_metadata("bar", context.get_extra("bar"))
+        context.report_asset_data_version("alpha")
 
     with temp_script(script_fn) as script_path:
         yield script_path
@@ -215,8 +215,8 @@ def test_ext_no_orchestration():
         init_dagster_ext()
         context = ExtContext.get()
         context.log("hello world")
-        context.report_asset_metadata("foo", "bar", context.get_extra("bar"))
-        context.report_asset_data_version("foo", "alpha")
+        context.report_asset_metadata("bar", context.get_extra("bar"))
+        context.report_asset_data_version("alpha")
 
     with temp_script(script_fn) as script_path:
         cmd = ["python", script_path]

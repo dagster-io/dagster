@@ -36,12 +36,31 @@ def assert_defined_asset_property(value: Optional[T], key: str) -> T:
     return assert_not_none(value, f"`{key}` is undefined. Current step does not target an asset.")
 
 
-# This should only be called under the precondition that the current steps targets assets.
+# This should only be called under the precondition that the current step targets assets.
 def assert_single_asset(data: ExtContextData, key: str) -> None:
     asset_keys = data["asset_keys"]
     assert asset_keys is not None
     if len(asset_keys) != 1:
         raise DagsterExtError(f"`{key}` is undefined. Current step targets multiple assets.")
+
+
+def resolve_optionally_passed_asset_key(
+    data: ExtContextData, asset_key: Optional[str], method: str
+) -> str:
+    asset_keys = assert_defined_asset_property(data["asset_keys"], method)
+    asset_key = assert_opt_param_type(asset_key, str, method, "asset_key")
+    if asset_key and asset_key not in asset_keys:
+        raise DagsterExtError(
+            f"Invalid asset key. Expected one of `{asset_keys}`, got `{asset_key}`."
+        )
+    if not asset_key:
+        if len(asset_keys) != 1:
+            raise DagsterExtError(
+                f"Calling `{method}` without passing an asset key is undefined. Current step"
+                " targets multiple assets."
+            )
+        asset_key = asset_keys[0]
+    return asset_key
 
 
 def assert_defined_partition_property(value: Optional[T], key: str) -> T:
@@ -69,6 +88,15 @@ def assert_param_type(value: T, expected_type: Any, method: str, param: str) -> 
         raise DagsterExtError(
             f"Invalid type for parameter `{param}` of `{method}`. Expected `{expected_type}`, got"
             f" `{type(value)}`."
+        )
+    return value
+
+
+def assert_opt_param_type(value: T, expected_type: Any, method: str, param: str) -> T:
+    if not (isinstance(value, expected_type) or value is None):
+        raise DagsterExtError(
+            f"Invalid type for parameter `{param}` of `{method}`. Expected"
+            f" `Optional[{expected_type}]`, got `{type(value)}`."
         )
     return value
 
