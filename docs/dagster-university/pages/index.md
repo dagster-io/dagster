@@ -74,3 +74,4 @@ title: Dagster University Course Content
     - [Updating the Definitions object](/dagster-essentials/lesson-9/updating-the-definitions-object)
     - [Sensors in the Dagster UI](/dagster-essentials/lesson-9/sensors-dagster-ui)
     - [Enabling the sensor](/dagster-essentials/lesson-9/enabling-the-sensor)
+  - [Capstone](/dagster-essentials/capstone)
