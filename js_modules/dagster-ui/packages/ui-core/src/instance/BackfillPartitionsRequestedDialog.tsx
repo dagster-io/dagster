@@ -1,8 +1,12 @@
-import {Button, DialogBody, DialogFooter, Dialog, FontFamily, Box} from '@dagster-io/ui-components';
+import {Button, DialogFooter, Dialog, FontFamily} from '@dagster-io/ui-components';
 import * as React from 'react';
+
+import {TruncatedTextWithFullTextOnHover} from '../nav/getLeftNavItemsForOption';
+import {VirtualizedItemListForDialog} from '../ui/VirtualizedItemListForDialog';
 
 import {BackfillTableFragment} from './types/BackfillTable.types';
 
+const COLLATOR = new Intl.Collator(navigator.language, {sensitivity: 'base', numeric: true});
 interface Props {
   backfill?: BackfillTableFragment;
   onClose: () => void;
@@ -19,18 +23,36 @@ export const BackfillPartitionsRequestedDialog = ({backfill, onClose}: Props) =>
       }
       onClose={onClose}
     >
-      <DialogBody>
-        {backfill && backfill.partitionNames ? (
-          <Box flex={{direction: 'column', gap: 8}} style={{maxHeight: '80vh', overflowY: 'auto'}}>
-            {backfill.partitionNames.map((partitionName) => (
-              <div key={partitionName}>{partitionName}</div>
-            ))}
-          </Box>
-        ) : null}
-      </DialogBody>
+      <DialogContent partitionNames={backfill?.partitionNames || []} />
       <DialogFooter topBorder>
         <Button onClick={onClose}>Done</Button>
       </DialogFooter>
     </Dialog>
+  );
+};
+
+interface DialogContentProps {
+  partitionNames: string[];
+}
+
+// Separate component so that we can delay sorting until render.
+const DialogContent = (props: DialogContentProps) => {
+  const {partitionNames} = props;
+
+  const sorted = React.useMemo(() => {
+    return [...(partitionNames || [])].sort((a, b) => COLLATOR.compare(a, b));
+  }, [partitionNames]);
+
+  return (
+    <div style={{height: '340px', overflow: 'hidden'}}>
+      <VirtualizedItemListForDialog
+        items={sorted}
+        renderItem={(partitionName) => (
+          <div key={partitionName}>
+            <TruncatedTextWithFullTextOnHover text={partitionName} />
+          </div>
+        )}
+      />
+    </div>
   );
 };

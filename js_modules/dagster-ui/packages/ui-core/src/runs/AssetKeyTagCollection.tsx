@@ -6,7 +6,6 @@ import {
   Dialog,
   DialogFooter,
   Icon,
-  Table,
   Tag,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
@@ -15,6 +14,7 @@ import {Link} from 'react-router-dom';
 import {displayNameForAssetKey, tokenForAssetKey} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetKey} from '../assets/types';
+import {VirtualizedItemListForDialog} from '../ui/VirtualizedItemListForDialog';
 
 const MAX_ASSET_TAGS = 3;
 
@@ -41,36 +41,17 @@ export const AssetKeyTagCollection: React.FC<{
         style={{minWidth: '400px', maxWidth: '80vw', maxHeight: '70vh'}}
         isOpen={showMore}
       >
-        {showMore ? (
-          <Box
-            padding={{bottom: 12}}
-            border={{side: 'bottom', color: Colors.KeylineGray, width: 1}}
-            style={{overflowY: 'auto'}}
-            background={Colors.White}
-          >
-            <Table>
-              <thead>
-                <tr>
-                  <th>Asset key</th>
-                </tr>
-              </thead>
-              <tbody>
-                {assetKeys.map((assetKey, ii) => (
-                  <tr key={`${tokenForAssetKey(assetKey)}-${ii}`}>
-                    <td>
-                      <Link to={assetDetailsPathForKey(assetKey)} key={tokenForAssetKey(assetKey)}>
-                        {displayNameForAssetKey(assetKey)}
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
-          </Box>
-        ) : null}
-        <DialogFooter>
-          <Button intent="primary" autoFocus onClick={() => setShowMore(false)}>
-            OK
+        <div style={{height: '340px', overflow: 'hidden'}}>
+          <VirtualizedItemListForDialog
+            items={assetKeys}
+            renderItem={(assetKey: AssetKey) => (
+              <Link to={assetDetailsPathForKey(assetKey)}>{displayNameForAssetKey(assetKey)}</Link>
+            )}
+          />
+        </div>
+        <DialogFooter topBorder>
+          <Button autoFocus onClick={() => setShowMore(false)}>
+            Done
           </Button>
         </DialogFooter>
       </Dialog>
@@ -99,8 +80,8 @@ export const AssetKeyTagCollection: React.FC<{
   }
 
   return (
-    <Box flex={{direction: 'row', gap: 8}}>
-      <Icon color={Colors.Gray400} name="asset" size={16} style={{marginTop: 2}} />
+    <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+      <Icon color={Colors.Gray400} name="asset" size={16} />
       <Box style={{flex: 1}} flex={{wrap: 'wrap', display: 'inline-flex'}}>
         {displayed.map((assetKey, idx) => (
           <Link

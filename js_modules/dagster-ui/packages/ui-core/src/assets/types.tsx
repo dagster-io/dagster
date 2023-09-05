@@ -20,4 +20,5 @@ export interface AssetViewParams {
   asOf?: string;
   evaluation?: string;
   checkDetail?: string;
+  default_range?: string;
 }
