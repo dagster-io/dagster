@@ -2,12 +2,14 @@ import inspect
 from datetime import datetime, timedelta
 from typing import Optional
 
+import pytest
 from dagster import (
     AllPartitionMapping,
     AssetExecutionContext,
     AssetIn,
     AssetMaterialization,
     AssetsDefinition,
+    DagsterInvalidDefinitionError,
     DailyPartitionsDefinition,
     IdentityPartitionMapping,
     IOManager,
@@ -570,16 +572,19 @@ def test_identity_partition_mapping():
 def test_partition_mapping_with_asset_deps():
     asset_1 = AssetSpec(asset_key="asset_1")
     asset_2 = AssetSpec(asset_key="asset_2")
+
+    asset_1_partition_mapping = TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
+    asset_2_partition_mapping = TimeWindowPartitionMapping(start_offset=-2, end_offset=-2)
     asset_3 = AssetSpec(
         asset_key="asset_3",
         deps=[
             AssetDep(
                 asset=asset_1,
-                partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
+                partition_mapping=asset_1_partition_mapping,
             ),
             AssetDep(
                 asset=asset_2,
-                partition_mapping=TimeWindowPartitionMapping(start_offset=-2, end_offset=-2),
+                partition_mapping=asset_2_partition_mapping,
             ),
         ],
     )
@@ -588,11 +593,11 @@ def test_partition_mapping_with_asset_deps():
         deps=[
             AssetDep(
                 asset=asset_1,
-                partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
+                partition_mapping=asset_1_partition_mapping,
             ),
             AssetDep(
                 asset=asset_2,
-                partition_mapping=TimeWindowPartitionMapping(start_offset=-2, end_offset=-2),
+                partition_mapping=asset_2_partition_mapping,
             ),
         ],
     )
@@ -622,6 +627,55 @@ def test_partition_mapping_with_asset_deps():
         return
 
     materialize([multi_asset_1, multi_asset_2], partition_key="2023-08-20")
+
+    assert multi_asset_2.partition_mappings == {
+        AssetKey("asset_1"): asset_1_partition_mapping,
+        AssetKey("asset_2"): asset_2_partition_mapping,
+    }
+
+
+def test_conflicting_mappings_with_asset_deps():
+    asset_1 = AssetSpec(asset_key="asset_1")
+    asset_2 = AssetSpec(asset_key="asset_2")
+
+    asset_1_partition_mapping = TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
+    asset_2_partition_mapping = TimeWindowPartitionMapping(start_offset=-2, end_offset=-2)
+    asset_3 = AssetSpec(
+        asset_key="asset_3",
+        deps=[
+            AssetDep(
+                asset=asset_1,
+                partition_mapping=asset_1_partition_mapping,
+            ),
+            AssetDep(
+                asset=asset_2,
+                partition_mapping=asset_2_partition_mapping,
+            ),
+        ],
+    )
+    asset_4 = AssetSpec(
+        asset_key="asset_4",
+        deps=[
+            AssetDep(
+                asset=asset_1,
+                partition_mapping=asset_1_partition_mapping,
+            ),
+            AssetDep(
+                asset=asset_2,
+                # conflicting partition mapping to asset_3's dependency on asset_2
+                partition_mapping=TimeWindowPartitionMapping(start_offset=-3, end_offset=-3),
+            ),
+        ],
+    )
+
+    with pytest.raises(DagsterInvalidDefinitionError):
+
+        @multi_asset(
+            specs=[asset_3, asset_4],
+            partitions_def=DailyPartitionsDefinition(start_date="2023-08-15"),
+        )
+        def multi_asset_2(context: AssetExecutionContext):
+            pass
 
 
 def test_self_dependent_partition_mapping_with_asset_deps():
