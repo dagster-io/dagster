@@ -1,8 +1,8 @@
-from dagster_externals import init_dagster_externals
+from dagster_ext import init_dagster_ext
 
 from .util import compute_data_version, store_asset_value
 
-context = init_dagster_externals()
+context = init_dagster_ext()
 storage_root = context.get_extra("storage_root")
 
 multiplier = context.get_extra("multiplier")

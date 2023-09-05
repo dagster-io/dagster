@@ -1,16 +1,16 @@
 from unittest.mock import MagicMock
 
 import pytest
-from dagster_externals._context import ExternalExecutionContext
-from dagster_externals._protocol import (
-    ExternalExecutionContextData,
-    ExternalExecutionDataProvenance,
-    ExternalExecutionPartitionKeyRange,
-    ExternalExecutionTimeWindow,
+from dagster_ext._context import ExtContext
+from dagster_ext._protocol import (
+    ExtContextData,
+    ExtDataProvenance,
+    ExtPartitionKeyRange,
+    ExtTimeWindow,
 )
-from dagster_externals._util import DagsterExternalsError
+from dagster_ext._util import DagsterExtError
 
-TEST_EXTERNAL_EXECUTION_CONTEXT_DEFAULTS = ExternalExecutionContextData(
+TEST_EXT_CONTEXT_DEFAULTS = ExtContextData(
     asset_keys=None,
     code_version_by_asset_key=None,
     provenance_by_asset_key=None,
@@ -25,15 +25,15 @@ TEST_EXTERNAL_EXECUTION_CONTEXT_DEFAULTS = ExternalExecutionContextData(
 
 
 def _make_external_execution_context(**kwargs):
-    kwargs = {**TEST_EXTERNAL_EXECUTION_CONTEXT_DEFAULTS, **kwargs}
-    return ExternalExecutionContext(
-        data=ExternalExecutionContextData(**kwargs),
+    kwargs = {**TEST_EXT_CONTEXT_DEFAULTS, **kwargs}
+    return ExtContext(
+        data=ExtContextData(**kwargs),
         message_channel=MagicMock(),
     )
 
 
 def _assert_undefined(context, key) -> None:
-    with pytest.raises(DagsterExternalsError, match=f"`{key}` is undefined"):
+    with pytest.raises(DagsterExtError, match=f"`{key}` is undefined"):
         getattr(context, key)
 
 
@@ -50,7 +50,7 @@ def test_no_asset_context():
 
 
 def test_single_asset_context():
-    foo_provenance = ExternalExecutionDataProvenance(
+    foo_provenance = ExtDataProvenance(
         code_version="alpha", input_data_versions={"bar": "baz"}, is_user_provided=False
     )
 
@@ -70,7 +70,7 @@ def test_single_asset_context():
 
 
 def test_multi_asset_context():
-    foo_provenance = ExternalExecutionDataProvenance(
+    foo_provenance = ExtDataProvenance(
         code_version="alpha", input_data_versions={"bar": "baz"}, is_user_provided=False
     )
     bar_provenance = None
@@ -103,7 +103,7 @@ def test_no_partition_context():
 
 
 def test_single_partition_context():
-    partition_key_range = ExternalExecutionPartitionKeyRange(start="foo", end="foo")
+    partition_key_range = ExtPartitionKeyRange(start="foo", end="foo")
 
     context = _make_external_execution_context(
         partition_key="foo",
@@ -118,8 +118,8 @@ def test_single_partition_context():
 
 
 def test_multiple_partition_context():
-    partition_key_range = ExternalExecutionPartitionKeyRange(start="2023-01-01", end="2023-01-02")
-    time_window = ExternalExecutionTimeWindow(start="2023-01-01", end="2023-01-02")
+    partition_key_range = ExtPartitionKeyRange(start="2023-01-01", end="2023-01-02")
+    time_window = ExtTimeWindow(start="2023-01-01", end="2023-01-02")
 
     context = _make_external_execution_context(
         partition_key=None,
@@ -137,5 +137,5 @@ def test_extras_context():
     context = _make_external_execution_context(extras={"foo": "bar"})
 
     assert context.get_extra("foo") == "bar"
-    with pytest.raises(DagsterExternalsError, match="Extra `bar` is undefined"):
+    with pytest.raises(DagsterExtError, match="Extra `bar` is undefined"):
         context.get_extra("bar")

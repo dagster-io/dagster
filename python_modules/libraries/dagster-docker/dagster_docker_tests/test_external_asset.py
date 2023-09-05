@@ -2,7 +2,7 @@ import os
 
 import pytest
 from dagster import AssetExecutionContext, asset, materialize
-from dagster_docker.external_resource import DockerExecutionResource
+from dagster_docker.external_resource import ExtDocker
 from dagster_test.test_project import (
     IS_BUILDKITE,
     find_local_test_image,
@@ -25,7 +25,7 @@ def test_basic():
     @asset
     def number_x(
         context: AssetExecutionContext,
-        docker_resource: DockerExecutionResource,
+        docker_resource: ExtDocker,
     ):
         instance_storage = context.instance.storage_directory()
         host_storage = os.path.join(instance_storage, "number_example")
@@ -55,7 +55,7 @@ def test_basic():
 
     result = materialize(
         [number_x],
-        resources={"docker_resource": DockerExecutionResource()},
+        resources={"docker_resource": ExtDocker()},
         raise_on_error=False,
     )
     assert result.success
