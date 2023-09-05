@@ -2013,11 +2013,47 @@ def test_multi_asset_asset_key_on_context():
     @multi_asset(
         outs={
             "my_string_asset": AssetOut(),
-            "my_int_asset": AssetOut(),
         }
     )
     def asset_key_context(context: AssetExecutionContext):
+        assert context.asset_key == AssetKey(["my_string_asset"])
+
+    materialize([asset_key_context])
+
+    @multi_asset(
+        outs={
+            "my_string_asset": AssetOut(),
+            "my_int_asset": AssetOut(),
+        }
+    )
+    def two_assets_key_context(context: AssetExecutionContext):
         return context.asset_key, 12
 
-    with pytest.raises(DagsterInvariantViolationError):
-        materialize([asset_key_context])
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Cannot call `context.asset_key` in a multi_asset with more than one asset",
+    ):
+        materialize([two_assets_key_context])
+
+    # test with AssetSpecs
+
+    spec1 = AssetSpec(asset_key="spec1")
+
+    @multi_asset(specs=[spec1])
+    def asset_key_context_with_specs(context: AssetExecutionContext):
+        assert context.asset_key == AssetKey(["spec1"])
+
+    materialize([asset_key_context_with_specs])
+
+    spec2 = AssetSpec(asset_key="spec2")
+    spec3 = AssetSpec(asset_key="spec3")
+
+    @multi_asset(specs=[spec2, spec3])
+    def asset_key_context_with_two_specs(context: AssetExecutionContext):
+        context.log.info(context.asset_key)
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Cannot call `context.asset_key` in a multi_asset with more than one asset",
+    ):
+        materialize([asset_key_context_with_two_specs])
