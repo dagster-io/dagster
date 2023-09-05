@@ -27,6 +27,7 @@ def test_databricks_submit_job_existing_cluster(mock_submit_run, databricks_run_
     task = databricks_run_config.pop("task")
     expected_task = jobs.SubmitTask.from_dict(task)
     expected_task.existing_cluster_id = databricks_run_config["cluster"]["existing"]
+    expected_task.task_key = "dagster-task"
     expected_task.libraries = [
         compute.Library(pypi=compute.PythonPyPiLibrary(package=f"dagster=={dagster.__version__}")),
         compute.Library(
@@ -74,6 +75,7 @@ def test_databricks_submit_job_new_cluster(mock_submit_run, databricks_run_confi
 
     task = databricks_run_config.pop("task")
     expected_task = jobs.SubmitTask.from_dict(task)
+    expected_task.task_key = "dagster-task"
     expected_task.new_cluster = compute.ClusterSpec(
         node_type_id=NEW_CLUSTER["nodes"]["node_types"]["node_type_id"],
         spark_version=NEW_CLUSTER["spark_version"],
