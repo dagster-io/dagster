@@ -378,6 +378,7 @@ class DatabricksJobRunner:
                         # "libraries": [compute.Library.from_dict(lib) for lib in libraries],
                         "libraries": libraries,
                         **task,
+                        "task_key": "dagster-task",
                     },
                 )
             ],

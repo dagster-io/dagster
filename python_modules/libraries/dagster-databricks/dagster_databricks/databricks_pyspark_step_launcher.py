@@ -32,8 +32,8 @@ from dagster._core.log_manager import DagsterLogManager
 from dagster._serdes import deserialize_value
 from dagster._utils.backoff import backoff
 from dagster_pyspark.utils import build_pyspark_zip
+from databricks.sdk.core import DatabricksError
 from databricks.sdk.service import jobs
-from requests import HTTPError
 
 from dagster_databricks import databricks_step_main
 from dagster_databricks.databricks import (
@@ -371,11 +371,10 @@ class DatabricksPySparkStepLauncher(StepLauncher):
             )
         # if you poll before the Databricks process has had a chance to create the file,
         # we expect to get this error
-        except HTTPError as e:
-            if e.response and e.response.json().get("error_code") == "RESOURCE_DOES_NOT_EXIST":
+        except DatabricksError as e:
+            if e.error_code == "RESOURCE_DOES_NOT_EXIST":
                 return []
-
-        return []
+            raise
 
     def _grant_permissions(
         self, log: DagsterLogManager, databricks_run_id: int, request_retries: int = 3

@@ -7,9 +7,9 @@ from typing import TYPE_CHECKING, Any, Optional, Sequence, Type, TypeVar
 
 from ._protocol import (
     ENV_KEY_PREFIX,
-    ExternalExecutionContextData,
-    ExternalExecutionExtras,
-    ExternalExecutionParams,
+    ExtContextData,
+    ExtExtras,
+    ExtParams,
 )
 
 if TYPE_CHECKING:
@@ -18,17 +18,17 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 
 
-class DagsterExternalsError(Exception):
+class DagsterExtError(Exception):
     pass
 
 
-class DagsterExternalsWarning(Warning):
+class DagsterExtWarning(Warning):
     pass
 
 
 def assert_not_none(value: Optional[T], desc: Optional[str] = None) -> T:
     if value is None:
-        raise DagsterExternalsError(f"Missing required property: {desc}")
+        raise DagsterExtError(f"Missing required property: {desc}")
     return value
 
 
@@ -36,12 +36,31 @@ def assert_defined_asset_property(value: Optional[T], key: str) -> T:
     return assert_not_none(value, f"`{key}` is undefined. Current step does not target an asset.")
 
 
-# This should only be called under the precondition that the current steps targets assets.
-def assert_single_asset(data: ExternalExecutionContextData, key: str) -> None:
+# This should only be called under the precondition that the current step targets assets.
+def assert_single_asset(data: ExtContextData, key: str) -> None:
     asset_keys = data["asset_keys"]
     assert asset_keys is not None
     if len(asset_keys) != 1:
-        raise DagsterExternalsError(f"`{key}` is undefined. Current step targets multiple assets.")
+        raise DagsterExtError(f"`{key}` is undefined. Current step targets multiple assets.")
+
+
+def resolve_optionally_passed_asset_key(
+    data: ExtContextData, asset_key: Optional[str], method: str
+) -> str:
+    asset_keys = assert_defined_asset_property(data["asset_keys"], method)
+    asset_key = assert_opt_param_type(asset_key, str, method, "asset_key")
+    if asset_key and asset_key not in asset_keys:
+        raise DagsterExtError(
+            f"Invalid asset key. Expected one of `{asset_keys}`, got `{asset_key}`."
+        )
+    if not asset_key:
+        if len(asset_keys) != 1:
+            raise DagsterExtError(
+                f"Calling `{method}` without passing an asset key is undefined. Current step"
+                " targets multiple assets."
+            )
+        asset_key = asset_keys[0]
+    return asset_key
 
 
 def assert_defined_partition_property(value: Optional[T], key: str) -> T:
@@ -51,36 +70,41 @@ def assert_defined_partition_property(value: Optional[T], key: str) -> T:
 
 
 # This should only be called under the precondition that the current steps targets assets.
-def assert_single_partition(data: ExternalExecutionContextData, key: str) -> None:
+def assert_single_partition(data: ExtContextData, key: str) -> None:
     partition_key_range = data["partition_key_range"]
     assert partition_key_range is not None
     if partition_key_range["start"] != partition_key_range["end"]:
-        raise DagsterExternalsError(
-            f"`{key}` is undefined. Current step targets multiple partitions."
-        )
+        raise DagsterExtError(f"`{key}` is undefined. Current step targets multiple partitions.")
 
 
-def assert_defined_extra(extras: ExternalExecutionExtras, key: str) -> Any:
+def assert_defined_extra(extras: ExtExtras, key: str) -> Any:
     if key not in extras:
-        raise DagsterExternalsError(f"Extra `{key}` is undefined. Extras must be provided by user.")
+        raise DagsterExtError(f"Extra `{key}` is undefined. Extras must be provided by user.")
     return extras[key]
 
 
 def assert_param_type(value: T, expected_type: Any, method: str, param: str) -> T:
     if not isinstance(value, expected_type):
-        raise DagsterExternalsError(
+        raise DagsterExtError(
             f"Invalid type for parameter `{param}` of `{method}`. Expected `{expected_type}`, got"
             f" `{type(value)}`."
         )
     return value
 
 
-def assert_env_param_type(
-    env_params: ExternalExecutionParams, key: str, expected_type: Type[T], cls: Type
-) -> T:
+def assert_opt_param_type(value: T, expected_type: Any, method: str, param: str) -> T:
+    if not (isinstance(value, expected_type) or value is None):
+        raise DagsterExtError(
+            f"Invalid type for parameter `{param}` of `{method}`. Expected"
+            f" `Optional[{expected_type}]`, got `{type(value)}`."
+        )
+    return value
+
+
+def assert_env_param_type(env_params: ExtParams, key: str, expected_type: Type[T], cls: Type) -> T:
     value = env_params.get(key)
     if not isinstance(value, expected_type):
-        raise DagsterExternalsError(
+        raise DagsterExtError(
             f"Invalid type for parameter `{key}` passed from orchestration side to"
             f" `{cls.__name__}`. Expected `{expected_type}`, got `{type(value)}`."
         )
@@ -88,11 +112,11 @@ def assert_env_param_type(
 
 
 def assert_opt_env_param_type(
-    env_params: ExternalExecutionParams, key: str, expected_type: Type[T], cls: Type
+    env_params: ExtParams, key: str, expected_type: Type[T], cls: Type
 ) -> Optional[T]:
     value = env_params.get(key)
     if value is not None and not isinstance(value, expected_type):
-        raise DagsterExternalsError(
+        raise DagsterExtError(
             f"Invalid type for parameter `{key}` passed from orchestration side to"
             f" `{cls.__name__}`. Expected `Optional[{expected_type}]`, got `{type(value)}`."
         )
@@ -101,7 +125,7 @@ def assert_opt_env_param_type(
 
 def assert_param_value(value: T, expected_values: Sequence[T], method: str, param: str) -> T:
     if value not in expected_values:
-        raise DagsterExternalsError(
+        raise DagsterExtError(
             f"Invalid value for parameter `{param}` of `{method}`. Expected one of"
             f" `{expected_values}`, got `{value}`."
         )
@@ -112,7 +136,7 @@ def assert_param_json_serializable(value: T, method: str, param: str) -> T:
     try:
         json.dumps(value)
     except (TypeError, OverflowError):
-        raise DagsterExternalsError(
+        raise DagsterExtError(
             f"Invalid type for parameter `{param}` of `{method}`. Expected a JSON-serializable"
             f" type, got `{type(value)}`."
         )
@@ -152,9 +176,9 @@ def is_dagster_orchestration_active() -> bool:
 def emit_orchestration_inactive_warning() -> None:
     warnings.warn(
         "This process was not launched by a Dagster orchestration process. All calls to the"
-        " `dagster-externals` context or attempts to initialize `dagster-externals` abstractions"
+        " `dagster-ext` context or attempts to initialize `dagster-ext` abstractions"
         " are no-ops.",
-        category=DagsterExternalsWarning,
+        category=DagsterExtWarning,
     )
 
 

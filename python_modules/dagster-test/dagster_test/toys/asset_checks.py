@@ -5,6 +5,7 @@ from dagster import (
     AssetCheckResult,
     AssetCheckSeverity,
     AssetCheckSpec,
+    DailyPartitionsDefinition,
     MetadataValue,
     Output,
     asset,
@@ -106,7 +107,28 @@ def severe_exception_check():
 
 @asset(
     group_name="asset_checks",
-    deps=[checked_asset, asset_with_check_in_same_op, check_exception_asset],
+    partitions_def=DailyPartitionsDefinition(
+        start_date="2020-01-01",
+    ),
+)
+def partitioned_asset(_):
+    return 1
+
+
+@asset_check(
+    asset=partitioned_asset,
+    description="A check that fails half the time.",
+)
+def random_fail_check_on_partitioned_asset():
+    random.seed(time.time())
+    return AssetCheckResult(
+        success=random.choice([False, True]),
+    )
+
+
+@asset(
+    group_name="asset_checks",
+    deps=[checked_asset, asset_with_check_in_same_op, check_exception_asset, partitioned_asset],
 )
 def downstream_asset():
     return 1
@@ -124,4 +146,6 @@ def get_checks_and_assets():
         check_exception_asset,
         exception_check,
         severe_exception_check,
+        partitioned_asset,
+        random_fail_check_on_partitioned_asset,
     ]

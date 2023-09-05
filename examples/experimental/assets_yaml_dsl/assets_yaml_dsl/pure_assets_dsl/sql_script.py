@@ -1,6 +1,6 @@
 import sys
 
-from dagster_externals import init_dagster_externals
+from dagster_ext import init_dagster_ext
 
 
 class SomeSqlClient:
@@ -11,9 +11,9 @@ class SomeSqlClient:
 if __name__ == "__main__":
     sql = sys.argv[1]
 
-    context = init_dagster_externals()
+    context = init_dagster_ext()
 
     client = SomeSqlClient()
     client.query(sql)
-    context.report_asset_metadata(context.asset_key, "sql", sql)
+    context.report_asset_metadata("sql", sql)
     context.log(f"Ran {sql}")
