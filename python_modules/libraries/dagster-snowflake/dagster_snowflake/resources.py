@@ -20,8 +20,10 @@ from dagster._utils.cached_method import cached_method
 from pydantic import Field, validator
 
 try:
+    # Pydantic 2.x
     from pydantic import model_validator
 except ImportError:
+    # Pydantic 1.x
     from pydantic import root_validator
 
     def model_validator(mode="before"):

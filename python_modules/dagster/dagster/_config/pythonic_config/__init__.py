@@ -1626,6 +1626,7 @@ def _config_type_for_type_on_pydantic_field(
         potential_dagster_type = get_args(potential_dagster_type)[0]
 
     try:
+        # Pydantic 1.x
         from pydantic import ConstrainedFloat, ConstrainedInt, ConstrainedStr
 
         # special case pydantic constrained types to their source equivalents
@@ -1637,6 +1638,7 @@ def _config_type_for_type_on_pydantic_field(
         elif safe_is_subclass(potential_dagster_type, ConstrainedInt):
             return IntSource
     except ImportError:
+        # These types do not exist in Pydantic 2.x
         pass
 
     if safe_is_subclass(get_origin(potential_dagster_type), List):
