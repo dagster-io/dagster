@@ -1,7 +1,6 @@
 import base64
 import logging
 import time
-from dataclasses import dataclass
 from typing import IO, Any, Mapping, Optional, Tuple, Union, cast
 
 import dagster
@@ -83,7 +82,8 @@ class DatabricksClient:
     def client(self) -> databricks_api.DatabricksAPI:
         """Retrieve the legacy Databricks API client. Note: accessing this property will throw an exception if oauth
         credentials are used to initialize the DatabricksClient, because oauth credentials are not supported by the
-        legacy Databricks API client."""
+        legacy Databricks API client.
+        """
         if self._client is None:
             raise ValueError(
                 "Legacy Databricks API client from `databricks-api` was not initialized because"
@@ -107,7 +107,7 @@ class DatabricksClient:
         see the `Databricks Python API <https://docs.databricks.com/dev-tools/python-api.html>`_.
         Noe: accessing this property will throw an exception if oauth credentials are used to initialize the
         DatabricksClient, because oauth credentials are not supported by the legacy Databricks API client.
-        **Examples:**
+        **Examples:**.
 
         .. code-block:: python
 
@@ -314,10 +314,6 @@ class DatabricksJobRunner:
         max_wait_time_sec: int = DEFAULT_RUN_MAX_WAIT_TIME_SEC,
     ):
         self.host = check.str_param(host, "host")
-        check.invariant(
-            token is not None or (oauth_client_id is not None and oauth_client_secret is not None),
-            "Must provide either databricks_token or oauth_credentials",
-        )
         check.invariant(
             token is None or (oauth_client_id is None and oauth_client_secret is None),
             "Must provide either databricks_token or oauth_credentials, but cannot provide both",

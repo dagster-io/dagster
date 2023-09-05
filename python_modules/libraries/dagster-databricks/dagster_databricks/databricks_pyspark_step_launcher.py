@@ -12,10 +12,10 @@ from dagster import (
     Bool,
     Field,
     IntSource,
+    Noneable,
     StringSource,
     _check as check,
     resource,
-    Noneable,
 )
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._core.definitions.step_launcher import StepLauncher, StepRunRef
@@ -222,7 +222,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
             "Must provide either databricks_token or oauth_credentials, but cannot provide both",
         )
         self.databricks_token = check.opt_str_param(databricks_token, "databricks_token")
-        oauth_credentials = check.opt_dict_param(
+        oauth_credentials = check.opt_mapping_param(
             oauth_credentials,
             "oauth_credentials",
             key_type=str,

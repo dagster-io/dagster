@@ -18,11 +18,11 @@ from dagster import (
     EnumValue,
     Field,
     Int,
+    Noneable,
     Permissive,
     Selector,
     Shape,
     String,
-    Noneable,
 )
 
 
