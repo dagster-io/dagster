@@ -78,7 +78,14 @@ export function useLiveDataForAssetKeys(assetKeys: AssetKeyInput[]) {
     const assetKeyTokens = new Set(assetKeys.map(tokenForAssetKey));
     const assetStepKeys = new Set(liveResult.data?.assetNodes.flatMap((n) => n.opNames) || []);
     const runInProgressId = uniq(
-      Object.values(liveDataByNode).flatMap((p) => [...p.unstartedRunIds, ...p.inProgressRunIds]),
+      Object.values(liveDataByNode).flatMap((p) => [
+        ...p.unstartedRunIds,
+        ...p.inProgressRunIds,
+        ...p.assetChecks
+          .map((c) => c.executionForLatestMaterialization)
+          .filter(Boolean)
+          .map((e) => e!.runId),
+      ]),
     ).sort();
 
     const unobserve = observeAssetEventsInRuns(runInProgressId, (events) => {
