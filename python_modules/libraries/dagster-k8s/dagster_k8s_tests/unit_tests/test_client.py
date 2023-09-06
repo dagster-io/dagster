@@ -425,7 +425,6 @@ def test_retrieve_pod_logs():
 
 def test_retrieve_pod_logs_deleted_pod():
     """Tests that no logs are returned when the Kubernetes API responds with an error status code."""
-
     mock_client = create_mocked_client()
     pod_name = "pod"
     namespace_name = "namespace"
