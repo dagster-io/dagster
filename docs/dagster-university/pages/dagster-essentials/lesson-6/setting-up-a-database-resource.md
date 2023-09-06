@@ -18,9 +18,7 @@ def taxi_trips():
 		...
 ```
 
-Every asset that queries DuckDB contains the `duckdb.connect` line. As previously mentioned, this can become brittle and error-prone as your project grows, whether in the number of assets that use it or the complexity of the connections. For example, to MotherDuck, a specific S3 bucket, or loading an extension.
-
-As outlined above, this can become brittle and error-prone as more assets use it or as you’ll need to maintain more complex connections (ex., to MotherDuck, a specific S3 bucket, or loading an extension). To be exact, this brittleness is shared across the following assets:
+Every asset that queries DuckDB contains the `duckdb.connect` line. As previously mentioned, this can become brittle and error-prone as your project grows, whether in the number of assets that use it or the complexity of the connections. For example, to MotherDuck, a specific S3 bucket, or loading an extension. To be exact, this brittleness is shared across the following assets:
 
 - `taxi_zones`
 - `taxi_trips`
@@ -51,7 +49,7 @@ This code snippet imports a resource called `DuckDBResource` from Dagster’s `d
 
 ## Using environment variables
 
-When working across different settings or with secure values like passwords, environment variables are a standardized way to store configurations and credentials. Not specific to Python, environment variables are values that are saved outside of software and used within it. 
+When working across different settings or with secure values like passwords, environment variables are a standardized way to store configurations and credentials. Not specific to Python, environment variables are values that are saved outside of software and used within it. For a primer on environment variables in Python, check out [this post from our blog](https://dagster.io/blog/python-environment-variables).
 
 When configuring resources, it’s best practice to load your configurations and secrets into your programs from environment variables. You’ve been following this pattern by using `os.getenv` to fetch environment variables from the `.env` file you created in Lesson 2. A `.env` file is a standard for project-level environment variables and should **not** be committed to git, as they often contain passwords and sensitive information.
 
