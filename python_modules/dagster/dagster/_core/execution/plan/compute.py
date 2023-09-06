@@ -205,8 +205,10 @@ def execute_core_compute(
         if isinstance(step_output, (DynamicOutput, Output)):
             emitted_result_names.add(step_output.output_name)
 
-    op_output_names = {output.name for output in step.step_outputs}
-    omitted_outputs = op_output_names.difference(emitted_result_names)
+    expected_op_output_names = {
+        output.name for output in step.step_outputs if not output.properties.asset_check_handle
+    }
+    omitted_outputs = expected_op_output_names.difference(emitted_result_names)
     if omitted_outputs:
         step_context.log.info(
             f"{step_context.op_def.node_type_str} '{step.node_handle}' did not fire "
