@@ -194,7 +194,11 @@ def dev_command(
                         f" {daemon_process.returncode}"
                     )
 
+        except KeyboardInterrupt:
+            logger.info("KeyboardInterrupt received")
         except:
+            logger.exception("An unexpected exception has occurred")
+        finally:
             logger.info("Shutting down Dagster services...")
             interrupt_ipc_subprocess(daemon_process)
             interrupt_ipc_subprocess(webserver_process)
