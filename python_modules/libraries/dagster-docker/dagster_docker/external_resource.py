@@ -9,9 +9,9 @@ from dagster._core.ext.context import (
     ExtOrchestrationContext,
 )
 from dagster._core.ext.resource import (
+    ExtClient,
     ExtContextInjector,
     ExtMessageReader,
-    ExtResource,
 )
 from dagster._core.ext.utils import (
     ExtFileContextInjector,
@@ -22,7 +22,6 @@ from dagster_ext import (
     DagsterExtError,
     ExtExtras,
 )
-from pydantic import Field
 from typing_extensions import TypeAlias
 
 VolumeMapping: TypeAlias = Mapping[str, Mapping[str, str]]
@@ -32,19 +31,16 @@ _CONTEXT_SOURCE_FILENAME = "context"
 _MESSAGE_SINK_FILENAME = "messages"
 
 
-class ExtDocker(ExtResource):
-    env: Optional[Mapping[str, str]] = Field(
-        default=None,
-        description="An optional dict of environment variables to pass to the subprocess.",
-    )
-    volumes: Optional[VolumeMapping] = Field(
-        default=None,
-        description="An optional dict of volumes to mount in the container.",
-    )
-    registry: Optional[Mapping[str, str]] = Field(
-        default=None,
-        description="An optional dict of registry credentials to use to pull the image.",
-    )
+class ExtDocker(ExtClient):
+    def __init__(
+        self,
+        env: Optional[Mapping[str, str]] = None,
+        volumes: Optional[VolumeMapping] = None,
+        registry: Optional[Mapping[str, str]] = None,
+    ):
+        self.env = env
+        self.volumes = volumes
+        self.registry = registry
 
     def run(
         self,
