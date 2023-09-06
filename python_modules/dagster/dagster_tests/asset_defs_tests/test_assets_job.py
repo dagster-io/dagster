@@ -86,7 +86,7 @@ def _asset_keys_for_node(result, node_name):
 def test_single_asset_job():
     @asset
     def asset1(context):
-        assert context.asset_key_for_output() == AssetKey(["asset1"])
+        assert context.asset_key == AssetKey(["asset1"])
         return 1
 
     job = build_assets_job("a", [asset1])

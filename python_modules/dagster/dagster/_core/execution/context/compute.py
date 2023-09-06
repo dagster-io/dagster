@@ -448,6 +448,20 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
     @public
     @property
+    def asset_key(self) -> AssetKey:
+        """The AssetKey for the current asset. In a multi_asset, use asset_key_for_output instead."""
+        if self.has_assets_def and len(self.assets_def.keys_by_output_name.keys()) > 1:
+            raise DagsterInvariantViolationError(
+                "Cannot call `context.asset_key` in a multi_asset with more than one asset. Use"
+                " `context.asset_key_for_output` instead."
+            )
+        # pass in the output name to handle the case when a multi_asset has a single AssetOut
+        return self.asset_key_for_output(
+            output_name=list(self.assets_def.keys_by_output_name.keys())[0]
+        )
+
+    @public
+    @property
     def has_assets_def(self) -> bool:
         """If there is a backing AssetsDefinition for what is currently executing."""
         assets_def = self.job_def.asset_layer.assets_def_for_node(self.node_handle)
