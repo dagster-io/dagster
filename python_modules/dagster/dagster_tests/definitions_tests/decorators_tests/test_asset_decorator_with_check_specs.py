@@ -107,42 +107,6 @@ def test_multiple_asset_checks_same_op():
     assert check_evals[1].metadata == {"baz": MetadataValue.text("bla")}
 
 
-def test_check_targets_other_asset():
-    @asset(check_specs=[AssetCheckSpec("check1", asset="asset2", description="desc")])
-    def asset1():
-        yield Output(None)
-        yield AssetCheckResult(
-            asset_key="asset2", check_name="check1", success=True, metadata={"foo": "bar"}
-        )
-
-    result = materialize(assets=[asset1])
-    assert result.success
-
-    check_evals = result.get_asset_check_evaluations()
-    assert len(check_evals) == 1
-    check_eval = check_evals[0]
-    assert check_eval.asset_key == AssetKey("asset2")
-    assert check_eval.check_name == "check1"
-    assert check_eval.metadata == {"foo": MetadataValue.text("bar")}
-
-
-def test_check_targets_other_asset_and_result_omits_key():
-    @asset(check_specs=[AssetCheckSpec("check1", asset="asset2", description="desc")])
-    def asset1():
-        yield Output(None)
-        yield AssetCheckResult(check_name="check1", success=True, metadata={"foo": "bar"})
-
-    result = materialize(assets=[asset1])
-    assert result.success
-
-    check_evals = result.get_asset_check_evaluations()
-    assert len(check_evals) == 1
-    check_eval = check_evals[0]
-    assert check_eval.asset_key == AssetKey("asset2")
-    assert check_eval.check_name == "check1"
-    assert check_eval.metadata == {"foo": MetadataValue.text("bar")}
-
-
 def test_no_result_for_check():
     @asset(check_specs=[AssetCheckSpec("check1", asset="asset1")])
     def asset1():
@@ -297,10 +261,27 @@ def test_duplicate_checks_same_asset():
             ...
 
 
+def test_check_wrong_asset():
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=re.escape("Invalid asset key"),
+    ):
+
+        @asset(
+            check_specs=[
+                AssetCheckSpec("check1", asset="other_asset", description="desc1"),
+            ]
+        )
+        def asset1():
+            ...
+
+
 def test_multi_asset_with_check():
     @multi_asset(
         outs={"one": AssetOut("asset1"), "two": AssetOut("asset2")},
-        check_specs=[AssetCheckSpec("check1", asset="asset1", description="desc")],
+        check_specs=[
+            AssetCheckSpec("check1", asset=AssetKey(["asset1", "one"]), description="desc")
+        ],
     )
     def asset_1_and_2():
         yield Output(None, output_name="one")
@@ -315,7 +296,7 @@ def test_multi_asset_with_check():
     check_evals = result.get_asset_check_evaluations()
     assert len(check_evals) == 1
     check_eval = check_evals[0]
-    assert check_eval.asset_key == AssetKey("asset1")
+    assert check_eval.asset_key == AssetKey(["asset1", "one"])
     assert check_eval.check_name == "check1"
     assert check_eval.metadata == {"foo": MetadataValue.text("bar")}
 
@@ -323,7 +304,9 @@ def test_multi_asset_with_check():
 def test_multi_asset_no_result_for_check():
     @multi_asset(
         outs={"one": AssetOut("asset1"), "two": AssetOut("asset2")},
-        check_specs=[AssetCheckSpec("check1", asset="asset1", description="desc")],
+        check_specs=[
+            AssetCheckSpec("check1", asset=AssetKey(["asset1", "one"]), description="desc")
+        ],
     )
     def asset_1_and_2():
         yield Output(None, output_name="one")
@@ -333,7 +316,7 @@ def test_multi_asset_no_result_for_check():
         DagsterStepOutputNotFoundError,
         match=(
             'Core compute for op "asset_1_and_2" did not return an output for non-optional output'
-            ' "asset1_check1"'
+            ' "asset1__one_check1"'
         ),
     ):
         materialize(assets=[asset_1_and_2])
@@ -341,7 +324,7 @@ def test_multi_asset_no_result_for_check():
 
 def test_result_missing_asset_key():
     @multi_asset(
-        outs={"one": AssetOut("asset1"), "two": AssetOut("asset2")},
+        outs={"one": AssetOut(key="asset1"), "two": AssetOut(key="asset2")},
         check_specs=[
             AssetCheckSpec("check1", asset="asset1"),
             AssetCheckSpec("check2", asset="asset2"),
