@@ -33,7 +33,6 @@ from .dependency import (
     IDependencyDefinition,
     NodeHandle,
     NodeInvocation,
-    NodeOutputHandle,
 )
 from .events import AssetKey
 from .executor_definition import ExecutorDefinition
@@ -52,8 +51,6 @@ ASSET_BASE_JOB_PREFIX = "__ASSET_JOB"
 
 if TYPE_CHECKING:
     from dagster._core.definitions.run_config import RunConfig
-
-    from .asset_check_spec import AssetCheckSpec
 
 
 def is_base_asset_job_name(name: str) -> bool:
