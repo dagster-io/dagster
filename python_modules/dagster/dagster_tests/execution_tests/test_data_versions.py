@@ -1,7 +1,9 @@
 import re
+from datetime import datetime, timedelta
 from random import randint
 from unittest import mock
 
+import pytest
 from dagster import (
     AssetMaterialization,
     DagsterInstance,
@@ -13,6 +15,7 @@ from dagster import (
 )
 from dagster._config.field import Field
 from dagster._config.pythonic_config import Config
+from dagster._core.definitions.asset_in import AssetIn
 from dagster._core.definitions.asset_out import AssetOut
 from dagster._core.definitions.data_version import (
     DATA_VERSION_TAG,
@@ -30,6 +33,8 @@ from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey, Output
 from dagster._core.definitions.observe import observe
 from dagster._core.definitions.partition import StaticPartitionsDefinition
+from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
+from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster._core.instance_for_test import instance_for_test
@@ -692,6 +697,60 @@ def test_stale_status_many_to_one_partitions() -> None:
         assert status_resolver.get_status(asset2.key) == StaleStatus.FRESH
         assert status_resolver.get_status(asset3.key, "alpha") == StaleStatus.STALE
         assert status_resolver.get_status(asset3.key, "beta") == StaleStatus.STALE
+
+
+@pytest.mark.parametrize(
+    ("num_partitions", "expected_status"),
+    [
+        (2, StaleStatus.STALE),  # under threshold
+        (3, StaleStatus.FRESH),  # over threshold
+    ],
+)
+def test_stale_status_self_partitioned(num_partitions: int, expected_status: StaleStatus) -> None:
+    start_date = datetime(2020, 1, 1)
+    end_date = start_date + timedelta(days=num_partitions)
+
+    partitions_def = DailyPartitionsDefinition(start_date=start_date, end_date=end_date)
+    start_key = start_date.strftime("%Y-%m-%d")
+    end_key = (end_date - timedelta(days=1)).strftime("%Y-%m-%d")
+
+    @asset(
+        partitions_def=partitions_def,
+        ins={
+            "asset1": AssetIn(
+                partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
+            )
+        },
+    )
+    def asset1(asset1):
+        return 1 if asset1 is None else asset1 + 1
+
+    all_assets = [asset1]
+    with instance_for_test() as instance:
+        for k in partitions_def.get_partition_keys():
+            materialize_asset(all_assets, asset1, instance, partition_key=k)
+        status_resolver = get_stale_status_resolver(instance, all_assets)
+        for k in partitions_def.get_partition_keys():
+            assert status_resolver.get_status(asset1.key, k) == StaleStatus.FRESH
+
+        materialize_asset(
+            all_assets,
+            asset1,
+            instance,
+            partition_key=start_key,
+        )
+        status_resolver = get_stale_status_resolver(instance, all_assets)
+        with mock.patch(
+            "dagster._core.definitions.data_version.SKIP_PARTITION_DATA_VERSION_SELF_DEPENDENCY_THRESHOLD",
+            3,
+        ):
+            # In the under-threshold case, this should return STALE since we updated an upstream
+            # partition.
+            #
+            # In the over-threshold case, even though we introduced a new data version to an
+            # upstream partition, this should return FRESH because the number of self-partitions is
+            # > SKIP_PARTITION_DATA_VERSION_SELF_DEPENDENCY_THRESHOLD
+            assert status_resolver.get_status(asset1.key, end_key) == expected_status
 
 
 def test_stale_status_manually_versioned() -> None:
