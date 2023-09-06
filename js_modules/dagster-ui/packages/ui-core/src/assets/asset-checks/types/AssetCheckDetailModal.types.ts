@@ -9,6 +9,7 @@ export type AssetCheckExecutionFragment = {
   status: Types.AssetCheckExecutionResolvedStatus;
   evaluation: {
     __typename: 'AssetCheckEvaluation';
+    severity: Types.AssetCheckSeverity;
     timestamp: number;
     targetMaterialization: {
       __typename: 'AssetCheckEvaluationTargetMaterializationData';
@@ -143,7 +144,6 @@ export type AssetCheckDetailsQuery = {
           __typename: 'AssetCheck';
           name: string;
           description: string | null;
-          severity: Types.AssetCheckSeverity;
           executions: Array<{
             __typename: 'AssetCheckExecution';
             id: string;
@@ -151,6 +151,7 @@ export type AssetCheckDetailsQuery = {
             status: Types.AssetCheckExecutionResolvedStatus;
             evaluation: {
               __typename: 'AssetCheckEvaluation';
+              severity: Types.AssetCheckSeverity;
               timestamp: number;
               targetMaterialization: {
                 __typename: 'AssetCheckEvaluationTargetMaterializationData';

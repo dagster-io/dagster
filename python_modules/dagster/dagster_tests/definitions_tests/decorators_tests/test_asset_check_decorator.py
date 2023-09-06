@@ -246,6 +246,8 @@ def test_asset_check_separate_op_downstream_still_executes():
 
 
 def test_error_severity_skip_downstream():
+    pytest.skip("Currently users should raise exceptions instead of using checks for control flow.")
+
     @asset
     def asset1():
         ...
@@ -281,6 +283,8 @@ def test_error_severity_skip_downstream():
 
 
 def test_error_severity_with_source_asset_fail():
+    pytest.skip("Currently users should raise exceptions instead of using checks for control flow.")
+
     asset1 = SourceAsset("asset1")
 
     @asset_check(asset=asset1, severity=AssetCheckSeverity.ERROR)
@@ -316,9 +320,9 @@ def test_error_severity_with_source_asset_fail():
 def test_error_severity_with_source_asset_success():
     asset1 = SourceAsset("asset1", io_manager_key="asset1_io_manager")
 
-    @asset_check(asset=asset1, severity=AssetCheckSeverity.ERROR)
+    @asset_check(asset=asset1)
     def check1(context):
-        return AssetCheckResult(success=True)
+        return AssetCheckResult(success=True, severity=AssetCheckSeverity.ERROR)
 
     @asset
     def asset2(asset1):

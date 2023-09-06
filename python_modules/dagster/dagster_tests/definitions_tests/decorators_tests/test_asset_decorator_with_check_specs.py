@@ -217,6 +217,8 @@ def test_asset_check_fails_downstream_still_executes():
 
 
 def test_error_severity_skip_downstream():
+    pytest.skip("Currently users should raise exceptions instead of using checks for control flow.")
+
     @asset(
         check_specs=[AssetCheckSpec("check1", asset="asset1", severity=AssetCheckSeverity.ERROR)]
     )

@@ -41,12 +41,16 @@ class GrapheneAssetCheckEvaluationTargetMaterializationData(graphene.ObjectType)
         self.timestamp = target_materialization_data.timestamp
 
 
+GrapheneAssetCheckSeverity = graphene.Enum.from_enum(AssetCheckSeverity)
+
+
 class GrapheneAssetCheckEvaluation(graphene.ObjectType):
     timestamp = graphene.Field(
         graphene.NonNull(graphene.Float), description="When the check evaluation was stored"
     )
     targetMaterialization = graphene.Field(GrapheneAssetCheckEvaluationTargetMaterializationData)
     metadataEntries = non_null_list(GrapheneMetadataEntry)
+    severity = graphene.NonNull(GrapheneAssetCheckSeverity)
 
     class Meta:
         name = "AssetCheckEvaluation"
@@ -67,6 +71,7 @@ class GrapheneAssetCheckEvaluation(graphene.ObjectType):
         )
 
         self.metadataEntries = list(iterate_metadata_entries(evaluation_data.metadata))
+        self.severity = evaluation_data.severity
 
 
 class GrapheneAssetCheckExecution(graphene.ObjectType):
@@ -98,14 +103,10 @@ class GrapheneAssetCheckExecution(graphene.ObjectType):
         self.timestamp = execution.create_timestamp
 
 
-GrapheneAssetCheckSeverity = graphene.Enum.from_enum(AssetCheckSeverity)
-
-
 class GrapheneAssetCheck(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     assetKey = graphene.NonNull(GrapheneAssetKey)
     description = graphene.String()
-    severity = graphene.NonNull(GrapheneAssetCheckSeverity)
     executions = graphene.Field(
         non_null_list(GrapheneAssetCheckExecution),
         limit=graphene.NonNull(graphene.Int),
@@ -127,9 +128,6 @@ class GrapheneAssetCheck(graphene.ObjectType):
 
     def resolve_description(self, _) -> Optional[str]:
         return self._asset_check.description
-
-    def resolve_severity(self, _) -> AssetCheckSeverity:
-        return self._asset_check.severity
 
     def resolve_executions(
         self, graphene_info: ResolveInfo, **kwargs

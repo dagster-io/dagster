@@ -4,11 +4,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {
-  AssetCheckExecutionResolvedStatus,
-  AssetCheckSeverity,
-  AssetKeyInput,
-} from '../../graphql/types';
+import {AssetCheckExecutionResolvedStatus, AssetKeyInput} from '../../graphql/types';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 import {testId} from '../../testing/testId';
 import {HeaderCell, Row, RowCell, Container, Inner} from '../../ui/VirtualizedTable';
@@ -71,7 +67,7 @@ export const VirtualizedAssetCheckTable: React.FC<Props> = ({
   );
 };
 
-const TEMPLATE_COLUMNS = '2fr 80px 120px 1fr 1fr';
+const TEMPLATE_COLUMNS = '2fr 120px 1fr 1fr';
 
 interface AssetCheckRowProps {
   assetKey: AssetKeyInput;
@@ -101,17 +97,13 @@ export const VirtualizedAssetCheckRow = ({
     ) {
       return <AssetCheckStatusTag notChecked={true} />;
     }
-    return <AssetCheckStatusTag status={lastExecution.status} severity={row.severity} />;
-  }, [lastExecution, lastMaterializationRunId, row.severity]);
-
-  const severity = React.useMemo(() => {
-    switch (row.severity) {
-      case AssetCheckSeverity.ERROR:
-        return 'Error';
-      case AssetCheckSeverity.WARN:
-        return 'Warn';
-    }
-  }, [row.severity]);
+    return (
+      <AssetCheckStatusTag
+        status={lastExecution.status}
+        severity={lastExecution.evaluation?.severity}
+      />
+    );
+  }, [lastExecution, lastMaterializationRunId]);
 
   return (
     <Row $height={height} $start={start} data-testid={testId(`row-#TODO_USE_CHECK_ID`)}>
@@ -128,9 +120,6 @@ export const VirtualizedAssetCheckRow = ({
             </Link>
             <CaptionEllipsed>{row.description}</CaptionEllipsed>
           </Box>
-        </RowCell>
-        <RowCell style={{flexDirection: 'row', alignItems: 'center'}}>
-          <Body2 color={Colors.Dark}>{severity}</Body2>
         </RowCell>
         <RowCell style={{flexDirection: 'row', alignItems: 'center'}}>
           <div>{status}</div>
@@ -172,7 +161,6 @@ export const VirtualizedAssetCheckHeader = () => {
       }}
     >
       <HeaderCell>Check name</HeaderCell>
-      <HeaderCell>Severity</HeaderCell>
       <HeaderCell>Status</HeaderCell>
       <HeaderCell>Evaluation timestamp</HeaderCell>
       <HeaderCell>Evaluation metadata</HeaderCell>

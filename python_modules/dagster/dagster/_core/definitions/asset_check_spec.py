@@ -46,7 +46,6 @@ class AssetCheckSpec(
             ("name", PublicAttr[str]),
             ("asset_key", PublicAttr[AssetKey]),
             ("description", PublicAttr[Optional[str]]),
-            ("severity", PublicAttr[AssetCheckSeverity]),
         ],
     )
 ):
@@ -61,7 +60,6 @@ class AssetCheckSpec(
         asset (Union[AssetKey, Sequence[str], str, AssetsDefinition, SourceAsset]): The asset that
             the check applies to.
         description (Optional[str]): Description for the check.
-        severity (AssetCheckSeverity): Severity of the check. Defaults to `WARN`
     """
 
     def __new__(
@@ -70,14 +68,12 @@ class AssetCheckSpec(
         *,
         asset: Union[CoercibleToAssetKey, "AssetsDefinition", "SourceAsset"],
         description: Optional[str] = None,
-        severity: AssetCheckSeverity = AssetCheckSeverity.WARN,
     ):
         return super().__new__(
             cls,
             name=check.str_param(name, "name"),
             asset_key=AssetKey.from_coercible_or_definition(asset),
             description=check.opt_str_param(description, "description"),
-            severity=check.inst_param(severity, "severity", AssetCheckSeverity),
         )
 
     def get_python_identifier(self) -> str:
