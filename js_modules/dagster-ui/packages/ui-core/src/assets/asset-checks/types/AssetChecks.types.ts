@@ -16,7 +16,7 @@ export type AssetChecksQuery = {
           __typename: 'AssetCheck';
           name: string;
           description: string | null;
-          executions: Array<{
+          executionForLatestMaterialization: {
             __typename: 'AssetCheckExecution';
             id: string;
             runId: string;

@@ -186,7 +186,7 @@ export function _buildAssetNodeStatusContent({
   const checksFailed = liveData.assetChecks.some(
     (c) =>
       (c.executionForLatestMaterialization?.status === AssetCheckExecutionResolvedStatus.FAILED &&
-        c.severity === AssetCheckSeverity.ERROR) ||
+        c.executionForLatestMaterialization?.evaluation?.severity === AssetCheckSeverity.ERROR) ||
       c.executionForLatestMaterialization?.status ===
         AssetCheckExecutionResolvedStatus.EXECUTION_FAILED,
   );

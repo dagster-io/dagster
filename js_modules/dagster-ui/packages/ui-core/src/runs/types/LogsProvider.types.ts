@@ -58,7 +58,7 @@ export type PipelineRunLogsSubscription = {
               evaluation: {
                 __typename: 'AssetCheckEvaluation';
                 checkName: string;
-                success: boolean | null;
+                success: boolean;
                 timestamp: number;
                 assetKey: {__typename: 'AssetKey'; path: Array<string>};
                 targetMaterialization: {
@@ -2674,7 +2674,7 @@ export type RunLogsSubscriptionSuccessFragment = {
         evaluation: {
           __typename: 'AssetCheckEvaluation';
           checkName: string;
-          success: boolean | null;
+          success: boolean;
           timestamp: number;
           assetKey: {__typename: 'AssetKey'; path: Array<string>};
           targetMaterialization: {
@@ -5235,7 +5235,7 @@ export type RunLogsQuery = {
               evaluation: {
                 __typename: 'AssetCheckEvaluation';
                 checkName: string;
-                success: boolean | null;
+                success: boolean;
                 timestamp: number;
                 assetKey: {__typename: 'AssetKey'; path: Array<string>};
                 targetMaterialization: {

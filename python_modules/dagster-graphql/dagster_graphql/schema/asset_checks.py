@@ -53,6 +53,7 @@ class GrapheneAssetCheckEvaluation(graphene.ObjectType):
     targetMaterialization = graphene.Field(GrapheneAssetCheckEvaluationTargetMaterializationData)
     metadataEntries = non_null_list(GrapheneMetadataEntry)
     severity = graphene.NonNull(GrapheneAssetCheckSeverity)
+    success = graphene.NonNull(graphene.Boolean)
 
     class Meta:
         name = "AssetCheckEvaluation"
@@ -73,7 +74,9 @@ class GrapheneAssetCheckEvaluation(graphene.ObjectType):
 
         self.metadataEntries = list(iterate_metadata_entries(evaluation_data.metadata))
         self.severity = evaluation_data.severity
-
+        self.success = evaluation_data.success
+        self.checkName = evaluation_data.check_name
+        self.assetKey = evaluation_data.asset_key
 
 
 class GrapheneAssetCheckExecution(graphene.ObjectType):

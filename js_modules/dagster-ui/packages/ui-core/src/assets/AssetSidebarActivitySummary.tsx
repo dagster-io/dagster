@@ -190,7 +190,7 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
                         })}`}
                       >
                         <AssetCheckStatusTag
-                          severity={check.severity}
+                          severity={check.executionForLatestMaterialization.evaluation?.severity}
                           status={check.executionForLatestMaterialization.status}
                         />
                       </Link>

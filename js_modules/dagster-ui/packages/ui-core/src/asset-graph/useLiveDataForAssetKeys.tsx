@@ -147,11 +147,13 @@ const ASSET_NODE_LIVE_FRAGMENT = gql`
     }
     assetChecks {
       name
-      severity
       executionForLatestMaterialization {
         id
         runId
         status
+        evaluation {
+          severity
+        }
       }
     }
     freshnessInfo {

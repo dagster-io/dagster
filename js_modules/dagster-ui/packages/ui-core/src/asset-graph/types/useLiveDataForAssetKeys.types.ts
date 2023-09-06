@@ -38,12 +38,12 @@ export type AssetNodeLiveFragment = {
   assetChecks: Array<{
     __typename: 'AssetCheck';
     name: string;
-    severity: Types.AssetCheckSeverity;
     executionForLatestMaterialization: {
       __typename: 'AssetCheckExecution';
       id: string;
       runId: string;
       status: Types.AssetCheckExecutionResolvedStatus;
+      evaluation: {__typename: 'AssetCheckEvaluation'; severity: Types.AssetCheckSeverity} | null;
     } | null;
   }>;
   freshnessInfo: {__typename: 'AssetFreshnessInfo'; currentMinutesLate: number | null} | null;
@@ -102,12 +102,12 @@ export type AssetGraphLiveQuery = {
     assetChecks: Array<{
       __typename: 'AssetCheck';
       name: string;
-      severity: Types.AssetCheckSeverity;
       executionForLatestMaterialization: {
         __typename: 'AssetCheckExecution';
         id: string;
         runId: string;
         status: Types.AssetCheckExecutionResolvedStatus;
+        evaluation: {__typename: 'AssetCheckEvaluation'; severity: Types.AssetCheckSeverity} | null;
       } | null;
     }>;
     freshnessInfo: {__typename: 'AssetFreshnessInfo'; currentMinutesLate: number | null} | null;

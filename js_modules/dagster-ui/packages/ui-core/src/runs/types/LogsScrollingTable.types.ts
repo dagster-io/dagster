@@ -39,7 +39,7 @@ export type LogsScrollingTableMessageFragment_AssetCheckEvaluationEvent_ = {
   evaluation: {
     __typename: 'AssetCheckEvaluation';
     checkName: string;
-    success: boolean | null;
+    success: boolean;
     timestamp: number;
     assetKey: {__typename: 'AssetKey'; path: Array<string>};
     targetMaterialization: {

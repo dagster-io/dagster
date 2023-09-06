@@ -179,42 +179,52 @@ export const LiveDataForNodeMaterializedWithChecks: LiveDataForNode = {
   assetChecks: [
     {
       name: 'check_1',
-      severity: AssetCheckSeverity.WARN,
       executionForLatestMaterialization: {
         runId: '1234',
         status: AssetCheckExecutionResolvedStatus.FAILED,
+        evaluation: {
+          severity: AssetCheckSeverity.WARN,
+        },
       },
     },
     {
       name: 'check_2',
-      severity: AssetCheckSeverity.ERROR,
       executionForLatestMaterialization: {
         runId: '1234',
         status: AssetCheckExecutionResolvedStatus.FAILED,
+        evaluation: {
+          severity: AssetCheckSeverity.ERROR,
+        },
       },
     },
     {
       name: 'check_3',
-      severity: AssetCheckSeverity.WARN,
       executionForLatestMaterialization: {
         runId: '1234',
         status: AssetCheckExecutionResolvedStatus.IN_PROGRESS,
+        evaluation: {
+          severity: AssetCheckSeverity.WARN,
+        },
       },
     },
     {
       name: 'check_4',
-      severity: AssetCheckSeverity.WARN,
       executionForLatestMaterialization: {
         runId: '1234',
         status: AssetCheckExecutionResolvedStatus.SKIPPED,
+        evaluation: {
+          severity: AssetCheckSeverity.WARN,
+        },
       },
     },
     {
       name: 'check_5',
-      severity: AssetCheckSeverity.WARN,
       executionForLatestMaterialization: {
         runId: '1234',
         status: AssetCheckExecutionResolvedStatus.SUCCEEDED,
+        evaluation: {
+          severity: AssetCheckSeverity.WARN,
+        },
       },
     },
   ],
@@ -225,7 +235,7 @@ export const LiveDataForNodeMaterializedWithChecks: LiveDataForNode = {
 export const LiveDataForNodeMaterializedWithChecksOk: LiveDataForNode = {
   ...LiveDataForNodeMaterializedWithChecks,
   assetChecks: LiveDataForNodeMaterializedWithChecks.assetChecks.filter(
-    (c) => c.severity !== AssetCheckSeverity.ERROR,
+    (c) => c.executionForLatestMaterialization?.evaluation?.severity !== AssetCheckSeverity.ERROR,
   ),
 };
 

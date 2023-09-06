@@ -841,14 +841,8 @@ type AssetCheck {
   name: String!
   assetKey: AssetKey!
   description: String
-  severity: AssetCheckSeverity!
   executions(limit: Int!, cursor: String): [AssetCheckExecution!]!
   executionForLatestMaterialization: AssetCheckExecution
-}
-
-enum AssetCheckSeverity {
-  WARN
-  ERROR
 }
 
 type AssetCheckExecution {
@@ -873,13 +867,19 @@ type AssetCheckEvaluation {
   assetKey: AssetKey!
   targetMaterialization: AssetCheckEvaluationTargetMaterializationData
   metadataEntries: [MetadataEntry!]!
-  success: Boolean
+  severity: AssetCheckSeverity!
+  success: Boolean!
 }
 
 type AssetCheckEvaluationTargetMaterializationData {
   storageId: Int!
   runId: String!
   timestamp: Float!
+}
+
+enum AssetCheckSeverity {
+  WARN
+  ERROR
 }
 
 enum EvaluationErrorReason {
@@ -1203,27 +1203,6 @@ type AssetCheckEvaluationEvent implements MessageEvent & StepEvent {
   evaluation: AssetCheckEvaluation!
 }
 
-<<<<<<< HEAD
-type AssetCheckEvaluation {
-  timestamp: Float!
-  targetMaterialization: AssetCheckEvaluationTargetMaterializationData
-  metadataEntries: [MetadataEntry!]!
-  severity: AssetCheckSeverity!
-}
-
-type AssetCheckEvaluationTargetMaterializationData {
-  storageId: Int!
-  runId: String!
-  timestamp: Float!
-}
-
-enum AssetCheckSeverity {
-  WARN
-  ERROR
-}
-
-=======
->>>>>>> c18d8b9ed1 (Split AssetNodeStatusContent into a separate file)
 type PipelineRunLogsSubscriptionFailure {
   message: String!
   missingRunId: String
@@ -3235,33 +3214,6 @@ type AssetChecks {
   checks: [AssetCheck!]!
 }
 
-<<<<<<< HEAD
-type AssetCheck {
-  name: String!
-  assetKey: AssetKey!
-  description: String
-  executions(limit: Int!, cursor: String): [AssetCheckExecution!]!
-  executionForLatestMaterialization: AssetCheckExecution
-}
-
-type AssetCheckExecution {
-  id: String!
-  runId: String!
-  status: AssetCheckExecutionResolvedStatus!
-  evaluation: AssetCheckEvaluation
-  timestamp: Float!
-}
-
-enum AssetCheckExecutionResolvedStatus {
-  IN_PROGRESS
-  SUCCEEDED
-  FAILED
-  EXECUTION_FAILED
-  SKIPPED
-}
-
-=======
->>>>>>> c18d8b9ed1 (Split AssetNodeStatusContent into a separate file)
 type AssetCheckNeedsMigrationError implements Error {
   message: String!
 }

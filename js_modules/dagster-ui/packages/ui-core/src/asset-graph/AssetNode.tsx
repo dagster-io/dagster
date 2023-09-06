@@ -174,7 +174,7 @@ const AssetNodeChecksRow: React.FC<{
       status === undefined
         ? 'NOT_EVALUATED'
         : status === AssetCheckExecutionResolvedStatus.FAILED
-        ? c.severity === AssetCheckSeverity.WARN
+        ? c.executionForLatestMaterialization?.evaluation?.severity === AssetCheckSeverity.WARN
           ? 'WARN'
           : 'ERROR'
         : status === AssetCheckExecutionResolvedStatus.EXECUTION_FAILED

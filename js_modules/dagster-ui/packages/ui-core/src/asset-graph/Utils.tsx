@@ -160,10 +160,12 @@ export interface LiveDataForNode {
   } | null;
   assetChecks: {
     name: string;
-    severity: AssetCheckSeverity;
     executionForLatestMaterialization: {
       runId: string;
       status: AssetCheckExecutionResolvedStatus;
+      evaluation: {
+        severity: AssetCheckSeverity;
+      } | null;
     } | null;
   }[];
 }

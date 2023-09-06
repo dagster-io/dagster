@@ -134,6 +134,7 @@ export type AssetCheckEvaluation = {
   checkName: Scalars['String'];
   metadataEntries: Array<MetadataEntry>;
   severity: AssetCheckSeverity;
+  success: Scalars['Boolean'];
   targetMaterialization: Maybe<AssetCheckEvaluationTargetMaterializationData>;
   timestamp: Scalars['Float'];
 };
@@ -4450,6 +4451,7 @@ export const buildAssetCheckEvaluation = (
       overrides && overrides.hasOwnProperty('severity')
         ? overrides.severity!
         : AssetCheckSeverity.ERROR,
+    success: overrides && overrides.hasOwnProperty('success') ? overrides.success! : true,
     targetMaterialization:
       overrides && overrides.hasOwnProperty('targetMaterialization')
         ? overrides.targetMaterialization!
