@@ -18,9 +18,7 @@ def taxi_trips():
 		...
 ```
 
-Every asset that queries DuckDB contains the `duckdb.connect` line. As previously mentioned, this can become brittle and error-prone as your project grows, whether in the number of assets that use it or the complexity of the connections. For example, to MotherDuck, a specific S3 bucket, or loading an extension.
-
-As outlined above, this can become brittle and error-prone as more assets use it or as you’ll need to maintain more complex connections (ex., to MotherDuck, a specific S3 bucket, or loading an extension). To be exact, this brittleness is shared across the following assets:
+Every asset that queries DuckDB contains the `duckdb.connect` line. As previously mentioned, this can become brittle and error-prone as your project grows, whether in the number of assets that use it or the complexity of the connections. For example, to MotherDuck, a specific S3 bucket, or loading an extension. To be exact, this brittleness is shared across the following assets:
 
 - `taxi_zones`
 - `taxi_trips`
