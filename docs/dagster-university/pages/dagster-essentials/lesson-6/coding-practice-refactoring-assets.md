@@ -47,7 +47,19 @@ We’ll assume your code looks like the following for the rest of the module. If
         
     
 - **In `assets/metrics.py`:**
-    - `manhattan_stats`:
+    - **Imports:**
+
+      Update the imports in `assets/metrics.py` to the following:
+
+      ```python
+      import requests 
+      from dagster_duckdb 
+      import DuckDBResource 
+      from . import constants 
+      from dagster import asset
+      ```
+
+    - **Asset**: `manhattan_stats`:
         
         ```python
         # assets/metrics.py
