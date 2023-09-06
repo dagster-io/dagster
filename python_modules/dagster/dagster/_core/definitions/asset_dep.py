@@ -23,7 +23,29 @@ class AssetDep(
         ],
     )
 ):
-    """TODO - docs."""
+    """Specifies a dependency on an upstream asset when using AssetSpec.
+
+    Attributes:
+        asset (Union[AssetKey, str, AssetSpec, AssetsDefinition, SourceAsset]): The upstream asset to depend on.
+        partition_mapping (Optional[PartitionMapping]): Defines what partitions to depend on in
+            the upstream asset. If not provided and the upstream asset is partitioned, defaults to
+            the default partition mapping for the partitions definition, which is typically maps
+            partition keys to the same partition keys in upstream assets.
+
+    Examples:
+    .. code-block:: python
+
+        upstream_asset = AssetSpec("upstream_asset")
+        downstream_asset = AssetSpec(
+            "downstream_asset",
+            deps=[
+                AssetDep(
+                    upstream_asset,
+                    partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
+                )
+            ]
+        )
+    """
 
     def __new__(
         cls,
