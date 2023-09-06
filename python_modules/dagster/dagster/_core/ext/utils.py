@@ -32,9 +32,11 @@ from dagster._utils import tail_file
 _CONTEXT_INJECTOR_FILENAME = "context"
 _MESSAGE_READER_FILENAME = "messages"
 
+_CONTEXT_INJECTOR_FILENAME = "context"
+
 
 class ExtFileContextInjector(ExtContextInjector):
-    def __init__(self, path: str):
+    def __init__(self, path):
         self._path = path
 
     @contextmanager

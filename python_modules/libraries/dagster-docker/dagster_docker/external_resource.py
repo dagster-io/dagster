@@ -60,10 +60,24 @@ class _ExtDocker(ExtClient):
     """
 
     def __init__(
-        self, env: Optional[Mapping[str, str]] = None, registry: Optional[Mapping[str, str]] = None
+        self,
+        env: Optional[Mapping[str, str]] = None,
+        registry: Optional[Mapping[str, str]] = None,
+        context_injector: Optional[ExtContextInjector] = None,
     ):
         self.env = check.opt_mapping_param(env, "env", key_type=str, value_type=str)
         self.registry = check.opt_mapping_param(registry, "registry", key_type=str, value_type=str)
+<<<<<<< HEAD
+=======
+        self.context_injector = (
+            check.opt_inst_param(
+                context_injector,
+                "context_injector",
+                ExtContextInjector,
+            )
+            or ExtEnvContextInjector()
+        )
+>>>>>>> 78e3d21037 (self review)
 
     def run(
         self,
@@ -75,7 +89,6 @@ class _ExtDocker(ExtClient):
         registry: Optional[Mapping[str, str]] = None,
         container_kwargs: Optional[Mapping[str, Any]] = None,
         extras: Optional[ExtExtras] = None,
-        context_injector: Optional[ExtContextInjector] = None,
         message_reader: Optional[ExtMessageReader] = None,
     ) -> None:
         """Create a docker container and run it to completion, enriched with the ext protocol.
@@ -100,6 +113,7 @@ class _ExtDocker(ExtClient):
             message_Reader (Optional[ExtMessageReader]):
                 Override the default ext protocol message reader.
         """
+<<<<<<< HEAD
         context_injector = context_injector or ExtEnvContextInjector()
         message_reader = message_reader or DockerLogsMessageReader()
 
@@ -109,6 +123,13 @@ class _ExtDocker(ExtClient):
             message_reader=message_reader,
             extras=extras,
         ) as ext_context:
+=======
+        ext_context = ExtOrchestrationContext(context=context, extras=extras)
+        with self._setup_ext_protocol(ext_context, message_reader) as (
+            ext_env,
+            message_reader,
+        ):
+>>>>>>> 78e3d21037 (self review)
             client = docker.client.from_env()
             registry = registry or self.registry
             if registry:
@@ -173,5 +194,24 @@ class _ExtDocker(ExtClient):
             **kwargs,
         )
 
+<<<<<<< HEAD
+=======
+    @contextmanager
+    def _setup_ext_protocol(
+        self,
+        external_context: ExtOrchestrationContext,
+        message_reader: Optional[ExtMessageReader],
+    ) -> Iterator[Tuple[Mapping[str, str], ExtMessageReader]]:
+        message_reader = message_reader or DockerLogsMessageReader()
+
+        with self.context_injector.inject_context(
+            external_context,
+        ) as ci_params, message_reader.read_messages(
+            external_context,
+        ) as mr_params:
+            protocol_envs = io_params_as_env_vars(ci_params, mr_params)
+            yield protocol_envs, message_reader
+
+>>>>>>> 78e3d21037 (self review)
 
 ExtDocker = ResourceParam[_ExtDocker]

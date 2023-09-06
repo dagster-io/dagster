@@ -130,7 +130,7 @@ def test_ext_subprocess(
     if context_injector_spec == "default":
         context_injector = None
     elif context_injector_spec == "user/file":
-        context_injector = ExtFileContextInjector(os.path.join(tmpdir, "input"))
+        context_injector = ExtFileContextInjector()
     elif context_injector_spec == "user/env":
         context_injector = ExtEnvContextInjector()
     else:
@@ -155,7 +155,6 @@ def test_ext_subprocess(
             cmd,
             context=context,
             extras=extras,
-            context_injector=context_injector,
             message_reader=message_reader,
             env={
                 "CONTEXT_INJECTOR_SPEC": context_injector_spec,
@@ -163,7 +162,8 @@ def test_ext_subprocess(
             },
         )
 
-    resource = ExtSubprocess()
+    resource = ExtSubprocess(context_injector=context_injector)
+
     with instance_for_test() as instance:
         materialize(
             [foo],

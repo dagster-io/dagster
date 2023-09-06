@@ -63,7 +63,6 @@ def test_file_io():
         find_local_test_image(docker_image)
 
     with tempfile.TemporaryDirectory() as tempdir:
-        context_injector = ExtFileContextInjector(os.path.join(tempdir, "context"))
         message_reader = ExtFileMessageReader(os.path.join(tempdir, "messages"))
 
         @asset
@@ -97,7 +96,6 @@ def test_file_io():
                 ],
                 registry=registry,
                 context=context,
-                context_injector=context_injector,
                 message_reader=message_reader,
                 extras={"storage_root": container_storage, "multiplier": 2},
                 container_kwargs={
@@ -108,7 +106,7 @@ def test_file_io():
 
         result = materialize(
             [number_x],
-            resources={"ext_docker": ExtDocker()},
+            resources={"ext_docker": ExtDocker(context_injector=ExtFileContextInjector())},
             raise_on_error=False,
         )
         assert result.success

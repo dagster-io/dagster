@@ -15,13 +15,15 @@ if TYPE_CHECKING:
 
 
 class ExtClient(ABC):
+    # def get_base_env(self) -> Mapping[str, str]:
+    #     return {DAGSTER_EXT_ENV_KEYS["is_orchestration_active"]: encode_env_var(True)}
+
     @abstractmethod
     def run(
         self,
         *,
         context: OpExecutionContext,
         extras: Optional[ExtExtras] = None,
-        context_injector: Optional["ExtContextInjector"] = None,
         message_reader: Optional["ExtMessageReader"] = None,
     ) -> None:
         ...
