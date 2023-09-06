@@ -13,7 +13,7 @@ from dagster import (
 )
 
 
-@asset(group_name="asset_checks")
+@asset(key_prefix="test_prefix", group_name="asset_checks")
 def checked_asset():
     return 1
 

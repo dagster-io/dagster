@@ -50,6 +50,37 @@ def test_asset_check_same_op():
     assert check_eval.target_materialization_data.timestamp == materialization_record.timestamp
 
 
+def test_asset_check_same_op_with_key_prefix():
+    @asset(
+        key_prefix="my_prefix",
+        check_specs=[
+            AssetCheckSpec("check1", asset=AssetKey(["my_prefix", "asset1"]), description="desc")
+        ],
+    )
+    def asset1():
+        yield Output(None)
+        yield AssetCheckResult(check_name="check1", success=True, metadata={"foo": "bar"})
+
+    instance = DagsterInstance.ephemeral()
+    result = materialize(assets=[asset1], instance=instance)
+    assert result.success
+
+    check_evals = result.get_asset_check_evaluations()
+    assert len(check_evals) == 1
+    check_eval = check_evals[0]
+    assert check_eval.asset_key == asset1.key
+    assert check_eval.check_name == "check1"
+    assert check_eval.metadata == {"foo": MetadataValue.text("bar")}
+
+    assert check_eval.target_materialization_data is not None
+    assert check_eval.target_materialization_data.run_id == result.run_id
+    materialization_record = instance.get_event_records(
+        EventRecordsFilter(event_type=DagsterEventType.ASSET_MATERIALIZATION)
+    )[0]
+    assert check_eval.target_materialization_data.storage_id == materialization_record.storage_id
+    assert check_eval.target_materialization_data.timestamp == materialization_record.timestamp
+
+
 def test_multiple_asset_checks_same_op():
     @asset(
         check_specs=[

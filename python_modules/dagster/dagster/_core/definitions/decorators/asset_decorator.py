@@ -6,6 +6,7 @@ from typing import (
     Callable,
     Dict,
     Iterable,
+    List,
     Mapping,
     Optional,
     Sequence,
@@ -782,6 +783,27 @@ def multi_asset(
     return inner
 
 
+def get_function_params_without_context_or_config_or_resources(fn: Callable) -> List[Parameter]:
+    params = get_function_params(fn)
+    is_context_provided = len(params) > 0 and params[0].name in get_valid_name_permutations(
+        "context"
+    )
+    input_params = params[1:] if is_context_provided else params
+
+    resource_arg_names = {arg.name for arg in get_resource_args(fn)}
+
+    new_input_args = []
+    for input_arg in input_params:
+        if input_arg.name != "config" and input_arg.name not in resource_arg_names:
+            new_input_args.append(input_arg)
+
+    return new_input_args
+
+
+def stringify_asset_key_to_input_name(asset_key: AssetKey) -> str:
+    return "_".join(asset_key.path).replace("-", "_")
+
+
 def build_asset_ins(
     fn: Callable,
     asset_ins: Mapping[str, AssetIn],
@@ -790,20 +812,7 @@ def build_asset_ins(
     """Creates a mapping from AssetKey to (name of input, In object)."""
     deps = check.opt_set_param(deps, "deps", AssetKey)
 
-    params = get_function_params(fn)
-    is_context_provided = len(params) > 0 and params[0].name in get_valid_name_permutations(
-        "context"
-    )
-    input_params = params[1:] if is_context_provided else params
-
-    # Filter config, resource args
-    resource_arg_names = {arg.name for arg in get_resource_args(fn)}
-
-    new_input_args = []
-    for input_arg in input_params:
-        if input_arg.name != "config" and input_arg.name not in resource_arg_names:
-            new_input_args.append(input_arg)
-    input_params = new_input_args
+    new_input_args = get_function_params_without_context_or_config_or_resources(fn)
 
     non_var_input_param_names = [
         param.name for param in new_input_args if param.kind == Parameter.POSITIONAL_OR_KEYWORD
@@ -847,13 +856,15 @@ def build_asset_ins(
         )
 
     for asset_key in deps:
-        stringified_asset_key = "_".join(asset_key.path).replace("-", "_")
         if asset_key in ins_by_asset_key:
             raise DagsterInvalidDefinitionError(
                 f"deps value {asset_key} also declared as input/AssetIn"
             )
             # mypy doesn't realize that Nothing is a valid type here
-        ins_by_asset_key[asset_key] = (stringified_asset_key, In(cast(type, Nothing)))
+        ins_by_asset_key[asset_key] = (
+            stringify_asset_key_to_input_name(asset_key),
+            In(cast(type, Nothing)),
+        )
 
     return ins_by_asset_key
 
