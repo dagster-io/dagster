@@ -69,7 +69,7 @@ K8S_JOB_OP_CONFIG = merge_dicts(
             is_required=False,
             description=(
                 "Raw k8s config for the k8s pod's metadata"
-                " (https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#objectmeta-v1-meta)."
+                " (https://kubernetes.io/docs/reference/kubernetes-api/common-definitions/object-meta/#ObjectMeta)."
                 " Keys can either snake_case or camelCase."
             ),
         ),
@@ -78,7 +78,7 @@ K8S_JOB_OP_CONFIG = merge_dicts(
             is_required=False,
             description=(
                 "Raw k8s config for the k8s pod's pod spec"
-                " (https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#podspec-v1-core)."
+                " (https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-v1/#PodSpec)."
                 " Keys can either snake_case or camelCase."
             ),
         ),
@@ -87,7 +87,7 @@ K8S_JOB_OP_CONFIG = merge_dicts(
             is_required=False,
             description=(
                 "Raw k8s config for the k8s job's metadata"
-                " (https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#objectmeta-v1-meta)."
+                " (https://kubernetes.io/docs/reference/kubernetes-api/common-definitions/object-meta/#ObjectMeta)."
                 " Keys can either snake_case or camelCase."
             ),
         ),
@@ -185,13 +185,13 @@ def execute_k8s_job(
             (https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#container-v1-core).
             Keys can either snake_case or camelCase.Default: None.
         pod_template_spec_metadata (Optional[Dict[str, Any]]): Raw k8s config for the k8s pod's
-            metadata (https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#objectmeta-v1-meta).
+            metadata (https://kubernetes.io/docs/reference/kubernetes-api/common-definitions/object-meta/#ObjectMeta).
             Keys can either snake_case or camelCase. Default: None.
         pod_spec_config (Optional[Dict[str, Any]]): Raw k8s config for the k8s pod's pod spec
-            (https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#podspec-v1-core).
+            (https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-v1/#PodSpec).
             Keys can either snake_case or camelCase. Default: None.
-        job_metadata (Optional[Dict[str, Any]]): aw k8s config for the k8s job's metadata
-            (https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#objectmeta-v1-meta).
+        job_metadata (Optional[Dict[str, Any]]): Raw k8s config for the k8s job's metadata
+            (https://kubernetes.io/docs/reference/kubernetes-api/common-definitions/object-meta/#ObjectMeta).
             Keys can either snake_case or camelCase. Default: None.
         job_spec_config (Optional[Dict[str, Any]]): Raw k8s config for the k8s job's job spec
             (https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#jobspec-v1-batch).
