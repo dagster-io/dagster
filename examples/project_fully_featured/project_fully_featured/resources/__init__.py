@@ -2,7 +2,7 @@ import os
 
 from dagster._utils import file_relative_path
 from dagster_aws.s3 import S3Resource
-from dagster_aws.s3.io_manager import ConfigurablePickledObjectS3IOManager
+from dagster_aws.s3.io_manager import S3PickleIOManager
 from dagster_dbt import DbtCliClientResource
 from dagster_pyspark import pyspark_resource
 
@@ -59,7 +59,7 @@ SHARED_SNOWFLAKE_CONF = {
 }
 
 RESOURCES_PROD = {
-    "io_manager": ConfigurablePickledObjectS3IOManager(
+    "io_manager": S3PickleIOManager(
         s3_resource=S3Resource.configure_at_launch(),
         s3_bucket="hackernews-elementl-prod",
     ),
@@ -73,7 +73,7 @@ RESOURCES_PROD = {
 
 
 RESOURCES_STAGING = {
-    "io_manager": ConfigurablePickledObjectS3IOManager(
+    "io_manager": S3PickleIOManager(
         s3_resource=S3Resource.configure_at_launch(),
         s3_bucket="hackernews-elementl-dev",
     ),
