@@ -1,80 +1,16 @@
-import {Box, PageHeader, Tabs, Tag, Heading, Tooltip} from '@dagster-io/ui-components';
+import {Box, PageHeader, Tag, Heading} from '@dagster-io/ui-components';
 import React from 'react';
 import {useRouteMatch} from 'react-router-dom';
 
-import {
-  PermissionResult,
-  usePermissionsForLocation,
-  PermissionsState,
-  permissionResultForKey,
-} from '../app/Permissions';
-import {
-  explorerPathFromString,
-  explorerPathToString,
-  ExplorerPath,
-} from '../pipelines/PipelinePathUtils';
-import {TabLink} from '../ui/TabLink';
+import {usePermissionsForLocation} from '../app/Permissions';
+import {JobFeatureContext} from '../pipelines/JobFeatureContext';
+import {JobTabs} from '../pipelines/JobTabs';
+import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
 import {useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
-import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {JobMetadata} from './JobMetadata';
 import {RepositoryLink} from './RepositoryLink';
-
-interface TabConfig {
-  title: string;
-  pathComponent: string;
-  getPermissionsResult?: (permissionsState: PermissionsState) => PermissionResult;
-}
-
-const pipelineTabs: {[key: string]: TabConfig} = {
-  overview: {title: 'Overview', pathComponent: ''},
-  playground: {
-    title: 'Launchpad',
-    pathComponent: 'playground',
-    getPermissionsResult: (permissionsState: PermissionsState) =>
-      permissionResultForKey(permissionsState, 'canLaunchPipelineExecution'),
-  },
-  runs: {
-    title: 'Runs',
-    pathComponent: 'runs',
-  },
-  partitions: {
-    title: 'Partitions',
-    pathComponent: 'partitions',
-  },
-};
-
-const currentOrder = ['overview', 'playground', 'runs', 'partitions'];
-
-function tabForPipelinePathComponent(component?: string): TabConfig {
-  const tabList = Object.keys(pipelineTabs);
-  const match =
-    tabList.find((t) => pipelineTabs[t]!.pathComponent === component) ||
-    tabList.find((t) => pipelineTabs[t]!.pathComponent === '')!;
-  return pipelineTabs[match]!;
-}
-
-const tabForKey = (repoAddress: RepoAddress, isJob: boolean, explorerPath: ExplorerPath) => {
-  const explorerPathForTab = explorerPathToString({
-    ...explorerPath,
-    opNames: [],
-  });
-
-  // When you click one of the top tabs, it resets the snapshot you may be looking at
-  // in the Definition tab and also clears solids from the path
-  return (key: string) => {
-    const tab = pipelineTabs[key]!;
-    return {
-      text: tab.title,
-      href: workspacePathFromAddress(
-        repoAddress,
-        `/${isJob ? 'jobs' : 'pipelines'}/${explorerPathForTab}${tab.pathComponent}`,
-      ),
-      getPermissionsResult: tab.getPermissionsResult,
-    };
-  };
-};
 
 interface Props {
   repoAddress: RepoAddress;
@@ -84,13 +20,14 @@ export const PipelineNav: React.FC<Props> = (props) => {
   const {repoAddress} = props;
   const permissions = usePermissionsForLocation(repoAddress.location);
 
+  const {tabBuilder} = React.useContext(JobFeatureContext);
+
   const match = useRouteMatch<{tab?: string; selector: string}>([
     '/locations/:repoPath/pipelines/:selector/:tab?',
     '/locations/:repoPath/jobs/:selector/:tab?',
     '/locations/:repoPath/pipeline_or_job/:selector/:tab?',
   ]);
 
-  const active = tabForPipelinePathComponent(match!.params.tab);
   const explorerPath = explorerPathFromString(match!.params.selector);
   const {pipelineName, snapshotId} = explorerPath;
 
@@ -109,11 +46,7 @@ export const PipelineNav: React.FC<Props> = (props) => {
     (partitionSet) => partitionSet.pipelineName === pipelineName,
   );
 
-  const tabs = currentOrder
-    .filter(
-      (key) => (hasLaunchpad || key !== 'playground') && (hasPartitionSet || key !== 'partitions'),
-    )
-    .map(tabForKey(repoAddress, isJob, explorerPath));
+  const tabs = tabBuilder({hasLaunchpad, hasPartitionSet});
 
   return (
     <>
@@ -131,25 +64,14 @@ export const PipelineNav: React.FC<Props> = (props) => {
           </Box>
         }
         tabs={
-          <Tabs size="large" selectedTabId={active.title}>
-            {tabs.map((tab) => {
-              const {href, text, getPermissionsResult} = tab;
-              let permissionsResult = null;
-              if (getPermissionsResult) {
-                permissionsResult = getPermissionsResult(permissions);
-              }
-              const disabled = !!(permissionsResult && !permissionsResult.enabled);
-              const title =
-                permissionsResult && disabled ? (
-                  <Tooltip content={permissionsResult.disabledReason} placement="top">
-                    {text}
-                  </Tooltip>
-                ) : (
-                  text
-                );
-              return <TabLink key={text} id={text} title={title} disabled={disabled} to={href} />;
-            })}
-          </Tabs>
+          <JobTabs
+            repoAddress={repoAddress}
+            isJob={isJob}
+            explorerPath={explorerPath}
+            permissions={permissions}
+            matchingTab={match!.params.tab}
+            tabs={tabs}
+          />
         }
       />
     </>
