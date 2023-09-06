@@ -1,6 +1,7 @@
 import datetime
 import json
 import os
+import sys
 import time
 from abc import abstractmethod
 from contextlib import contextmanager
@@ -150,3 +151,15 @@ def io_params_as_env_vars(
         DAGSTER_EXT_ENV_KEYS["context"]: encode_env_var(context_injector_params),
         DAGSTER_EXT_ENV_KEYS["messages"]: encode_env_var(message_reader_params),
     }
+
+
+def extract_message_or_forward_to_stdout(ext_context: "ExtOrchestrationContext", log_line: str):
+    # exceptions as control flow, you love to see it
+    try:
+        message = json.loads(log_line)
+        # need better message check
+        if message.keys() == {"method", "params"}:
+            ext_context.handle_message(message)
+    except Exception:
+        # move non-message logs in to stdout for compute log capture
+        sys.stdout.writelines((log_line, "\n"))

@@ -13,7 +13,6 @@ from dagster import (
     Field,
     Noneable,
     StringSource,
-    __version__ as dagster_version,
 )
 from dagster._config import Permissive, Shape, validate_config
 from dagster._core.errors import DagsterInvalidConfigError
@@ -22,7 +21,7 @@ from dagster._serdes import whitelist_for_serdes
 from dagster._utils.merger import merge_dicts
 
 from .models import k8s_model_from_dict, k8s_snake_case_dict
-from .utils import sanitize_k8s_label
+from .utils import get_common_labels, sanitize_k8s_label
 
 # To retry step worker, users should raise RetryRequested() so that the dagster system is aware of the
 # retry. As an example, see retry_job in dagster_test.test_project.test_jobs.repo
@@ -696,13 +695,7 @@ def construct_dagster_k8s_job(
         % (len(pod_name), MAX_K8S_NAME_LEN),
     )
 
-    # See: https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/
-    k8s_common_labels = {
-        "app.kubernetes.io/name": "dagster",
-        "app.kubernetes.io/instance": "dagster",
-        "app.kubernetes.io/version": sanitize_k8s_label(dagster_version),
-        "app.kubernetes.io/part-of": "dagster",
-    }
+    k8s_common_labels = get_common_labels()
 
     if component:
         k8s_common_labels["app.kubernetes.io/component"] = component
