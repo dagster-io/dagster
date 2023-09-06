@@ -46,8 +46,6 @@ class AssetCheckSpec(
             ("name", PublicAttr[str]),
             ("asset_key", PublicAttr[AssetKey]),
             ("description", PublicAttr[Optional[str]]),
-            # non-public because this should only be set on the decorator
-            ("in_critical_path", bool),
         ],
     )
 ):
@@ -70,14 +68,12 @@ class AssetCheckSpec(
         *,
         asset: Union[CoercibleToAssetKey, "AssetsDefinition", "SourceAsset"],
         description: Optional[str] = None,
-        in_critical_path: bool = False,
     ):
         return super().__new__(
             cls,
             name=check.str_param(name, "name"),
             asset_key=AssetKey.from_coercible_or_definition(asset),
             description=check.opt_str_param(description, "description"),
-            in_critical_path=check.bool_param(in_critical_path, "in_critical_path"),
         )
 
     def get_python_identifier(self) -> str:

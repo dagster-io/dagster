@@ -1085,7 +1085,6 @@ class ExternalAssetCheck(
             ("name", str),
             ("asset_key", AssetKey),
             ("description", Optional[str]),
-            ("in_critical_path", bool),
         ],
     )
 ):
@@ -1096,14 +1095,12 @@ class ExternalAssetCheck(
         name: str,
         asset_key: AssetKey,
         description: Optional[str],
-        in_critical_path: bool,
     ):
         return super(ExternalAssetCheck, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
             asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
             description=check.opt_str_param(description, "description"),
-            in_critical_path=check.bool_param(in_critical_path, "in_critical_path"),
         )
 
     @classmethod
@@ -1112,7 +1109,6 @@ class ExternalAssetCheck(
             name=spec.name,
             asset_key=spec.asset_key,
             description=spec.description,
-            in_critical_path=spec.in_critical_path,
         )
 
 

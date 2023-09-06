@@ -35,7 +35,6 @@ def asset_check(
     compute_kind: Optional[str] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
     retry_policy: Optional[RetryPolicy] = None,
-    in_critical_path: bool = False,
 ) -> Callable[[AssetCheckFunction], AssetChecksDefinition]:
     """Create a definition for how to execute an asset check.
 
@@ -58,10 +57,7 @@ def asset_check(
         compute_kind (Optional[str]): A string to represent the kind of computation that executes
             the check, e.g. "dbt" or "spark".
         retry_policy (Optional[RetryPolicy]): The retry policy for the op that executes the check.
-        in_critical_path (bool): Determines if any assets downstream of the asset this check applies
-            to should wait for this check to complete before running. Defaults to False. Setting this
-            to True is useful for checks that are intended to raise an exception and block downstream
-            execution when they fail.
+
 
     Produces an :py:class:`AssetChecksDefinition` object.
 
@@ -123,7 +119,6 @@ def asset_check(
             name=resolved_name,
             description=description,
             asset=resolved_asset_key,
-            in_critical_path=in_critical_path,
         )
 
         op_def = _Op(
