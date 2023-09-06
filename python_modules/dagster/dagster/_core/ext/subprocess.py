@@ -1,14 +1,15 @@
 import os
 import tempfile
-from contextlib import ExitStack, contextmanager
+from contextlib import contextmanager
 from subprocess import Popen
 from typing import Iterator, Mapping, Optional, Sequence, Union
 
 from dagster_ext import ExtExtras
-from pydantic import Field
+from pydantic import Field, PrivateAttr
 
 from dagster._core.errors import DagsterExternalExecutionError
 from dagster._core.execution.context.compute import OpExecutionContext
+from dagster._core.execution.context.init import InitResourceContext
 from dagster._core.ext.context import (
     ExtOrchestrationContext,
 )
@@ -28,6 +29,20 @@ _MESSAGE_READER_FILENAME = "messages"
 
 
 class ExtSubprocess(ExtResource):
+    def __init__(
+        self,
+        cwd: Optional[str] = None,
+        env: Optional[Mapping[str, str]] = None,
+        context_injector: Optional[ExtContextInjector] = None,
+        message_reader: Optional[ExtMessageReader] = None,
+    ) -> None:
+        self._context_injector = context_injector
+        self._message_reader = message_reader
+        super().__init__(**dict(cwd=cwd,env=env))
+
+    _context_injector = PrivateAttr(default=None)
+    _message_reader = PrivateAttr(default=None)
+
     cwd: Optional[str] = Field(
         default=None, description="Working directory in which to launch the subprocess command."
     )
@@ -36,19 +51,35 @@ class ExtSubprocess(ExtResource):
         description="An optional dict of environment variables to pass to the subprocess.",
     )
 
+    @contextmanager
+    def yield_for_execution(self, context: InitResourceContext):
+        if self._context_injector is not None and self._message_reader is not None:
+            return
+
+        with tempfile.TemporaryDirectory() as tempdir:
+            self._context_injector = (
+                ExtFileContextInjector(os.path.join(tempdir, _CONTEXT_INJECTOR_FILENAME))
+                if self._context_injector is None
+                else self._context_injector
+            )
+            self._message_reader = (
+                ExtFileMessageReader(os.path.join(tempdir, _MESSAGE_READER_FILENAME))
+                if self._message_reader is None
+                else self._message_reader
+            )
+            yield self
+
     def run(
         self,
         command: Union[str, Sequence[str]],
         *,
         context: OpExecutionContext,
         extras: Optional[ExtExtras] = None,
-        context_injector: Optional[ExtContextInjector] = None,
-        message_reader: Optional[ExtMessageReader] = None,
         env: Optional[Mapping[str, str]] = None,
         cwd: Optional[str] = None,
     ) -> None:
         external_context = ExtOrchestrationContext(context=context, extras=extras)
-        with self._setup_io(external_context, context_injector, message_reader) as io_env:
+        with self._setup_io(external_context) as io_env:
             process = Popen(
                 command,
                 cwd=cwd or self.cwd,
@@ -69,22 +100,13 @@ class ExtSubprocess(ExtResource):
     def _setup_io(
         self,
         external_context: ExtOrchestrationContext,
-        context_injector: Optional[ExtContextInjector],
-        message_reader: Optional[ExtMessageReader],
     ) -> Iterator[Mapping[str, str]]:
-        with ExitStack() as stack:
-            if context_injector is None or message_reader is None:
-                tempdir = stack.enter_context(tempfile.TemporaryDirectory())
-                context_injector = context_injector or ExtFileContextInjector(
-                    os.path.join(tempdir, _CONTEXT_INJECTOR_FILENAME)
-                )
-                message_reader = message_reader or ExtFileMessageReader(
-                    os.path.join(tempdir, _MESSAGE_READER_FILENAME)
-                )
-            context_injector_params = stack.enter_context(
-                context_injector.inject_context(external_context)
-            )
-            message_reader_params = stack.enter_context(
-                message_reader.read_messages(external_context)
-            )
+        assert self._context_injector
+        assert self._message_reader
+
+        with self._context_injector.inject_context(
+            external_context
+        ) as context_injector_params, self._message_reader.read_messages(
+            external_context
+        ) as message_reader_params:
             yield io_params_as_env_vars(context_injector_params, message_reader_params)

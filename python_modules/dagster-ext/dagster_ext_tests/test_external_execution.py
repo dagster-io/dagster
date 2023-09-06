@@ -137,15 +137,15 @@ def test_ext_subprocess(
             cmd,
             context=context,
             extras=extras,
-            context_injector=context_injector,
-            message_reader=message_reader,
+            # context_injector=context_injector,
+            # message_reader=message_reader,
             env={
                 "CONTEXT_INJECTOR_SPEC": context_injector_spec,
                 "MESSAGE_READER_SPEC": message_reader_spec,
             },
         )
 
-    resource = ExtSubprocess()
+    resource = ExtSubprocess(context_injector=context_injector, message_reader=message_reader)
     with instance_for_test() as instance:
         materialize(
             [foo],
