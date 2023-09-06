@@ -1,14 +1,14 @@
 from unittest.mock import MagicMock
 
 import pytest
-from dagster_ext._context import ExtContext
-from dagster_ext._protocol import (
+from dagster_ext import (
+    DagsterExtError,
+    ExtContext,
     ExtContextData,
     ExtDataProvenance,
     ExtPartitionKeyRange,
     ExtTimeWindow,
 )
-from dagster_ext._util import DagsterExtError
 
 TEST_EXT_CONTEXT_DEFAULTS = ExtContextData(
     asset_keys=None,

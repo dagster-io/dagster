@@ -58,9 +58,9 @@ def external_script() -> Iterator[str]:
 
         from dagster_ext import (
             ExtContext,
+            ExtS3MessageWriter,
             init_dagster_ext,
         )
-        from dagster_ext._io.s3 import ExtS3MessageWriter
 
         if os.getenv("MESSAGE_READER_SPEC") == "user/s3":
             import boto3

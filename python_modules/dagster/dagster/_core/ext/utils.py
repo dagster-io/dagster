@@ -11,10 +11,10 @@ from typing import TYPE_CHECKING, Iterator, Mapping, Optional
 from dagster_ext import (
     DAGSTER_EXT_ENV_KEYS,
     ExtDefaultContextLoader,
+    ExtDefaultMessageWriter,
     ExtParams,
     encode_env_var,
 )
-from dagster_ext._io.default import ExtDefaultMessageWriter
 
 from dagster._core.ext.resource import (
     ExtContextInjector,
