@@ -505,6 +505,9 @@ def load_assets_from_dbt_project(
     Creates one Dagster asset for each dbt model. All assets will be re-materialized using a single
     `dbt run` or `dbt build` command.
 
+    When searching for more flexibility in defining the computations that materialize your
+    dbt assets, we recommend that you use :py:class:`~dagster_dbt.dbt_assets`.
+
     Args:
         project_dir (Optional[str]): The directory containing the dbt project to load.
         profiles_dir (Optional[str]): The profiles directory to use for loading the DBT project.
@@ -710,6 +713,9 @@ def load_assets_from_dbt_manifest(
 
     Creates one Dagster asset for each dbt model. All assets will be re-materialized using a single
     `dbt run` command.
+
+    When searching for more flexibility in defining the computations that materialize your
+    dbt assets, we recommend that you use :py:class:`~dagster_dbt.dbt_assets`.
 
     Args:
         manifest (Optional[Mapping[str, Any]]): The contents of a DBT manifest.json, which contains
