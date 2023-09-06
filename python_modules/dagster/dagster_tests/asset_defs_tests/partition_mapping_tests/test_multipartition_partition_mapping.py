@@ -798,19 +798,28 @@ def test_multi_partition_mapping_with_asset_deps():
 
     @multi_asset(specs=[asset_3, asset_4], partitions_def=partitions_def)
     def multi_asset_2(context: AssetExecutionContext):
-        asset_1_key = datetime.strptime(
-            context.asset_partition_key_for_input("asset_1").keys_by_dimension["time"], "%Y-%m-%d"
-        )
-        asset_2_key = datetime.strptime(
-            context.asset_partition_key_for_input("asset_2").keys_by_dimension["time"], "%Y-%m-%d"
-        )
+        asset_1_mp_key = context.asset_partition_key_for_input("asset_1")
+        asset_2_mp_key = context.asset_partition_key_for_input("asset_2")
+        current_mp_key = context.partition_key
 
-        current_partition_key = datetime.strptime(
-            context.partition_key.keys_by_dimension["time"], "%Y-%m-%d"
-        )
+        if (
+            isinstance(asset_1_mp_key, MultiPartitionKey)
+            and isinstance(asset_2_mp_key, MultiPartitionKey)
+            and isinstance(current_mp_key, MultiPartitionKey)
+        ):
+            asset_1_key = datetime.strptime(asset_1_mp_key.keys_by_dimension["time"], "%Y-%m-%d")
+            asset_2_key = datetime.strptime(asset_2_mp_key.keys_by_dimension["time"], "%Y-%m-%d")
 
-        assert current_partition_key - asset_1_key == timedelta(days=1)
-        assert current_partition_key - asset_2_key == timedelta(days=2)
+            current_partition_key = datetime.strptime(
+                current_mp_key.keys_by_dimension["time"], "%Y-%m-%d"
+            )
+
+            assert current_partition_key - asset_1_key == timedelta(days=1)
+            assert current_partition_key - asset_2_key == timedelta(days=2)
+        else:
+            assert (
+                False
+            ), "partition keys for asset_1, asset_2, and multi_asset_2 should be MultiPartitionKeys"
 
         return
 
