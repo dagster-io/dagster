@@ -817,3 +817,62 @@ class ToposortedPriorityQueue:
 
     def __len__(self) -> int:
         return len(self._heap)
+
+
+class RealToposortedPriorityQueue:
+    """Queue that returns parents before their children."""
+
+    @functools.total_ordering
+    class QueueItem(NamedTuple):
+        level: int
+        partition_sort_key: Optional[float]
+        asset_partition: AssetKeyPartitionKey
+
+        def __eq__(self, other: object) -> bool:
+            if isinstance(other, RealToposortedPriorityQueue.QueueItem):
+                return (
+                    self.level == other.level
+                    and self.partition_sort_key == other.partition_sort_key
+                )
+            return False
+
+        def __lt__(self, other: object) -> bool:
+            if isinstance(other, RealToposortedPriorityQueue.QueueItem):
+                return self.level < other.level or (
+                    self.level == other.level
+                    and self.partition_sort_key is not None
+                    and other.partition_sort_key is not None
+                    and self.partition_sort_key < other.partition_sort_key
+                )
+            raise TypeError()
+
+    def __init__(self, asset_graph: AssetGraph, items: Iterable[AssetKeyPartitionKey]):
+        self._asset_graph = asset_graph
+        toposorted_asset_keys = asset_graph.toposort_asset_keys()
+        self._toposort_level_by_asset_key = {
+            asset_key: i
+            for i, asset_keys in enumerate(toposorted_asset_keys)
+            for asset_key in asset_keys
+        }
+        self._heap = [self._queue_item(asset_partition) for asset_partition in items]
+        heapify(self._heap)
+
+    def enqueue(self, asset_partition: AssetKeyPartitionKey) -> None:
+        heappush(self._heap, self._queue_item(asset_partition))
+
+    def dequeue(self) -> QueueItem:
+        return heappop(self._heap)
+
+    def _queue_item(
+        self, asset_partition: AssetKeyPartitionKey
+    ) -> "RealToposortedPriorityQueue.QueueItem":
+        asset_key = asset_partition.asset_key
+
+        level = self._toposort_level_by_asset_key[asset_key]
+
+        return RealToposortedPriorityQueue.QueueItem(
+            level, sort_key_for_asset_partition(self._asset_graph, asset_partition), asset_partition
+        )
+
+    def __len__(self) -> int:
+        return len(self._heap)
