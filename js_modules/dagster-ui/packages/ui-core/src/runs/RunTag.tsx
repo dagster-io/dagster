@@ -1,7 +1,8 @@
-import {Box, Caption, Colors, IconName, Popover, Tag} from '@dagster-io/ui-components';
+import {IconName, Tag} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
+
+import {TagAction, TagActionsPopover} from '../ui/TagActions';
 
 export enum DagsterTag {
   Automaterialize = 'dagster/auto_materialize',
@@ -39,11 +40,6 @@ export type TagType = {
   link?: string;
   pinned?: boolean;
   originalKey?: string;
-};
-
-export type TagAction = {
-  label: React.ReactNode;
-  onClick: (tag: TagType) => any;
 };
 
 interface IRunTagProps {
@@ -120,54 +116,11 @@ export const RunTag = ({tag, actions}: IRunTagProps) => {
 
   if (actions?.length) {
     return (
-      <Popover
-        content={<TagActions actions={actions} tag={tag} />}
-        hoverOpenDelay={100}
-        hoverCloseDelay={100}
-        placement="top"
-        interactionKind="hover"
-      >
+      <TagActionsPopover actions={actions} data={tag}>
         {tagElement}
-      </Popover>
+      </TagActionsPopover>
     );
   }
 
   return tagElement;
 };
-
-const TagActions = ({tag, actions}: {tag: TagType; actions: TagAction[]}) => (
-  <ActionContainer background={Colors.Gray900} flex={{direction: 'row'}}>
-    {actions.map(({label, onClick}, ii) => (
-      <TagButton key={ii} onClick={() => onClick(tag)}>
-        <Caption>{label}</Caption>
-      </TagButton>
-    ))}
-  </ActionContainer>
-);
-
-const ActionContainer = styled(Box)`
-  border-radius: 8px;
-  overflow: hidden;
-`;
-
-const TagButton = styled.button`
-  border: none;
-  background: ${Colors.Dark};
-  color: ${Colors.Gray100};
-  cursor: pointer;
-  padding: 8px 12px;
-  text-align: left;
-
-  :not(:last-child) {
-    box-shadow: -1px 0 0 inset ${Colors.Gray600};
-  }
-
-  :focus {
-    outline: none;
-  }
-
-  :hover {
-    background-color: ${Colors.Gray800};
-    color: ${Colors.White};
-  }
-`;

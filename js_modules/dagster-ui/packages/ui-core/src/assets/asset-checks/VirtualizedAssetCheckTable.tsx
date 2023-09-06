@@ -61,7 +61,7 @@ export const VirtualizedAssetCheckTable: React.FC<Props> = ({assetKey, rows}: Pr
   );
 };
 
-const TEMPLATE_COLUMNS = '2fr 120px 1fr 1fr';
+const TEMPLATE_COLUMNS = '2fr 150px 1fr 1fr';
 
 interface AssetCheckRowProps {
   assetKey: AssetKeyInput;
@@ -73,15 +73,6 @@ interface AssetCheckRowProps {
 export const VirtualizedAssetCheckRow = ({assetKey, height, start, row}: AssetCheckRowProps) => {
   const execution = row.executionForLatestMaterialization;
   const timestamp = execution?.evaluation?.timestamp;
-
-  const status = React.useMemo(() => {
-    if (!execution) {
-      return <AssetCheckStatusTag notChecked={true} />;
-    }
-    return (
-      <AssetCheckStatusTag status={execution.status} severity={execution.evaluation?.severity} />
-    );
-  }, [execution]);
 
   return (
     <Row $height={height} $start={start} data-testid={testId(`row-#TODO_USE_CHECK_ID`)}>
@@ -100,7 +91,9 @@ export const VirtualizedAssetCheckRow = ({assetKey, height, start, row}: AssetCh
           </Box>
         </RowCell>
         <RowCell style={{flexDirection: 'row', alignItems: 'center'}}>
-          <div>{status}</div>
+          <div>
+            <AssetCheckStatusTag check={row} execution={row.executionForLatestMaterialization} />
+          </div>
         </RowCell>
         <RowCell style={{flexDirection: 'row', alignItems: 'center'}}>
           {timestamp ? (

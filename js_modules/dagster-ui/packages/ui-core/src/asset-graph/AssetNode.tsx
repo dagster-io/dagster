@@ -140,7 +140,7 @@ const AssetCheckIconsOrdered: {type: AssetCheckIconType; content: React.ReactNod
   },
   {
     type: 'NOT_EVALUATED',
-    content: <Icon name="changes_present" color={Colors.Gray700} />,
+    content: <Icon name="dot" color={Colors.Gray500} />,
   },
   {
     type: 'ERROR',
