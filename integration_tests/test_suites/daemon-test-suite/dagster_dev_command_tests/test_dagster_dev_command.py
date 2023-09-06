@@ -48,6 +48,8 @@ def test_dagster_dev_command_workspace():
                         str(dagit_port),
                         "--log-level",
                         "debug",
+                        "--webserver-log-level",
+                        "trace",
                     ],
                     cwd=tempdir,
                 )
