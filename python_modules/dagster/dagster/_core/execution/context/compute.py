@@ -33,6 +33,7 @@ from dagster._core.definitions.events import (
     UserEvent,
 )
 from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
@@ -558,7 +559,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         return self._step_execution_context.asset_partition_key_range_for_input(input_name)
 
     @public
-    def asset_partition_key_for_input(self, input_name: str) -> Union[str, Mapping[str, str]]:
+    def asset_partition_key_for_input(self, input_name: str) -> Union[str, MultiPartitionKey]:
         """Returns the partition key of the upstream asset corresponding to the given input."""
         return self._step_execution_context.asset_partition_key_for_input(input_name)
 
