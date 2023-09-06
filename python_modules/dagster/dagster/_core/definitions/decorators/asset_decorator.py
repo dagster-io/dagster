@@ -383,7 +383,7 @@ class _Asset:
                 self.check_specs
             )
             check_outs: Mapping[str, Out] = {
-                output_name: Out(dagster_type=None)
+                output_name: Out(dagster_type=None, is_required=False)
                 for output_name in check_specs_by_output_name.keys()
             }
 
@@ -674,7 +674,8 @@ def multi_asset(
 
         check_specs_by_output_name = _validate_and_assign_output_names_to_check_specs(check_specs)
         check_outs_by_output_name: Mapping[str, Out] = {
-            output_name: Out(dagster_type=None) for output_name in check_specs_by_output_name.keys()
+            output_name: Out(dagster_type=None, required=False)
+            for output_name in check_specs_by_output_name.keys()
         }
         overlapping_output_names = (
             asset_outs_by_output_name.keys() & check_outs_by_output_name.keys()

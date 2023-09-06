@@ -130,7 +130,7 @@ def asset_check(
         resolved_name = name or fn.__name__
         asset_key = AssetKey.from_coercible_or_definition(asset)
 
-        out = Out(dagster_type=None)
+        out = Out(dagster_type=None, is_required=False)
         input_tuples_by_asset_key = _build_asset_check_input(resolved_name, asset_key, fn)
         if len(input_tuples_by_asset_key) == 0:
             raise DagsterInvalidDefinitionError(
