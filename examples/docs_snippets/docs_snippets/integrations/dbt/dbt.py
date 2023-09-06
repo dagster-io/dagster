@@ -3,25 +3,24 @@
 MANIFEST_PATH = ""
 
 
-def scope_load_assets_from_dbt_project():
-    # start_load_assets_from_dbt_project
-    from dagster_dbt import load_assets_from_dbt_project
+def scope_compile_dbt_manifest(manifest):
+    # start_compile_dbt_manifest
+    import os
+    from pathlib import Path
 
-    dbt_assets = load_assets_from_dbt_project(project_dir="path/to/dbt/project")
-    # end_load_assets_from_dbt_project
+    from dagster_dbt import DbtCliResource
 
+    dbt_project_dir = Path(__file__).joinpath("..", "..", "..").resolve()
+    dbt = DbtCliResource(project_dir=os.fspath(dbt_project_dir))
 
-def scope_load_assets_from_dbt_manifest():
-    # start_load_assets_from_dbt_manifest
-    import json
-
-    from dagster_dbt import load_assets_from_dbt_manifest
-
-    with open("path/to/dbt/manifest.json") as f:
-        manifest_json = json.load(f)
-
-    dbt_assets = load_assets_from_dbt_manifest(manifest_json)
-    # end_load_assets_from_dbt_manifest
+    # If DAGSTER_DBT_PARSE_PROJECT_ON_LOAD is set, a manifest will be created at runtime.
+    # Otherwise, we expect a manifest to be present in the project's target directory.
+    if os.getenv("DAGSTER_DBT_PARSE_PROJECT_ON_LOAD"):
+        dbt_parse_invocation = dbt.cli(["parse"], manifest={}).wait()
+        dbt_manifest_path = dbt_parse_invocation.target_path.joinpath("manifest.json")
+    else:
+        dbt_manifest_path = dbt_project_dir.joinpath("target", "manifest.json")
+    # end_compile_dbt_manifest
 
 
 def scope_schedule_assets_dbt_only(manifest):

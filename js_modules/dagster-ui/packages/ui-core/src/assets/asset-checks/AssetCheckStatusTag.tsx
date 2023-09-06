@@ -1,6 +1,7 @@
 import {Box, Spinner, Tag} from '@dagster-io/ui-components';
 import * as React from 'react';
 
+import {assertUnreachable} from '../../app/Util';
 import {AssetCheckExecutionResolvedStatus, AssetCheckSeverity} from '../../graphql/types';
 
 export const AssetCheckStatusTag = ({
@@ -14,6 +15,9 @@ export const AssetCheckStatusTag = ({
 }) => {
   if (notChecked) {
     return <Tag>Not checked</Tag>;
+  }
+  if (!status) {
+    return null;
   }
   const isWarn = severity === AssetCheckSeverity.WARN;
   switch (status) {
@@ -40,6 +44,10 @@ export const AssetCheckStatusTag = ({
           Passed
         </Tag>
       );
+    case AssetCheckExecutionResolvedStatus.SKIPPED:
+      return <Tag icon="dot">Skipped</Tag>;
+    default:
+      assertUnreachable(status);
   }
   return null;
 };

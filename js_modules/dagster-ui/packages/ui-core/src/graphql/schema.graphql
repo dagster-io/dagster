@@ -687,6 +687,7 @@ type AssetNode {
   type: DagsterType
   hasMaterializePermission: Boolean!
   hasAssetChecks: Boolean!
+  assetChecks: [AssetCheck!]!
 }
 
 type MaterializationUpstreamDataVersion {
@@ -834,6 +835,51 @@ enum StaleCauseCategory {
   CODE
   DATA
   DEPENDENCIES
+}
+
+type AssetCheck {
+  name: String!
+  assetKey: AssetKey!
+  description: String
+  executions(limit: Int!, cursor: String): [AssetCheckExecution!]!
+  executionForLatestMaterialization: AssetCheckExecution
+}
+
+type AssetCheckExecution {
+  id: String!
+  runId: String!
+  status: AssetCheckExecutionResolvedStatus!
+  evaluation: AssetCheckEvaluation
+  timestamp: Float!
+}
+
+enum AssetCheckExecutionResolvedStatus {
+  IN_PROGRESS
+  SUCCEEDED
+  FAILED
+  EXECUTION_FAILED
+  SKIPPED
+}
+
+type AssetCheckEvaluation {
+  timestamp: Float!
+  checkName: String!
+  assetKey: AssetKey!
+  targetMaterialization: AssetCheckEvaluationTargetMaterializationData
+  metadataEntries: [MetadataEntry!]!
+  severity: AssetCheckSeverity!
+  success: Boolean!
+}
+
+type AssetCheckEvaluationTargetMaterializationData {
+  storageId: Int!
+  runId: String!
+  timestamp: Float!
+}
+
+enum AssetCheckSeverity {
+  WARN
+  ERROR
 }
 
 enum EvaluationErrorReason {
@@ -1155,24 +1201,6 @@ type AssetCheckEvaluationEvent implements MessageEvent & StepEvent {
   solidHandleID: String
   eventType: DagsterEventType
   evaluation: AssetCheckEvaluation!
-}
-
-type AssetCheckEvaluation {
-  timestamp: Float!
-  targetMaterialization: AssetCheckEvaluationTargetMaterializationData
-  metadataEntries: [MetadataEntry!]!
-  severity: AssetCheckSeverity!
-}
-
-type AssetCheckEvaluationTargetMaterializationData {
-  storageId: Int!
-  runId: String!
-  timestamp: Float!
-}
-
-enum AssetCheckSeverity {
-  WARN
-  ERROR
 }
 
 type PipelineRunLogsSubscriptionFailure {
@@ -3184,30 +3212,6 @@ union AssetChecksOrError = AssetChecks | AssetCheckNeedsMigrationError
 
 type AssetChecks {
   checks: [AssetCheck!]!
-}
-
-type AssetCheck {
-  name: String!
-  assetKey: AssetKey!
-  description: String
-  executions(limit: Int!, cursor: String): [AssetCheckExecution!]!
-  executionForLatestMaterialization: AssetCheckExecution
-}
-
-type AssetCheckExecution {
-  id: String!
-  runId: String!
-  status: AssetCheckExecutionResolvedStatus!
-  evaluation: AssetCheckEvaluation
-  timestamp: Float!
-}
-
-enum AssetCheckExecutionResolvedStatus {
-  IN_PROGRESS
-  SUCCEEDED
-  FAILED
-  EXECUTION_FAILED
-  SKIPPED
 }
 
 type AssetCheckNeedsMigrationError implements Error {
