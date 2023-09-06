@@ -7,6 +7,7 @@ from typing import Iterator, Mapping, Optional, Sequence, Union
 from dagster_ext import ExtExtras
 from pydantic import Field, PrivateAttr
 
+import dagster._check as check
 from dagster._core.errors import DagsterExternalExecutionError
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.execution.context.init import InitResourceContext
@@ -36,8 +37,8 @@ class ExtSubprocess(ExtResource):
         context_injector: Optional[ExtContextInjector] = None,
         message_reader: Optional[ExtMessageReader] = None,
     ) -> None:
-        self._context_injector = context_injector
-        self._message_reader = message_reader
+        self._context_injector = check.opt_inst_param(context_injector, "context_injector", ExtContextInjector)
+        self._message_reader = check.opt_inst_param(message_reader, "message_reader", ExtMessageReader)
         super().__init__(**dict(cwd=cwd,env=env))
 
     _context_injector = PrivateAttr(default=None)
@@ -53,18 +54,18 @@ class ExtSubprocess(ExtResource):
 
     @contextmanager
     def yield_for_execution(self, context: InitResourceContext):
-        if self._context_injector is not None and self._message_reader is not None:
+        if self._context_injector and self._message_reader:
             return
 
         with tempfile.TemporaryDirectory() as tempdir:
             self._context_injector = (
                 ExtFileContextInjector(os.path.join(tempdir, _CONTEXT_INJECTOR_FILENAME))
-                if self._context_injector is None
+                if not self._context_injector
                 else self._context_injector
             )
             self._message_reader = (
                 ExtFileMessageReader(os.path.join(tempdir, _MESSAGE_READER_FILENAME))
-                if self._message_reader is None
+                if not self._message_reader
                 else self._message_reader
             )
             yield self
