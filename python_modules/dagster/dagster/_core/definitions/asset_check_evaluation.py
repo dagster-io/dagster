@@ -90,8 +90,8 @@ class AssetCheckEvaluation(
         check_name: str,
         success: bool,
         metadata: Mapping[str, MetadataValue],
-        target_materialization_data: Optional[AssetCheckEvaluationTargetMaterializationData],
-        severity: AssetCheckSeverity,
+        target_materialization_data: Optional[AssetCheckEvaluationTargetMaterializationData] = None,
+        severity: AssetCheckSeverity = AssetCheckSeverity.ERROR,
     ):
         return super(AssetCheckEvaluation, cls).__new__(
             cls,
