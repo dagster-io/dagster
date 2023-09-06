@@ -48,9 +48,12 @@ class GrapheneAssetCheckEvaluation(graphene.ObjectType):
     timestamp = graphene.Field(
         graphene.NonNull(graphene.Float), description="When the check evaluation was stored"
     )
+    checkName = graphene.NonNull(graphene.String)
+    assetKey = graphene.NonNull(GrapheneAssetKey)
     targetMaterialization = graphene.Field(GrapheneAssetCheckEvaluationTargetMaterializationData)
     metadataEntries = non_null_list(GrapheneMetadataEntry)
     severity = graphene.NonNull(GrapheneAssetCheckSeverity)
+    success = graphene.NonNull(graphene.Boolean)
 
     class Meta:
         name = "AssetCheckEvaluation"
@@ -62,7 +65,6 @@ class GrapheneAssetCheckEvaluation(graphene.ObjectType):
             AssetCheckEvaluation,
             check.not_none(evaluation_event.dagster_event).event_specific_data,
         )
-
         target_materialization_data = evaluation_data.target_materialization_data
         self.targetMaterialization = (
             GrapheneAssetCheckEvaluationTargetMaterializationData(target_materialization_data)
@@ -72,6 +74,9 @@ class GrapheneAssetCheckEvaluation(graphene.ObjectType):
 
         self.metadataEntries = list(iterate_metadata_entries(evaluation_data.metadata))
         self.severity = evaluation_data.severity
+        self.success = evaluation_data.success
+        self.checkName = evaluation_data.check_name
+        self.assetKey = evaluation_data.asset_key
 
 
 class GrapheneAssetCheckExecution(graphene.ObjectType):

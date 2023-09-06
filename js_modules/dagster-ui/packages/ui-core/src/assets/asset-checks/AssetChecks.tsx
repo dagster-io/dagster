@@ -20,12 +20,10 @@ import {AssetChecksQuery, AssetChecksQueryVariables} from './types/AssetChecks.t
 
 export const AssetChecks = ({
   lastMaterializationTimestamp,
-  lastMaterializationRunId,
   assetKey,
 }: {
   assetKey: AssetKey;
   lastMaterializationTimestamp: string | undefined;
-  lastMaterializationRunId: string | undefined;
 }) => {
   const formatDatetime = useFormatDateTime();
   const lastMaterializationDate = React.useMemo(
@@ -46,7 +44,7 @@ export const AssetChecks = ({
   useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
   const [openCheck, setOpenCheck] = useQueryPersistedState<string | undefined>({
-    queryKey: 'check_detail',
+    queryKey: 'checkDetail',
   });
   function content() {
     if (!data) {
@@ -60,13 +58,7 @@ export const AssetChecks = ({
     if (!checks.length) {
       return <NoChecks />;
     }
-    return (
-      <VirtualizedAssetCheckTable
-        assetKey={assetKey}
-        rows={checks}
-        lastMaterializationRunId={lastMaterializationRunId}
-      />
-    );
+    return <VirtualizedAssetCheckTable assetKey={assetKey} rows={checks} />;
   }
 
   const {AssetChecksBanner} = useContext(AssetFeatureContext);
@@ -140,7 +132,7 @@ export const ASSET_CHECKS_QUERY = gql`
         checks {
           name
           description
-          executions(limit: 1, cursor: "") {
+          executionForLatestMaterialization {
             ...AssetCheckExecutionFragment
           }
         }
