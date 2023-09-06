@@ -8,8 +8,8 @@ import {PipelineNav} from '../nav/PipelineNav';
 import {PipelinePartitionsRoot} from '../partitions/PipelinePartitionsRoot';
 import {RepoAddress} from '../workspace/types';
 
+import {JobFeatureContext} from './JobFeatureContext';
 import {PipelineOrJobDisambiguationRoot} from './PipelineOrJobDisambiguationRoot';
-import {PipelineOverviewRoot} from './PipelineOverviewRoot';
 import {PipelineRunsRoot} from './PipelineRunsRoot';
 
 interface Props {
@@ -18,6 +18,7 @@ interface Props {
 
 export const PipelineRoot: React.FC<Props> = (props) => {
   const {repoAddress} = props;
+  const {FallthroughRoute} = React.useContext(JobFeatureContext);
 
   return (
     <div
@@ -93,7 +94,7 @@ export const PipelineRoot: React.FC<Props> = (props) => {
           )}
         />
         <Route path={['/locations/:repoPath/pipelines/(/?.*)', '/locations/:repoPath/jobs/(/?.*)']}>
-          <PipelineOverviewRoot repoAddress={repoAddress} />
+          <FallthroughRoute repoAddress={repoAddress} />
         </Route>
       </Switch>
     </div>
