@@ -11,7 +11,19 @@ See:
 """
 from typing import Dict, Union
 
-from dagster import Array, Bool, Enum, EnumValue, Field, Int, Permissive, Selector, Shape, String
+from dagster import (
+    Array,
+    Bool,
+    Enum,
+    EnumValue,
+    Field,
+    Int,
+    Noneable,
+    Permissive,
+    Selector,
+    Shape,
+    String,
+)
 
 
 def _define_autoscale() -> Field:
@@ -914,4 +926,24 @@ def define_databricks_permissions() -> Field:
             "job_permissions": _define_databricks_job_permission(),
             "cluster_permissions": _define_databricks_cluster_permission(),
         }
+    )
+
+
+def define_oauth_credentials():
+    return Field(
+        Noneable(
+            Shape(
+                fields={
+                    "client_id": Field(str, is_required=True, description="Oauth client ID"),
+                    "client_secret": Field(
+                        str, is_required=True, description="Oauth client secret"
+                    ),
+                }
+            ),
+        ),
+        description=(
+            "Oauth credentials for interacting with the Databricks REST API via a service"
+            " principal. See https://docs.databricks.com/en/dev-tools/auth.html#oauth-2-0"
+        ),
+        default_value=None,
     )
