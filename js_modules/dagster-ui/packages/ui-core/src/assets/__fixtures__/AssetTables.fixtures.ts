@@ -92,7 +92,7 @@ export const SingleAssetQueryMaterializedWithLatestRun: MockedResponse<AssetGrap
               __typename: 'MaterializationEvent',
             },
           ],
-
+          assetChecks: [],
           freshnessInfo: null,
           assetObservations: [
             {
@@ -145,6 +145,7 @@ export const SingleAssetQueryMaterializedStaleAndLate: MockedResponse<AssetGraph
             path: ['late_asset'],
             __typename: 'AssetKey',
           },
+          assetChecks: [],
           assetMaterializations: [
             {
               timestamp: '1674603891025',
@@ -207,6 +208,7 @@ export const SingleAssetQueryLastRunFailed: MockedResponse<AssetGraphLiveQuery> 
             path: ['run_failing_asset'],
             __typename: 'AssetKey',
           },
+          assetChecks: [],
           assetMaterializations: [
             {
               timestamp: '1666373060112',

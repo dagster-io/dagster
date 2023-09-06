@@ -102,6 +102,9 @@ const SingleRunLogObserver: React.FC<{
             ) {
               return {assetKey: m.assetKey} as ObservedEvent;
             }
+            if (m.__typename === 'AssetCheckEvaluationEvent') {
+              return {assetKey: m.evaluation.assetKey} as ObservedEvent;
+            }
             if (
               (m.__typename === 'ExecutionStepFailureEvent' ||
                 m.__typename === 'ExecutionStepStartEvent') &&
@@ -131,6 +134,13 @@ export const ASSET_LIVE_RUN_LOGS_SUBSCRIPTION = gql`
           ... on AssetMaterializationPlannedEvent {
             assetKey {
               path
+            }
+          }
+          ... on AssetCheckEvaluationEvent {
+            evaluation {
+              assetKey {
+                path
+              }
             }
           }
           ... on MaterializationEvent {

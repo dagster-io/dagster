@@ -130,8 +130,11 @@ export type AssetCheckExecutionsArgs = {
 
 export type AssetCheckEvaluation = {
   __typename: 'AssetCheckEvaluation';
+  assetKey: AssetKey;
+  checkName: Scalars['String'];
   metadataEntries: Array<MetadataEntry>;
   severity: AssetCheckSeverity;
+  success: Scalars['Boolean'];
   targetMaterialization: Maybe<AssetCheckEvaluationTargetMaterializationData>;
   timestamp: Scalars['Float'];
 };
@@ -282,6 +285,7 @@ export type AssetMetadataEntry = MetadataEntry & {
 
 export type AssetNode = {
   __typename: 'AssetNode';
+  assetChecks: Array<AssetCheck>;
   assetKey: AssetKey;
   assetMaterializationUsedData: Array<MaterializationUpstreamDataVersion>;
   assetMaterializations: Array<MaterializationEvent>;
@@ -4434,12 +4438,20 @@ export const buildAssetCheckEvaluation = (
   relationshipsToOmit.add('AssetCheckEvaluation');
   return {
     __typename: 'AssetCheckEvaluation',
+    assetKey:
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKey')
+        ? ({} as AssetKey)
+        : buildAssetKey({}, relationshipsToOmit),
+    checkName: overrides && overrides.hasOwnProperty('checkName') ? overrides.checkName! : 'sed',
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     severity:
       overrides && overrides.hasOwnProperty('severity')
         ? overrides.severity!
         : AssetCheckSeverity.ERROR,
+    success: overrides && overrides.hasOwnProperty('success') ? overrides.success! : true,
     targetMaterialization:
       overrides && overrides.hasOwnProperty('targetMaterialization')
         ? overrides.targetMaterialization!
@@ -4795,6 +4807,7 @@ export const buildAssetNode = (
   relationshipsToOmit.add('AssetNode');
   return {
     __typename: 'AssetNode',
+    assetChecks: overrides && overrides.hasOwnProperty('assetChecks') ? overrides.assetChecks! : [],
     assetKey:
       overrides && overrides.hasOwnProperty('assetKey')
         ? overrides.assetKey!
