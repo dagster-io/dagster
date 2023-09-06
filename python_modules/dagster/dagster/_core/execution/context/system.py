@@ -1107,7 +1107,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         check.failed("The input has no asset partitions")
 
-    def asset_partition_key_for_input(self, input_name: str) -> str:
+    def asset_partition_key_for_input(self, input_name: str) -> Union[str, Mapping[str, str]]:
         start, end = self.asset_partition_key_range_for_input(input_name)
         if start == end:
             return start

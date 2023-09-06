@@ -9,6 +9,7 @@ from typing import (
     Optional,
     Sequence,
     Set,
+    Union,
     cast,
 )
 
@@ -557,7 +558,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         return self._step_execution_context.asset_partition_key_range_for_input(input_name)
 
     @public
-    def asset_partition_key_for_input(self, input_name: str) -> str:
+    def asset_partition_key_for_input(self, input_name: str) -> Union[str, Mapping[str, str]]:
         """Returns the partition key of the upstream asset corresponding to the given input."""
         return self._step_execution_context.asset_partition_key_for_input(input_name)
 
