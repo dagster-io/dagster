@@ -116,6 +116,50 @@ In production, `DAGSTER_DBT_PARSE_PROJECT_ON_LOAD` should be unset so that your 
 
 ---
 
+## Deploying a Dagster project with a dbt project
+
+<Note>
+  <strong>Got questions about our recommendations or something to add?</strong>{" "}
+  Join our{" "}
+  <a href="https://github.com/dagster-io/dagster/discussions/13767">
+    GitHub discussion
+  </a>{" "}
+  to share how you deploy your Dagster code with your dbt project.
+</Note>
+
+When deploying your Dagster project to production, your dbt project must be present alongside your Dagster project so that dbt commands can be executed. As a result, we recommend that you set up your continuous integration and continuous deployment (CI/CD) workflows to package the dbt project with your Dagster project.
+
+### Deploying a dbt project from a separate git repository
+
+If you are managing your Dagster project in a separate git repository from your dbt project, you should include the following steps in your CI/CD workflows.
+
+In your CI/CD workflows for your Dagster project:
+
+1. Include any secrets that are required by your dbt project in your CI/CD environment.
+2. Clone the dbt project repository as a subdirectory of your Dagster project.
+3. Run `dbt deps` to build your dbt project's dependencies.
+4. Run `dbt parse` to create a dbt manifest for your Dagster project.
+
+In the CI/CD workflows for your dbt project, set up a dispatch action to trigger a deployment of your Dagster project when your dbt project changes.
+
+### Deploying a dbt project from a monorepo
+
+<Note>
+  With <a href="https://dagster.io/cloud">Dagster Cloud</a>, we streamline this
+  option. As part of our Dagster Cloud onboarding for dbt users, we can
+  automatically create a Dagster project in an existing dbt project repository.
+</Note>
+
+If you are managing your Dagster project in the same git repository as your dbt project, you should include the following steps in your CI/CD workflows.
+
+In your CI/CD workflows for your Dagster and dbt project:
+
+1. Include any secrets that are required by your dbt project in your CI/CD environment.
+2. Run `dbt deps` to build your dbt project's dependencies.
+3. Run `dbt parse` to create a dbt manifest for your Dagster project.
+
+---
+
 ## Scheduling dbt jobs
 
 Once you have your dbt assets, you can define a job to materialize a selection of these assets on a schedule.
