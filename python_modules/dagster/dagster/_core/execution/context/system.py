@@ -1057,34 +1057,63 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     #     return partition_key_ranges[0]
 
-    def asset_partition_key_range_for_asset(
-        self, asset: CoercibleToAssetKey, is_dependency: bool = False
-    ) -> PartitionKeyRange:
-        # if the asset we are getting the key_range for is a parent of the asset that is currently
-        # materializing, we need to load the key_range in a different way. So we must first figure out
+    def _load_partition_info_as_upstream_asset(
+        self, current_asset: CoercibleToAssetKey, is_dependency: bool
+    ) -> bool:
+        # In some cases, if the asset we are getting the partition info for is a parent of the asset that is currently
+        # materializing, we need to load the info in a different way. So we must first figure out
         # if asset is the parent of the currently materializing asset
 
         asset_layer = self.job_def.asset_layer
         currently_materializing_assets_def = asset_layer.assets_def_for_node(self.node_handle)
-        asset_key = AssetKey.from_coercible(asset)
+        asset_key = AssetKey.from_coercible(current_asset)
 
         is_resulting_asset = (
-            currently_materializing_assets_def
+            currently_materializing_assets_def is not None
             and asset_key in currently_materializing_assets_def.keys_by_output_name.values()
         )
-        is_parent_asset = (
-            currently_materializing_assets_def
+        is_upstream_asset = (
+            currently_materializing_assets_def is not None
             and asset_key in currently_materializing_assets_def.keys_by_input_name.values()
         )
 
         # when `asset` is a self-dependent partitioned asset, then is_resulting_asset and is_upstream_asset
         # are both True. In this case, we defer to the user-provided is_dependency parameter. If
-        # is_dependency is True, then we return the key range of asset as a parent asset
-        get_partition_key_range_as_parent_asset = (is_parent_asset and not is_resulting_asset) or (
-            is_parent_asset and is_resulting_asset and is_dependency
+        # is_dependency is True, then we return the partition info of asset as an upstream asset
+        get_partition_key_range_as_upstream_asset = (
+            is_upstream_asset and not is_resulting_asset
+        ) or (is_upstream_asset and is_resulting_asset and is_dependency)
+
+        return get_partition_key_range_as_upstream_asset
+
+    def partitions_def_for_asset(self, asset: CoercibleToAssetKey) -> PartitionsDefinition:
+        """The PartitionsDefinition on the provided asset."""
+        asset_key = AssetKey.from_coercible(asset)
+        result = self.job_def.asset_layer.partitions_def_for_asset(asset_key)
+
+        if result is None:
+            raise DagsterInvariantViolationError(
+                f"Attempting to access partitions def for asset {asset_key}, but it is not"
+                " partitioned"
+            )
+        return result
+
+    def asset_partition_keys_for_asset(
+        self, asset: CoercibleToAssetKey, is_dependency: bool = False
+    ) -> Sequence[str]:
+        if self._load_partition_info_as_upstream_asset(asset, is_dependency=is_dependency):
+            return list(self.asset_partitions_subset_for_input(asset).get_partition_keys())
+        return self.partitions_def_for_asset(asset).get_partition_keys_in_range(
+            self.asset_partition_key_range_for_asset(asset),
+            dynamic_partitions_store=self.instance,
         )
 
-        if get_partition_key_range_as_parent_asset:
+    def asset_partition_key_range_for_asset(
+        self, asset: CoercibleToAssetKey, is_dependency: bool = False
+    ) -> PartitionKeyRange:
+        if self._load_partition_info_as_upstream_asset(
+            current_asset=asset, is_dependency=is_dependency
+        ):
             subset = self.asset_partitions_subset_for_input(asset)
             partition_key_ranges = subset.get_partition_key_ranges(
                 dynamic_partitions_store=self.instance
@@ -1103,7 +1132,6 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
     def asset_partitions_subset_for_input(
         self, asset: CoercibleToAssetKey, *, require_valid_partitions: bool = True
     ) -> PartitionsSubset:
-        # TODO - change other callsites to get the asset key before passing
         asset_layer = self.job_def.asset_layer
         assets_def = asset_layer.assets_def_for_node(self.node_handle)
         upstream_asset_key = AssetKey.from_coercible(asset)
