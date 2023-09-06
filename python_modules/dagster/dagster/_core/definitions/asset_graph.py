@@ -634,7 +634,7 @@ class AssetGraph:
         all_nodes = set(initial_asset_partitions)
 
         # invariant: we never consider an asset partition before considering its ancestors
-        queue = ToposortedPriorityQueue(self, all_nodes)
+        queue = ToposortedPriorityQueue(self, all_nodes, include_required_multi_assets=True)
 
         result: Set[AssetKeyPartitionKey] = set()
 
@@ -756,7 +756,7 @@ class ToposortedPriorityQueue:
     class QueueItem(NamedTuple):
         level: int
         partition_sort_key: Optional[float]
-        multi_asset_partition: Iterable[AssetKeyPartitionKey]
+        asset_partitions: Iterable[AssetKeyPartitionKey]
 
         def __eq__(self, other: object) -> bool:
             if isinstance(other, ToposortedPriorityQueue.QueueItem):
@@ -776,8 +776,15 @@ class ToposortedPriorityQueue:
                 )
             raise TypeError()
 
-    def __init__(self, asset_graph: AssetGraph, items: Iterable[AssetKeyPartitionKey]):
+    def __init__(
+        self,
+        asset_graph: AssetGraph,
+        items: Iterable[AssetKeyPartitionKey],
+        include_required_multi_assets: bool,
+    ):
         self._asset_graph = asset_graph
+        self._include_required_multi_assets = include_required_multi_assets
+
         toposorted_asset_keys = asset_graph.toposort_asset_keys()
         self._toposort_level_by_asset_key = {
             asset_key: i
@@ -791,16 +798,22 @@ class ToposortedPriorityQueue:
         heappush(self._heap, self._queue_item(asset_partition))
 
     def dequeue(self) -> Iterable[AssetKeyPartitionKey]:
-        return heappop(self._heap).multi_asset_partition
+        # For multi-assets, will include all required multi-asset keys if include_required_multi_assets is set to
+        # True, or a list of size 1 with just the passed in asset key if it was not
+        return heappop(self._heap).asset_partitions
 
     def _queue_item(
         self, asset_partition: AssetKeyPartitionKey
     ) -> "ToposortedPriorityQueue.QueueItem":
         asset_key = asset_partition.asset_key
 
-        required_multi_asset_keys = self._asset_graph.get_required_multi_asset_keys(asset_key) | {
-            asset_key
-        }
+        if self._include_required_multi_assets:
+            required_multi_asset_keys = self._asset_graph.get_required_multi_asset_keys(
+                asset_key
+            ) | {asset_key}
+        else:
+            required_multi_asset_keys = {asset_key}
+
         level = max(
             self._toposort_level_by_asset_key[required_asset_key]
             for required_asset_key in required_multi_asset_keys

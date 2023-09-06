@@ -904,7 +904,9 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
 
         # Toposort them so that at each iteration we can count on the cache being full for
         # all of your parents, then update the cache for each node based on the parent's results
-        toposort_queue = ToposortedPriorityQueue(self.asset_graph, visited)
+        toposort_queue = ToposortedPriorityQueue(
+            self.asset_graph, visited, include_required_multi_assets=False
+        )
 
         while len(toposort_queue) > 0:
             candidates_unit = toposort_queue.dequeue()
