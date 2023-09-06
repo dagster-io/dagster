@@ -90,7 +90,7 @@ def test_dynamic_partitioned_asset_dep():
     @asset(partitions_def=partitions_def, deps=[asset1])
     def asset2(context):
         assert context.partition_key == "apple"
-        assert context.asset_key_for_output() == "apple"
+        assert context.asset_key == "apple"
         assert context.asset_keys_for_output() == ["apple"]
         assert context.asset_key_for_input() == "apple"
         assert context.asset_keys_for_input() == ["apple"]
