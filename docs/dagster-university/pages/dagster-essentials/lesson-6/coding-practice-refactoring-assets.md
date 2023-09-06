@@ -17,7 +17,7 @@ The refactored assets should look similar to the code contained in the **View an
 We’ll assume your code looks like the following for the rest of the module. If your solution and the code provided have differences, update your code to match the answers and re-materialize these assets to prepare for the next part of this lesson.
 
 - **In `assets/trips.py`:**
-    - `taxi_zones`:
+    - **Asset**: `taxi_zones`:
         
         ```python
         # assets/trips.py
@@ -94,7 +94,7 @@ We’ll assume your code looks like the following for the rest of the module. If
             output_file.write(trips_by_zone.to_json())
         ```
         
-    - `trips_by_week`:
+    - **Asset**: `trips_by_week`:
         
         ```python
         # assets/metrics.py
@@ -137,12 +137,12 @@ We’ll assume your code looks like the following for the rest of the module. If
           # clean up the formatting of the dataframe
           result['num_trips'] = result['num_trips'].astype(int)
           result['passenger_count'] = result['passenger_count'].astype(int)
-          result['total_amouncot'] = result['total_amount'].round(2).astype(float)
+          result['total_amount'] = result['total_amount'].round(2).astype(float)
           result['trip_distance'] = result['trip_distance'].round(2).astype(float)
           result = result[["period", "num_trips", "total_amount", "trip_distance", "passenger_count"]]
           result = result.sort_values(by="period")
       
-          result.to_csv(constants.TRIPS_BY_WEEK_FILE_PATH, index=False))
+          result.to_csv(constants.TRIPS_BY_WEEK_FILE_PATH, index=False)
         ```
 
 **If there are differences**, compare what you wrote to the answer code and make updates, as these assets will be used as-is in future lessons.
