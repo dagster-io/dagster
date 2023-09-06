@@ -1,7 +1,7 @@
 from typing import Mapping, NamedTuple, Optional
 
 import dagster._check as check
-from dagster._core.definitions.asset_check_spec import AssetCheckHandle
+from dagster._core.definitions.asset_check_spec import AssetCheckHandle, AssetCheckSeverity
 from dagster._core.definitions.events import AssetKey, MetadataValue
 from dagster._serdes import whitelist_for_serdes
 
@@ -61,6 +61,7 @@ class AssetCheckEvaluation(
                 "target_materialization_data",
                 Optional[AssetCheckEvaluationTargetMaterializationData],
             ),
+            ("severity", AssetCheckSeverity),
         ],
     )
 ):
@@ -79,6 +80,8 @@ class AssetCheckEvaluation(
             list, and one of the data classes returned by a MetadataValue static method.
         target_materialization_data (Optional[AssetCheckEvaluationTargetMaterializationData]):
             The latest materialization at execution time of the check.
+        severity (AssetCheckSeverity):
+            Severity of the check result.
     """
 
     def __new__(
@@ -87,7 +90,8 @@ class AssetCheckEvaluation(
         check_name: str,
         success: bool,
         metadata: Mapping[str, MetadataValue],
-        target_materialization_data: Optional[AssetCheckEvaluationTargetMaterializationData] = None,
+        target_materialization_data: Optional[AssetCheckEvaluationTargetMaterializationData],
+        severity: AssetCheckSeverity,
     ):
         return super(AssetCheckEvaluation, cls).__new__(
             cls,
@@ -100,6 +104,7 @@ class AssetCheckEvaluation(
                 "target_materialization_data",
                 AssetCheckEvaluationTargetMaterializationData,
             ),
+            severity=check.inst_param(severity, "severity", AssetCheckSeverity),
         )
 
     @property

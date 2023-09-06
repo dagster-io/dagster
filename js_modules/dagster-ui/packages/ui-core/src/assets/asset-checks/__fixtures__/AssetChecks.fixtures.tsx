@@ -21,7 +21,6 @@ export const TestAssetCheck = buildAssetCheck({
   assetKey: buildAssetKey(testAssetKey),
   name: 'Test check',
   description: 'Test description',
-  severity: AssetCheckSeverity.ERROR,
   executions: [
     buildAssetCheckExecution({
       evaluation: buildAssetCheckEvaluation({
@@ -30,6 +29,7 @@ export const TestAssetCheck = buildAssetCheck({
           runId: testLatestMaterializationRunId,
         }),
         metadataEntries: [buildIntMetadataEntry({})],
+        severity: AssetCheckSeverity.ERROR,
       }),
       runId: testLatestMaterializationRunId,
       status: AssetCheckExecutionResolvedStatus.FAILED,
@@ -64,7 +64,7 @@ export const TestAssetCheckWarning = buildAssetCheck({
   assetKey: buildAssetKey(testAssetKey),
   name: 'Test check warning',
   description: 'Test description',
-  severity: AssetCheckSeverity.WARN,
+
   executions: [
     buildAssetCheckExecution({
       evaluation: buildAssetCheckEvaluation({
@@ -73,6 +73,7 @@ export const TestAssetCheckWarning = buildAssetCheck({
           runId: testLatestMaterializationRunId,
         }),
         metadataEntries: [buildIntMetadataEntry({})],
+        severity: AssetCheckSeverity.WARN,
       }),
       runId: testLatestMaterializationRunId,
       status: AssetCheckExecutionResolvedStatus.FAILED,

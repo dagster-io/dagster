@@ -1161,12 +1161,18 @@ type AssetCheckEvaluation {
   timestamp: Float!
   targetMaterialization: AssetCheckEvaluationTargetMaterializationData
   metadataEntries: [MetadataEntry!]!
+  severity: AssetCheckSeverity!
 }
 
 type AssetCheckEvaluationTargetMaterializationData {
   storageId: Int!
   runId: String!
   timestamp: Float!
+}
+
+enum AssetCheckSeverity {
+  WARN
+  ERROR
 }
 
 type PipelineRunLogsSubscriptionFailure {
@@ -3184,14 +3190,8 @@ type AssetCheck {
   name: String!
   assetKey: AssetKey!
   description: String
-  severity: AssetCheckSeverity!
   executions(limit: Int!, cursor: String): [AssetCheckExecution!]!
   executionForLatestMaterialization: AssetCheckExecution
-}
-
-enum AssetCheckSeverity {
-  WARN
-  ERROR
 }
 
 type AssetCheckExecution {
