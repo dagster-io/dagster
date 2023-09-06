@@ -584,6 +584,7 @@ class DagsterApiServer(DagsterApiServicer):
                     job_subset_snapshot_args.job_origin.job_name,
                     job_subset_snapshot_args.op_selection,
                     job_subset_snapshot_args.asset_selection,
+                    job_subset_snapshot_args.asset_check_selection,
                 )
             )
         except Exception:

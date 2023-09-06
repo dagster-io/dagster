@@ -92,6 +92,7 @@ IS_AIRFLOW_INGEST_PIPELINE_STR = "is_airflow_ingest_pipeline"
 
 if TYPE_CHECKING:
     from dagster._core.debug import DebugRunPayload
+    from dagster._core.definitions.asset_check_spec import AssetCheckHandle
     from dagster._core.definitions.job_definition import (
         JobDefinition,
     )
@@ -1113,6 +1114,7 @@ class DagsterInstance(DynamicPartitionsStore):
             run_config=run_config,
             op_selection=op_selection,
             asset_selection=asset_selection,
+            asset_check_selection=None,
             resolved_op_selection=resolved_op_selection,
             step_keys_to_execute=step_keys_to_execute,
             status=DagsterRunStatus(status) if status else None,
@@ -1144,6 +1146,7 @@ class DagsterInstance(DynamicPartitionsStore):
         execution_plan_snapshot: Optional["ExecutionPlanSnapshot"],
         parent_job_snapshot: Optional["JobSnapshot"],
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
+        asset_check_selection: Optional[AbstractSet["AssetCheckHandle"]] = None,
         op_selection: Optional[Sequence[str]] = None,
         external_job_origin: Optional["ExternalJobOrigin"] = None,
         job_code_origin: Optional[JobPythonOrigin] = None,
@@ -1182,6 +1185,7 @@ class DagsterInstance(DynamicPartitionsStore):
             run_id=run_id,
             run_config=run_config,
             asset_selection=asset_selection,
+            asset_check_selection=asset_check_selection,
             op_selection=op_selection,
             resolved_op_selection=resolved_op_selection,
             step_keys_to_execute=step_keys_to_execute,
@@ -1361,11 +1365,13 @@ class DagsterInstance(DynamicPartitionsStore):
         job_snapshot: Optional["JobSnapshot"],
         parent_job_snapshot: Optional["JobSnapshot"],
         asset_selection: Optional[AbstractSet[AssetKey]],
+        asset_check_selection: Optional[AbstractSet["AssetCheckHandle"]],
         resolved_op_selection: Optional[AbstractSet[str]],
         op_selection: Optional[Sequence[str]],
         external_job_origin: Optional["ExternalJobOrigin"],
         job_code_origin: Optional[JobPythonOrigin],
     ) -> DagsterRun:
+        from dagster._core.definitions.asset_check_spec import AssetCheckHandle
         from dagster._core.definitions.utils import validate_tags
         from dagster._core.host_representation.origin import ExternalJobOrigin
         from dagster._core.snap import ExecutionPlanSnapshot, JobSnapshot
@@ -1432,20 +1438,27 @@ class DagsterInstance(DynamicPartitionsStore):
         # the set of assets into the canonical resolved_op_selection is done in
         # the user process, and the exact resolution is never persisted in the run.
         # We are asserting that invariant here to maintain that behavior.
+        #
+        # Finally, asset_check_selection can be passed along with asset_selection. It
+        # is mutually exclusive with op_selection and resolved_op_selection.
 
         check.opt_set_param(resolved_op_selection, "resolved_op_selection", of_type=str)
         check.opt_sequence_param(op_selection, "op_selection", of_type=str)
         check.opt_set_param(asset_selection, "asset_selection", of_type=AssetKey)
+        check.opt_set_param(
+            asset_check_selection, "asset_check_selection", of_type=AssetCheckHandle
+        )
 
-        if asset_selection is not None:
+        if asset_selection is not None or asset_check_selection is not None:
             check.invariant(
                 op_selection is None,
-                "Cannot pass both asset_selection and op_selection",
+                "Cannot pass op_selection with either of asset_selection or asset_check_selection",
             )
 
             check.invariant(
                 resolved_op_selection is None,
-                "Cannot pass both asset_selection and resolved_op_selection",
+                "Cannot pass resolved_op_selection with either of asset_selection or"
+                " asset_check_selection",
             )
 
         # The "python origin" arguments exist so a job can be reconstructed in memory
@@ -1465,6 +1478,7 @@ class DagsterInstance(DynamicPartitionsStore):
             run_id=run_id,  # type: ignore  # (possible none)
             run_config=run_config,
             asset_selection=asset_selection,
+            asset_check_selection=asset_check_selection,
             op_selection=op_selection,
             resolved_op_selection=resolved_op_selection,
             step_keys_to_execute=step_keys_to_execute,

@@ -789,18 +789,44 @@ def build_asset_selection_job(
         build_source_asset_observation_job,
     )
 
-    if asset_selection is not None:
-        (included_assets, excluded_assets) = _subset_assets_defs(assets, asset_selection)
-        included_checks = [
-            asset_check for asset_check in asset_checks if asset_check.asset_key in asset_selection
-        ]
-        included_source_assets = _subset_source_assets(source_assets, asset_selection)
+    asset_check_selection = (
+        asset_selection_data.asset_check_selection if asset_selection_data else None
+    )
 
-    else:
+    if not asset_selection and not asset_check_selection:
+        # no selections, include everything
         included_assets = list(assets)
         excluded_assets = []
-        included_checks = list(asset_checks)
         included_source_assets = []
+        included_checks = list(asset_checks)
+    else:
+        if asset_selection:
+            (included_assets, excluded_assets) = _subset_assets_defs(assets, asset_selection)
+            included_source_assets = _subset_source_assets(source_assets, asset_selection)
+        else:
+            # if checks were specified, then exclude all assets
+            included_assets = []
+            excluded_assets = list(assets)
+            included_source_assets = []
+
+        if asset_check_selection:
+            # NOTE: This filters to a checks def if any of the included specs are in the selection.
+            # This needs to change to fully subsetting checks in multi assets.
+            included_checks = [
+                asset_check
+                for asset_check in asset_checks
+                if [spec for spec in asset_check.specs if spec.handle in asset_check_selection]
+            ]
+        elif asset_selection is None:
+            # If assets were selected and checks were null, then include all checks on the selected assets
+            included_checks = [
+                asset_check
+                for asset_check in asset_checks
+                if asset_check.asset_key in check.not_none(asset_selection)
+            ]
+        else:
+            # If checks were explicitly [], then exclude all checks
+            included_checks = []
 
     if partitions_def:
         for asset in included_assets:

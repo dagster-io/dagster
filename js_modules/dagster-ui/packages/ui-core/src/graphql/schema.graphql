@@ -2100,6 +2100,12 @@ input JobOrPipelineSelector {
   repositoryLocationName: String!
   solidSelection: [String!]
   assetSelection: [AssetKeyInput!]
+  assetCheckSelection: [AssetCheckHandleInput!]
+}
+
+input AssetCheckHandleInput {
+  assetKey: AssetKeyInput!
+  name: String!
 }
 
 input ExecutionTag {
