@@ -24,7 +24,7 @@ pip --version
 
 ## Installation
 
-> 💡 Heads up! We strongly recommend installing Dagster inside a Python virtual environment. If you need a primer on virtual environments, including creating and activating one, check out this blog post.
+> 💡 Heads up! We strongly recommend installing Dagster inside a Python virtual environment. If you need a primer on virtual environments, including creating and activating one, check out this [blog post](https://dagster.io/blog/python-packages-primer-2).
 
 To install Dagster into your current Python environment:
 
