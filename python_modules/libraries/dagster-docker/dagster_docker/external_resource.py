@@ -2,7 +2,7 @@ from contextlib import contextmanager
 from typing import Any, Iterator, Mapping, Optional, Sequence, Tuple, Union
 
 import docker
-from dagster import OpExecutionContext
+from dagster import OpExecutionContext, ResourceParam
 from dagster._core.ext.client import (
     ExtClient,
     ExtContextInjector,
@@ -22,7 +22,6 @@ from dagster_ext import (
     ExtExtras,
     ExtParams,
 )
-from pydantic import Field
 
 
 class DockerLogsMessageReader(ExtMessageReader):
@@ -38,22 +37,18 @@ class DockerLogsMessageReader(ExtMessageReader):
             extract_message_or_forward_to_stdout(ext_context, log_line)
 
 
-class ExtDocker(ExtClient):
+class _ExtDocker(ExtClient):
     """An ext protocol compliant resource for launching docker containers.
 
     By default context is injected via environment variables and messages are parsed out of the
     log stream and other logs are forwarded to stdout of the orchestration process.
     """
 
-    env: Optional[Mapping[str, str]] = Field(
-        default=None,
-        description="An optional dict of environment variables to set on the container.",
-    )
-
-    registry: Optional[Mapping[str, str]] = Field(
-        default=None,
-        description="An optional dict of registry credentials to use to login the docker client.",
-    )
+    def __init__(
+        self, env: Optional[Mapping[str, str]] = None, registry: Optional[Mapping[str, str]] = None
+    ):
+        self.env = env
+        self.registry = registry
 
     def run(
         self,
@@ -177,3 +172,6 @@ class ExtDocker(ExtClient):
         ) as mr_params:
             protocol_envs = io_params_as_env_vars(ci_params, mr_params)
             yield protocol_envs, message_reader
+
+
+ExtDocker = ResourceParam[_ExtDocker]
