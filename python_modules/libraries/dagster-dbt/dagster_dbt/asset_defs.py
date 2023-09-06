@@ -20,6 +20,7 @@ from typing import (
 
 import dateutil
 from dagster import (
+    AssetCheckResult,
     AssetKey,
     AssetsDefinition,
     AutoMaterializePolicy,
@@ -247,7 +248,7 @@ def _stream_event_iterator(
     ],
     kwargs: Dict[str, Any],
     manifest_json: Mapping[str, Any],
-) -> Iterator[Union[AssetObservation, Output]]:
+) -> Iterator[Union[AssetObservation, Output, AssetCheckResult]]:
     """Yields events for a dbt cli invocation. Emits outputs as soon as the relevant dbt logs are
     emitted.
     """
