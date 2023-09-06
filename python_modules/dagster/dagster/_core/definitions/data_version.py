@@ -347,6 +347,13 @@ class StaleCause(
 # large upstream partition counts.
 SKIP_PARTITION_DATA_VERSION_DEPENDENCY_THRESHOLD = 100
 
+# If an asset is self-dependent and has  greater than this number of partitions, we don't check the
+# self-edge for updated data or propagate other stale causes through the edge. That is because the
+# current logic will recurse to the first partition, potentially throwing a recursion error. This
+# constraint can be removed when we have thoroughly tested performance for large partition counts on
+# self-dependent assets.
+SKIP_PARTITION_DATA_VERSION_SELF_DEPENDENCY_THRESHOLD = 100
+
 
 class CachingStaleStatusResolver:
     """Used to resolve data version information. Avoids redundant database
@@ -676,6 +683,13 @@ class CachingStaleStatusResolver:
     # constraint can be removed when we have thoroughly tested performance for large upstream
     # partition counts. At that time, the body of this method can just be replaced with a call to
     # `asset_graph.get_parents_partitions`, which the logic here largely replicates.
+    #
+    # If an asset is self-dependent and has greater than or equal to
+    # SKIP_PARTITION_DATA_VERSION_SELF_DEPENDENCY_THRESHOLD partitions, we don't check the
+    # self-edge for updated data or propagate other stale causes through the edge. That is because
+    # the current logic will recurse to the first partition, potentially throwing a recursion error.
+    # This constraint can be removed when we have thoroughly tested performance for large partition
+    # counts on self-dependent assets.
     @cached_method
     def _get_partition_dependencies(
         self, *, key: "AssetKeyPartitionKey"
@@ -690,6 +704,10 @@ class CachingStaleStatusResolver:
         for dep_asset_key in asset_deps:
             if not self.asset_graph.is_partitioned(dep_asset_key):
                 deps.append(AssetKeyPartitionKey(dep_asset_key, None))
+            elif key.asset_key == dep_asset_key and self._exceeds_self_partition_limit(
+                key.asset_key
+            ):
+                continue
             else:
                 upstream_partition_keys = list(
                     self.asset_graph.get_parent_partition_keys_for_child(
@@ -708,3 +726,9 @@ class CachingStaleStatusResolver:
                         ]
                     )
         return deps
+
+    def _exceeds_self_partition_limit(self, asset_key: "AssetKey") -> bool:
+        return (
+            check.not_none(self.asset_graph.get_partitions_def(asset_key)).get_num_partitions()
+            >= SKIP_PARTITION_DATA_VERSION_SELF_DEPENDENCY_THRESHOLD
+        )
