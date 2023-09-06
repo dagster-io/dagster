@@ -624,12 +624,24 @@ def multi_asset(
                     " the AssetSpecs directly."
                 )
 
-            upstream_keys = {
-                dep.asset_key
-                for spec in specs
-                for dep in spec.deps
-                # if dep.asset_key not in output_tuples_by_asset_key
-            }
+            upstream_keys = set()
+            for spec in specs:
+                for dep in spec.deps:
+                    if dep.asset_key not in output_tuples_by_asset_key:
+                        upstream_keys.add(dep.asset_key)
+                    if (
+                        dep.asset_key in output_tuples_by_asset_key
+                        and dep.partition_mapping is not None
+                    ):
+                        # self-dependent asset also needs to be considered an upstream_key
+                        upstream_keys.add(dep.asset_key)
+
+            # upstream_keys = {
+            #     dep.asset_key
+            #     for spec in specs
+            #     for dep in spec.deps
+            #     if dep.asset_key not in output_tuples_by_asset_key and dep.partition_mapping is None
+            # }
 
             explicit_ins = ins or {}
             # get which asset keys have inputs set
@@ -736,15 +748,18 @@ def multi_asset(
             # Add PartitionMappings specified via AssetSpec.deps to partition_mappings dictionary. Error on duplicates
             for spec in specs:
                 for dep in spec.deps:
-                    if dep.partition_mapping is not None:
-                        if partition_mappings.get(dep.asset_key, None):
-                            if partition_mappings[dep.asset_key] != dep.partition_mapping:
-                                raise Exception(
-                                    f"Two PartitionMappings for input {dep.asset_key} provided."
-                                )
-                            # else the correct PartitionMapping for the dep is already in the dictionary
-                        else:
-                            partition_mappings[dep.asset_key] = dep.partition_mapping
+                    if dep.partition_mapping is None:
+                        continue
+                    if partition_mappings.get(dep.asset_key, None) is None:
+                        partition_mappings[dep.asset_key] = dep.partition_mapping
+                        continue
+                    if partition_mappings[dep.asset_key] == dep.partition_mapping:
+                        continue
+                    else:
+                        raise DagsterInvalidDefinitionError(
+                            f"Two different PartitionMappings for input {dep.asset_key} provided"
+                            f" for multi_asset {op_name}. Please use the same PartitionMapping."
+                        )
 
         else:
             internal_deps = {keys_by_output_name[name]: asset_deps[name] for name in asset_deps}
