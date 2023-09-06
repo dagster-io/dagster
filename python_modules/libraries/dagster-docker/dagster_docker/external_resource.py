@@ -7,9 +7,9 @@ from dagster._core.ext.context import (
     ExtOrchestrationContext,
 )
 from dagster._core.ext.resource import (
+    ExtClient,
     ExtContextInjector,
     ExtMessageReader,
-    ExtResource,
 )
 from dagster._core.ext.utils import (
     ExtEnvContextInjector,
@@ -38,7 +38,7 @@ class DockerLogsMessageReader(ExtMessageReader):
             extract_message_or_forward_to_stdout(ext_context, log_line)
 
 
-class ExtDocker(ExtResource):
+class ExtDocker(ExtClient):
     """An ext protocol compliant resource for launching docker containers.
 
     By default context is injected via environment variables and messages are parsed out of the

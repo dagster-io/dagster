@@ -13,9 +13,9 @@ from dagster._core.ext.context import (
     ExtOrchestrationContext,
 )
 from dagster._core.ext.resource import (
+    ExtClient,
     ExtContextInjector,
     ExtMessageReader,
-    ExtResource,
 )
 from dagster._core.ext.utils import (
     ExtFileContextInjector,
@@ -27,7 +27,7 @@ _CONTEXT_INJECTOR_FILENAME = "context"
 _MESSAGE_READER_FILENAME = "messages"
 
 
-class ExtSubprocess(ExtResource):
+class ExtSubprocess(ExtClient):
     cwd: Optional[str] = Field(
         default=None, description="Working directory in which to launch the subprocess command."
     )

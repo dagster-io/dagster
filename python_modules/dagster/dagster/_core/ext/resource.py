@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from dagster._core.ext.context import ExtOrchestrationContext
 
 
-class ExtResource(ConfigurableResource, ABC):
+class ExtClient(ConfigurableResource, ABC):
     def get_base_env(self) -> Mapping[str, str]:
         return {DAGSTER_EXT_ENV_KEYS["is_orchestration_active"]: encode_env_var(True)}
 
