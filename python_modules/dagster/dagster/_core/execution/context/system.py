@@ -1356,7 +1356,10 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         asset_layer = self.job_def.asset_layer
         asset_key = AssetKey.from_coercible(asset)
 
-        if not asset_layer.has_assets_def_for_asset(asset_key):
+        if (
+            not asset_layer.has_assets_def_for_asset(asset_key)
+            and asset_layer.source_assets_by_key.get(asset_key, None) is None
+        ):
             raise ValueError("The provided asset key does not correspond to an asset.")
 
         asset_partitions_def = asset_layer.partitions_def_for_asset(asset_key)

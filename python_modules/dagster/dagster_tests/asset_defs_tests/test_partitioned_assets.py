@@ -40,12 +40,12 @@ from dagster._core.test_utils import assert_namedtuple_lists_equal
 from dagster._seven.compat.pendulum import create_pendulum_time
 
 
-# @pytest.fixture(autouse=True)
-# def error_on_warning():
-#     # turn off any outer warnings filters, e.g. ignores that are set in pyproject.toml
-#     warnings.resetwarnings()
+@pytest.fixture(autouse=True)
+def error_on_warning():
+    # turn off any outer warnings filters, e.g. ignores that are set in pyproject.toml
+    warnings.resetwarnings()
 
-#     warnings.filterwarnings("error")
+    warnings.filterwarnings("error")
 
 
 def get_upstream_partitions_for_partition_range(
