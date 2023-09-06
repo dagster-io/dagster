@@ -20,5 +20,6 @@
     "@types/react-dom": "latest",
     "tailwindcss": "^3.3.3",
     "typescript": "latest"
-  }
+  },
+  "packageManager": "yarn@3.6.3"
 }
