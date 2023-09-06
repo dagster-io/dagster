@@ -21,7 +21,6 @@ from dagster import (
     PartitionsDefinition,
     SourceAsset,
     SpecificPartitionsPartitionMapping,
-    StaticPartitionMapping,
     StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
     WeeklyPartitionsDefinition,
@@ -680,7 +679,7 @@ def test_conflicting_mappings_with_asset_deps():
             specs=[asset_3, asset_4],
             partitions_def=DailyPartitionsDefinition(start_date="2023-08-15"),
         )
-        def multi_asset_2(context: AssetExecutionContext):
+        def multi_asset_2():
             pass
 
 
@@ -719,21 +718,19 @@ def test_dynamic_partition_mapping_with_asset_deps():
         deps=[
             AssetDep(
                 asset=asset_1,
-                partition_mapping=StaticPartitionMapping({"apple": "orange"}),
+                partition_mapping=SpecificPartitionsPartitionMapping(["apple"]),
             ),
         ],
     )
 
-    @multi_asset(partitions_def=partitions_def)
-    def asset_1_multi_asset(context: AssetExecutionContext):
+    @multi_asset(specs=[asset_1], partitions_def=partitions_def)
+    def asset_1_multi_asset():
         return
 
     @multi_asset(specs=[asset_2], partitions_def=partitions_def)
     def asset_2_multi_asset(context: AssetExecutionContext):
-        # TODO - fails... sure why yet
-        context.asset_partition_key_for_input("asset_1")
-
-        # assert current_partition_key - asset_1_key == timedelta(days=1)
+        assert context.asset_partition_key_for_input("asset_1") == "apple"
+        assert context.partition_key == "orange"
 
     with instance_for_test() as instance:
         instance.add_dynamic_partitions("fruits", ["apple"])
