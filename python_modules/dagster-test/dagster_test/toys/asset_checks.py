@@ -13,13 +13,13 @@ from dagster import (
 )
 
 
-@asset(group_name="asset_checks")
+@asset(key_prefix="test_prefix", group_name="asset_checks")
 def checked_asset():
     return 1
 
 
 @asset_check(asset=checked_asset, description="A check that fails half the time.")
-def random_fail_check():
+def random_fail_check(checked_asset):
     random.seed(time.time())
     return AssetCheckResult(
         success=random.choice([False, True]),
