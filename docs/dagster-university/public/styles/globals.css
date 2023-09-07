@@ -10,21 +10,21 @@
 
 @layer base {
   html {
-    font-feature-settings: "ss02";
+    font-feature-settings: 'ss02';
     letter-spacing: 0.0175em;
   }
 
   ::selection {
-    background: #DEDDFF; /* WebKit/Blink Browsers */
-    color: #21463D;
+    background: #deddff; /* WebKit/Blink Browsers */
+    color: #21463d;
   }
   ::-moz-selection {
-    background: #DEDDFF; /* WebKit/Blink Browsers */
-    color: #21463D;
+    background: #deddff; /* WebKit/Blink Browsers */
+    color: #21463d;
   }
 
   code {
-    background: #231F1B;
+    background: #231f1b;
     color: #ccc;
     font-family: 'Courier New';
     padding: 4px 6px;
@@ -33,7 +33,7 @@
 }
 
 page {
-  position: fixed; 
+  position: fixed;
   top: 5rem;
   display: flex;
   width: 100vw;
@@ -44,8 +44,8 @@ page {
 main {
   overflow: auto;
   height: calc(100vh - var(--top-nav-height));
-  flexGrow: 1;
-  fontSize: 16px;
+  flexgrow: 1;
+  fontsize: 16px;
   padding: 0 5rem 5rem;
 }
 
