@@ -24,8 +24,8 @@
 
 ### Experimental
 
-- Asset checks are now displayed in the asset graph and sidebar.
 - An initial version of the `dagster-ext` module along with subprocess, docker, and k8s pod integrations are now available. Read more at https://github.com/dagster-io/dagster/discussions/16319
+- Asset checks are now displayed in the asset graph and sidebar.
 - [Breaking] Asset check severity is now set at runtime on `AssetCheckResult` instead of in the `@asset_check` definition. Now you can define one check that either errors or warns depending on your check logic. `ERROR` severity no longer causes the run to fail. We plan to reintroduce this functionality with a different API.
 - [Breaking] `@asset_check` now requires the `asset=` argument, even if the asset is passed as an input to the decorated function. Example:
 
