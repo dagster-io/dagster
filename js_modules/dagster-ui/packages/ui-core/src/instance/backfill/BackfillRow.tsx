@@ -1,5 +1,5 @@
 import {gql, QueryResult, useLazyQuery} from '@apollo/client';
-import {Box, Button, Colors, Icon, Mono, Tag} from '@dagster-io/ui-components';
+import {Box, Colors, Icon, Mono, Tag} from '@dagster-io/ui-components';
 import countBy from 'lodash/countBy';
 import * as React from 'react';
 import {Link, useHistory} from 'react-router-dom';
@@ -7,34 +7,30 @@ import styled from 'styled-components';
 
 import {showCustomAlert} from '../../app/CustomAlertProvider';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
-import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../../app/QueryRefresh';
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {isHiddenAssetGroupJob} from '../../asset-graph/Utils';
-import {RunStatus, BulkActionStatus} from '../../graphql/types';
-import {PartitionStatusHealthSourceOps, PartitionStatus} from '../../partitions/PartitionStatus';
+import {BulkActionStatus, RunStatus} from '../../graphql/types';
+import {PartitionStatus, PartitionStatusHealthSourceOps} from '../../partitions/PartitionStatus';
 import {PipelineReference} from '../../pipelines/PipelineReference';
 import {AssetKeyTagCollection} from '../../runs/AssetKeyTagCollection';
 import {inProgressStatuses} from '../../runs/RunStatuses';
 import {RunStatusTagsWithCounts} from '../../runs/RunTimeline';
 import {runsPathWithFilters} from '../../runs/RunsFilterInput';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
-import {useDelayedRowQuery, LoadingOrNone} from '../../workspace/VirtualizedWorkspaceTable';
-import {useRepository, isThisThingAJob} from '../../workspace/WorkspaceContext';
+import {LoadingOrNone, useDelayedRowQuery} from '../../workspace/VirtualizedWorkspaceTable';
+import {isThisThingAJob, useRepository} from '../../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../../workspace/repoAddressAsString';
-import {workspacePipelinePath, workspacePathFromAddress} from '../../workspace/workspacePath';
+import {workspacePathFromAddress, workspacePipelinePath} from '../../workspace/workspacePath';
 
-import {
-  BackfillActionsMenu,
-  backfillCanCancelRuns,
-  backfillCanCancelSubmission,
-} from './BackfillActionsMenu';
+import {BackfillActionsMenu} from './BackfillActionsMenu';
 import {BackfillStatusTagForPage} from './BackfillStatusTagForPage';
 import {
-  SingleBackfillQuery,
-  SingleBackfillQueryVariables,
+  PartitionStatusesForBackfillFragment,
   SingleBackfillCountsQuery,
   SingleBackfillCountsQueryVariables,
-  PartitionStatusesForBackfillFragment,
+  SingleBackfillQuery,
+  SingleBackfillQueryVariables,
 } from './types/BackfillRow.types';
 import {BackfillTableFragment} from './types/BackfillTable.types';
 
@@ -47,18 +43,14 @@ export const BackfillRow = ({
   backfill,
   allPartitions,
   showBackfillTarget,
-  onTerminateBackfill,
-  onResumeBackfill,
-  onShowStepStatus,
   onShowPartitionsRequested,
+  refetch,
 }: {
   backfill: BackfillTableFragment;
   allPartitions?: string[];
-  onTerminateBackfill: (backfill: BackfillTableFragment) => void;
-  onResumeBackfill: (backfill: BackfillTableFragment) => void;
   showBackfillTarget: boolean;
-  onShowStepStatus: (backfill: BackfillTableFragment) => void;
   onShowPartitionsRequested: (backfill: BackfillTableFragment) => void;
+  refetch: () => void;
 }) => {
   const statusDetails = useLazyQuery<SingleBackfillQuery, SingleBackfillQueryVariables>(
     SINGLE_BACKFILL_STATUS_DETAILS_QUERY,
@@ -163,16 +155,7 @@ export const BackfillRow = ({
         )}
       </td>
       <td>
-        <BackfillActionsMenu
-          backfill={backfill}
-          onResumeBackfill={onResumeBackfill}
-          onTerminateBackfill={onTerminateBackfill}
-          onShowStepStatus={onShowStepStatus}
-          canCancelRuns={backfillCanCancelRuns(backfill, counts)}
-          canCancelSubmission={backfillCanCancelSubmission(backfill)}
-        >
-          <Button icon={<Icon name="expand_more" />} />
-        </BackfillActionsMenu>
+        <BackfillActionsMenu backfill={backfill} counts={counts} refetch={refetch} />
       </td>
     </tr>
   );
@@ -402,6 +385,7 @@ export const BackfillStatusTag = ({
     case BulkActionStatus.CANCELED:
       return <Tag>Canceled</Tag>;
   }
+  return <span />;
 };
 
 const TagButton = styled.button`

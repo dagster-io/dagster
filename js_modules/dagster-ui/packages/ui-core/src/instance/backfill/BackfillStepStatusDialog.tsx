@@ -1,3 +1,4 @@
+import {gql} from '@apollo/client';
 import {Button, DialogFooter, Dialog} from '@dagster-io/ui-components';
 import * as React from 'react';
 
@@ -9,19 +10,25 @@ import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {repoAddressToSelector} from '../../workspace/repoAddressToSelector';
 import {RepoAddress} from '../../workspace/types';
 
-import {
-  BackfillTableFragment,
-  PartitionSetForBackfillTableFragment,
-} from './types/BackfillTable.types';
+import {BackfillStepStatusDialogBackfillFragment} from './types/BackfillStepStatusDialog.types';
 
 interface Props {
-  backfill?: BackfillTableFragment;
+  backfill?: BackfillStepStatusDialogBackfillFragment;
   onClose: () => void;
+}
+
+export function backfillCanShowStepStatus(
+  backfill?: BackfillStepStatusDialogBackfillFragment,
+): backfill is BackfillStepStatusDialogBackfillFragment & {
+  partitionSet: NonNullable<BackfillStepStatusDialogBackfillFragment['partitionSet']>;
+  partitionNames: string[];
+} {
+  return !!backfill && backfill.partitionSet !== null && backfill.partitionNames !== null;
 }
 
 export const BackfillStepStatusDialog = ({backfill, onClose}: Props) => {
   const content = () => {
-    if (!backfill?.partitionSet || backfill.partitionNames === null) {
+    if (!backfillCanShowStepStatus(backfill)) {
       return null;
     }
 
@@ -56,9 +63,24 @@ export const BackfillStepStatusDialog = ({backfill, onClose}: Props) => {
   );
 };
 
+export const BACKFILL_STEP_STATUS_DIALOG_BACKFILL_FRAGMENT = gql`
+  fragment BackfillStepStatusDialogBackfillFragment on PartitionBackfill {
+    id
+    partitionNames
+    partitionSet {
+      name
+      pipelineName
+      repositoryOrigin {
+        repositoryName
+        repositoryLocationName
+      }
+    }
+  }
+`;
+
 interface ContentProps {
-  backfill: BackfillTableFragment;
-  partitionSet: PartitionSetForBackfillTableFragment;
+  backfill: BackfillStepStatusDialogBackfillFragment;
+  partitionSet: NonNullable<BackfillStepStatusDialogBackfillFragment['partitionSet']>;
   partitionNames: string[];
   repoAddress: RepoAddress;
   onClose: () => void;

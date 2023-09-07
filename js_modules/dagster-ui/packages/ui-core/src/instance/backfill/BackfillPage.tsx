@@ -36,7 +36,7 @@ import {testId} from '../../testing/testId';
 import {VirtualizedItemListForDialog} from '../../ui/VirtualizedItemListForDialog';
 import {numberFormatter} from '../../ui/formatters';
 
-import {BackfillActionsMenu} from './BackfillActionsMenu';
+import {BACKFILL_ACTIONS_BACKFILL_FRAGMENT, BackfillActionsMenu} from './BackfillActionsMenu';
 import {BackfillStatusTagForPage} from './BackfillStatusTagForPage';
 import {
   BackfillStatusesByAssetQuery,
@@ -54,37 +54,39 @@ export const BackfillPage = () => {
 
   const queryResult = useQuery<BackfillStatusesByAssetQuery, BackfillStatusesByAssetQueryVariables>(
     BACKFILL_DETAILS_QUERY,
-    {
-      variables: {backfillId},
-    },
+    {variables: {backfillId}},
   );
+
   const {data} = queryResult;
 
-  const backfill = data?.partitionBackfillOrError;
+  const backfill =
+    data?.partitionBackfillOrError.__typename === 'PartitionBackfill'
+      ? data.partitionBackfillOrError
+      : null;
 
-  let isInProgress = true;
-  if (backfill && backfill.__typename === 'PartitionBackfill') {
-    // for asset backfills, all of the requested runs have concluded in order for the status to be BulkActionStatus.COMPLETED
-    isInProgress = [BulkActionStatus.REQUESTED, BulkActionStatus.CANCELING].includes(
-      backfill.status,
-    );
-  }
+  // for asset backfills, all of the requested runs have concluded in order for the status to be BulkActionStatus.COMPLETED
+  const isInProgress = backfill
+    ? [BulkActionStatus.REQUESTED, BulkActionStatus.CANCELING].includes(backfill.status)
+    : true;
+
   const refreshState = useQueryRefreshAtInterval(queryResult, 10000, isInProgress);
 
   function content() {
-    if (!backfill || !data) {
+    if (!data || !data.partitionBackfillOrError) {
       return (
         <Box padding={64} data-testid={testId('page-loading-indicator')}>
           <Spinner purpose="page" />
         </Box>
       );
     }
-    if (backfill.__typename === 'PythonError') {
-      return <PythonErrorInfo error={backfill} />;
+    if (data.partitionBackfillOrError.__typename === 'PythonError') {
+      return <PythonErrorInfo error={data.partitionBackfillOrError} />;
     }
-    if (backfill.__typename === 'BackfillNotFoundError') {
-      return <NonIdealState icon="no-results" title={backfill.message} />;
+    if (data.partitionBackfillOrError.__typename === 'BackfillNotFoundError') {
+      return <NonIdealState icon="no-results" title={data.partitionBackfillOrError.message} />;
     }
+
+    const backfill = data.partitionBackfillOrError;
 
     function getRunsUrl(status: 'inProgress' | 'complete' | 'failed' | 'targeted') {
       const filters: RunFilterToken[] = [
@@ -295,26 +297,18 @@ export const BackfillPage = () => {
           </Heading>
         }
         right={
-          <>
+          <Box flex={{gap: 12, alignItems: 'center'}}>
             {isInProgress ? <QueryRefreshCountdown refreshState={refreshState} /> : null}
-            {canCancelSubmission ? (
-            <MenuItem
-              text="Cancel backfill submission"
-              icon="cancel"
-              intent="danger"
-              onClick={() => onTerminateBackfill(backfill)}
-            />
-          ) : null}
-          {canCancelRuns ? (
-            <MenuItem
-              text="Terminate unfinished runs"
-              icon="cancel"
-              intent="danger"
-              onClick={() => onTerminateBackfill(backfill)}
-            />
-          ) : null}
-
-          </>
+            {backfill ? (
+              <BackfillActionsMenu
+                backfill={backfill}
+                refetch={queryResult.refetch}
+                counts={Object.fromEntries(
+                  backfill.partitionStatusCounts.map((e) => [e.runStatus, e.count]),
+                )}
+              />
+            ) : null}
+          </Box>
         }
       />
       {content()}
@@ -400,8 +394,14 @@ export const BACKFILL_DETAILS_QUERY = gql`
     timestamp
     endTimestamp
     numPartitions
+    ...BackfillActionsBackfillFragment
+
     error {
       ...PythonErrorFragment
+    }
+    partitionStatusCounts {
+      runStatus
+      count
     }
     assetBackfillData {
       rootAssetTargetedRanges {
@@ -431,6 +431,7 @@ export const BACKFILL_DETAILS_QUERY = gql`
     }
   }
   ${PYTHON_ERROR_FRAGMENT}
+  ${BACKFILL_ACTIONS_BACKFILL_FRAGMENT}
 `;
 
 const COLLATOR = new Intl.Collator(navigator.language, {sensitivity: 'base', numeric: true});

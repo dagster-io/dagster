@@ -2,6 +2,14 @@
 
 import * as Types from '../../../graphql/types';
 
+export type BackfillTerminationDialogBackfillFragment = {
+  __typename: 'PartitionBackfill';
+  id: string;
+  status: Types.BulkActionStatus;
+  isAssetBackfill: boolean;
+  numCancelable: number;
+};
+
 export type CancelBackfillMutationVariables = Types.Exact<{
   backfillId: Types.Scalars['String'];
 }>;

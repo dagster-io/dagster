@@ -9,17 +9,18 @@ import {TerminationDialog} from '../../runs/TerminationDialog';
 
 import {SINGLE_BACKFILL_STATUS_DETAILS_QUERY} from './BackfillRow';
 import {SingleBackfillQuery, SingleBackfillQueryVariables} from './types/BackfillRow.types';
-import {BackfillTableFragment} from './types/BackfillTable.types';
 import {
   CancelBackfillMutation,
   CancelBackfillMutationVariables,
+  BackfillTerminationDialogBackfillFragment,
 } from './types/BackfillTerminationDialog.types';
 
 interface Props {
-  backfill?: BackfillTableFragment;
+  backfill?: BackfillTerminationDialogBackfillFragment;
   onClose: () => void;
   onComplete: () => void;
 }
+
 export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props) => {
   const [cancelBackfill] = useMutation<CancelBackfillMutation, CancelBackfillMutationVariables>(
     CANCEL_BACKFILL_MUTATION,
@@ -115,6 +116,15 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
     </>
   );
 };
+
+export const BACKFILL_TERMINATION_DIALOG_BACKFILL_FRAGMENT = gql`
+  fragment BackfillTerminationDialogBackfillFragment on PartitionBackfill {
+    id
+    status
+    isAssetBackfill
+    numCancelable
+  }
+`;
 
 const CANCEL_BACKFILL_MUTATION = gql`
   mutation CancelBackfill($backfillId: String!) {
