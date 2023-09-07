@@ -10,6 +10,7 @@ from dagster import (
     DagsterEventType,
     DagsterInstance,
     EventRecordsFilter,
+    In,
     MetadataValue,
     Output,
     asset,
@@ -27,6 +28,7 @@ from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 from dagster._core.storage.io_manager import IOManager
 from dagster._core.test_utils import instance_for_test
+from dagster._core.types.dagster_type import Nothing
 
 
 def test_asset_check_same_op():
@@ -457,19 +459,26 @@ def test_multi_asset_with_check_subset():
 def test_graph_asset():
     @op
     def create_asset():
-        return "hello"
+        return None
 
     @op
     def validate_asset(word):
-        return AssetCheckResult(check_name="check1", success=True, metadata={"foo": "bar"})
+        yield AssetCheckResult(check_name="check1", success=True, metadata={"foo": "bar"})
+        return "foo"
+
+    @op(ins={"staging_asset": In(Nothing), "check_result": In(Nothing)})
+    def promote_asset():
+        return None
 
     @graph_asset(
         name="foo",
-        check_specs=[AssetCheckSpec("check1", asset="asset1", description="desc")],
+        check_specs=[AssetCheckSpec("check1", asset="foo", description="desc")],
     )
     def asset1():
-        result = create_asset()
-        return {"result": result, "asset1_check1": validate_asset(result)}
+        staging_asset = create_asset()
+        check_result = validate_asset(staging_asset)
+        promoted_asset = promote_asset(staging_asset=staging_asset, check_result=check_result)
+        return {"result": promoted_asset, "foo_check1": check_result}
 
     result = materialize(assets=[asset1])
     assert result.success
@@ -479,6 +488,6 @@ def test_graph_asset():
     check_evals = result.get_asset_check_evaluations()
     assert len(check_evals) == 1
     check_eval = check_evals[0]
-    assert check_eval.asset_key == AssetKey("asset1")
+    assert check_eval.asset_key == AssetKey("foo")
     assert check_eval.check_name == "check1"
     assert check_eval.metadata == {"foo": MetadataValue.text("bar")}
