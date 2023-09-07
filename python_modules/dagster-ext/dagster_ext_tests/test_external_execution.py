@@ -41,6 +41,9 @@ from dagster._core.ext.utils import (
     ExtEnvContextInjector,
     ExtFileContextInjector,
     ExtFileMessageReader,
+    ExtTempFileContextInjector,
+    ExtTempFileMessageReader,
+    ext_protocol,
 )
 from dagster._core.instance_for_test import instance_for_test
 from dagster_aws.ext import ExtS3MessageReader
@@ -299,3 +302,31 @@ def test_ext_no_orchestration():
             r"This process was not launched by a Dagster orchestration process.",
             stderr.decode(),
         )
+
+
+def test_ext_no_client(external_script):
+    @asset
+    def subproc_run(context: AssetExecutionContext):
+        extras = {"bar": "baz"}
+        cmd = [_PYTHON_EXECUTABLE, external_script]
+
+        with ext_protocol(
+            context,
+            ExtTempFileContextInjector(),
+            ExtTempFileMessageReader(),
+            extras=extras,
+        ) as ext_context:
+            subprocess.run(cmd, env=ext_context.get_external_process_env_vars())
+
+    ExtSubprocess()
+    with instance_for_test() as instance:
+        materialize(
+            [subproc_run],
+            instance=instance,
+        )
+        mat = instance.get_latest_materialization_event(subproc_run.key)
+        assert mat and mat.asset_materialization
+        assert mat.asset_materialization.metadata["bar"].value == "baz"
+        assert mat.asset_materialization.tags
+        assert mat.asset_materialization.tags[DATA_VERSION_TAG] == "alpha"
+        assert mat.asset_materialization.tags[DATA_VERSION_IS_USER_PROVIDED_TAG]
