@@ -379,30 +379,6 @@ def _define_nodes() -> Field:
         is_required=True,
     )
 
-def _define_azure_log_analytics_info() -> Field:
-    log_analytics_primary_key = Field(Noneable(str), default_value=None)
-    log_analytic_workspace_id = Field(Noneable(str), default_value=None)
-    return Field(Noneable(Shape({"log_analytics_primary_key": log_analytics_primary_key,
-                  "log_analytics_workspace_id": log_analytic_workspace_id})), default_value=None)
-
-def _define_azure_attributes_conf() -> Field:
-    availability = Field(Noneable(Enum("AzureAvailability", [EnumValue("ON_DEMAND_AZURE"), EnumValue("SPOT_AZURE"), EnumValue("SPOT_WITH_FALLBACK_AZURE")])))
-    first_on_demand = Field(Noneable(int), default_value=None)
-    log_analytics_info = _define_azure_log_analytics_info()
-    spot_bid_max_price = Field(Noneable(float), default_value=None)
-    return Field(Noneable(Shape({"availability": availability,
-                                 "first_on_demand": first_on_demand,
-                                 "log_analytics_info": log_analytics_info,
-                                 "spot_bid_max_price": spot_bid_max_price})), default_value=None)
-
-
-def _define_gcp_attributes_conf() -> Field:
-    availability = Field(Enum("GcpAvailability", [EnumValue("ON_DEMAND_GCP"), EnumValue("PREEMPTIBLE_GCP"), EnumValue("PREEMPTIBLE_WITH_FALLBACK_GCP")]), is_required=False)
-    boot_disk_size = Field(int, is_required=False)
-    google_service_account = Field(str, is_required=False)
-    local_ssd_count = Field(int, is_required=False)
-    return Field(Shape({"availability": availability, "boot_disk_size": boot_disk_size, "google_service_account": google_service_account, "local_ssd_count": local_ssd_count}), is_required=False)
-
 
 def _define_new_cluster() -> Field:
     spark_version = Field(
@@ -492,8 +468,6 @@ def _define_new_cluster() -> Field:
                 "spark_conf": spark_conf,
                 "nodes": _define_nodes(),
                 "aws_attributes": _define_aws_attributes_conf(),
-                "azure_attributes": _define_azure_attributes_conf(),
-                "gcp_attributes": _define_gcp_attributes_conf(),
                 "ssh_public_keys": ssh_public_keys,
                 "custom_tags": _define_custom_tags(),
                 "cluster_log_conf": _define_cluster_log_conf(),
