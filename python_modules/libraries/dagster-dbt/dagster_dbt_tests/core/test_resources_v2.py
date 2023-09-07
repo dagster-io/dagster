@@ -52,7 +52,7 @@ def test_dbt_cli(global_config_flags: List[str], command: str) -> None:
 def test_dbt_cli_manifest_argument(manifest: DbtManifestParam) -> None:
     dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR)
 
-    assert dbt.cli(["run"], manifest=manifest).is_successful()
+    assert dbt.cli(["run"]).is_successful()
 
 
 def test_dbt_cli_project_dir_path() -> None:
