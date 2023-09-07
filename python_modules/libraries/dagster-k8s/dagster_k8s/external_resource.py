@@ -87,12 +87,15 @@ class _ExtK8sPod(ExtClient):
 
     Args:
         env (Optional[Mapping[str, str]]): An optional dict of environment variables to pass to the subprocess.
+        context_injector (Optional[ExtContextInjector]): An context injector to use to inject context into the k8s container process. Defaults to ExtEnvContextInjector.
+        message_reader (Optional[ExtContextInjector]): An context injector to use to read messages from the k8s container process. Defaults to K8sPodLogsMessageReader.
     """
 
     def __init__(
         self,
         env: Optional[Mapping[str, str]] = None,
         context_injector: Optional[ExtContextInjector] = None,
+        message_reader: Optional[ExtMessageReader] = None,
     ):
         self.env = check.opt_mapping_param(env, "env", key_type=str, value_type=str)
         self.context_injector = (
@@ -102,6 +105,11 @@ class _ExtK8sPod(ExtClient):
                 ExtContextInjector,
             )
             or ExtEnvContextInjector()
+        )
+
+        self.message_reader = (
+            check.opt_inst_param(message_reader, "message_reader", ExtMessageReader)
+            or K8sPodLogsMessageReader()
         )
 
     def run(
@@ -115,7 +123,6 @@ class _ExtK8sPod(ExtClient):
         base_pod_meta: Optional[Mapping[str, Any]] = None,
         base_pod_spec: Optional[Mapping[str, Any]] = None,
         extras: Optional[ExtExtras] = None,
-        message_reader: Optional[ExtMessageReader] = None,
     ) -> None:
         """Publish a kubernetes pod and wait for it to complete, enriched with the ext protocol.
 
@@ -146,13 +153,11 @@ class _ExtK8sPod(ExtClient):
         """
         client = DagsterKubernetesClient.production_client()
 
-        message_reader = message_reader or K8sPodLogsMessageReader()
-
         with ext_protocol(
             context=context,
             extras=extras,
             context_injector=self.context_injector,
-            message_reader=message_reader,
+            message_reader=self.message_reader,
         ) as ext_process:
             namespace = namespace or "default"
             pod_name = get_pod_name(context.run_id, context.op.name)
@@ -171,13 +176,13 @@ class _ExtK8sPod(ExtClient):
             client.core_api.create_namespaced_pod(namespace, pod_body)
             try:
                 # if were doing direct pod reading, wait for pod to start and then stream logs out
-                if isinstance(message_reader, K8sPodLogsMessageReader):
+                if isinstance(self.message_reader, K8sPodLogsMessageReader):
                     client.wait_for_pod(
                         pod_name,
                         namespace,
                         wait_for_state=WaitForPodState.Ready,
                     )
-                    message_reader.consume_pod_logs(
+                    self.message_reader.consume_pod_logs(
                         core_api=client.core_api,
                         pod_name=pod_name,
                         namespace=namespace,
