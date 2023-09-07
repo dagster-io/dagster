@@ -196,6 +196,13 @@ def build_pod_body(
     if "containers" not in spec:
         spec["containers"] = [{}]
 
+    if "restart_policy" not in spec:
+        spec["restart_policy"] = "Never"
+    elif spec["restart_policy"] == "Always":
+        raise DagsterInvariantViolationError(
+            "A restart policy of Always is not allowed, computations are expected to complete."
+        )
+
     if "image" not in spec["containers"][0] and not image:
         raise DagsterInvariantViolationError(
             "Must specify image property or provide base_pod_spec with one set."
