@@ -1016,7 +1016,7 @@ def define_databricks_secrets_config() -> Field:
 
 def _define_accessor() -> Selector:
     return Selector(
-        {"group_name": str, "user_name": str},
+        {"group_name": Field(str), "user_name": Field(str)},
         description="Group or User that shall access the target.",
     )
 
