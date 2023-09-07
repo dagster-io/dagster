@@ -349,7 +349,11 @@ class DatabricksJobRunner:
             new_cluster = new_cluster.copy()
 
             nodes = new_cluster.pop("nodes")
-            check.invariant("driver_instance_pool_id" in nodes and not "instance_pool_id" in nodes, "Usage of `driver_instance_pool_id` requires that `instance_pool_id` be specified for worker nodes")
+            check.invariant(
+                "driver_instance_pool_id" in nodes and not "instance_pool_id" in nodes,
+                "Usage of `driver_instance_pool_id` requires that `instance_pool_id` be specified"
+                " for worker nodes",
+            )
 
             if "instance_pool_id" in nodes:
                 new_cluster["instance_pool_id"] = nodes["instance_pool_id"]
@@ -416,6 +420,9 @@ class DatabricksJobRunner:
             "Multiple tasks specified in Databricks run",
         )
 
+        notification_settings = self._get_notification_settings(run_config)
+        job_health_settings = self._get_job_health_settings(run_config)
+
         return self.client.workspace_client.jobs.submit(
             run_name=run_config.get("run_name"),
             tasks=[
@@ -430,7 +437,42 @@ class DatabricksJobRunner:
                     },
                 )
             ],
+            idempotency_token=run_config.get("idempotency_token"),
+            timeout_seconds=run_config.get("timeout_seconds"),
+            health=job_health_settings,
+            **notification_settings,
         ).bind()["run_id"]
+
+    def _get_job_health_settings(self, run_config: Mapping[str, Any]) -> Optional[list[jobs.JobsHealthRule]]:
+        if "job_health_settings" in run_config:
+            job_health_settings = [jobs.JobsHealthRule.from_dict(h) for h in run_config["job_health_settings"]]
+        else:
+            job_health_settings = None
+        return job_health_settings
+
+    def _get_notification_settings(
+        self, run_config: Mapping[str, Any]
+    ) -> Mapping[
+        str,
+        Union[jobs.JobEmailNotifications, jobs.JobNotificationSettings, jobs.WebhookNotifications],
+    ]:
+        notification_configs = {}
+        if "email_notifications" in run_config:
+            email_notifications = jobs.JobEmailNotifications.from_dict(
+                run_config["email_notifications"]
+            )
+            notification_configs.update({"email_notifications": email_notifications})
+        if "notification_settings" in run_config:
+            notification_settings = jobs.JobNotificationSettings.from_dict(
+                run_config["notification_settings"]
+            )
+            notification_configs.update({"notification_settings": notification_settings})
+        if "webhook_notifications" in run_config:
+            webhook_notifications = jobs.WebhookNotifications.from_dict(
+                run_config["webhook_notifications"]
+            )
+            notification_configs.update({"webhook_notifications": webhook_notifications})
+        return notification_configs
 
     def retrieve_logs_for_run_id(
         self, log: logging.Logger, databricks_run_id: int

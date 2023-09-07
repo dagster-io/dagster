@@ -674,7 +674,7 @@ def _define_webhook_notification_settings() -> Field:
             [
                 Shape(
                     {
-                        "id": Field(Noneable(str), default_value=None),
+                        "id": Field(String, is_required=False),
                     }
                 )
             ]
@@ -716,6 +716,42 @@ def _define_docker_image_conf() -> Field:
         Shape({"basic_auth": basic_auth, "url": url}),
         description="Optional Docker image to use as base image for the cluster",
         is_required=False,
+    )
+
+
+def _define_job_health_settings():
+    jobs_health_rule = Shape(
+        {
+            "metric": Field(
+                Enum("JobsHealthMetric", [EnumValue("RUN_DURATION_SECONDS")]),
+                is_required=True,
+                description=(
+                    "Specifies the health metric that is being evaluated for a particular health"
+                    " rule"
+                ),
+            ),
+            "op": Field(
+                Enum("JobsHealthOperator", [EnumValue("GREATER_THAN")]),
+                is_required=True,
+                description=(
+                    "Specifies the operator used to compare the health metric value with the"
+                    " specified threshold"
+                ),
+            ),
+            "value": Field(
+                Int,
+                is_required=True,
+                description=(
+                    "Specifies the threshold value that the health metric should obey to satisfy"
+                    " the health rule."
+                ),
+            ),
+        }
+    )
+    return Field(
+        [jobs_health_rule],
+        is_required=False,
+        description="An optional set of health rules that can be defined for this job",
     )
 
 
@@ -765,6 +801,7 @@ def _define_submit_run_fields() -> Dict[str, Union[Selector, Field]]:
         "email_notifications": _define_email_notifications(),
         "notification_settings": _define_notification_settings(),
         "webhook_notifications": _define_webhook_notification_settings(),
+        "job_health_settings": _define_job_health_settings(),
     }
 
 
