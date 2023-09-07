@@ -20,7 +20,7 @@
 - Fixed an issue where Dagster raised an exception when combining observable source assets with multiple partitions definitions. Thanks [@aroig](https://github.com/aroig)!
 - [dagster-databricks] Added support for client authentication with OAuth. Thanks [@zyd14](https://github.com/zyd14)!
 - [dagster-databricks] Added support for `workspace` and `volumes` init scripts in the databricks client. Thanks [@zyd14](https://github.com/zyd14)!
-- Fixed a missing import in our docs. Thanks @[C0DK](https://github.com/C0DK)!
+- Fixed a missing import in our docs. Thanks [@C0DK](https://github.com/C0DK)!
 
 ### Experimental
 
