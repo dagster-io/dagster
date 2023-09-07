@@ -9,6 +9,7 @@ from dagster._core.storage.event_log import (
 )
 from dagster._core.storage.event_log.schema import (
     AssetKeyTable,
+    DynamicPartitionsTable,
     SecondaryIndexMigrationTable as EventLogSecondaryIndexTable,
     SqlEventLogStorageTable,
 )
@@ -33,19 +34,19 @@ from dagster._core.storage.schedules.schema import (
 
 
 def _has_integer_id_column(inspector, table):
-    type_by_col_name = {col["name"]: col["type"] for col in inspector.get_columns(table)}
+    type_by_col_name = {col["name"]: col["type"] for col in inspector.get_columns(table.name)}
     id_col_type = type_by_col_name.get("id")
     return id_col_type and str(id_col_type) == str(db.Integer())
 
 
-def _convert_int_to_bigint(conn, table, colname):
+def _convert_id_from_int_to_bigint(conn, table):
     # Since we are not using alembic (which might mess up the versioning system), we need to
     # manually handle the dialect differences for running the migration
     dialect = db.inspect(conn).dialect.name
     if dialect == "postgresql":
-        statement = db.text(f"ALTER TABLE {table} ALTER COLUMN {colname} TYPE BIGINT")
+        statement = db.text(f"ALTER TABLE {table.name} ALTER COLUMN id TYPE BIGINT")
     elif dialect == "mysql":
-        statement = db.text(f"ALTER TABLE {table} MODIFY COLUMN {colname} BIGINT")
+        statement = db.text(f"ALTER TABLE {table.name} MODIFY COLUMN id BIGINT")
     else:
         raise Exception(f"Unsupported dialect {dialect}")
     conn.execute(statement)
@@ -61,10 +62,12 @@ def _remove_asset_event_tags_foreign_key(conn, inspector, print_fn):
         print_fn("Completed dropping foreign key constraint on asset event tags table")
 
 
-def _restore_asset_event_tags_foreign_key(conn, print_fn):
+def _restore_asset_event_tags_foreign_key(conn, inspector, print_fn):
+    if len(inspector.get_foreign_keys("asset_event_tags")) > 0:
+        # There are foreign keys present for the asset event tags table already, no need to restore
+        return
+
     print_fn("Restoring foreign key constraint on asset event tags table")
-    # For pseudo-idempotence, just come up with a foreign key name rather on relying for the
-    # foreign key name to be the same across invocations
     conn.execute(
         db.text(
             "ALTER TABLE asset_event_tags ADD CONSTRAINT asset_event_tags_event_id_fkey"
@@ -74,26 +77,24 @@ def _restore_asset_event_tags_foreign_key(conn, print_fn):
     print_fn("Completed restoring foreign key constraint on asset event tags table")
 
 
-def _migrate_storage(conn, id_tables, print_fn):
+def _migrate_storage(conn, tables_to_migrate, print_fn):
     inspector = db.inspect(conn)
-    table_names = [table.name for table in id_tables]
-    storage_tables = [table for table in inspector.get_table_names() if table in table_names]
-    to_migrate = set()
-    for table in storage_tables:
+    all_table_names = set(inspector.get_table_names())
+
+    for table in tables_to_migrate:
         if _has_integer_id_column(inspector, table):
-            to_migrate.add(table)
+            if table.name == "event_logs" and "asset_event_tags" in all_table_names:
+                # the asset event tags table has a foreign key on the event_logs id that has to be
+                # removed before the event logs col can be converted to bigint
+                _remove_asset_event_tags_foreign_key(conn, inspector, print_fn)
 
-    for table in to_migrate:
-        if table == "event_logs" and "asset_event_tags" in storage_tables:
-            # the asset event tags table has a foreign key on the event_logs id that has to be
-            # removed before the event logs col can be converted to bigint
-            _remove_asset_event_tags_foreign_key(conn, inspector, print_fn)
+            print_fn(f"Altering {table} to use bigint for id column")
+            _convert_id_from_int_to_bigint(conn, table)
+            print_fn(f"Completed {table} migration")
 
-        print_fn(f"Altering {table} to use bigint for id column")
-        _convert_int_to_bigint(conn, table, "id")
-        print_fn(f"Completed {table} migration")
-
-        if table == "event_logs" and "asset_event_tags" in storage_tables:
+        # restore the foreign key on the asset event tags table if needed, even if we did not just
+        # migrate the event logs table in case we hit some error and exited in a bad state
+        if table == "event_logs" and "asset_event_tags" in all_table_names:
             _restore_asset_event_tags_foreign_key(conn, print_fn)
 
 
@@ -102,7 +103,12 @@ def run_bigint_migration(instance: DagsterInstance, print_fn: Callable = print):
         print_fn("Sqlite does not support bigint types, no need to migrate event log storage.")
     elif isinstance(instance.event_log_storage, SqlEventLogStorage):
         with instance.event_log_storage.index_connection() as conn:
-            id_tables = [SqlEventLogStorageTable, EventLogSecondaryIndexTable, AssetKeyTable]
+            id_tables = [
+                SqlEventLogStorageTable,
+                EventLogSecondaryIndexTable,
+                AssetKeyTable,
+                DynamicPartitionsTable,
+            ]
             _migrate_storage(conn, id_tables, print_fn)
 
     if isinstance(instance.run_storage, SqliteRunStorage):
