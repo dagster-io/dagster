@@ -78,6 +78,9 @@ class _ExtK8sPod(ExtClient):
 
     The first container within the containers list of the pod spec is expected (or set) to be
     the container prepared for ext protocol communication.
+
+    Args:
+        env (Optional[Mapping[str, str]]): An optional dict of environment variables to pass to the subprocess.
     """
 
     def __init__(self, env: Optional[Mapping[str, str]] = None):

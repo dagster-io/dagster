@@ -29,6 +29,16 @@ _MESSAGE_READER_FILENAME = "messages"
 
 
 class _ExtSubprocess(ExtClient):
+    """An ext client that runs a subprocess with the given command and environment.
+
+    By default parameters are injected via environment variables. And then context is passed via
+    a temp file, and structured messages are read from from a temp file.
+
+    Args:
+        env (Optional[Mapping[str, str]]): An optional dict of environment variables to pass to the subprocess.
+        cwd (Optional[str]): Working directory in which to launch the subprocess command.
+    """
+
     def __init__(self, env: Optional[Mapping[str, str]] = None, cwd: Optional[str] = None):
         self.env = check.opt_mapping_param(env, "env", key_type=str, value_type=str)
         self.cwd = check.opt_str_param(cwd, "cwd")

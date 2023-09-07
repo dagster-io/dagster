@@ -46,6 +46,10 @@ class _ExtDocker(ExtClient):
 
     By default context is injected via environment variables and messages are parsed out of the
     log stream and other logs are forwarded to stdout of the orchestration process.
+
+    Args:
+        env (Optional[Mapping[str, str]]): An optional dict of environment variables to pass to the subprocess.
+        register (Optional[Mapping[str, str]]): An optional dict of registry credentials to login the docker client.
     """
 
     def __init__(
