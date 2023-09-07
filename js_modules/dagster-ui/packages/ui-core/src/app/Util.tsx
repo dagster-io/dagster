@@ -205,3 +205,5 @@ export const gqlTypePredicate = <T extends string>(typename: T) => <N extends {_
 ): node is Extract<N, {__typename: T}> => {
   return node.__typename === typename;
 };
+
+export const COMMON_COLLATOR = new Intl.Collator(navigator.language, {sensitivity: 'base'});

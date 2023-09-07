@@ -4,7 +4,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {breakOnUnderscores} from '../app/Util';
+import {COMMON_COLLATOR, breakOnUnderscores} from '../app/Util';
 import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {OpTypeSignature, OP_TYPE_SIGNATURE_FRAGMENT} from '../ops/OpTypeSignature';
@@ -110,25 +110,27 @@ export const SidebarOpDefinition: React.FC<SidebarOpDefinitionProps> = (props) =
         </SidebarSection>
       )}
       {requiredResources && (
-        <SidebarSection title="Required Resources">
+        <SidebarSection title="Required resources">
           <Box padding={{vertical: 16, horizontal: 24}}>
-            {[...requiredResources].sort().map((requirement) => (
-              <ResourceContainer key={requirement.resourceKey}>
-                <Icon name="resource" color={Colors.Gray700} />
-                {repoAddress ? (
-                  <Link
-                    to={workspacePathFromAddress(
-                      repoAddress,
-                      `/resources/${requirement.resourceKey}`,
-                    )}
-                  >
+            {[...requiredResources]
+              .sort((a, b) => COMMON_COLLATOR.compare(a.resourceKey, b.resourceKey))
+              .map((requirement) => (
+                <ResourceContainer key={requirement.resourceKey}>
+                  <Icon name="resource" color={Colors.Gray700} />
+                  {repoAddress ? (
+                    <Link
+                      to={workspacePathFromAddress(
+                        repoAddress,
+                        `/resources/${requirement.resourceKey}`,
+                      )}
+                    >
+                      <ResourceHeader>{requirement.resourceKey}</ResourceHeader>
+                    </Link>
+                  ) : (
                     <ResourceHeader>{requirement.resourceKey}</ResourceHeader>
-                  </Link>
-                ) : (
-                  <ResourceHeader>{requirement.resourceKey}</ResourceHeader>
-                )}
-              </ResourceContainer>
-            ))}
+                  )}
+                </ResourceContainer>
+              ))}
           </Box>
         </SidebarSection>
       )}
