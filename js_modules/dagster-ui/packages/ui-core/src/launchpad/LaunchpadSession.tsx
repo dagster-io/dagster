@@ -3,7 +3,6 @@ import {
   Box,
   Button,
   Colors,
-  ConfigEditor,
   ConfigEditorHelpContext,
   Group,
   Icon,
@@ -12,6 +11,8 @@ import {
   isHelpContextEqual,
   ConfigEditorHelp,
   TextInput,
+  NewConfigEditor,
+  ConfigEditorHandle,
 } from '@dagster-io/ui-components';
 import merge from 'deepmerge';
 import uniqBy from 'lodash/uniqBy';
@@ -184,19 +185,21 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
   } = usePermissionsForLocation(repoAddress.location);
 
   const mounted = React.useRef<boolean>(false);
-  const editor = React.useRef<ConfigEditor | null>(null);
+  const editor = React.useRef<ConfigEditorHandle | null>(null);
   const editorSplitPanelContainer = React.useRef<SplitPanelContainer | null>(null);
   const previewCounter = React.useRef(0);
 
   const {isJob} = pipeline;
   const tagsFromSession = React.useMemo(() => currentSession.tags || [], [currentSession]);
 
-  const pipelineSelector: PipelineSelector = {
-    ...repoAddressToSelector(repoAddress),
-    pipelineName: pipeline.name,
-    solidSelection: currentSession.solidSelection || undefined,
-    assetSelection: currentSession.assetSelection?.map(({assetKey: {path}}) => ({path})),
-  };
+  const pipelineSelector: PipelineSelector = React.useMemo(() => {
+    return {
+      ...repoAddressToSelector(repoAddress),
+      pipelineName: pipeline.name,
+      solidSelection: currentSession.solidSelection || undefined,
+      assetSelection: currentSession.assetSelection?.map(({assetKey: {path}}) => ({path})),
+    };
+  }, [currentSession.assetSelection, currentSession.solidSelection, pipeline.name, repoAddress]);
 
   const configResult = useQuery<
     PipelineExecutionConfigSchemaQuery,
@@ -374,39 +377,42 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
     onSaveSession({tags: toSave});
   };
 
-  const checkConfig = async (configYaml: string) => {
-    // Another request to preview a newer document may be made while this request
-    // is in flight, in which case completion of this async method should not set loading=false.
-    previewCounter.current += 1;
-    const currentPreviewCount = previewCounter.current;
-    const configYamlOrEmpty = sanitizeConfigYamlString(configYaml);
+  const checkConfig = React.useCallback(
+    async (configYaml: string) => {
+      // Another request to preview a newer document may be made while this request
+      // is in flight, in which case completion of this async method should not set loading=false.
+      previewCounter.current += 1;
+      const currentPreviewCount = previewCounter.current;
+      const configYamlOrEmpty = sanitizeConfigYamlString(configYaml);
 
-    dispatch({type: 'preview-loading', payload: true});
+      dispatch({type: 'preview-loading', payload: true});
 
-    const {data} = await client.query<PreviewConfigQuery, PreviewConfigQueryVariables>({
-      fetchPolicy: 'no-cache',
-      query: PREVIEW_CONFIG_QUERY,
-      variables: {
-        runConfigData: configYamlOrEmpty,
-        pipeline: pipelineSelector,
-        mode: currentSession.mode || 'default',
-      },
-    });
-
-    if (mounted.current) {
-      const isLatestRequest = currentPreviewCount === previewCounter.current;
-      dispatch({
-        type: 'set-preview',
-        payload: {
-          preview: data,
-          previewedDocument: configYamlOrEmpty,
-          previewLoading: isLatestRequest ? false : state.previewLoading,
+      const {data} = await client.query<PreviewConfigQuery, PreviewConfigQueryVariables>({
+        fetchPolicy: 'no-cache',
+        query: PREVIEW_CONFIG_QUERY,
+        variables: {
+          runConfigData: configYamlOrEmpty,
+          pipeline: pipelineSelector,
+          mode: currentSession.mode || 'default',
         },
       });
-    }
 
-    return responseToYamlValidationResult(configYamlOrEmpty, data.isPipelineConfigValid);
-  };
+      if (mounted.current) {
+        const isLatestRequest = currentPreviewCount === previewCounter.current;
+        dispatch({
+          type: 'set-preview',
+          payload: {
+            preview: data,
+            previewedDocument: configYamlOrEmpty,
+            previewLoading: isLatestRequest ? false : state.previewLoading,
+          },
+        });
+      }
+
+      return responseToYamlValidationResult(configYamlOrEmpty, data.isPipelineConfigValid);
+    },
+    [client, currentSession.mode, pipelineSelector, state.previewLoading],
+  );
 
   const tagsApplyingNewBaseTags = (newBaseTags: PipelineRunTag[]) => {
     // If you choose a new base (preset or partition), we want to make a best-effort to preserve
@@ -710,7 +716,7 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
               firstMinSize={100}
               firstInitialPercent={70}
               first={
-                <ConfigEditor
+                <NewConfigEditor
                   ref={editor}
                   readOnly={false}
                   configSchema={runConfigSchema}
