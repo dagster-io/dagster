@@ -132,13 +132,21 @@ DEFAULT_POOL_RECYCLE = 3600  # 1 hr
     is_flag=True,
 )
 @click.option(
-    "--log-level",
-    help="Set the log level for the web server.",
+    "--uvicorn-log-level",
+    "--log-level",  # Back-compat
+    help="Set the log level for the uvicorn web server.",
     show_default=True,
     default="warning",
     type=click.Choice(
         ["critical", "error", "warning", "info", "debug", "trace"], case_sensitive=False
     ),
+)
+@click.option(
+    "--dagster-log-level",
+    help="Set the log level for dagster log events.",
+    show_default=True,
+    default="warning",
+    type=click.Choice(["critical", "error", "warning", "info", "debug"], case_sensitive=False),
 )
 @click.option(
     "--code-server-log-level",
@@ -162,7 +170,8 @@ def dagster_webserver(
     db_pool_recycle: int,
     read_only: bool,
     suppress_warnings: bool,
-    log_level: str,
+    uvicorn_log_level: str,
+    dagster_log_level: str,
     code_server_log_level: str,
     instance_ref: Optional[str],
     **kwargs: ClickArgValue,
@@ -170,11 +179,7 @@ def dagster_webserver(
     if suppress_warnings:
         os.environ["PYTHONWARNINGS"] = "ignore"
 
-    dagster_log_level = log_level.upper()
-    if dagster_log_level == "TRACE":  # uvicorn-specific level
-        dagster_log_level = "DEBUG"
-
-    configure_loggers(log_level=dagster_log_level)
+    configure_loggers(log_level=dagster_log_level.upper())
     logger = logging.getLogger(WEBSERVER_LOGGER_NAME)
 
     if sys.argv[0].endswith("dagit"):
@@ -199,7 +204,7 @@ def dagster_webserver(
             code_server_log_level=code_server_log_level,
         ) as workspace_process_context:
             host_dagster_ui_with_workspace_process_context(
-                workspace_process_context, host, port, path_prefix, log_level
+                workspace_process_context, host, port, path_prefix, uvicorn_log_level
             )
 
 
