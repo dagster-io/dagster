@@ -61,15 +61,6 @@ def dev_command_options(f):
     type=click.Choice(["critical", "error", "warning", "info", "debug"], case_sensitive=False),
 )
 @click.option(
-    "--webserver-log-level",
-    help="Set the log level for the Dagster webserver.",
-    show_default=True,
-    default="warning",
-    type=click.Choice(
-        ["critical", "error", "warning", "info", "debug", "trace"], case_sensitive=False
-    ),
-)
-@click.option(
     "--log-level",
     help="Set the log level for dagster services.",
     show_default=True,
@@ -95,7 +86,6 @@ def dev_command_options(f):
 )
 def dev_command(
     code_server_log_level: str,
-    webserver_log_level: str,
     log_level: str,
     port: Optional[str],
     host: Optional[str],
@@ -172,7 +162,7 @@ def dev_command(
             [sys.executable, "-m", "dagster_webserver"]
             + (["--port", port] if port else [])
             + (["--host", host] if host else [])
-            + (["--log-level", webserver_log_level])
+            + (["--dagster-log-level", log_level])
             + args
         )
         daemon_process = open_ipc_subprocess(
