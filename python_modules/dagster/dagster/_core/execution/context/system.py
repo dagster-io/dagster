@@ -931,7 +931,6 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             # Input name will be none if this is an internal dep
             input_name = self.job_def.asset_layer.input_for_asset_key(self.node_handle, key)
             # Exclude AllPartitionMapping for now to avoid huge queries
-            # TODO - need to solve the self dependent partition issue with the method refactors
             if input_name and self.has_asset_partitions_for_input(input_name):
                 subset = self.partitions_subset_for_upstream_asset(
                     key, require_valid_partitions=False
@@ -1016,8 +1015,6 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                 continue
             output_keys.add(asset_info.key)
         return output_keys
-
-    #### Partitions methods
 
     def has_asset_partitions_for_input(self, input_name: str) -> bool:
         asset_layer = self.job_def.asset_layer
