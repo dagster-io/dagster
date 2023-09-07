@@ -5,8 +5,9 @@ from subprocess import Popen
 from typing import Iterator, Mapping, Optional, Sequence, Union
 
 from dagster_ext import ExtExtras
-from pydantic import Field
 
+from dagster import _check as check
+from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.errors import DagsterExternalExecutionError
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.ext.client import (
@@ -27,14 +28,20 @@ _CONTEXT_INJECTOR_FILENAME = "context"
 _MESSAGE_READER_FILENAME = "messages"
 
 
-class ExtSubprocess(ExtClient):
-    cwd: Optional[str] = Field(
-        default=None, description="Working directory in which to launch the subprocess command."
-    )
-    env: Optional[Mapping[str, str]] = Field(
-        default=None,
-        description="An optional dict of environment variables to pass to the subprocess.",
-    )
+class _ExtSubprocess(ExtClient):
+    """An ext client that runs a subprocess with the given command and environment.
+
+    By default parameters are injected via environment variables. And then context is passed via
+    a temp file, and structured messages are read from from a temp file.
+
+    Args:
+        env (Optional[Mapping[str, str]]): An optional dict of environment variables to pass to the subprocess.
+        cwd (Optional[str]): Working directory in which to launch the subprocess command.
+    """
+
+    def __init__(self, env: Optional[Mapping[str, str]] = None, cwd: Optional[str] = None):
+        self.env = check.opt_mapping_param(env, "env", key_type=str, value_type=str)
+        self.cwd = check.opt_str_param(cwd, "cwd")
 
     def run(
         self,
@@ -88,3 +95,6 @@ class ExtSubprocess(ExtClient):
                 message_reader.read_messages(external_context)
             )
             yield io_params_as_env_vars(context_injector_params, message_reader_params)
+
+
+ExtSubprocess = ResourceParam[_ExtSubprocess]

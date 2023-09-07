@@ -9,14 +9,13 @@ from dagster_ext import (
     encode_env_var,
 )
 
-from dagster._config.pythonic_config import ConfigurableResource
 from dagster._core.execution.context.compute import OpExecutionContext
 
 if TYPE_CHECKING:
     from dagster._core.ext.context import ExtOrchestrationContext
 
 
-class ExtClient(ConfigurableResource, ABC):
+class ExtClient(ABC):
     def get_base_env(self) -> Mapping[str, str]:
         return {DAGSTER_EXT_ENV_KEYS["is_orchestration_active"]: encode_env_var(True)}
 
