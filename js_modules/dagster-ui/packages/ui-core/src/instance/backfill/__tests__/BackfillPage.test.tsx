@@ -142,7 +142,7 @@ describe('BackfillPage', () => {
     // Check if the loaded content is displayed
     const detailRow = await screen.findByTestId('backfill-page-details');
 
-    expect(screen.getByText('Partition Selection')).toBeVisible();
+    expect(screen.getByText('Partition selection')).toBeVisible();
     expect(screen.getByText('Asset name')).toBeVisible();
 
     expect(getByText(detailRow, 'Jan 1, 1970, 12:16:40 AM')).toBeVisible();
@@ -215,7 +215,7 @@ describe('PartitionSelection', () => {
     expect(getByText('3...4')).toBeInTheDocument();
   });
 
-  it('renders the numPartitions in a ButtonLink when neither rootAssetTargetedPartitions nor rootAssetTargetedRanges are provided', async () => {
+  it('renders the numPartitions when neither rootAssetTargetedPartitions nor rootAssetTargetedRanges are provided', async () => {
     const {getByText} = render(<PartitionSelection numPartitions={2} />);
 
     expect(getByText('2 partitions')).toBeInTheDocument();
