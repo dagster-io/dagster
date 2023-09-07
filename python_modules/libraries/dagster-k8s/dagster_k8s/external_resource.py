@@ -4,7 +4,11 @@ from contextlib import contextmanager
 from typing import Any, Iterator, Mapping, Optional, Sequence, Union
 
 import kubernetes
-from dagster import OpExecutionContext
+from dagster import (
+    OpExecutionContext,
+    _check as check,
+)
+from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.ext.client import (
     ExtClient,
@@ -24,7 +28,6 @@ from dagster_ext import (
     ExtDefaultMessageWriter,
     ExtExtras,
 )
-from pydantic import Field
 
 from dagster_k8s.utils import get_common_labels
 
@@ -67,7 +70,7 @@ class K8sPodLogsMessageReader(ExtMessageReader):
                 extract_message_or_forward_to_stdout(ext_context, log_line)
 
 
-class ExtK8sPod(ExtClient):
+class _ExtK8sPod(ExtClient):
     """An ext protocol compliant resource for launching kubernetes pods.
 
     By default context is injected via environment variables and messages are parsed out of
@@ -75,12 +78,13 @@ class ExtK8sPod(ExtClient):
 
     The first container within the containers list of the pod spec is expected (or set) to be
     the container prepared for ext protocol communication.
+
+    Args:
+        env (Optional[Mapping[str, str]]): An optional dict of environment variables to pass to the subprocess.
     """
 
-    env: Optional[Mapping[str, str]] = Field(
-        default=None,
-        description="An optional dict of environment variables to set on the container.",
-    )
+    def __init__(self, env: Optional[Mapping[str, str]] = None):
+        self.env = check.opt_mapping_param(env, "env", key_type=str, value_type=str)
 
     def run(
         self,
@@ -236,3 +240,6 @@ def _setup_ext_protocol(
     ) as mr_params:
         protocol_envs = io_params_as_env_vars(ci_params, mr_params)
         yield protocol_envs, message_reader
+
+
+ExtK8sPod = ResourceParam[_ExtK8sPod]
