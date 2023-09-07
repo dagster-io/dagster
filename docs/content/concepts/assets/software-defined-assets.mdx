@@ -370,10 +370,10 @@ To view a list of all your assets, click **Assets** in the top navigation. This 
 <!-- ![Asset catalog page in the UI](/images/concepts/webserver/all-assets.png) -->
 
 <Image
-  alt="Asset catalog page in the UI"
-  src="/images/concepts/webserver/all-assets.png"
-  width={3574}
-  height={1962}
+alt="Asset catalog page in the UI"
+src="/images/concepts/webserver/all-assets.png"
+width={3574}
+height={1962}
 />
 
 </TabItem>
@@ -386,10 +386,10 @@ View the **Asset details** page for an asset by clicking on its name:
 <!-- ![Asset details page in the UI](/images/concepts/webserver/asset.png) -->
 
 <Image
-  alt="Asset details page in the UI"
-  src="/images/concepts/webserver/asset.png"
-  width={3574}
-  height={1962}
+alt="Asset details page in the UI"
+src="/images/concepts/webserver/asset.png"
+width={3574}
+height={1962}
 />
 
 </TabItem>
@@ -405,10 +405,10 @@ To view a graph of all assets and their dependencies, you can:
 <!-- ![Asset lineage graph](/images/concepts/assets/software-defined-assets/graph.png) -->
 
 <Image
-  alt="Asset lineage graph"
-  src="/images/concepts/assets/software-defined-assets/graph.png"
-  width={3574}
-  height={1962}
+alt="Asset lineage graph"
+src="/images/concepts/assets/software-defined-assets/graph.png"
+width={3574}
+height={1962}
 />
 
 </TabItem>
@@ -479,10 +479,10 @@ Click the asset group to open a dependency graph for all assets in the group. Fo
 <!-- ![Dependency graph for an asset group](/images/concepts/assets/asset-group-dependency-graph.png) -->
 
 <Image
-  alt="Dependency graph for an asset group"
-  src="/images/concepts/assets/asset-group-dependency-graph.png"
-  width={3574}
-  height={1962}
+alt="Dependency graph for an asset group"
+src="/images/concepts/assets/asset-group-dependency-graph.png"
+width={3574}
+height={1962}
 />
 
 ---
@@ -615,7 +615,7 @@ def downstream_asset(upstream_asset):
 
 ### Recording materialization metadata
 
-Dagster supports attaching arbitrary [metadata](/_apidocs/ops#dagster.MetadataValue) to asset materializations. This metadata will be displayed on the "Activity" tab of the "Asset Details" page in the UI. If it's numeric, it will be plotted. To attach metadata, your asset's op can return an <PyObject object="Output" /> object that contains the output value and a dictionary of metadata:
+Dagster supports attaching arbitrary [metadata](/\_apidocs/ops#dagster.MetadataValue) to asset materializations. This metadata will be displayed on the "Activity" tab of the "Asset Details" page in the UI. If it's numeric, it will be plotted. To attach metadata, your asset's op can return an <PyObject object="Output" /> object that contains the output value and a dictionary of metadata:
 
 ```python file=/concepts/assets/asset_materialization_metadata.py
 from pandas import DataFrame
@@ -647,7 +647,7 @@ Sometimes it's useful to record the same metadata for all assets that are stored
 
 ### Attaching definition metadata
 
-Dagster supports attaching arbitrary [metadata](/_apidocs/ops#dagster.MetadataValue) to asset definitions. This metadata will be displayed on the "Definition" tab of the "Asset Details" page in the UI. This is useful for metadata that describes how the asset should be handled, rather than metadata that describes the contents that were produced by a particular run.
+Dagster supports attaching arbitrary [metadata](/\_apidocs/ops#dagster.MetadataValue) to asset definitions. This metadata will be displayed on the "Definition" tab of the "Asset Details" page in the UI. This is useful for metadata that describes how the asset should be handled, rather than metadata that describes the contents that were produced by a particular run.
 
 To attach metadata, supply a `metadata` dictionary to the asset:
 
@@ -672,7 +672,7 @@ For more examples of software-defined assets, check out these examples:
 - In the [Fully Featured Project example](https://github.com/dagster-io/dagster/tree/master/examples/project_fully_featured):
 
   - [Defining an asset](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/assets/activity_analytics/activity_forecast.py)
-  - [Loading assets from dbt](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/assets/__init__.py)
+  - [Loading assets from dbt](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/assets/\__init\_\_.py)
   - [Per-asset I/O manager](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/assets/core/items.py)
   - [Partitioned assets](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/assets/core/items.py)
 
