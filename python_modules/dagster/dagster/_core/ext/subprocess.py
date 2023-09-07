@@ -9,13 +9,13 @@ from pydantic import Field
 
 from dagster._core.errors import DagsterExternalExecutionError
 from dagster._core.execution.context.compute import OpExecutionContext
-from dagster._core.ext.context import (
-    ExtOrchestrationContext,
-)
-from dagster._core.ext.resource import (
+from dagster._core.ext.client import (
+    ExtClient,
     ExtContextInjector,
     ExtMessageReader,
-    ExtResource,
+)
+from dagster._core.ext.context import (
+    ExtOrchestrationContext,
 )
 from dagster._core.ext.utils import (
     ExtFileContextInjector,
@@ -27,7 +27,7 @@ _CONTEXT_INJECTOR_FILENAME = "context"
 _MESSAGE_READER_FILENAME = "messages"
 
 
-class ExtSubprocess(ExtResource):
+class ExtSubprocess(ExtClient):
     cwd: Optional[str] = Field(
         default=None, description="Working directory in which to launch the subprocess command."
     )

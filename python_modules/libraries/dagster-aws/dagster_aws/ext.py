@@ -5,7 +5,7 @@ from typing import Optional
 import boto3
 import dagster._check as check
 from botocore.exceptions import ClientError
-from dagster._core.ext.resource import (
+from dagster._core.ext.client import (
     ExtParams,
 )
 from dagster._core.ext.utils import ExtBlobStoreMessageReader
