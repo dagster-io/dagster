@@ -368,10 +368,23 @@ def _define_nodes() -> Field:
         ),
         is_required=False,
     )
-    driver_instance_pool_id = Field(String, description="The optional ID of the instance pool to use for launching the driver node. If not specified, the driver node will be launched in the same instance pool as the workers (specified by the instance_pool_id configuration value).")
+    driver_instance_pool_id = Field(
+        String,
+        description=(
+            "The optional ID of the instance pool to use for launching the driver node. If not"
+            " specified, the driver node will be launched in the same instance pool as the workers"
+            " (specified by the instance_pool_id configuration value)."
+        ),
+    )
 
     return Field(
-        Selector({"node_types": _define_node_types(), "instance_pool_id": instance_pool_id, "driver_instance_pool_id": driver_instance_pool_id}),
+        Selector(
+            {
+                "node_types": _define_node_types(),
+                "instance_pool_id": instance_pool_id,
+                "driver_instance_pool_id": driver_instance_pool_id,
+            }
+        ),
         description=(
             "The nodes used in the cluster. Either the node types or an instance pool "
             "can be specified."
@@ -637,35 +650,107 @@ def _define_email_notifications() -> Dict[str, Field]:
     on_failure = Field(Noneable([str]), default_value=None)
     on_start = Field(Noneable([str]), default_value=None)
     on_success = Field(Noneable([str]), default_value=None)
-    return {"no_alert_for_skipped_runs": no_alert_for_skipped_runs,
-            "on_duration_warning_threshold_exceeded": on_duration_warning_threshold_exceeded,
-            "on_failure": on_failure,
-            "on_start": on_start,
-            "on_success": on_success}
+    return {
+        "no_alert_for_skipped_runs": no_alert_for_skipped_runs,
+        "on_duration_warning_threshold_exceeded": on_duration_warning_threshold_exceeded,
+        "on_failure": on_failure,
+        "on_start": on_start,
+        "on_success": on_success,
+    }
 
 
 def _define_notification_settings() -> Dict[str, Field]:
     no_alert_for_canceled_runs = Field(Noneable(bool), default_value=None)
     no_alert_for_skipped_runs = Field(Noneable(bool), default_value=None)
-    return {"no_alert_for_canceled_runs": no_alert_for_canceled_runs,
-            "no_alert_for_skipped_runs": no_alert_for_skipped_runs}
+    return {
+        "no_alert_for_canceled_runs": no_alert_for_canceled_runs,
+        "no_alert_for_skipped_runs": no_alert_for_skipped_runs,
+    }
 
 
-def _define_webhook_notification_settings() -> Dict[str, Field]:
-    webhook_id_field = Field(Noneable([Shape({"id": Field(Noneable(str), default_value=None),})]), default_value=None)
-    return {"on_duration_warning_threshold_exceeded": webhook_id_field,
-            "on_failure": webhook_id_field,
-            "on_start": webhook_id_field,
-            "on_success": webhook_id_field}
+def _define_webhook_notification_settings() -> Field:
+    webhook_id_field = Field(
+        Noneable(
+            [
+                Shape(
+                    {
+                        "id": Field(Noneable(str), default_value=None),
+                    }
+                )
+            ]
+        ),
+        default_value=None,
+    )
+    return Field(
+        Shape(
+            {
+                "on_duration_warning_threshold_exceeded": webhook_id_field,
+                "on_failure": webhook_id_field,
+                "on_start": webhook_id_field,
+                "on_success": webhook_id_field,
+            }
+        ),
+        is_required=False,
+        description="Optional webhooks to trigger at different stages of job execution",
+    )
 
 
 def _define_docker_image_conf() -> Field:
-    docker_basic_auth = Shape({"password": Field(Noneable(str), default_value=None),
-                               "username": Field(Noneable(str), default_value=None)})
-    basic_auth = Field(Noneable(docker_basic_auth), default_value=None, description="Authentication information for pulling down docker image. Leave as None if you have an instance profile configured which already has permissions to pull the image from the confiugured URL")
-    url = Field(str)
-    return Field(Noneable(Shape({"basic_auth": basic_auth,
-            "url": url})), default_value=None, description="Docker image to use as base image for the cluster")
+    docker_basic_auth = Shape(
+        {
+            "password": Field(Noneable(str), default_value=None),
+            "username": Field(Noneable(str), default_value=None),
+        }
+    )
+    basic_auth = Field(
+        docker_basic_auth,
+        description=(
+            "Authentication information for pulling down docker image. Leave unconfigured if the"
+            " image is stored in AWS ECR you have an instance profile configured which already has"
+            " permissions to pull the image from the configured URL"
+        ),
+        is_required=False,
+    )
+    url = Field(str, description="Image URL")
+    return Field(
+        Shape({"basic_auth": basic_auth, "url": url}),
+        description="Optional Docker image to use as base image for the cluster",
+        is_required=False,
+    )
+
+
+def _define_job_acl_lists() -> Field:
+    user_name = Field(String, is_required=False, description="User to whom this ACL applies to")
+    group_name = Field(String, is_required=False, description="Group to whom this ACL applies to")
+    service_principal_name = Field(
+        String, is_required=False, description="Service principal to whom this ACL applies to"
+    )
+    permission_level = Field(
+        Enum(
+            "ACLPermissionLevel",
+            [EnumValue("IS_OWNER"), EnumValue("CAN_VIEW"), EnumValue("CAN_MANAGE_RUN")],
+        ),
+        is_required=True,
+        description="Permissions to apply to the job run.",
+    )
+    return Field(
+        Shape(
+            {
+                "user_name": user_name,
+                "group_name": group_name,
+                "service_principal_name": service_principal_name,
+                "permission_level": permission_level,
+            }
+        ),
+        is_required=False,
+        description=(
+            "Optional Job ACL to apply. This give the ability to restrict which users, groups, or"
+            " service principals can view job run output and settings, and is useful for"
+            " restricting access to job runs which may output sensitive data. The"
+            " `permission_level` and at least one of `user_name`, `group_name`, or"
+            " `service_principal` is required if configuring job ACLs"
+        ),
+    )
 
 
 def _define_submit_run_fields() -> Dict[str, Union[Selector, Field]]:
