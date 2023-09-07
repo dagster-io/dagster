@@ -78,7 +78,8 @@ export const BackfillRow = ({
   // making the hooks below support an optional query function / result.
   const [statusQueryFn, statusQueryResult] = statusUnsupported
     ? NoBackfillStatusQuery
-    : (backfill.numPartitions || 0) > BACKFILL_PARTITIONS_COUNTS_THRESHOLD
+    : backfill.isAssetBackfill ||
+      (backfill.numPartitions || 0) > BACKFILL_PARTITIONS_COUNTS_THRESHOLD
     ? statusCounts
     : statusDetails;
 
@@ -145,7 +146,7 @@ export const BackfillRow = ({
       </td>
       <td>
         {backfill.isValidSerialization ? (
-          counts && statuses ? (
+          counts && statuses !== undefined ? (
             <BackfillRunStatus backfill={backfill} counts={counts} statuses={statuses} />
           ) : (
             <LoadingOrNone queryResult={statusQueryResult} noneString={'\u2013'} />
