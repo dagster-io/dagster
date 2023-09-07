@@ -4,6 +4,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {COMMON_COLLATOR} from '../app/Util';
 import {ASSET_NODE_CONFIG_FRAGMENT} from '../assets/AssetConfig';
 import {AssetDefinedInMultipleReposNotice} from '../assets/AssetDefinedInMultipleReposNotice';
 import {
@@ -132,22 +133,27 @@ export const SidebarAssetInfo: React.FC<{
       )}
 
       {asset.requiredResources.length > 0 && (
-        <SidebarSection title="Required Resources">
+        <SidebarSection title="Required resources">
           <Box padding={{vertical: 16, horizontal: 24}}>
-            {asset.requiredResources.map((resource) => (
-              <ResourceContainer key={resource.resourceKey}>
-                <Icon name="resource" color={Colors.Gray700} />
-                {repoAddress ? (
-                  <Link
-                    to={workspacePathFromAddress(repoAddress, `/resources/${resource.resourceKey}`)}
-                  >
+            {[...asset.requiredResources]
+              .sort((a, b) => COMMON_COLLATOR.compare(a.resourceKey, b.resourceKey))
+              .map((resource) => (
+                <ResourceContainer key={resource.resourceKey}>
+                  <Icon name="resource" color={Colors.Gray700} />
+                  {repoAddress ? (
+                    <Link
+                      to={workspacePathFromAddress(
+                        repoAddress,
+                        `/resources/${resource.resourceKey}`,
+                      )}
+                    >
+                      <ResourceHeader>{resource.resourceKey}</ResourceHeader>
+                    </Link>
+                  ) : (
                     <ResourceHeader>{resource.resourceKey}</ResourceHeader>
-                  </Link>
-                ) : (
-                  <ResourceHeader>{resource.resourceKey}</ResourceHeader>
-                )}
-              </ResourceContainer>
-            ))}
+                  )}
+                </ResourceContainer>
+              ))}
           </Box>
         </SidebarSection>
       )}

@@ -12,6 +12,7 @@ import {
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {COMMON_COLLATOR} from '../app/Util';
 import {ASSET_NODE_FRAGMENT} from '../asset-graph/AssetNode';
 import {isHiddenAssetGroupJob, LiveData, toGraphId} from '../asset-graph/Utils';
 import {AssetNodeForGraphQueryFragment} from '../asset-graph/types/useAssetGraphData.types';
@@ -192,29 +193,31 @@ export const AssetNodeDefinition: React.FC<{
               padding={{vertical: 16, horizontal: 24}}
               border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
             >
-              <Subheading>Required Resources</Subheading>
+              <Subheading>Required resources</Subheading>
             </Box>
             <Box
               padding={{vertical: 16, horizontal: 24}}
               border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
             >
-              {assetNode.requiredResources.map((resource) => (
-                <ResourceContainer key={resource.resourceKey}>
-                  <Icon name="resource" color={Colors.Gray700} />
-                  {repoAddress ? (
-                    <Link
-                      to={workspacePathFromAddress(
-                        repoAddress,
-                        `/resources/${resource.resourceKey}`,
-                      )}
-                    >
+              {[...assetNode.requiredResources]
+                .sort((a, b) => COMMON_COLLATOR.compare(a.resourceKey, b.resourceKey))
+                .map((resource) => (
+                  <ResourceContainer key={resource.resourceKey}>
+                    <Icon name="resource" color={Colors.Gray700} />
+                    {repoAddress ? (
+                      <Link
+                        to={workspacePathFromAddress(
+                          repoAddress,
+                          `/resources/${resource.resourceKey}`,
+                        )}
+                      >
+                        <ResourceHeader>{resource.resourceKey}</ResourceHeader>
+                      </Link>
+                    ) : (
                       <ResourceHeader>{resource.resourceKey}</ResourceHeader>
-                    </Link>
-                  ) : (
-                    <ResourceHeader>{resource.resourceKey}</ResourceHeader>
-                  )}
-                </ResourceContainer>
-              ))}
+                    )}
+                  </ResourceContainer>
+                ))}
               {assetNode.requiredResources.length === 0 && (
                 <Body>
                   No required resources to display
