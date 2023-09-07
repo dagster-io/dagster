@@ -52,6 +52,7 @@ from .dependency import NodeHandle
 from .events import AssetKey, CoercibleToAssetKey, CoercibleToAssetKeyPrefix
 from .node_definition import NodeDefinition
 from .op_definition import OpDefinition
+from .output import Out
 from .partition import PartitionsDefinition
 from .partition_mapping import (
     PartitionMapping,
@@ -359,6 +360,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         ] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
         can_subset: bool = False,
+        check_specs: Optional[Mapping[str, AssetCheckSpec]] = None,
     ) -> "AssetsDefinition":
         """Constructs an AssetsDefinition from a GraphDefinition.
 
@@ -429,6 +431,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             auto_materialize_policies_by_output_name=auto_materialize_policies_by_output_name,
             backfill_policy=backfill_policy,
             can_subset=can_subset,
+            check_specs=check_specs,
         )
 
     @public
@@ -540,7 +543,12 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         ] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
         can_subset: bool = False,
+        check_specs: Optional[Sequence[AssetCheckSpec]] = None,
     ) -> "AssetsDefinition":
+        from dagster._core.definitions.decorators.asset_decorator import (
+            _validate_and_assign_output_names_to_check_specs,
+        )
+
         node_def = check.inst_param(node_def, "node_def", NodeDefinition)
         keys_by_input_name = _infer_keys_by_input_names(
             node_def,
@@ -599,6 +607,11 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             }
         else:
             group_names_by_key = None
+
+        check_specs_by_output_name = _validate_and_assign_output_names_to_check_specs(check_specs)
+        {
+            output_name: Out(dagster_type=None) for output_name in check_specs_by_output_name.keys()
+        }
 
         return AssetsDefinition.dagster_internal_init(
             keys_by_input_name=keys_by_input_name,
@@ -661,7 +674,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             ),
             can_subset=can_subset,
             selected_asset_keys=None,  # node has no subselection info
-            check_specs_by_output_name={},
+            check_specs_by_output_name=check_specs_by_output_name,
         )
 
     @public
@@ -1279,14 +1292,14 @@ def _infer_keys_by_output_names(
     node_def: Union["GraphDefinition", OpDefinition], keys_by_output_name: Mapping[str, AssetKey]
 ) -> Mapping[str, AssetKey]:
     output_names = [output_def.name for output_def in node_def.output_defs]
-    if keys_by_output_name:
-        check.invariant(
-            set(keys_by_output_name.keys()) == set(output_names),
-            "The set of output names keys specified in the keys_by_output_name argument must "
-            f"equal the set of asset keys outputted by {node_def.name}. \n"
-            f"keys_by_output_name keys: {set(keys_by_output_name.keys())} \n"
-            f"expected keys: {set(output_names)}",
-        )
+    # if keys_by_output_name:
+    #     check.invariant(
+    #         set(keys_by_output_name.keys()) == set(output_names),
+    #         "The set of output names keys specified in the keys_by_output_name argument must "
+    #         f"equal the set of asset keys outputted by {node_def.name}. \n"
+    #         f"keys_by_output_name keys: {set(keys_by_output_name.keys())} \n"
+    #         f"expected keys: {set(output_names)}",
+    #     )
 
     inferred_keys_by_output_names: Dict[str, AssetKey] = {
         output_name: asset_key for output_name, asset_key in keys_by_output_name.items()
