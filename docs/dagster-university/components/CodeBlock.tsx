@@ -3,11 +3,11 @@ import Prism from 'prismjs';
 import * as React from 'react';
 
 export function CodeBlock({children, 'data-language': language}) {
-  const ref = React.useRef(null);
-
-  React.useEffect(() => {
-    if (ref.current) Prism.highlightElement(ref.current, false);
-  }, [children]);
+  const ref = React.useCallback((node: HTMLPreElement) => {
+    if (node) {
+      Prism.highlightElement(node, false);
+    }
+  }, []);
 
   return (
     <div className="code" aria-live="polite" style={{display: 'flex'}}>

@@ -3,7 +3,7 @@
 const defaultTheme = require('tailwindcss/defaultTheme');
 
 module.exports = {
-  content: ['/pages/**/*.md', '/components/**/*.{html,md}'],
+  content: ['./pages/**/*.{tsx,md}', './components/**/*.{html,md,tsx}'],
   theme: {
     extend: {
       fontFamily: {
@@ -66,10 +66,13 @@ module.exports = {
         DEFAULT: {
           css: {
             code: {
-              background_color: theme('colors.gray.900'),
+              background: theme('colors.gray.100'),
+              color: theme('colors.gable-green'),
               overflowWrap: 'break-word',
+              fontFamily: theme('fontFamily.mono').join(','),
               fontWeight: theme('fontWeight.medium'),
               fontSize: '14px',
+              padding: '4px 6px',
             },
             'code::before': {
               content: '""',
