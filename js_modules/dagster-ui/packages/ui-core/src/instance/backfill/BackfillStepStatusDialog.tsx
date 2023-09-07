@@ -1,13 +1,13 @@
 import {Button, DialogFooter, Dialog} from '@dagster-io/ui-components';
 import * as React from 'react';
 
-import {PartitionPerOpStatus} from '../partitions/PartitionStepStatus';
-import {usePartitionStepQuery} from '../partitions/usePartitionStepQuery';
-import {DagsterTag} from '../runs/RunTag';
-import {RunFilterToken} from '../runs/RunsFilterInput';
-import {buildRepoAddress} from '../workspace/buildRepoAddress';
-import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
-import {RepoAddress} from '../workspace/types';
+import {PartitionPerOpStatus} from '../../partitions/PartitionStepStatus';
+import {usePartitionStepQuery} from '../../partitions/usePartitionStepQuery';
+import {DagsterTag} from '../../runs/RunTag';
+import {RunFilterToken} from '../../runs/RunsFilterInput';
+import {buildRepoAddress} from '../../workspace/buildRepoAddress';
+import {repoAddressToSelector} from '../../workspace/repoAddressToSelector';
+import {RepoAddress} from '../../workspace/types';
 
 import {
   BackfillTableFragment,

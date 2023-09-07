@@ -35,8 +35,9 @@ import {RunFilterToken, runsPathWithFilters} from '../../runs/RunsFilterInput';
 import {testId} from '../../testing/testId';
 import {VirtualizedItemListForDialog} from '../../ui/VirtualizedItemListForDialog';
 import {numberFormatter} from '../../ui/formatters';
-import {BackfillStatusTagForPage} from '../BackfillStatusTagForPage';
 
+import {BackfillActionsMenu} from './BackfillActionsMenu';
+import {BackfillStatusTagForPage} from './BackfillStatusTagForPage';
 import {
   BackfillStatusesByAssetQuery,
   BackfillStatusesByAssetQueryVariables,
@@ -293,7 +294,28 @@ export const BackfillPage = () => {
             {backfillId}
           </Heading>
         }
-        right={isInProgress ? <QueryRefreshCountdown refreshState={refreshState} /> : null}
+        right={
+          <>
+            {isInProgress ? <QueryRefreshCountdown refreshState={refreshState} /> : null}
+            {canCancelSubmission ? (
+            <MenuItem
+              text="Cancel backfill submission"
+              icon="cancel"
+              intent="danger"
+              onClick={() => onTerminateBackfill(backfill)}
+            />
+          ) : null}
+          {canCancelRuns ? (
+            <MenuItem
+              text="Terminate unfinished runs"
+              icon="cancel"
+              intent="danger"
+              onClick={() => onTerminateBackfill(backfill)}
+            />
+          ) : null}
+
+          </>
+        }
       />
       {content()}
     </Page>

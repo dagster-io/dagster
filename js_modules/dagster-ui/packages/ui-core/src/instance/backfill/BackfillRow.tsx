@@ -1,45 +1,40 @@
 import {gql, QueryResult, useLazyQuery} from '@apollo/client';
-import {
-  Box,
-  Button,
-  Colors,
-  Icon,
-  MenuItem,
-  Menu,
-  Popover,
-  Tag,
-  Mono,
-} from '@dagster-io/ui-components';
+import {Box, Button, Colors, Icon, Mono, Tag} from '@dagster-io/ui-components';
 import countBy from 'lodash/countBy';
 import * as React from 'react';
-import {useHistory, Link} from 'react-router-dom';
+import {Link, useHistory} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {showCustomAlert} from '../app/CustomAlertProvider';
-import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
-import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {RunStatus, BulkActionStatus} from '../graphql/types';
-import {PartitionStatus, PartitionStatusHealthSourceOps} from '../partitions/PartitionStatus';
-import {PipelineReference} from '../pipelines/PipelineReference';
-import {AssetKeyTagCollection} from '../runs/AssetKeyTagCollection';
-import {inProgressStatuses} from '../runs/RunStatuses';
-import {RunStatusTagsWithCounts} from '../runs/RunTimeline';
-import {runsPathWithFilters} from '../runs/RunsFilterInput';
-import {TimestampDisplay} from '../schedules/TimestampDisplay';
-import {LoadingOrNone, useDelayedRowQuery} from '../workspace/VirtualizedWorkspaceTable';
-import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
-import {buildRepoAddress} from '../workspace/buildRepoAddress';
-import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
-import {workspacePathFromAddress, workspacePipelinePath} from '../workspace/workspacePath';
+import {showCustomAlert} from '../../app/CustomAlertProvider';
+import {PythonErrorInfo} from '../../app/PythonErrorInfo';
+import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../../app/QueryRefresh';
+import {isHiddenAssetGroupJob} from '../../asset-graph/Utils';
+import {RunStatus, BulkActionStatus} from '../../graphql/types';
+import {PartitionStatusHealthSourceOps, PartitionStatus} from '../../partitions/PartitionStatus';
+import {PipelineReference} from '../../pipelines/PipelineReference';
+import {AssetKeyTagCollection} from '../../runs/AssetKeyTagCollection';
+import {inProgressStatuses} from '../../runs/RunStatuses';
+import {RunStatusTagsWithCounts} from '../../runs/RunTimeline';
+import {runsPathWithFilters} from '../../runs/RunsFilterInput';
+import {TimestampDisplay} from '../../schedules/TimestampDisplay';
+import {useDelayedRowQuery, LoadingOrNone} from '../../workspace/VirtualizedWorkspaceTable';
+import {useRepository, isThisThingAJob} from '../../workspace/WorkspaceContext';
+import {buildRepoAddress} from '../../workspace/buildRepoAddress';
+import {repoAddressAsHumanString} from '../../workspace/repoAddressAsString';
+import {workspacePipelinePath, workspacePathFromAddress} from '../../workspace/workspacePath';
 
+import {
+  BackfillActionsMenu,
+  backfillCanCancelRuns,
+  backfillCanCancelSubmission,
+} from './BackfillActionsMenu';
 import {BackfillStatusTagForPage} from './BackfillStatusTagForPage';
 import {
-  PartitionStatusesForBackfillFragment,
-  SingleBackfillCountsQuery,
-  SingleBackfillCountsQueryVariables,
   SingleBackfillQuery,
   SingleBackfillQueryVariables,
+  SingleBackfillCountsQuery,
+  SingleBackfillCountsQueryVariables,
+  PartitionStatusesForBackfillFragment,
 } from './types/BackfillRow.types';
 import {BackfillTableFragment} from './types/BackfillTable.types';
 
@@ -114,15 +109,6 @@ export const BackfillRow = ({
     return {counts, statuses};
   }, [data]);
 
-  const canCancelRuns = React.useMemo(() => {
-    if (counts) {
-      const queuedCount = counts[RunStatus.QUEUED] || 0;
-      const startedCount = counts[RunStatus.STARTED] || 0;
-      return queuedCount > 0 || startedCount > 0;
-    }
-    return false;
-  }, [counts]);
-
   return (
     <tr>
       <td style={{width: 120}}>
@@ -177,96 +163,21 @@ export const BackfillRow = ({
         )}
       </td>
       <td>
-        <BackfillMenu
+        <BackfillActionsMenu
           backfill={backfill}
           onResumeBackfill={onResumeBackfill}
           onTerminateBackfill={onTerminateBackfill}
           onShowStepStatus={onShowStepStatus}
-          canCancelRuns={canCancelRuns}
-        />
+          canCancelRuns={backfillCanCancelRuns(backfill, counts)}
+          canCancelSubmission={backfillCanCancelSubmission(backfill)}
+        >
+          <Button icon={<Icon name="expand_more" />} />
+        </BackfillActionsMenu>
       </td>
     </tr>
   );
 };
 
-const BackfillMenu = ({
-  backfill,
-  canCancelRuns,
-  onTerminateBackfill,
-  onResumeBackfill,
-  onShowStepStatus,
-}: {
-  backfill: BackfillTableFragment;
-  canCancelRuns: boolean;
-  onTerminateBackfill: (backfill: BackfillTableFragment) => void;
-  onResumeBackfill: (backfill: BackfillTableFragment) => void;
-  onShowStepStatus: (backfill: BackfillTableFragment) => void;
-}) => {
-  const history = useHistory();
-  const {hasResumePermission} = backfill;
-
-  const runsUrl = runsPathWithFilters([
-    {
-      token: 'tag',
-      value: `dagster/backfill=${backfill.id}`,
-    },
-  ]);
-
-  return (
-    <Popover
-      content={
-        <Menu>
-          {backfill.hasCancelPermission ? (
-            <>
-              {(backfill.isAssetBackfill && backfill.status === BulkActionStatus.REQUESTED) ||
-              backfill.numCancelable > 0 ? (
-                <MenuItem
-                  text="Cancel backfill submission"
-                  icon="cancel"
-                  intent="danger"
-                  onClick={() => onTerminateBackfill(backfill)}
-                />
-              ) : null}
-              {canCancelRuns ? (
-                <MenuItem
-                  text="Terminate unfinished runs"
-                  icon="cancel"
-                  intent="danger"
-                  onClick={() => onTerminateBackfill(backfill)}
-                />
-              ) : null}
-            </>
-          ) : null}
-          {hasResumePermission &&
-          backfill.status === BulkActionStatus.FAILED &&
-          backfill.partitionSet ? (
-            <MenuItem
-              text="Resume failed backfill"
-              title="Submits runs for all partitions in the backfill that do not have a corresponding run. Does not retry failed runs."
-              icon="refresh"
-              onClick={() => onResumeBackfill(backfill)}
-            />
-          ) : null}
-          <MenuItem
-            text="View backfill runs"
-            icon="settings_backup_restore"
-            onClick={() => history.push(runsUrl)}
-          />
-          <MenuItem
-            text="View step status"
-            icon="view_list"
-            onClick={() => {
-              onShowStepStatus(backfill);
-            }}
-          />
-        </Menu>
-      }
-      position="bottom-right"
-    >
-      <Button icon={<Icon name="expand_more" />} />
-    </Popover>
-  );
-};
 const BACKFILL_PARTITIONS_COUNTS_THRESHOLD = 1000;
 
 const BackfillRunStatus = ({

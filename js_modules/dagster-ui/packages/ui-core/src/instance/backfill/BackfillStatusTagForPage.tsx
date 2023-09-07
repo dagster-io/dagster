@@ -2,10 +2,10 @@ import {Box, Tag} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
-import {showCustomAlert} from '../app/CustomAlertProvider';
-import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
-import {BulkActionStatus} from '../graphql/types';
+import {showCustomAlert} from '../../app/CustomAlertProvider';
+import {PythonErrorInfo} from '../../app/PythonErrorInfo';
+import {PythonErrorFragment} from '../../app/types/PythonErrorFragment.types';
+import {BulkActionStatus} from '../../graphql/types';
 
 type BackfillState = {
   status: BulkActionStatus;
