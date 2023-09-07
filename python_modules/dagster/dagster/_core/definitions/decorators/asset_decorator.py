@@ -636,13 +636,6 @@ def multi_asset(
                         # self-dependent asset also needs to be considered an upstream_key
                         upstream_keys.add(dep.asset_key)
 
-            # upstream_keys = {
-            #     dep.asset_key
-            #     for spec in specs
-            #     for dep in spec.deps
-            #     if dep.asset_key not in output_tuples_by_asset_key and dep.partition_mapping is None
-            # }
-
             explicit_ins = ins or {}
             # get which asset keys have inputs set
             loaded_upstreams = build_asset_ins(fn, explicit_ins, deps=set())

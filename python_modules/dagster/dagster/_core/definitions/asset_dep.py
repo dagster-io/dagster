@@ -23,7 +23,7 @@ class AssetDep(
         ],
     )
 ):
-    """Specifies a dependency on an upstream asset when using AssetSpec.
+    """Specifies a dependency on an upstream asset.
 
     Attributes:
         asset (Union[AssetKey, str, AssetSpec, AssetsDefinition, SourceAsset]): The upstream asset to depend on.
