@@ -188,7 +188,7 @@ def databricks_pyspark_step_launcher(
     """
     return DatabricksPySparkStepLauncher(**context.resource_config)
 
-
+from databricks.sdk import WorkspaceClient
 class DatabricksPySparkStepLauncher(StepLauncher):
     def __init__(
         self,

@@ -368,15 +368,40 @@ def _define_nodes() -> Field:
         ),
         is_required=False,
     )
+    driver_instance_pool_id = Field(String, description="The optional ID of the instance pool to use for launching the driver node. If not specified, the driver node will be launched in the same instance pool as the workers (specified by the instance_pool_id configuration value).")
 
     return Field(
-        Selector({"node_types": _define_node_types(), "instance_pool_id": instance_pool_id}),
+        Selector({"node_types": _define_node_types(), "instance_pool_id": instance_pool_id, "driver_instance_pool_id": driver_instance_pool_id}),
         description=(
             "The nodes used in the cluster. Either the node types or an instance pool "
             "can be specified."
         ),
         is_required=True,
     )
+
+def _define_azure_log_analytics_info() -> Field:
+    log_analytics_primary_key = Field(Noneable(str), default_value=None)
+    log_analytic_workspace_id = Field(Noneable(str), default_value=None)
+    return Field(Noneable(Shape({"log_analytics_primary_key": log_analytics_primary_key,
+                  "log_analytics_workspace_id": log_analytic_workspace_id})), default_value=None)
+
+def _define_azure_attributes_conf() -> Field:
+    availability = Field(Noneable(Enum("AzureAvailability", [EnumValue("ON_DEMAND_AZURE"), EnumValue("SPOT_AZURE"), EnumValue("SPOT_WITH_FALLBACK_AZURE")])))
+    first_on_demand = Field(Noneable(int), default_value=None)
+    log_analytics_info = _define_azure_log_analytics_info()
+    spot_bid_max_price = Field(Noneable(float), default_value=None)
+    return Field(Noneable(Shape({"availability": availability,
+                                 "first_on_demand": first_on_demand,
+                                 "log_analytics_info": log_analytics_info,
+                                 "spot_bid_max_price": spot_bid_max_price})), default_value=None)
+
+
+def _define_gcp_attributes_conf() -> Field:
+    availability = Field(Enum("GcpAvailability", [EnumValue("ON_DEMAND_GCP"), EnumValue("PREEMPTIBLE_GCP"), EnumValue("PREEMPTIBLE_WITH_FALLBACK_GCP")]), is_required=False)
+    boot_disk_size = Field(int, is_required=False)
+    google_service_account = Field(str, is_required=False)
+    local_ssd_count = Field(int, is_required=False)
+    return Field(Shape({"availability": availability, "boot_disk_size": boot_disk_size, "google_service_account": google_service_account, "local_ssd_count": local_ssd_count}), is_required=False)
 
 
 def _define_new_cluster() -> Field:
@@ -451,6 +476,8 @@ def _define_new_cluster() -> Field:
         ),
         is_required=False,
     )
+    enable_local_disk_encryption = Field(bool, is_required=False, description="Whether to encrypt cluster local disks")
+    runtime_engine = Field(Enum("RuntimeEngine", [EnumValue("PHOTON"), EnumValue("STANDARD")]), is_required=False, description="Decides which runtime engine to be use, e.g. Standard vs. Photon. If unspecified, the runtime engine is inferred from spark_version.")
     policy_id = Field(
         String,
         description="The ID of the cluster policy used to create the cluster if applicable",
@@ -465,12 +492,17 @@ def _define_new_cluster() -> Field:
                 "spark_conf": spark_conf,
                 "nodes": _define_nodes(),
                 "aws_attributes": _define_aws_attributes_conf(),
+                "azure_attributes": _define_azure_attributes_conf(),
+                "gcp_attributes": _define_gcp_attributes_conf(),
                 "ssh_public_keys": ssh_public_keys,
                 "custom_tags": _define_custom_tags(),
                 "cluster_log_conf": _define_cluster_log_conf(),
                 "init_scripts": init_scripts,
                 "spark_env_vars": spark_env_vars,
                 "enable_elastic_disk": enable_elastic_disk,
+                "docker_image": _define_docker_image_conf(),
+                "enable_local_disk_encryption": enable_local_disk_encryption,
+                "runtime_engine": runtime_engine,
                 "policy_id": policy_id,
             }
         )
@@ -625,6 +657,43 @@ def _define_libraries() -> Field:
     )
 
 
+def _define_email_notifications() -> Dict[str, Field]:
+    no_alert_for_skipped_runs = Field(Noneable(bool), default_value=None)
+    on_duration_warning_threshold_exceeded = Field(Noneable([str]), default_value=None)
+    on_failure = Field(Noneable([str]), default_value=None)
+    on_start = Field(Noneable([str]), default_value=None)
+    on_success = Field(Noneable([str]), default_value=None)
+    return {"no_alert_for_skipped_runs": no_alert_for_skipped_runs,
+            "on_duration_warning_threshold_exceeded": on_duration_warning_threshold_exceeded,
+            "on_failure": on_failure,
+            "on_start": on_start,
+            "on_success": on_success}
+
+
+def _define_notification_settings() -> Dict[str, Field]:
+    no_alert_for_canceled_runs = Field(Noneable(bool), default_value=None)
+    no_alert_for_skipped_runs = Field(Noneable(bool), default_value=None)
+    return {"no_alert_for_canceled_runs": no_alert_for_canceled_runs,
+            "no_alert_for_skipped_runs": no_alert_for_skipped_runs}
+
+
+def _define_webhook_notification_settings() -> Dict[str, Field]:
+    webhook_id_field = Field(Noneable([Shape({"id": Field(Noneable(str), default_value=None),})]), default_value=None)
+    return {"on_duration_warning_threshold_exceeded": webhook_id_field,
+            "on_failure": webhook_id_field,
+            "on_start": webhook_id_field,
+            "on_success": webhook_id_field}
+
+
+def _define_docker_image_conf() -> Field:
+    docker_basic_auth = Shape({"password": Field(Noneable(str), default_value=None),
+                               "username": Field(Noneable(str), default_value=None)})
+    basic_auth = Field(Noneable(docker_basic_auth), default_value=None, description="Authentication information for pulling down docker image. Leave as None if you have an instance profile configured which already has permissions to pull the image from the confiugured URL")
+    url = Field(str)
+    return Field(Noneable(Shape({"basic_auth": basic_auth,
+            "url": url})), default_value=None, description="Docker image to use as base image for the cluster")
+
+
 def _define_submit_run_fields() -> Dict[str, Union[Selector, Field]]:
     run_name = Field(
         String,
@@ -668,6 +737,9 @@ def _define_submit_run_fields() -> Dict[str, Union[Selector, Field]]:
         "install_default_libraries": install_default_libraries,
         "timeout_seconds": timeout_seconds,
         "idempotency_token": idempotency_token,
+        "email_notifications": _define_email_notifications(),
+        "notification_settings": _define_notification_settings(),
+        "webhook_notifications": _define_webhook_notification_settings(),
     }
 
 
