@@ -95,7 +95,24 @@ const buildSidebarQueryMock = (
         },
         opVersion: null,
         repository: MockRepo,
-        requiredResources: [],
+        requiredResources: [
+          {
+            __typename: 'ResourceRequirement',
+            resourceKey: 'foobar',
+          },
+          {
+            __typename: 'ResourceRequirement',
+            resourceKey: 'barbaz',
+          },
+          {
+            __typename: 'ResourceRequirement',
+            resourceKey: 'FOO_BAR',
+          },
+          {
+            __typename: 'ResourceRequirement',
+            resourceKey: 'just_another_resource',
+          },
+        ],
         type: {
           key: 'Any',
           name: 'Any',
