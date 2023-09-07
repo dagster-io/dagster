@@ -5,11 +5,13 @@ from dagster import (
     AssetCheckResult,
     AssetCheckSeverity,
     AssetCheckSpec,
+    AssetOut,
     DailyPartitionsDefinition,
     MetadataValue,
     Output,
     asset,
     asset_check,
+    multi_asset,
 )
 
 
@@ -133,6 +135,19 @@ def downstream_asset():
     return 1
 
 
+@multi_asset(
+    outs={
+        "one": AssetOut(key="multi_asset_piece_1", group_name="asset_checks"),
+        "two": AssetOut(key="multi_asset_piece_2", group_name="asset_checks"),
+    },
+    check_specs=[AssetCheckSpec("my_check", asset="multi_asset_piece_1")],
+)
+def multi_asset_1_and_2():
+    yield Output(1, output_name="one")
+    yield Output(1, output_name="two")
+    yield AssetCheckResult(success=True, metadata={"foo": "bar"})
+
+
 def get_checks_and_assets():
     return [
         checked_asset,
@@ -147,4 +162,5 @@ def get_checks_and_assets():
         severe_exception_check,
         partitioned_asset,
         random_fail_check_on_partitioned_asset,
+        multi_asset_1_and_2,
     ]
