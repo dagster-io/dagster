@@ -32,7 +32,9 @@ export function VirtualizedAssetPartitionListForDialog<A>({
 
   const allRows = React.useMemo(() => {
     const rows = [] as Row<A>[];
-    Object.entries(assetKeysByPartition).forEach(([partitionName, assetKeys]) => {
+    const partitionNames = Object.keys(assetKeysByPartition).sort();
+    partitionNames.forEach((partitionName) => {
+      const assetKeys = assetKeysByPartition[partitionName]!;
       const expanded = expandedPartitions.has(partitionName);
       rows.push({type: 'partition-name', partitionName, expanded, assetCount: assetKeys.length});
       if (expanded) {

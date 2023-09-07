@@ -245,6 +245,10 @@ export function displayNameForAssetKey(key: {path: string[]}) {
   return key.path.join(' / ');
 }
 
+export function sortAssetKeys(a: {path: string[]}, b: {path: string[]}) {
+  return displayNameForAssetKey(a).localeCompare(displayNameForAssetKey(b));
+}
+
 export function stepKeyForAsset(definition: {opNames: string[]}) {
   // Used for linking to the run with this step highlighted. We only support highlighting
   // a single step, so just use the first one.

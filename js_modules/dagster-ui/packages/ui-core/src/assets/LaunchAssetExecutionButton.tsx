@@ -20,6 +20,7 @@ import {
   displayNameForAssetKey,
   isHiddenAssetGroupJob,
   LiveData,
+  sortAssetKeys,
   toGraphId,
   tokenForAssetKey,
 } from '../asset-graph/Utils';
@@ -527,9 +528,7 @@ function getAnchorAssetForPartitionMappedBackfill(assets: LaunchAssetExecutionAs
 
   const partitionedRoots = roots
     .filter((r) => !!r.partitionDefinition)
-    .sort((a, b) =>
-      displayNameForAssetKey(a.assetKey).localeCompare(displayNameForAssetKey(b.assetKey)),
-    );
+    .sort((a, b) => sortAssetKeys(a.assetKey, b.assetKey));
 
   if (!partitionedRoots.length) {
     return null;
