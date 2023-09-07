@@ -608,8 +608,6 @@ def get_deps(
 def get_asset_deps(
     dbt_nodes,
     deps,
-    node_info_to_freshness_policy_fn,
-    node_info_to_auto_materialize_policy_fn,
     io_manager_key,
     manifest: Optional[Mapping[str, Any]],
     dagster_dbt_translator: "DagsterDbtTranslator",
@@ -674,11 +672,13 @@ def get_asset_deps(
         if group_name is not None:
             group_names_by_key[asset_key] = group_name
 
-        freshness_policy = node_info_to_freshness_policy_fn(dbt_resource_props)
+        freshness_policy = dagster_dbt_translator.get_freshness_policy(dbt_resource_props)
         if freshness_policy is not None:
             freshness_policies_by_key[asset_key] = freshness_policy
 
-        auto_materialize_policy = node_info_to_auto_materialize_policy_fn(dbt_resource_props)
+        auto_materialize_policy = dagster_dbt_translator.get_auto_materialize_policy(
+            dbt_resource_props
+        )
         if auto_materialize_policy is not None:
             auto_materialize_policies_by_key[asset_key] = auto_materialize_policy
 
