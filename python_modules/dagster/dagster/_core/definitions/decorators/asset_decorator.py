@@ -380,7 +380,7 @@ class _Asset:
             )
 
             check_specs_by_output_name = _validate_and_assign_output_names_to_check_specs(
-                self.check_specs
+                self.check_specs, [out_asset_key]
             )
             check_outs: Mapping[str, Out] = {
                 output_name: Out(dagster_type=None)
@@ -672,7 +672,9 @@ def multi_asset(
 
         asset_outs_by_output_name: Mapping[str, Out] = dict(output_tuples_by_asset_key.values())
 
-        check_specs_by_output_name = _validate_and_assign_output_names_to_check_specs(check_specs)
+        check_specs_by_output_name = _validate_and_assign_output_names_to_check_specs(
+            check_specs, list(output_tuples_by_asset_key.keys())
+        )
         check_outs_by_output_name: Mapping[str, Out] = {
             output_name: Out(dagster_type=None) for output_name in check_specs_by_output_name.keys()
         }
@@ -1206,7 +1208,7 @@ def _make_asset_keys(
 
 
 def _validate_and_assign_output_names_to_check_specs(
-    check_specs: Optional[Sequence[AssetCheckSpec]],
+    check_specs: Optional[Sequence[AssetCheckSpec]], valid_asset_keys: Sequence[AssetKey]
 ) -> Mapping[str, AssetCheckSpec]:
     check_specs_by_output_name = {spec.get_python_identifier(): spec for spec in check_specs or []}
     if check_specs and len(check_specs_by_output_name) != len(check_specs):
@@ -1219,5 +1221,12 @@ def _validate_and_assign_output_names_to_check_specs(
         }
 
         raise DagsterInvalidDefinitionError(f"Duplicate check specs: {duplicates}")
+
+    for spec in check_specs_by_output_name.values():
+        if spec.asset_key not in valid_asset_keys:
+            raise DagsterInvalidDefinitionError(
+                f"Invalid asset key {spec.asset_key} in check spec {spec.name}. Must be one of"
+                f" {valid_asset_keys}"
+            )
 
     return check_specs_by_output_name
