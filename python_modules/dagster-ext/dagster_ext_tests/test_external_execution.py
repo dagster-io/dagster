@@ -16,6 +16,7 @@ from dagster._core.definitions.data_version import (
 )
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.materialize import materialize
+from dagster._core.definitions.metadata import MarkdownMetadataValue
 from dagster._core.errors import DagsterExternalExecutionError
 from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster._core.execution.context.invocation import build_asset_context
@@ -76,7 +77,7 @@ def external_script() -> Iterator[str]:
         context = ExtContext.get()
         context.log("hello world")
         time.sleep(0.1)  # sleep to make sure that we encompass multiple intervals for blob store IO
-        context.report_asset_metadata("bar", context.get_extra("bar"))
+        context.report_asset_metadata("bar", context.get_extra("bar"), type="md")
         context.report_asset_data_version("alpha")
 
     with temp_script(script_fn) as script_path:
@@ -154,6 +155,7 @@ def test_ext_subprocess(
         )
         mat = instance.get_latest_materialization_event(foo.key)
         assert mat and mat.asset_materialization
+        assert isinstance(mat.asset_materialization.metadata["bar"], MarkdownMetadataValue)
         assert mat.asset_materialization.metadata["bar"].value == "baz"
         assert mat.asset_materialization.tags
         assert mat.asset_materialization.tags[DATA_VERSION_TAG] == "alpha"

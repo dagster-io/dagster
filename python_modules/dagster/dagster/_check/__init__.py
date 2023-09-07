@@ -883,6 +883,31 @@ def is_list(
 
 
 # ########################
+# ##### LITERAL
+# ########################
+
+
+def literal_param(
+    obj: T, param_name: str, values: Sequence[object], additional_message: Optional[str] = None
+) -> T:
+    additional_message = " " + additional_message if additional_message else ""
+    if obj not in values:
+        raise _param_value_mismatch_exception(obj, values, param_name, additional_message)
+    return obj
+
+
+def opt_literal_param(
+    obj: T, param_name: str, values: Sequence[object], additional_message: Optional[str] = None
+) -> T:
+    additional_message = " " + additional_message if additional_message else ""
+    if obj is not None and obj not in values:
+        raise _param_value_mismatch_exception(
+            obj, values, param_name, additional_message, allow_none=True
+        )
+    return obj
+
+
+# ########################
 # ##### MAPPING
 # ########################
 
@@ -1642,6 +1667,21 @@ def _element_check_error(
     additional_message = " " + additional_message if additional_message else ""
     return ElementCheckError(
         f"Value {value!r} from key {key} is not a {ttype!r}. Dict: {ddict!r}.{additional_message}"
+    )
+
+
+def _param_value_mismatch_exception(
+    obj: object,
+    values: Sequence[object],
+    param_name: str,
+    additional_message: Optional[str] = None,
+    allow_none: bool = False,
+) -> ParameterCheckError:
+    allow_none_clause = " or None" if allow_none else ""
+    additional_message = " " + additional_message if additional_message else ""
+    return ParameterCheckError(
+        f'Param "{param_name}" is not equal to one of {values}{allow_none_clause}. Got'
+        f" {obj!r}.{additional_message}"
     )
 
 

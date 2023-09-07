@@ -18,6 +18,7 @@ from typing import (
     ClassVar,
     Generic,
     Iterator,
+    Literal,
     Mapping,
     Optional,
     Sequence,
@@ -26,6 +27,7 @@ from typing import (
     TypedDict,
     TypeVar,
     cast,
+    get_args,
 )
 
 if TYPE_CHECKING:
@@ -92,6 +94,23 @@ class ExtDataProvenance(TypedDict):
     code_version: str
     input_data_versions: Mapping[str, str]
     is_user_provided: bool
+
+
+ExtMetadataType = Literal[
+    "text",
+    "url",
+    "path",
+    "notebook",
+    "json",
+    "md",
+    "float",
+    "int",
+    "bool",
+    "dagster_run",
+    "asset",
+    "table",
+    "null",
+]
 
 
 # ########################
@@ -210,6 +229,17 @@ def _assert_opt_env_param_type(
 
 def _assert_param_value(value: _T, expected_values: Sequence[_T], method: str, param: str) -> _T:
     if value not in expected_values:
+        raise DagsterExtError(
+            f"Invalid value for parameter `{param}` of `{method}`. Expected one of"
+            f" `{expected_values}`, got `{value}`."
+        )
+    return value
+
+
+def _assert_opt_param_value(
+    value: _T, expected_values: Sequence[_T], method: str, param: str
+) -> _T:
+    if value is not None and value not in expected_values:
         raise DagsterExtError(
             f"Invalid value for parameter `{param}` of `{method}`. Expected one of"
             f" `{expected_values}`, got `{value}`."
@@ -668,15 +698,23 @@ class ExtContext:
     # ##### WRITE
 
     def report_asset_metadata(
-        self, label: str, value: Any, asset_key: Optional[str] = None
+        self,
+        label: str,
+        value: Any,
+        type: Optional[ExtMetadataType] = None,  # noqa: A002
+        asset_key: Optional[str] = None,
     ) -> None:
         asset_key = _resolve_optionally_passed_asset_key(
             self._data, asset_key, "report_asset_metadata"
         )
         label = _assert_param_type(label, str, "report_asset_metadata", "label")
         value = _assert_param_json_serializable(value, "report_asset_metadata", "value")
+        _type = _assert_opt_param_value(
+            type, get_args(ExtMetadataType), "report_asset_metadata", "type"
+        )
         self._write_message(
-            "report_asset_metadata", {"asset_key": asset_key, "label": label, "value": value}
+            "report_asset_metadata",
+            {"asset_key": asset_key, "label": label, "value": value, "type": _type},
         )
 
     def report_asset_data_version(self, data_version: str, asset_key: Optional[str] = None) -> None:

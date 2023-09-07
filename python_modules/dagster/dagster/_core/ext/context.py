@@ -1,16 +1,18 @@
-from typing import Any, Optional
+from typing import Any, Optional, get_args
 
 from dagster_ext import (
     ExtContextData,
     ExtDataProvenance,
     ExtExtras,
     ExtMessage,
+    ExtMetadataType,
     ExtTimeWindow,
 )
 
 import dagster._check as check
 from dagster._core.definitions.data_version import DataProvenance, DataVersion
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.execution.context.compute import OpExecutionContext
@@ -38,12 +40,17 @@ class ExtOrchestrationContext:
         elif message["method"] == "log":
             self._handle_log(**message["params"])  # type: ignore
 
-    def _handle_report_asset_metadata(self, asset_key: str, label: str, value: Any) -> None:
+    def _handle_report_asset_metadata(
+        self, asset_key: str, label: str, value: Any, type: ExtMetadataType  # noqa: A002
+    ) -> None:
         check.str_param(asset_key, "asset_key")
         check.str_param(label, "label")
+        check.opt_literal_param(type, "type", get_args(ExtMetadataType))
         key = AssetKey.from_user_string(asset_key)
         output_name = self._context.output_for_asset_key(key)
-        self._context.add_output_metadata({label: value}, output_name)
+        # metadata type values correspond to static methods on MetadataValue
+        metadata_value = getattr(MetadataValue, type)(value)
+        self._context.add_output_metadata({label: metadata_value}, output_name)
 
     def _handle_report_asset_data_version(self, asset_key: str, data_version: str) -> None:
         check.str_param(asset_key, "asset_key")
