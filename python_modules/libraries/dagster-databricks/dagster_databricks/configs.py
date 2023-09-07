@@ -719,40 +719,6 @@ def _define_docker_image_conf() -> Field:
     )
 
 
-def _define_job_acl_lists() -> Field:
-    user_name = Field(String, is_required=False, description="User to whom this ACL applies to")
-    group_name = Field(String, is_required=False, description="Group to whom this ACL applies to")
-    service_principal_name = Field(
-        String, is_required=False, description="Service principal to whom this ACL applies to"
-    )
-    permission_level = Field(
-        Enum(
-            "ACLPermissionLevel",
-            [EnumValue("IS_OWNER"), EnumValue("CAN_VIEW"), EnumValue("CAN_MANAGE_RUN")],
-        ),
-        is_required=True,
-        description="Permissions to apply to the job run.",
-    )
-    return Field(
-        Shape(
-            {
-                "user_name": user_name,
-                "group_name": group_name,
-                "service_principal_name": service_principal_name,
-                "permission_level": permission_level,
-            }
-        ),
-        is_required=False,
-        description=(
-            "Optional Job ACL to apply. This give the ability to restrict which users, groups, or"
-            " service principals can view job run output and settings, and is useful for"
-            " restricting access to job runs which may output sensitive data. The"
-            " `permission_level` and at least one of `user_name`, `group_name`, or"
-            " `service_principal` is required if configuring job ACLs"
-        ),
-    )
-
-
 def _define_submit_run_fields() -> Dict[str, Union[Selector, Field]]:
     run_name = Field(
         String,
