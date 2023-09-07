@@ -15,6 +15,7 @@ def test_pod_building():
         base_pod_meta=None,
     )
     assert pod.spec.containers[0].image == test_image
+    assert pod.spec.restart_policy == "Never"
 
     # expected common case
     pod = build_pod_body(
@@ -165,3 +166,24 @@ def test_pod_building():
     )
     assert pod.metadata.labels["app.kubernetes.io/name"] == "custom"
     assert pod.metadata.labels["app.kubernetes.io/instance"] == "dagster"
+
+    # restart policy
+    pod = build_pod_body(
+        pod_name="test",
+        image=test_image,
+        command=["echo", "hello"],
+        env_vars={},
+        base_pod_spec={"restartPolicy": "OnFailure"},
+        base_pod_meta=None,
+    )
+    assert pod.spec.restart_policy == "OnFailure"
+
+    with pytest.raises(DagsterInvariantViolationError):
+        build_pod_body(
+            pod_name="test",
+            image=test_image,
+            command=["echo", "hello"],
+            env_vars={},
+            base_pod_spec={"restart_policy": "Always"},
+            base_pod_meta=None,
+        )

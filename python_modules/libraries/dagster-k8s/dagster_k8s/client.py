@@ -616,10 +616,10 @@ class DagsterKubernetesClient:
                     KubernetesWaitingReasons.CrashLoopBackOff,
                     KubernetesWaitingReasons.RunContainerError,
                 ]:
+                    debug_info = self.get_pod_debug_info(pod_name, namespace, pod=pod)
                     raise DagsterK8sError(
-                        'Failed: Reason="{reason}" Message="{message}"'.format(
-                            reason=state.waiting.reason, message=state.waiting.message
-                        )
+                        f'Failed: Reason="{state.waiting.reason}"'
+                        f' Message="{state.waiting.message}"\n{debug_info}'
                     )
                 else:
                     raise DagsterK8sError("Unknown issue: %s" % state.waiting)
@@ -730,13 +730,24 @@ class DagsterKubernetesClient:
 
         return False
 
-    def get_pod_debug_info(self, pod_name, namespace, container_name: Optional[str] = None) -> str:
-        pods = self.core_api.list_namespaced_pod(
-            namespace=namespace, field_selector="metadata.name=%s" % pod_name
-        ).items
-        pod = pods[0] if pods else None
+    def get_pod_debug_info(
+        self,
+        pod_name,
+        namespace,
+        container_name: Optional[str] = None,
+        pod: Optional[kubernetes.client.V1Pod] = None,  # the already fetched pod
+    ) -> str:
+        if pod is None:
+            pods = self.core_api.list_namespaced_pod(
+                namespace=namespace, field_selector="metadata.name=%s" % pod_name
+            ).items
+            pod = pods[0] if pods else None
 
         pod_status_str = self._get_pod_status_str(pod) if pod else f"Could not find pod {pod_name}"
+
+        if container_name is None and pod is not None and pod.spec and pod.spec.containers:
+            # assume the first container is relevant if explicit container name not selected
+            container_name = pod.spec.containers[0].name
 
         specific_warning = ""
 

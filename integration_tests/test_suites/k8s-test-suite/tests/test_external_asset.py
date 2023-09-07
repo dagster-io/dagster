@@ -21,10 +21,8 @@ if TYPE_CHECKING:
     )
 
 
-@pytest.mark.skip("passes locally, BK debug in progress")
 @pytest.mark.default
 def test_ext_k8s_pod(namespace, cluster_provider):
-    kubernetes.config.load_kube_config(cluster_provider.kubeconfig_file)
     docker_image = get_test_project_docker_image()
 
     @asset
@@ -119,7 +117,6 @@ class ExtConfigMapContextInjector(ExtContextInjector):
         }
 
 
-@pytest.mark.skip("passes locally, BK debug in progress")
 @pytest.mark.default
 def test_ext_k8s_pod_file_inject(namespace, cluster_provider):
     # a convoluted test to
@@ -127,7 +124,6 @@ def test_ext_k8s_pod_file_inject(namespace, cluster_provider):
     # - preserve file injection via config map code
 
     docker_image = get_test_project_docker_image()
-    kubernetes.config.load_kube_config(cluster_provider.kubeconfig_file)
 
     @asset
     def number_y(
