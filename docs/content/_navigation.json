@@ -243,12 +243,12 @@
             "title": "Logging",
             "children": [
               {
-                "title": "Loggers",
-                "path": "/concepts/logging/loggers"
-              },
-              {
                 "title": "Python logging",
                 "path": "/concepts/logging/python-logging"
+              },
+              {
+                "title": "Custom loggers",
+                "path": "/concepts/logging/loggers"
               }
             ]
           },
