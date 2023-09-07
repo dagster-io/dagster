@@ -1,10 +1,10 @@
 import * as React from 'react';
 
 import {Button} from './Button';
-import {ConfigSchema} from './ConfigEditor';
 import {ConfigEditorWithSchema} from './ConfigEditorWithSchema';
 import {Dialog, DialogFooter} from './Dialog';
 import {Icon} from './Icon';
+import {ConfigSchema} from './NewConfigEditor';
 import {Tooltip} from './Tooltip';
 
 interface Props {

@@ -1,10 +1,4 @@
-import {
-  Button,
-  DialogFooter,
-  Dialog,
-  Icon,
-  StyledReadOnlyCodeMirror,
-} from '@dagster-io/ui-components';
+import {Button, DialogFooter, Dialog, Icon, StyledRawCodeMirror} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {IPluginSidebarProps} from '../plugins';
@@ -36,7 +30,10 @@ export const SidebarComponent: React.FC<IPluginSidebarProps> = (props) => {
         title={`SQL: ${props.definition.name}`}
         isOpen={open}
       >
-        <StyledReadOnlyCodeMirror options={{lineNumbers: true, mode: 'sql'}} value={sql.value} />
+        <StyledRawCodeMirror
+          options={{readOnly: true, lineNumbers: true, mode: 'sql'}}
+          value={sql.value}
+        />
         <DialogFooter topBorder>
           <Button intent="primary" onClick={() => setOpen(false)}>
             Close

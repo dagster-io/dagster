@@ -8,10 +8,10 @@ import {
   Spinner,
   Code,
   Heading,
-  StyledReadOnlyCodeMirror,
+  StyledRawCodeMirror,
   Subheading,
 } from '@dagster-io/ui-components';
-import * as codemirror from 'codemirror';
+import CodeMirror from 'codemirror';
 import * as React from 'react';
 import {createGlobalStyle} from 'styled-components';
 
@@ -24,12 +24,12 @@ import {InstanceTabs} from './InstanceTabs';
 import {InstanceConfigQuery, InstanceConfigQueryVariables} from './types/InstanceConfig.types';
 
 const InstanceConfigStyle = createGlobalStyle`
-  .react-codemirror2 .CodeMirror.cm-s-instance-config {
+  .CodeMirror.cm-s-instance-config {
     box-shadow: 0 1px 0 ${Colors.KeylineGray};
     height: 100%;
   }
 
-  .react-codemirror2 .CodeMirror.cm-s-instance-config {
+  .CodeMirror.cm-s-instance-config {
     .config-highlight {
       background-color: ${Colors.Yellow200};
     }
@@ -51,18 +51,22 @@ export const InstanceConfig = React.memo(() => {
   const {data} = queryResult;
   const config = data?.instance.info;
 
-  const onEditorDidMount = (editor: codemirror.Editor) => {
-    const documentHash = document.location.hash;
-    if (documentHash) {
-      const target = new RegExp(`^${documentHash.slice(1)}:`);
-      const cursor = editor.getSearchCursor(target);
-      const found = cursor.findNext();
-      if (found) {
-        editor.markText(cursor.from(), cursor.to(), {className: 'config-highlight'});
-        editor.scrollIntoView(cursor.from());
-      }
-    }
-  };
+  const handlers = React.useMemo(() => {
+    return {
+      onReady: (editor: CodeMirror.Editor) => {
+        const documentHash = document.location.hash;
+        if (documentHash) {
+          const target = new RegExp(`^${documentHash.slice(1)}:`);
+          const cursor = editor.getSearchCursor(target);
+          const found = cursor.findNext();
+          if (found) {
+            editor.markText(cursor.from(), cursor.to(), {className: 'config-highlight'});
+            editor.scrollIntoView(cursor.from());
+          }
+        }
+      },
+    };
+  }, []);
 
   if (!data) {
     return (
@@ -87,10 +91,10 @@ export const InstanceConfig = React.memo(() => {
           Dagster version: <Code style={{fontSize: '16px'}}>{data.version}</Code>
         </Subheading>
       </Box>
-      <StyledReadOnlyCodeMirror
-        editorDidMount={onEditorDidMount}
+      <StyledRawCodeMirror
         value={config || ''}
-        options={{lineNumbers: true, mode: 'yaml'}}
+        options={{readOnly: true, lineNumbers: true, mode: 'yaml'}}
+        handlers={handlers}
         theme={['instance-config']}
       />
     </>

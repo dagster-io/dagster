@@ -2471,7 +2471,6 @@ __metadata:
     nearest-color: ^0.4.4
     prettier: 2.2.1
     react: ^18.2.0
-    react-codemirror2: ^7.2.1
     react-docgen-typescript-plugin: ^1.0.5
     react-dom: ^18.2.0
     react-virtualized: ^9.22.3
@@ -2596,7 +2595,6 @@ __metadata:
     qs: ^6.10.3
     react: ^18.2.0
     react-chartjs-2: ^3.0.3
-    react-codemirror2: ^7.2.1
     react-dates: ^21.8.0
     react-docgen-typescript-plugin: ^1.0.5
     react-dom: ^18.2.0
@@ -21887,16 +21885,6 @@ __metadata:
     chart.js: ^3.5.0
     react: ^16.8.0 || ^17.0.0
   checksum: ad8b1324a89b1bf7b7bef3f5a09b2abb12d0624105c00616ef95fabe3346457e01846c92b0aa24bfc9f52c5362ae83c37cffc9ce8b2dd7113f9fd0228e248f9c
-  languageName: node
-  linkType: hard
-
-"react-codemirror2@npm:^7.2.1":
-  version: 7.2.1
-  resolution: "react-codemirror2@npm:7.2.1"
-  peerDependencies:
-    codemirror: 5.x
-    react: ">=15.5 <=16.x"
-  checksum: 5c524a073167fbd89429a32f6ccbda83b78890231dd743219fb95335c2fd4c90fecc906fe9410a26b42c3baea62e00800d0e4e85c67965ab05234b6f7d4dd82d
   languageName: node
   linkType: hard
 
