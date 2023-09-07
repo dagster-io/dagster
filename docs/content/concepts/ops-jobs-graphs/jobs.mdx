@@ -44,9 +44,9 @@ An op job can be created in the following ways:
 - [Using the @job decorator](#using-the-job-decorator)
 - [From a graph](#from-a-graph)
 
-#### Using the @job decorator
+### Using the @job decorator
 
-The simplest way to create an op-based job is to use the <PyObject object="job"/> decorator.
+The simplest way to create an op-based job is to use the <PyObject object="job" decorator /> decorator.
 
 Within the decorated function body, you can use function calls to indicate the dependency structure between the ops/graphs. This allows you to explicitly define dependencies between ops when you define the job.
 
@@ -75,7 +75,7 @@ When defining a job, you can provide [resources](/concepts/resources), [configur
 
 Like regular jobs, jobs that target assets can be placed on [schedules](/concepts/partitions-schedules-sensors/schedules) and [sensors](/concepts/partitions-schedules-sensors/sensors).
 
-#### From a graph
+### From a graph
 
 Creating jobs from a graph can be useful when you want to define inter-op dependencies before binding them to resources, configuration, executors, and other environment-specific features. This approach to job creation allows you to customize graphs for each environment by plugging in configuration and services specific to that environment.
 
@@ -122,7 +122,7 @@ local_job = do_stuff.to_job(
 
 ## Configuring jobs
 
-Ops, software-defined assets, and resources often accept [configuration](/concepts/configuration/config-schema) that determines how they behave. By default, you supply configuration for these ops and resources at the time you launch the job.
+Ops, Software-defined Assets, and resources often accept [configuration](/concepts/configuration/config-schema) that determines how they behave. By default, you supply configuration for these ops and resources at the time you launch the job.
 
 When constructing a job, you can customize how that configuration will be satisfied, by passing a value to the `config` parameter of the <PyObject object="GraphDefinition" method="to_job" /> method or the <PyObject object="job" decorator /> decorator. The options are discussed below:
 
@@ -132,7 +132,7 @@ When constructing a job, you can customize how that configuration will be satisf
 
 ### Hardcoded configuration
 
-You can supply a <PyObject object="RunConfig"/> object or raw config dictionary. The supplied config will be used to configure the job whenever the job is launched. It will show up in the UI Launchpad and can be overridden.
+You can supply a <PyObject object="RunConfig"/> object or raw config dictionary. The supplied config will be used to configure the job whenever the job is launched. It will show up in the Dagster UI Launchpad and can be overridden.
 
 ```python file=/concepts/ops_jobs_graphs/jobs_with_default_config.py
 from dagster import Config, RunConfig, job, op
@@ -164,7 +164,7 @@ if __name__ == "__main__":
 
 ### Partitioned configuration
 
-For op-based jobs, you can supply a <PyObject object="PartitionedConfig" /> to create a partitioned job. This defines a discrete set of partitions along with a function for generating config for a partition. Job runs can be configured by selecting a partition.
+For op jobs, you can supply a <PyObject object="PartitionedConfig" /> to create a partitioned job. This defines a discrete set of partitions along with a function for generating config for a partition. Job runs can be configured by selecting a partition.
 
 Refer to the [Partitions documentation](/concepts/partitions-schedules-sensors/partitions) for more info and examples.
 
