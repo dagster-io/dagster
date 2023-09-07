@@ -349,8 +349,13 @@ class DatabricksJobRunner:
             new_cluster = new_cluster.copy()
 
             nodes = new_cluster.pop("nodes")
+            check.invariant("driver_instance_pool_id" in nodes and not "instance_pool_id" in nodes, "Usage of `driver_instance_pool_id` requires that `instance_pool_id` be specified for worker nodes")
+
             if "instance_pool_id" in nodes:
                 new_cluster["instance_pool_id"] = nodes["instance_pool_id"]
+
+                if "driver_instance_pool_id" in nodes:
+                    new_cluster["driver_node_type_id"] = nodes["driver_node_type_id"]
             else:
                 node_types = nodes["node_types"]
                 new_cluster["node_type_id"] = node_types["node_type_id"]
