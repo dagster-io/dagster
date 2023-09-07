@@ -89,7 +89,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
                     instance_ref=instance.get_ref(),
                 )
             ),
-            StartRunResult,  # type: ignore
+            StartRunResult,
         )
         if not res.success:
             raise (

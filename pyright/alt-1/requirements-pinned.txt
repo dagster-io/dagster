@@ -56,12 +56,12 @@ cycler==0.11.0
 -e python_modules/libraries/dagster-snowflake-pyspark
 -e python_modules/libraries/dagster-spark
 -e python_modules/dagster-webserver
-dbt-core==1.6.1
+dbt-core==1.6.2
 dbt-duckdb==1.6.0
 dbt-extractor==0.4.1
 dbt-semantic-interfaces==0.2.0
 dbt-snowflake==1.6.2
-debugpy==1.6.7.post1
+debugpy==1.8.0
 decorator==5.1.1
 defusedxml==0.7.1
 dill==0.3.7
@@ -74,14 +74,14 @@ exceptiongroup==1.1.3
 execnet==2.0.2
 executing==1.2.0
 fastjsonschema==2.18.0
-filelock==3.12.3
+filelock==3.12.4
 fonttools==4.42.1
 frozenlist==1.4.0
 fsspec==2023.9.0
 gcsfs==2023.9.0
 google-api-core==2.11.1
-google-auth==2.22.0
-google-auth-oauthlib==1.0.0
+google-auth==2.23.0
+google-auth-oauthlib==1.1.0
 google-cloud-core==2.3.3
 google-cloud-storage==2.10.0
 google-crc32c==1.5.0
@@ -91,9 +91,9 @@ gql==3.4.1
 graphene==3.3
 graphql-core==3.2.3
 graphql-relay==3.2.0
-grpcio==1.57.0
-grpcio-health-checking==1.57.0
-grpcio-tools==1.57.0
+grpcio==1.58.0
+grpcio-health-checking==1.58.0
+grpcio-tools==1.58.0
 h11==0.14.0
 hologram==0.0.16
 httptools==0.6.0
@@ -130,7 +130,7 @@ Mako==1.2.4
 markdown-it-py==3.0.0
 MarkupSafe==2.1.3
 mashumaro==3.8.1
-matplotlib==3.7.2
+matplotlib==3.8.0
 matplotlib-inline==0.1.6
 mccabe==0.7.0
 mdurl==0.1.2
@@ -156,7 +156,7 @@ notebook_shim==0.2.3
 numpy==1.25.2
 oauthlib==3.2.2
 objgraph==3.6.0
-orjson==3.9.5
+orjson==3.9.7
 oscrypto==1.3.0
 overrides==7.4.0
 packaging==23.1
@@ -170,13 +170,13 @@ pathspec==0.11.2
 pendulum==2.1.2
 pexpect==4.8.0
 pickleshare==0.7.5
-Pillow==10.0.0
-platformdirs==3.9.1
+Pillow==10.0.1
+platformdirs==3.8.1
 pluggy==1.3.0
 -e examples/project_fully_featured
 prometheus-client==0.17.1
 prompt-toolkit==3.0.39
-protobuf==4.24.2
+protobuf==4.24.3
 psutil==5.9.5
 psycopg2-binary==2.9.7
 ptyprocess==0.7.0
@@ -193,8 +193,8 @@ Pygments==2.16.1
 PyJWT==2.8.0
 pylint==2.17.5
 pyOpenSSL==23.2.0
-pyparsing==3.0.9
-pyright==1.1.326
+pyparsing==3.1.1
+pyright==1.1.327
 pyrsistent==0.19.3
 pyspark==3.4.1
 pytest==7.0.1
@@ -229,9 +229,9 @@ scipy==1.11.2
 seaborn==0.12.2
 Send2Trash==1.8.2
 six==1.16.0
-slack-sdk==3.21.3
+slack-sdk==3.22.0
 sniffio==1.3.0
-snowflake-connector-python==3.1.1
+snowflake-connector-python==3.2.0
 snowflake-sqlalchemy==1.5.0
 sortedcontainers==2.4.0
 soupsieve==2.5
@@ -252,8 +252,8 @@ toposort==1.10
 tornado==6.3.3
 tox==3.25.0
 tqdm==4.66.1
-traitlets==5.9.0
-typeguard==4.1.3
+traitlets==5.10.0
+typeguard==4.1.5
 typer==0.9.0
 types-backports==0.1.3
 types-certifi==2021.10.8.3
@@ -287,7 +287,7 @@ watchdog==3.0.0
 watchfiles==0.20.0
 wcwidth==0.2.6
 webencodings==0.5.1
-websocket-client==1.6.2
+websocket-client==1.6.3
 websockets==11.0.3
 wrapt==1.15.0
 yamllint==1.32.0

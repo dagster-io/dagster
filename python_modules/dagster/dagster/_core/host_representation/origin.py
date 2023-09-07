@@ -77,7 +77,7 @@ def _assign_loadable_target_origin_name(loadable_target_origin: LoadableTargetOr
     )
 
 
-class CodeLocationOrigin(ABC, tuple):
+class CodeLocationOrigin(ABC):
     """Serializable representation of a CodeLocation that can be used to
     uniquely identify the location or reload it in across process boundaries.
     """

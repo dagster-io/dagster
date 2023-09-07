@@ -16,7 +16,7 @@ from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 from sphinx.ext.autodoc import (
     ClassDocumenter,
-    ObjectMembers,
+    ObjectMembers,  # type: ignore  # (bad stubs)
     Options as AutodocOptions,
 )
 from sphinx.util import logging

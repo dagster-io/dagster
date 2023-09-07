@@ -78,8 +78,8 @@ class _ExtSubprocess(ExtClient):
                 cwd=cwd or self.cwd,
                 env={
                     **ext_context.get_external_process_env_vars(),
-                    **(self.env or {}),  # type: ignore  # (pyright bug)
-                    **(env or {}),  # type: ignore  # (pyright bug)
+                    **self.env,
+                    **(env or {}),
                 },
             )
             process.wait()

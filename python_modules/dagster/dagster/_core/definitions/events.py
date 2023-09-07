@@ -438,7 +438,7 @@ class AssetObservation(
                 "The tags argument is reserved for system-populated tags."
             )
 
-        metadata = normalize_metadata(
+        normed_metadata = normalize_metadata(
             check.opt_mapping_param(metadata, "metadata", key_type=str),
         )
 
@@ -446,7 +446,7 @@ class AssetObservation(
             cls,
             asset_key=asset_key,
             description=check.opt_str_param(description, "description"),
-            metadata=metadata,
+            metadata=normed_metadata,
             tags=tags,
             partition=check.opt_str_param(partition, "partition"),
         )
@@ -539,7 +539,7 @@ class AssetMaterialization(
                 " AssetMaterializations. The tags argument is reserved for system-populated tags."
             )
 
-        metadata = normalize_metadata(
+        normed_metadata = normalize_metadata(
             check.opt_mapping_param(metadata, "metadata", key_type=str),
         )
 
@@ -560,7 +560,7 @@ class AssetMaterialization(
             cls,
             asset_key=asset_key,
             description=check.opt_str_param(description, "description"),
-            metadata=metadata,
+            metadata=normed_metadata,
             tags=tags,
             partition=partition,
         )
@@ -630,7 +630,7 @@ class ExpectationResult(
         description: Optional[str] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
-        metadata = normalize_metadata(
+        normed_metadata = normalize_metadata(
             check.opt_mapping_param(metadata, "metadata", key_type=str),
         )
 
@@ -639,7 +639,7 @@ class ExpectationResult(
             success=check.bool_param(success, "success"),
             label=check.opt_str_param(label, "label", "result"),
             description=check.opt_str_param(description, "description"),
-            metadata=metadata,
+            metadata=normed_metadata,
         )
 
 
@@ -682,7 +682,7 @@ class TypeCheck(
         description: Optional[str] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
-        metadata = normalize_metadata(
+        normed_metadata = normalize_metadata(
             check.opt_mapping_param(metadata, "metadata", key_type=str),
         )
 
@@ -690,7 +690,7 @@ class TypeCheck(
             cls,
             success=check.bool_param(success, "success"),
             description=check.opt_str_param(description, "description"),
-            metadata=metadata,
+            metadata=normed_metadata,
         )
 
 
