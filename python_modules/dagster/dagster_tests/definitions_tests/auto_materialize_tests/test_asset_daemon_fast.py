@@ -86,9 +86,7 @@ def test_reconciliation(scenario, respect_materialization_data_versions):
 
 @pytest.mark.parametrize(
     "scenario",
-    [
-        ASSET_RECONCILIATION_SCENARIOS["freshness_complex_subsettable"],
-    ],
+    [ASSET_RECONCILIATION_SCENARIOS["freshness_complex_subsettable"]],
 )
 def test_reconciliation_no_tags(scenario):
     # simulates an environment where asset_event_tags cannot be added

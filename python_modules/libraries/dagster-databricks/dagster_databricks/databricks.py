@@ -32,13 +32,22 @@ class DatabricksError(Exception):
 class DatabricksClient:
     """A thin wrapper over the Databricks REST API."""
 
-    def __init__(self, host: str, token: str, workspace_id: Optional[str] = None):
+    def __init__(
+        self,
+        host: str,
+        token: Optional[str] = None,
+        oauth_client_id: Optional[str] = None,
+        oauth_client_secret: Optional[str] = None,
+        workspace_id: Optional[str] = None,
+    ):
         self.host = host
         self.workspace_id = workspace_id
 
         self._workspace_client = WorkspaceClient(
             host=host,
             token=token,
+            client_id=oauth_client_id,
+            client_secret=oauth_client_secret,
             product="dagster-databricks",
             product_version=__version__,
         )
@@ -46,14 +55,17 @@ class DatabricksClient:
         # TODO: This is the old shim client that we were previously using. Arguably this is
         # confusing for users to use since this is an unofficial wrapper around the documented
         # Databricks REST API. We should consider removing this in the next minor release.
-        self._client = databricks_api.DatabricksAPI(host=host, token=token)
-        self.__setup_user_agent(self._client.client)
-
-        # TODO: This is the old `databricks_cli` client that was previous recommended by Databricks.
-        # It is no longer supported and should be removed in favour of `databricks-sdk` in the next
-        # minor release.
-        self._api_client = databricks_cli.sdk.ApiClient(host=host, token=token)
-        self.__setup_user_agent(self._api_client)
+        if token:
+            self._client = databricks_api.DatabricksAPI(host=host, token=token)
+            self.__setup_user_agent(self._client.client)
+            # TODO: This is the old `databricks_cli` client that was previously recommended by Databricks.
+            # It is no longer supported and should be removed in favour of `databricks-sdk` in the next
+            # minor release.
+            self._api_client = databricks_cli.sdk.ApiClient(host=host, token=token)
+            self.__setup_user_agent(self._api_client)
+        else:
+            self._client = None
+            self._api_client = None
 
     def __setup_user_agent(
         self,
@@ -68,11 +80,21 @@ class DatabricksClient:
     @public
     @property
     def client(self) -> databricks_api.DatabricksAPI:
-        """Retrieve the legacy Databricks API client."""
+        """Retrieve the legacy Databricks API client. Note: accessing this property will throw an exception if oauth
+        credentials are used to initialize the DatabricksClient, because oauth credentials are not supported by the
+        legacy Databricks API client.
+        """
+        if self._client is None:
+            raise ValueError(
+                "Legacy Databricks API client from `databricks-api` was not initialized because"
+                " oauth credentials were used instead of an access token. This legacy Databricks"
+                " API client is not supported when using oauth credentials. Use the"
+                " `workspace_client` property instead."
+            )
         return self._client
 
     @client.setter
-    def client(self, value: databricks_api.DatabricksAPI) -> None:
+    def client(self, value: Optional[databricks_api.DatabricksAPI]) -> None:
         self._client = value
 
     @deprecated(
@@ -83,8 +105,9 @@ class DatabricksClient:
     def api_client(self) -> databricks_cli.sdk.ApiClient:
         """Retrieve a reference to the underlying Databricks API client. For more information,
         see the `Databricks Python API <https://docs.databricks.com/dev-tools/python-api.html>`_.
-
-        **Examples:**
+        Noe: accessing this property will throw an exception if oauth credentials are used to initialize the
+        DatabricksClient, because oauth credentials are not supported by the legacy Databricks API client.
+        **Examples:**.
 
         .. code-block:: python
 
@@ -119,6 +142,13 @@ class DatabricksClient:
         Returns:
             ApiClient: The authenticated Databricks API client.
         """
+        if self._api_client is None:
+            raise ValueError(
+                "Legacy Databricks API client from `databricks-cli` was not initialized because"
+                " oauth credentials were used instead of an access token. This legacy Databricks"
+                " API client is not supported when using oauth credentials. Use the"
+                " `workspace_client` property instead."
+            )
         return self._api_client
 
     @public
@@ -277,16 +307,29 @@ class DatabricksJobRunner:
     def __init__(
         self,
         host: str,
-        token: str,
+        token: Optional[str] = None,
+        oauth_client_id: Optional[str] = None,
+        oauth_client_secret: Optional[str] = None,
         poll_interval_sec: float = 5,
         max_wait_time_sec: int = DEFAULT_RUN_MAX_WAIT_TIME_SEC,
     ):
         self.host = check.str_param(host, "host")
-        self.token = check.str_param(token, "token")
+        check.invariant(
+            token is None or (oauth_client_id is None and oauth_client_secret is None),
+            "Must provide either databricks_token or oauth_credentials, but cannot provide both",
+        )
+        self.token = check.opt_str_param(token, "token")
+        self.oauth_client_id = check.opt_str_param(oauth_client_id, "oauth_client_id")
+        self.oauth_client_secret = check.opt_str_param(oauth_client_secret, "oauth_client_secret")
         self.poll_interval_sec = check.numeric_param(poll_interval_sec, "poll_interval_sec")
         self.max_wait_time_sec = check.int_param(max_wait_time_sec, "max_wait_time_sec")
 
-        self._client: DatabricksClient = DatabricksClient(host=self.host, token=self.token)
+        self._client: DatabricksClient = DatabricksClient(
+            host=self.host,
+            token=self.token,
+            oauth_client_id=oauth_client_id,
+            oauth_client_secret=oauth_client_secret,
+        )
 
     @property
     def client(self) -> DatabricksClient:
@@ -378,6 +421,7 @@ class DatabricksJobRunner:
                         # "libraries": [compute.Library.from_dict(lib) for lib in libraries],
                         "libraries": libraries,
                         **task,
+                        "task_key": "dagster-task",
                     },
                 )
             ],

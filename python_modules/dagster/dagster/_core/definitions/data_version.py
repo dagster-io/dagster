@@ -347,6 +347,13 @@ class StaleCause(
 # large upstream partition counts.
 SKIP_PARTITION_DATA_VERSION_DEPENDENCY_THRESHOLD = 100
 
+# If an asset is self-dependent and has  greater than this number of partitions, we don't check the
+# self-edge for updated data or propagate other stale causes through the edge. That is because the
+# current logic will recurse to the first partition, potentially throwing a recursion error. This
+# constraint can be removed when we have thoroughly tested performance for large partition counts on
+# self-dependent assets.
+SKIP_PARTITION_DATA_VERSION_SELF_DEPENDENCY_THRESHOLD = 100
+
 
 class CachingStaleStatusResolver:
     """Used to resolve data version information. Avoids redundant database
@@ -403,31 +410,37 @@ class CachingStaleStatusResolver:
 
     @cached_method
     def _get_status(self, key: "AssetKeyPartitionKey") -> StaleStatus:
-        current_version = self._get_current_data_version(key=key)
-        if current_version == NULL_DATA_VERSION:
-            return StaleStatus.MISSING
-        elif self.asset_graph.is_partitioned(key.asset_key) and not key.partition_key:
-            return StaleStatus.FRESH
-        elif self.asset_graph.is_source(key.asset_key):
+        # The status loader does not support querying for the stale status of a
+        # partitioned asset without specifying a partition, so we return here.
+        if self.asset_graph.is_partitioned(key.asset_key) and not key.partition_key:
             return StaleStatus.FRESH
         else:
-            causes = self._get_stale_causes(key=key)
-            return StaleStatus.FRESH if len(causes) == 0 else StaleStatus.STALE
+            current_version = self._get_current_data_version(key=key)
+            if current_version == NULL_DATA_VERSION:
+                return StaleStatus.MISSING
+            elif self.asset_graph.is_source(key.asset_key):
+                return StaleStatus.FRESH
+            else:
+                causes = self._get_stale_causes(key=key)
+                return StaleStatus.FRESH if len(causes) == 0 else StaleStatus.STALE
 
     @cached_method
     def _get_stale_causes(self, key: "AssetKeyPartitionKey") -> Sequence[StaleCause]:
-        current_version = self._get_current_data_version(key=key)
-        if current_version == NULL_DATA_VERSION or self.asset_graph.is_source(key.asset_key):
-            return []
         # Querying for the stale status of a partitioned asset without specifying a partition key
         # is strictly speaking undefined, but we return an empty list here (from which FRESH status
         # is inferred) for backcompat.
-        elif self.asset_graph.is_partitioned(key.asset_key) and not key.partition_key:
+        if self.asset_graph.is_partitioned(key.asset_key) and not key.partition_key:
+            return []
+        elif self.asset_graph.is_source(key.asset_key):
             return []
         else:
-            return sorted(
-                self._get_stale_causes_materialized(key=key), key=lambda cause: cause.sort_key
-            )
+            current_version = self._get_current_data_version(key=key)
+            if current_version == NULL_DATA_VERSION:
+                return []
+            else:
+                return sorted(
+                    self._get_stale_causes_materialized(key=key), key=lambda cause: cause.sort_key
+                )
 
     def _is_dep_updated(self, provenance: DataProvenance, dep_key: "AssetKeyPartitionKey") -> bool:
         if dep_key.partition_key is None:
@@ -670,6 +683,13 @@ class CachingStaleStatusResolver:
     # constraint can be removed when we have thoroughly tested performance for large upstream
     # partition counts. At that time, the body of this method can just be replaced with a call to
     # `asset_graph.get_parents_partitions`, which the logic here largely replicates.
+    #
+    # If an asset is self-dependent and has greater than or equal to
+    # SKIP_PARTITION_DATA_VERSION_SELF_DEPENDENCY_THRESHOLD partitions, we don't check the
+    # self-edge for updated data or propagate other stale causes through the edge. That is because
+    # the current logic will recurse to the first partition, potentially throwing a recursion error.
+    # This constraint can be removed when we have thoroughly tested performance for large partition
+    # counts on self-dependent assets.
     @cached_method
     def _get_partition_dependencies(
         self, *, key: "AssetKeyPartitionKey"
@@ -684,6 +704,10 @@ class CachingStaleStatusResolver:
         for dep_asset_key in asset_deps:
             if not self.asset_graph.is_partitioned(dep_asset_key):
                 deps.append(AssetKeyPartitionKey(dep_asset_key, None))
+            elif key.asset_key == dep_asset_key and self._exceeds_self_partition_limit(
+                key.asset_key
+            ):
+                continue
             else:
                 upstream_partition_keys = list(
                     self.asset_graph.get_parent_partition_keys_for_child(
@@ -702,3 +726,9 @@ class CachingStaleStatusResolver:
                         ]
                     )
         return deps
+
+    def _exceeds_self_partition_limit(self, asset_key: "AssetKey") -> bool:
+        return (
+            check.not_none(self.asset_graph.get_partitions_def(asset_key)).get_num_partitions()
+            >= SKIP_PARTITION_DATA_VERSION_SELF_DEPENDENCY_THRESHOLD
+        )

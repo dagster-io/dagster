@@ -15,7 +15,7 @@ interface LinkProps {
 
 const Link = ({href, children, passHref = false}: LinkProps) => {
   return (
-    <NextLink href={href} passHref={passHref}>
+    <NextLink href={href} passHref={passHref} legacyBehavior>
       {children}
     </NextLink>
   );

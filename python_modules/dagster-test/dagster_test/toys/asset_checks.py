@@ -5,24 +5,40 @@ from dagster import (
     AssetCheckResult,
     AssetCheckSeverity,
     AssetCheckSpec,
+    AssetOut,
+    DailyPartitionsDefinition,
     MetadataValue,
     Output,
     asset,
     asset_check,
+    multi_asset,
 )
 
 
-@asset(group_name="asset_checks")
+@asset(key_prefix="test_prefix", group_name="asset_checks")
 def checked_asset():
     return 1
 
 
 @asset_check(asset=checked_asset, description="A check that fails half the time.")
-def random_fail_check():
+def random_fail_check(checked_asset):
     random.seed(time.time())
     return AssetCheckResult(
         success=random.choice([False, True]),
         metadata={"timestamp": MetadataValue.float(time.time())},
+    )
+
+
+@asset_check(
+    asset=checked_asset,
+    description="A check that fails half the time.",
+)
+def severe_random_fail_check():
+    random.seed(time.time())
+    return AssetCheckResult(
+        success=random.choice([False, True]),
+        metadata={"timestamp": MetadataValue.float(time.time())},
+        severity=AssetCheckSeverity.ERROR,
     )
 
 
@@ -36,6 +52,7 @@ def always_fail():
             "foo": MetadataValue.text("bar"),
             "asset_key": MetadataValue.asset(checked_asset.key),
         },
+        severity=AssetCheckSeverity.WARN,
     )
 
 
@@ -50,11 +67,10 @@ def slow_check():
     check_specs=[
         AssetCheckSpec(
             name="random_fail_check",
-            asset_key="asset_with_same_op_checks",
+            asset="asset_with_check_in_same_op",
             description=(
                 "An ERROR check calculated in the same op with the asset. It fails half the time."
             ),
-            severity=AssetCheckSeverity.ERROR,
         )
     ],
 )
@@ -64,17 +80,87 @@ def asset_with_check_in_same_op():
     yield AssetCheckResult(check_name="random_fail_check", success=random.choice([False, True]))
 
 
-@asset(group_name="asset_checks", deps=[checked_asset, asset_with_check_in_same_op])
+@asset(group_name="asset_checks")
+def check_exception_asset():
+    return 1
+
+
+@asset_check(
+    asset=check_exception_asset, description="A check that hits an exception half the time."
+)
+def exception_check():
+    random.seed(time.time())
+    if random.choice([False, True]):
+        raise Exception("This check failed!")
+    return AssetCheckResult(success=True)
+
+
+@asset_check(
+    asset=check_exception_asset,
+    description="A severe check that hits an exception half the time.",
+)
+def severe_exception_check():
+    random.seed(time.time())
+    if random.choice([False, True]):
+        raise Exception("This check failed!")
+    return AssetCheckResult(success=True)
+
+
+@asset(
+    group_name="asset_checks",
+    partitions_def=DailyPartitionsDefinition(
+        start_date="2020-01-01",
+    ),
+)
+def partitioned_asset(_):
+    return 1
+
+
+@asset_check(
+    asset=partitioned_asset,
+    description="A check that fails half the time.",
+)
+def random_fail_check_on_partitioned_asset():
+    random.seed(time.time())
+    return AssetCheckResult(
+        success=random.choice([False, True]),
+    )
+
+
+@asset(
+    group_name="asset_checks",
+    deps=[checked_asset, asset_with_check_in_same_op, check_exception_asset, partitioned_asset],
+)
 def downstream_asset():
     return 1
+
+
+@multi_asset(
+    outs={
+        "one": AssetOut(key="multi_asset_piece_1", group_name="asset_checks"),
+        "two": AssetOut(key="multi_asset_piece_2", group_name="asset_checks"),
+    },
+    check_specs=[AssetCheckSpec("my_check", asset="multi_asset_piece_1")],
+)
+def multi_asset_1_and_2():
+    yield Output(1, output_name="one")
+    yield Output(1, output_name="two")
+    yield AssetCheckResult(success=True, metadata={"foo": "bar"})
 
 
 def get_checks_and_assets():
     return [
         checked_asset,
         random_fail_check,
+        severe_random_fail_check,
         always_fail,
         slow_check,
         asset_with_check_in_same_op,
         downstream_asset,
+        check_exception_asset,
+        exception_check,
+        severe_exception_check,
+        partitioned_asset,
+        random_fail_check_on_partitioned_asset,
+        multi_asset_1_and_2,
     ]

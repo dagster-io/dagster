@@ -32,7 +32,7 @@ RUN pip install \
     -e modules/dagster-docker \
     -e modules/dagster-airflow \
     -e modules/dagstermill \
-    -e modules/dagster-externals \
+    -e modules/dagster-ext \
     -e . \
     pyparsing\<3.0.0
 

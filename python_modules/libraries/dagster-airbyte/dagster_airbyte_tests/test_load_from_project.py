@@ -11,9 +11,11 @@ from .utils import get_project_connection_json, get_project_job_json
 @pytest.fixture(name="airbyte_instance", params=[True, False], scope="module")
 def airbyte_instance_fixture(request) -> AirbyteResource:
     if request.param:
-        return AirbyteResource(host="some_host", port="8000")
+        return AirbyteResource(host="some_host", port="8000", poll_interval=0)
     else:
-        return airbyte_resource(build_init_resource_context({"host": "some_host", "port": "8000"}))
+        return airbyte_resource(
+            build_init_resource_context({"host": "some_host", "port": "8000", "poll_interval": 0})
+        )
 
 
 @responses.activate
@@ -127,6 +129,7 @@ def test_load_from_project(
                     {
                         "host": "some_host",
                         "port": "8000",
+                        "poll_interval": 0,
                     }
                 )
             },

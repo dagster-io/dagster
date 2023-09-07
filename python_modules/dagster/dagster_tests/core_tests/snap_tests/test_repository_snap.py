@@ -631,8 +631,8 @@ def test_asset_check():
 def test_asset_check_in_asset_op():
     @asset(
         check_specs=[
-            AssetCheckSpec(name="my_other_asset_check", asset_key="my_asset"),
-            AssetCheckSpec(name="my_other_asset_check_2", asset_key="my_asset"),
+            AssetCheckSpec(name="my_other_asset_check", asset="my_asset"),
+            AssetCheckSpec(name="my_other_asset_check_2", asset="my_asset"),
         ]
     )
     def my_asset():
@@ -659,7 +659,7 @@ def test_asset_check_in_asset_op():
 def test_asset_check_multiple_jobs():
     @asset(
         check_specs=[
-            AssetCheckSpec(name="my_other_asset_check", asset_key="my_asset"),
+            AssetCheckSpec(name="my_other_asset_check", asset="my_asset"),
         ]
     )
     def my_asset():

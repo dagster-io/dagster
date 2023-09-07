@@ -317,10 +317,11 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         )
 
     def __call__(self, *args: object, **kwargs: object) -> object:
+        from .composition import is_in_composition
         from .graph_definition import GraphDefinition
 
-        # defer to GraphDefinition.__call__ for graph backed assets
-        if isinstance(self.node_def, GraphDefinition):
+        # defer to GraphDefinition.__call__ for graph backed assets, or if invoked in composition
+        if isinstance(self.node_def, GraphDefinition) or is_in_composition():
             return self._node_def(*args, **kwargs)
 
         # invoke against self to allow assets def information to be used

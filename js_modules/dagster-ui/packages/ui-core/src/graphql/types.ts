@@ -118,9 +118,9 @@ export type AssetCheck = {
   __typename: 'AssetCheck';
   assetKey: AssetKey;
   description: Maybe<Scalars['String']>;
+  executionForLatestMaterialization: Maybe<AssetCheckExecution>;
   executions: Array<AssetCheckExecution>;
   name: Scalars['String'];
-  severity: AssetCheckSeverity;
 };
 
 export type AssetCheckExecutionsArgs = {
@@ -130,7 +130,11 @@ export type AssetCheckExecutionsArgs = {
 
 export type AssetCheckEvaluation = {
   __typename: 'AssetCheckEvaluation';
+  assetKey: AssetKey;
+  checkName: Scalars['String'];
   metadataEntries: Array<MetadataEntry>;
+  severity: AssetCheckSeverity;
+  success: Scalars['Boolean'];
   targetMaterialization: Maybe<AssetCheckEvaluationTargetMaterializationData>;
   timestamp: Scalars['Float'];
 };
@@ -172,15 +176,18 @@ export type AssetCheckEvaluationTargetMaterializationData = {
 export type AssetCheckExecution = {
   __typename: 'AssetCheckExecution';
   evaluation: Maybe<AssetCheckEvaluation>;
-  id: Scalars['Int'];
+  id: Scalars['String'];
   runId: Scalars['String'];
-  status: AssetCheckExecutionStatus;
+  status: AssetCheckExecutionResolvedStatus;
+  timestamp: Scalars['Float'];
 };
 
-export enum AssetCheckExecutionStatus {
-  FAILURE = 'FAILURE',
-  PLANNED = 'PLANNED',
-  SUCCESS = 'SUCCESS',
+export enum AssetCheckExecutionResolvedStatus {
+  EXECUTION_FAILED = 'EXECUTION_FAILED',
+  FAILED = 'FAILED',
+  IN_PROGRESS = 'IN_PROGRESS',
+  SKIPPED = 'SKIPPED',
+  SUCCEEDED = 'SUCCEEDED',
 }
 
 export type AssetCheckNeedsMigrationError = Error & {
@@ -278,6 +285,7 @@ export type AssetMetadataEntry = MetadataEntry & {
 
 export type AssetNode = {
   __typename: 'AssetNode';
+  assetChecks: Array<AssetCheck>;
   assetKey: AssetKey;
   assetMaterializationUsedData: Array<MaterializationUpstreamDataVersion>;
   assetMaterializations: Array<MaterializationEvent>;
@@ -4411,12 +4419,14 @@ export const buildAssetCheck = (
         : buildAssetKey({}, relationshipsToOmit),
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'omnis',
+    executionForLatestMaterialization:
+      overrides && overrides.hasOwnProperty('executionForLatestMaterialization')
+        ? overrides.executionForLatestMaterialization!
+        : relationshipsToOmit.has('AssetCheckExecution')
+        ? ({} as AssetCheckExecution)
+        : buildAssetCheckExecution({}, relationshipsToOmit),
     executions: overrides && overrides.hasOwnProperty('executions') ? overrides.executions! : [],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'dignissimos',
-    severity:
-      overrides && overrides.hasOwnProperty('severity')
-        ? overrides.severity!
-        : AssetCheckSeverity.ERROR,
   };
 };
 
@@ -4428,8 +4438,20 @@ export const buildAssetCheckEvaluation = (
   relationshipsToOmit.add('AssetCheckEvaluation');
   return {
     __typename: 'AssetCheckEvaluation',
+    assetKey:
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKey')
+        ? ({} as AssetKey)
+        : buildAssetKey({}, relationshipsToOmit),
+    checkName: overrides && overrides.hasOwnProperty('checkName') ? overrides.checkName! : 'sed',
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
+    severity:
+      overrides && overrides.hasOwnProperty('severity')
+        ? overrides.severity!
+        : AssetCheckSeverity.ERROR,
+    success: overrides && overrides.hasOwnProperty('success') ? overrides.success! : true,
     targetMaterialization:
       overrides && overrides.hasOwnProperty('targetMaterialization')
         ? overrides.targetMaterialization!
@@ -4528,12 +4550,13 @@ export const buildAssetCheckExecution = (
         : relationshipsToOmit.has('AssetCheckEvaluation')
         ? ({} as AssetCheckEvaluation)
         : buildAssetCheckEvaluation({}, relationshipsToOmit),
-    id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : 2672,
+    id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : 'ut',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'veritatis',
     status:
       overrides && overrides.hasOwnProperty('status')
         ? overrides.status!
-        : AssetCheckExecutionStatus.FAILURE,
+        : AssetCheckExecutionResolvedStatus.EXECUTION_FAILED,
+    timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 2.57,
   };
 };
 
@@ -4784,6 +4807,7 @@ export const buildAssetNode = (
   relationshipsToOmit.add('AssetNode');
   return {
     __typename: 'AssetNode',
+    assetChecks: overrides && overrides.hasOwnProperty('assetChecks') ? overrides.assetChecks! : [],
     assetKey:
       overrides && overrides.hasOwnProperty('assetKey')
         ? overrides.assetKey!

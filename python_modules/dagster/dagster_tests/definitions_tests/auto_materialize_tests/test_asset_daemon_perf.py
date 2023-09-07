@@ -34,6 +34,8 @@ from dagster._core.storage.partition_status_cache import get_and_update_asset_st
 from dagster._core.types.dagster_type import Nothing
 from dagster._utils import file_relative_path
 
+from .base_scenario import with_implicit_auto_materialize_policies
+
 
 class RandomAssets(NamedTuple):
     name: str
@@ -208,15 +210,14 @@ class PerfScenario(NamedTuple):
 
         @repository
         def repo():
-            return list(
-                self.snapshot.assets.get_definitions(
-                    freshness_ids=set(
-                        random.sample(
-                            range(self.snapshot.assets.n_assets), self.n_freshness_policies
-                        )
-                    )
+            sources, roots, multi_asset = self.snapshot.assets.get_definitions(
+                freshness_ids=set(
+                    random.sample(range(self.snapshot.assets.n_assets), self.n_freshness_policies)
                 )
             )
+            assets = [*sources, *roots, multi_asset]
+
+            return with_implicit_auto_materialize_policies(assets, AssetGraph.from_assets(assets))
 
         return repo
 

@@ -69,30 +69,45 @@ class AutoMaterializePolicy(
 ):
     """An AutoMaterializePolicy specifies how Dagster should attempt to keep an asset up-to-date.
 
-    There are two main kinds of auto-materialize policies: eager and lazy. In essence, an asset with
-    an eager policy will try to immediately materialize after upstream changes, while an asset with
-    a lazy policy will only materialize when necessary in order to satisfy the relevant
-    FreshnessPolicies.
+    Each policy consists of a set of AutoMaterializeRules, which are used to determine whether an
+    asset or a partition of an asset should or should not be auto-materialized.
 
-    For an asset / partition of an asset with an _eager_ policy to be auto-materialized, at least
-    one of the following must be true:
+    The most common policy is `AutoMaterializePolicy.eager()`, which consists of the following rules:
 
-    - it is missing
-    - it has a freshness policy that requires more up-to-date data
-    - any of its descendants have a freshness policy that require more up-to-date data
-    - any of its parent assets / partitions have newer data
+    - `AutoMaterializeRule.materialize_on_missing()`
+        Materialize an asset or a partition if it has never been materialized.
+    - `AutoMaterializeRule.materialize_on_parent_updated()`
+        Materialize an asset or a partition if one of its parents have been updated more recently
+        than it has.
+    - `AutoMaterializeRule.materialize_on_required_for_freshness()`
+        Materialize an asset or a partition if it is required to satisfy a freshness policy.
+    - `AutoMaterializeRule.skip_on_parent_outdated()`
+        Skip materializing an asset or partition if any of its parents have ancestors that have
+        been materialized more recently.
+    - `AutoMaterializeRule.skip_on_parent_missing()`
+        Skip materializing an asset or a partition if any parent has never been materialized or
+        observed.
 
-    For an asset / partition of an asset with a _lazy_ policy to be auto-materialized, at least one
-    of the following must be true:
+    Policies can be customized by adding or removing rules. For example, if you'd like to allow
+    an asset to be materialized even if some of its parent partitions are missing:
 
-    - it has a freshness policy that requires more up-to-date data
-    - any of its descendants have a freshness policy that require more up-to-date data
+    .. code-block:: python
 
-    If an asset / partition meets the above criteria, then it will be auto-materialized only if none
-    of the following are true:
+        from dagster import AutoMaterializePolicy, AutoMaterializeRule
 
-    - any of its parent assets / partitions are missing
-    - any of its ancestor assets / partitions have ancestors of their own with newer data
+        my_policy = AutoMaterializePolicy.eager().without_rules(
+            AutoMaterializeRule.skip_on_parent_missing(),
+        )
+
+    If you'd like an asset to wait for all of its parents to be updated before materializing:
+
+    .. code-block:: python
+
+        from dagster import AutoMaterializePolicy, AutoMaterializeRule
+
+        my_policy = AutoMaterializePolicy.eager().with_rules(
+            AutoMaterializeRule.skip_on_all_parents_not_updated(),
+        )
 
     Lastly, the `max_materializations_per_minute` parameter, which is set to 1 by default,
     rate-limits the number of auto-materializations that can occur for a particular asset within

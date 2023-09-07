@@ -2,8 +2,8 @@ import os
 import sys
 
 from dagster import AssetExecutionContext, Config, Definitions, asset
-from dagster._core.external_execution.subprocess import (
-    SubprocessExecutionResource,
+from dagster._core.ext.subprocess import (
+    ExtSubprocess,
 )
 from pydantic import Field
 
@@ -32,17 +32,13 @@ class NumberConfig(Config):
 
 
 @asset
-def number_x(
-    context: AssetExecutionContext, ext: SubprocessExecutionResource, config: NumberConfig
-) -> None:
+def number_x(context: AssetExecutionContext, ext: ExtSubprocess, config: NumberConfig) -> None:
     extras = {**get_common_extras(context), "multiplier": config.multiplier}
     ext.run(command_for_asset("number_x"), context=context, extras=extras)
 
 
 @asset
-def number_y(
-    context: AssetExecutionContext, ext: SubprocessExecutionResource, config: NumberConfig
-):
+def number_y(context: AssetExecutionContext, ext: ExtSubprocess, config: NumberConfig):
     ext.run(
         command_for_asset("number_y"),
         context=context,
@@ -52,11 +48,11 @@ def number_y(
 
 
 @asset(deps=[number_x, number_y])
-def number_sum(context: AssetExecutionContext, ext: SubprocessExecutionResource) -> None:
+def number_sum(context: AssetExecutionContext, ext: ExtSubprocess) -> None:
     ext.run(command_for_asset("number_sum"), context=context, extras=get_common_extras(context))
 
 
-ext = SubprocessExecutionResource(
+ext = ExtSubprocess(
     env=get_env(),
 )
 

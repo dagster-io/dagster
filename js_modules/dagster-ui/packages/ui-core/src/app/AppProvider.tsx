@@ -29,6 +29,7 @@ import {SubscriptionClient} from 'subscriptions-transport-ws';
 import {AssetRunLogObserver} from '../asset-graph/AssetRunLogObserver';
 import {DeploymentStatusProvider, DeploymentStatusType} from '../instance/DeploymentStatusProvider';
 import {InstancePageContext} from '../instance/InstancePageContext';
+import {JobFeatureProvider} from '../pipelines/JobFeatureContext';
 import {WorkspaceProvider} from '../workspace/WorkspaceContext';
 
 import {AppContext} from './AppContext';
@@ -205,7 +206,9 @@ export const AppProvider: React.FC<AppProviderProps> = (props) => {
                       <CustomConfirmationProvider>
                         <AnalyticsContext.Provider value={analytics}>
                           <InstancePageContext.Provider value={instancePageValue}>
-                            <LayoutProvider>{props.children}</LayoutProvider>
+                            <JobFeatureProvider>
+                              <LayoutProvider>{props.children}</LayoutProvider>
+                            </JobFeatureProvider>
                           </InstancePageContext.Provider>
                         </AnalyticsContext.Provider>
                       </CustomConfirmationProvider>

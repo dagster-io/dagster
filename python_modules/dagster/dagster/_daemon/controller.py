@@ -89,6 +89,7 @@ def daemon_controller_from_instance(
     ] = create_daemons_from_instance,
     error_interval_seconds: int = DEFAULT_DAEMON_ERROR_INTERVAL_SECONDS,
     code_server_log_level: str = "info",
+    log_level: str = "info",
 ) -> Iterator["DagsterDaemonController"]:
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(workspace_load_target, "workspace_load_target", WorkspaceLoadTarget)
@@ -113,6 +114,7 @@ def daemon_controller_from_instance(
                 heartbeat_tolerance_seconds=heartbeat_tolerance_seconds,
                 error_interval_seconds=error_interval_seconds,
                 grpc_server_registry=grpc_server_registry,
+                log_level=log_level,
             )
         )
 
@@ -142,6 +144,7 @@ class DagsterDaemonController(AbstractContextManager):
         heartbeat_tolerance_seconds: float = DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
         error_interval_seconds: int = DEFAULT_DAEMON_ERROR_INTERVAL_SECONDS,
         handler: str = "default",
+        log_level: str = "info",
     ):
         self._daemon_uuid = str(uuid.uuid4())
 
@@ -167,7 +170,7 @@ class DagsterDaemonController(AbstractContextManager):
 
         self._daemon_shutdown_event = threading.Event()
 
-        configure_loggers(handler=handler)
+        configure_loggers(handler=handler, log_level=log_level.upper())
 
         self._logger = logging.getLogger("dagster.daemon")
         self._logger.info(

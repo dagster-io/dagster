@@ -1,4 +1,4 @@
-from collections import defaultdict
+from collections import defaultdict, deque
 from datetime import datetime
 from typing import (
     TYPE_CHECKING,
@@ -19,7 +19,7 @@ from typing import (
 import pendulum
 
 import dagster._check as check
-from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_graph import AssetGraph, ToposortedPriorityQueue
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.data_version import (
     DATA_VERSION_TAG,
@@ -76,6 +76,11 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         self._dynamic_partitions_cache: Dict[str, Sequence[str]] = {}
 
         self._evaluation_time = evaluation_time if evaluation_time else pendulum.now("UTC")
+
+        self._root_unreconciled_ancestors_cache: Dict[AssetKeyPartitionKey, Set[AssetKey]] = {}
+        self._respect_materialization_data_versions = (
+            self._instance.auto_materialize_respect_materialization_data_versions
+        )
 
     @property
     def instance(self) -> DagsterInstance:
@@ -779,15 +784,27 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             AssetKeyPartitionKey(asset_key), after_cursor=after_cursor
         ):
             return set()
-        # quick check that just compares latest storage ids
-        updated_after_cursor = {
-            asset_partition
-            for asset_partition, latest_storage_id in self._get_latest_materialization_or_observation_storage_ids_by_asset_partition(
+
+        last_storage_id_by_asset_partition = (
+            self._get_latest_materialization_or_observation_storage_ids_by_asset_partition(
                 asset_key=asset_key
-            ).items()
-            if (latest_storage_id or 0) > (after_cursor or 0)
-            and (asset_partitions is None or asset_partition in asset_partitions)
-        }
+            )
+        )
+
+        if asset_partitions is None:
+            updated_after_cursor = {
+                asset_partition
+                for asset_partition, latest_storage_id in last_storage_id_by_asset_partition.items()
+                if (latest_storage_id or 0) > (after_cursor or 0)
+            }
+        else:
+            # Optimized for the case where there are many partitions and last_storage_id_by_asset_partition
+            # is large, but we're only looking for the result for a small number of partitions
+            updated_after_cursor = set()
+            for asset_partition in asset_partitions:
+                latest_storage_id = last_storage_id_by_asset_partition.get(asset_partition)
+                if latest_storage_id is not None and latest_storage_id > (after_cursor or 0):
+                    updated_after_cursor.add(asset_partition)
 
         if not updated_after_cursor:
             return set()
@@ -813,7 +830,8 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
 
         partitions_def = self.asset_graph.get_partitions_def(asset_partition.asset_key)
         updated_parents = set()
-        for parent_key, asset_partitions in parent_asset_partitions_by_key.items():
+
+        for parent_key, parent_asset_partitions in parent_asset_partitions_by_key.items():
             # ignore non-observable source parents
             if self.asset_graph.is_source(parent_key) and not self.asset_graph.is_observable(
                 parent_key
@@ -837,7 +855,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             updated_parents.update(
                 self.get_asset_partitions_updated_after_cursor(
                     asset_key=parent_key,
-                    asset_partitions=asset_partitions,
+                    asset_partitions=parent_asset_partitions,
                     after_cursor=self.get_latest_materialization_or_observation_storage_id(
                         asset_partition
                     ),
@@ -846,38 +864,79 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             )
         return updated_parents
 
-    @cached_method
     def get_root_unreconciled_ancestors(
-        self, *, asset_partition: AssetKeyPartitionKey, respect_materialization_data_versions: bool
+        self, *, asset_partition: AssetKeyPartitionKey
     ) -> AbstractSet[AssetKey]:
         """Return the set of root unreconciled ancestors of the given asset partition, i.e. the set
         of ancestors of this asset partition whose parents have been updated more recently than
         they have.
         """
+        if asset_partition in self._root_unreconciled_ancestors_cache:
+            return self._root_unreconciled_ancestors_cache[asset_partition]
+
         if self.asset_graph.is_source(asset_partition.asset_key):
             return set()
 
-        parent_asset_partitions = self.asset_graph.get_parents_partitions(
-            dynamic_partitions_store=self,
-            current_time=self._evaluation_time,
-            asset_key=asset_partition.asset_key,
-            partition_key=asset_partition.partition_key,
-        ).parent_partitions
+        # First traverse upwards and gather any candidates that have not been previously added
+        # to the cache
+        visited: set[AssetKeyPartitionKey] = set()
 
-        updated_parents = self.get_updated_parent_asset_partitions(
-            asset_partition,
-            parent_asset_partitions,
-            respect_materialization_data_versions=respect_materialization_data_versions,
+        queue: deque[AssetKeyPartitionKey] = deque()
+        queue.append(asset_partition)
+
+        while queue:
+            current_partition = queue.popleft()
+            visited.add(current_partition)
+
+            if self.asset_graph.is_source(current_partition.asset_key):
+                continue
+
+            parent_asset_partitions = self.asset_graph.get_parents_partitions(
+                dynamic_partitions_store=self,
+                current_time=self._evaluation_time,
+                asset_key=current_partition.asset_key,
+                partition_key=current_partition.partition_key,
+            ).parent_partitions
+
+            for parent in parent_asset_partitions:
+                if parent not in visited and parent not in self._root_unreconciled_ancestors_cache:
+                    queue.append(parent)
+
+        # Toposort them so that at each iteration we can count on the cache being full for
+        # all of your parents, then update the cache for each node based on the parent's results
+        toposort_queue = ToposortedPriorityQueue(
+            self.asset_graph, visited, include_required_multi_assets=False
         )
 
-        root_unreconciled_ancestors = {asset_partition.asset_key} if updated_parents else set()
+        while len(toposort_queue) > 0:
+            candidates_unit = toposort_queue.dequeue()
+            for current_partition in candidates_unit:
+                parent_asset_partitions = self.asset_graph.get_parents_partitions(
+                    dynamic_partitions_store=self,
+                    current_time=self._evaluation_time,
+                    asset_key=current_partition.asset_key,
+                    partition_key=current_partition.partition_key,
+                ).parent_partitions
 
-        # recurse over parents
-        for parent in set(parent_asset_partitions) - updated_parents:
-            root_unreconciled_ancestors.update(
-                self.get_root_unreconciled_ancestors(
-                    asset_partition=parent,
-                    respect_materialization_data_versions=respect_materialization_data_versions,
+                updated_parents: AbstractSet[AssetKeyPartitionKey] = (
+                    self.get_updated_parent_asset_partitions(
+                        asset_partition=current_partition,
+                        parent_asset_partitions=parent_asset_partitions,
+                        respect_materialization_data_versions=self._respect_materialization_data_versions,
+                    )
                 )
-            )
-        return root_unreconciled_ancestors
+
+                root_unreconciled_ancestors = (
+                    {current_partition.asset_key} if updated_parents else set()
+                )
+
+                for parent in set(parent_asset_partitions) - updated_parents:
+                    root_unreconciled_ancestors.update(
+                        self._root_unreconciled_ancestors_cache[parent]
+                    )
+
+                self._root_unreconciled_ancestors_cache[current_partition] = (
+                    root_unreconciled_ancestors
+                )
+
+        return self._root_unreconciled_ancestors_cache[asset_partition]

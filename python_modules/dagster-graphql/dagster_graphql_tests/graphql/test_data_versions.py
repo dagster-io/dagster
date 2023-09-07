@@ -149,9 +149,11 @@ def test_stale_status_partitioned():
                 node = _get_asset_node(result)
                 assert node["dataVersion"] is None
                 assert node["dataVersionByPartition"] == [None, None]
-                assert node["staleStatus"] == "MISSING"
+                assert (
+                    node["staleStatus"] == "FRESH"
+                )  # always returns fresh for this undefined field
                 assert node["staleStatusByPartition"] == ["MISSING", "MISSING"]
-                assert node["staleCauses"] == []
+                assert node["staleCauses"] == []  # always returns empty for this undefined field
                 assert node["staleCausesByPartition"] == [[], []]
 
             assert _materialize_assets(
@@ -263,11 +265,17 @@ def test_partitioned_self_dep():
         with define_out_of_process_context(
             __file__, "get_repo_with_partitioned_self_dep_asset", instance
         ) as context:
-            result = _fetch_data_versions(context, repo)
+            result = _fetch_partition_data_versions(
+                context, AssetKey(["a"]), partitions=["2020-01-01", "2020-01-02"]
+            )
             assert result
             assert result.data
-            assert _get_asset_node(result, "a")["staleStatus"] == "MISSING"
-            assert _get_asset_node(result, "b")["staleStatus"] == "MISSING"
+            node = _get_asset_node(result, "a")
+            assert node["staleStatusByPartition"] == ["MISSING", "MISSING"]
+
+            result = _fetch_data_versions(context, repo)
+            node = _get_asset_node(result, "b")
+            assert node["staleStatus"] == "MISSING"
 
 
 def get_observable_source_asset_repo():

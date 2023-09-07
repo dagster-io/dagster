@@ -16,14 +16,14 @@ export type AssetChecksQuery = {
           __typename: 'AssetCheck';
           name: string;
           description: string | null;
-          severity: Types.AssetCheckSeverity;
-          executions: Array<{
+          executionForLatestMaterialization: {
             __typename: 'AssetCheckExecution';
-            id: number;
+            id: string;
             runId: string;
-            status: Types.AssetCheckExecutionStatus;
+            status: Types.AssetCheckExecutionResolvedStatus;
             evaluation: {
               __typename: 'AssetCheckEvaluation';
+              severity: Types.AssetCheckSeverity;
               timestamp: number;
               targetMaterialization: {
                 __typename: 'AssetCheckEvaluationTargetMaterializationData';
@@ -154,7 +154,7 @@ export type AssetChecksQuery = {
                   }
               >;
             } | null;
-          }>;
+          } | null;
         }>;
       };
 };

@@ -61,6 +61,13 @@ def dev_command_options(f):
     type=click.Choice(["critical", "error", "warning", "info", "debug"], case_sensitive=False),
 )
 @click.option(
+    "--log-level",
+    help="Set the log level for dagster services.",
+    show_default=True,
+    default="info",
+    type=click.Choice(["critical", "error", "warning", "info", "debug"], case_sensitive=False),
+)
+@click.option(
     "--port",
     "--dagit-port",
     "-p",
@@ -79,6 +86,7 @@ def dev_command_options(f):
 )
 def dev_command(
     code_server_log_level: str,
+    log_level: str,
     port: Optional[str],
     host: Optional[str],
     **kwargs: ClickArgValue,
@@ -93,7 +101,7 @@ def dev_command(
             ' running "pip install dagster-webserver" in your Python environment.'
         )
 
-    configure_loggers()
+    configure_loggers(log_level=log_level.upper())
     logger = logging.getLogger("dagster")
 
     # Sanity check workspace args
@@ -154,10 +162,11 @@ def dev_command(
             [sys.executable, "-m", "dagster_webserver"]
             + (["--port", port] if port else [])
             + (["--host", host] if host else [])
+            + (["--dagster-log-level", log_level])
             + args
         )
         daemon_process = open_ipc_subprocess(
-            [sys.executable, "-m", "dagster._daemon", "run"] + args
+            [sys.executable, "-m", "dagster._daemon", "run", "--log-level", log_level] + args
         )
         try:
             while True:
@@ -175,7 +184,11 @@ def dev_command(
                         f" {daemon_process.returncode}"
                     )
 
+        except KeyboardInterrupt:
+            logger.info("KeyboardInterrupt received")
         except:
+            logger.exception("An unexpected exception has occurred")
+        finally:
             logger.info("Shutting down Dagster services...")
             interrupt_ipc_subprocess(daemon_process)
             interrupt_ipc_subprocess(webserver_process)

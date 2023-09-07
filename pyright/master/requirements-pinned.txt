@@ -108,7 +108,7 @@ cycler==0.11.0
 -e python_modules/libraries/dagster-duckdb-pandas
 -e python_modules/libraries/dagster-duckdb-polars
 -e python_modules/libraries/dagster-duckdb-pyspark
--e python_modules/dagster-externals
+-e python_modules/dagster-ext
 -e python_modules/libraries/dagster-fivetran
 -e python_modules/libraries/dagster-gcp
 -e python_modules/libraries/dagster-gcp-pandas

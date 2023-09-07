@@ -1,10 +1,51 @@
 # Changelog
 
+# 1.4.11 / 0.20.11 (libraries)
+
+### New
+
+- Dagster code servers now wait to shut down until any calls that they are running have finished, preventing them from stopping while in the middle of executing sensor ticks or other long-running operations.
+- The `dagster execute job` cli now accepts `—-op-selection` (thanks @silent-lad!)
+- [ui] Option (Alt) + R now reloads all code locations (OSS only)
+
+### Bugfixes
+
+- Adds a check to validate partition mappings when directly constructing `AssetsDefinition` instances.
+- Assets invoked in composition functions like `@graph` and `@job` now work again, fixing a regression introduced in 1.4.5.
+- Fixed an issue where a race condition with parallel runs materializing the same asset could cause a run to hang.
+- Fixed an issue where including a resource in both a schedule and a job raised a “Cannot specify resource requirements” exception when the definitions were loaded.
+- The `ins` argument to `graph_asset` is now respected correctly.
+- Fixed an issue where the daemon process could sometimes stop with a heartbeat failure when the first sensor it ran took a long time to execute.
+- Fixed an issue where `dagster dev` failed on startup when the `DAGSTER_GRPC_PORT` `environment variable was set in the environment.
+- `deps` arguments for an asset can now be specified as an iterable instead of a sequence, allowing for sets to be passed.
+- [dagster-aws] Fixed a bug where the S3PickleIOManager didn’t correctly handle missing partitions when allow_missing_partitions was set. Thanks @o-sirawat!
+- [dagster-k8s] in the helm chart, the daemon `securityContext` setting now applies correctly to all init containers (thanks @maowerner!)
+
+### Community Contributions
+
+- [dagster-databricks] Migrated to use new official databricks Python SDK. Thanks @judahrand!
+
+### Experimental
+
+- New APIs for defining and executing checks on software-defined assets. These APIs are very early and subject to change. The corresponding UI has limited functionality. [Docs](https://docs.dagster.io/_apidocs/asset-checks)
+- Adds a new auto-materialize skip rule `AutoMaterializeRule.skip_on_not_all_parents_updated` that enforces that an asset can only be materialized if all parents have been materialized since the asset's last materialization.
+- Exposed an auto-materialize skip rule – `AutoMaterializeRule.skip_on_parent_missing` –which is already part of the behavior of the default auto-materialize policy.
+- Auto-materialize evaluation history will now be stored for 1 month, instead of 1 week.
+- The auto-materialize asset daemon now includes more logs about what it’s doing for each asset in each tick in the Dagster Daemon process output.
+
+### Documentation
+
+- [dagster-dbt] Added reference docs for `dagster-dbt project scaffold`.
+
+### Dagster Cloud
+
+- Fixed an issue where the Docker agent would sometimes fail to load code locations with long names with a hostname connection error.
+
 # 1.4.10 / 0.20.10 (libraries)
 
 ### Bugfixes
-- [dagster-webserver] Fixed an issue that broke loading static files on Windows.
 
+- [dagster-webserver] Fixed an issue that broke loading static files on Windows.
 
 # 1.4.9 / 0.20.9 (libraries)
 
@@ -31,7 +72,6 @@
 - [ui] When opening step compute logs, the view defaults to `stderr` which aligns with Python’s logging defaults.
 - [ui] When viewing a global asset graph with more than 100 assets, the “choose a subset to display” prompt is correctly aligned to the query input.
 
-
 ### Community Contributions
 
 - Fix for loading assets with a `BackfillPolicy`, thanks @ruizh22!
@@ -55,15 +95,15 @@
 # 1.4.7 / 0.20.7 (libraries)
 
 ### Experimental
+
 - Added a `respect_materialization_data_versions` option to auto materialization. It can enabled in `dagster.yaml` with
 
   ```yaml
   auto_materialize:
-      respect_materialization_data_versions: True
+    respect_materialization_data_versions: True
   ```
 
   This flag may be changed or removed in the near future.
-
 
 # 1.4.6 / 0.20.6 (libraries)
 
@@ -75,10 +115,10 @@
 - [dagster-k8s] Launched run pods now have an additional code location label.
 - [dagster-ui] The runs table now lets you toggle which tags are always visible.
 - [dagster-dbt] `dagster-dbt project scaffold` now creates the scaffold in multiple files:
-    - `constants.py` contains a reference to your manifest and dbt project directory
-    - `assets.py` contains your initial dbt assets definitions
-    - `definitions.py` contains the code to load your asset definitions into the Dagster UI
-    - `schedules.py` contains an optional schedule to add for your dbt assets
+  - `constants.py` contains a reference to your manifest and dbt project directory
+  - `assets.py` contains your initial dbt assets definitions
+  - `definitions.py` contains the code to load your asset definitions into the Dagster UI
+  - `schedules.py` contains an optional schedule to add for your dbt assets
 - [dagster-dbt] Added new methods `get_auto_materialize_policy` and `get_freshness_policy` to `DagsterDbtTranslator`.
 - [dagster-fivertran] Sync options can now be passed to `load_assets_from_fivetran_instance`.
 - [dagster-wandb] W&B IO Manager now handles partitions natively. (Thanks [@chrishiste](https://github.com/chrishiste)!)
@@ -97,12 +137,12 @@
 - Added callouts to the [GitHub](https://docs.dagster.io/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments-with-github) and [GitLab](https://docs.dagster.io/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments-with-gitlab) Branch Deployment guides specifying that some steps are optional for Serverless users.
 - The “Graphs” page under the “Concepts” section has been renamed to “Op Graphs” and moved inside under the “Ops” heading.
 - [dagster-dbt] Added API examples for `@dbt_assets` for the following use-cases:
-    - Running dbt commands with flags
-    - Running dbt commands with `--vars`
-    - Running multiple dbt commands
-    - Retrieving dbt artifacts after running a dbt command
-    - Invoking other Dagster resouces alongside dbt
-    - Defining and accessing Dagster config alongside dbt
+  - Running dbt commands with flags
+  - Running dbt commands with `--vars`
+  - Running multiple dbt commands
+  - Retrieving dbt artifacts after running a dbt command
+  - Invoking other Dagster resouces alongside dbt
+  - Defining and accessing Dagster config alongside dbt
 
 ### Dagster Cloud
 
@@ -114,7 +154,7 @@
 
 - `@graph_asset` now takes a `config` parameter equivalent to the parameter on `@graph`.
 - Added an optional `dynamic_partitions_store` argument to `DynamicPartitionsDefinition` for multi-partition run properly with dynamic partitions (Thanks @elzzz!).
-- [dagster-grpahql] Added `partitionsByAssets`` to `backfillParams`` for ranged partition backfill (Thanks @ruizh22!).
+- [dagster-grpahql] Added ` partitionsByAssets` to `backfillParams` for ranged partition backfill (Thanks @ruizh22!).
 - [dagster-dbt] Support for `dbt-core==1.6` has been added.
 - [dagster-dbt] `DbtCliResource` now supports configuring `profiles_dir`.
 - [dagster-k8s] Allow specifying `restart_policy` on `k8s_job_op` (Thanks @Taadas!).

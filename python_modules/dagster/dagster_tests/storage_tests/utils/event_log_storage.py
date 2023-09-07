@@ -40,6 +40,7 @@ from dagster._core.definitions.asset_check_evaluation import (
     AssetCheckEvaluationPlanned,
     AssetCheckEvaluationTargetMaterializationData,
 )
+from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.job_base import InMemoryJob
@@ -67,7 +68,7 @@ from dagster._core.host_representation.origin import (
     InProcessCodeLocationOrigin,
 )
 from dagster._core.storage.asset_check_execution_record import (
-    AssetCheckExecutionStatus,
+    AssetCheckExecutionRecordStatus,
 )
 from dagster._core.storage.event_log import InMemoryEventLogStorage, SqlEventLogStorage
 from dagster._core.storage.event_log.base import EventLogStorage
@@ -3930,7 +3931,7 @@ class TestEventLogStorage:
 
         checks = storage.get_asset_check_executions(AssetKey(["my_asset"]), "my_check", limit=10)
         assert len(checks) == 1
-        assert checks[0].status == AssetCheckExecutionStatus.PLANNED
+        assert checks[0].status == AssetCheckExecutionRecordStatus.PLANNED
         assert checks[0].run_id == "foo"
 
         checks = storage.get_asset_check_executions(
@@ -3962,6 +3963,7 @@ class TestEventLogStorage:
                         target_materialization_data=AssetCheckEvaluationTargetMaterializationData(
                             storage_id=42, run_id="bizbuz", timestamp=3.3
                         ),
+                        severity=AssetCheckSeverity.ERROR,
                     ),
                 ),
             )
@@ -3969,7 +3971,7 @@ class TestEventLogStorage:
 
         checks = storage.get_asset_check_executions(AssetKey(["my_asset"]), "my_check", limit=10)
         assert len(checks) == 1
-        assert checks[0].status == AssetCheckExecutionStatus.SUCCESS
+        assert checks[0].status == AssetCheckExecutionRecordStatus.SUCCEEDED
         assert (
             checks[
                 0

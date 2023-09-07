@@ -48,6 +48,30 @@ def test_asset_check_decorator_name():
     assert _check.name == "check1"
 
 
+def test_asset_check_with_prefix():
+    @asset(key_prefix="prefix")
+    def asset1():
+        ...
+
+    @asset_check(asset=asset1)
+    def my_check():
+        ...
+
+    assert my_check.asset_key == AssetKey(["prefix", "asset1"])
+
+
+def test_asset_check_input_with_prefix():
+    @asset(key_prefix="prefix")
+    def asset1():
+        ...
+
+    @asset_check(asset=asset1)
+    def my_check(asset1):
+        ...
+
+    assert my_check.asset_key == AssetKey(["prefix", "asset1"])
+
+
 def test_execute_asset_and_check():
     @asset
     def asset1():
@@ -246,6 +270,8 @@ def test_asset_check_separate_op_downstream_still_executes():
 
 
 def test_error_severity_skip_downstream():
+    pytest.skip("Currently users should raise exceptions instead of using checks for control flow.")
+
     @asset
     def asset1():
         ...
@@ -281,6 +307,8 @@ def test_error_severity_skip_downstream():
 
 
 def test_error_severity_with_source_asset_fail():
+    pytest.skip("Currently users should raise exceptions instead of using checks for control flow.")
+
     asset1 = SourceAsset("asset1")
 
     @asset_check(asset=asset1, severity=AssetCheckSeverity.ERROR)
@@ -316,9 +344,9 @@ def test_error_severity_with_source_asset_fail():
 def test_error_severity_with_source_asset_success():
     asset1 = SourceAsset("asset1", io_manager_key="asset1_io_manager")
 
-    @asset_check(asset=asset1, severity=AssetCheckSeverity.ERROR)
+    @asset_check(asset=asset1)
     def check1(context):
-        return AssetCheckResult(success=True)
+        return AssetCheckResult(success=True, severity=AssetCheckSeverity.ERROR)
 
     @asset
     def asset2(asset1):
@@ -433,9 +461,7 @@ def test_job_only_execute_checks_downstream_of_selected_assets():
 
 
 def test_asset_not_provided():
-    with pytest.raises(
-        DagsterInvalidDefinitionError, match="No target asset provided when defining check 'check1'"
-    ):
+    with pytest.raises(Exception):
 
         @asset_check(description="desc")
         def check1():
@@ -447,7 +473,7 @@ def test_managed_input():
     def asset1() -> int:
         return 4
 
-    @asset_check(description="desc")
+    @asset_check(asset=asset1, description="desc")
     def check1(asset1):
         assert asset1 == 4
         return AssetCheckResult(success=True)
@@ -471,10 +497,13 @@ def test_managed_input():
 def test_multiple_managed_inputs():
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=re.escape("When defining check 'check1', Multiple target assets provided:"),
+        match=re.escape(
+            "When defining check 'check1', multiple target assets provided as parameters:"
+            " ['asset1', 'asset2']. Only one is allowed."
+        ),
     ):
 
-        @asset_check(description="desc")
+        @asset_check(asset="asset1", description="desc")
         def check1(asset1, asset2):
             ...
 
@@ -484,7 +513,7 @@ def test_managed_input_with_context():
     def asset1() -> int:
         return 4
 
-    @asset_check(description="desc")
+    @asset_check(asset=asset1, description="desc")
     def check1(context, asset1):
         assert context
         assert asset1 == 4

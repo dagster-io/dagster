@@ -10,10 +10,11 @@ export function CodeBlock({children, 'data-language': language}) {
   }, [children]);
 
   return (
-    <div className="code" aria-live="polite">
+    <div className="code" aria-live="polite" style={{display: 'flex'}}>
       <pre
         ref={ref}
         className={`language-${language}`}
+        style={{height: '100%', marginBottom: 0, marginTop: 0}}
       >
         {children}
       </pre>

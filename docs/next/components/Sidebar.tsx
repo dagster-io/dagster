@@ -107,7 +107,7 @@ const MenuItem = React.forwardRef<HTMLAnchorElement, React.PropsWithChildren<Men
     }
 
     return (
-      <NextLink href={item.path} passHref>
+      <NextLink href={item.path} passHref legacyBehavior>
         {linkElement}
       </NextLink>
     );

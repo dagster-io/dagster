@@ -105,6 +105,9 @@ def asset_sensor(
     """Creates an asset sensor where the decorated function is used as the asset sensor's evaluation
     function.
 
+    If the asset has been materialized multiple times between since the last sensor tick, the
+    evaluation function will only be invoked once, with the latest materialization.
+
     The decorated function may:
 
     1. Return a `RunRequest` object.

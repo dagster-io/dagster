@@ -11,7 +11,19 @@ See:
 """
 from typing import Dict, Union
 
-from dagster import Array, Bool, Enum, EnumValue, Field, Int, Permissive, Selector, Shape, String
+from dagster import (
+    Array,
+    Bool,
+    Enum,
+    EnumValue,
+    Field,
+    Int,
+    Noneable,
+    Permissive,
+    Selector,
+    Shape,
+    String,
+)
 
 
 def _define_autoscale() -> Field:
@@ -274,8 +286,49 @@ def _define_cluster_log_conf() -> Field:
     )
 
 
+def _define_workspace_storage_info() -> Field:
+    return Field(
+        Shape(
+            fields={
+                "destination": Field(
+                    String,
+                    description=(
+                        "The path to the directory in the workspace where the notebook is located."
+                    ),
+                    is_required=True,
+                )
+            }
+        ),
+        description="Workspace storage information",
+    )
+
+
+def _define_volumes_storage_info() -> Field:
+    return Field(
+        Shape(
+            fields={
+                "destination": Field(
+                    String,
+                    description=(
+                        "The path to the directory in the workspace where the notebook is located."
+                    ),
+                    is_required=True,
+                )
+            }
+        ),
+        description="Workspace storage information",
+    )
+
+
 def _define_init_script():
-    return Selector({"dbfs": _define_dbfs_storage_info(), "s3": _define_s3_storage_info()})
+    return Selector(
+        {
+            "dbfs": _define_dbfs_storage_info(),
+            "s3": _define_s3_storage_info(),
+            "workspace": _define_workspace_storage_info(),
+            "volumes": _define_volumes_storage_info(),
+        }
+    )
 
 
 def _define_node_types() -> Field:
@@ -873,4 +926,24 @@ def define_databricks_permissions() -> Field:
             "job_permissions": _define_databricks_job_permission(),
             "cluster_permissions": _define_databricks_cluster_permission(),
         }
+    )
+
+
+def define_oauth_credentials():
+    return Field(
+        Noneable(
+            Shape(
+                fields={
+                    "client_id": Field(str, is_required=True, description="Oauth client ID"),
+                    "client_secret": Field(
+                        str, is_required=True, description="Oauth client secret"
+                    ),
+                }
+            ),
+        ),
+        description=(
+            "Oauth credentials for interacting with the Databricks REST API via a service"
+            " principal. See https://docs.databricks.com/en/dev-tools/auth.html#oauth-2-0"
+        ),
+        default_value=None,
     )

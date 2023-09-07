@@ -36,9 +36,7 @@ setup(
     install_requires=[
         f"dagster{pin}",
         f"dagster_spark{pin}",
-        # Pyspark 2.x is incompatible with Python 3.8+
-        'pyspark>=3.0.0; python_version >= "3.8"',
-        'pyspark>=2.0.2; python_version < "3.8"',
+        "pyspark>=3",
     ],
     zip_safe=False,
 )

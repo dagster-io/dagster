@@ -486,6 +486,10 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         """Frees concurrency slots for a given run/step."""
         raise NotImplementedError()
 
+    @property
+    def supports_asset_checks(self):
+        return True
+
     def get_asset_check_executions(
         self,
         asset_key: AssetKey,

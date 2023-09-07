@@ -1,35 +1,64 @@
-from typing import Any, Callable, Mapping, Optional, Set, Union
+from typing import Any, Callable, Mapping, Optional, Set, Tuple, Union, cast
 
 from dagster import _check as check
 from dagster._annotations import experimental
+from dagster._builtins import Nothing
 from dagster._config import UserConfigSchema
 from dagster._core.definitions.asset_check_result import AssetCheckResult
-from dagster._core.definitions.asset_check_spec import AssetCheckSeverity, AssetCheckSpec
+from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_checks import (
     AssetChecksDefinition,
     AssetChecksDefinitionInputOutputProps,
 )
 from dagster._core.definitions.assets import AssetsDefinition
-from dagster._core.definitions.decorators.asset_decorator import (
-    asset_key_from_coercible_or_definition,
-    build_asset_ins,
-)
-from dagster._core.definitions.events import CoercibleToAssetKey
+from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.output import Out
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.source_asset import SourceAsset
+from dagster._core.definitions.utils import NoValueSentinel
 from dagster._core.errors import DagsterInvalidDefinitionError
 
+from ..input import In
+from .asset_decorator import (
+    get_function_params_without_context_or_config_or_resources,
+    stringify_asset_key_to_input_name,
+)
 from .op_decorator import _Op
 
 AssetCheckFunctionReturn = AssetCheckResult
 AssetCheckFunction = Callable[..., AssetCheckFunctionReturn]
 
 
+def _build_asset_check_input(
+    name: str, asset_key: AssetKey, fn: Callable
+) -> Mapping[AssetKey, Tuple[str, In]]:
+    asset_params = get_function_params_without_context_or_config_or_resources(fn)
+
+    if len(asset_params) == 0:
+        input_name = stringify_asset_key_to_input_name(asset_key)
+        in_def = In(cast(type, Nothing))
+    elif len(asset_params) == 1:
+        input_name = asset_params[0].name
+        in_def = In(metadata={}, input_manager_key=None, dagster_type=NoValueSentinel)
+    else:
+        raise DagsterInvalidDefinitionError(
+            f"When defining check '{name}', multiple target assets provided as parameters:"
+            f" {[param.name for param in asset_params]}. Only one"
+            " is allowed."
+        )
+
+    return {
+        asset_key: (
+            input_name,
+            in_def,
+        )
+    }
+
+
 @experimental
 def asset_check(
     *,
-    asset: Optional[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]] = None,
+    asset: Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset],
     name: Optional[str] = None,
     description: Optional[str] = None,
     required_resource_keys: Optional[Set[str]] = None,
@@ -38,12 +67,11 @@ def asset_check(
     compute_kind: Optional[str] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
     retry_policy: Optional[RetryPolicy] = None,
-    severity: AssetCheckSeverity = AssetCheckSeverity.WARN,
 ) -> Callable[[AssetCheckFunction], AssetChecksDefinition]:
     """Create a definition for how to execute an asset check.
 
     Args:
-        asset (Optional[Union[AssetKey, Sequence[str], str, AssetsDefinition, SourceAsset]]): The
+        asset (Union[AssetKey, Sequence[str], str, AssetsDefinition, SourceAsset]): The
             asset that the check applies to.
         name (Optional[str]): The name of the check. If not specified, the name of the decorated
             function will be used. Checks for the same asset must have unique names.
@@ -61,12 +89,14 @@ def asset_check(
         compute_kind (Optional[str]): A string to represent the kind of computation that executes
             the check, e.g. "dbt" or "spark".
         retry_policy (Optional[RetryPolicy]): The retry policy for the op that executes the check.
-        severity (AssetCheckSeverity): Severity of the check.
+
 
     Produces an :py:class:`AssetChecksDefinition` object.
 
-    Examples:
+
+    Example:
         .. code-block:: python
+
             from dagster import asset, asset_check, AssetCheckResult
 
             @asset
@@ -79,7 +109,9 @@ def asset_check(
                 return AssetCheckResult(success=num_rows > 5, metadata={"num_rows": num_rows})
 
 
+    Example with a DataFrame Output:
         .. code-block:: python
+
             from dagster import asset, asset_check, AssetCheckResult
             from pandas import DataFrame
 
@@ -87,7 +119,7 @@ def asset_check(
             def my_asset() -> DataFrame:
                 ...
 
-            @asset_check(description="Check that my asset has enough rows")
+            @asset_check(asset=my_asset, description="Check that my asset has enough rows")
             def my_asset_has_enough_rows(my_asset: DataFrame) -> AssetCheckResult:
                 num_rows = my_asset.shape[0]
                 return AssetCheckResult(success=num_rows > 5, metadata={"num_rows": num_rows})
@@ -96,12 +128,10 @@ def asset_check(
     def inner(fn: AssetCheckFunction) -> AssetChecksDefinition:
         check.callable_param(fn, "fn")
         resolved_name = name or fn.__name__
-        asset_key = asset_key_from_coercible_or_definition(asset) if asset is not None else None
+        asset_key = AssetKey.from_coercible_or_definition(asset)
 
         out = Out(dagster_type=None)
-        input_tuples_by_asset_key = build_asset_ins(
-            fn, {}, {asset_key} if asset_key is not None else set()
-        )
+        input_tuples_by_asset_key = _build_asset_check_input(resolved_name, asset_key, fn)
         if len(input_tuples_by_asset_key) == 0:
             raise DagsterInvalidDefinitionError(
                 f"No target asset provided when defining check '{resolved_name}'"
@@ -118,8 +148,7 @@ def asset_check(
         spec = AssetCheckSpec(
             name=resolved_name,
             description=description,
-            asset_key=resolved_asset_key,
-            severity=severity,
+            asset=resolved_asset_key,
         )
 
         op_def = _Op(

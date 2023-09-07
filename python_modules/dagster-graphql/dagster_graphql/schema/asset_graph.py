@@ -31,7 +31,7 @@ from dagster._core.workspace.permissions import Permissions
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 from dagster_graphql.implementation.events import iterate_metadata_entries
-from dagster_graphql.implementation.fetch_asset_checks import fetch_asset_checks
+from dagster_graphql.implementation.fetch_asset_checks import fetch_asset_checks, has_asset_checks
 from dagster_graphql.implementation.fetch_assets import (
     get_asset_materializations,
     get_asset_observations,
@@ -59,6 +59,7 @@ from ..implementation.loader import (
     CrossRepoAssetDependedByLoader,
     StaleStatusLoader,
 )
+from ..schema.asset_checks import GrapheneAssetCheck, GrapheneAssetCheckNeedsMigrationError
 from . import external
 from .asset_key import GrapheneAssetKey
 from .auto_materialize_policy import GrapheneAutoMaterializePolicy
@@ -265,6 +266,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     # the acutal checks are listed in the assetChecksOrError resolver. We use this boolean
     # to show/hide the checks tab. We plan to remove this field once we always show the checks tab.
     hasAssetChecks = graphene.NonNull(graphene.Boolean)
+    assetChecks = non_null_list(GrapheneAssetCheck)
 
     class Meta:
         name = "AssetNode"
@@ -599,8 +601,6 @@ class GrapheneAssetNode(graphene.ObjectType):
     ) -> Any:  # (GrapheneAssetStaleStatus)
         if partition:
             self._validate_partitions_existence()
-        # The status loader does not support querying for the stale status of a
-        # partitioned asset without specifying a partition, so we return here.
         return self.stale_status_loader.get_status(self._external_asset_node.asset_key, partition)
 
     def resolve_staleStatusByPartition(
@@ -1089,7 +1089,13 @@ class GrapheneAssetNode(graphene.ObjectType):
             check.failed("Asset node has no partitions definition")
 
     def resolve_hasAssetChecks(self, graphene_info: ResolveInfo) -> bool:
-        return bool(fetch_asset_checks(graphene_info, self._external_asset_node.asset_key).checks)
+        return has_asset_checks(graphene_info, self._external_asset_node.asset_key)
+
+    def resolve_assetChecks(self, graphene_info: ResolveInfo) -> List[GrapheneAssetCheck]:
+        res = fetch_asset_checks(graphene_info, self._external_asset_node.asset_key)
+        if isinstance(res, GrapheneAssetCheckNeedsMigrationError):
+            return []
+        return res.checks
 
 
 class GrapheneAssetGroup(graphene.ObjectType):

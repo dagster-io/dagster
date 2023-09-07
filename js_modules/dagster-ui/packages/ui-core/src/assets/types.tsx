@@ -19,5 +19,6 @@ export interface AssetViewParams {
   time?: string;
   asOf?: string;
   evaluation?: string;
-  check_detail?: string;
+  checkDetail?: string;
+  default_range?: string;
 }

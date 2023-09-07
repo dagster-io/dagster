@@ -21,7 +21,10 @@ import {MetadataEntryFragment} from '../metadata/types/MetadataEntry.types';
 import {EventTypeColumn} from './LogsRowComponents';
 import {IRunMetadataDict} from './RunMetadataProvider';
 import {eventTypeToDisplayType} from './getRunFilterProviders';
-import {LogsRowStructuredFragment} from './types/LogsRow.types';
+import {
+  LogsRowStructuredFragment,
+  LogsRowStructuredFragment_AssetCheckEvaluationEvent_,
+} from './types/LogsRow.types';
 
 interface IStructuredContentProps {
   node: LogsRowStructuredFragment;
@@ -215,7 +218,7 @@ export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({nod
       return <DefaultContent message={node.message} />;
     case 'LogsCapturedEvent':
       const currentQuery = qs.parse(location.search, {ignoreQueryPrefix: true});
-      const updatedQuery = {...currentQuery, logType: 'stderr', logFileKey: node.stepKey};
+      const updatedQuery = {...currentQuery, logType: 'stderr', logFileKey: node.fileKey};
       const rawLogsUrl = `${location.pathname}?${qs.stringify(updatedQuery)}`;
       const rawLogsLink = (
         <Link to={rawLogsUrl} style={{color: 'inherit'}}>
@@ -247,7 +250,7 @@ export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({nod
     case 'AssetCheckEvaluationPlannedEvent':
       return <DefaultContent message={node.message} eventType={eventType} />;
     case 'AssetCheckEvaluationEvent':
-      return <DefaultContent message={node.message} eventType={eventType} />;
+      return <AssetCheckEvaluationContent node={node} eventType={eventType} />;
     default:
       // This allows us to check that the switch is exhaustive because the union type should
       // have been narrowed following each successive case to `never` at this point.
@@ -418,6 +421,36 @@ const StepUpForRetryContent: React.FC<{
         {errorCause}
       </Box>
     </>
+  );
+};
+
+const AssetCheckEvaluationContent: React.FC<{
+  node: LogsRowStructuredFragment_AssetCheckEvaluationEvent_;
+  eventType: string;
+}> = ({node, eventType}) => {
+  const {checkName, success, metadataEntries, targetMaterialization, assetKey} = node.evaluation;
+
+  const checkLink = assetDetailsPathForKey(assetKey, {
+    view: 'checks',
+    checkDetail: checkName,
+  });
+
+  const matLink = assetDetailsPathForKey(assetKey, {
+    view: 'events',
+    asOf: targetMaterialization ? `${targetMaterialization.timestamp}` : undefined,
+  });
+
+  return (
+    <DefaultContent message="" eventType={eventType}>
+      <div>
+        <div>
+          Check <MetadataEntryLink to={checkLink}>{checkName}</MetadataEntryLink>
+          {` ${success ? 'succeeded' : 'failed'} for materialization of `}
+          <MetadataEntryLink to={matLink}>{displayNameForAssetKey(assetKey)}</MetadataEntryLink>.
+        </div>
+        <MetadataEntries entries={metadataEntries} />
+      </div>
+    </DefaultContent>
   );
 };
 

@@ -46,6 +46,9 @@ class AssetSensorDefinition(SensorDefinition):
     """Define an asset sensor that initiates a set of runs based on the materialization of a given
     asset.
 
+    If the asset has been materialized multiple times between since the last sensor tick, the
+    evaluation function will only be invoked once, with the latest materialization.
+
     Args:
         name (str): The name of the sensor to create.
         asset_key (AssetKey): The asset_key this sensor monitors.

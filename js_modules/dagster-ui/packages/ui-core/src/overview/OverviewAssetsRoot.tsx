@@ -19,7 +19,7 @@ import styled from 'styled-components';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
-import {StatusCase, buildAssetNodeStatusContent} from '../asset-graph/AssetNode';
+import {StatusCase, buildAssetNodeStatusContent} from '../asset-graph/AssetNodeStatusContent';
 import {displayNameForAssetKey, toGraphId} from '../asset-graph/Utils';
 import {useLiveDataForAssetKeys} from '../asset-graph/useLiveDataForAssetKeys';
 import {partitionCountString} from '../assets/AssetNodePartitionCounts';

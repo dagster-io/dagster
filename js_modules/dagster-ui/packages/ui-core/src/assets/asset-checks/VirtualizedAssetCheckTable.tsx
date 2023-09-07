@@ -4,7 +4,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {AssetCheckExecutionStatus, AssetCheckSeverity, AssetKeyInput} from '../../graphql/types';
+import {AssetKeyInput} from '../../graphql/types';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 import {testId} from '../../testing/testId';
 import {HeaderCell, Row, RowCell, Container, Inner} from '../../ui/VirtualizedTable';
@@ -21,15 +21,10 @@ type Check = Extract<
 
 type Props = {
   assetKey: AssetKeyInput;
-  lastMaterializationRunId: string | undefined;
   rows: Check[];
 };
 
-export const VirtualizedAssetCheckTable: React.FC<Props> = ({
-  assetKey,
-  rows,
-  lastMaterializationRunId,
-}: Props) => {
+export const VirtualizedAssetCheckTable: React.FC<Props> = ({assetKey, rows}: Props) => {
   const parentRef = React.useRef<HTMLDivElement | null>(null);
   const count = rows.length;
 
@@ -57,7 +52,6 @@ export const VirtualizedAssetCheckTable: React.FC<Props> = ({
                 height={size}
                 start={start}
                 row={row}
-                lastMaterializationRunId={lastMaterializationRunId}
               />
             );
           })}
@@ -67,47 +61,27 @@ export const VirtualizedAssetCheckTable: React.FC<Props> = ({
   );
 };
 
-const TEMPLATE_COLUMNS = '2fr 80px 120px 1fr 1fr';
+const TEMPLATE_COLUMNS = '2fr 120px 1fr 1fr';
 
 interface AssetCheckRowProps {
   assetKey: AssetKeyInput;
   height: number;
   start: number;
   row: Check;
-  lastMaterializationRunId: string | undefined;
 }
 
-export const VirtualizedAssetCheckRow = ({
-  assetKey,
-  height,
-  start,
-  row,
-  lastMaterializationRunId,
-}: AssetCheckRowProps) => {
-  const lastExecution = row.executions[0];
-  const timestamp = lastExecution?.evaluation?.timestamp;
+export const VirtualizedAssetCheckRow = ({assetKey, height, start, row}: AssetCheckRowProps) => {
+  const execution = row.executionForLatestMaterialization;
+  const timestamp = execution?.evaluation?.timestamp;
 
   const status = React.useMemo(() => {
-    if (
-      // If the latest execution's target materialization's run ID doesn't match the latest materialization's run id
-      // for the asset, then that means this check was not checked on that materialization.
-      (!lastExecution ||
-        lastExecution.evaluation?.targetMaterialization?.runId !== lastMaterializationRunId) &&
-      lastExecution?.status !== AssetCheckExecutionStatus.PLANNED
-    ) {
+    if (!execution) {
       return <AssetCheckStatusTag notChecked={true} />;
     }
-    return <AssetCheckStatusTag status={lastExecution.status} severity={row.severity} />;
-  }, [lastExecution, lastMaterializationRunId, row.severity]);
-
-  const severity = React.useMemo(() => {
-    switch (row.severity) {
-      case AssetCheckSeverity.ERROR:
-        return 'Error';
-      case AssetCheckSeverity.WARN:
-        return 'Warn';
-    }
-  }, [row.severity]);
+    return (
+      <AssetCheckStatusTag status={execution.status} severity={execution.evaluation?.severity} />
+    );
+  }, [execution]);
 
   return (
     <Row $height={height} $start={start} data-testid={testId(`row-#TODO_USE_CHECK_ID`)}>
@@ -117,7 +91,7 @@ export const VirtualizedAssetCheckRow = ({
             <Link
               to={assetDetailsPathForKey(assetKey, {
                 view: 'checks',
-                check_detail: row.name,
+                checkDetail: row.name,
               })}
             >
               <Body2>{row.name}</Body2>
@@ -126,14 +100,11 @@ export const VirtualizedAssetCheckRow = ({
           </Box>
         </RowCell>
         <RowCell style={{flexDirection: 'row', alignItems: 'center'}}>
-          <Body2 color={Colors.Dark}>{severity}</Body2>
-        </RowCell>
-        <RowCell style={{flexDirection: 'row', alignItems: 'center'}}>
           <div>{status}</div>
         </RowCell>
         <RowCell style={{flexDirection: 'row', alignItems: 'center'}}>
           {timestamp ? (
-            <Link to={`/runs/${lastExecution.runId}`}>
+            <Link to={`/runs/${execution.runId}`}>
               <TimestampDisplay timestamp={timestamp} />
             </Link>
           ) : (
@@ -141,7 +112,7 @@ export const VirtualizedAssetCheckRow = ({
           )}
         </RowCell>
         <RowCell>
-          <MetadataCell metadataEntries={row.executions[0]?.evaluation?.metadataEntries} />
+          <MetadataCell metadataEntries={execution?.evaluation?.metadataEntries} />
         </RowCell>
       </RowGrid>
     </Row>
@@ -168,7 +139,6 @@ export const VirtualizedAssetCheckHeader = () => {
       }}
     >
       <HeaderCell>Check name</HeaderCell>
-      <HeaderCell>Severity</HeaderCell>
       <HeaderCell>Status</HeaderCell>
       <HeaderCell>Evaluation timestamp</HeaderCell>
       <HeaderCell>Evaluation metadata</HeaderCell>

@@ -15,28 +15,32 @@ from typing import (
     Mapping,
     Optional,
     Union,
-    cast,
 )
 
 import dateutil.parser
 import orjson
 from dagster import (
+    AssetCheckResult,
+    AssetCheckSeverity,
     AssetObservation,
     AssetsDefinition,
     ConfigurableResource,
     OpExecutionContext,
     Output,
-    _check as check,
     get_dagster_logger,
 )
 from dagster._annotations import public
 from dagster._core.errors import DagsterInvalidPropertyError
-from dbt.contracts.results import NodeStatus
+from dbt.contracts.results import NodeStatus, TestStatus
 from dbt.node_types import NodeType
 from pydantic import Field, validator
 from typing_extensions import Literal
 
-from ..asset_utils import get_manifest_and_translator_from_dbt_assets, output_name_fn
+from ..asset_utils import (
+    get_manifest_and_translator_from_dbt_assets,
+    is_asset_check_from_dbt_resource_props,
+    output_name_fn,
+)
 from ..dagster_dbt_translator import DagsterDbtTranslator
 from ..dbt_manifest import DbtManifestParam, validate_manifest
 from ..errors import DagsterDbtCliRuntimeError
@@ -78,7 +82,7 @@ class DbtCliEventMessage:
         self,
         manifest: DbtManifestParam,
         dagster_dbt_translator: DagsterDbtTranslator = DagsterDbtTranslator(),
-    ) -> Iterator[Union[Output, AssetObservation]]:
+    ) -> Iterator[Union[Output, AssetObservation, AssetCheckResult]]:
         """Convert a dbt CLI event to a set of corresponding Dagster events.
 
         Args:
@@ -87,9 +91,10 @@ class DbtCliEventMessage:
                 linking dbt nodes to Dagster assets.
 
         Returns:
-            Iterator[Union[Output, AssetObservation]]: A set of corresponding Dagster events.
-                - AssetMaterializations for refables (e.g. models, seeds, snapshots.)
-                - AssetObservations for test results.
+            Iterator[Union[Output, AssetObservation, AssetCheckResult]]: A set of corresponding Dagster events.
+                - Output for refables (e.g. models, seeds, snapshots.)
+                - AssetObservation for dbt test results that are not enabled as asset checks.
+                - AssetCheckResult for dbt test results that are enabled as asset checks.
         """
         if self.raw_event["info"]["level"] == "debug":
             return
@@ -99,6 +104,11 @@ class DbtCliEventMessage:
             return
 
         manifest = validate_manifest(manifest)
+
+        if not manifest:
+            logger.info(
+                "No dbt manifest was provided. Dagster events for dbt tests will not be created."
+            )
 
         unique_id: str = event_node_info["unique_id"]
         node_resource_type: str = event_node_info["resource_type"]
@@ -119,22 +129,33 @@ class DbtCliEventMessage:
                     "Execution Duration": duration_seconds,
                 },
             )
-        elif node_resource_type == NodeType.Test and is_node_finished:
+        elif manifest and node_resource_type == NodeType.Test and is_node_finished:
             upstream_unique_ids: List[str] = manifest["parent_map"][unique_id]
 
             for upstream_unique_id in upstream_unique_ids:
-                upstream_node_info: Dict[str, Any] = manifest["nodes"].get(
+                test_resource_props = manifest["nodes"][unique_id]
+                upstream_resource_props: Dict[str, Any] = manifest["nodes"].get(
                     upstream_unique_id
                 ) or manifest["sources"].get(upstream_unique_id)
-                upstream_asset_key = dagster_dbt_translator.get_asset_key(upstream_node_info)
+                upstream_asset_key = dagster_dbt_translator.get_asset_key(upstream_resource_props)
 
-                yield AssetObservation(
-                    asset_key=upstream_asset_key,
-                    metadata={
-                        "unique_id": unique_id,
-                        "status": node_status,
-                    },
-                )
+                is_test_successful = node_status == TestStatus.Pass
+                metadata = {"unique_id": unique_id, "status": node_status}
+                severity = AssetCheckSeverity(test_resource_props["config"]["severity"].upper())
+
+                if is_asset_check_from_dbt_resource_props(test_resource_props):
+                    yield AssetCheckResult(
+                        success=is_test_successful,
+                        asset_key=upstream_asset_key,
+                        check_name=event_node_info["node_name"],
+                        metadata=metadata,
+                        severity=severity,
+                    )
+                else:
+                    yield AssetObservation(
+                        asset_key=upstream_asset_key,
+                        metadata=metadata,
+                    )
 
 
 @dataclass
@@ -227,15 +248,11 @@ class DbtCliInvocation:
         Examples:
             .. code-block:: python
 
-                import json
-                from pathlib import Path
-
                 from dagster_dbt import DbtCliResource
 
-                manifest = json.loads(Path("path/to/manifest.json").read_text())
                 dbt = DbtCliResource(project_dir="/path/to/dbt/project")
 
-                dbt_cli_invocation = dbt.cli(["run"], manifest=manifest).wait()
+                dbt_cli_invocation = dbt.cli(["run"]).wait()
         """
         list(self.stream_raw_events())
 
@@ -251,15 +268,11 @@ class DbtCliInvocation:
         Examples:
             .. code-block:: python
 
-                import json
-                from pathlib import Path
-
                 from dagster_dbt import DbtCliResource
 
-                manifest = json.loads(Path("path/to/manifest.json").read_text())
                 dbt = DbtCliResource(project_dir="/path/to/dbt/project")
 
-                dbt_cli_invocation = dbt.cli(["run"], manifest=manifest, raise_on_error=False)
+                dbt_cli_invocation = dbt.cli(["run"], raise_on_error=False)
 
                 if dbt_cli_invocation.is_successful():
                     ...
@@ -267,13 +280,14 @@ class DbtCliInvocation:
         return self.process.wait() == 0
 
     @public
-    def stream(self) -> Iterator[Union[Output, AssetObservation]]:
+    def stream(self) -> Iterator[Union[Output, AssetObservation, AssetCheckResult]]:
         """Stream the events from the dbt CLI process and convert them to Dagster events.
 
         Returns:
-            Iterator[Union[Output, AssetObservation]]: A set of corresponding Dagster events.
+            Iterator[Union[Output, AssetObservation, AssetCheckResult]]: A set of corresponding Dagster events.
                 - Output for refables (e.g. models, seeds, snapshots.)
-                - AssetObservations for test results.
+                - AssetObservation for dbt test results that are not enabled as asset checks.
+                - AssetCheckResult for dbt test results that are enabled as asset checks.
 
         Examples:
             .. code-block:: python
@@ -338,15 +352,11 @@ class DbtCliInvocation:
         Examples:
             .. code-block:: python
 
-                import json
-                from pathlib import Path
-
                 from dagster_dbt import DbtCliResource
 
-                manifest = json.loads(Path("path/to/manifest.json").read_text())
                 dbt = DbtCliResource(project_dir="/path/to/dbt/project")
 
-                dbt_cli_invocation = dbt.cli(["run"], manifest=manifest).wait()
+                dbt_cli_invocation = dbt.cli(["run"]).wait()
 
                 # Retrieve the run_results.json artifact.
                 run_results = dbt_cli_invocation.get_artifact("run_results.json")
@@ -608,6 +618,27 @@ class DbtCliResource(ConfigurableResource):
                         yield from dbt_run_invocation.stream()
                     else:
                         ...
+
+            Invoking a dbt CLI command in a custom asset or op:
+
+            .. code-block:: python
+
+                import json
+
+                from dagster import asset, op
+                from dagster_dbt import DbtCliResource
+
+
+                @asset
+                def my_dbt_asset(dbt: DbtCliResource):
+                    dbt_macro_args = {"key": "value"}
+                    dbt.cli(["run-operation", "my-macro", json.dumps(dbt_macro_args)]).wait()
+
+
+                @op
+                def my_dbt_op(dbt: DbtCliResource):
+                    dbt_macro_args = {"key": "value"}
+                    dbt.cli(["run-operation", "my-macro", json.dumps(dbt_macro_args)]).wait()
         """
         target_path = self._get_unique_target_path(context=context)
         env = {
@@ -638,6 +669,8 @@ class DbtCliResource(ConfigurableResource):
         with suppress(DagsterInvalidPropertyError):
             assets_def = context.assets_def if context else None
 
+        selection_args: List[str] = []
+        dagster_dbt_translator = dagster_dbt_translator or DagsterDbtTranslator()
         if context and assets_def is not None:
             manifest, dagster_dbt_translator = get_manifest_and_translator_from_dbt_assets(
                 [assets_def]
@@ -648,19 +681,11 @@ class DbtCliResource(ConfigurableResource):
                 select=context.op.tags.get("dagster-dbt/select"),
                 exclude=context.op.tags.get("dagster-dbt/exclude"),
             )
-        elif manifest is None:
-            check.failed(
-                "Must provide a value for the manifest argument if not executing as part of"
-                " @dbt_assets"
-            )
         else:
-            selection_args: List[str] = []
-            manifest = validate_manifest(manifest)
-            dagster_dbt_translator = dagster_dbt_translator or DagsterDbtTranslator()
+            manifest = validate_manifest(manifest) if manifest else {}
 
         # TODO: verify that args does not have any selection flags if the context and manifest
         # are passed to this function.
-
         profile_args: List[str] = []
         if self.profile:
             profile_args = ["--profile", self.profile]
@@ -674,7 +699,7 @@ class DbtCliResource(ConfigurableResource):
         return DbtCliInvocation.run(
             args=args,
             env=env,
-            manifest=cast(Mapping[str, Any], manifest),
+            manifest=manifest,
             dagster_dbt_translator=dagster_dbt_translator,
             project_dir=project_dir,
             target_path=project_dir.joinpath(target_path),

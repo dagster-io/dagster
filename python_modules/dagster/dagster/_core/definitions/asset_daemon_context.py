@@ -53,6 +53,34 @@ if TYPE_CHECKING:
     from dagster._utils.caching_instance_queryer import CachingInstanceQueryer  # expensive import
 
 
+def get_implicit_auto_materialize_policy(
+    asset_key: AssetKey, asset_graph: AssetGraph
+) -> Optional[AutoMaterializePolicy]:
+    """For backcompat with pre-auto materialize policy graphs, assume a default scope of 1 day."""
+    auto_materialize_policy = asset_graph.get_auto_materialize_policy(asset_key)
+    if auto_materialize_policy is None:
+        time_partitions_def = get_time_partitions_def(asset_graph.get_partitions_def(asset_key))
+        if time_partitions_def is None:
+            max_materializations_per_minute = None
+        elif time_partitions_def.schedule_type == ScheduleType.HOURLY:
+            max_materializations_per_minute = 24
+        else:
+            max_materializations_per_minute = 1
+        rules = {
+            AutoMaterializeRule.materialize_on_missing(),
+            AutoMaterializeRule.materialize_on_required_for_freshness(),
+            AutoMaterializeRule.skip_on_parent_outdated(),
+            AutoMaterializeRule.skip_on_parent_missing(),
+        }
+        if not bool(asset_graph.get_downstream_freshness_policies(asset_key=asset_key)):
+            rules.add(AutoMaterializeRule.materialize_on_parent_updated())
+        return AutoMaterializePolicy(
+            rules=rules,
+            max_materializations_per_minute=max_materializations_per_minute,
+        )
+    return auto_materialize_policy
+
+
 class AssetDaemonContext:
     def __init__(
         self,
@@ -134,35 +162,6 @@ class AssetDaemonContext:
     @property
     def respect_materialization_data_versions(self) -> bool:
         return self._respect_materialization_data_versions
-
-    def get_implicit_auto_materialize_policy(
-        self, asset_key: AssetKey
-    ) -> Optional[AutoMaterializePolicy]:
-        """For backcompat with pre-auto materialize policy graphs, assume a default scope of 1 day."""
-        auto_materialize_policy = self.asset_graph.get_auto_materialize_policy(asset_key)
-        if auto_materialize_policy is None:
-            time_partitions_def = get_time_partitions_def(
-                self.asset_graph.get_partitions_def(asset_key)
-            )
-            if time_partitions_def is None:
-                max_materializations_per_minute = None
-            elif time_partitions_def.schedule_type == ScheduleType.HOURLY:
-                max_materializations_per_minute = 24
-            else:
-                max_materializations_per_minute = 1
-            rules = {
-                AutoMaterializeRule.materialize_on_missing(),
-                AutoMaterializeRule.materialize_on_required_for_freshness(),
-                AutoMaterializeRule.skip_on_parent_outdated(),
-                AutoMaterializeRule.skip_on_parent_missing(),
-            }
-            if not bool(self.asset_graph.get_downstream_freshness_policies(asset_key=asset_key)):
-                rules.add(AutoMaterializeRule.materialize_on_parent_updated())
-            return AutoMaterializePolicy(
-                rules=rules,
-                max_materializations_per_minute=max_materializations_per_minute,
-            )
-        return auto_materialize_policy
 
     @cached_method
     def _get_never_handled_and_newly_handled_root_asset_partitions(
@@ -313,7 +312,7 @@ class AssetDaemonContext:
             - The set of AssetKeyPartitionKeys that should be discarded.
         """
         auto_materialize_policy = check.not_none(
-            self.get_implicit_auto_materialize_policy(asset_key)
+            self.asset_graph.auto_materialize_policies_by_key.get(asset_key)
         )
 
         # the results of evaluating individual rules
@@ -338,6 +337,8 @@ class AssetDaemonContext:
 
         for materialize_rule in auto_materialize_policy.materialize_rules:
             rule_snapshot = materialize_rule.to_snapshot()
+
+            self._logger.debug(f"Evaluating materialize rule: {rule_snapshot}")
             for evaluation_data, asset_partitions in materialize_rule.evaluate_for_asset(
                 materialize_context
             ):
@@ -349,7 +350,9 @@ class AssetDaemonContext:
                         asset_partitions,
                     )
                 )
+                self._logger.debug(f"Rule returned {len(asset_partitions)} partitions")
                 to_materialize.update(asset_partitions)
+            self._logger.debug("Done evaluating materialize rule")
 
         # These should be conditions, but aren't currently, so we just manually strip out things
         # from our materialization set
@@ -377,6 +380,7 @@ class AssetDaemonContext:
 
         for skip_rule in auto_materialize_policy.skip_rules:
             rule_snapshot = skip_rule.to_snapshot()
+            self._logger.debug(f"Evaluating skip rule: {rule_snapshot}")
             for evaluation_data, asset_partitions in skip_rule.evaluate_for_asset(skip_context):
                 all_results.append(
                     (
@@ -386,7 +390,9 @@ class AssetDaemonContext:
                         asset_partitions,
                     )
                 )
+                self._logger.debug(f"Rule returned {len(asset_partitions)} partitions")
                 to_skip.update(asset_partitions)
+            self._logger.debug("Done evaluating skip rule")
         to_materialize.difference_update(to_skip)
 
         # this is treated separately from other rules, for now
@@ -395,6 +401,9 @@ class AssetDaemonContext:
                 limit=auto_materialize_policy.max_materializations_per_minute
             )
             rule_snapshot = rule.to_snapshot()
+
+            self._logger.debug(f"Evaluating discard rule: {rule_snapshot}")
+
             for evaluation_data, asset_partitions in rule.evaluate_for_asset(
                 skip_context._replace(candidates=to_materialize)
             ):
@@ -406,7 +415,10 @@ class AssetDaemonContext:
                         asset_partitions,
                     )
                 )
+                self._logger.debug(f"Discard rule returned {len(asset_partitions)} partitions")
                 to_discard.update(asset_partitions)
+            self._logger.debug("Done evaluating discard rule")
+
         to_materialize.difference_update(to_discard)
         to_skip.difference_update(to_discard)
 
@@ -445,6 +457,9 @@ class AssetDaemonContext:
             # an asset may have already been visited if it was part of a non-subsettable multi-asset
             if asset_key not in self.target_asset_keys or asset_key in visited_multi_asset_keys:
                 continue
+
+            self._logger.debug(f"Evaluating asset {asset_key.to_user_string()}")
+
             (evaluation, to_materialize_for_asset, to_discard_for_asset) = self.evaluate_asset(
                 asset_key, will_materialize_mapping, expected_data_time_mapping
             )

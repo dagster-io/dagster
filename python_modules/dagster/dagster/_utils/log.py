@@ -249,17 +249,17 @@ def configure_loggers(handler="default", log_level="INFO"):
         "loggers": {
             "dagster": {
                 "handlers": [handler],
-                "level": "INFO",
+                "level": log_level,
             },
             # Only one of dagster or dagster-webserver will be used at a time. We configure them
             # both here to avoid a dependency on the dagster-webserver package.
             "dagit": {
                 "handlers": [handler],
-                "level": "INFO",
+                "level": log_level,
             },
             "dagster-webserver": {
                 "handlers": [handler],
-                "level": "INFO",
+                "level": log_level,
             },
         },
     }

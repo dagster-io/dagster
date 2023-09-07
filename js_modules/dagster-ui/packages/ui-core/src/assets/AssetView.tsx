@@ -70,8 +70,13 @@ export const AssetView = ({assetKey}: Props) => {
   const {definition, definitionQueryResult, lastMaterialization} = useAssetViewAssetDefinition(
     assetKey,
   );
+  const tabList = React.useMemo(() => tabBuilder({definition, params}), [
+    definition,
+    params,
+    tabBuilder,
+  ]);
 
-  const defaultTab = definition?.partitionDefinition ? 'partitions' : 'events';
+  const defaultTab = tabList.some((t) => t.id === 'partitions') ? 'partitions' : 'events';
   const selectedTab = params.view || defaultTab;
 
   // Load the asset graph - a large graph for the Lineage tab, a small graph for the Definition tab
@@ -109,12 +114,6 @@ export const AssetView = ({assetKey}: Props) => {
     useQueryRefreshAtInterval(definitionQueryResult, FIFTEEN_SECONDS),
     liveDataRefreshState,
   );
-
-  const tabList = React.useMemo(() => tabBuilder({definition, params}), [
-    definition,
-    params,
-    tabBuilder,
-  ]);
 
   const renderDefinitionTab = () => {
     if (definitionQueryResult.loading && !definitionQueryResult.previousData) {
@@ -222,7 +221,6 @@ export const AssetView = ({assetKey}: Props) => {
       <AssetChecks
         assetKey={assetKey}
         lastMaterializationTimestamp={lastMaterialization?.timestamp}
-        lastMaterializationRunId={lastMaterialization?.runId}
       />
     );
   };

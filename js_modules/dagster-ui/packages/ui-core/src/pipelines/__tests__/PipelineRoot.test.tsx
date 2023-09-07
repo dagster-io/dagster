@@ -5,6 +5,7 @@ import {MemoryRouter} from 'react-router-dom';
 import {TestPermissionsProvider} from '../../testing/TestPermissions';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {repoAddressAsURLString} from '../../workspace/repoAddressAsString';
+import {JobFeatureProvider} from '../JobFeatureContext';
 import {PipelineRoot} from '../PipelineRoot';
 
 jest.mock('../../launchpad/LaunchpadAllowedRoot', () => ({
@@ -51,9 +52,11 @@ describe('PipelineRoot', () => {
 
   it('renders overview by default', async () => {
     render(
-      <MemoryRouter initialEntries={[path]}>
-        <PipelineRoot repoAddress={repoAddress} />
-      </MemoryRouter>,
+      <JobFeatureProvider>
+        <MemoryRouter initialEntries={[path]}>
+          <PipelineRoot repoAddress={repoAddress} />
+        </MemoryRouter>
+      </JobFeatureProvider>,
     );
 
     const overviewDummy = await screen.findByText(/pipeline overview placeholder/i);
@@ -68,11 +71,13 @@ describe('PipelineRoot', () => {
     };
 
     render(
-      <TestPermissionsProvider locationOverrides={locationPermissions}>
-        <MemoryRouter initialEntries={[`${path}/playground`]}>
-          <PipelineRoot repoAddress={repoAddress} />
-        </MemoryRouter>
-      </TestPermissionsProvider>,
+      <JobFeatureProvider>
+        <TestPermissionsProvider locationOverrides={locationPermissions}>
+          <MemoryRouter initialEntries={[`${path}/playground`]}>
+            <PipelineRoot repoAddress={repoAddress} />
+          </MemoryRouter>
+        </TestPermissionsProvider>
+      </JobFeatureProvider>,
     );
 
     const playgroundDummy = await screen.findByText(/launchpad allowed placeholder/i);
@@ -87,11 +92,13 @@ describe('PipelineRoot', () => {
     };
 
     render(
-      <TestPermissionsProvider locationOverrides={locationPermissions}>
-        <MemoryRouter initialEntries={[`${path}/playground`]}>
-          <PipelineRoot repoAddress={repoAddress} />
-        </MemoryRouter>
-      </TestPermissionsProvider>,
+      <JobFeatureProvider>
+        <TestPermissionsProvider locationOverrides={locationPermissions}>
+          <MemoryRouter initialEntries={[`${path}/playground`]}>
+            <PipelineRoot repoAddress={repoAddress} />
+          </MemoryRouter>
+        </TestPermissionsProvider>
+      </JobFeatureProvider>,
     );
 
     const overviewDummy = await screen.findByText(/pipeline or job disambiguation placeholder/i);

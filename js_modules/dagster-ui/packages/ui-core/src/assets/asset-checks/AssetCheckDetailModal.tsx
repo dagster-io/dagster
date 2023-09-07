@@ -133,7 +133,8 @@ const AssetCheckDetailModalImpl = ({
     if (executionHistoryData.assetChecksOrError.__typename === 'AssetCheckNeedsMigrationError') {
       return <MigrationRequired />;
     }
-    if (!executionHistoryData.assetChecksOrError.checks[0]) {
+    const check = executionHistoryData.assetChecksOrError.checks[0];
+    if (!check) {
       showCustomAlert({
         title: 'Error',
         body: `Asset Check ${checkName} not found`,
@@ -144,7 +145,7 @@ const AssetCheckDetailModalImpl = ({
       });
       return <NoChecks />;
     }
-    const executions = executionHistoryData.assetChecksOrError.checks[0].executions;
+    const executions = check.executions;
     if (!executions.length) {
       return <NoExecutions />;
     }
@@ -154,27 +155,40 @@ const AssetCheckDetailModalImpl = ({
           <thead>
             <tr>
               <th>Timestamp</th>
+              <th>Target materialization</th>
               <th>Result</th>
               <th>Evaluation metadata</th>
             </tr>
           </thead>
           <tbody>
             {executions.map((execution) => {
-              const timestamp = execution.evaluation?.targetMaterialization?.timestamp;
               return (
                 <tr key={execution.id}>
                   <td>
-                    {timestamp ? (
-                      // @ts-expect-error - targetMaterialization is not null since timestamp is truthy in this branch
-                      <Link to={`/runs/${execution.evaluation.targetMaterialization.runId}`}>
-                        <TimestampDisplay timestamp={timestamp} />
+                    {execution.evaluation?.timestamp ? (
+                      <Link to={`/runs/${execution.runId}`}>
+                        <TimestampDisplay timestamp={execution.evaluation.timestamp} />
                       </Link>
                     ) : (
                       ' - '
                     )}
                   </td>
                   <td>
-                    <AssetCheckStatusTag status={execution.status} />
+                    {execution.evaluation?.targetMaterialization ? (
+                      <Link to={`/runs/${execution.evaluation.targetMaterialization.runId}`}>
+                        <TimestampDisplay
+                          timestamp={execution.evaluation.targetMaterialization.timestamp}
+                        />
+                      </Link>
+                    ) : (
+                      ' - '
+                    )}
+                  </td>
+                  <td>
+                    <AssetCheckStatusTag
+                      status={execution.status}
+                      severity={execution.evaluation?.severity}
+                    />
                   </td>
                   <td>
                     <MetadataCell metadataEntries={execution.evaluation?.metadataEntries} />
@@ -238,6 +252,7 @@ export const ASSET_CHECK_EXECUTION_FRAGMENT = gql`
     runId
     status
     evaluation {
+      severity
       timestamp
       targetMaterialization {
         timestamp
@@ -285,7 +300,7 @@ export function MigrationRequired() {
         description={
           <Box flex={{direction: 'column'}}>
             <Body2 color={Colors.Gray700} style={{padding: '6px 0'}}>
-              A data migration is required to use asset checks. Run{' '}
+              A database schema migration is required to use asset checks. Run{' '}
               <Mono>dagster instance migrate</Mono>.
             </Body2>
             {/* <Box

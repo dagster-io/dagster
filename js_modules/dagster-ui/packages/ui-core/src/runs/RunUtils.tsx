@@ -40,7 +40,7 @@ export function linkToRunEvent(
   return `/runs/${run.id}?${qs.stringify({
     focusedTime: event.timestamp ? Number(event.timestamp) : undefined,
     selection: event.stepKey,
-    logs: `step:${event.stepKey}`,
+    logs: event.stepKey ? `step:${event.stepKey}` : '',
   })}`;
 }
 

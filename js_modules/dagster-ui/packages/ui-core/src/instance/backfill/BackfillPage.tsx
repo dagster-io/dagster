@@ -11,8 +11,8 @@ import {
   Button,
   DialogFooter,
   ButtonLink,
-  DialogBody,
   NonIdealState,
+  Heading,
 } from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
@@ -21,7 +21,6 @@ import React from 'react';
 import {Link, useParams} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {showCustomAlert} from '../../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
 import {QueryRefreshCountdown, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
@@ -34,7 +33,9 @@ import {useDocumentTitle} from '../../hooks/useDocumentTitle';
 import {TruncatedTextWithFullTextOnHover} from '../../nav/getLeftNavItemsForOption';
 import {RunFilterToken, runsPathWithFilters} from '../../runs/RunsFilterInput';
 import {testId} from '../../testing/testId';
+import {VirtualizedItemListForDialog} from '../../ui/VirtualizedItemListForDialog';
 import {numberFormatter} from '../../ui/formatters';
+import {BackfillStatusTagForPage} from '../BackfillStatusTagForPage';
 
 import {
   BackfillStatusesByAssetQuery,
@@ -136,6 +137,17 @@ export const BackfillPage = () => {
       return runsPathWithFilters(filters);
     }
 
+    const linkQuery = () => {
+      if (backfill.assetBackfillData?.rootAssetTargetedRanges?.length === 1) {
+        const ranges = backfill.assetBackfillData?.rootAssetTargetedRanges;
+        if (ranges?.length) {
+          const {start, end} = ranges[0]!;
+          return {default_range: `[${start}...${end}]`};
+        }
+      }
+      return undefined;
+    };
+
     return (
       <>
         <Box
@@ -167,7 +179,7 @@ export const BackfillPage = () => {
             }
           />
           <Detail
-            label="Partition Selection"
+            label="Partition selection"
             detail={
               <PartitionSelection
                 numPartitions={backfill.numPartitions || 0}
@@ -178,7 +190,7 @@ export const BackfillPage = () => {
               />
             }
           />
-          <Detail label="Status" detail={<StatusLabel backfill={backfill} />} />
+          <Detail label="Status" detail={<BackfillStatusTagForPage backfill={backfill} />} />
         </Box>
         <Table>
           <thead>
@@ -223,7 +235,7 @@ export const BackfillPage = () => {
                   <td>
                     <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
                       <div>
-                        <Link to={assetDetailsPathForKey(asset.assetKey)}>
+                        <Link to={assetDetailsPathForKey(asset.assetKey, linkQuery())}>
                           {asset.assetKey.path.join('/')}
                         </Link>
                       </div>
@@ -273,13 +285,13 @@ export const BackfillPage = () => {
     <Page>
       <PageHeader
         title={
-          <div style={{fontSize: '18px'}}>
+          <Heading>
             <Link to="/overview/backfills" style={{color: Colors.Gray700}}>
               Backfills
             </Link>
             {' / '}
             {backfillId}
-          </div>
+          </Heading>
         }
         right={isInProgress ? <QueryRefreshCountdown refreshState={refreshState} /> : null}
       />
@@ -294,38 +306,6 @@ const Detail = ({label, detail}: {label: JSX.Element | string; detail: JSX.Eleme
     <div>{detail}</div>
   </Box>
 );
-
-const StatusLabel = ({backfill}: {backfill: PartitionBackfillFragment}) => {
-  function errorState(status: string) {
-    return (
-      <Box margin={{bottom: 12}}>
-        <TagButton
-          onClick={() =>
-            backfill.error &&
-            showCustomAlert({title: 'Error', body: <PythonErrorInfo error={backfill.error} />})
-          }
-        >
-          <Tag intent="danger">{status}</Tag>
-        </TagButton>
-      </Box>
-    );
-  }
-  switch (backfill.status) {
-    case BulkActionStatus.REQUESTED:
-      return <Tag>In Progress</Tag>;
-
-    case BulkActionStatus.CANCELING:
-      return errorState('Canceling');
-    case BulkActionStatus.CANCELED:
-      return errorState('Canceled');
-    case BulkActionStatus.FAILED:
-      return errorState('Failed');
-    case BulkActionStatus.COMPLETED:
-      return <Tag intent="success">Completed</Tag>;
-    default:
-      return <Tag>{backfill.status}</Tag>;
-  }
-};
 
 function StatusBar({
   targeted,
@@ -431,6 +411,8 @@ export const BACKFILL_DETAILS_QUERY = gql`
   ${PYTHON_ERROR_FRAGMENT}
 `;
 
+const COLLATOR = new Intl.Collator(navigator.language, {sensitivity: 'base', numeric: true});
+
 type AssetBackfillData = Extract<
   PartitionBackfillFragment['assetBackfillData'],
   {__typename: 'AssetBackfillData'}
@@ -447,78 +429,82 @@ export const PartitionSelection = ({
 }) => {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
 
-  let dialogContent: JSX.Element | undefined;
-  let content: JSX.Element | undefined;
   if (rootAssetTargetedPartitions) {
-    if (rootAssetTargetedPartitions.length > 3) {
-      dialogContent = (
-        <div>
-          {rootAssetTargetedPartitions.map((p) => (
-            <div key={p} style={{maxWidth: '100px'}}>
-              <TruncatedTextWithFullTextOnHover text={p} />
-            </div>
-          ))}
-        </div>
-      );
-      content = (
-        <ButtonLink
-          onClick={() => {
-            setIsDialogOpen(true);
-          }}
-        >
-          {numberFormatter.format(numPartitions)} partitions
-        </ButtonLink>
-      );
-    } else {
-      content = (
+    if (rootAssetTargetedPartitions.length <= 3) {
+      return (
         <Box flex={{direction: 'row', gap: 8, wrap: 'wrap'}}>
           {rootAssetTargetedPartitions.map((p) => (
-            <div key={p}>{p}</div>
+            <Tag key={p}>{p}</Tag>
           ))}
         </Box>
       );
     }
-  } else {
+
+    return (
+      <>
+        <ButtonLink onClick={() => setIsDialogOpen(true)}>
+          {numberFormatter.format(numPartitions)} partitions
+        </ButtonLink>
+        <Dialog
+          isOpen={isDialogOpen}
+          title={`Partition selection (${rootAssetTargetedPartitions.length})`}
+          onClose={() => setIsDialogOpen(false)}
+        >
+          <div style={{height: '340px', overflow: 'hidden'}}>
+            <VirtualizedItemListForDialog
+              items={[...rootAssetTargetedPartitions].sort((a, b) => COLLATOR.compare(a, b))}
+              renderItem={(assetKey) => (
+                <div key={assetKey}>
+                  <TruncatedTextWithFullTextOnHover text={assetKey} />
+                </div>
+              )}
+            />
+          </div>
+          <DialogFooter topBorder>
+            <Button onClick={() => setIsDialogOpen(false)}>Close</Button>
+          </DialogFooter>
+        </Dialog>
+      </>
+    );
+  }
+
+  if (rootAssetTargetedRanges) {
     if (rootAssetTargetedRanges?.length === 1) {
       const {start, end} = rootAssetTargetedRanges[0]!;
-      content = (
+      return (
         <div>
           {start}...{end}
         </div>
       );
-    } else {
-      content = (
-        <ButtonLink
-          onClick={() => {
-            setIsDialogOpen(true);
-          }}
-        >
+    }
+
+    return (
+      <>
+        <ButtonLink onClick={() => setIsDialogOpen(true)}>
           {numberFormatter.format(numPartitions)} partitions
         </ButtonLink>
-      );
-      dialogContent = (
-        <Box flex={{direction: 'column', gap: 8}}>
-          {rootAssetTargetedRanges?.map((r) => (
-            <div key={`${r.start}:${r.end}`}>
-              {r.start}...{r.end}
-            </div>
-          ))}
-        </Box>
-      );
-    }
+        <Dialog
+          isOpen={isDialogOpen}
+          title={`Partition selection (${rootAssetTargetedRanges?.length})`}
+          onClose={() => setIsDialogOpen(false)}
+        >
+          <div style={{height: '340px', overflow: 'hidden'}}>
+            <VirtualizedItemListForDialog
+              items={rootAssetTargetedRanges || []}
+              renderItem={({start, end}) => {
+                return <div key={`${start}:${end}`}>{`${start}...${end}`}</div>;
+              }}
+            />
+          </div>
+          <DialogFooter topBorder>
+            <Button onClick={() => setIsDialogOpen(false)}>Close</Button>
+          </DialogFooter>
+        </Dialog>
+      </>
+    );
   }
 
-  return (
-    <>
-      <div>{content}</div>
-      <Dialog isOpen={!!dialogContent && isDialogOpen} title="Partition selection">
-        <DialogBody>{dialogContent}</DialogBody>
-        <DialogFooter topBorder>
-          <Button onClick={() => setIsDialogOpen(false)}>Close</Button>
-        </DialogFooter>
-      </Dialog>
-    </>
-  );
+  return <div>{numPartitions === 1 ? '1 partition' : `${numPartitions} partitions`}</div>;
 };
 
 const formatDuration = (duration: number) => {
@@ -540,15 +526,3 @@ const formatDuration = (duration: number) => {
   }
   return result.trim();
 };
-
-const TagButton = styled.button`
-  border: none;
-  background: none;
-  cursor: pointer;
-  padding: 0;
-  margin: 0;
-
-  :focus {
-    outline: none;
-  }
-`;

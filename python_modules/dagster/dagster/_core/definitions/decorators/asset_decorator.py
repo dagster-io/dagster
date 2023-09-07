@@ -6,6 +6,7 @@ from typing import (
     Callable,
     Dict,
     Iterable,
+    List,
     Mapping,
     Optional,
     Sequence,
@@ -379,7 +380,7 @@ class _Asset:
             )
 
             check_specs_by_output_name = _validate_and_assign_output_names_to_check_specs(
-                self.check_specs
+                self.check_specs, [out_asset_key]
             )
             check_outs: Mapping[str, Out] = {
                 output_name: Out(dagster_type=None)
@@ -671,7 +672,9 @@ def multi_asset(
 
         asset_outs_by_output_name: Mapping[str, Out] = dict(output_tuples_by_asset_key.values())
 
-        check_specs_by_output_name = _validate_and_assign_output_names_to_check_specs(check_specs)
+        check_specs_by_output_name = _validate_and_assign_output_names_to_check_specs(
+            check_specs, list(output_tuples_by_asset_key.keys())
+        )
         check_outs_by_output_name: Mapping[str, Out] = {
             output_name: Out(dagster_type=None) for output_name in check_specs_by_output_name.keys()
         }
@@ -782,6 +785,27 @@ def multi_asset(
     return inner
 
 
+def get_function_params_without_context_or_config_or_resources(fn: Callable) -> List[Parameter]:
+    params = get_function_params(fn)
+    is_context_provided = len(params) > 0 and params[0].name in get_valid_name_permutations(
+        "context"
+    )
+    input_params = params[1:] if is_context_provided else params
+
+    resource_arg_names = {arg.name for arg in get_resource_args(fn)}
+
+    new_input_args = []
+    for input_arg in input_params:
+        if input_arg.name != "config" and input_arg.name not in resource_arg_names:
+            new_input_args.append(input_arg)
+
+    return new_input_args
+
+
+def stringify_asset_key_to_input_name(asset_key: AssetKey) -> str:
+    return "_".join(asset_key.path).replace("-", "_")
+
+
 def build_asset_ins(
     fn: Callable,
     asset_ins: Mapping[str, AssetIn],
@@ -790,20 +814,7 @@ def build_asset_ins(
     """Creates a mapping from AssetKey to (name of input, In object)."""
     deps = check.opt_set_param(deps, "deps", AssetKey)
 
-    params = get_function_params(fn)
-    is_context_provided = len(params) > 0 and params[0].name in get_valid_name_permutations(
-        "context"
-    )
-    input_params = params[1:] if is_context_provided else params
-
-    # Filter config, resource args
-    resource_arg_names = {arg.name for arg in get_resource_args(fn)}
-
-    new_input_args = []
-    for input_arg in input_params:
-        if input_arg.name != "config" and input_arg.name not in resource_arg_names:
-            new_input_args.append(input_arg)
-    input_params = new_input_args
+    new_input_args = get_function_params_without_context_or_config_or_resources(fn)
 
     non_var_input_param_names = [
         param.name for param in new_input_args if param.kind == Parameter.POSITIONAL_OR_KEYWORD
@@ -847,13 +858,15 @@ def build_asset_ins(
         )
 
     for asset_key in deps:
-        stringified_asset_key = "_".join(asset_key.path).replace("-", "_")
         if asset_key in ins_by_asset_key:
             raise DagsterInvalidDefinitionError(
                 f"deps value {asset_key} also declared as input/AssetIn"
             )
             # mypy doesn't realize that Nothing is a valid type here
-        ins_by_asset_key[asset_key] = (stringified_asset_key, In(cast(type, Nothing)))
+        ins_by_asset_key[asset_key] = (
+            stringify_asset_key_to_input_name(asset_key),
+            In(cast(type, Nothing)),
+        )
 
     return ins_by_asset_key
 
@@ -1189,26 +1202,13 @@ def _make_asset_keys(
 
     deps_asset_keys: Set[AssetKey] = set()
     for dep in deps:
-        deps_asset_keys.add(asset_key_from_coercible_or_definition(dep))
+        deps_asset_keys.add(AssetKey.from_coercible_or_definition(dep))
 
     return deps_asset_keys
 
 
-def asset_key_from_coercible_or_definition(
-    arg: Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]
-) -> AssetKey:
-    if isinstance(arg, AssetsDefinition):
-        # this will error if the AssetsDefinition is a multi_asset, but we should have caught that
-        # earlier in execution
-        return arg.key
-    elif isinstance(arg, SourceAsset):
-        return arg.key
-    else:
-        return AssetKey.from_coercible(arg)
-
-
 def _validate_and_assign_output_names_to_check_specs(
-    check_specs: Optional[Sequence[AssetCheckSpec]],
+    check_specs: Optional[Sequence[AssetCheckSpec]], valid_asset_keys: Sequence[AssetKey]
 ) -> Mapping[str, AssetCheckSpec]:
     check_specs_by_output_name = {spec.get_python_identifier(): spec for spec in check_specs or []}
     if check_specs and len(check_specs_by_output_name) != len(check_specs):
@@ -1221,5 +1221,12 @@ def _validate_and_assign_output_names_to_check_specs(
         }
 
         raise DagsterInvalidDefinitionError(f"Duplicate check specs: {duplicates}")
+
+    for spec in check_specs_by_output_name.values():
+        if spec.asset_key not in valid_asset_keys:
+            raise DagsterInvalidDefinitionError(
+                f"Invalid asset key {spec.asset_key} in check spec {spec.name}. Must be one of"
+                f" {valid_asset_keys}"
+            )
 
     return check_specs_by_output_name

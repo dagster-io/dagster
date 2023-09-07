@@ -4,11 +4,12 @@ import * as Types from '../../../graphql/types';
 
 export type AssetCheckExecutionFragment = {
   __typename: 'AssetCheckExecution';
-  id: number;
+  id: string;
   runId: string;
-  status: Types.AssetCheckExecutionStatus;
+  status: Types.AssetCheckExecutionResolvedStatus;
   evaluation: {
     __typename: 'AssetCheckEvaluation';
+    severity: Types.AssetCheckSeverity;
     timestamp: number;
     targetMaterialization: {
       __typename: 'AssetCheckEvaluationTargetMaterializationData';
@@ -145,11 +146,12 @@ export type AssetCheckDetailsQuery = {
           description: string | null;
           executions: Array<{
             __typename: 'AssetCheckExecution';
-            id: number;
+            id: string;
             runId: string;
-            status: Types.AssetCheckExecutionStatus;
+            status: Types.AssetCheckExecutionResolvedStatus;
             evaluation: {
               __typename: 'AssetCheckEvaluation';
+              severity: Types.AssetCheckSeverity;
               timestamp: number;
               targetMaterialization: {
                 __typename: 'AssetCheckEvaluationTargetMaterializationData';

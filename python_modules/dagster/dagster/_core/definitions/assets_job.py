@@ -22,7 +22,6 @@ from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.selector.subset_selector import AssetSelectionData
 from dagster._utils.merger import merge_dicts
 
-from .asset_check_spec import AssetCheckSeverity, AssetCheckSpec
 from .asset_checks import AssetChecksDefinition
 from .asset_layer import AssetLayer
 from .assets import AssetsDefinition
@@ -34,7 +33,6 @@ from .dependency import (
     IDependencyDefinition,
     NodeHandle,
     NodeInvocation,
-    NodeOutputHandle,
 )
 from .events import AssetKey
 from .executor_definition import ExecutorDefinition
@@ -213,7 +211,11 @@ def build_assets_job(
             *(asset_check.node_def for asset_check in asset_checks),
         ]
     else:
-        node_defs = list(filter(None, [asset.node_def for asset in [*source_assets]]))
+        node_defs = [
+            asset.node_def
+            for asset in source_assets
+            if isinstance(asset, SourceAsset) and asset.is_observable and asset.node_def is not None
+        ]
 
     graph = GraphDefinition(
         name=name,
@@ -441,12 +443,6 @@ def build_node_deps(
         node_key = NodeInvocation(node_def_name)
         asset_checks_defs_by_node_handle[NodeHandle(node_def_name, parent=None)] = asset_checks_def
 
-    blocking_asset_check_output_handles_by_asset_key = (
-        _get_blocking_asset_check_output_handles_by_asset_key(
-            assets_defs_by_node_handle, asset_checks_defs_by_node_handle
-        )
-    )
-
     deps: Dict[NodeInvocation, Dict[str, IDependencyDefinition]] = {}
     for node_handle, assets_def in assets_defs_by_node_handle.items():
         # the key that we'll use to reference the node inside this AssetsDefinition
@@ -465,31 +461,12 @@ def build_node_deps(
             if upstream_asset_key in assets_def.keys:
                 continue
 
-            blocking_asset_check_output_handles = (
-                blocking_asset_check_output_handles_by_asset_key.get(upstream_asset_key)
-            )
-            asset_check_deps = [
-                DependencyDefinition(
-                    node_output_handle.node_handle.name, node_output_handle.output_name
-                )
-                for node_output_handle in blocking_asset_check_output_handles or []
-            ]
-
             if upstream_asset_key in node_alias_and_output_by_asset_key:
                 upstream_node_alias, upstream_output_name = node_alias_and_output_by_asset_key[
                     upstream_asset_key
                 ]
                 asset_dep_def = DependencyDefinition(upstream_node_alias, upstream_output_name)
-                if blocking_asset_check_output_handles:
-                    deps[node_key][input_name] = BlockingAssetChecksDependencyDefinition(
-                        asset_check_dependencies=asset_check_deps, other_dependency=asset_dep_def
-                    )
-                else:
-                    deps[node_key][input_name] = asset_dep_def
-            elif asset_check_deps:
-                deps[node_key][input_name] = BlockingAssetChecksDependencyDefinition(
-                    asset_check_dependencies=asset_check_deps, other_dependency=None
-                )
+                deps[node_key][input_name] = asset_dep_def
 
     # put asset checks downstream of the assets they're checking
     asset_checks_defs_by_node_handle: Dict[NodeHandle, AssetChecksDefinition] = {}
@@ -509,38 +486,6 @@ def build_node_deps(
                 )
 
     return deps, assets_defs_by_node_handle, asset_checks_defs_by_node_handle
-
-
-def _get_blocking_asset_check_output_handles_by_asset_key(
-    assets_defs_by_node_handle, asset_checks_defs_by_node_handle
-) -> Mapping[AssetKey, AbstractSet[NodeOutputHandle]]:
-    """For each asset key, returns the set of node output handles that correspond to asset check
-    specs that should block the execution of downstream assets if they fail.
-    """
-    check_specs_by_node_output_handle: Mapping[NodeOutputHandle, AssetCheckSpec] = {}
-
-    for node_handle, assets_def in assets_defs_by_node_handle.items():
-        for output_name, check_spec in assets_def.check_specs_by_output_name.items():
-            check_specs_by_node_output_handle[
-                NodeOutputHandle(node_handle, output_name=output_name)
-            ] = check_spec
-
-    for node_handle, asset_checks_def in asset_checks_defs_by_node_handle.items():
-        for output_name, check_spec in asset_checks_def.specs_by_output_name.items():
-            check_specs_by_node_output_handle[
-                NodeOutputHandle(node_handle, output_name=output_name)
-            ] = check_spec
-
-    blocking_asset_check_output_handles_by_asset_key: Dict[AssetKey, Set[NodeOutputHandle]] = (
-        defaultdict(set)
-    )
-    for node_output_handle, check_spec in check_specs_by_node_output_handle.items():
-        if check_spec.severity == AssetCheckSeverity.ERROR:
-            blocking_asset_check_output_handles_by_asset_key[check_spec.asset_key].add(
-                node_output_handle
-            )
-
-    return blocking_asset_check_output_handles_by_asset_key
 
 
 def _has_cycles(

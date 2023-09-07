@@ -1,45 +1,24 @@
 import {gql} from '@apollo/client';
-import {Body, Box, Colors, FontFamily, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
+import {Box, Colors, FontFamily, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
+import countBy from 'lodash/countBy';
 import isEqual from 'lodash/isEqual';
 import React from 'react';
 import {Link} from 'react-router-dom';
 import styled, {CSSObject} from 'styled-components';
 
 import {withMiddleTruncation} from '../app/Util';
-import {
-  PartitionCountTags,
-  StyleForAssetPartitionStatus,
-  partitionCountString,
-} from '../assets/AssetNodePartitionCounts';
-import {AssetPartitionStatusDot} from '../assets/AssetPartitionList';
-import {AssetPartitionStatus} from '../assets/AssetPartitionStatus';
-import {OverdueLineagePopover, isAssetOverdue} from '../assets/OverdueTag';
+import {PartitionCountTags} from '../assets/AssetNodePartitionCounts';
 import {StaleReasonsTags} from '../assets/Stale';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetComputeKindTag} from '../graph/OpTags';
-import {AssetKeyInput} from '../graphql/types';
-import {TimestampDisplay} from '../schedules/TimestampDisplay';
+import {AssetCheckExecutionResolvedStatus, AssetCheckSeverity} from '../graphql/types';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 
-import {AssetLatestRunSpinner, AssetRunLink} from './AssetRunLinking';
-import {LiveDataForNode, stepKeyForAsset} from './Utils';
+import {buildAssetNodeStatusContent} from './AssetNodeStatusContent';
+import {AssetLatestRunSpinner} from './AssetRunLinking';
+import {LiveDataForNode} from './Utils';
 import {ASSET_NODE_NAME_MAX_LENGTH} from './layout';
 import {AssetNodeFragment} from './types/AssetNode.types';
-
-export enum StatusCase {
-  LOADING = 'LOADING',
-  SOURCE_OBSERVING = 'SOURCE_OBSERVING',
-  SOURCE_OBSERVED = 'SOURCE_OBSERVED',
-  SOURCE_NEVER_OBSERVED = 'SOURCE_NEVER_OBSERVED',
-  SOURCE_NO_STATE = 'SOURCE_NO_STATE',
-  MATERIALIZING = 'MATERIALIZING',
-  LATE_OR_FAILED = 'LATE_OR_FAILED',
-  NEVER_MATERIALIZED = 'NEVER_MATERIALIZED',
-  MATERIALIZED = 'MATERIALIZED',
-  PARTITIONS_FAILED = 'PARTITIONS_FAILED',
-  PARTITIONS_MISSING = 'PARTITIONS_MISSING',
-  PARTITIONS_MATERIALIZED = 'PARTITIONS_MATERIALIZED',
-}
 
 export const AssetNode: React.FC<{
   definition: AssetNodeFragment;
@@ -81,7 +60,7 @@ export const AssetNode: React.FC<{
             ) : (
               <Description $color={Colors.Gray400}>No description</Description>
             )}
-            {definition.isPartitioned && (
+            {definition.isPartitioned && !definition.isSource && (
               <PartitionCountTags definition={definition} liveData={liveData} />
             )}
             <StaleReasonsTags liveData={liveData} assetKey={definition.assetKey} include="self" />
@@ -89,6 +68,9 @@ export const AssetNode: React.FC<{
 
           {isSource && !definition.isObservable ? null : (
             <AssetNodeStatusRow definition={definition} liveData={liveData} />
+          )}
+          {(liveData?.assetChecks || []).length > 0 && (
+            <AssetNodeChecksRow definition={definition} liveData={liveData} />
           )}
           <AssetComputeKindTag definition={definition} style={{right: -2, paddingTop: 7}} />
         </AssetNodeBox>
@@ -106,26 +88,19 @@ const AssetTopTags: React.FC<{
   </Box>
 );
 
-const AssetNodeStatusBox: React.FC<{background: string; children: React.ReactNode}> = ({
-  background,
-  children,
-}) => (
-  <Box
-    padding={{horizontal: 8}}
-    style={{
-      borderBottomLeftRadius: 6,
-      borderBottomRightRadius: 6,
-      whiteSpace: 'nowrap',
-      lineHeight: '12px',
-      fontSize: 12,
-      height: 24,
-    }}
-    flex={{justifyContent: 'space-between', alignItems: 'center', gap: 6}}
-    background={background}
-  >
-    {children}
-  </Box>
-);
+const AssetNodeRowBox = styled(Box)`
+  white-space: nowrap;
+  line-height: 12px;
+  font-size: 12px;
+  height: 24px;
+  a:hover {
+    text-decoration: none;
+  }
+  &:last-child {
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
+  }
+`;
 
 interface StatusRowProps {
   definition: AssetNodeFragment;
@@ -138,290 +113,100 @@ const AssetNodeStatusRow: React.FC<StatusRowProps> = ({definition, liveData}) =>
     definition,
     liveData,
   });
-  return <AssetNodeStatusBox background={background}>{content}</AssetNodeStatusBox>;
+  return (
+    <AssetNodeRowBox
+      background={background}
+      padding={{horizontal: 8}}
+      flex={{justifyContent: 'space-between', alignItems: 'center', gap: 6}}
+    >
+      {content}
+    </AssetNodeRowBox>
+  );
 };
 
-export function buildAssetNodeStatusContent({
-  assetKey,
-  definition,
-  liveData,
-  expanded,
-}: {
-  assetKey: AssetKeyInput;
-  definition: {opNames: string[]; isSource: boolean; isObservable: boolean};
-  liveData: LiveDataForNode | null | undefined;
-  expanded?: boolean;
-}) {
-  if (!liveData) {
-    return {
-      case: StatusCase.LOADING,
-      background: Colors.Gray100,
-      border: Colors.Gray300,
-      content: (
-        <>
-          <Spinner purpose="caption-text" />
-          <span style={{flex: 1, color: Colors.Gray800}}>Loading...</span>
-        </>
-      ),
-    };
+type AssetCheckIconType =
+  | Exclude<
+      AssetCheckExecutionResolvedStatus,
+      AssetCheckExecutionResolvedStatus.FAILED | AssetCheckExecutionResolvedStatus.EXECUTION_FAILED
+    >
+  | 'NOT_EVALUATED'
+  | 'WARN'
+  | 'ERROR';
+
+const AssetCheckIconsOrdered: {type: AssetCheckIconType; content: React.ReactNode}[] = [
+  {
+    type: AssetCheckExecutionResolvedStatus.IN_PROGRESS,
+    content: <Spinner purpose="caption-text" />,
+  },
+  {
+    type: 'NOT_EVALUATED',
+    content: <Icon name="changes_present" color={Colors.Gray700} />,
+  },
+  {
+    type: 'ERROR',
+    content: <Icon name="cancel" color={Colors.Red700} />,
+  },
+  {
+    type: 'WARN',
+    content: <Icon name="warning_outline" color={Colors.Yellow700} />,
+  },
+  {
+    type: AssetCheckExecutionResolvedStatus.SKIPPED,
+    content: <Icon name="dot" color={Colors.Gray500} />,
+  },
+  {
+    type: AssetCheckExecutionResolvedStatus.SUCCEEDED,
+    content: <Icon name="check_circle" color={Colors.Green700} />,
+  },
+];
+
+const AssetNodeChecksRow: React.FC<{
+  definition: AssetNodeFragment;
+  liveData: LiveDataForNode | undefined;
+}> = ({definition, liveData}) => {
+  if (!liveData || !liveData.assetChecks.length) {
+    return <span />;
   }
 
-  const {
-    lastMaterialization,
-    runWhichFailedToMaterialize,
-    inProgressRunIds,
-    unstartedRunIds,
-  } = liveData;
+  const byIconType = countBy(liveData.assetChecks, (c) => {
+    const status = c.executionForLatestMaterialization?.status;
+    const value: AssetCheckIconType =
+      status === undefined
+        ? 'NOT_EVALUATED'
+        : status === AssetCheckExecutionResolvedStatus.FAILED
+        ? c.executionForLatestMaterialization?.evaluation?.severity === AssetCheckSeverity.WARN
+          ? 'WARN'
+          : 'ERROR'
+        : status === AssetCheckExecutionResolvedStatus.EXECUTION_FAILED
+        ? 'ERROR'
+        : status;
+    return value;
+  });
 
-  const materializingRunId = inProgressRunIds[0] || unstartedRunIds[0];
-  const overdue = isAssetOverdue(liveData);
-
-  if (definition.isSource) {
-    if (materializingRunId) {
-      return {
-        case: StatusCase.SOURCE_OBSERVING,
-        background: Colors.Gray100,
-        border: Colors.Gray300,
-        content: (
-          <>
-            <AssetLatestRunSpinner liveData={liveData} purpose="caption-text" />
-            <span style={{flex: 1}} color={Colors.Gray800}>
-              Observing...
-            </span>
-            {expanded && <SpacerDot />}
-            <AssetRunLink runId={materializingRunId} />
-          </>
-        ),
-      };
-    }
-    if (liveData?.lastObservation) {
-      return {
-        case: StatusCase.SOURCE_OBSERVED,
-        background: Colors.Gray100,
-        border: Colors.Gray300,
-        content: (
-          <>
-            {expanded && <AssetPartitionStatusDot status={[AssetPartitionStatus.MISSING]} />}
-            <span>Observed</span>
-            {expanded && <SpacerDot />}
-            <span style={{textAlign: 'right', overflow: 'hidden'}}>
-              <AssetRunLink
-                runId={liveData.lastObservation.runId}
-                event={{
-                  stepKey: stepKeyForAsset(definition),
-                  timestamp: liveData.lastObservation.timestamp,
-                }}
-              >
-                <TimestampDisplay
-                  timestamp={Number(liveData.lastObservation.timestamp) / 1000}
-                  timeFormat={{showSeconds: false, showTimezone: false}}
-                />
-              </AssetRunLink>
-            </span>
-          </>
-        ),
-      };
-    }
-    if (definition.isObservable) {
-      return {
-        case: StatusCase.SOURCE_NEVER_OBSERVED,
-        background: Colors.Gray100,
-        border: Colors.Gray300,
-        content: (
-          <>
-            {expanded && (
-              <Icon
-                name="partition_missing"
-                color={Colors.Gray300}
-                style={{marginRight: -2}}
-                size={12}
-              />
-            )}
-            <span>Never observed</span>
-            {!expanded && <span>–</span>}
-          </>
-        ),
-      };
-    }
-
-    return {
-      case: StatusCase.SOURCE_NO_STATE,
-      background: Colors.Gray100,
-      border: Colors.Gray300,
-      content: <span>–</span>,
-    };
-  }
-
-  if (materializingRunId) {
-    // Note: this value is undefined for unpartitioned assets
-    const numMaterializing = liveData.partitionStats?.numMaterializing;
-
-    return {
-      case: StatusCase.MATERIALIZING,
-      background: Colors.Blue50,
-      border: Colors.Blue500,
-      numMaterializing,
-      content: (
-        <>
-          <div style={{marginLeft: -1, marginRight: -1}}>
-            <AssetLatestRunSpinner liveData={liveData} purpose="caption-text" />
-          </div>
-          <span style={{flex: 1}} color={Colors.Gray800}>
-            {numMaterializing === 1
-              ? `Materializing 1 partition...`
-              : numMaterializing
-              ? `Materializing ${numMaterializing} partitions...`
-              : `Materializing...`}
-          </span>
-          {expanded && <SpacerDot />}
-          {!numMaterializing || numMaterializing === 1 ? (
-            <AssetRunLink runId={materializingRunId} />
-          ) : undefined}
-        </>
-      ),
-    };
-  }
-
-  if (liveData.partitionStats) {
-    const {numPartitions, numMaterialized, numFailed} = liveData.partitionStats;
-    const numMissing = numPartitions - numFailed - numMaterialized;
-    const {background, foreground, border} = StyleForAssetPartitionStatus[
-      overdue || numFailed
-        ? AssetPartitionStatus.FAILED
-        : numMissing
-        ? AssetPartitionStatus.MISSING
-        : AssetPartitionStatus.MATERIALIZED
-    ];
-    const statusCase =
-      overdue || numFailed
-        ? StatusCase.PARTITIONS_FAILED
-        : numMissing
-        ? StatusCase.PARTITIONS_MISSING
-        : StatusCase.PARTITIONS_MATERIALIZED;
-
-    return {
-      case: statusCase,
-      background,
-      border,
-      numPartitions,
-      numMissing,
-      numFailed,
-      numMaterialized,
-      content: (
-        <Link
-          to={assetDetailsPathForKey(assetKey, {view: 'partitions'})}
-          style={{color: foreground}}
-          target="_blank"
-          rel="noreferrer"
-        >
-          {overdue ? (
-            <OverdueLineagePopover assetKey={assetKey} liveData={liveData}>
-              Overdue
-            </OverdueLineagePopover>
-          ) : (
-            partitionCountString(numPartitions)
-          )}
-        </Link>
-      ),
-    };
-  }
-
-  const lastMaterializationLink = lastMaterialization ? (
-    <span style={{overflow: 'hidden'}}>
-      <AssetRunLink
-        runId={lastMaterialization.runId}
-        event={{stepKey: stepKeyForAsset(definition), timestamp: lastMaterialization.timestamp}}
+  return (
+    <AssetNodeRowBox
+      padding={{horizontal: 8}}
+      flex={{justifyContent: 'space-between', alignItems: 'center', gap: 6}}
+      border={{side: 'top', width: 1, color: Colors.KeylineGray}}
+      background={Colors.Gray50}
+    >
+      Checks
+      <Link
+        to={assetDetailsPathForKey(definition.assetKey, {view: 'checks'})}
+        onClick={(e) => e.stopPropagation()}
       >
-        <TimestampDisplay
-          timestamp={Number(lastMaterialization.timestamp) / 1000}
-          timeFormat={{showSeconds: false, showTimezone: false}}
-        />
-      </AssetRunLink>
-    </span>
-  ) : undefined;
-
-  if (runWhichFailedToMaterialize || overdue) {
-    return {
-      case: StatusCase.LATE_OR_FAILED,
-      background: Colors.Red50,
-      border: Colors.Red500,
-      content: (
-        <>
-          {expanded && (
-            <Icon
-              name="partition_failure"
-              color={Colors.Red500}
-              style={{marginRight: -2}}
-              size={12}
-            />
-          )}
-
-          {overdue && runWhichFailedToMaterialize ? (
-            <OverdueLineagePopover assetKey={assetKey} liveData={liveData}>
-              <span style={{color: Colors.Red700}}>Failed, Overdue</span>
-            </OverdueLineagePopover>
-          ) : overdue ? (
-            <OverdueLineagePopover assetKey={assetKey} liveData={liveData}>
-              <span style={{color: Colors.Red700}}>Overdue</span>
-            </OverdueLineagePopover>
-          ) : runWhichFailedToMaterialize ? (
-            <span style={{color: Colors.Red700}}>Failed</span>
-          ) : undefined}
-
-          {expanded && <SpacerDot />}
-
-          {runWhichFailedToMaterialize ? (
-            <span style={{overflow: 'hidden'}}>
-              <AssetRunLink runId={runWhichFailedToMaterialize.id}>
-                <TimestampDisplay
-                  timestamp={Number(runWhichFailedToMaterialize.endTime)}
-                  timeFormat={{showSeconds: false, showTimezone: false}}
-                />
-              </AssetRunLink>
-            </span>
-          ) : (
-            lastMaterializationLink
-          )}
-        </>
-      ),
-    };
-  }
-
-  if (!lastMaterialization) {
-    return {
-      case: StatusCase.NEVER_MATERIALIZED,
-      background: Colors.Yellow50,
-      border: Colors.Yellow500,
-      content: (
-        <>
-          {expanded && (
-            <Icon
-              name="partition_missing"
-              color={Colors.Yellow500}
-              style={{marginRight: -2}}
-              size={12}
-            />
-          )}
-          <span style={{color: Colors.Yellow700}}>Never materialized</span>
-        </>
-      ),
-    };
-  }
-
-  return {
-    case: StatusCase.MATERIALIZED,
-    background: Colors.Green50,
-    border: Colors.Green500,
-    content: (
-      <>
-        {expanded && <AssetPartitionStatusDot status={[AssetPartitionStatus.MATERIALIZED]} />}
-        <span style={{color: Colors.Green700}}>Materialized</span>
-        {expanded && <SpacerDot />}
-        {lastMaterializationLink}
-      </>
-    ),
-  };
-}
+        <Box flex={{gap: 6, alignItems: 'center'}}>
+          {AssetCheckIconsOrdered.filter((a) => byIconType[a.type]).map((icon) => (
+            <Box flex={{gap: 2, alignItems: 'center'}} key={icon.type}>
+              {icon.content}
+              {byIconType[icon.type]}
+            </Box>
+          ))}
+        </Box>
+      </Link>
+    </AssetNodeRowBox>
+  );
+};
 
 export const AssetNodeMinimal: React.FC<{
   selected: boolean;
@@ -431,6 +216,7 @@ export const AssetNodeMinimal: React.FC<{
   const {isSource, assetKey} = definition;
   const {border, background} = buildAssetNodeStatusContent({assetKey, definition, liveData});
   const displayName = assetKey.path[assetKey.path.length - 1]!;
+
   return (
     <AssetInsetForHoverEffect>
       <MinimalAssetNodeContainer $selected={selected}>
@@ -448,8 +234,8 @@ export const AssetNodeMinimal: React.FC<{
           >
             <div
               style={{
-                position: 'absolute',
                 top: '50%',
+                position: 'absolute',
                 transform: 'translate(8px, -16px)',
               }}
             >
@@ -464,59 +250,6 @@ export const AssetNodeMinimal: React.FC<{
     </AssetInsetForHoverEffect>
   );
 };
-
-export const ASSET_NODE_LIVE_FRAGMENT = gql`
-  fragment AssetNodeLiveFragment on AssetNode {
-    id
-    opNames
-    repository {
-      id
-    }
-    assetKey {
-      path
-    }
-    assetMaterializations(limit: 1) {
-      ...AssetNodeLiveMaterialization
-    }
-    assetObservations(limit: 1) {
-      ...AssetNodeLiveObservation
-    }
-    freshnessInfo {
-      ...AssetNodeLiveFreshnessInfo
-    }
-    staleStatus
-    staleCauses {
-      key {
-        path
-      }
-      reason
-      category
-      dependency {
-        path
-      }
-    }
-    partitionStats {
-      numMaterialized
-      numMaterializing
-      numPartitions
-      numFailed
-    }
-  }
-
-  fragment AssetNodeLiveFreshnessInfo on AssetFreshnessInfo {
-    currentMinutesLate
-  }
-
-  fragment AssetNodeLiveMaterialization on MaterializationEvent {
-    timestamp
-    runId
-  }
-
-  fragment AssetNodeLiveObservation on ObservationEvent {
-    timestamp
-    runId
-  }
-`;
 
 // Note: This fragment should only contain fields that are needed for
 // useAssetGraphData and the Asset DAG. Some pages of Dagster UI request this
@@ -618,6 +351,8 @@ const Name = styled.div<{$isSource: boolean}>`
   display: flex;
   gap: 4px;
   background: ${(p) => (p.$isSource ? Colors.Gray100 : Colors.Blue50)};
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
 `;
 
 const MinimalAssetNodeContainer = styled(AssetNodeContainer)`
@@ -674,9 +409,3 @@ const Description = styled.div<{$color: string}>`
 const TooltipStyled = styled(Tooltip)`
   height: 100%;
 `;
-
-const SpacerDot = () => (
-  <Body color={Colors.KeylineGray} style={{marginLeft: -3, marginRight: -3}}>
-    •
-  </Body>
-);

@@ -27,6 +27,7 @@ from dagster._annotations import public
 from dagster._core.definitions.data_version import (
     DATA_VERSION_TAG,
     SKIP_PARTITION_DATA_VERSION_DEPENDENCY_THRESHOLD,
+    extract_data_version_from_entry,
 )
 from dagster._core.definitions.dependency import OpNode
 from dagster._core.definitions.events import AssetKey, AssetLineageInfo
@@ -975,26 +976,22 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         else:
             return None
 
-    def _get_input_asset_event(self, key: AssetKey, retries: int = 0) -> Optional["EventLogRecord"]:
-        from dagster._core.definitions.data_version import (
-            extract_data_version_from_entry,
-        )
-
-        is_step_internal_input = key in self._data_version_cache
+    def _get_input_asset_event(self, key: AssetKey) -> Optional["EventLogRecord"]:
         event = self.instance.get_latest_data_version_record(key)
-        if event is None and is_step_internal_input and retries <= 5:
-            return self._get_input_asset_event(key, retries + 1)
-        elif event is None:
-            return None
-        else:
-            # The cache gets populated for inputs generated during the current step. We need to keep
-            # reloading the latest event until the data version matches the one in the cache to ensure
-            # the storage id reflects the input actually used.
-            data_version = extract_data_version_from_entry(event.event_log_entry)
-            if is_step_internal_input and data_version != self._data_version_cache[key]:
-                return self._get_input_asset_event(key, retries + 1)
-            else:
-                return event
+        if event:
+            self._check_input_asset_event(key, event)
+        return event
+
+    def _check_input_asset_event(self, key: AssetKey, event: "EventLogRecord") -> None:
+        assert event.event_log_entry
+        event_data_version = extract_data_version_from_entry(event.event_log_entry)
+        if key in self._data_version_cache and self._data_version_cache[key] != event_data_version:
+            self.log.warning(
+                f"Data version mismatch for asset {key}. Data version from materialization within"
+                f" current step is `{self._data_version_cache[key]}`. Data version from most recent"
+                f" materialization is `{event_data_version}`. Most recent materialization will be"
+                " used for provenance tracking."
+            )
 
     def _get_partitions_data_version_from_keys(
         self, key: AssetKey, partition_keys: Sequence[str]
