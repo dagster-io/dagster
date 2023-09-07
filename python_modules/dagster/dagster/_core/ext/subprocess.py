@@ -6,6 +6,7 @@ from typing import Iterator, Mapping, Optional, Sequence, Union
 
 from dagster_ext import ExtExtras
 
+from dagster import _check as check
 from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.errors import DagsterExternalExecutionError
 from dagster._core.execution.context.compute import OpExecutionContext
@@ -29,8 +30,8 @@ _MESSAGE_READER_FILENAME = "messages"
 
 class _ExtSubprocess(ExtClient):
     def __init__(self, env: Optional[Mapping[str, str]] = None, cwd: Optional[str] = None):
-        self.env = env
-        self.cwd = cwd
+        self.env = check.opt_mapping_param(env, "env", key_type=str, value_type=str)
+        self.cwd = check.opt_str_param(cwd, "cwd")
 
     def run(
         self,

@@ -2,7 +2,11 @@ from contextlib import contextmanager
 from typing import Any, Iterator, Mapping, Optional, Sequence, Tuple, Union
 
 import docker
-from dagster import OpExecutionContext, ResourceParam
+from dagster import (
+    OpExecutionContext,
+    ResourceParam,
+    _check as check,
+)
 from dagster._core.ext.client import (
     ExtClient,
     ExtContextInjector,
@@ -47,8 +51,8 @@ class _ExtDocker(ExtClient):
     def __init__(
         self, env: Optional[Mapping[str, str]] = None, registry: Optional[Mapping[str, str]] = None
     ):
-        self.env = env
-        self.registry = registry
+        self.env = check.opt_mapping_param(env, "env", key_type=str, value_type=str)
+        self.registry = check.opt_mapping_param(registry, "registry", key_type=str, value_type=str)
 
     def run(
         self,

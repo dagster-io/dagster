@@ -4,7 +4,10 @@ from contextlib import contextmanager
 from typing import Any, Iterator, Mapping, Optional, Sequence, Union
 
 import kubernetes
-from dagster import OpExecutionContext
+from dagster import (
+    OpExecutionContext,
+    _check as check,
+)
 from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.ext.client import (
@@ -78,7 +81,7 @@ class _ExtK8sPod(ExtClient):
     """
 
     def __init__(self, env: Optional[Mapping[str, str]] = None):
-        self.env = env
+        self.env = check.opt_mapping_param(env, "env", key_type=str, value_type=str)
 
     def run(
         self,
