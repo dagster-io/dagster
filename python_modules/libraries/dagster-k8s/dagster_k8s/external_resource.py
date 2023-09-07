@@ -6,14 +6,14 @@ from typing import Any, Iterator, Mapping, Optional, Sequence, Union
 import kubernetes
 from dagster import OpExecutionContext
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.ext.context import (
-    ExtOrchestrationContext,
-)
-from dagster._core.ext.resource import (
+from dagster._core.ext.client import (
     ExtClient,
     ExtContextInjector,
     ExtMessageReader,
     ExtParams,
+)
+from dagster._core.ext.context import (
+    ExtOrchestrationContext,
 )
 from dagster._core.ext.utils import (
     ExtEnvContextInjector,

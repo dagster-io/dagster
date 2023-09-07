@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 import kubernetes
 import pytest
 from dagster import AssetExecutionContext, asset, materialize
-from dagster._core.ext.resource import (
+from dagster._core.ext.client import (
     ExtContextInjector,
 )
 from dagster_ext import ExtDefaultContextLoader

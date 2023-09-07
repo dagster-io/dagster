@@ -9,13 +9,13 @@ from pydantic import Field
 
 from dagster._core.errors import DagsterExternalExecutionError
 from dagster._core.execution.context.compute import OpExecutionContext
-from dagster._core.ext.context import (
-    ExtOrchestrationContext,
-)
-from dagster._core.ext.resource import (
+from dagster._core.ext.client import (
     ExtClient,
     ExtContextInjector,
     ExtMessageReader,
+)
+from dagster._core.ext.context import (
+    ExtOrchestrationContext,
 )
 from dagster._core.ext.utils import (
     ExtFileContextInjector,

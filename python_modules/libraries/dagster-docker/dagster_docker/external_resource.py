@@ -3,13 +3,13 @@ from typing import Any, Iterator, Mapping, Optional, Sequence, Tuple, Union
 
 import docker
 from dagster import OpExecutionContext
-from dagster._core.ext.context import (
-    ExtOrchestrationContext,
-)
-from dagster._core.ext.resource import (
+from dagster._core.ext.client import (
     ExtClient,
     ExtContextInjector,
     ExtMessageReader,
+)
+from dagster._core.ext.context import (
+    ExtOrchestrationContext,
 )
 from dagster._core.ext.utils import (
     ExtEnvContextInjector,
