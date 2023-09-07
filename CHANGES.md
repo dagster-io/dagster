@@ -1,5 +1,51 @@
 # Changelog
 
+# 1.4.12 / 0.20.12 (libraries)
+
+### New
+
+- The `context` object now has an `asset_key` property to get the `AssetKey` of the current asset.
+- Performance improvements to the auto-materialize daemon when running on large asset graphs.
+- The `dagster dev` and `dagster-daemon run` commands now include a `--log-level` argument that allows you to customize the logger level threshold.
+- [dagster-airbyte] `AirbyteResource` now includes a `poll_interval` key that allows you to configure how often it checks an Airbyte sync’s status.
+
+### Bugfixes
+
+- Fixed an issue where the dagster scheduler would sometimes raise an error if a schedule set its cron_schedule to a list of strings and also had its default status set to AUTOMATICALLY_RUNNING.
+- Fixed an issue where the auto-materialize daemon would sometimes raise a RecursionError when processing asset graphs with long upstream dependency chains.
+- [ui] Fixed an issue where the Raw Compute Logs dropdown on the Run page sometimes didn’t show the current step name or properly account for retried steps.
+
+### Community Contributions
+- [dagster-databricks] Fixed a regression causing `DatabricksStepLauncher` to fail. Thanks [@zyd14](https://github.com/zyd14)!
+- Fixed an issue where Dagster raised an exception when combining observable source assets with multiple partitions definitions. Thanks [@aroig](https://github.com/aroig)!
+- [dagster-databricks] Added support for client authentication with OAuth. Thanks [@zyd14](https://github.com/zyd14)!
+- [dagster-databricks] Added support for `workspace` and `volumes` init scripts in the databricks client. Thanks [@zyd14](https://github.com/zyd14)!
+- Fixed a missing import in our docs. Thanks @[C0DK](https://github.com/C0DK)!
+
+### Experimental
+
+- Asset checks are now displayed in the asset graph and sidebar.
+- An initial version of the `dagster-ext` module along with subprocess, docker, and k8s pod integrations are now available. Read more at https://github.com/dagster-io/dagster/discussions/16319
+- [Breaking] Asset check severity is now set at runtime on `AssetCheckResult` instead of in the `@asset_check` definition. Now you can define one check that either errors or warns depending on your check logic. `ERROR` severity no longer causes the run to fail. We plan to reintroduce this functionality with a different API.
+- [Breaking] `@asset_check` now requires the `asset=` argument, even if the asset is passed as an input to the decorated function. Example:
+
+    ```python
+    @asset_check(asset=my_asset)
+    def my_check(my_asset) -> AssetCheckResult:
+        ...
+    ```
+
+- [Breaking] `AssetCheckSpec` now takes `asset=` instead of `asset_key=`, and can accept either a key or an asset definition.
+- [Bugfix] Asset checks now work on assets with `key_prefix` set.
+- [Bugfix] `Execution failure` asset checks are now displayed correctly on the checks tab.
+
+### Documentation
+
+- [dagster-dbt] Added example of invoking `DbtCliResource` in custom asset/op to API docs.
+- [dagster-dbt] Added reference to explain how a dbt manifest can be created at run time or build time.
+- [dagster-dbt] Added reference to outline the steps required to deploy a Dagster and dbt project in CI/CD.
+- Miscellaneous fixes to broken links and typos.
+
 # 1.4.11 / 0.20.11 (libraries)
 
 ### New
