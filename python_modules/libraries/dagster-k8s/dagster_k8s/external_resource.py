@@ -6,14 +6,14 @@ from typing import Any, Iterator, Mapping, Optional, Sequence, Union
 import kubernetes
 from dagster import OpExecutionContext
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.ext.context import (
-    ExtOrchestrationContext,
-)
-from dagster._core.ext.resource import (
+from dagster._core.ext.client import (
+    ExtClient,
     ExtContextInjector,
     ExtMessageReader,
     ExtParams,
-    ExtResource,
+)
+from dagster._core.ext.context import (
+    ExtOrchestrationContext,
 )
 from dagster._core.ext.utils import (
     ExtEnvContextInjector,
@@ -67,7 +67,7 @@ class K8sPodLogsMessageReader(ExtMessageReader):
                 extract_message_or_forward_to_stdout(ext_context, log_line)
 
 
-class ExtK8sPod(ExtResource):
+class ExtK8sPod(ExtClient):
     """An ext protocol compliant resource for launching kubernetes pods.
 
     By default context is injected via environment variables and messages are parsed out of

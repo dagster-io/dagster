@@ -16,7 +16,7 @@ from dagster_ext import (
     encode_env_var,
 )
 
-from dagster._core.ext.resource import (
+from dagster._core.ext.client import (
     ExtContextInjector,
     ExtMessageReader,
 )
