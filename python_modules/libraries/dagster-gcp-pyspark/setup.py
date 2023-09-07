@@ -35,8 +35,8 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_gcp_pyspark_tests*"]),
     install_requires=[
-        f"dagster{pin}",
-        f"dagster-gcp{pin}",
+        "dagster==1.4.12rc0",
+        "dagster-gcp==0.20.12rc0",
         "pyspark",
     ],
     extras_require={"test": ["pandas-gbq"]},

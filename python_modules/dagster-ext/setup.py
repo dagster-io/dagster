@@ -34,7 +34,7 @@ setup(
     packages=find_packages(exclude=["dagster_ext_tests*"]),
     extras_require={
         "test": [
-            f"dagster{pin}",
+            "dagster==1.4.12rc0",
             "boto3",
             "botocore",
             "moto[s3,server]",
