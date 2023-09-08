@@ -188,7 +188,7 @@ def test_dbt_with_partial_parse() -> None:
     shutil.copy(partial_parse_file_path, Path(TEST_PROJECT_DIR, "target", PARTIAL_PARSE_FILE_NAME))
 
     # Assert that partial parsing was used.
-    dbt_cli_compile_with_partial_parse_invocation = dbt.cli(["compile"]).wait()
+    dbt_cli_compile_with_partial_parse_invocation = dbt.cli(["compile"])
 
     assert dbt_cli_compile_with_partial_parse_invocation.is_successful()
     assert not any(
@@ -221,7 +221,7 @@ def test_dbt_cli_subsetted_execution() -> None:
 
     @dbt_assets(manifest=manifest, select=dbt_select)
     def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
-        dbt_cli_invocation = dbt.cli(["run"], context=context).wait()
+        dbt_cli_invocation = dbt.cli(["run"], context=context)
 
         assert dbt_cli_invocation.process.args == ["dbt", "run", "--select", dbt_select]
 
@@ -244,7 +244,7 @@ def test_dbt_cli_asset_selection() -> None:
 
     @dbt_assets(manifest=manifest)
     def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
-        dbt_cli_invocation = dbt.cli(["run"], context=context).wait()
+        dbt_cli_invocation = dbt.cli(["run"], context=context)
 
         dbt_cli_args: List[str] = list(dbt_cli_invocation.process.args)  # type: ignore
         *dbt_args, dbt_select_args = dbt_cli_args
@@ -273,22 +273,24 @@ def test_dbt_cli_asset_selection() -> None:
 @pytest.mark.parametrize("exclude", [None, "fqn:dagster_dbt_test_project.subdir.least_caloric"])
 def test_dbt_cli_default_selection(exclude: Optional[str]) -> None:
     @dbt_assets(manifest=manifest, exclude=exclude)
-    def my_dbt_assets(context: OpExecutionContext):
-        dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR)
+    def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
         dbt_cli_invocation = dbt.cli(["run"], context=context)
-
-        dbt_cli_invocation.wait()
 
         expected_args = ["dbt", "run", "--select", "fqn:*"]
         if exclude:
             expected_args += ["--exclude", exclude]
 
         assert dbt_cli_invocation.process.args == expected_args
-        assert dbt_cli_invocation.process.returncode is not None
 
         yield from dbt_cli_invocation.stream()
 
-    assert materialize([my_dbt_assets]).success
+    result = materialize(
+        [my_dbt_assets],
+        resources={
+            "dbt": DbtCliResource(project_dir=TEST_PROJECT_DIR),
+        },
+    )
+    assert result.success
 
 
 def test_dbt_cli_op_execution() -> None:
