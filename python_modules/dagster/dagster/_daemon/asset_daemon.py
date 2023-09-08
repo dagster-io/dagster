@@ -5,10 +5,10 @@ import pendulum
 import dagster._check as check
 from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
-from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+from dagster._core.definitions.assets_job import ASSET_BASE_JOB_PREFIX
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.run_request import RunRequest
-from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
@@ -17,7 +17,6 @@ from dagster._core.storage.tags import (
     AUTO_MATERIALIZE_TAG,
     AUTO_OBSERVE_TAG,
 )
-from dagster._core.definitions.assets_job import ASSET_BASE_JOB_PREFIX
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._core.workspace.workspace import IWorkspace
 from dagster._daemon.daemon import DaemonIterator, IntervalDaemon
@@ -188,23 +187,41 @@ class AssetDaemon(IntervalDaemon):
 
 
 def get_external_job_name_for_asset_keys(
-    asset_keys: Sequence[AssetKey], asset_graph: AssetGraph, external_repository
+    asset_keys: Sequence[AssetKey], asset_graph: ExternalAssetGraph, external_repository
 ) -> Optional[str]:
-    # for observable source assets, require a hack
+    """Returns an external job name for a given set of keys, or None if no such job exists. This
+    is challenging in the case of observable source assets, as all job definitions contain all
+    observable source asset definitions, and so we need to explicitly find the one that has the
+    correct partitions definition.
+    """
     if all(asset_graph.is_observable(asset_key) for asset_key in asset_keys):
+        # for observable source assets, we need to select the job based on the partitions def
         target_partitions_def = asset_graph.get_partitions_def(asset_keys[0])
+        check.invariant(
+            all(
+                asset_graph.get_partitions_def(asset_key) == target_partitions_def
+                for asset_key in asset_keys
+            )
+        )
 
+        # create a mapping from job name to the partitions def of that job
         partitions_def_by_job_name = {}
         for (
             external_partition_set_data
         ) in external_repository.external_repository_data.external_partition_set_datas:
             if external_partition_set_data.external_partitions_data is None:
-                continue
-            job_name = external_partition_set_data.job_name
-            partitions_def = (
-                external_partition_set_data.external_partitions_data.get_partitions_definition()
-            )
-            partitions_def_by_job_name[job_name] = partitions_def
+                partitions_def = None
+            else:
+                partitions_def = (
+                    external_partition_set_data.external_partitions_data.get_partitions_definition()
+                )
+            partitions_def_by_job_name[external_partition_set_data.job_name] = partitions_def
+        # add any jobs that don't have a partitions def
+        for external_job in external_repository.get_all_external_jobs():
+            job_name = external_job.external_job_data.name
+            if job_name not in partitions_def_by_job_name:
+                partitions_def_by_job_name[job_name] = None
+        # find the job that matches the expected partitions definition
         for job_name, external_partitions_def in partitions_def_by_job_name.items():
             if not job_name.startswith(ASSET_BASE_JOB_PREFIX):
                 continue

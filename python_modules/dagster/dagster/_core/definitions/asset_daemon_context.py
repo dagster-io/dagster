@@ -788,7 +788,8 @@ def get_auto_observe_run_requests(
         ):
             assets_to_auto_observe.add(asset_key)
 
-    partitions_def_and_asset_key_groups = []
+    # create groups of asset keys that share the same repository AND the same partitions definition
+    partitions_def_and_asset_key_groups: List[Sequence[AssetKey]] = []
     for repository_asset_keys in asset_graph.split_asset_keys_by_repository(assets_to_auto_observe):
         asset_keys_by_partitions_def = defaultdict(list)
         for asset_key in repository_asset_keys:
@@ -796,10 +797,8 @@ def get_auto_observe_run_requests(
             asset_keys_by_partitions_def[partitions_def].append(asset_key)
         partitions_def_and_asset_key_groups.extend(asset_keys_by_partitions_def.values())
 
-    ret = [
+    return [
         RunRequest(asset_selection=list(asset_keys), tags=run_tags)
         for asset_keys in partitions_def_and_asset_key_groups
         if len(asset_keys) > 0
     ]
-    print(ret)
-    return ret
