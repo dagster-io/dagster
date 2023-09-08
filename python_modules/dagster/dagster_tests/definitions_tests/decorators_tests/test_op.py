@@ -916,6 +916,20 @@ def test_metadata_logging_multiple_entries():
         execute_op_in_graph(basic)
 
 
+def test_metadata_logging_multiple_entries_with_merge():
+    @op
+    def basic(context):
+        context.merge_output_metadata({"foo": "bar"})
+        context.merge_output_metadata({"baz": "bat"})
+
+    result = execute_op_in_graph(basic)
+    assert result.success
+    events = result.events_for_node("basic")
+    assert len(events[1].event_specific_data.metadata) == 2
+    assert events[1].event_specific_data.metadata["foo"].text == "bar"
+    assert events[1].event_specific_data.metadata["baz"].text == "bat"
+
+
 def test_log_event_multi_output():
     @op(out={"out1": Out(), "out2": Out()})
     def the_op(context):
