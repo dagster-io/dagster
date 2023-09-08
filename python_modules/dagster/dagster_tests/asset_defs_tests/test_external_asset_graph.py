@@ -210,40 +210,52 @@ def test_partitioned_source_asset():
 
 
 def test_get_implicit_job_name_for_assets():
-    workspace = make_context(["defs1", "defs2"])
-    defs1_repo = workspace.code_locations[0]
-    asset_graph = ExternalAssetGraph.from_workspace(workspace)
+    asset_graph = ExternalAssetGraph.from_workspace(make_context(["defs1", "defs2"]))
     assert (
-        asset_graph.get_implicit_job_name_for_assets([asset1.key], external_repo=workspace)
+        asset_graph.get_implicit_job_name_for_assets([asset1.key], external_repo=None)
         == "__ASSET_JOB"
     )
-    assert asset_graph.get_implicit_job_name_for_assets([asset2.key]) == "__ASSET_JOB"
-    assert asset_graph.get_implicit_job_name_for_assets([asset1.key, asset2.key]) == "__ASSET_JOB"
+    assert (
+        asset_graph.get_implicit_job_name_for_assets([asset2.key], external_repo=None)
+        == "__ASSET_JOB"
+    )
+    assert (
+        asset_graph.get_implicit_job_name_for_assets([asset1.key, asset2.key], external_repo=None)
+        == "__ASSET_JOB"
+    )
 
     asset_graph = ExternalAssetGraph.from_workspace(make_context(["partitioned_defs"]))
     assert (
-        asset_graph.get_implicit_job_name_for_assets([downstream_of_partitioned_source.key])
+        asset_graph.get_implicit_job_name_for_assets(
+            [downstream_of_partitioned_source.key], external_repo=None
+        )
         == "__ASSET_JOB_0"
     )
 
     asset_graph = ExternalAssetGraph.from_workspace(make_context(["different_partitions_defs"]))
     assert (
-        asset_graph.get_implicit_job_name_for_assets([static_partitioned_asset.key])
-        == "__ASSET_JOB_0"
-    )
-    assert (
-        asset_graph.get_implicit_job_name_for_assets([other_static_partitioned_asset.key])
+        asset_graph.get_implicit_job_name_for_assets(
+            [static_partitioned_asset.key], external_repo=None
+        )
         == "__ASSET_JOB_0"
     )
     assert (
         asset_graph.get_implicit_job_name_for_assets(
-            [static_partitioned_asset.key, other_static_partitioned_asset.key]
+            [other_static_partitioned_asset.key], external_repo=None
+        )
+        == "__ASSET_JOB_0"
+    )
+    assert (
+        asset_graph.get_implicit_job_name_for_assets(
+            [static_partitioned_asset.key, other_static_partitioned_asset.key], external_repo=None
         )
         == "__ASSET_JOB_0"
     )
 
     assert (
-        asset_graph.get_implicit_job_name_for_assets([downstream_of_partitioned_source.key])
+        asset_graph.get_implicit_job_name_for_assets(
+            [downstream_of_partitioned_source.key], external_repo=None
+        )
         == "__ASSET_JOB_1"
     )
 
@@ -253,7 +265,8 @@ def test_get_implicit_job_name_for_assets():
                 static_partitioned_asset.key,
                 other_static_partitioned_asset.key,
                 downstream_of_partitioned_source.key,
-            ]
+            ],
+            external_repo=None,
         )
         is None
     )
