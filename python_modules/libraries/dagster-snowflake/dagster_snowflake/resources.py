@@ -21,7 +21,7 @@ from pydantic import Field, validator
 
 try:
     # Pydantic 2.x
-    from pydantic import model_validator
+    from pydantic import model_validator  # type: ignore
 except ImportError:
     # Pydantic 1.x
     from pydantic import root_validator

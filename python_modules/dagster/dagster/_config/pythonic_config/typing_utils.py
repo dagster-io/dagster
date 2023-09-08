@@ -12,7 +12,7 @@ try:
     from pydantic.main import ModelMetaclass
 except ImportError:
     # Pydantic 1.x
-    from pydantic._internal._model_construction import ModelMetaclass
+    from pydantic._internal._model_construction import ModelMetaclass  # type: ignore
 
 if TYPE_CHECKING:
     from dagster._config.pythonic_config import PartialResource
@@ -59,7 +59,7 @@ class LateBoundTypesForResourceTypeChecking:
 
 
 @dataclass_transform(kw_only_default=True, field_specifiers=(Field,))
-class BaseConfigMeta(ModelMetaclass):
+class BaseConfigMeta(ModelMetaclass):  # type: ignore
     def __new__(cls, name, bases, namespaces, **kwargs) -> Any:
         annotations = namespaces.get("__annotations__", {})
 

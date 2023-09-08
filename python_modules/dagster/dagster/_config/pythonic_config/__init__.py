@@ -25,7 +25,7 @@ import pydantic
 from pydantic.fields import FieldInfo
 
 try:
-    from pydantic_core import PydanticUndefined
+    from pydantic_core import PydanticUndefined  # type: ignore
 except:
     PydanticUndefined = None
 from typing_extensions import Annotated, TypeAlias, TypeGuard, get_args, get_origin
@@ -168,7 +168,7 @@ class ModelFieldCompat:
         return getattr(self.field, "discriminator_key", None)
 
 
-def model_fields(model: Type[BaseModel]) -> Dict[str, ModelFieldCompat]:
+def model_fields(model) -> Dict[str, ModelFieldCompat]:
     """Returns a dictionary of fields for a given pydantic model, wrapped
     in a compat class to provide a consistent interface between Pydantic 1 and 2.
     """
@@ -280,7 +280,10 @@ class MakeConfigCacheable(BaseModel):
         return name.endswith(INTERNAL_MARKER)
 
 
-def ensure_env_vars_set_post_init(set_value: Any, input_value: Any) -> Optional[Any]:
+T = TypeVar("T")
+
+
+def ensure_env_vars_set_post_init(set_value: T, input_value: Any) -> T:
     """Pydantic 2.x utility. Ensures that Pydantic field values are set to the appropriate
     EnvVar or IntEnvVar objects post-model-instantiation, since Pydantic 2.x will cast
     EnvVar or IntEnvVar values to raw strings or ints as part of the model instantiation process.
@@ -291,7 +294,7 @@ def ensure_env_vars_set_post_init(set_value: Any, input_value: Any) -> Optional[
                 set_value[key] = value
             elif isinstance(value, (dict, list)):
                 set_value[key] = ensure_env_vars_set_post_init(set_value[key], value)
-    if isinstance(set_value, list) and isinstance(input_value, list):
+    if isinstance(set_value, List) and isinstance(input_value, List):
         for i in range(len(set_value)):
             value = input_value[i]
             if isinstance(value, (EnvVar, IntEnvVar)):
@@ -435,7 +438,7 @@ def _discriminated_union_config_dict_to_selector_config_dict(
     return wrapped_dict
 
 
-def _config_value_to_dict_representation(field: Optional[FieldInfo], value: Any):
+def _config_value_to_dict_representation(field: Optional[ModelFieldCompat], value: Any):
     """Converts a config value to a dictionary representation. If a field is provided, it will be used
     to determine the appropriate dictionary representation in the case of discriminated unions.
     """
@@ -1324,7 +1327,7 @@ class PartialResource(Generic[TResValue], AllowDelayedDependencies, MakeConfigCa
             description=self._state__internal__.description,
             resolve_resource_keys=self._resolve_required_resource_keys,
             nested_resources=self.nested_resources,
-            dagster_maintained=self.resource_cls._is_dagster_maintained(),  # noqa: SLF001
+            dagster_maintained=self.resource_cls._is_dagster_maintained(),  # noqa: SLF001 # type: ignore
         )
 
 
@@ -1519,7 +1522,7 @@ class PartialIOManager(Generic[TResValue], PartialResource[TResValue]):
             nested_resources=self._state__internal__.nested_resources,
             input_config_schema=input_config_schema,
             output_config_schema=output_config_schema,
-            dagster_maintained=self.resource_cls._is_dagster_maintained(),  # noqa: SLF001
+            dagster_maintained=self.resource_cls._is_dagster_maintained(),  # noqa: SLF001 # type: ignore
         )
 
 
@@ -1584,7 +1587,9 @@ def _get_inner_field_if_exists(shape_type: Type, field: FieldInfo) -> Optional[F
     return None
 
 
-def _convert_pydantic_field(pydantic_field: FieldInfo, model_cls: Optional[Type] = None) -> Field:
+def _convert_pydantic_field(
+    pydantic_field: ModelFieldCompat, model_cls: Optional[Type] = None
+) -> Field:
     """Transforms a Pydantic field into a corresponding Dagster config field.
 
 
@@ -1746,7 +1751,7 @@ class ConfigurableLegacyIOManagerAdapter(ConfigurableIOManagerFactory):
         )
 
 
-def _convert_pydantic_descriminated_union_field(pydantic_field: FieldInfo) -> Field:
+def _convert_pydantic_descriminated_union_field(pydantic_field: ModelFieldCompat) -> Field:
     """Builds a Selector config field from a Pydantic field which is a descriminated union.
 
     For example:
