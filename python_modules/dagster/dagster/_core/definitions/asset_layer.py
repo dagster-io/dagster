@@ -817,16 +817,14 @@ def build_asset_selection_job(
                 for asset_check in asset_checks
                 if [spec for spec in asset_check.specs if spec.handle in asset_check_selection]
             ]
-        elif asset_selection is None:
-            # If assets were selected and checks were null, then include all checks on the selected assets
+        else:
+            # If assets were selected and checks weren't, then include all checks on the selected assets.
+            # Note: a future diff needs to add support for selecting assets, and not their checks.
             included_checks = [
                 asset_check
                 for asset_check in asset_checks
                 if asset_check.asset_key in check.not_none(asset_selection)
             ]
-        else:
-            # If checks were explicitly [], then exclude all checks
-            included_checks = []
 
     if partitions_def:
         for asset in included_assets:

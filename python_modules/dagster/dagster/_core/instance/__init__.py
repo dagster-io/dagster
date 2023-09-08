@@ -1589,6 +1589,7 @@ class DagsterInstance(DynamicPartitionsStore):
             parent_job_snapshot=external_job.parent_job_snapshot,
             op_selection=parent_run.op_selection,
             asset_selection=parent_run.asset_selection,
+            asset_check_selection=parent_run.asset_check_selection,
             external_job_origin=external_job.get_external_origin(),
             job_code_origin=external_job.get_python_origin(),
         )
