@@ -272,7 +272,9 @@ class ExternalAssetGraph(AssetGraph):
             for job_name, external_partitions_def in partitions_def_by_job_name.items():
                 if not job_name.startswith(ASSET_BASE_JOB_PREFIX):
                     continue
-                if external_partitions_def == target_partitions_def:
+                if external_partitions_def == target_partitions_def and all(
+                    asset_key in self._asset_keys_by_job_name[job_name] for asset_key in asset_keys
+                ):
                     return job_name
         else:
             for job_name in sorted(self._asset_keys_by_job_name.keys()):
