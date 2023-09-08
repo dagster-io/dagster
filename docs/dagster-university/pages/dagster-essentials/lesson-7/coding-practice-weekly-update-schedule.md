@@ -19,7 +19,7 @@ To practice what you’ve learned, add a schedule to `schedules/__init__.py` tha
 The schedule you built should look similar to the code contained in the **View answer** toggle. Click to open it.
 
 ```python
-from dagster import AssetSelection, ScheduleDefinition
+from dagster import ScheduleDefinition
 
 from ..jobs import weekly_update_job
 
