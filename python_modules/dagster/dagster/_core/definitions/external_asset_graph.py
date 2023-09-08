@@ -11,8 +11,8 @@ from typing import (
     Set,
     Tuple,
 )
-import dagster._check as check
 
+import dagster._check as check
 from dagster._core.definitions.assets_job import ASSET_BASE_JOB_PREFIX
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.host_representation.external import ExternalRepository
@@ -240,11 +240,10 @@ class ExternalAssetGraph(AssetGraph):
         Note: all asset_keys should be in the same repository.
         """
         if all(self.is_observable(asset_key) for asset_key in asset_keys):
-            check.invariant(
-                external_repo is not None,
-                "external_repo must be passed in when getting job names for observable source"
-                " assets",
-            )
+            if external_repo is None:
+                check.failed(
+                    "external_repo must be passed in when getting job names for observable assets"
+                )
             # for observable source assets, we need to select the job based on the partitions def
             target_partitions_defs = {
                 self.get_partitions_def(asset_key) for asset_key in asset_keys
