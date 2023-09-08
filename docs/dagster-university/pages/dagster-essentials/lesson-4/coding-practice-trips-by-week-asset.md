@@ -29,7 +29,7 @@ To practice what you’ve learned, create an asset in `metrics.py` that:
 - There are many ways to solve these problems, such as within a database or aggregating a DataFrame
 - No additional imports are needed, but you can import whatever you need
 - For convenience and to accommodate for data quality issues, you can hard code the start date and end dates of the analysis to be the range of data you have (ex. `2023-03-01` to `2023-03-03`)
-- DuckDB has a [`date_trunc](https://duckdb.org/docs/sql/functions/date.html#date-functions)` function that accepts `'week’` as a valid precision to truncate down to
+- DuckDB has a [`date_trunc`](https://duckdb.org/docs/sql/functions/date.html#date-functions) function that accepts `'week’` as a valid precision to truncate down to
 - DuckDB also supports adding time: `+ interval '1 week'`
 
 The numbers might not add up exactly this way, but the following is an example of what the output may look like:
