@@ -51,8 +51,10 @@ def _param_name_to_env_key(key: str) -> str:
 
 # ##### PARAMETERS
 
+IS_DAGSTER_EXT_PROCESS_ENV_VAR = "IS_DAGSTER_EXT_PROCESS"
+
 DAGSTER_EXT_ENV_KEYS = {
-    k: _param_name_to_env_key(k) for k in ("is_orchestration_active", "context", "messages")
+    k: _param_name_to_env_key(k) for k in (IS_DAGSTER_EXT_PROCESS_ENV_VAR, "context", "messages")
 }
 
 
@@ -283,8 +285,8 @@ def _env_var_to_param_name(env_var: str) -> str:
     return env_var[len(_ENV_KEY_PREFIX) :].lower()
 
 
-def is_dagster_orchestration_active() -> bool:
-    return _param_from_env_var("is_orchestration_active")
+def is_dagster_ext_process() -> bool:
+    return _param_from_env_var(IS_DAGSTER_EXT_PROCESS_ENV_VAR)
 
 
 def _emit_orchestration_inactive_warning() -> None:
@@ -550,7 +552,7 @@ def init_dagster_ext(
     if ExtContext.is_initialized():
         return ExtContext.get()
 
-    if is_dagster_orchestration_active():
+    if is_dagster_ext_process():
         param_loader = param_loader or ExtEnvVarParamLoader()
         context_params = param_loader.load_context_params()
         messages_params = param_loader.load_messages_params()

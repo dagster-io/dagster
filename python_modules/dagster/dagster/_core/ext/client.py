@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Iterator, Mapping, Optional
 
 from dagster_ext import (
     DAGSTER_EXT_ENV_KEYS,
+    IS_DAGSTER_EXT_PROCESS_ENV_VAR,
     ExtExtras,
     ExtParams,
     encode_env_var,
@@ -17,7 +18,7 @@ if TYPE_CHECKING:
 
 class ExtClient(ABC):
     def get_base_env(self) -> Mapping[str, str]:
-        return {DAGSTER_EXT_ENV_KEYS["is_orchestration_active"]: encode_env_var(True)}
+        return {DAGSTER_EXT_ENV_KEYS[IS_DAGSTER_EXT_PROCESS_ENV_VAR]: encode_env_var(True)}
 
     @abstractmethod
     def run(
