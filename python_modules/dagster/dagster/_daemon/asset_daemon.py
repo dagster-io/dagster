@@ -201,9 +201,13 @@ def submit_asset_run(
 
     location_name = repo_handle.code_location_origin.location_name
     repository_name = repo_handle.repository_name
-    job_name = check.not_none(asset_graph.get_implicit_job_name_for_assets(asset_keys))
-
     code_location = workspace.get_code_location(location_name)
+    job_name = check.not_none(
+        asset_graph.get_implicit_job_name_for_assets(
+            asset_keys, code_location.get_repository(repository_name)
+        )
+    )
+
     external_job = code_location.get_external_job(
         JobSubsetSelector(
             location_name=location_name,
