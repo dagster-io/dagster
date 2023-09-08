@@ -117,7 +117,11 @@ assert CACHED_METHOD_FIELD_SUFFIX.endswith(INTERNAL_MARKER)
 
 
 class ModelFieldCompat:
-    def __init__(self, field: FieldInfo):
+    """Wraps a Pydantic model field to provide a consistent interface for accessing
+    metadata and annotations between Pydantic 1 and 2.
+    """
+
+    def __init__(self, field):
         self.field = field
 
     @property
@@ -138,21 +142,36 @@ class ModelFieldCompat:
 
     @property
     def description(self):
+        # Pydantic 1.x
         field_info = getattr(self.field, "field_info", None)
         if field_info:
             return field_info.description
+
+        # Pydantic 2.x
         return getattr(self.field, "description", None)
 
     def is_required(self):
-        return getattr(self.field, "is_required", lambda: getattr(self.field, "required"))()
+        # Pydantic 2.x
+        if hasattr(self.field, "is_required"):
+            return self.field.is_required()
+
+        # Pydantic 1.x
+        return self.field.required
 
     @property
     def discriminator(self):
-        return getattr(self.field, "discriminator", getattr(self.field, "discriminator_key", None))
+        # Pydantic 2.x
+        if hasattr(self.field, "discriminator"):
+            return self.field.discriminator
+
+        # Pydantic 1.x
+        return getattr(self.field, "discriminator_key", None)
 
 
 def model_fields(model: Type[BaseModel]) -> Dict[str, ModelFieldCompat]:
-    """Returns a dictionary of fields for a given pydantic model."""
+    """Returns a dictionary of fields for a given pydantic model, wrapped
+    in a compat class to provide a consistent interface between Pydantic 1 and 2.
+    """
     fields = getattr(model, "model_fields", None)
     if not fields:
         fields = getattr(model, "__fields__")
@@ -160,7 +179,11 @@ def model_fields(model: Type[BaseModel]) -> Dict[str, ModelFieldCompat]:
     return {k: ModelFieldCompat(v) for k, v in fields.items()}
 
 
-class OldConfigWrapper:
+class Pydantic1ConfigWrapper:
+    """Config wrapper for Pydantic 1 style model config, which provides a
+    Pydantic 2 style interface for accessing mopdel config values.
+    """
+
     def __init__(self, config):
         self._config = config
 
@@ -169,7 +192,15 @@ class OldConfigWrapper:
 
 
 def model_config(model: Type[BaseModel]):
-    return getattr(model, "model_config", OldConfigWrapper(getattr(model, "__config__", None)))
+    """Returns the config for a given pydantic model, wrapped such that it has
+    a Pydantic 2-style interface for accessing config values.
+    """
+    # Pydantic 2.x
+    if hasattr(model, "model_config"):
+        return getattr(model, "model_config")
+
+    # Pydantic 1.x
+    return Pydantic1ConfigWrapper(getattr(model, "__config__"))
 
 
 class MakeConfigCacheable(BaseModel):
@@ -205,9 +236,11 @@ class MakeConfigCacheable(BaseModel):
             return super().__setattr__(name, value)
         except (TypeError, ValueError) as e:
             clsname = self.__class__.__name__
-            if "Instance is frozen" in str(
+            if "Instance is frozen" in str(  # Pydantic 2.x error
                 e
-            ) or "is immutable and does not support item assignment" in str(e):
+            ) or "is immutable and does not support item assignment" in str(  # Pydantic 1.x error
+                e
+            ):
                 if isinstance(self, ConfigurableResourceFactory):
                     raise DagsterInvalidInvocationError(
                         f"'{clsname}' is a Pythonic resource and does not support item assignment,"
@@ -247,24 +280,24 @@ class MakeConfigCacheable(BaseModel):
         return name.endswith(INTERNAL_MARKER)
 
 
-def ensure_env_vars_set(set_value: Any, input_value: Any) -> Optional[Any]:
-    """Ensures that Pydantic field values are set to the appropriate EnvVar or IntEnvVar
-    objects, if the input value is an EnvVar or IntEnvVar. Pydantic will cast
-    them to strings or ints otherwise, which is not what we want.
+def ensure_env_vars_set_post_init(set_value: Any, input_value: Any) -> Optional[Any]:
+    """Pydantic 2.x utility. Ensures that Pydantic field values are set to the appropriate
+    EnvVar or IntEnvVar objects post-model-instantiation, since Pydantic 2.x will cast
+    EnvVar or IntEnvVar values to raw strings or ints as part of the model instantiation process.
     """
     if isinstance(set_value, dict) and isinstance(input_value, dict):
         for key, value in input_value.items():
             if isinstance(value, (EnvVar, IntEnvVar)):
                 set_value[key] = value
             elif isinstance(value, (dict, list)):
-                set_value[key] = ensure_env_vars_set(set_value[key], value)
+                set_value[key] = ensure_env_vars_set_post_init(set_value[key], value)
     if isinstance(set_value, list) and isinstance(input_value, list):
         for i in range(len(set_value)):
             value = input_value[i]
             if isinstance(value, (EnvVar, IntEnvVar)):
                 set_value[i] = value
             elif isinstance(value, (dict, list)):
-                set_value[i] = ensure_env_vars_set(set_value[i], value)
+                set_value[i] = ensure_env_vars_set_post_init(set_value[i], value)
 
     return set_value
 
@@ -337,7 +370,7 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
                 modified_data[key] = None
         super().__init__(**modified_data)
         if USING_PYDANTIC_2:
-            self.__dict__ = ensure_env_vars_set(self.__dict__, modified_data)
+            self.__dict__ = ensure_env_vars_set_post_init(self.__dict__, modified_data)
 
     def _convert_to_config_dictionary(self) -> Mapping[str, Any]:
         """Converts this Config object to a Dagster config dictionary, in the same format as the dictionary
@@ -364,8 +397,6 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
             if self._is_field_internal(key):
                 continue
             field = model_fields(self).get(key)
-            if field and value is None and not _is_pydantic_field_required(field):
-                continue
 
             if field:
                 alias = field.alias or key
@@ -1574,29 +1605,15 @@ def _convert_pydantic_field(pydantic_field: FieldInfo, model_cls: Optional[Type]
         )
         return inferred_field
 
-        # return Field(
-        #     config=(
-        #         inferred_field.config_type,  # Noneable(wrapped_config_type) if pydantic_field.allow_none else wrapped_config_type
-        #     ),
-        #     description=inferred_field.description,
-        #     is_required=_is_pydantic_field_required(pydantic_field),
-        # )
     else:
-        # For certain data structure types, we need to grab the inner Pydantic field (e.g. List type)
-        # if inner_field:
-        #     config_type = _convert_pydantic_field(inner_field, model_cls=model_cls).config_type
-        # else:
         if not pydantic_field.is_required() and not _is_optional(field_type):
             field_type = Optional[field_type]
         config_type = _config_type_for_type_on_pydantic_field(field_type)
 
         return Field(
-            config=(
-                config_type  # Noneable(wrapped_config_type) if pydantic_field.allow_none else wrapped_config_type
-            ),
+            config=(config_type),
             description=pydantic_field.description,
-            is_required=pydantic_field.is_required()
-            and not _is_optional(field_type),  # _is_pydantic_field_required(pydantic_field),
+            is_required=pydantic_field.is_required() and not _is_optional(field_type),
             default_value=(
                 pydantic_field.default
                 if pydantic_field.default is not None
@@ -1676,20 +1693,6 @@ def _config_type_for_type_on_pydantic_field(
         return BoolSource
     else:
         return convert_potential_field(potential_dagster_type).config_type
-
-
-def _is_pydantic_field_required(pydantic_field: FieldInfo) -> bool:
-    # required is of type BoolUndefined = Union[bool, UndefinedType] in Pydantic
-
-    return True
-    # if isinstance(pydantic_field.required, bool):
-    #    return pydantic_field.required
-
-    raise Exception(
-        "pydantic.field.required is their UndefinedType sentinel value which we "
-        "do not fully understand the semantics of right now. For the time being going "
-        "to throw an error to figure see when we actually encounter this state."
-    )
 
 
 class ConfigurableLegacyIOManagerAdapter(ConfigurableIOManagerFactory):
