@@ -84,7 +84,7 @@ export const AssetCheckStatusTag = ({
       data={{key: '', value: ''}}
       actions={[
         {
-          label: 'View in Run Logs',
+          label: 'View in run logs',
           to: `/runs/${runId}?${qs.stringify({logs: check.name})}`,
         },
       ]}
