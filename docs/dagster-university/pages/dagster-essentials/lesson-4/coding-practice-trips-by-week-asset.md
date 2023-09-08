@@ -18,7 +18,7 @@ To practice what you’ve learned, create an asset in `metrics.py` that:
         - `total_amount` - The total sum of the revenue produced by trips that week
         - `trip_distance` - The total miles driven in all trips that happened that week
 
-> **Extra credit!** If want a challenge, follow this constraint:
+> **Extra credit!** If you want a challenge, follow this constraint:
 > Imagine that the entire `trips` data is too big to fit into memory. However, a week’s worth of data fits comfortably. How would you structure your asset’s function to accommodate this?
 
 ---
