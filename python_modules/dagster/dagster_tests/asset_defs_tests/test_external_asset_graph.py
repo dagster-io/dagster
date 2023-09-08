@@ -210,8 +210,13 @@ def test_partitioned_source_asset():
 
 
 def test_get_implicit_job_name_for_assets():
-    asset_graph = ExternalAssetGraph.from_workspace(make_context(["defs1", "defs2"]))
-    assert asset_graph.get_implicit_job_name_for_assets([asset1.key]) == "__ASSET_JOB"
+    workspace = make_context(["defs1", "defs2"])
+    defs1_repo = workspace.code_locations[0]
+    asset_graph = ExternalAssetGraph.from_workspace(workspace)
+    assert (
+        asset_graph.get_implicit_job_name_for_assets([asset1.key], external_repo=workspace)
+        == "__ASSET_JOB"
+    )
     assert asset_graph.get_implicit_job_name_for_assets([asset2.key]) == "__ASSET_JOB"
     assert asset_graph.get_implicit_job_name_for_assets([asset1.key, asset2.key]) == "__ASSET_JOB"
 
