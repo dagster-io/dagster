@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional, Tuple
 
 import pendulum
 
@@ -8,8 +8,9 @@ from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import JobSubsetSelector
+from dagster._core.host_representation.external import ExternalExecutionPlan, ExternalJob
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import (
     ASSET_EVALUATION_ID_TAG,
     AUTO_MATERIALIZE_TAG,
@@ -137,21 +138,36 @@ class AssetDaemon(IntervalDaemon):
 
         evaluations_by_asset_key = {evaluation.asset_key: evaluation for evaluation in evaluations}
 
+        submit_job_inputs: List[Tuple[RunRequest, ExternalJob, ExternalExecutionPlan]] = []
+
+        # First do work that is most likely to fail before doing any writes (to make
+        # double-creation of runs less likely)
         for run_request in run_requests:
             yield
+            submit_job_inputs.append(
+                get_asset_run_submit_input(
+                    run_request._replace(
+                        tags={
+                            **run_request.tags,
+                            ASSET_EVALUATION_ID_TAG: str(new_cursor.evaluation_id),
+                        }
+                    ),
+                    instance,
+                    workspace,
+                    asset_graph,
+                )
+            )
+
+        # Now submit all runs to the queue
+        for submit_job_input in submit_job_inputs:
+            yield
+
+            run_request, external_job, external_execution_plan = submit_job_input
 
             asset_keys = check.not_none(run_request.asset_selection)
 
             run = submit_asset_run(
-                run_request._replace(
-                    tags={
-                        **run_request.tags,
-                        ASSET_EVALUATION_ID_TAG: str(new_cursor.evaluation_id),
-                    }
-                ),
-                instance,
-                workspace,
-                asset_graph,
+                run_request, instance, workspace, external_job, external_execution_plan
             )
 
             asset_key_str = ", ".join([asset_key.to_user_string() for asset_key in asset_keys])
@@ -184,12 +200,12 @@ class AssetDaemon(IntervalDaemon):
         self._logger.info("Finished auto-materialization tick")
 
 
-def submit_asset_run(
+def get_asset_run_submit_input(
     run_request: RunRequest,
     instance: DagsterInstance,
     workspace: IWorkspace,
     asset_graph: ExternalAssetGraph,
-) -> DagsterRun:
+) -> Tuple[RunRequest, ExternalJob, ExternalExecutionPlan]:
     asset_keys = check.not_none(run_request.asset_selection)
     check.invariant(len(asset_keys) > 0)
 
@@ -225,6 +241,19 @@ def submit_asset_run(
         known_state=None,
         instance=instance,
     )
+
+    return (run_request, external_job, external_execution_plan)
+
+
+def submit_asset_run(
+    run_request: RunRequest,
+    instance: DagsterInstance,
+    workspace: IWorkspace,
+    external_job: ExternalJob,
+    external_execution_plan: ExternalExecutionPlan,
+):
+    asset_keys = check.not_none(run_request.asset_selection)
+
     execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
 
     run = instance.create_run(
