@@ -72,6 +72,13 @@ one_asset_self_dependency = [
         deps={"asset1": TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)},
     )
 ]
+one_asset_self_dependency_later_start_date = [
+    asset_def(
+        "asset1",
+        partitions_def=DailyPartitionsDefinition(start_date="2023-01-01"),
+        deps={"asset1": TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)},
+    )
+]
 
 root_assets_different_partitions_same_downstream = [
     asset_def("root1", partitions_def=two_partitions_partitions_def),
@@ -302,6 +309,17 @@ exotic_partition_mapping_scenarios = {
         ),
         expected_run_requests=[run_request(asset_keys=["asset1"], partition_key="2020-01-02")],
         current_time=create_pendulum_time(year=2020, month=1, day=3, hour=4),
+    ),
+    "self_dependency_start_date_changed": AssetReconciliationScenario(
+        assets=one_asset_self_dependency_later_start_date,
+        unevaluated_runs=[],
+        cursor_from=AssetReconciliationScenario(
+            assets=one_asset_self_dependency,
+            unevaluated_runs=[],
+            expected_run_requests=[run_request(asset_keys=["asset1"], partition_key="2020-01-01")],
+            current_time=create_pendulum_time(year=2020, month=1, day=2, hour=4),
+        ),
+        expected_run_requests=[run_request(asset_keys=["asset1"], partition_key="2023-01-01")],
     ),
     "self_dependency_multipartitioned": AssetReconciliationScenario(
         assets=multipartitioned_self_dependency,

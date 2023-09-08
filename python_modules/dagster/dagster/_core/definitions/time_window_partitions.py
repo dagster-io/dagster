@@ -1586,6 +1586,31 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
         ):  # version 1
             time_windows = tuples_to_time_windows(loaded["time_windows"])
             num_partitions = loaded["num_partitions"]
+            # this can happen if the partition subset was serialized with a partition definition
+            # that had an older start date than the current one
+            if any(time_window.start < partitions_def.start for time_window in time_windows):
+                # filter out time windows that are before the start date
+                filtered_time_windows = []
+                for time_window in time_windows:
+                    if time_window.start < partitions_def.start:
+                        if time_window.end <= partitions_def.start:
+                            continue
+                        else:
+                            filtered_time_windows.append(
+                                TimeWindow(
+                                    start=partitions_def.start,
+                                    end=time_window.end,
+                                )
+                            )
+                    else:
+                        filtered_time_windows.append(time_window)
+                time_windows = filtered_time_windows
+                # must recalculate num_partitions
+                num_partitions = sum(
+                    len(partitions_def.get_partition_keys_in_time_window(time_window))
+                    for time_window in time_windows
+                )
+
         else:
             raise DagsterInvalidDeserializationVersionError(
                 f"Attempted to deserialize partition subset with version {loaded.get('version')},"
