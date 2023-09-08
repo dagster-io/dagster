@@ -13,7 +13,7 @@ import {
   Tooltip,
   Subheading,
   Box,
-  StyledReadOnlyCodeMirror,
+  StyledRawCodeMirror,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {useHistory} from 'react-router-dom';
@@ -262,9 +262,9 @@ export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({r
                 <Subheading>Config</Subheading>
               </Box>
               <CodeMirrorContainer>
-                <StyledReadOnlyCodeMirror
+                <StyledRawCodeMirror
                   value={runConfigYaml}
-                  options={{lineNumbers: true, mode: 'yaml'}}
+                  options={{readOnly: true, lineNumbers: true, mode: 'yaml'}}
                   theme={['config-editor']}
                 />
               </CodeMirrorContainer>
@@ -321,7 +321,6 @@ const CodeMirrorContainer = styled.div`
   flex: 1;
   overflow: hidden;
 
-  .react-codemirror2,
   .CodeMirror {
     height: 100%;
   }

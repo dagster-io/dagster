@@ -16,8 +16,8 @@ import {
   Spinner,
   Table,
   Subheading,
-  StyledReadOnlyCodeMirror,
   ExternalAnchorButton,
+  StyledRawCodeMirror,
 } from '@dagster-io/ui-components';
 import qs from 'qs';
 import * as React from 'react';
@@ -365,9 +365,9 @@ const NextTickDialog: React.FC<{
           >
             <Subheading>Config</Subheading>
           </Box>
-          <StyledReadOnlyCodeMirror
+          <StyledRawCodeMirror
             value={selectedRunRequest.runConfigYaml}
-            options={{lineNumbers: true, mode: 'yaml'}}
+            options={{readOnly: true, lineNumbers: true, mode: 'yaml'}}
           />
         </div>
       </Box>
