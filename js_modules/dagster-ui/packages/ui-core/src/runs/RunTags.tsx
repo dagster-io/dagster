@@ -4,8 +4,9 @@ import * as React from 'react';
 import {showSharedToaster} from '../app/DomUtils';
 import {useCopyToClipboard} from '../app/browser';
 import {__ASSET_JOB_PREFIX} from '../asset-graph/Utils';
+import {TagAction} from '../ui/TagActions';
 
-import {DagsterTag, RunTag, TagAction, TagType} from './RunTag';
+import {DagsterTag, RunTag, TagType} from './RunTag';
 import {RunFilterToken} from './RunsFilterInput';
 
 // Sort these tags to the start of the list.
