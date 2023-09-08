@@ -163,47 +163,6 @@ def scope_existing_asset():
     # end_upstream_dagster_asset
 
 
-def scope_input_manager():
-    # start_input_manager
-    import pandas as pd
-
-    from dagster import ConfigurableIOManager
-
-    class PandasIOManager(ConfigurableIOManager):
-        connection_str: str
-
-        def handle_output(self, context, obj):
-            # dbt handles outputs for us
-            pass
-
-        def load_input(self, context) -> pd.DataFrame:
-            """Load the contents of a table as a pandas DataFrame."""
-            table_name = context.asset_key.path[-1]
-            return pd.read_sql(f"SELECT * FROM {table_name}", con=self.connection_str)
-
-    # end_input_manager
-
-
-def scope_input_manager_resources():
-    class PandasIOManager:
-        def __init__(self, connection_str: str):
-            pass
-
-    # start_input_manager_resources
-    from dagster_dbt import DbtCliResource, load_assets_from_dbt_project
-
-    from dagster import Definitions
-
-    defs = Definitions(
-        assets=load_assets_from_dbt_project(...),
-        resources={
-            "dbt": DbtCliResource(project_dir="path/to/dbt_project"),
-            "pandas_df_manager": PandasIOManager(connection_str=...),
-        },
-    )
-    # end_input_manager_resources
-
-
 def scope_custom_asset_key_dagster_dbt_translator():
     # start_custom_asset_key_dagster_dbt_translator
     from pathlib import Path
