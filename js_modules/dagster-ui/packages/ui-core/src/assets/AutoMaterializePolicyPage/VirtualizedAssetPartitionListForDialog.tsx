@@ -3,6 +3,7 @@ import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 import styled from 'styled-components';
 
+import {COMMON_COLLATOR} from '../../app/Util';
 import {Container, Inner, Row} from '../../ui/VirtualizedTable';
 
 interface Props<A> {
@@ -32,7 +33,9 @@ export function VirtualizedAssetPartitionListForDialog<A>({
 
   const allRows = React.useMemo(() => {
     const rows = [] as Row<A>[];
-    const partitionNames = Object.keys(assetKeysByPartition).sort();
+    const partitionNames = Object.keys(assetKeysByPartition).sort((a, b) =>
+      COMMON_COLLATOR.compare(a, b),
+    );
     partitionNames.forEach((partitionName) => {
       const assetKeys = assetKeysByPartition[partitionName]!;
       const expanded = expandedPartitions.has(partitionName);

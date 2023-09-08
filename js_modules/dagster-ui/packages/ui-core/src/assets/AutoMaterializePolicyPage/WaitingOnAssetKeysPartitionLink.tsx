@@ -24,7 +24,7 @@ export const WaitingOnAssetKeysPartitionLink = ({assetKeysByPartition}: Props) =
     return Object.fromEntries(
       filteredPartitionNames.map((partitionName) => [
         partitionName,
-        assetKeysByPartition[partitionName]!.sort(sortAssetKeys),
+        [...assetKeysByPartition[partitionName]!].sort(sortAssetKeys),
       ]),
     );
   }, [assetKeysByPartition, filteredPartitionNames]);
