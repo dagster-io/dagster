@@ -64,6 +64,65 @@ def daemon_not_paused_instance():
         yield instance
 
 
+daemon_scenarios_with_multiple_run_requests = {
+    key: val for key, val in daemon_scenarios.items() if len(val.expected_run_requests or []) > 1
+}
+
+
+@pytest.mark.parametrize(
+    "scenario_item",
+    list(daemon_scenarios_with_multiple_run_requests.items()),
+    ids=list(daemon_scenarios_with_multiple_run_requests.keys()),
+)
+def test_daemon_idempotency_after_failure(
+    scenario_item, daemon_not_paused_instance_empty_run_queue
+):
+    runs = daemon_not_paused_instance_empty_run_queue.get_runs()
+    assert len(runs) == 0
+
+    scenario_name, scenario = scenario_item
+    gen_launch_runs = scenario.gen_do_daemon_scenario(
+        daemon_not_paused_instance_empty_run_queue, scenario_name=scenario_name
+    )
+    next(gen_launch_runs)
+    next(gen_launch_runs)
+
+    runs = daemon_not_paused_instance_empty_run_queue.get_runs()
+    num_runs = len(runs)
+    assert num_runs > 0
+
+    # simulate a failure here by starting a second tick
+    gen_launch_runs = scenario.gen_do_daemon_scenario(
+        daemon_not_paused_instance_empty_run_queue,
+        scenario_name=scenario_name,
+        include_unevaluated_runs=False,
+    )
+    next(gen_launch_runs)
+    next(gen_launch_runs)
+
+    runs = daemon_not_paused_instance_empty_run_queue.get_runs()
+    assert len(runs) == num_runs  # Did not launch the same run again
+
+
+@pytest.fixture
+def daemon_not_paused_instance_empty_run_queue():
+    with instance_for_test(
+        overrides={
+            "run_launcher": {
+                "module": "dagster._core.launcher.sync_in_memory_run_launcher",
+                "class": "SyncInMemoryRunLauncher",
+            },
+            "run_coordinator": {
+                "module": "dagster._core.run_coordinator",
+                "class": "QueuedRunCoordinator",
+                "config": {"max_concurrent_runs": 0},
+            },
+        }
+    ) as instance:
+        set_auto_materialize_paused(instance, False)
+        yield instance
+
+
 @pytest.mark.parametrize(
     "scenario_item",
     list(daemon_scenarios.items()),
@@ -84,6 +143,9 @@ def test_daemon(scenario_item, daemon_not_paused_instance):
         inner_scenario = inner_scenario.cursor_from
 
     assert len(runs) == expected_runs
+
+    scenario.do_daemon_scenario(daemon_not_paused_instance, scenario_name=scenario_name)
+    # Idempotent - no new runs if you re-run the same evaluation ID over again
 
     for run in runs:
         if any(

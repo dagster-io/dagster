@@ -3,6 +3,7 @@ from typing import Optional
 import pendulum
 
 import dagster._check as check
+from dagster import RunsFilter
 from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
@@ -137,10 +138,29 @@ class AssetDaemon(IntervalDaemon):
 
         evaluations_by_asset_key = {evaluation.asset_key: evaluation for evaluation in evaluations}
 
+        # Look for existing runs from this evaluation ID (in case the tick failed partway through launching runs)
+        runs_filter = RunsFilter(tags={ASSET_EVALUATION_ID_TAG: str(new_cursor.evaluation_id)})
+        existing_runs = instance.get_runs(runs_filter)
+
+        print(str(existing_runs))
+
         for run_request in run_requests:
             yield
 
             asset_keys = check.not_none(run_request.asset_selection)
+
+            asset_key_str = ", ".join([asset_key.to_user_string() for asset_key in asset_keys])
+
+            if any(
+                (run.asset_selection or {}) == set(asset_keys)
+                and (run_request.tags.items() <= run.tags.items())
+                for run in existing_runs
+            ):
+                self._logger.info(
+                    f"Skipping run for assets {asset_key_str} with tags {run_request.tags} since a"
+                    " run was already launched for this tick"
+                )
+                continue
 
             run = submit_asset_run(
                 run_request._replace(
@@ -153,8 +173,6 @@ class AssetDaemon(IntervalDaemon):
                 workspace,
                 asset_graph,
             )
-
-            asset_key_str = ", ".join([asset_key.to_user_string() for asset_key in asset_keys])
 
             self._logger.info(
                 f"Launched run {run.run_id} for assets {asset_key_str} with tags {run_request.tags}"

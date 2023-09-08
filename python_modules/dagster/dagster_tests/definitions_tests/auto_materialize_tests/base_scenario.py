@@ -413,6 +413,9 @@ class AssetReconciliationScenario(
         return run_requests, cursor, evaluations
 
     def do_daemon_scenario(self, instance, scenario_name):
+        list(self.gen_do_daemon_scenario(instance, scenario_name))
+
+    def gen_do_daemon_scenario(self, instance, scenario_name, include_unevaluated_runs=True):
         assert bool(self.assets) != bool(
             self.code_locations
         ), "Must specify either assets or code_locations"
@@ -435,31 +438,32 @@ class AssetReconciliationScenario(
         def test_time_fn():
             return (test_time + (datetime.datetime.now() - start)).timestamp()
 
-        for run in self.unevaluated_runs:
-            if self.between_runs_delta is not None:
-                test_time += self.between_runs_delta
+        if include_unevaluated_runs:
+            for run in self.unevaluated_runs:
+                if self.between_runs_delta is not None:
+                    test_time += self.between_runs_delta
 
-            with pendulum.test(test_time), mock.patch("time.time", new=test_time_fn):
-                assert not run.is_observation, "Observations not supported for daemon tests"
-                if self.assets:
-                    do_run(
-                        asset_keys=run.asset_keys,
-                        partition_key=run.partition_key,
-                        all_assets=self.assets,
-                        instance=instance,
-                        failed_asset_keys=run.failed_asset_keys,
-                    )
-                else:
-                    all_assets = [
-                        asset for assets in self.code_locations.values() for asset in assets
-                    ]
-                    do_run(
-                        asset_keys=run.asset_keys,
-                        partition_key=run.partition_key,
-                        all_assets=all_assets,  # This isn't quite right, it should be filtered to just the assets for the location
-                        instance=instance,
-                        failed_asset_keys=run.failed_asset_keys,
-                    )
+                with pendulum.test(test_time), mock.patch("time.time", new=test_time_fn):
+                    assert not run.is_observation, "Observations not supported for daemon tests"
+                    if self.assets:
+                        do_run(
+                            asset_keys=run.asset_keys,
+                            partition_key=run.partition_key,
+                            all_assets=self.assets,
+                            instance=instance,
+                            failed_asset_keys=run.failed_asset_keys,
+                        )
+                    else:
+                        all_assets = [
+                            asset for assets in self.code_locations.values() for asset in assets
+                        ]
+                        do_run(
+                            asset_keys=run.asset_keys,
+                            partition_key=run.partition_key,
+                            all_assets=all_assets,  # This isn't quite right, it should be filtered to just the assets for the location
+                            instance=instance,
+                            failed_asset_keys=run.failed_asset_keys,
+                        )
 
         if self.evaluation_delta is not None:
             test_time += self.evaluation_delta
@@ -487,7 +491,7 @@ class AssetReconciliationScenario(
                     workspace.get_code_location_error("test_location") is None
                 ), workspace.get_code_location_error("test_location")
 
-                list(AssetDaemon(interval_seconds=42).run_iteration(workspace_context))
+                yield from AssetDaemon(interval_seconds=42).run_iteration(workspace_context)
 
 
 def do_run(
