@@ -1,6 +1,6 @@
 // Generated GraphQL types, do not edit manually.
 
-import * as Types from '../../graphql/types';
+import * as Types from '../../../graphql/types';
 
 export type ResumeBackfillMutationVariables = Types.Exact<{
   backfillId: Types.Scalars['String'];

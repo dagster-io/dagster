@@ -17,6 +17,11 @@ export type BackfillStatusesByAssetQuery = {
         timestamp: number;
         endTimestamp: number | null;
         numPartitions: number | null;
+        hasCancelPermission: boolean;
+        hasResumePermission: boolean;
+        isAssetBackfill: boolean;
+        numCancelable: number;
+        partitionNames: Array<string> | null;
         error: {
           __typename: 'PythonError';
           message: string;
@@ -27,6 +32,11 @@ export type BackfillStatusesByAssetQuery = {
             error: {__typename: 'PythonError'; message: string; stack: Array<string>};
           }>;
         } | null;
+        partitionStatusCounts: Array<{
+          __typename: 'PartitionStatusCounts';
+          runStatus: Types.RunStatus;
+          count: number;
+        }>;
         assetBackfillData: {
           __typename: 'AssetBackfillData';
           rootAssetTargetedPartitions: Array<string> | null;
@@ -53,6 +63,16 @@ export type BackfillStatusesByAssetQuery = {
               }
           >;
         } | null;
+        partitionSet: {
+          __typename: 'PartitionSet';
+          name: string;
+          pipelineName: string;
+          repositoryOrigin: {
+            __typename: 'RepositoryOrigin';
+            repositoryName: string;
+            repositoryLocationName: string;
+          };
+        } | null;
       }
     | {
         __typename: 'PythonError';
@@ -73,6 +93,11 @@ export type PartitionBackfillFragment = {
   timestamp: number;
   endTimestamp: number | null;
   numPartitions: number | null;
+  hasCancelPermission: boolean;
+  hasResumePermission: boolean;
+  isAssetBackfill: boolean;
+  numCancelable: number;
+  partitionNames: Array<string> | null;
   error: {
     __typename: 'PythonError';
     message: string;
@@ -83,6 +108,11 @@ export type PartitionBackfillFragment = {
       error: {__typename: 'PythonError'; message: string; stack: Array<string>};
     }>;
   } | null;
+  partitionStatusCounts: Array<{
+    __typename: 'PartitionStatusCounts';
+    runStatus: Types.RunStatus;
+    count: number;
+  }>;
   assetBackfillData: {
     __typename: 'AssetBackfillData';
     rootAssetTargetedPartitions: Array<string> | null;
@@ -108,5 +138,15 @@ export type PartitionBackfillFragment = {
           assetKey: {__typename: 'AssetKey'; path: Array<string>};
         }
     >;
+  } | null;
+  partitionSet: {
+    __typename: 'PartitionSet';
+    name: string;
+    pipelineName: string;
+    repositoryOrigin: {
+      __typename: 'RepositoryOrigin';
+      repositoryName: string;
+      repositoryLocationName: string;
+    };
   } | null;
 };

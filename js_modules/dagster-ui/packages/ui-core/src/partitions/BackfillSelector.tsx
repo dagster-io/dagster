@@ -21,11 +21,11 @@ import {isTimeseriesPartition} from '../assets/MultipartitioningSupport';
 import {GanttChartMode} from '../gantt/GanttChart';
 import {buildLayout} from '../gantt/GanttChartLayout';
 import {PartitionDefinitionType, RunStatus} from '../graphql/types';
-import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/BackfillUtils';
+import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/backfill/BackfillUtils';
 import {
   LaunchPartitionBackfillMutation,
   LaunchPartitionBackfillMutationVariables,
-} from '../instance/types/BackfillUtils.types';
+} from '../instance/backfill/types/BackfillUtils.types';
 import {LaunchButton} from '../launchpad/LaunchButton';
 import {TagContainer, TagEditor} from '../launchpad/TagEditor';
 import {explodeCompositesInHandleGraph} from '../pipelines/CompositeSupport';
