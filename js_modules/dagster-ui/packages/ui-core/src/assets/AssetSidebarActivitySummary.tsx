@@ -1,5 +1,4 @@
 import {Body, Box, Colors, Icon, Spinner, Table} from '@dagster-io/ui-components';
-import qs from 'qs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -181,20 +180,10 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
                 <tr key={check.name}>
                   <td style={{paddingLeft: 24}}>{check.name}</td>
                   <td>
-                    {check.executionForLatestMaterialization === null ? (
-                      <AssetCheckStatusTag notChecked={true} />
-                    ) : (
-                      <Link
-                        to={`/runs/${check.executionForLatestMaterialization.runId}?${qs.stringify({
-                          logs: check.name,
-                        })}`}
-                      >
-                        <AssetCheckStatusTag
-                          severity={check.executionForLatestMaterialization.evaluation?.severity}
-                          status={check.executionForLatestMaterialization.status}
-                        />
-                      </Link>
-                    )}
+                    <AssetCheckStatusTag
+                      check={check}
+                      execution={check.executionForLatestMaterialization}
+                    />
                   </td>
                 </tr>
               ))}
