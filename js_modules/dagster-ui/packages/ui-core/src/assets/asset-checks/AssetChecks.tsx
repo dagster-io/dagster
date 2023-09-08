@@ -4,9 +4,9 @@ import React, {useContext} from 'react';
 import {Link} from 'react-router-dom';
 
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
+import {Timestamp} from '../../app/time/Timestamp';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {LoadingSpinner} from '../../ui/Loading';
-import {useFormatDateTime} from '../../ui/useFormatDateTime';
 import {AssetFeatureContext} from '../AssetFeatureContext';
 import {assetDetailsPathForKey} from '../assetDetailsPathForKey';
 import {AssetKey} from '../types';
@@ -27,16 +27,6 @@ export const AssetChecks = ({
   assetKey: AssetKey;
   lastMaterializationTimestamp: string | undefined;
 }) => {
-  const formatDatetime = useFormatDateTime();
-  const lastMaterializationDate = React.useMemo(
-    () => (lastMaterializationTimestamp ? new Date(parseInt(lastMaterializationTimestamp)) : null),
-    [lastMaterializationTimestamp],
-  );
-  const isCurrentYear = React.useMemo(
-    () => lastMaterializationDate?.getFullYear() === new Date().getFullYear(),
-    [lastMaterializationDate],
-  );
-
   const queryResult = useQuery<AssetChecksQuery, AssetChecksQueryVariables>(ASSET_CHECKS_QUERY, {
     variables: {
       assetKey,
@@ -88,31 +78,20 @@ export const AssetChecks = ({
         <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
           <Body2>Latest materialization:</Body2>
 
-          <Link
-            to={assetDetailsPathForKey(assetKey, {
-              time: lastMaterializationTimestamp,
-              view: 'events',
-            })}
-          >
-            <Tag icon="materialization">
-              {lastMaterializationDate ? (
-                <>
-                  {formatDatetime(lastMaterializationDate, {
-                    month: 'short',
-                    day: 'numeric',
-                    year: isCurrentYear ? undefined : 'numeric',
-                  })}{' '}
-                  at{' '}
-                  {formatDatetime(lastMaterializationDate, {
-                    hour: 'numeric',
-                    minute: 'numeric',
-                  })}
-                </>
-              ) : (
-                'None'
-              )}
-            </Tag>
-          </Link>
+          {lastMaterializationTimestamp ? (
+            <Link
+              to={assetDetailsPathForKey(assetKey, {
+                time: lastMaterializationTimestamp,
+                view: 'events',
+              })}
+            >
+              <Tag icon="materialization">
+                <Timestamp timestamp={{ms: Number(lastMaterializationTimestamp)}} />
+              </Tag>
+            </Link>
+          ) : (
+            <Tag icon="materialization">None </Tag>
+          )}
         </Box>
         {/* TODO: Enable once the mutations are ready */}
         {/* {data && 'checks' in data.assetChecksOrError! && data.assetChecksOrError.checks.length ? (
