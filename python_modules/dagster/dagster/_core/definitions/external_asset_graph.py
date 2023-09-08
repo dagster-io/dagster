@@ -232,7 +232,7 @@ class ExternalAssetGraph(AssetGraph):
     def get_implicit_job_name_for_assets(
         self,
         asset_keys: Iterable[AssetKey],
-        external_repo: ExternalRepository,
+        external_repo: Optional[ExternalRepository],
     ) -> Optional[str]:
         """Returns the name of the asset base job that contains all the given assets, or None if there is no such
         job.
@@ -240,6 +240,11 @@ class ExternalAssetGraph(AssetGraph):
         Note: all asset_keys should be in the same repository.
         """
         if all(self.is_observable(asset_key) for asset_key in asset_keys):
+            check.invariant(
+                external_repo is not None,
+                "external_repo must be passed in when getting job names for observable source"
+                " assets",
+            )
             # for observable source assets, we need to select the job based on the partitions def
             target_partitions_defs = {
                 self.get_partitions_def(asset_key) for asset_key in asset_keys
