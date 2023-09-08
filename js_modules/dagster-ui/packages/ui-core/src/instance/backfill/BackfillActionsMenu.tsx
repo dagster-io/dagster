@@ -40,7 +40,7 @@ export function backfillCanResume(backfill: {
   status: BulkActionStatus;
   partitionSet: {__typename: 'PartitionSet'} | null;
 }) {
-  return (
+  return !!(
     backfill.hasResumePermission &&
     backfill.status === BulkActionStatus.FAILED &&
     backfill.partitionSet
@@ -115,51 +115,46 @@ export const BackfillActionsMenu = ({
     }
   };
 
+  const canCancelSubmission = backfillCanCancelSubmission(backfill);
+  const canCancelRuns = backfillCanCancelRuns(backfill, counts);
+
   return (
     <>
       <Popover
+        position="bottom-right"
         content={
           <Menu>
-            {backfillCanCancelSubmission(backfill) ? (
-              <MenuItem
-                text="Cancel backfill submission"
-                icon="cancel"
-                intent="danger"
-                onClick={() => setShowTerminateDialog(true)}
-              />
-            ) : backfillCanCancelRuns(backfill, counts) ? (
-              <MenuItem
-                text="Terminate unfinished runs"
-                icon="cancel"
-                intent="danger"
-                onClick={() => setShowTerminateDialog(true)}
-              />
-            ) : null}
-            {backfillCanResume(backfill) ? (
-              <MenuItem
-                text="Resume failed backfill"
-                title="Submits runs for all partitions in the backfill that do not have a corresponding run. Does not retry failed runs."
-                icon="refresh"
-                onClick={() => resume()}
-              />
-            ) : null}
             <MenuItem
               text="View backfill runs"
               icon="settings_backup_restore"
               onClick={() => history.push(runsUrl)}
             />
-            {backfillCanShowStepStatus(backfill) ? (
-              <MenuItem
-                text="View step status"
-                icon="view_list"
-                onClick={() => {
-                  setShowStepStatus(true);
-                }}
-              />
-            ) : null}
+            <MenuItem
+              disabled={!backfillCanShowStepStatus(backfill)}
+              text="View step status"
+              icon="view_list"
+              onClick={() => {
+                setShowStepStatus(true);
+              }}
+            />
+            <MenuItem
+              disabled={!backfillCanResume(backfill)}
+              text="Resume failed backfill"
+              title="Submits runs for all partitions in the backfill that do not have a corresponding run. Does not retry failed runs."
+              icon="refresh"
+              onClick={() => resume()}
+            />
+            <MenuItem
+              text={
+                canCancelSubmission ? 'Cancel backfill submission' : 'Terminate unfinished runs'
+              }
+              icon="cancel"
+              intent="danger"
+              disabled={!(canCancelSubmission || canCancelRuns)}
+              onClick={() => setShowTerminateDialog(true)}
+            />
           </Menu>
         }
-        position="bottom-right"
       >
         <Button icon={<Icon name="expand_more" />} />
       </Popover>
