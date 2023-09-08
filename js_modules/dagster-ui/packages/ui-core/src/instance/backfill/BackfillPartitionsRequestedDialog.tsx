@@ -1,8 +1,8 @@
 import {Button, DialogFooter, Dialog, FontFamily} from '@dagster-io/ui-components';
 import * as React from 'react';
 
-import {TruncatedTextWithFullTextOnHover} from '../nav/getLeftNavItemsForOption';
-import {VirtualizedItemListForDialog} from '../ui/VirtualizedItemListForDialog';
+import {TruncatedTextWithFullTextOnHover} from '../../nav/getLeftNavItemsForOption';
+import {VirtualizedItemListForDialog} from '../../ui/VirtualizedItemListForDialog';
 
 import {BackfillTableFragment} from './types/BackfillTable.types';
 

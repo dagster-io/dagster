@@ -32,11 +32,11 @@ import {
 } from '../asset-graph/Utils';
 import {AssetKey} from '../assets/types';
 import {LaunchBackfillParams, PartitionDefinitionType} from '../graphql/types';
-import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/BackfillUtils';
+import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/backfill/BackfillUtils';
 import {
   LaunchPartitionBackfillMutation,
   LaunchPartitionBackfillMutationVariables,
-} from '../instance/types/BackfillUtils.types';
+} from '../instance/backfill/types/BackfillUtils.types';
 import {CONFIG_PARTITION_SELECTION_QUERY} from '../launchpad/ConfigEditorConfigPicker';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {TagEditor, TagContainer} from '../launchpad/TagEditor';

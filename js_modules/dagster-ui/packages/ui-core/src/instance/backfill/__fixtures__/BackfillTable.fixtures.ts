@@ -12,7 +12,7 @@ import {
   buildPartitionStatuses,
   buildPythonError,
   buildRepositoryOrigin,
-} from '../../graphql/types';
+} from '../../../graphql/types';
 import {
   SINGLE_BACKFILL_STATUS_COUNTS_QUERY,
   SINGLE_BACKFILL_STATUS_DETAILS_QUERY,

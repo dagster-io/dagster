@@ -13,8 +13,8 @@ import {
   buildInstance,
   buildRunLauncher,
 } from '../../graphql/types';
-import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../../instance/BackfillUtils';
-import {LaunchPartitionBackfillMutation} from '../../instance/types/BackfillUtils.types';
+import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../../instance/backfill/BackfillUtils';
+import {LaunchPartitionBackfillMutation} from '../../instance/backfill/types/BackfillUtils.types';
 import {CONFIG_PARTITION_SELECTION_QUERY} from '../../launchpad/ConfigEditorConfigPicker';
 import {ConfigPartitionSelectionQuery} from '../../launchpad/types/ConfigEditorConfigPicker.types';
 import {LAUNCH_PIPELINE_EXECUTION_MUTATION} from '../../runs/RunUtils';
