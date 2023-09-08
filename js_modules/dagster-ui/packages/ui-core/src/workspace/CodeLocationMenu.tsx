@@ -6,7 +6,7 @@ import {
   Menu,
   MenuItem,
   Popover,
-  StyledReadOnlyCodeMirror,
+  StyledRawCodeMirror,
   Table,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
@@ -133,9 +133,9 @@ const CodeLocationConfig: React.FC<{
   }, [displayMetadata]);
 
   return (
-    <StyledReadOnlyCodeMirror
+    <StyledRawCodeMirror
       value={yamlString}
-      options={{lineNumbers: true, mode: 'yaml'}}
+      options={{readOnly: true, lineNumbers: true, mode: 'yaml'}}
       theme={['config-editor']}
     />
   );
