@@ -15,6 +15,7 @@ from dagster._core.execution.plan.objects import StepFailureData
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.step_delegating.step_handler.base import StepHandler, StepHandlerContext
+from dagster._core.instance import DagsterInstance
 from dagster._grpc.types import ExecuteStepArgs
 from dagster._utils.error import serializable_error_info_from_exc_info
 
@@ -67,16 +68,24 @@ class StepDelegatingExecutor(Executor):
             ),
         )
         self._should_verify_step = should_verify_step
+        self._event_cursor: Optional[str] = None
 
     @property
     def retries(self):
         return self._retries
 
-    def _pop_events(self, instance, run_id) -> Sequence[DagsterEvent]:
-        events = instance.logs_after(run_id, self._event_cursor, of_type=set(DagsterEventType))
-        self._event_cursor += len(events)
-        dagster_events = [event.dagster_event for event in events]
-        check.invariant(None not in dagster_events, "Query should not return a non dagster event")
+    def _pop_events(self, instance: DagsterInstance, run_id: str) -> Sequence[DagsterEvent]:
+        conn = instance.get_records_for_run(
+            run_id,
+            self._event_cursor,
+            of_type=set(DagsterEventType),
+        )
+        self._event_cursor = conn.cursor
+        dagster_events = [
+            record.event_log_entry.dagster_event
+            for record in conn.records
+            if record.event_log_entry.dagster_event
+        ]
         return dagster_events
 
     def _get_step_handler_context(
@@ -101,8 +110,6 @@ class StepDelegatingExecutor(Executor):
     def execute(self, plan_context: PlanOrchestrationContext, execution_plan: ExecutionPlan):
         check.inst_param(plan_context, "plan_context", PlanOrchestrationContext)
         check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
-
-        self._event_cursor = -1
 
         DagsterEvent.engine_event(
             plan_context,
