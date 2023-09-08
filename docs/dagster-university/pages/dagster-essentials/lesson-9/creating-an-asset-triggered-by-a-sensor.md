@@ -74,8 +74,8 @@ Now that you’ve defined how the asset can be materialized, let’s create the 
         )
         group by 1, 2
         order by 1, 2 asc
-    """
-    ```
+      """
+      ```
     
 5. Next, run the query in DuckDB and store the results as a DataFrame:
     
