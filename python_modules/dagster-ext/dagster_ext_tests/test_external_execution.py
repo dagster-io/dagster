@@ -279,10 +279,10 @@ def test_ext_no_orchestration():
         from dagster_ext import (
             ExtContext,
             init_dagster_ext,
-            is_dagster_orchestration_active,
+            is_dagster_ext_process,
         )
 
-        assert not is_dagster_orchestration_active()
+        assert not is_dagster_ext_process()
 
         init_dagster_ext()
         context = ExtContext.get()
