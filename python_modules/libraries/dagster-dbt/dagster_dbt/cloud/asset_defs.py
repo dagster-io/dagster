@@ -351,6 +351,14 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             def get_group_name(cls, dbt_resource_props):
                 return self._node_info_to_group_fn(dbt_resource_props)
 
+            @classmethod
+            def get_freshness_policy(cls, dbt_resource_props):
+                return self._node_info_to_freshness_policy_fn(dbt_resource_props)
+
+            @classmethod
+            def get_auto_materialize_policy(cls, dbt_resource_props):
+                return self._node_info_to_auto_materialize_policy_fn(dbt_resource_props)
+
         (
             asset_deps,
             asset_ins,
@@ -363,8 +371,6 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         ) = get_asset_deps(
             dbt_nodes=dbt_nodes,
             deps=dbt_dependencies,
-            node_info_to_freshness_policy_fn=self._node_info_to_freshness_policy_fn,
-            node_info_to_auto_materialize_policy_fn=self._node_info_to_auto_materialize_policy_fn,
             # TODO: In the future, allow the IO manager to be specified.
             io_manager_key=None,
             dagster_dbt_translator=CustomDagsterDbtTranslator(),
