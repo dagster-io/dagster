@@ -46,7 +46,7 @@ class ExtMessageHandler:
         key = AssetKey.from_user_string(asset_key)
         output_name = self._context.output_for_asset_key(key)
         metadata_value = self._resolve_metadata_value(value, type)
-        self._context.merge_output_metadata({label: metadata_value}, output_name)
+        self._context.add_output_metadata({label: metadata_value}, output_name)
 
     def _resolve_metadata_value(
         self, value: Any, metadata_type: Optional[ExtMetadataType]
