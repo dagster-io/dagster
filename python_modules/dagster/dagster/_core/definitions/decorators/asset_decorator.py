@@ -750,8 +750,9 @@ def multi_asset(
                         continue
                     else:
                         raise DagsterInvalidDefinitionError(
-                            f"Two different PartitionMappings for input {dep.asset_key} provided"
-                            f" for multi_asset {op_name}. Please use the same PartitionMapping."
+                            f"Two different PartitionMappings for {dep.asset_key} provided for"
+                            f" multi_asset {op_name}. Please use the same PartitionMapping for"
+                            f" {dep.asset_key}."
                         )
 
         else:
