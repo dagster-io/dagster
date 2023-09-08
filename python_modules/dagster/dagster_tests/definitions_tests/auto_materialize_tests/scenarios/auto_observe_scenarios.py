@@ -28,6 +28,13 @@ def partitioned_observable_source_asset():
     return DataVersionsByPartition({"b": "1", "c": "5"})
 
 
+@observable_source_asset(
+    auto_observe_interval_minutes=30, partitions_def=StaticPartitionsDefinition(["a", "b"])
+)
+def partitioned_observable_source_asset2():
+    return DataVersionsByPartition({"a": "1"})
+
+
 auto_observe_scenarios = {
     "auto_observe_single_asset": AssetReconciliationScenario(
         [],
@@ -71,6 +78,14 @@ auto_observe_scenarios = {
         expected_run_requests=[
             run_request(asset_keys=["asset1"]),
             run_request(asset_keys=["asset2"]),
+        ],
+    ),
+    "auto_observe_two_assets_different_partitions_defs": AssetReconciliationScenario(
+        unevaluated_runs=[],
+        assets=[partitioned_observable_source_asset, partitioned_observable_source_asset2],
+        expected_run_requests=[
+            run_request(asset_keys=["partitioned_observable_source_asset"]),
+            run_request(asset_keys=["partitioned_observable_source_asset2"]),
         ],
     ),
 }

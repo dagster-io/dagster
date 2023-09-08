@@ -288,10 +288,14 @@ class RepositoryDefinition:
             i = 0
             while self.has_job(f"{ASSET_BASE_JOB_PREFIX}_{i}"):
                 base_job = self.get_job(f"{ASSET_BASE_JOB_PREFIX}_{i}")
+                partitions_def = base_job.partitions_def
 
                 if all(
                     key in base_job.asset_layer.assets_defs_by_key
-                    or base_job.asset_layer.is_observable_for_asset(key)
+                    or (
+                        base_job.asset_layer.is_observable_for_asset(key)
+                        and partitions_def == base_job.asset_layer.partitions_def_for_asset(key)
+                    )
                     for key in asset_keys
                 ):
                     return base_job

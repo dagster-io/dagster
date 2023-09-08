@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Sequence
 
 import pendulum
 
@@ -6,7 +6,9 @@ import dagster._check as check
 from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.run_request import RunRequest
+from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
@@ -15,6 +17,7 @@ from dagster._core.storage.tags import (
     AUTO_MATERIALIZE_TAG,
     AUTO_OBSERVE_TAG,
 )
+from dagster._core.definitions.assets_job import ASSET_BASE_JOB_PREFIX
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._core.workspace.workspace import IWorkspace
 from dagster._daemon.daemon import DaemonIterator, IntervalDaemon
@@ -184,6 +187,34 @@ class AssetDaemon(IntervalDaemon):
         self._logger.info("Finished auto-materialization tick")
 
 
+def get_external_job_name_for_asset_keys(
+    asset_keys: Sequence[AssetKey], asset_graph: AssetGraph, external_repository
+) -> Optional[str]:
+    # for observable source assets, require a hack
+    if all(asset_graph.is_observable(asset_key) for asset_key in asset_keys):
+        target_partitions_def = asset_graph.get_partitions_def(asset_keys[0])
+
+        partitions_def_by_job_name = {}
+        for (
+            external_partition_set_data
+        ) in external_repository.external_repository_data.external_partition_set_datas:
+            if external_partition_set_data.external_partitions_data is None:
+                continue
+            job_name = external_partition_set_data.job_name
+            partitions_def = (
+                external_partition_set_data.external_partitions_data.get_partitions_definition()
+            )
+            partitions_def_by_job_name[job_name] = partitions_def
+        for job_name, external_partitions_def in partitions_def_by_job_name.items():
+            if not job_name.startswith(ASSET_BASE_JOB_PREFIX):
+                continue
+            if external_partitions_def == target_partitions_def:
+                return job_name
+        return None
+    else:
+        return asset_graph.get_implicit_job_name_for_assets(asset_keys)
+
+
 def submit_asset_run(
     run_request: RunRequest,
     instance: DagsterInstance,
@@ -201,9 +232,14 @@ def submit_asset_run(
 
     location_name = repo_handle.code_location_origin.location_name
     repository_name = repo_handle.repository_name
-    job_name = check.not_none(asset_graph.get_implicit_job_name_for_assets(asset_keys))
-
     code_location = workspace.get_code_location(location_name)
+
+    job_name = check.not_none(
+        get_external_job_name_for_asset_keys(
+            asset_keys, asset_graph, code_location.get_repository(repository_name)
+        )
+    )
+
     external_job = code_location.get_external_job(
         JobSubsetSelector(
             location_name=location_name,
