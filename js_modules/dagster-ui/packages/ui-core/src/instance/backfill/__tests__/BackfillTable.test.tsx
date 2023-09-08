@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import * as React from 'react';
 import {MemoryRouter} from 'react-router-dom';
 
-import * as Alerting from '../../app/CustomAlertProvider';
+import * as Alerting from '../../../app/CustomAlertProvider';
 import {BackfillTable} from '../BackfillTable';
 import {
   BackfillTableFragmentFailedErrorStatus,
