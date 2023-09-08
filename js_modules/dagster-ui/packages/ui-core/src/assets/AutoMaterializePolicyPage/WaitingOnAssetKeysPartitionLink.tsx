@@ -1,7 +1,7 @@
 import {ButtonLink, Box, Tag, Caption} from '@dagster-io/ui-components';
 import * as React from 'react';
 
-import {displayNameForAssetKey, sortAssetKeys} from '../../asset-graph/Utils';
+import {sortAssetKeys} from '../../asset-graph/Utils';
 import {AssetLink} from '../AssetLink';
 import {AssetKey} from '../types';
 
