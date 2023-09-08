@@ -12,7 +12,7 @@ from dagster_ext import (
 import dagster._check as check
 from dagster._core.definitions.data_version import DataProvenance, DataVersion
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.metadata import MetadataValue
+from dagster._core.definitions.metadata import MetadataValue, normalize_metadata_value
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.execution.context.compute import OpExecutionContext
@@ -48,9 +48,42 @@ class ExtOrchestrationContext:
         check.opt_literal_param(type, "type", get_args(ExtMetadataType))
         key = AssetKey.from_user_string(asset_key)
         output_name = self._context.output_for_asset_key(key)
-        # metadata type values correspond to static methods on MetadataValue
-        metadata_value = getattr(MetadataValue, type)(value)
-        self._context.add_output_metadata({label: metadata_value}, output_name)
+        metadata_value = self._resolve_metadata_value(value, type)
+        self._context.merge_output_metadata({label: metadata_value}, output_name)
+
+    def _resolve_metadata_value(
+        self, value: Any, metadata_type: Optional[ExtMetadataType]
+    ) -> MetadataValue:
+        if metadata_type is None:
+            return normalize_metadata_value(value)
+        elif metadata_type == "text":
+            return MetadataValue.text(value)
+        elif metadata_type == "url":
+            return MetadataValue.url(value)
+        elif metadata_type == "path":
+            return MetadataValue.path(value)
+        elif metadata_type == "notebook":
+            return MetadataValue.notebook(value)
+        elif metadata_type == "json":
+            return MetadataValue.json(value)
+        elif metadata_type == "md":
+            return MetadataValue.md(value)
+        elif metadata_type == "float":
+            return MetadataValue.float(value)
+        elif metadata_type == "int":
+            return MetadataValue.int(value)
+        elif metadata_type == "bool":
+            return MetadataValue.bool(value)
+        elif metadata_type == "dagster_run":
+            return MetadataValue.dagster_run(value)
+        elif metadata_type == "asset":
+            return MetadataValue.asset(AssetKey.from_user_string(value))
+        elif metadata_type == "table":
+            return MetadataValue.table(value)
+        elif metadata_type == "null":
+            return MetadataValue.null()
+        else:
+            check.failed(f"Unexpected metadata type {metadata_type}")
 
     def _handle_report_asset_data_version(self, asset_key: str, data_version: str) -> None:
         check.str_param(asset_key, "asset_key")

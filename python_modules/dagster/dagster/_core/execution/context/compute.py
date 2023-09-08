@@ -410,6 +410,20 @@ class OpExecutionContext(AbstractComputeExecutionContext):
             metadata=metadata, output_name=output_name, mapping_key=mapping_key
         )
 
+    def merge_output_metadata(
+        self,
+        metadata: Mapping[str, Any],
+        output_name: Optional[str] = None,
+        mapping_key: Optional[str] = None,
+    ) -> None:
+        metadata = check.mapping_param(metadata, "metadata", key_type=str)
+        output_name = check.opt_str_param(output_name, "output_name")
+        mapping_key = check.opt_str_param(mapping_key, "mapping_key")
+
+        self._step_execution_context.add_output_metadata(
+            metadata=metadata, output_name=output_name, mapping_key=mapping_key, merge=True
+        )
+
     def get_output_metadata(
         self, output_name: str, mapping_key: Optional[str] = None
     ) -> Optional[Mapping[str, Any]]:

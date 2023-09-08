@@ -15,8 +15,22 @@ from dagster._core.definitions.data_version import (
     DATA_VERSION_TAG,
 )
 from dagster._core.definitions.decorators.asset_decorator import asset
+from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.materialize import materialize
-from dagster._core.definitions.metadata import MarkdownMetadataValue
+from dagster._core.definitions.metadata import (
+    BoolMetadataValue,
+    DagsterAssetMetadataValue,
+    DagsterRunMetadataValue,
+    FloatMetadataValue,
+    IntMetadataValue,
+    JsonMetadataValue,
+    MarkdownMetadataValue,
+    NotebookMetadataValue,
+    NullMetadataValue,
+    PathMetadataValue,
+    TextMetadataValue,
+    UrlMetadataValue,
+)
 from dagster._core.errors import DagsterExternalExecutionError
 from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster._core.execution.context.invocation import build_asset_context
@@ -77,7 +91,7 @@ def external_script() -> Iterator[str]:
         context = ExtContext.get()
         context.log("hello world")
         time.sleep(0.1)  # sleep to make sure that we encompass multiple intervals for blob store IO
-        context.report_asset_metadata("bar", context.get_extra("bar"), type="md")
+        context.report_asset_metadata("bar", context.get_extra("bar"), metadata_type="md")
         context.report_asset_data_version("alpha")
 
     with temp_script(script_fn) as script_path:
@@ -163,6 +177,68 @@ def test_ext_subprocess(
 
         captured = capsys.readouterr()
         assert re.search(r"dagster - INFO - [^\n]+ - hello world\n", captured.err, re.MULTILINE)
+
+
+def test_ext_typed_metadata():
+    def script_fn():
+        from dagster_ext import init_dagster_ext
+
+        context = init_dagster_ext()
+        context.report_asset_metadata("untyped_meta", "bar")
+        context.report_asset_metadata("text_meta", "bar", metadata_type="text")
+        context.report_asset_metadata("url_meta", "http://bar.com", metadata_type="url")
+        context.report_asset_metadata("path_meta", "/bar", metadata_type="path")
+        context.report_asset_metadata("notebook_meta", "/bar.ipynb", metadata_type="notebook")
+        context.report_asset_metadata("json_meta", ["bar"], metadata_type="json")
+        context.report_asset_metadata("md_meta", "bar", metadata_type="md")
+        context.report_asset_metadata("float_meta", 1.0, metadata_type="float")
+        context.report_asset_metadata("int_meta", 1, metadata_type="int")
+        context.report_asset_metadata("bool_meta", True, metadata_type="bool")
+        context.report_asset_metadata("dagster_run_meta", "foo", metadata_type="dagster_run")
+        context.report_asset_metadata("asset_meta", "bar/baz", metadata_type="asset")
+        context.report_asset_metadata("null_meta", None, metadata_type="null")
+
+    @asset
+    def foo(context: AssetExecutionContext, ext: ExtSubprocess):
+        with temp_script(script_fn) as script_path:
+            cmd = [_PYTHON_EXECUTABLE, script_path]
+            ext.run(cmd, context=context)
+
+    with instance_for_test() as instance:
+        materialize(
+            [foo],
+            instance=instance,
+            resources={"ext": ExtSubprocess()},
+        )
+        mat = instance.get_latest_materialization_event(foo.key)
+        assert mat and mat.asset_materialization
+        metadata = mat.asset_materialization.metadata
+        assert isinstance(metadata["untyped_meta"], TextMetadataValue)
+        assert metadata["untyped_meta"].value == "bar"
+        assert isinstance(metadata["text_meta"], TextMetadataValue)
+        assert metadata["text_meta"].value == "bar"
+        assert isinstance(metadata["url_meta"], UrlMetadataValue)
+        assert metadata["url_meta"].value == "http://bar.com"
+        assert isinstance(metadata["path_meta"], PathMetadataValue)
+        assert metadata["path_meta"].value == "/bar"
+        assert isinstance(metadata["notebook_meta"], NotebookMetadataValue)
+        assert metadata["notebook_meta"].value == "/bar.ipynb"
+        assert isinstance(metadata["json_meta"], JsonMetadataValue)
+        assert metadata["json_meta"].value == ["bar"]
+        assert isinstance(metadata["md_meta"], MarkdownMetadataValue)
+        assert metadata["md_meta"].value == "bar"
+        assert isinstance(metadata["float_meta"], FloatMetadataValue)
+        assert metadata["float_meta"].value == 1.0
+        assert isinstance(metadata["int_meta"], IntMetadataValue)
+        assert metadata["int_meta"].value == 1
+        assert isinstance(metadata["bool_meta"], BoolMetadataValue)
+        assert metadata["bool_meta"].value is True
+        assert isinstance(metadata["dagster_run_meta"], DagsterRunMetadataValue)
+        assert metadata["dagster_run_meta"].value == "foo"
+        assert isinstance(metadata["asset_meta"], DagsterAssetMetadataValue)
+        assert metadata["asset_meta"].value == AssetKey(["bar", "baz"])
+        assert isinstance(metadata["null_meta"], NullMetadataValue)
+        assert metadata["null_meta"].value is None
 
 
 def test_ext_asset_failed():

@@ -108,7 +108,6 @@ ExtMetadataType = Literal[
     "bool",
     "dagster_run",
     "asset",
-    "table",
     "null",
 ]
 
@@ -701,7 +700,7 @@ class ExtContext:
         self,
         label: str,
         value: Any,
-        type: Optional[ExtMetadataType] = None,  # noqa: A002
+        metadata_type: Optional[ExtMetadataType] = None,
         asset_key: Optional[str] = None,
     ) -> None:
         asset_key = _resolve_optionally_passed_asset_key(
@@ -709,12 +708,12 @@ class ExtContext:
         )
         label = _assert_param_type(label, str, "report_asset_metadata", "label")
         value = _assert_param_json_serializable(value, "report_asset_metadata", "value")
-        _type = _assert_opt_param_value(
-            type, get_args(ExtMetadataType), "report_asset_metadata", "type"
+        metadata_type = _assert_opt_param_value(
+            metadata_type, get_args(ExtMetadataType), "report_asset_metadata", "type"
         )
         self._write_message(
             "report_asset_metadata",
-            {"asset_key": asset_key, "label": label, "value": value, "type": _type},
+            {"asset_key": asset_key, "label": label, "value": value, "type": metadata_type},
         )
 
     def report_asset_data_version(self, data_version: str, asset_key: Optional[str] = None) -> None:
