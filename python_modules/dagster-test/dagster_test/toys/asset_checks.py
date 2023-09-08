@@ -5,6 +5,7 @@ from dagster import (
     AssetCheckResult,
     AssetCheckSeverity,
     AssetCheckSpec,
+    AssetKey,
     AssetOut,
     DailyPartitionsDefinition,
     MetadataValue,
@@ -137,15 +138,18 @@ def downstream_asset():
 
 @multi_asset(
     outs={
-        "one": AssetOut(key="multi_asset_piece_1", group_name="asset_checks"),
-        "two": AssetOut(key="multi_asset_piece_2", group_name="asset_checks"),
+        "one": AssetOut(key="multi_asset_piece_1", group_name="asset_checks", is_required=False),
+        "two": AssetOut(key="multi_asset_piece_2", group_name="asset_checks", is_required=False),
     },
     check_specs=[AssetCheckSpec("my_check", asset="multi_asset_piece_1")],
+    can_subset=True,
 )
-def multi_asset_1_and_2():
-    yield Output(1, output_name="one")
-    yield Output(1, output_name="two")
-    yield AssetCheckResult(success=True, metadata={"foo": "bar"})
+def multi_asset_1_and_2(context):
+    if AssetKey("multi_asset_piece_1") in context.selected_asset_keys:
+        yield Output(1, output_name="one")
+        yield AssetCheckResult(success=True, metadata={"foo": "bar"})
+    if AssetKey("multi_asset_piece_2") in context.selected_asset_keys:
+        yield Output(1, output_name="two")
 
 
 def get_checks_and_assets():

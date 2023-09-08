@@ -133,6 +133,13 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             value_type=AssetKey,
         )
 
+        check.opt_mapping_param(
+            check_specs_by_output_name,
+            "check_specs_by_output_name",
+            key_type=str,
+            value_type=AssetCheckSpec,
+        )
+
         # if not specified assume all output assets depend on all input assets
         all_asset_keys = set(keys_by_output_name.values())
         input_asset_keys = set(keys_by_input_name.values())
@@ -247,12 +254,14 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             backfill_policy, "backfill_policy", BackfillPolicy
         )
 
-        self._check_specs_by_output_name = check.opt_mapping_param(
-            check_specs_by_output_name,
-            "check_specs_by_output_name",
-            key_type=str,
-            value_type=AssetCheckSpec,
-        )
+        if selected_asset_keys is None:
+            self._check_specs_by_output_name = check_specs_by_output_name or {}
+        else:
+            self._check_specs_by_output_name = {
+                output_name: check_spec
+                for output_name, check_spec in (check_specs_by_output_name or {}).items()
+                if check_spec.asset_key in selected_asset_keys
+            }
 
         self._check_specs_by_handle = {
             spec.handle: spec for spec in self._check_specs_by_output_name.values()

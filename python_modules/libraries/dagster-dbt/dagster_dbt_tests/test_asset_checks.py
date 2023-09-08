@@ -111,19 +111,3 @@ def test_asset_check_execution(dbt_commands: List[List[str]]) -> None:
         )
         in events
     )
-
-
-def test_asset_check_invalid_execution() -> None:
-    @dbt_assets(manifest=manifest_asset_checks_json)
-    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
-        yield from dbt.cli(["run"], context=context).stream()
-
-    result = materialize(
-        [my_dbt_assets],
-        resources={
-            "dbt": DbtCliResource(project_dir=os.fspath(test_asset_checks_dbt_project_dir)),
-        },
-        raise_on_error=False,
-    )
-
-    assert not result.success
