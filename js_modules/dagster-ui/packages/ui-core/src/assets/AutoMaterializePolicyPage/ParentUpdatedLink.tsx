@@ -1,6 +1,7 @@
 import {ButtonLink, Box} from '@dagster-io/ui-components';
 import * as React from 'react';
 
+import {sortAssetKeys} from '../../asset-graph/Utils';
 import {VirtualizedItemListForDialog} from '../../ui/VirtualizedItemListForDialog';
 import {AssetLink} from '../AssetLink';
 import {AssetKey} from '../types';
@@ -27,11 +28,11 @@ export const ParentUpdatedLink = ({updatedAssetKeys, willUpdateAssetKeys}: Props
 
   const filteredAssetKeys: AssetKeyDetail[] = React.useMemo(() => {
     return [
-      ...filteredUpdatedAssetKeys.map((assetKey) => ({
+      ...filteredUpdatedAssetKeys.sort(sortAssetKeys).map((assetKey) => ({
         assetKey,
         detailType: AssetDetailType.Updated,
       })),
-      ...filteredWillUpdateAssetKeys.map((assetKey) => ({
+      ...filteredWillUpdateAssetKeys.sort(sortAssetKeys).map((assetKey) => ({
         assetKey,
         detailType: AssetDetailType.WillUpdate,
       })),
