@@ -17,6 +17,8 @@ import {
 } from '../../../graphql/types';
 import {BACKFILL_DETAILS_QUERY, BackfillPage, PartitionSelection} from '../BackfillPage';
 
+// This file must be mocked because Jest can't handle `import.meta.url`.
+jest.mock('../../../graph/asyncGraphLayout', () => ({}));
 jest.mock('../../../app/QueryRefresh', () => {
   return {
     useQueryRefreshAtInterval: jest.fn(),

@@ -12,7 +12,7 @@ import {
 } from '../__fixtures__/BackfillTable.fixtures';
 
 // This file must be mocked because Jest can't handle `import.meta.url`.
-jest.mock('../../graph/asyncGraphLayout', () => ({}));
+jest.mock('../../../graph/asyncGraphLayout', () => ({}));
 
 describe('BackfillTable', () => {
   it('allows you to click "Failed" backfills for error details', async () => {
