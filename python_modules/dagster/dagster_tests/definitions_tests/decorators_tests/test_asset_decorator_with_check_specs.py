@@ -21,7 +21,10 @@ from dagster._core.errors import (
     DagsterInvariantViolationError,
     DagsterStepOutputNotFoundError,
 )
+from dagster._core.execution.context.compute import AssetExecutionContext
+from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 from dagster._core.storage.io_manager import IOManager
+from dagster._core.test_utils import instance_for_test
 
 
 def test_asset_check_same_op():
@@ -386,3 +389,64 @@ def test_asset_check_doesnt_store_output():
     )[0]
     assert check_eval.target_materialization_data.storage_id == materialization_record.storage_id
     assert check_eval.target_materialization_data.timestamp == materialization_record.timestamp
+
+
+def test_multi_asset_with_check_subset():
+    @multi_asset(
+        outs={
+            "one": AssetOut(key="asset1", is_required=False),
+            "two": AssetOut(key="asset2", is_required=False),
+        },
+        check_specs=[AssetCheckSpec("check1", asset=AssetKey(["asset1"]))],
+        can_subset=True,
+    )
+    def asset_1_and_2(context: AssetExecutionContext):
+        if AssetKey("asset1") in context.selected_asset_keys:
+            yield Output(None, output_name="one")
+            yield AssetCheckResult(check_name="check1", success=True)
+        if AssetKey("asset2") in context.selected_asset_keys:
+            yield Output(None, output_name="two")
+
+    # no selection
+    with instance_for_test() as instance:
+        result = materialize(assets=[asset_1_and_2], instance=instance)
+        assert result.success
+        assert len(result.get_asset_materialization_events()) == 2
+        check_evals = result.get_asset_check_evaluations()
+        assert len(check_evals) == 1
+        check_eval = check_evals[0]
+        assert check_eval.asset_key == AssetKey(["asset1"])
+        assert check_eval.check_name == "check1"
+        assert (
+            instance.event_log_storage.get_asset_check_executions(
+                AssetKey(["asset1"]), check_name="check1", limit=1
+            )[0].status
+            == AssetCheckExecutionRecordStatus.SUCCEEDED
+        )
+
+    # asset1
+    with instance_for_test() as instance:
+        result = materialize(assets=[asset_1_and_2], selection=["asset1"], instance=instance)
+        assert result.success
+        assert len(result.get_asset_materialization_events()) == 1
+        check_evals = result.get_asset_check_evaluations()
+        assert len(check_evals) == 1
+        check_eval = check_evals[0]
+        assert check_eval.asset_key == AssetKey(["asset1"])
+        assert check_eval.check_name == "check1"
+        assert (
+            instance.event_log_storage.get_asset_check_executions(
+                AssetKey(["asset1"]), check_name="check1", limit=1
+            )[0].status
+            == AssetCheckExecutionRecordStatus.SUCCEEDED
+        )
+
+    # asset2
+    with instance_for_test() as instance:
+        result = materialize(assets=[asset_1_and_2], selection=["asset2"], instance=instance)
+        assert result.success
+        assert len(result.get_asset_materialization_events()) == 1
+        assert not result.get_asset_check_evaluations()
+        assert not instance.event_log_storage.get_asset_check_executions(
+            AssetKey(["asset1"]), check_name="check1", limit=1
+        )
