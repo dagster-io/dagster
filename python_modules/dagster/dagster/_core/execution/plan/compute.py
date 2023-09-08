@@ -197,20 +197,4 @@ def execute_core_compute(
     check.inst_param(step_context, "step_context", StepExecutionContext)
     check.mapping_param(inputs, "inputs", key_type=str)
 
-    step = step_context.step
-
-    emitted_result_names = set()
-    for step_output in _yield_compute_results(step_context, inputs, compute_fn):
-        yield step_output
-        if isinstance(step_output, (DynamicOutput, Output)):
-            emitted_result_names.add(step_output.output_name)
-
-    expected_op_output_names = {
-        output.name for output in step.step_outputs if not output.properties.asset_check_handle
-    }
-    omitted_outputs = expected_op_output_names.difference(emitted_result_names)
-    if omitted_outputs:
-        step_context.log.info(
-            f"{step_context.op_def.node_type_str} '{step.node_handle}' did not fire "
-            f"outputs {omitted_outputs!r}"
-        )
+    yield from _yield_compute_results(step_context, inputs, compute_fn)
