@@ -421,8 +421,6 @@ def _dbt_nodes_to_assets(
     ) = get_asset_deps(
         dbt_nodes=dbt_nodes,
         deps=deps,
-        node_info_to_freshness_policy_fn=node_info_to_freshness_policy_fn,
-        node_info_to_auto_materialize_policy_fn=node_info_to_auto_materialize_policy_fn,
         io_manager_key=io_manager_key,
         manifest=manifest_json,
         dagster_dbt_translator=dagster_dbt_translator,
@@ -951,6 +949,18 @@ def _load_assets_from_dbt_manifest(
             @classmethod
             def get_group_name(cls, dbt_resource_props):
                 return node_info_to_group_fn(dbt_resource_props)
+
+            @classmethod
+            def get_freshness_policy(
+                cls, dbt_resource_props: Mapping[str, Any]
+            ) -> Optional[FreshnessPolicy]:
+                return node_info_to_freshness_policy_fn(dbt_resource_props)
+
+            @classmethod
+            def get_auto_materialize_policy(
+                cls, dbt_resource_props: Mapping[str, Any]
+            ) -> Optional[AutoMaterializePolicy]:
+                return node_info_to_auto_materialize_policy_fn(dbt_resource_props)
 
         dagster_dbt_translator = CustomDagsterDbtTranslator()
 
