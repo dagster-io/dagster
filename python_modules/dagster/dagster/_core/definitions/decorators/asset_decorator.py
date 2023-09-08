@@ -676,7 +676,8 @@ def multi_asset(
             check_specs, list(output_tuples_by_asset_key.keys())
         )
         check_outs_by_output_name: Mapping[str, Out] = {
-            output_name: Out(dagster_type=None) for output_name in check_specs_by_output_name.keys()
+            output_name: Out(dagster_type=None, is_required=not can_subset)
+            for output_name in check_specs_by_output_name.keys()
         }
         overlapping_output_names = (
             asset_outs_by_output_name.keys() & check_outs_by_output_name.keys()
