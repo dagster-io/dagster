@@ -12,8 +12,6 @@ from typing import (
     cast,
 )
 
-from typing_extensions import TypeAlias
-
 import dagster._check as check
 from dagster._annotations import deprecated, experimental, public
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
