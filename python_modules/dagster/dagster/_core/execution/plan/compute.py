@@ -32,7 +32,7 @@ from dagster._core.definitions.op_definition import OpComputeFunction
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.errors import DagsterExecutionStepExecutionError, DagsterInvariantViolationError
 from dagster._core.events import DagsterEvent
-from dagster._core.execution.context.compute import OpExecutionContext
+from dagster._core.execution.context.compute import AssetExecutionContext, OpExecutionContext
 from dagster._core.execution.context.system import StepExecutionContext
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._utils import iterate_with_context
@@ -146,7 +146,11 @@ def _yield_compute_results(
 ) -> Iterator[OpOutputUnion]:
     check.inst_param(step_context, "step_context", StepExecutionContext)
 
-    context = OpExecutionContext(step_context)
+    context = (
+        AssetExecutionContext(OpExecutionContext(step_context))
+        if step_context.is_sda_step
+        else OpExecutionContext(step_context)
+    )
     user_event_generator = compute_fn(context, inputs)
 
     if isinstance(user_event_generator, Output):
