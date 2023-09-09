@@ -707,10 +707,7 @@ _current_context: ContextVar[Optional[OpExecutionContext]] = ContextVar(
 def enter_execution_context(
     step_context: StepExecutionContext,
 ) -> Iterator[OpExecutionContext]:
-    if step_context.is_sda_step:
-        ctx = AssetExecutionContext(step_context)
-    else:
-        ctx = OpExecutionContext(step_context)
+    ctx = OpExecutionContext(step_context)
 
     token = _current_context.set(ctx)
     try:
