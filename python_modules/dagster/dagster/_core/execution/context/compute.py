@@ -693,10 +693,23 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 # AssetExecutionContext: TypeAlias = OpExecutionContext
 
 
-class AssetExecutionContext(OpExecutionContext):
+class AssetExecutionContext:
+    def __init__(self, op_execution_context) -> None:
+        self._op_execution_context = op_execution_context
+
     pass
     # def __init__(self, op_execution_context: OpExecutionContext):
     #     self._op_execution_context = op_execution_context
 
     # def __call__(self, *args, **kwargs):
     #     return self._op_execution_context.__call__(*args, **kwargs)
+
+    def __getattr__(self, attr) -> Any:
+        # see if this object has attr
+        # NOTE do not use hasattr, it goes into
+        # infinite recurrsion
+        if attr in self.__dict__:
+            # this object has it
+            return getattr(self, attr)
+        # proxy to the wrapped object
+        return getattr(self._op_execution_context, attr)
