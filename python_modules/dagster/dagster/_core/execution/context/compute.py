@@ -692,4 +692,13 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 #  * manually constructing ops to make AssetsDefinitions
 #  * having ops in a graph that form a graph backed asset
 # so we have a single type that users can call by their preferred name where appropriate
-AssetExecutionContext: TypeAlias = OpExecutionContext
+# AssetExecutionContext: TypeAlias = OpExecutionContext
+
+
+class AssetExecutionContext(OpExecutionContext):
+    pass
+    # def __init__(self, op_execution_context: OpExecutionContext):
+    #     self._op_execution_context = op_execution_context
+
+    # def __call__(self, *args, **kwargs):
+    #     return self._op_execution_context.__call__(*args, **kwargs)
