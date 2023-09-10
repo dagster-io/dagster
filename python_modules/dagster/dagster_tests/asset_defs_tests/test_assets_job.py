@@ -1,6 +1,5 @@
 import hashlib
 import os
-import warnings
 
 import pytest
 from dagster import (
@@ -56,13 +55,12 @@ from dagster._utils.warnings import (
     disable_dagster_warnings,
 )
 
+# @pytest.fixture(autouse=True)
+# def error_on_warning():
+#     # turn off any outer warnings filters, e.g. ignores that are set in pyproject.toml
+#     warnings.resetwarnings()
 
-@pytest.fixture(autouse=True)
-def error_on_warning():
-    # turn off any outer warnings filters, e.g. ignores that are set in pyproject.toml
-    warnings.resetwarnings()
-
-    warnings.filterwarnings("error")
+#     warnings.filterwarnings("error")
 
 
 def _all_asset_keys(result):

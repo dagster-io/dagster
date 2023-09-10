@@ -834,6 +834,8 @@ class AssetExecutionContext:
         return self._op_execution_context.log
 
     @public
+    # renaming to avoid ambiguity in single run and multi-partition case
+    @property
     def is_partitioned_execution(self) -> bool:
         return self._op_execution_context.has_partition_key
 
@@ -842,11 +844,14 @@ class AssetExecutionContext:
         return self._op_execution_context.log_event(event)
 
     @public
+    @property
     def assets_def(self) -> AssetsDefinition:
         return self._op_execution_context.assets_def
 
     @public
-    # TODO confirm semantics
+    # TODO confirm semantics in the presense of asset subsetting
+    # seems like there should be both "asset_keys" and "selected_asset_keys"
+    @property
     def selected_asset_keys(self) -> AbstractSet[AssetKey]:
         return self._op_execution_context.selected_asset_keys
 
@@ -861,12 +866,5 @@ class AssetExecutionContext:
 
     @public
     def partition_key_range(self, asset_key: Optional[AssetKey] = None) -> PartitionKeyRange:
-        # "asset_partition_key_for_input",
-        # "asset_partition_key_for_output",
-        # "asset_partition_key_range_for_input",
-        # "asset_partition_key_range_for_output",
-        # "asset_partition_keys_for_input",
-        # "asset_partition_keys_for_output",
-        # "asset_partitions_time_window_for_input",
-        # "asset_partitions_time_window_for_output",
+        # TODO, refactor guts of step execution context to get this cleanly
         raise NotImplementedError()
