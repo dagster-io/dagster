@@ -1,6 +1,7 @@
 from typing import List, Union
 
 from dagster import (
+    MonthlyPartitionsDefinition,
     AssetExecutionContext,
     AssetKey,
     AssetsDefinition,
@@ -174,20 +175,41 @@ def test_basic_daily_partitioning_multi_asset() -> None:
     assert called["yup"]
 
 
+
 def test_handle_partition_mapping() -> None:
     ...
     # TODO
     # daily_partitions_def = DailyPartitionsDefinition(start_date="2020-01-01", end_date="2020-03-01")
 
+
     # @asset(partitions_def=daily_partitions_def)
     # def daily_partitioned_asset(context: AssetExecutionContext):
+    #     raise Exception("not executed")
     #     assert context.partition_key_range.start == "2020-01-01"
     #     assert context.partition_key_range.end == "2020-01-02"
 
     # monthly_partitions_def = MonthlyPartitionsDefinition(start_date="2020-01-01", end_date="2020-03-01")
 
-    # @asset(partitions_def=monthly_partitions_def, deps=[AssetDep(daily_partitioned_asset)])
+    # @asset(partitions_def=monthly_partitions_def, deps=[daily_partitioned_asset])
     # def downstream_monthly_partitioned_asset(context: AssetExecutionContext):
-    #     pass
+    #     print(context.partition_key_range_for_asset_key(AssetKey("daily_partitioned_asset")))
 
-    # materialize_single_run_with_partition_key_range([daily_partitioned_asset, downstream_monthly_partitioned_asset], start="2020-01-01", end="2020-02-01")
+    # materialize_single_run_with_partition_key_range([downstream_monthly_partitioned_asset], start="2020-01-01", end="2020-02-01")
+
+
+def test_time_window_methods() -> None:
+    called = {"yup": False}
+
+    @asset(partitions_def=DailyPartitionsDefinition(start_date="2020-01-01", end_date="2020-01-03"))
+    def a_partitioned_asset(context: AssetExecutionContext):
+        ptw = context.op_execution_context.partition_time_window
+        assert ptw.start.day == 1
+        assert ptw.end.day == 2
+        called["yup"] = True
+
+    # time windows do not work on ranges
+    # assert materialize_single_run_with_partition_key_range(
+    #     a_partitioned_asset, start="2020-01-01", end="2020-01-01"
+    # ).success
+    assert materialize([a_partitioned_asset], partition_key="2020-01-01").success
+    assert called["yup"]
