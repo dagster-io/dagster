@@ -172,3 +172,22 @@ def test_basic_daily_partitioning_multi_asset() -> None:
         a_multi_asset, start="2020-01-01", end="2020-01-02"
     ).success
     assert called["yup"]
+
+
+def test_handle_partition_mapping() -> None:
+    ...
+    # TODO
+    # daily_partitions_def = DailyPartitionsDefinition(start_date="2020-01-01", end_date="2020-03-01")
+
+    # @asset(partitions_def=daily_partitions_def)
+    # def daily_partitioned_asset(context: AssetExecutionContext):
+    #     assert context.partition_key_range.start == "2020-01-01"
+    #     assert context.partition_key_range.end == "2020-01-02"
+
+    # monthly_partitions_def = MonthlyPartitionsDefinition(start_date="2020-01-01", end_date="2020-03-01")
+
+    # @asset(partitions_def=monthly_partitions_def, deps=[AssetDep(daily_partitioned_asset)])
+    # def downstream_monthly_partitioned_asset(context: AssetExecutionContext):
+    #     pass
+
+    # materialize_single_run_with_partition_key_range([daily_partitioned_asset, downstream_monthly_partitioned_asset], start="2020-01-01", end="2020-02-01")
