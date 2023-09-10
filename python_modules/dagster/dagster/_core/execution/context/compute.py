@@ -713,12 +713,12 @@ OP_EXECUTION_CONTEXT_ONLY_METHODS = set(
         "node_handle",
         "op",
         "op_config",
-        "op_def",
+        # "op_def", # used by internals
         "op_handle",
         "retry_number",
         "resources",
         "step_launcher",
-        "has_events",
+        # "has_events", # used by internals
         "consumer_events",
     ]
 )
@@ -726,7 +726,7 @@ OP_EXECUTION_CONTEXT_ONLY_METHODS = set(
 
 PARTITION_KEY_RANGE_AS_ALT = "use partition_key_range instead"
 INPUT_OUTPUT_ALT = "not use input or output names and instead use asset keys directly"
-OUTPUT_METADATA_ALT = "use MaterializationResult instead"
+OUTPUT_METADATA_ALT = "return MaterializationResult from the asset instead"
 
 DEPRECATED_IO_MANAGER_CENTRIC_CONTEXT_METHODS = {
     "add_output_metadata": OUTPUT_METADATA_ALT,
@@ -770,25 +770,39 @@ class AssetExecutionContext:
 
         if attr in OP_EXECUTION_CONTEXT_ONLY_METHODS:
             deprecation_warning(
-                f"Calling deprecated method {attr} on AssetExecutionContext. Use underlying"
-                f" OpExecutionContext instead by calling op_execution_context.{attr}",
-                "1.7",
+                subject=f"AssetExecutionContext.{attr}",
+                additional_warn_text=(
+                    f"You have called the deprecated method {attr} on AssetExecutionContext. Use the"
+                    " underlying OpExecutionContext instead by calling"
+                    f" op_execution_context.{attr}."
+                ),
+                breaking_version="1.7",
+                stacklevel=1
             )
 
         if attr in DEPRECATED_IO_MANAGER_CENTRIC_CONTEXT_METHODS:
             alt = DEPRECATED_IO_MANAGER_CENTRIC_CONTEXT_METHODS[attr]
+
+            # warnings.warn(
             deprecation_warning(
-                f"Calling method {attr} on AssetExecutionContext oriented around I/O managers. "
-                f"If you not using I/O managers we suggest you {alt}. If you are using "
-                "I/O managers the method still exists at op_execution_context.{attr}.",
-                "1.7",
+                subject=f"AssetExecutionContext.{attr}",
+                additional_warn_text=(
+                    f"You have called method {attr} on AssetExecutionContext that is oriented"
+                    f" around I/O managers. If you not using I/O managers we suggest you {alt}. If"
+                    " you are using I/O managers the method still exists at"
+                    f" op_execution_context.{attr}."
+                ),
+                breaking_version="1.7",
+                stacklevel=1
             )
 
         if attr in ALTERNATE_AVAILABLE_METHODS:
             deprecation_warning(
-                f"Calling method {attr} on AssetExecutionContext. Instead,"
-                f" {ALTERNATE_AVAILABLE_METHODS[attr]}",
-                "1.7",
+                subject=f"AssetExecutionContext.{attr}",
+                additional_warn_text=f"Instead"
+                f" {ALTERNATE_AVAILABLE_METHODS[attr]}.",
+                breaking_version="1.7",
+                stacklevel=1
             )
 
         return getattr(self._op_execution_context, attr)

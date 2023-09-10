@@ -1,7 +1,9 @@
+import warnings
+
+import pytest
 from typing import List, Union
 
 from dagster import (
-    MonthlyPartitionsDefinition,
     AssetExecutionContext,
     AssetKey,
     AssetsDefinition,
@@ -175,12 +177,10 @@ def test_basic_daily_partitioning_multi_asset() -> None:
     assert called["yup"]
 
 
-
 def test_handle_partition_mapping() -> None:
     ...
     # TODO
     # daily_partitions_def = DailyPartitionsDefinition(start_date="2020-01-01", end_date="2020-03-01")
-
 
     # @asset(partitions_def=daily_partitions_def)
     # def daily_partitioned_asset(context: AssetExecutionContext):
@@ -212,4 +212,85 @@ def test_time_window_methods() -> None:
     #     a_partitioned_asset, start="2020-01-01", end="2020-01-01"
     # ).success
     assert materialize([a_partitioned_asset], partition_key="2020-01-01").success
+    assert called["yup"]
+
+
+
+
+@pytest.fixture
+def error_on_warning():
+    # I couldn't get these to fire otherwise ¯\_(ツ)_/¯
+    # turn off any outer warnings filters, e.g. ignores that are set in pyproject.toml
+    warnings.resetwarnings()
+    warnings.filterwarnings("error")
+
+
+def test_io_manager_oriented_warning(error_on_warning) -> None:
+    called = {"yup": False}
+
+    @asset(partitions_def=DailyPartitionsDefinition(start_date="2020-01-01", end_date="2020-01-03"))
+    def a_partitioned_asset(context: AssetExecutionContext):
+        with pytest.raises(DeprecationWarning) as exc_info:
+            assert context.asset_partition_key_for_output("result") == "2020-01-01"
+
+        expected = (
+            "AssetExecutionContext.asset_partition_key_for_output is deprecated and will be removed"
+            " in 1.7. You have called method asset_partition_key_for_output on"
+            " AssetExecutionContext that is oriented around I/O managers. If you not using I/O"
+            " managers we suggest you use partition_key_range instead. If you are using I/O"
+            " managers the method still exists at"
+            " op_execution_context.asset_partition_key_for_output."
+        )
+
+        assert expected in str(exc_info.value)
+
+        called["yup"] = True
+
+    assert materialize([a_partitioned_asset], partition_key="2020-01-01").success
+    assert called["yup"]
+
+
+def test_generic_op_execution_context_warning(error_on_warning) -> None:
+    called = {"yup": False}
+
+    @asset
+    def an_asset(context: AssetExecutionContext):
+        assert isinstance(context, AssetExecutionContext)
+
+        with pytest.raises(DeprecationWarning) as exc_info:
+            assert context.file_manager is None
+
+        expected = (
+            "AssetExecutionContext.file_manager is deprecated and will be removed in 1.7. You have"
+            " called the deprecated method file_manager on AssetExecutionContext. Use the underlying"
+            " OpExecutionContext instead by calling op_execution_context.file_manager."
+        )
+
+        assert expected in str(exc_info.value)
+
+        called["yup"] = True
+
+    assert materialize([an_asset]).success
+    assert called["yup"]
+
+def test_alternative_available_warning(error_on_warning) -> None:
+    called = {"yup": False}
+
+    @asset
+    def an_asset(context: AssetExecutionContext):
+        assert isinstance(context, AssetExecutionContext)
+
+        with pytest.raises(DeprecationWarning) as exc_info:
+            assert context.has_tag("foobar") is False
+
+
+        expected = (
+            "AssetExecutionContext.has_tag is deprecated and will be removed in 1.7. "
+            "Instead use dagster_run.has_tag instead."
+        )
+        assert expected in str(exc_info.value)
+
+        called["yup"] = True
+
+    assert materialize([an_asset]).success
     assert called["yup"]

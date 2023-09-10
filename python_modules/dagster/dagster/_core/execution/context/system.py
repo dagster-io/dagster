@@ -1087,7 +1087,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             asset_layer.assets_def_for_node(self.node_handle), "must have assets def"
         )
         asset_partitions_def = check.not_none(
-            asset_layer.partitions_def_for_asset(asset_key), "The asset key does not have a partitions definition"
+            asset_layer.partitions_def_for_asset(asset_key),
+            "The asset key does not have a partitions definition",
         )
 
         partitions_def = assets_def.partitions_def
