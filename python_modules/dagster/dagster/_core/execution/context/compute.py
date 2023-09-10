@@ -51,13 +51,6 @@ from .system import StepExecutionContext
 
 class AbstractComputeMetaclass(ABCMeta):
     pass
-    # def __instancecheck__(cls, instance) -> bool:
-    #     # Check if the instance is an instance of both MyClass and AdditionalClass
-    #     # return isinstance(instance, MyClass) and isinstance(instance, AdditionalClass)
-    #     if isinstance(instance, "AssetExecutionContext"):
-    #         return True
-    #     return super().__instancecheck__(instance)
-    # pass
 
 
 class AbstractComputeExecutionContext(ABC, metaclass=AbstractComputeMetaclass):
@@ -109,8 +102,9 @@ class AbstractComputeExecutionContext(ABC, metaclass=AbstractComputeMetaclass):
 
 class OpExecutionContextMetaClass(AbstractComputeMetaclass):
     def __instancecheck__(cls, instance) -> bool:
-        # Check if the instance is an instance of both MyClass and AdditionalClass
-        # return isinstance(instance, MyClass) and isinstance(instance, AdditionalClass)
+        # This makes isinstance(context, OpExecutionContext) return True when
+        # the instance is an AssetExecutionContext. This makes the new AssetExecutionContext
+        # backwards compatible with the old OpExecutionContext codepaths.
         if isinstance(instance, AssetExecutionContext):
             return True
         return super().__instancecheck__(instance)
