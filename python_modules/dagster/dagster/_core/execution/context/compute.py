@@ -49,6 +49,7 @@ from dagster._utils.warnings import deprecation_warning
 from .system import StepExecutionContext
 
 
+# This metaclass has to exist for OpExecutionContext to have a metaclass
 class AbstractComputeMetaclass(ABCMeta):
     pass
 
@@ -103,8 +104,9 @@ class AbstractComputeExecutionContext(ABC, metaclass=AbstractComputeMetaclass):
 class OpExecutionContextMetaClass(AbstractComputeMetaclass):
     def __instancecheck__(cls, instance) -> bool:
         # This makes isinstance(context, OpExecutionContext) return True when
-        # the instance is an AssetExecutionContext. This makes the new AssetExecutionContext
-        # backwards compatible with the old OpExecutionContext codepaths.
+        # the context is an AssetExecutionContext. This makes the new
+        # AssetExecutionContext backwards compatible with the old
+        # OpExecutionContext codepaths.
         if isinstance(instance, AssetExecutionContext):
             return True
         return super().__instancecheck__(instance)
