@@ -860,5 +860,16 @@ class AssetExecutionContext:
 
     @public
     def partition_key_range(self, asset_key: Optional[AssetKey] = None) -> PartitionKeyRange:
-        # TODO, refactor guts of step execution context to get this cleanly
-        raise NotImplementedError()
+        asset_key = asset_key if asset_key else self.asset_key
+        subset = self._op_execution_context.get_step_execution_context().asset_partitions_subset_for_asset_key(
+            asset_key
+        )
+        partition_key_ranges = subset.get_partition_key_ranges(
+            dynamic_partitions_store=self._op_execution_context.instance
+        )
+        if len(partition_key_ranges) != 1:
+            check.failed(
+                "Tried to access asset partition key range, but there are "
+                f"({len(partition_key_ranges)}) key ranges associated with this asset key.",
+            )
+        return partition_key_ranges[0]

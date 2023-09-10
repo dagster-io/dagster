@@ -1072,22 +1072,25 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         self, input_name: str, *, require_valid_partitions: bool = True
     ) -> PartitionsSubset:
         asset_layer = self.job_def.asset_layer
-        assets_def = asset_layer.assets_def_for_node(self.node_handle)
-        upstream_asset_key = asset_layer.asset_key_for_input(self.node_handle, input_name)
+        asset_key = check.not_none(
+            asset_layer.asset_key_for_input(self.node_handle, input_name),
+            "The input has no asset key",
+        )
 
-        if upstream_asset_key is None:
-            check.failed("The input has no asset partitions")
+        return self.asset_partitions_subset_for_asset_key(asset_key, require_valid_partitions)
 
-        assert upstream_asset_key, "The input has no asset partitions"
+    def asset_partitions_subset_for_asset_key(
+        self, asset_key: AssetKey, require_valid_partitions: bool = True
+    ):
+        asset_layer = self.job_def.asset_layer
+        assets_def = check.not_none(
+            asset_layer.assets_def_for_node(self.node_handle), "must have assets def"
+        )
+        asset_partitions_def = check.not_none(
+            asset_layer.partitions_def_for_asset(asset_key), "The input has no asset partitions"
+        )
 
-        upstream_asset_partitions_def = asset_layer.partitions_def_for_asset(upstream_asset_key)
-
-        if upstream_asset_partitions_def is None:
-            check.failed("The input has no asset partitions")
-
-        assert upstream_asset_partitions_def, "The input has no asset partitions"
-
-        partitions_def = assets_def.partitions_def if assets_def else None
+        partitions_def = assets_def.partitions_def
         partitions_subset = (
             partitions_def.empty_subset().with_partition_key_range(
                 self.asset_partition_key_range, dynamic_partitions_store=self.instance
@@ -1096,14 +1099,14 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             else None
         )
         partition_mapping = infer_partition_mapping(
-            asset_layer.partition_mapping_for_node_input(self.node_handle, upstream_asset_key),
+            asset_layer.partition_mapping_for_node_input(self.node_handle, asset_key),
             partitions_def,
-            upstream_asset_partitions_def,
+            asset_partitions_def,
         )
         mapped_partitions_result = (
             partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
                 partitions_subset,
-                upstream_asset_partitions_def,
+                asset_partitions_def,
                 dynamic_partitions_store=self.instance,
             )
         )
@@ -1116,7 +1119,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                 f"Partition key range {self.asset_partition_key_range} in"
                 f" {self.node_handle.name} depends on invalid partition keys"
                 f" {mapped_partitions_result.required_but_nonexistent_partition_keys} in"
-                f" upstream asset {upstream_asset_key}"
+                f" upstream asset {asset_key}"
             )
 
         return mapped_partitions_result.partitions_subset
