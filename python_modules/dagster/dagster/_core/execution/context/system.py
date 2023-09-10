@@ -1096,9 +1096,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             else None
         )
         partition_mapping = infer_partition_mapping(
-            asset_layer.partition_mapping_for_node_input(
-                self.node_handle, upstream_asset_key
-            ),
+            asset_layer.partition_mapping_for_node_input(self.node_handle, upstream_asset_key),
             partitions_def,
             upstream_asset_partitions_def,
         )
@@ -1122,7 +1120,6 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             )
 
         return mapped_partitions_result.partitions_subset
-
 
     def asset_partition_key_for_input(self, input_name: str) -> str:
         start, end = self.asset_partition_key_range_for_input(input_name)
