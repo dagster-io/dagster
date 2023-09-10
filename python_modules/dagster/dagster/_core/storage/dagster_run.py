@@ -428,6 +428,12 @@ class DagsterRun(
     def tags_for_backfill_id(backfill_id: str) -> Mapping[str, str]:
         return {BACKFILL_ID_TAG: backfill_id}
 
+    def get_tag(self, key: str) -> Optional[str]:
+        return self.tags.get(key)
+
+    def has_tag(self, key: str) -> bool:
+        return key in self.tags
+
 
 class RunsFilterSerializer(NamedTupleSerializer["RunsFilter"]):
     def before_unpack(

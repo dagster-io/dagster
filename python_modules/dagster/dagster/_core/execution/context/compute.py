@@ -44,6 +44,7 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._utils.forked_pdb import ForkedPdb
+from dagster._utils.warnings import deprecation_warning
 
 from .system import StepExecutionContext
 
@@ -706,44 +707,166 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
         return asset_checks_def.spec
 
 
-# actually forking the object type for assets is tricky for users in the cases of:
-#  * manually constructing ops to make AssetsDefinitions
-#  * having ops in a graph that form a graph backed asset
-# so we have a single type that users can call by their preferred name where appropriate
-# AssetExecutionContext: TypeAlias = OpExecutionContext
+OP_EXECUTION_CONTEXT_ONLY_METHODS = set(
+    [
+        "describe_op",
+        "file_manager",
+        "has_assets_def",
+        "get_mapping_key",
+        "get_step_execution_context",
+        "job_def",
+        "job_name",
+        "node_handle",
+        "op",
+        "op_config",
+        "op_def",
+        "op_handle",
+        "retry_number",
+        "resources",
+        "step_launcher",
+        "has_events",
+        "consumer_events",
+    ]
+)
 
-# class AssetExecutionContextMetaClass(type):
-#     def __instancecheck__(cls, instance) -> bool:
-#         # Check if the instance is an instance of both MyClass and AdditionalClass
-#         # return isinstance(instance, MyClass) and isinstance(instance, AdditionalClass)
-#         if isinstance(instance, AdditionalClass):
-#             return True
-#         return super().__instancecheck__(instance)
-#     pass
+
+PARTITION_KEY_RANGE_AS_ALT = "use partition_key_range instead"
+INPUT_OUTPUT_ALT = "not use input or output names and instead use asset keys directly"
+OUTPUT_METADATA_ALT = "use MaterializationResult instead"
+
+DEPRECATED_IO_MANAGER_CENTRIC_CONTEXT_METHODS = {
+    "add_output_metadata": OUTPUT_METADATA_ALT,
+    "asset_key_for_input": INPUT_OUTPUT_ALT,
+    "asset_key_for_output": INPUT_OUTPUT_ALT,
+    "asset_partition_key_for_input": PARTITION_KEY_RANGE_AS_ALT,
+    "asset_partition_key_for_output": PARTITION_KEY_RANGE_AS_ALT,
+    "asset_partition_key_range_for_input": PARTITION_KEY_RANGE_AS_ALT,
+    "asset_partition_key_range_for_output": PARTITION_KEY_RANGE_AS_ALT,
+    "asset_partition_keys_for_input": PARTITION_KEY_RANGE_AS_ALT,
+    "asset_partition_keys_for_output": PARTITION_KEY_RANGE_AS_ALT,
+    "asset_partitions_time_window_for_input": PARTITION_KEY_RANGE_AS_ALT,
+    "asset_partitions_time_window_for_output": PARTITION_KEY_RANGE_AS_ALT,
+    "asset_partitions_def_for_input": PARTITION_KEY_RANGE_AS_ALT,
+    "asset_partitions_def_for_output": PARTITION_KEY_RANGE_AS_ALT,
+    "get_output_metadata": "use op_execution_context.op_def.get_output(...).metadata",
+    "merge_output_metadata": OUTPUT_METADATA_ALT,
+    "output_for_asset_key": INPUT_OUTPUT_ALT,
+    "selected_output_names": INPUT_OUTPUT_ALT,
+}
+
+ALTERNATE_AVAILABLE_METHODS = {
+    "has_tag": "use dagster_run.has_tag instead",
+    "get_tag": "use dagster_run.get_tag instead",
+    "run_tags": "use dagster_run.tags instead",
+    "set_data_version": "use MaterializationResult instead",
+}
 
 
-# class AssetExecutionContext(metaclass=AssetExecutionContextMetaClass):
 class AssetExecutionContext:
-    def __init__(self, op_execution_context) -> None:
-        self._op_execution_context = op_execution_context
-
-    # @property
-    # def __class__(self) -> Type:
-    #     return OpExecutionContext
-
-    pass
-    # def __init__(self, op_execution_context: OpExecutionContext):
-    #     self._op_execution_context = op_execution_context
-
-    # def __call__(self, *args, **kwargs):
-    #     return self._op_execution_context.__call__(*args, **kwargs)
+    def __init__(self, op_execution_context: OpExecutionContext) -> None:
+        self._op_execution_context = check.inst_param(
+            op_execution_context, "op_execution_context", OpExecutionContext
+        )
 
     def __getattr__(self, attr) -> Any:
-        # see if this object has attr
-        # NOTE do not use hasattr, it goes into
-        # infinite recurrsion
+        check.str_param(attr, "attr")
+
         if attr in self.__dict__:
-            # this object has it
             return getattr(self, attr)
-        # proxy to the wrapped object
+
+        if attr in OP_EXECUTION_CONTEXT_ONLY_METHODS:
+            deprecation_warning(
+                f"Calling deprecated method {attr} on AssetExecutionContext. Use underlying"
+                f" OpExecutionContext instead by calling op_execution_context.{attr}",
+                "1.7",
+            )
+
+        if attr in DEPRECATED_IO_MANAGER_CENTRIC_CONTEXT_METHODS:
+            alt = DEPRECATED_IO_MANAGER_CENTRIC_CONTEXT_METHODS[attr]
+            deprecation_warning(
+                f"Calling method {attr} on AssetExecutionContext oriented around I/O managers. "
+                f"If you not using I/O managers we suggest you {alt}. If you are using "
+                "I/O managers the method still exists at op_execution_context.{attr}.",
+                "1.7",
+            )
+
+        if attr in ALTERNATE_AVAILABLE_METHODS:
+            deprecation_warning(
+                f"Calling method {attr} on AssetExecutionContext. Instead,"
+                f" {ALTERNATE_AVAILABLE_METHODS[attr]}",
+                "1.7",
+            )
+
         return getattr(self._op_execution_context, attr)
+
+    # include all supported methods below
+
+    @public
+    @property
+    def op_execution_context(self) -> OpExecutionContext:
+        return self._op_execution_context
+
+    @public
+    @property
+    def run_id(self) -> str:
+        return self._op_execution_context.run_id
+
+    @public
+    @property
+    def dagster_run(self) -> DagsterRun:
+        """PipelineRun: The current pipeline run."""
+        return self._step_execution_context.dagster_run
+
+    @public
+    @property
+    def asset_key(self) -> AssetKey:
+        return self._op_execution_context.asset_key
+
+    @public
+    @property
+    def pdb(self) -> ForkedPdb:
+        return self._op_execution_context.pdb
+
+    @public
+    @property
+    def log(self) -> DagsterLogManager:
+        """DagsterLogManager: The log manager available in the execution context."""
+        return self._op_execution_context.log
+
+    @public
+    def is_partitioned_execution(self) -> bool:
+        return self._op_execution_context.has_partition_key
+
+    @public
+    def log_event(self, event: UserEvent) -> None:
+        return self._op_execution_context.log_event(event)
+
+    @public
+    def assets_def(self) -> AssetsDefinition:
+        return self._op_execution_context.assets_def
+
+    @public
+    # TODO confirm semantics
+    def selected_asset_keys(self) -> AbstractSet[AssetKey]:
+        return self._op_execution_context.selected_asset_keys
+
+    @public
+    @experimental
+    def get_asset_provenance(self, asset_key: AssetKey) -> Optional[DataProvenance]:
+        return self._op_execution_context.get_asset_provenance(asset_key)
+
+    @property
+    def asset_check_spec(self) -> AssetCheckSpec:
+        return self._op_execution_context.asset_check_spec
+
+    @public
+    def partition_key_range(self, asset_key: Optional[AssetKey] = None) -> PartitionKeyRange:
+        # "asset_partition_key_for_input",
+        # "asset_partition_key_for_output",
+        # "asset_partition_key_range_for_input",
+        # "asset_partition_key_range_for_output",
+        # "asset_partition_keys_for_input",
+        # "asset_partition_keys_for_output",
+        # "asset_partitions_time_window_for_input",
+        # "asset_partitions_time_window_for_output",
+        raise NotImplementedError()
