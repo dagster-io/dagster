@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import ABC, ABCMeta, abstractmethod
 from typing import (
     AbstractSet,
     Any,
@@ -48,7 +48,18 @@ from dagster._utils.forked_pdb import ForkedPdb
 from .system import StepExecutionContext
 
 
-class AbstractComputeExecutionContext(ABC):
+class AbstractComputeMetaclass(ABCMeta):
+    pass
+    # def __instancecheck__(cls, instance) -> bool:
+    #     # Check if the instance is an instance of both MyClass and AdditionalClass
+    #     # return isinstance(instance, MyClass) and isinstance(instance, AdditionalClass)
+    #     if isinstance(instance, "AssetExecutionContext"):
+    #         return True
+    #     return super().__instancecheck__(instance)
+    # pass
+
+
+class AbstractComputeExecutionContext(ABC, metaclass=AbstractComputeMetaclass):
     """Base class for op context implemented by OpExecutionContext and DagstermillExecutionContext."""
 
     @abstractmethod
@@ -95,7 +106,16 @@ class AbstractComputeExecutionContext(ABC):
         """The parsed config specific to this op."""
 
 
-class OpExecutionContext(AbstractComputeExecutionContext):
+class OpExecutionContextMetaClass(AbstractComputeMetaclass):
+    def __instancecheck__(cls, instance) -> bool:
+        # Check if the instance is an instance of both MyClass and AdditionalClass
+        # return isinstance(instance, MyClass) and isinstance(instance, AdditionalClass)
+        if isinstance(instance, AssetExecutionContext):
+            return True
+        return super().__instancecheck__(instance)
+
+
+class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionContextMetaClass):
     """The ``context`` object that can be made available as the first argument to the function
     used for computing an op or asset.
 
@@ -692,10 +712,24 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 # so we have a single type that users can call by their preferred name where appropriate
 # AssetExecutionContext: TypeAlias = OpExecutionContext
 
+# class AssetExecutionContextMetaClass(type):
+#     def __instancecheck__(cls, instance) -> bool:
+#         # Check if the instance is an instance of both MyClass and AdditionalClass
+#         # return isinstance(instance, MyClass) and isinstance(instance, AdditionalClass)
+#         if isinstance(instance, AdditionalClass):
+#             return True
+#         return super().__instancecheck__(instance)
+#     pass
 
+
+# class AssetExecutionContext(metaclass=AssetExecutionContextMetaClass):
 class AssetExecutionContext:
     def __init__(self, op_execution_context) -> None:
         self._op_execution_context = op_execution_context
+
+    # @property
+    # def __class__(self) -> Type:
+    #     return OpExecutionContext
 
     pass
     # def __init__(self, op_execution_context: OpExecutionContext):
