@@ -1,8 +1,7 @@
 import warnings
-
-import pytest
 from typing import List, Union
 
+import pytest
 from dagster import (
     AssetExecutionContext,
     AssetKey,
@@ -215,8 +214,6 @@ def test_time_window_methods() -> None:
     assert called["yup"]
 
 
-
-
 @pytest.fixture
 def error_on_warning():
     # I couldn't get these to fire otherwise ¯\_(ツ)_/¯
@@ -262,8 +259,8 @@ def test_generic_op_execution_context_warning(error_on_warning) -> None:
 
         expected = (
             "AssetExecutionContext.file_manager is deprecated and will be removed in 1.7. You have"
-            " called the deprecated method file_manager on AssetExecutionContext. Use the underlying"
-            " OpExecutionContext instead by calling op_execution_context.file_manager."
+            " called the deprecated method file_manager on AssetExecutionContext. Use the"
+            " underlying OpExecutionContext instead by calling op_execution_context.file_manager."
         )
 
         assert expected in str(exc_info.value)
@@ -272,6 +269,7 @@ def test_generic_op_execution_context_warning(error_on_warning) -> None:
 
     assert materialize([an_asset]).success
     assert called["yup"]
+
 
 def test_alternative_available_warning(error_on_warning) -> None:
     called = {"yup": False}
@@ -282,7 +280,6 @@ def test_alternative_available_warning(error_on_warning) -> None:
 
         with pytest.raises(DeprecationWarning) as exc_info:
             assert context.has_tag("foobar") is False
-
 
         expected = (
             "AssetExecutionContext.has_tag is deprecated and will be removed in 1.7. "

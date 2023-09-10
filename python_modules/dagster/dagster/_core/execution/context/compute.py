@@ -772,12 +772,12 @@ class AssetExecutionContext:
             deprecation_warning(
                 subject=f"AssetExecutionContext.{attr}",
                 additional_warn_text=(
-                    f"You have called the deprecated method {attr} on AssetExecutionContext. Use the"
-                    " underlying OpExecutionContext instead by calling"
+                    f"You have called the deprecated method {attr} on AssetExecutionContext. Use"
+                    " the underlying OpExecutionContext instead by calling"
                     f" op_execution_context.{attr}."
                 ),
                 breaking_version="1.7",
-                stacklevel=1
+                stacklevel=1,
             )
 
         if attr in DEPRECATED_IO_MANAGER_CENTRIC_CONTEXT_METHODS:
@@ -793,16 +793,15 @@ class AssetExecutionContext:
                     f" op_execution_context.{attr}."
                 ),
                 breaking_version="1.7",
-                stacklevel=1
+                stacklevel=1,
             )
 
         if attr in ALTERNATE_AVAILABLE_METHODS:
             deprecation_warning(
                 subject=f"AssetExecutionContext.{attr}",
-                additional_warn_text=f"Instead"
-                f" {ALTERNATE_AVAILABLE_METHODS[attr]}.",
+                additional_warn_text=f"Instead {ALTERNATE_AVAILABLE_METHODS[attr]}.",
                 breaking_version="1.7",
-                stacklevel=1
+                stacklevel=1,
             )
 
         return getattr(self._op_execution_context, attr)
