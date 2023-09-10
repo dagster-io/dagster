@@ -859,8 +859,12 @@ class AssetExecutionContext:
         return self._op_execution_context.asset_check_spec
 
     @public
-    def partition_key_range(self, asset_key: Optional[AssetKey] = None) -> PartitionKeyRange:
-        asset_key = asset_key if asset_key else self.asset_key
+    @property
+    def partition_key_range(self) -> PartitionKeyRange:
+        return self._op_execution_context.asset_partition_key_range
+
+    @public
+    def partition_key_range_for_asset_key(self, asset_key: AssetKey) -> PartitionKeyRange:
         subset = self._op_execution_context.get_step_execution_context().asset_partitions_subset_for_asset_key(
             asset_key
         )
