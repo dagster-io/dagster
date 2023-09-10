@@ -709,7 +709,7 @@ OP_EXECUTION_CONTEXT_ONLY_METHODS = set(
         "file_manager",
         "has_assets_def",
         "get_mapping_key",
-        "get_step_execution_context",
+        # "get_step_execution_context", # used by internals
         "job_def",
         "job_name",
         "node_handle",
@@ -718,7 +718,6 @@ OP_EXECUTION_CONTEXT_ONLY_METHODS = set(
         # "op_def", # used by internals
         "op_handle",
         "retry_number",
-        "resources",
         "step_launcher",
         # "has_events", # used by internals
         "consumer_events",
@@ -726,7 +725,7 @@ OP_EXECUTION_CONTEXT_ONLY_METHODS = set(
 )
 
 
-PARTITION_KEY_RANGE_AS_ALT = "use partition_key_range instead"
+PARTITION_KEY_RANGE_AS_ALT = "use partition_key_range or partition_key_range_for_asset instead"
 INPUT_OUTPUT_ALT = "not use input or output names and instead use asset keys directly"
 OUTPUT_METADATA_ALT = "return MaterializationResult from the asset instead"
 

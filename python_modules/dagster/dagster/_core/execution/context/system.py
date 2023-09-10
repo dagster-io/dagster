@@ -1083,15 +1083,14 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         self, asset_key: AssetKey, require_valid_partitions: bool = True
     ):
         asset_layer = self.job_def.asset_layer
-        assets_def = check.not_none(
-            asset_layer.assets_def_for_node(self.node_handle), "must have assets def"
-        )
+        assets_def = asset_layer.assets_def_for_node(self.node_handle)
         asset_partitions_def = check.not_none(
             asset_layer.partitions_def_for_asset(asset_key),
             "The asset key does not have a partitions definition",
         )
 
-        partitions_def = assets_def.partitions_def
+        # assets_def can be None in cases where op-only jobs are invoked with a partition key
+        partitions_def = assets_def.partitions_def if assets_def else None
         partitions_subset = (
             partitions_def.empty_subset().with_partition_key_range(
                 self.asset_partition_key_range, dynamic_partitions_store=self.instance
