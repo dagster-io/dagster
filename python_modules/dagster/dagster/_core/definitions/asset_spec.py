@@ -1,9 +1,7 @@
-from typing import TYPE_CHECKING, Any, Iterable, Mapping, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, Any, Iterable, Mapping, NamedTuple, Optional
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental
-from dagster._core.definitions.assets import AssetsDefinition
-from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.errors import DagsterInvariantViolationError
 
 from .auto_materialize_policy import AutoMaterializePolicy
@@ -15,7 +13,7 @@ from .freshness_policy import FreshnessPolicy
 from .metadata import MetadataUserInput
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_dep import AssetDep
+    from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
 
 
 @experimental
@@ -62,11 +60,7 @@ class AssetSpec(
     def __new__(
         cls,
         asset_key: CoercibleToAssetKey,
-        deps: Optional[
-            Iterable[
-                Union[CoercibleToAssetKey, "AssetSpec", AssetsDefinition, SourceAsset, "AssetDep"]
-            ]
-        ] = None,
+        deps: Optional[Iterable["CoercibleToAssetDep"]] = None,
         description: Optional[str] = None,
         metadata: Optional[MetadataUserInput] = None,
         skippable: bool = False,
@@ -80,10 +74,7 @@ class AssetSpec(
         dep_set = {}
         if deps:
             for dep in deps:
-                if not isinstance(dep, AssetDep):
-                    asset_dep = AssetDep(dep)
-                else:
-                    asset_dep = dep
+                asset_dep = AssetDep.from_coercible(dep)
 
                 # we cannot do deduplication via a set because MultiPartitionMappings have an internal
                 # dictionary that cannot be hashed. Instead deduplicate by making a dictionary and checking

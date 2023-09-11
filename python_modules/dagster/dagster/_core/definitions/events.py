@@ -34,6 +34,7 @@ from .metadata import (
 from .utils import DEFAULT_OUTPUT, check_valid_name
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.asset_dep import CoercibleToAssetDep
     from dagster._core.definitions.assets import AssetsDefinition
     from dagster._core.definitions.source_asset import SourceAsset
     from dagster._core.execution.context.output import OutputContext
@@ -186,6 +187,24 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
             return arg.key
         elif isinstance(arg, SourceAsset):
             return arg.key
+        else:
+            return AssetKey.from_coercible(arg)
+
+    @staticmethod
+    def from_coercible_to_asset_dep(arg: "CoercibleToAssetDep") -> "AssetKey":
+        from dagster._core.definitions.asset_dep import AssetDep
+        from dagster._core.definitions.asset_spec import AssetSpec
+        from dagster._core.definitions.assets import AssetsDefinition
+        from dagster._core.definitions.source_asset import SourceAsset
+
+        if isinstance(arg, AssetsDefinition):
+            return arg.key
+        elif isinstance(arg, SourceAsset):
+            return arg.key
+        elif isinstance(arg, AssetDep):
+            return arg.asset_key
+        elif isinstance(arg, AssetSpec):
+            return arg.asset_key
         else:
             return AssetKey.from_coercible(arg)
 
