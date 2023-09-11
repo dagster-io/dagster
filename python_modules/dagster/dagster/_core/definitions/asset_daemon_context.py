@@ -96,7 +96,7 @@ class AssetDaemonContext:
     ):
         from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
-        self._instance_queryer = CachingInstanceQueryer(instance, asset_graph)
+        self._instance_queryer = CachingInstanceQueryer(instance, asset_graph, logger=logger)
         self._data_time_resolver = CachingDataTimeResolver(self.instance_queryer)
         self._cursor = cursor
         self._target_asset_keys = target_asset_keys or {
