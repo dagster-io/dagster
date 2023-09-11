@@ -1213,7 +1213,11 @@ def build_asset_outs(asset_outs: Mapping[str, AssetOut]) -> Mapping[AssetKey, Tu
     return outs_by_asset_key
 
 
+<<<<<<< HEAD
 def _deps_and_non_argument_deps_to_asset_deps(
+=======
+def _type_check_deps_and_non_argument_deps(
+>>>>>>> 479391a1ab (add coercibleToAssetDep)
     deps: Optional[Iterable[CoercibleToAssetDep]],
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]],
 ) -> Optional[Iterable[AssetDep]]:
@@ -1263,12 +1267,18 @@ def _deps_and_non_argument_deps_to_asset_deps(
     return _make_asset_deps(upstream_asset_deps)
 
 
+<<<<<<< HEAD
 def _make_asset_deps(deps: Optional[Iterable[CoercibleToAssetDep]]) -> Optional[Iterable[AssetDep]]:
     if deps is None:
         return None
 
     with disable_dagster_warnings():
         dep_dict = {}
+=======
+def _make_asset_deps(deps=Optional[Iterable[CoercibleToAssetDep]]) -> Iterable[AssetDep]:
+    dep_dict = {}
+    if deps:
+>>>>>>> 479391a1ab (add coercibleToAssetDep)
         for dep in deps:
             asset_dep = AssetDep.from_coercible(dep)
 
