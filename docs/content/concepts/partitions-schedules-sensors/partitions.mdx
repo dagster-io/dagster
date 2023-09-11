@@ -313,12 +313,12 @@ defs = Definitions(
 
 ---
 
-## Partitioned non-asset jobs
+## Partitioned op jobs
 
 - [Relevant APIs](#relevant-apis-1)
-- [Defining a job with time partitions](#defining-a-job-with-time-partitions)
-- [Defining a job with static partitions](#defining-a-job-with-static-partitions)
-- [Creating schedules from partitioned jobs](#creating-schedules-from-partitioned-jobs)
+- [Defining an op job with time partitions](#defining-an-op-job-with-time-partitions)
+- [Defining an op job with static partitions](#defining-an-op-job-with-static-partitions)
+- [Creating schedules from partitioned op jobs](#creating-schedules-from-partitioned-op-jobs)
 
 ### Relevant APIs
 
@@ -335,17 +335,17 @@ defs = Definitions(
 
 When defining a job that doesn't use software-defined assets, you can make it partitioned by supplying <PyObject object="PartitionedConfig" /> object as its config.
 
-### Defining a job with time partitions
+### Defining an op job with time partitions
 
-The most common kind of partitioned job is a time-partitioned job - each partition is a time window, and each run for a partition processes data within that time window.
+The most common kind of partitioned op job is a time-partitioned job - each partition is a time window, and each run for a partition processes data within that time window.
 
-- [Non-partitioned job with date config](#non-partitioned-job-with-date-config)
-- [Date-partitioned job](#date-partitioned-job)
-- [Dagster UI partitions tab](#dagster-ui-partitions-tab)
+- [Non-partitioned op job with date config](#non-partitioned-op-job-with-date-config)
+- [Date-partitioned op job](#date-partitioned-op-job)
+- [Dagster UI Partitions tab](#dagster-ui-partitions-tab)
 
-#### Non-partitioned job with date config
+#### Non-partitioned op job with date config
 
-Before we define a partitioned job, let's look at a non-partitioned job that computes some data for a given date:
+Before we define a partitioned op job, let's look at a non-partitioned job that computes some data for a given date:
 
 ```python file=/concepts/partitions_schedules_sensors/date_config_job.py
 from dagster import Config, job, op
@@ -375,7 +375,7 @@ graph:
       date: "2020-05-05"
 ```
 
-#### Date-partitioned job
+#### Date-partitioned op job
 
 With the job above, it's possible to supply any value for the `date` param, which means that, if you wanted to launch a backfill, Dagster wouldn't know what values to run it on. You can instead build a partitioned job that operates on a defined set of dates.
 
@@ -395,7 +395,7 @@ def my_partitioned_config(start: datetime, _end: datetime):
     }
 ```
 
-Then you can build a job that uses the `PartitionedConfig` by supplying it to the `config` argument when you construct the job:
+Then you can build an op job that uses the `PartitionedConfig` by supplying it to the `config` argument when you construct the job:
 
 ```python file=/concepts/partitions_schedules_sensors/partitioned_job.py startafter=start_partitioned_job endbefore=end_partitioned_job
 @job(config=my_partitioned_config)
@@ -403,7 +403,7 @@ def do_stuff_partitioned():
     process_data_for_date()
 ```
 
-#### Dagster UI partitions tab
+#### Dagster UI Partitions tab
 
 In the UI, you can view runs by partition in the **Partitions tab** of a **Job** page:
 
@@ -472,11 +472,11 @@ def continent_job():
     continent_op()
 ```
 
-### Creating schedules from partitioned jobs
+### Creating schedules from partitioned op jobs
 
-It's common that, when you have a partitioned job, you want to run it on a schedule. For example, if your job has a partition for each date, you likely want to run that job every day, on the partition for that day.
+It's common that, when you have a partitioned op job, you want to run it on a schedule. For example, if the job has a partition for each date, you likely want to run that job every day, on the partition for that day.
 
-The <PyObject object="build_schedule_from_partitioned_job"/> function allows you to construct a schedule from a date partitioned job. It creates a schedule with an interval that matches the spacing of your partition. If you wanted to create a schedule for `do_stuff_partitioned` job defined above, you could write:
+The <PyObject object="build_schedule_from_partitioned_job"/> function allows you to construct a schedule from a date-partitioned job. It creates a schedule with an interval that matches the spacing of your partition. If you wanted to create a schedule for `do_stuff_partitioned` job defined above, you could write:
 
 ```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_marker endbefore=end_marker
 from dagster import build_schedule_from_partitioned_job, job
