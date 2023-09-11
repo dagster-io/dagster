@@ -1,3 +1,4 @@
+import logging
 from collections import defaultdict, deque
 from datetime import datetime
 from typing import (
@@ -33,6 +34,7 @@ from dagster._core.definitions.time_window_partitions import (
     get_time_partition_key,
     get_time_partitions_def,
 )
+from dagster._core.errors import DagsterDefinitionChangedDeserializationError
 from dagster._core.events import DagsterEventType
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 from dagster._core.storage.dagster_run import (
@@ -61,9 +63,11 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         instance: DagsterInstance,
         asset_graph: AssetGraph,
         evaluation_time: Optional[datetime] = None,
+        logger: Optional[logging.Logger] = None,
     ):
         self._instance = instance
         self._asset_graph = asset_graph
+        self._logger = logger or logging.getLogger("dagster")
 
         self._asset_record_cache: Dict[AssetKey, Optional[AssetRecord]] = {}
         self._asset_partition_count_cache: Dict[
@@ -470,11 +474,19 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             if asset_backfill.serialized_asset_backfill_data is None:
                 check.failed("Asset backfill missing serialized_asset_backfill_data")
 
-            asset_backfill_data = AssetBackfillData.from_serialized(
-                asset_backfill.serialized_asset_backfill_data,
-                self.asset_graph,
-                asset_backfill.backfill_timestamp,
-            )
+            try:
+                asset_backfill_data = AssetBackfillData.from_serialized(
+                    asset_backfill.serialized_asset_backfill_data,
+                    self.asset_graph,
+                    asset_backfill.backfill_timestamp,
+                )
+            except DagsterDefinitionChangedDeserializationError:
+                self._logger.warning(
+                    f"Not considering assets in backfill {asset_backfill.backfill_id} since its"
+                    " data could not be deserialized"
+                )
+                # Backfill can't be loaded, so no risk of the assets interfering
+                continue
 
             result |= asset_backfill_data.target_subset
 
