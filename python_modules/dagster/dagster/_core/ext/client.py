@@ -1,25 +1,20 @@
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Iterator, Mapping, Optional
+from typing import TYPE_CHECKING, Iterator, Optional
 
 from dagster_ext import (
-    DAGSTER_EXT_ENV_KEYS,
-    IS_DAGSTER_EXT_PROCESS_ENV_VAR,
+    ExtContextData,
     ExtExtras,
     ExtParams,
-    encode_env_var,
 )
 
 from dagster._core.execution.context.compute import OpExecutionContext
 
 if TYPE_CHECKING:
-    from dagster._core.ext.context import ExtOrchestrationContext
+    from .context import ExtMessageHandler
 
 
 class ExtClient(ABC):
-    def get_base_env(self) -> Mapping[str, str]:
-        return {DAGSTER_EXT_ENV_KEYS[IS_DAGSTER_EXT_PROCESS_ENV_VAR]: encode_env_var(True)}
-
     @abstractmethod
     def run(
         self,
@@ -35,12 +30,12 @@ class ExtClient(ABC):
 class ExtContextInjector(ABC):
     @abstractmethod
     @contextmanager
-    def inject_context(self, context: "ExtOrchestrationContext") -> Iterator[ExtParams]:
+    def inject_context(self, context_data: "ExtContextData") -> Iterator[ExtParams]:
         ...
 
 
 class ExtMessageReader(ABC):
     @abstractmethod
     @contextmanager
-    def read_messages(self, context: "ExtOrchestrationContext") -> Iterator[ExtParams]:
+    def read_messages(self, handler: "ExtMessageHandler") -> Iterator[ExtParams]:
         ...
