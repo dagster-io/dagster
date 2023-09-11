@@ -6,27 +6,11 @@ from dagster import (
     IAttachDifferentObjectToOpContext,
     resource,
 )
+from dagster._config.pythonic_config.pydantic_compat_layer import compat_model_validator
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from pydantic import Field
 
 from .databricks import DatabricksClient
-
-try:
-    # Pydantic 2.x
-    from pydantic import model_validator  # type: ignore
-except ImportError:
-    # Pydantic 1.x
-    from pydantic import root_validator
-
-    def model_validator(mode="before"):
-        def _decorate(func):
-            return (
-                root_validator(pre=True)(func)
-                if mode == "before"
-                else root_validator(post=False)(func)
-            )
-
-        return _decorate
 
 
 class OauthCredentials(Config):
@@ -62,7 +46,7 @@ class DatabricksClientResource(ConfigurableResource, IAttachDifferentObjectToOpC
         ),
     )
 
-    @model_validator(mode="before")
+    @compat_model_validator(mode="before")
     def has_token_or_oauth_credentials(cls, values):
         token = values.get("token")
         oauth_credentials = values.get("oauth_credentials")

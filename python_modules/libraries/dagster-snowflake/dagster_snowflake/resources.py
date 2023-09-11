@@ -14,28 +14,11 @@ from dagster import (
     resource,
 )
 from dagster._annotations import public
+from dagster._config.pythonic_config.pydantic_compat_layer import compat_model_validator
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._core.storage.event_log.sql_event_log import SqlDbConnection
 from dagster._utils.cached_method import cached_method
 from pydantic import Field, validator
-
-try:
-    # Pydantic 2.x
-    from pydantic import model_validator  # type: ignore
-except ImportError:
-    # Pydantic 1.x
-    from pydantic import root_validator
-
-    def model_validator(mode="before"):
-        def _decorate(func):
-            return (
-                root_validator(pre=True)(func)
-                if mode == "before"
-                else root_validator(post=False)(func)
-            )
-
-        return _decorate
-
 
 try:
     import snowflake.connector
@@ -289,7 +272,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
             )
         return v
 
-    @model_validator(mode="before")
+    @compat_model_validator(mode="before")
     def validate_authentication(cls, values):
         auths_set = 0
         auths_set += 1 if values.get("password") is not None else 0
