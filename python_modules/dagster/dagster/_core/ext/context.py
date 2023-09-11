@@ -1,12 +1,17 @@
-from typing import Any, Optional, get_args
+from dataclasses import dataclass
+from typing import Any, Mapping, Optional, get_args
 
 from dagster_ext import (
+    DAGSTER_EXT_ENV_KEYS,
+    IS_DAGSTER_EXT_PROCESS_ENV_VAR,
     ExtContextData,
     ExtDataProvenance,
     ExtExtras,
     ExtMessage,
     ExtMetadataType,
+    ExtParams,
     ExtTimeWindow,
+    encode_env_var,
 )
 
 import dagster._check as check
@@ -19,17 +24,9 @@ from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.execution.context.invocation import BoundOpExecutionContext
 
 
-class ExtOrchestrationContext:
-    def __init__(self, *, context: OpExecutionContext, extras: Optional[ExtExtras]) -> None:
+class ExtMessageHandler:
+    def __init__(self, context: OpExecutionContext) -> None:
         self._context = context
-        self._extras = extras
-
-    def get_data(self) -> ExtContextData:
-        return build_external_execution_context_data(self._context, self._extras)
-
-    # ########################
-    # ##### HANDLE NOTIFICATIONS
-    # ########################
 
     # Type ignores because we currently validate in individual handlers
     def handle_message(self, message: ExtMessage) -> None:
@@ -94,6 +91,32 @@ class ExtOrchestrationContext:
     def _handle_log(self, message: str, level: str = "info") -> None:
         check.str_param(message, "message")
         self._context.log.log(level, message)
+
+
+def _ext_params_as_env_vars(
+    context_injector_params: ExtParams, message_reader_params: ExtParams
+) -> Mapping[str, str]:
+    return {
+        DAGSTER_EXT_ENV_KEYS["context"]: encode_env_var(context_injector_params),
+        DAGSTER_EXT_ENV_KEYS["messages"]: encode_env_var(message_reader_params),
+    }
+
+
+@dataclass
+class ExtOrchestrationContext:
+    context_data: ExtContextData
+    message_handler: ExtMessageHandler
+    context_injector_params: ExtParams
+    message_reader_params: ExtParams
+
+    def get_external_process_env_vars(self):
+        return {
+            DAGSTER_EXT_ENV_KEYS[IS_DAGSTER_EXT_PROCESS_ENV_VAR]: encode_env_var(True),
+            **_ext_params_as_env_vars(
+                context_injector_params=self.context_injector_params,
+                message_reader_params=self.message_reader_params,
+            ),
+        }
 
 
 def build_external_execution_context_data(
