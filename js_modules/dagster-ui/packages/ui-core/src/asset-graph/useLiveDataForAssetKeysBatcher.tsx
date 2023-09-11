@@ -3,7 +3,7 @@ import React from 'react';
 import {AssetKeyInput} from '../graphql/types';
 
 import {buildLiveData} from './Utils';
-export const useLiveDataForAssetKeysBatcher = (assetKeys: AssetKeyInput[], batchSize = 1) => {
+export const useLiveDataForAssetKeysBatcher = (assetKeys: AssetKeyInput[], batchSize = 50) => {
   const [_, forceRerender] = React.useReducer((s) => s + 1, 0);
   const currentBatchIndexRef = React.useRef(0);
   const currentBatchIndex = currentBatchIndexRef.current;
