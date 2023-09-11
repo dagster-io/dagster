@@ -368,6 +368,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         else:
             check.failed(f"Unexpected event {event}")
 
+    @public
     def add_output_metadata(
         self,
         metadata: Mapping[str, Any],
@@ -376,11 +377,14 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     ) -> None:
         """Add metadata to one of the outputs of an op.
 
-        This can only be used once per output in the body of an op. Using this method with the same output_name more than once within an op will result in an error.
+        This can be invoked multiple times per output in the body of an op. If the same key is
+        passed multiple times, the value associated with the last call will be used.
 
         Args:
             metadata (Mapping[str, Any]): The metadata to attach to the output
             output_name (Optional[str]): The name of the output to attach metadata to. If there is only one output on the op, then this argument does not need to be provided. The metadata will automatically be attached to the only output.
+            mapping_key (Optional[str]): The mapping key of the output to attach metadata to. If the
+                output is not dynamic, this argument does not need to be provided.
 
         **Examples:**
 
@@ -408,20 +412,6 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
         self._step_execution_context.add_output_metadata(
             metadata=metadata, output_name=output_name, mapping_key=mapping_key
-        )
-
-    def merge_output_metadata(
-        self,
-        metadata: Mapping[str, Any],
-        output_name: Optional[str] = None,
-        mapping_key: Optional[str] = None,
-    ) -> None:
-        metadata = check.mapping_param(metadata, "metadata", key_type=str)
-        output_name = check.opt_str_param(output_name, "output_name")
-        mapping_key = check.opt_str_param(mapping_key, "mapping_key")
-
-        self._step_execution_context.add_output_metadata(
-            metadata=metadata, output_name=output_name, mapping_key=mapping_key, merge=True
         )
 
     def get_output_metadata(
