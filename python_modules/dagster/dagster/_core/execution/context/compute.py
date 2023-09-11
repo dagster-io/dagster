@@ -260,7 +260,8 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     def partition_key(self) -> str:
         """The partition key for the current run.
 
-        Raises an error if the current run is not a partitioned run.
+        Raises an error if the current run is not a partitioned run. Or if the current run is operating
+        over a range of partitions (ie. a backfill of several partitions executed in a single run).
 
         Examples:
             .. code-block:: python
@@ -587,9 +588,10 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         """Returns the asset partition key for the given output.
 
         Args:
-            output_name (str): The name of the output produced by the asset to get the partition key for.
-                If not provided for assets defined with the `@asset` decorator, the name of the output
-                will be automatically provided.
+            output_name (str): For assets defined with the ``@asset`` decorator, the name of the output
+                will be automatically provided. For assets defined with ``@multi_asset``, ``output_name``
+                should be the op output associated with the asset key (as determined by AssetOut)
+                to get the partition key for.
 
         Examples:
             .. code-block:: python
@@ -652,9 +654,10 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         MultiPartitionsDefinition with one time-partitioned dimension.
 
         Args:
-            output_name (str): The name of the output produced by the asset to get the time window for.
-                If not provided for assets defined with the `@asset` decorator, the name of the output
-                will be automatically provided.
+            output_name (str): For assets defined with the ``@asset`` decorator, the name of the output
+                will be automatically provided. For assets defined with ``@multi_asset``, ``output_name``
+                should be the op output associated with the asset key (as determined by AssetOut)
+                to get the time window for.
 
         Examples:
             .. code-block:: python
@@ -716,16 +719,17 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     def asset_partition_key_range_for_output(
         self, output_name: str = "result"
     ) -> PartitionKeyRange:
-        """Return the PartitionKeyRange for the corresponding output. Errors if not present.
+        """Return the PartitionKeyRange for the corresponding output. Errors if the run is not partitioned.
 
         If you want to write your asset to support running a backfill of several partitions in a single run,
         you can use ``asset_partition_key_range_for_output`` to get all of the partitions being materialized
         by the backfill.
 
         Args:
-            output_name (str): The name of the output produced by the asset to get the key range for.
-                If not provided for assets defined with the `@asset` decorator, the name of the output
-                will be automatically provided.
+            output_name (str): For assets defined with the ``@asset`` decorator, the name of the output
+                will be automatically provided. For assets defined with ``@multi_asset``, ``output_name``
+                should be the op output associated with the asset key (as determined by AssetOut)
+                to get the partition key range for.
 
         Examples:
             .. code-block:: python
@@ -776,7 +780,8 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
     @public
     def asset_partition_key_range_for_input(self, input_name: str) -> PartitionKeyRange:
-        """Return the PartitionKeyRange for the corresponding input. Errors if there is more or less than one.
+        """Return the PartitionKeyRange for the corresponding input. Errors if the asset depends on a
+        non-contiguous chunk of the input.
 
         If you want to write your asset to support running a backfill of several partitions in a single run,
         you can use ``asset_partition_key_range_for_input`` to get the range of partitions keys of the input that
@@ -884,9 +889,10 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         """The PartitionsDefinition on the asset corresponding to this output.
 
         Args:
-            output_name (str): The name of the output produced by the asset to get the PartitionsDefinition for.
-                If not provided for assets defined with the `@asset` decorator, the name of the output
-                will be automatically provided.
+            output_name (str): For assets defined with the ``@asset`` decorator, the name of the output
+                will be automatically provided. For assets defined with ``@multi_asset``, ``output_name``
+                should be the op output associated with the asset key (as determined by AssetOut)
+                to get the PartitionsDefinition for.
 
         Examples:
             .. code-block:: python
@@ -979,9 +985,10 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         by the backfill.
 
         Args:
-            output_name (str): The name of the output produced by the asset to get the keys for.
-                If not provided for assets defined with the `@asset` decorator, the name of the output
-                will be automatically provided.
+            output_name (str): For assets defined with the ``@asset`` decorator, the name of the output
+                will be automatically provided. For assets defined with ``@multi_asset``, ``output_name``
+                should be the op output associated with the asset key (as determined by AssetOut)
+                to get the partition keys for.
 
         Examples:
             .. code-block:: python
