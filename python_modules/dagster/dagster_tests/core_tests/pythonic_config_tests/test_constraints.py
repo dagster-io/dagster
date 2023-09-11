@@ -120,7 +120,7 @@ def test_list_length() -> None:
         AListConfig(a_list=[1] * 11)
 
 
-@pytest.mark.skipif(USING_PYDANTIC_2, "Removed in pydantic 2")
+@pytest.mark.skipif(USING_PYDANTIC_2, reason="Removed in pydantic 2")
 def test_list_uniqueness() -> None:
     class AListConfig(Config):
         a_list: List[int] = Field(unique_items=True)
