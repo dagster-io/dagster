@@ -211,7 +211,7 @@ def asset(
     """
 
     def create_asset():
-        upstream_asset_deps = _type_check_deps_and_non_argument_deps(
+        upstream_asset_deps = _deps_and_non_argument_deps_to_asset_dep(
             deps=deps, non_argument_deps=non_argument_deps
         )
 
@@ -219,7 +219,7 @@ def asset(
             name=cast(Optional[str], name),  # (mypy bug that it can't infer name is Optional[str])
             key_prefix=key_prefix,
             ins=ins,
-            deps=_make_asset_deps(upstream_asset_deps),
+            deps=upstream_asset_deps,
             metadata=metadata,
             description=description,
             config_schema=config_schema,
@@ -588,7 +588,7 @@ def multi_asset(
 
     specs = check.opt_list_param(specs, "specs", of_type=AssetSpec)
 
-    upstream_asset_deps = _type_check_deps_and_non_argument_deps(
+    upstream_asset_deps = _deps_and_non_argument_deps_to_asset_dep(
         deps=deps, non_argument_deps=non_argument_deps
     )
 
@@ -668,7 +668,7 @@ def multi_asset(
             remaining_upstream_keys = {key for key in upstream_keys if key not in loaded_upstreams}
             asset_ins = build_asset_ins(fn, explicit_ins, deps=remaining_upstream_keys)
         else:
-            asset_ins = build_asset_ins(fn, ins or {}, deps=_make_asset_keys(upstream_asset_deps))
+            asset_ins = build_asset_ins(fn, ins or {}, deps=upstream_asset_deps)
             output_tuples_by_asset_key = build_asset_outs(asset_out_map)
             # validate that the asset_deps make sense
             valid_asset_deps = set(asset_ins.keys()) | set(output_tuples_by_asset_key.keys())
@@ -747,6 +747,22 @@ def multi_asset(
             for input_name, asset_in in (ins or {}).items()
             if asset_in.partition_mapping is not None
         }
+
+        # Add PartitionMappings specified via deps to partition_mappings dictionary. Error on duplicates
+        for dep in upstream_asset_deps:
+            if dep.partition_mapping is None:
+                continue
+            if partition_mappings.get(dep.asset_key, None) is None:
+                partition_mappings[dep.asset_key] = dep.partition_mapping
+                continue
+            if partition_mappings[dep.asset_key] == dep.partition_mapping:
+                continue
+            else:
+                raise DagsterInvalidDefinitionError(
+                    f"Two different PartitionMappings for {dep.asset_key} provided for"
+                    f" asset {op_name}. Please use the same PartitionMapping for"
+                    f" {dep.asset_key}."
+                )
 
         if specs:
             internal_deps = {
@@ -1218,7 +1234,7 @@ def build_asset_outs(asset_outs: Mapping[str, AssetOut]) -> Mapping[AssetKey, Tu
     return outs_by_asset_key
 
 
-def _type_check_deps_and_non_argument_deps(
+def _deps_and_non_argument_deps_to_asset_dep(
     deps: Optional[Iterable[Union[AssetDep, CoercibleToAssetKey, AssetsDefinition, SourceAsset]]],
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]],
 ):
@@ -1271,29 +1287,29 @@ def _type_check_deps_and_non_argument_deps(
         check.set_param(non_argument_deps, "non_argument_deps", of_type=(AssetKey, str))
         upstream_asset_deps = list(non_argument_deps)
 
-    return upstream_asset_deps
+    return _make_asset_deps(upstream_asset_deps)
 
 
 def _make_asset_deps(
-    deps=Optional[Iterable[Union[AssetDep, CoercibleToAssetKey, AssetsDefinition, SourceAsset]]]
-) -> Iterable[AssetDep]:
+    deps: Optional[Iterable[Union[AssetDep, CoercibleToAssetKey, AssetsDefinition, SourceAsset]]]
+) -> Optional[Iterable[AssetDep]]:
+    if deps is None:
+        return None
     dep_set = {}
-    if deps:
-        for dep in deps:
-            if not isinstance(dep, AssetDep):
-                asset_dep = AssetDep(dep)
-            else:
-                asset_dep = dep
+    for dep in deps:
+        if not isinstance(dep, AssetDep):
+            asset_dep = AssetDep(dep)
+        else:
+            asset_dep = dep
 
-            # we cannot do deduplication via a set because MultiPartitionMappings have an internal
-            # dictionary that cannot be hashed. Instead deduplicate by making a dictionary and checking
-            # for existing keys.
-            if asset_dep.asset_key in dep_set.keys():
-                raise DagsterInvariantViolationError(
-                    f"Cannot set a dependency on asset {asset_dep.asset_key} more than once per"
-                    " asset."
-                )
-            dep_set[asset_dep.asset_key] = asset_dep
+        # we cannot do deduplication via a set because MultiPartitionMappings have an internal
+        # dictionary that cannot be hashed. Instead deduplicate by making a dictionary and checking
+        # for existing keys.
+        if asset_dep.asset_key in dep_set.keys():
+            raise DagsterInvariantViolationError(
+                f"Cannot set a dependency on asset {asset_dep.asset_key} more than once per asset."
+            )
+        dep_set[asset_dep.asset_key] = asset_dep
 
     return list(dep_set.values())
 
