@@ -89,5 +89,6 @@ class AssetDep(
                 f" available keys are: {arg.keys}."
             )
         if isinstance(arg, AssetDep):
+            # we need to retain the partition_mapping, so return the original object
             return arg
         return AssetDep(asset=arg)

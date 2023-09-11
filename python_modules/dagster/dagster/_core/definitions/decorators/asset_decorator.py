@@ -1202,15 +1202,17 @@ def build_asset_outs(asset_outs: Mapping[str, AssetOut]) -> Mapping[AssetKey, Tu
     return outs_by_asset_key
 
 
-def _type_check_deps_and_non_argument_deps(
+def _deps_and_non_argument_deps_to_asset_deps(
     deps: Optional[Iterable[CoercibleToAssetDep]],
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]],
-):
+) -> Optional[Iterable[AssetDep]]:
     """Helper function for managing deps and non_argument_deps while non_argument_deps is still an accepted parameter.
     Ensures:
     1. only one of deps and non_argument_deps is provided.
     2. multi assets AssetsDefinition is not passed to deps.
     3. deprecation warning is fired for non_argument_deps.
+
+    Converts the deps to `AssetDep`s
     """
     if non_argument_deps is not None and deps is not None:
         raise DagsterInvalidDefinitionError(
@@ -1230,9 +1232,9 @@ def _type_check_deps_and_non_argument_deps(
                         f" available keys are: {dep.keys}."
                     )
             else:
-                # confirm that dep is coercible to AssetKey
+                # confirm that dep is coercible to AssetDep
                 try:
-                    AssetKey.from_coercible_to_asset_dep(dep)
+                    AssetDep.from_coercible(dep)
                 except check.CheckError:
                     raise DagsterInvalidDefinitionError(
                         f"Cannot pass an instance of type {type(dep)} to deps parameter of @asset."
@@ -1250,21 +1252,22 @@ def _type_check_deps_and_non_argument_deps(
     return _make_asset_deps(upstream_asset_deps)
 
 
-def _make_asset_deps(deps=Optional[Iterable[CoercibleToAssetDep]]) -> Iterable[AssetDep]:
-    dep_dict = {}
-    if deps:
-        for dep in deps:
-            asset_dep = AssetDep.from_coercible(dep)
+def _make_asset_deps(deps: Optional[Iterable[CoercibleToAssetDep]]) -> Optional[Iterable[AssetDep]]:
+    if deps is None:
+        return None
 
-            # we cannot do deduplication via a set because MultiPartitionMappings have an internal
-            # dictionary that cannot be hashed. Instead deduplicate by making a dictionary and checking
-            # for existing keys.
-            if asset_dep.asset_key in dep_dict.keys():
-                raise DagsterInvariantViolationError(
-                    f"Cannot set a dependency on asset {asset_dep.asset_key} more than once per"
-                    " asset."
-                )
-            dep_dict[asset_dep.asset_key] = asset_dep
+    dep_dict = {}
+    for dep in deps:
+        asset_dep = AssetDep.from_coercible(dep)
+
+        # we cannot do deduplication via a set because MultiPartitionMappings have an internal
+        # dictionary that cannot be hashed. Instead deduplicate by making a dictionary and checking
+        # for existing keys.
+        if asset_dep.asset_key in dep_dict.keys():
+            raise DagsterInvariantViolationError(
+                f"Cannot set a dependency on asset {asset_dep.asset_key} more than once per asset."
+            )
+        dep_dict[asset_dep.asset_key] = asset_dep
 
     return list(dep_dict.values())
 
