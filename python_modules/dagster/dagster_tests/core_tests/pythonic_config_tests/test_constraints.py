@@ -2,6 +2,7 @@ from typing import List
 
 import pytest
 from dagster._config.pythonic_config import Config
+from dagster._config.pythonic_config.pydantic_compat_layer import USING_PYDANTIC_2
 from pydantic import Field, ValidationError, conlist, constr
 
 
@@ -119,7 +120,7 @@ def test_list_length() -> None:
         AListConfig(a_list=[1] * 11)
 
 
-@pytest.mark.skip("removed in pydantic 2")
+@pytest.mark.skipif(USING_PYDANTIC_2, "Removed in pydantic 2")
 def test_list_uniqueness() -> None:
     class AListConfig(Config):
         a_list: List[int] = Field(unique_items=True)

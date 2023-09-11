@@ -5,10 +5,13 @@ from typing import (
 
 import pydantic
 
+PydanticUndefined = None
 try:
-    from pydantic_core import PydanticUndefined as PydanticUndefined  # type: ignore
+    from pydantic_core import PydanticUndefined as _PydanticUndefined  # type: ignore
+
+    PydanticUndefined = _PydanticUndefined
 except:
-    PydanticUndefined = None
+    pass
 
 
 from pydantic import BaseModel
@@ -109,12 +112,12 @@ def model_config(model: Type[BaseModel]):
 
 try:
     # Pydantic 2.x
-    from pydantic import model_validator as compat_model_validator  # type: ignore
+    from pydantic import model_validator as model_validator  # type: ignore
 except ImportError:
     # Pydantic 1.x
     from pydantic import root_validator
 
-    def compat_model_validator(mode="before"):
+    def model_validator(mode="before"):
         """Mimics the Pydantic 2.x model_validator decorator, which is used to
         define validation logic for a Pydantic model. This decorator is used
         to wrap a validation function which is called before or after the
@@ -129,3 +132,6 @@ except ImportError:
             )
 
         return _decorate
+
+
+compat_model_validator = model_validator
