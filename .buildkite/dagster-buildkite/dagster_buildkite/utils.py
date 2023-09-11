@@ -12,9 +12,9 @@ from typing_extensions import Literal, TypeAlias, TypedDict, TypeGuard
 from dagster_buildkite.git import ChangedFiles, get_commit_message
 
 BUILD_CREATOR_EMAIL_TO_SLACK_CHANNEL_MAP = {
-    "rex@elementl.com": "eng-buildkite-rex",
-    "dish@elementl.com": "eng-buildkite-dish",
-    "johann@elementl.com": "eng-buildkite-johann",
+    "rex@dagsterlabs.com": "eng-buildkite-rex",
+    "dish@dagsterlabs.com": "eng-buildkite-dish",
+    "johann@dagsterlabs.com": "eng-buildkite-johann",
 }
 
 # ########################

@@ -32,8 +32,8 @@ GRPC_VERSION_FLOOR = "1.44.0"
 setup(
     name="dagster",
     version=get_version(),
-    author="Elementl",
-    author_email="hello@elementl.com",
+    author="Dagster Labs",
+    author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
     description=(
         "Dagster is an orchestration platform for the development, production, and observation of"
