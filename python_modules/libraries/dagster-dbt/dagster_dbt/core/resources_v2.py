@@ -1,4 +1,5 @@
 import atexit
+import contextlib
 import os
 import shutil
 import subprocess
@@ -311,20 +312,21 @@ class DbtCliInvocation:
         Returns:
             Iterator[DbtCliEventMessage]: An iterator of events from the dbt CLI process.
         """
-        for raw_line in self.process.stdout or []:
-            log: str = raw_line.decode().strip()
-            try:
-                event = DbtCliEventMessage.from_log(log=log)
+        with self.process.stdout or contextlib.nullcontext():
+            for raw_line in self.process.stdout or []:
+                log: str = raw_line.decode().strip()
+                try:
+                    event = DbtCliEventMessage.from_log(log=log)
 
-                # Re-emit the logs from dbt CLI process into stdout.
-                sys.stdout.write(str(event) + "\n")
-                sys.stdout.flush()
+                    # Re-emit the logs from dbt CLI process into stdout.
+                    sys.stdout.write(str(event) + "\n")
+                    sys.stdout.flush()
 
-                yield event
-            except:
-                # If we can't parse the log, then just emit it as a raw log.
-                sys.stdout.write(log + "\n")
-                sys.stdout.flush()
+                    yield event
+                except:
+                    # If we can't parse the log, then just emit it as a raw log.
+                    sys.stdout.write(log + "\n")
+                    sys.stdout.flush()
 
         # Ensure that the dbt CLI process has completed.
         self._raise_on_error()
