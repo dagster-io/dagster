@@ -318,7 +318,6 @@ def test_ext_no_client(external_script):
         ) as ext_context:
             subprocess.run(cmd, env=ext_context.get_external_process_env_vars())
 
-    ExtSubprocess()
     with instance_for_test() as instance:
         materialize(
             [subproc_run],

@@ -140,6 +140,7 @@ class _ExtK8sPod(ExtClient):
 
         with ext_protocol(
             context=context,
+            extras=extras,
             context_injector=context_injector,
             message_reader=message_reader,
         ) as ext_process:

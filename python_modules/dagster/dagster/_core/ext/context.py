@@ -4,7 +4,6 @@ from typing import Any, Mapping, Optional, get_args
 from dagster_ext import (
     DAGSTER_EXT_ENV_KEYS,
     IS_DAGSTER_EXT_PROCESS_ENV_VAR,
-    ExtContext,
     ExtContextData,
     ExtDataProvenance,
     ExtExtras,
@@ -105,7 +104,7 @@ def _ext_params_as_env_vars(
 
 @dataclass
 class ExtOrchestrationContext:
-    context_data: ExtContext
+    context_data: ExtContextData
     message_handler: ExtMessageHandler
     context_injector_params: ExtParams
     message_reader_params: ExtParams

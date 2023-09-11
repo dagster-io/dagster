@@ -50,7 +50,7 @@ class ExtFileContextInjector(ExtContextInjector):
 
 class ExtTempFileContextInjector(ExtContextInjector):
     @contextmanager
-    def inject_context(self, context: "ExtOrchestrationContext") -> Iterator[ExtParams]:
+    def inject_context(self, context: "ExtContextData") -> Iterator[ExtParams]:
         with tempfile.TemporaryDirectory() as tempdir:
             with ExtFileContextInjector(
                 os.path.join(tempdir, _CONTEXT_INJECTOR_FILENAME)
