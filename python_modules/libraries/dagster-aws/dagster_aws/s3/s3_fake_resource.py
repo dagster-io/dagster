@@ -70,9 +70,9 @@ class S3FakeSession:
         with open(Filename, "rb") as fileobj:
             self.buckets[Bucket][Key] = fileobj.read()
 
-    def upload_fileobj(self, fileobj, bucket, key, *args, **kwargs):
+    def upload_fileobj(self, Fileobj, Bucket, Key, *args, **kwargs):
         self.mock_extras.upload_fileobj(*args, **kwargs)
-        self.buckets[bucket][key] = fileobj.read()
+        self.buckets[Bucket][Key] = Fileobj.read()
 
     def has_object(self, bucket, key):
         return bucket in self.buckets and key in self.buckets[bucket]
