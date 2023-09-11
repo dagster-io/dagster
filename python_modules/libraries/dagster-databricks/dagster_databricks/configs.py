@@ -645,11 +645,11 @@ def _define_libraries() -> Field:
 
 
 def _define_email_notifications() -> Dict[str, Field]:
-    no_alert_for_skipped_runs = Field(Noneable(bool), default_value=None)
-    on_duration_warning_threshold_exceeded = Field(Noneable([str]), default_value=None)
-    on_failure = Field(Noneable([str]), default_value=None)
-    on_start = Field(Noneable([str]), default_value=None)
-    on_success = Field(Noneable([str]), default_value=None)
+    no_alert_for_skipped_runs = Field(bool, is_required=False)
+    on_duration_warning_threshold_exceeded = Field([str], is_required=False)
+    on_failure = Field([str], is_required=False)
+    on_start = Field([str], is_required=False)
+    on_success = Field([str], is_required=False)
     return {
         "no_alert_for_skipped_runs": no_alert_for_skipped_runs,
         "on_duration_warning_threshold_exceeded": on_duration_warning_threshold_exceeded,
@@ -660,8 +660,8 @@ def _define_email_notifications() -> Dict[str, Field]:
 
 
 def _define_notification_settings() -> Dict[str, Field]:
-    no_alert_for_canceled_runs = Field(Noneable(bool), default_value=None)
-    no_alert_for_skipped_runs = Field(Noneable(bool), default_value=None)
+    no_alert_for_canceled_runs = Field(bool, is_required=False)
+    no_alert_for_skipped_runs = Field(bool, is_required=False)
     return {
         "no_alert_for_canceled_runs": no_alert_for_canceled_runs,
         "no_alert_for_skipped_runs": no_alert_for_skipped_runs,
@@ -670,16 +670,14 @@ def _define_notification_settings() -> Dict[str, Field]:
 
 def _define_webhook_notification_settings() -> Field:
     webhook_id_field = Field(
-        Noneable(
             [
                 Shape(
                     {
                         "id": Field(String, is_required=False),
                     }
                 )
-            ]
-        ),
-        default_value=None,
+            ],
+        is_required=False
     )
     return Field(
         Shape(
@@ -698,8 +696,8 @@ def _define_webhook_notification_settings() -> Field:
 def _define_docker_image_conf() -> Field:
     docker_basic_auth = Shape(
         {
-            "password": Field(Noneable(str), default_value=None),
-            "username": Field(Noneable(str), default_value=None),
+            "password": Field(String),
+            "username": Field(String),
         }
     )
     basic_auth = Field(
