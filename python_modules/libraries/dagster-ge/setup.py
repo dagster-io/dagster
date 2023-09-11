@@ -18,7 +18,7 @@ pin = "" if ver == "1!0+dev" else f"=={ver}"
 setup(
     name="dagster-ge",
     version=ver,
-    author="Elementl",
+    author="Dagster Labs",
     license="Apache-2.0",
     description="Package for GE-specific Dagster framework op and resource components.",
     url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-ge",

@@ -3,7 +3,7 @@ from setuptools import find_packages, setup
 setup(
     name="dagit-screenshot",
     version="1!0+dev",
-    author_email="hello@elementl.com",
+    author_email="hello@dagsterlabs.com",
     packages=find_packages(exclude=["dagit_screenshot_tests*"]),  # same as name
     install_requires=[
         "click>=6",
@@ -11,7 +11,7 @@ setup(
         "pyyaml",
         "typing-extensions>=4",
     ],  # external packages as dependencies
-    author="Elementl",
+    author="Dagster Labs",
     license="Apache-2.0",
     description="Utility for taking automated screenshots from dagit",
     classifiers=[

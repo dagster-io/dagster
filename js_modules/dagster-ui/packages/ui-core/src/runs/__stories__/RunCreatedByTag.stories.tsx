@@ -25,7 +25,7 @@ export const Default = () => {
                 [
                   buildPipelineTag({
                     key: DagsterTag.User,
-                    value: 'foo@elementl.com',
+                    value: 'foo@dagsterlabs.com',
                   }),
                 ] as RunTagsFragment[]
               }

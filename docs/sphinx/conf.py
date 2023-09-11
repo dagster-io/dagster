@@ -76,8 +76,8 @@ for path in paths:
 # -- Project information -----------------------------------------------------
 
 project = "Dagster"
-copyright = "2019, Elementl, Inc"  # noqa: A001
-author = "The Dagster Team"
+copyright = "2019, Dagster Labs, Inc"  # noqa: A001
+author = "Dagster Labs"
 
 # The short X.Y version
 version = ""
@@ -101,7 +101,7 @@ extensions = [
     "sphinx.ext.viewcode",
     # Directives for automatically documenting CLIs built with the `click` package.
     "sphinx_click.ext",
-    # Elementl-authored extension with custom directives and sphinx processing.
+    # Dagster-Labs-authored extension with custom directives and sphinx processing.
     "autodoc_dagster",
     # Renders a collapsible HTML component. Used by autodoc_dagster.
     "sphinx_toolbox.collapse",
