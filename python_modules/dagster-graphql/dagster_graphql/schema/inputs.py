@@ -84,6 +84,7 @@ class GraphenePipelineSelector(graphene.InputObjectType):
     repositoryLocationName = graphene.NonNull(graphene.String)
     solidSelection = graphene.List(graphene.NonNull(graphene.String))
     assetSelection = graphene.List(graphene.NonNull(GrapheneAssetKeyInput))
+    assetCheckSelection = graphene.List(graphene.NonNull(GrapheneAssetCheckHandleInput))
 
     class Meta:
         description = """This type represents the fields necessary to identify a

@@ -793,14 +793,14 @@ def build_asset_selection_job(
         asset_selection_data.asset_check_selection if asset_selection_data else None
     )
 
-    if not asset_selection and not asset_check_selection:
+    if asset_selection is None and asset_check_selection is None:
         # no selections, include everything
         included_assets = list(assets)
         excluded_assets = []
         included_source_assets = []
         included_checks = list(asset_checks)
     else:
-        if asset_selection:
+        if asset_selection is not None:
             (included_assets, excluded_assets) = _subset_assets_defs(assets, asset_selection)
             included_source_assets = _subset_source_assets(source_assets, asset_selection)
         else:
@@ -809,7 +809,7 @@ def build_asset_selection_job(
             excluded_assets = list(assets)
             included_source_assets = []
 
-        if asset_check_selection:
+        if asset_check_selection is not None:
             # NOTE: This filters to a checks def if any of the included specs are in the selection.
             # This needs to change to fully subsetting checks in multi assets.
             included_checks = [
