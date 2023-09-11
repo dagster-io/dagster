@@ -213,7 +213,7 @@ def asset(
     """
 
     def create_asset():
-        upstream_asset_deps = _deps_and_non_argument_deps_to_asset_dep(
+        upstream_asset_deps = _deps_and_non_argument_deps_to_asset_deps(
             deps=deps, non_argument_deps=non_argument_deps
         )
 
@@ -590,7 +590,7 @@ def multi_asset(
 
     specs = check.opt_list_param(specs, "specs", of_type=AssetSpec)
 
-    upstream_asset_deps = _deps_and_non_argument_deps_to_asset_dep(
+    upstream_asset_deps = _deps_and_non_argument_deps_to_asset_deps(
         deps=deps, non_argument_deps=non_argument_deps
     )
 
@@ -1223,7 +1223,7 @@ def build_asset_outs(asset_outs: Mapping[str, AssetOut]) -> Mapping[AssetKey, Tu
     return outs_by_asset_key
 
 
-def _deps_and_non_argument_deps_to_asset_dep(
+def _deps_and_non_argument_deps_to_asset_deps(
     deps: Optional[Iterable[Union[AssetDep, CoercibleToAssetKey, AssetsDefinition, SourceAsset]]],
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]],
 ):
@@ -1284,7 +1284,7 @@ def _make_asset_deps(
 ) -> Optional[Iterable[AssetDep]]:
     if deps is None:
         return None
-    dep_set = {}
+    dep_dict = {}
     for dep in deps:
         if not isinstance(dep, AssetDep):
             asset_dep = AssetDep(dep)
@@ -1294,27 +1294,13 @@ def _make_asset_deps(
         # we cannot do deduplication via a set because MultiPartitionMappings have an internal
         # dictionary that cannot be hashed. Instead deduplicate by making a dictionary and checking
         # for existing keys.
-        if asset_dep.asset_key in dep_set.keys():
+        if asset_dep.asset_key in dep_dict.keys():
             raise DagsterInvariantViolationError(
                 f"Cannot set a dependency on asset {asset_dep.asset_key} more than once per asset."
             )
-        dep_set[asset_dep.asset_key] = asset_dep
+        dep_dict[asset_dep.asset_key] = asset_dep
 
-    return list(dep_set.values())
-
-
-def _make_asset_keys(
-    deps: Optional[Iterable[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]]
-) -> Optional[Set[AssetKey]]:
-    """Convert all items to AssetKey in a set. By putting all of the AssetKeys in a set, it will also deduplicate them."""
-    if deps is None:
-        return deps
-
-    deps_asset_keys: Set[AssetKey] = set()
-    for dep in deps:
-        deps_asset_keys.add(AssetKey.from_coercible_or_definition(dep))
-
-    return deps_asset_keys
+    return list(dep_dict.values())
 
 
 def _validate_and_assign_output_names_to_check_specs(
