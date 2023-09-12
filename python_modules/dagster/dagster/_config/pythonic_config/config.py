@@ -209,7 +209,6 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
         """
         modified_data = {}
         for key, value in config_dict.items():
-            field = self.__fields__.get(key)
             field = model_fields(self).get(key)
             if field and not field.is_required() and value is None:
                 continue
