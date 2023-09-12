@@ -17,6 +17,10 @@ from typing import (
 
 import dagster._check as check
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
+from dagster._core.definitions.time_window_partitions import (
+    TimeWindowPartitionsDefinition,
+    TimeWindowPartitionsSubset,
+)
 
 from .asset_graph import AssetGraph
 from .partition import (
@@ -201,11 +205,22 @@ class AssetDaemonCursor(NamedTuple):
             try:
                 # in the case that the partitions def has changed, we may not be able to deserialize
                 # the corresponding subset. in this case, we just use an empty subset
-                handled_root_partitions_by_asset_key[key] = partitions_def.deserialize_subset(
-                    serialized_subset
-                )
+                subset = partitions_def.deserialize_subset(serialized_subset)
+                # this covers the case in which the start date has changed for a time-partitioned
+                # asset. in reality, we should be using the can_deserialize method but because we
+                # are not storing the serializable unique id, we can't do that.
+                if (
+                    isinstance(subset, TimeWindowPartitionsSubset)
+                    and isinstance(partitions_def, TimeWindowPartitionsDefinition)
+                    and any(
+                        time_window.start < partitions_def.start
+                        for time_window in subset.included_time_windows
+                    )
+                ):
+                    subset = partitions_def.empty_subset()
             except:
-                handled_root_partitions_by_asset_key[key] = partitions_def.empty_subset()
+                subset = partitions_def.empty_subset()
+            handled_root_partitions_by_asset_key[key] = subset
         return cls(
             latest_storage_id=latest_storage_id,
             handled_root_asset_keys={

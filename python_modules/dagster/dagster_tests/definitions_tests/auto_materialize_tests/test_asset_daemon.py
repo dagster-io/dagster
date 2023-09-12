@@ -24,6 +24,8 @@ def instance():
 )
 def test_reconcile_with_external_asset_graph(scenario_item, instance):
     scenario_name, scenario = scenario_item
+    if not scenario.supports_with_external_asset_graph:
+        pytest.skip("Scenario does not support with_external_asset_graph")
     run_requests, _, _ = scenario.do_sensor_scenario(
         instance, scenario_name=scenario_name, with_external_asset_graph=True
     )

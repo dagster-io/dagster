@@ -163,6 +163,7 @@ class AssetReconciliationScenario(
             ),
             ("expected_evaluations", Optional[Sequence[AssetEvaluationSpec]]),
             ("requires_respect_materialization_data_versions", bool),
+            ("supports_with_external_asset_graph", bool),
         ],
     )
 ):
@@ -184,6 +185,7 @@ class AssetReconciliationScenario(
         ] = None,
         expected_evaluations: Optional[Sequence[AssetEvaluationSpec]] = None,
         requires_respect_materialization_data_versions: bool = False,
+        supports_with_external_asset_graph: bool = True,
     ) -> "AssetReconciliationScenario":
         # For scenarios with no auto-materialize policies, we infer auto-materialize policies
         # and add them to the assets.
@@ -219,6 +221,7 @@ class AssetReconciliationScenario(
             code_locations=code_locations,
             expected_evaluations=expected_evaluations,
             requires_respect_materialization_data_versions=requires_respect_materialization_data_versions,
+            supports_with_external_asset_graph=supports_with_external_asset_graph,
         )
 
     def _get_code_location_origin(
