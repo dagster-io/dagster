@@ -210,9 +210,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
                 return
 
             if total_time >= timeout:
-                raise Exception(
-                    f"Timed out waiting for these runs to finish: {repr(active_run_ids)}"
-                )
+                raise Exception(f"Timed out waiting for these runs to finish: {active_run_ids!r}")
 
             total_time += interval
             time.sleep(interval)

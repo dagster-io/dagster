@@ -223,7 +223,7 @@ def extract_schedule_name(schedule_name: Optional[Union[str, Sequence[str]]]) ->
         if len(schedule_name) == 1:
             return schedule_name[0]
         else:
-            check.failed(f"Can only handle zero or one schedule args. Got {repr(schedule_name)}")
+            check.failed(f"Can only handle zero or one schedule args. Got {schedule_name!r}")
     return None
 
 

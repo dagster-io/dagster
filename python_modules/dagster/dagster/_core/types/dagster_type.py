@@ -172,7 +172,7 @@ class DagsterType(RequiresResources):
 
         if not isinstance(retval, (bool, TypeCheck)):
             raise DagsterInvariantViolationError(
-                f"You have returned {repr(retval)} of type {type(retval)} from the type "
+                f"You have returned {retval!r} of type {type(retval)} from the type "
                 f'check function of type "{self.key}". Return value must be instance '
                 "of TypeCheck or a bool."
             )

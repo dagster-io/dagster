@@ -120,7 +120,7 @@ def set_git_tag(tag: str, signed: bool = False, dry_run: bool = True) -> str:
             raise Exception(
                 "Bailing: cannot sign tag. You may find "
                 "https://stackoverflow.com/q/39494631/324449 helpful. Original error "
-                f"output:\n{str(exc_info.output)}"
+                f"output:\n{exc_info.output}"
             )
 
         match = re.search(

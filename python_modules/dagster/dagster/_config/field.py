@@ -63,19 +63,19 @@ def resolve_to_config_type(obj: object) -> Union[ConfigType, bool]:
             if not isinstance(key, str):
                 if not key_type:
                     raise DagsterInvalidDefinitionError(
-                        f"Invalid key in map specification: {repr(key)} in map {obj}"
+                        f"Invalid key in map specification: {key!r} in map {obj}"
                     )
 
                 if not key_type.kind == ConfigTypeKind.SCALAR:  # type: ignore
                     raise DagsterInvalidDefinitionError(
-                        f"Non-scalar key in map specification: {repr(key)} in map {obj}"
+                        f"Non-scalar key in map specification: {key!r} in map {obj}"
                     )
 
                 inner_type = resolve_to_config_type(obj[key])
 
                 if not inner_type:
                     raise DagsterInvalidDefinitionError(
-                        f"Invalid value in map specification: {repr(obj[str])} in map {obj}"
+                        f"Invalid value in map specification: {obj[str]!r} in map {obj}"
                     )
                 return Map(key_type, inner_type)
         return convert_fields_to_dict_type(obj)
@@ -88,7 +88,7 @@ def resolve_to_config_type(obj: object) -> Union[ConfigType, bool]:
 
         if not inner_type:
             raise DagsterInvalidDefinitionError(
-                f"Invalid member of array specification: {repr(obj[0])} in list {obj}"
+                f"Invalid member of array specification: {obj[0]!r} in list {obj}"
             )
         return Array(inner_type)
 
@@ -123,7 +123,7 @@ def resolve_to_config_type(obj: object) -> Union[ConfigType, bool]:
 
     if isinstance(obj, type) and is_subclass(obj, DagsterType):
         raise DagsterInvalidDefinitionError(
-            f"You have passed a DagsterType class {repr(obj)} to the config system. "
+            f"You have passed a DagsterType class {obj!r} to the config system. "
             "The DagsterType and config schema systems are separate. "
             f"Valid config values are:\n{VALID_CONFIG_DESC}"
         )
@@ -161,7 +161,7 @@ def resolve_to_config_type(obj: object) -> Union[ConfigType, bool]:
     if isinstance(obj, DagsterType):
         raise DagsterInvalidDefinitionError(
             f"You have passed an instance of DagsterType {obj.display_name} to the config "
-            f"system (Repr of type: {repr(obj)}). "
+            f"system (Repr of type: {obj!r}). "
             "The DagsterType and config schema systems are separate. "
             f"Valid config values are:\n{VALID_CONFIG_DESC}",
         )
@@ -256,7 +256,7 @@ class Field:
         config_type = resolve_to_config_type(config)
         if not config_type:
             raise DagsterInvalidDefinitionError(
-                f"Attempted to pass {repr(config)} to a Field that expects a valid "
+                f"Attempted to pass {config!r} to a Field that expects a valid "
                 "dagster type usable in config (e.g. Dict, Int, String et al)."
             )
         return config_type

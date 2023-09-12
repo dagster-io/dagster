@@ -955,7 +955,7 @@ def _check_serdes_tuple_class_invariants(klass: Type[NamedTuple]) -> None:
                 "in the named tuple that are not present as parameters to the "
                 "to the __new__ method. In order for "
                 "both serdes serialization and pickling to work, "
-                f"these must match. Missing: {repr(list(klass._fields[index:]))}"
+                f"these must match. Missing: {list(klass._fields[index:])!r}"
             )
 
             raise SerdesUsageError(_with_header(error_msg))
