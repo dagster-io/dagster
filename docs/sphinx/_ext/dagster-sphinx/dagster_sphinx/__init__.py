@@ -1,4 +1,4 @@
-from typing import List, Optional, Sequence, Tuple, Type, TypeVar
+from typing import List, Optional, Tuple, Type, TypeVar
 
 import docutils.nodes as nodes
 from dagster._annotations import is_deprecated, is_public
@@ -60,14 +60,6 @@ def check_public_method_has_docstring(env: BuildEnvironment, name: str, obj: obj
         record_error(env, message)
 
 
-def check_class_docstring_has_no_attributes(
-    env: BuildEnvironment, name: str, docstring: Sequence[str]
-) -> None:
-    if any(line.startswith(".. attribute::") for line in docstring):
-        message = f'Object {name} has "Attributes:" in docstring. Use "Args:" insetad.'
-        record_error(env, message)
-
-
 class DagsterClassDocumenter(ClassDocumenter):
     """Overrides the default autodoc ClassDocumenter to adds some extra options."""
 
@@ -99,8 +91,6 @@ def process_docstring(
     lines: List[str],
 ) -> None:
     assert app.env is not None
-    if isinstance(obj, type):
-        check_class_docstring_has_no_attributes(app.env, name, lines)
 
     # Insert a "deprecated" sphinx directive (this is built-in to autodoc) for objects flagged with
     # @deprecated.
