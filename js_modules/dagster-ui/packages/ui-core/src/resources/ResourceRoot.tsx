@@ -107,7 +107,9 @@ export const ResourceRoot: React.FC<Props> = (props) => {
     queryResult.data?.topLevelResourceDetailsOrError.__typename === 'ResourceDetails'
       ? queryResult.data.topLevelResourceDetailsOrError.parentResources.length +
         queryResult.data.topLevelResourceDetailsOrError.assetKeysUsing.length +
-        queryResult.data.topLevelResourceDetailsOrError.jobsOpsUsing.length
+        queryResult.data.topLevelResourceDetailsOrError.jobsOpsUsing.length +
+        queryResult.data.topLevelResourceDetailsOrError.schedulesUsing.length +
+        queryResult.data.topLevelResourceDetailsOrError.sensorsUsing.length
       : 0;
 
   const tab = useRouteMatch<{tab?: string}>(['/locations/:repoPath/resources/:name/:tab?'])?.params
@@ -494,6 +496,56 @@ const ResourceUses: React.FC<{
           </Table>
         </Box>
       )}
+      {[
+        {name: 'Schedules', objects: resourceDetails.schedulesUsing, icon: 'schedules'},
+        {name: 'Sensors', objects: resourceDetails.sensorsUsing, icon: 'sensors'},
+      ].map(
+        ({name, objects, icon}) =>
+          objects.length > 0 && (
+            <Box>
+              <SectionHeader>
+                <Subheading>{name}</Subheading>
+              </SectionHeader>
+              <Table>
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {resourceDetails.sensorsUsing.map((sensorName) => {
+                    return (
+                      <tr key={sensorName}>
+                        <td>
+                          <Box
+                            flex={{
+                              direction: 'row',
+                              alignItems: 'center',
+                              display: 'inline-flex',
+                              gap: 8,
+                            }}
+                            style={{maxWidth: '100%'}}
+                          >
+                            <Icon name={icon} color={Colors.Gray400} />
+
+                            <Link
+                              to={workspacePathFromAddress(
+                                repoAddress,
+                                `/${name.toLowerCase()}/${sensorName}`,
+                              )}
+                            >
+                              <MiddleTruncate text={sensorName} />
+                            </Link>
+                          </Box>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </Table>
+            </Box>
+          ),
+      )}
     </>
   );
 };
@@ -576,6 +628,8 @@ const RESOURCE_DETAILS_FRAGMENT = gql`
     assetKeysUsing {
       path
     }
+    schedulesUsing
+    sensorsUsing
     jobsOpsUsing {
       job {
         id
