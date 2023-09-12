@@ -116,7 +116,7 @@ class IOManagerWithKeyMapping(ResourceWithKeyMapping, IOManagerDefinition):
         )
 
 
-class ConfigurableIOManagerFactory(ConfigurableResourceFactory[TIOManagerValue]):
+class ConfigurableIOManagerFactory(ConfigurableResourceFactory, Generic[TResValue]):
     """Base class for Dagster IO managers that utilize structured config. This base class
     is useful for cases in which the returned IO manager is not the same as the class itself
     (e.g. when it is a wrapper around the actual IO manager implementation).
@@ -165,11 +165,11 @@ class ConfigurableIOManagerFactory(ConfigurableResourceFactory[TIOManagerValue])
         ConfigurableResourceFactory.__init__(self, **data)
 
     @abstractmethod
-    def create_io_manager(self, context) -> TIOManagerValue:
+    def create_io_manager(self, context) -> TResValue:
         """Implement as one would implement a @io_manager decorator function."""
         raise NotImplementedError()
 
-    def create_resource(self, context: InitResourceContext) -> TIOManagerValue:
+    def create_resource(self, context: InitResourceContext) -> TResValue:
         return self.create_io_manager(context)
 
     @classmethod

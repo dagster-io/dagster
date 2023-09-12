@@ -716,7 +716,7 @@ class PartialResourceState(NamedTuple):
 
 class PartialResource(Generic[TResValue], AllowDelayedDependencies, MakeConfigCacheable):
     data: Dict[str, Any]
-    resource_cls: Type[ConfigurableResourceFactory[TResValue]]
+    resource_cls: Type[Any]
 
     def __init__(
         self,
