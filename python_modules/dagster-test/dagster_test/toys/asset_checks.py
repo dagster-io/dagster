@@ -8,11 +8,15 @@ from dagster import (
     AssetKey,
     AssetOut,
     DailyPartitionsDefinition,
+    In,
     MetadataValue,
+    Nothing,
     Output,
     asset,
     asset_check,
+    graph_asset,
     multi_asset,
+    op,
 )
 
 
@@ -152,6 +156,42 @@ def multi_asset_1_and_2(context):
         yield Output(1, output_name="two")
 
 
+@op
+def create_staged_asset():
+    return 1
+
+
+@op
+def test_staged_asset(staged_asset):
+    random.seed(time.time())
+    result = AssetCheckResult(
+        success=random.choice([False, True]),
+    )
+    yield result
+    if not result.success:
+        raise Exception("Raising an exception to block promotion.")
+
+
+@op(ins={"staged_asset": In(), "check_result": In(Nothing)})
+def promote_staged_asset(staged_asset):
+    return staged_asset
+
+
+@graph_asset(
+    group_name="asset_checks",
+    check_specs=[
+        AssetCheckSpec("random_fail_and_raise_check", asset="stage_then_promote_graph_asset")
+    ],
+)
+def stage_then_promote_graph_asset():
+    staged_asset = create_staged_asset()
+    check_result = test_staged_asset(staged_asset)
+    return {
+        "result": promote_staged_asset(staged_asset, check_result),
+        "stage_then_promote_graph_asset_random_fail_and_raise_check": check_result,
+    }
+
+
 def get_checks_and_assets():
     return [
         checked_asset,
@@ -167,4 +207,5 @@ def get_checks_and_assets():
         partitioned_asset,
         random_fail_check_on_partitioned_asset,
         multi_asset_1_and_2,
+        stage_then_promote_graph_asset,
     ]
