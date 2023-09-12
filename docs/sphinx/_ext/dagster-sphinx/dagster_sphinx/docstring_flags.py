@@ -59,14 +59,7 @@ def inject_param_flag(
     )
 
     if index is not None and modified_line is not None:
-        print("INDEX IS ", index)
         lines[index] = modified_line
-    # else:
-    #     # find end of param list, or if none exist, the last line
-    #     index = next((i for i in range(len(lines)) if re.search(r'^:(param|type)', lines[len(lines) -1 - i])), len(lines))
-    #     print(lines)
-    #     line = f":param {param}: {flag} {message}"
-    #     lines.insert(index, line)
 
 
 # ########################
@@ -90,12 +83,11 @@ class inline_flag(nodes.Inline, nodes.TextElement):
 def visit_inline_flag(self, node: inline_flag):
     flag_type = node.attributes["flag_type"]
     html = f'<span class="flag {flag_type}">{flag_type}</span>'
-    print("INSERTING HTML", html)
     self.body.append(html)
 
 
 class flag(nodes.Element):
-    local_attributes = [*nodes.Element.local_attributes, *FLAG_ATTRS]
+    local_attributes = [*nodes.Element.local_attributes, *FLAG_ATTRS]  # type: ignore
 
 
 def visit_flag(self, node: flag):
@@ -118,28 +110,14 @@ def depart_flag(self, node: flag):
     ...
 
 
-# class FlagDirective(SphinxDirective):
-#     # Takes two arguments-- the first word is the flag type and the remaining words are the message.
-#     required_arguments = 1
-#     # final_argument_whitespace = True
-#     has_content = True
-#
-#     def run(self):
-#         flag_node = flag(self.content)
-#         flag_node["flag_type"] = self.arguments[0]
-#         flag_node["message"] = "\n".join(self.content)
-#         return [flag_node]
-
-
 class FlagDirective(SphinxDirective):
     # Takes two arguments-- the first word is the flag type and the remaining words are the message.
-    required_arguments = 2
+    required_arguments = 1
     final_argument_whitespace = True
     has_content = True
 
     def run(self):
-        flag_node = flag(self.content)
+        flag_node = flag()
         flag_node["flag_type"] = self.arguments[0]
-        flag_node["message"] = self.arguments[1]
-        self.state
+        flag_node["message"] = " ".join(self.content)
         return [flag_node]

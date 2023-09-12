@@ -1,8 +1,17 @@
 from typing import List, Optional, Tuple, Type, TypeVar
 
 import docutils.nodes as nodes
-from dagster._annotations import is_deprecated, is_public
-from sphinx.addnodes import versionmodified
+from dagster._annotations import (
+    get_deprecated_info,
+    get_deprecated_params,
+    get_experimental_info,
+    get_experimental_params,
+    has_deprecated_params,
+    has_experimental_params,
+    is_deprecated,
+    is_experimental,
+    is_public,
+)
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 from sphinx.ext.autodoc import (
@@ -15,13 +24,15 @@ from typing_extensions import Literal, TypeAlias
 
 from dagster_sphinx.configurable import (
     ConfigurableDocumenter,
-    get_deprecated_info,
-    get_deprecated_params,
-    get_experimental_info,
-    get_experimental_params,
-    has_deprecated_params,
-    has_experimental_params,
-    is_experimental,
+)
+from dagster_sphinx.docstring_flags import (
+    FlagDirective,
+    depart_flag,
+    flag,
+    inline_flag,
+    inline_flag_role,
+    visit_flag,
+    visit_inline_flag,
 )
 
 from .docstring_flags import inject_object_flag, inject_param_flag
@@ -114,18 +125,10 @@ def process_docstring(
     if is_experimental(obj):
         inject_object_flag(obj, get_experimental_info(obj), lines)
 
-    from dagster import ResourceDefinition
-    from dagster._core.definitions.source_asset import SourceAsset
-
-    if obj == SourceAsset:
-        print("SOURCE ASSET", has_experimental_params(obj))
     if has_experimental_params(obj):
         params = get_experimental_params(obj)
         for param, info in params.items():
-            print("INJECTING", obj)
             inject_param_flag(lines, param, info)
-        if obj == ResourceDefinition:
-            print(lines)
 
 
 T_Node = TypeVar("T_Node", bound=nodes.Node)
@@ -139,15 +142,15 @@ def get_child_as(node: nodes.Node, index: int, node_type: Type[T_Node]) -> T_Nod
     return child
 
 
-def substitute_deprecated_text(app: Sphinx, doctree: nodes.Element, docname: str) -> None:
-    # The `.. deprecated::` directive is rendered as a `versionmodified` node.
-    # Find them all and replace the auto-generated text, which requires a version argument, with a
-    # plain string "Deprecated".
-    for node in doctree.findall(versionmodified):
-        paragraph = get_child_as(node, 0, nodes.paragraph)
-        inline = get_child_as(paragraph, 0, nodes.inline)
-        text = get_child_as(inline, 0, nodes.Text)
-        inline.replace(text, nodes.Text("Deprecated"))
+# def substitute_deprecated_text(app: Sphinx, doctree: nodes.Element, docname: str) -> None:
+#     # The `.. deprecated::` directive is rendered as a `versionmodified` node.
+#     # Find them all and replace the auto-generated text, which requires a version argument, with a
+#     # plain string "Deprecated".
+#     for node in doctree.findall(versionmodified):
+#         paragraph = get_child_as(node, 0, nodes.paragraph)
+#         inline = get_child_as(paragraph, 0, nodes.inline)
+#         text = get_child_as(inline, 0, nodes.Text)
+#         inline.replace(text, nodes.Text("Deprecated"))
 
 
 def check_custom_errors(app: Sphinx, exc: Optional[Exception] = None) -> None:
@@ -165,8 +168,12 @@ def setup(app):
     app.add_autodocumenter(ConfigurableDocumenter)
     # override allows `.. autoclass::` to invoke DagsterClassDocumenter instead of default
     app.add_autodocumenter(DagsterClassDocumenter, override=True)
+    app.add_directive("flag", FlagDirective)
+    app.add_node(inline_flag, html=(visit_inline_flag, depart_flag))
+    app.add_node(flag, html=(visit_flag, depart_flag))
+    app.add_role("inline-flag", inline_flag_role)
     app.connect("autodoc-process-docstring", process_docstring)
-    app.connect("doctree-resolved", substitute_deprecated_text)
+    # app.connect("doctree-resolved", substitute_deprecated_text)
     app.connect("build-finished", check_custom_errors)
 
     return {
