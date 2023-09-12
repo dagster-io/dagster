@@ -46,10 +46,10 @@ export function useLiveDataForAssetKeys(assetKeys: AssetKeyInput[], batched?: bo
   }, [liveResult.data, setBatchData, batched]);
 
   React.useEffect(() => {
-    if (batched && !isLastBatch && liveResult.data) {
+    if (batched && !isLastBatch && !liveResult.loading && liveResult.data) {
       nextBatch();
     }
-  }, [batched, liveResult.data, isLastBatch, nextBatch]);
+  }, [batched, liveResult.loading, liveResult.data, isLastBatch, nextBatch]);
 
   // Track whether the data is being refetched so incoming asset events don't trigger
   // duplicate requests for live data.
@@ -61,9 +61,11 @@ export function useLiveDataForAssetKeys(assetKeys: AssetKeyInput[], batched?: bo
   const timerRef = React.useRef<NodeJS.Timeout | null>(null);
 
   const refetch = React.useCallback(() => {
-    if (batched && isLastBatch) {
-      // If we're not on the last batch we're still fetching so don't immediately refetch
-      nextBatch();
+    if (batched) {
+      if (isLastBatch) {
+        // If we're not on the last batch we're still fetching so don't immediately refetch
+        nextBatch();
+      }
     } else {
       liveResult.refetch();
     }
