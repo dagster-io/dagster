@@ -4,7 +4,6 @@ import styled from 'styled-components';
 
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
-import {AssetChecksBanner} from '../asset-checks/AssetChecksBanner';
 import {AssetKey} from '../types';
 
 import {AutoMaterializeExperimentalBanner} from './AutoMaterializeExperimentalBanner';

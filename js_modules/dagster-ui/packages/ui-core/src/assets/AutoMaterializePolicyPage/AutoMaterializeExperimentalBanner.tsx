@@ -1,16 +1,8 @@
-import {Alert, Box, Colors, Icon, Popover, Tag} from '@dagster-io/ui-components';
+import {Alert, Colors, Icon, Tag, Tooltip} from '@dagster-io/ui-components';
 import React from 'react';
-import styled from 'styled-components';
 
-const AutoMaterializeExperimentalText = (
-  <span>
-    You can learn more about this new feature and provide feedback{' '}
-    <a href="https://docs.dagster.io/concepts/assets/asset-auto-execution#auto-materializing-assets-">
-      here
-    </a>
-    .
-  </span>
-);
+const LearnMoreLink =
+  'https://docs.dagster.io/concepts/assets/asset-auto-execution#auto-materializing-assets-';
 
 export const AutoMaterializeExperimentalBanner = () => {
   return (
@@ -18,34 +10,25 @@ export const AutoMaterializeExperimentalBanner = () => {
       intent="info"
       title="Auto-materialize policies are experimental"
       icon={<Icon name="info" color={Colors.Blue700} />}
-      description={AutoMaterializeExperimentalText}
+      description={
+        <span>
+          You can learn more about this new feature and provide feedback{' '}
+          <a target="_blank" href={LearnMoreLink} rel="noreferrer">
+            here
+          </a>
+          .
+        </span>
+      }
     />
   );
 };
 
 export const AutoMaterializeExperimentalTag = () => {
   return (
-    <Popover
-      content={<Container>{AutoMaterializeExperimentalText}</Container>}
-      hoverOpenDelay={100}
-      hoverCloseDelay={100}
-      placement="top"
-      interactionKind="hover"
-    >
-      <Tag intent="primary">Experimental</Tag>
-    </Popover>
+    <Tooltip content="Click to learn more about this new feature and provide feedback">
+      <a target="_blank" href={LearnMoreLink} rel="noreferrer">
+        <Tag intent="primary">Experimental</Tag>
+      </a>
+    </Tooltip>
   );
 };
-
-const Container = styled(Box)`
-  border-radius: 8px;
-  overflow: hidden;
-  background: ${Colors.Dark};
-  padding: 8px 12px;
-  color: ${Colors.Gray100};
-
-  & a {
-    color: ${Colors.White};
-    text-decoration: underline;
-  }
-`;
