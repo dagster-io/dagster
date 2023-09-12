@@ -1,4 +1,13 @@
-import {Box, Button, Colors, Dialog, DialogFooter, Icon, Tag} from '@dagster-io/ui-components';
+import {
+  Box,
+  Button,
+  ButtonLink,
+  Colors,
+  Dialog,
+  DialogFooter,
+  Icon,
+  Tag,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -49,7 +58,7 @@ export const AssetKeyTagCollection: React.FC<{
     // parent is a flexbox.
     const assetKey = assetKeys[0]!;
     return (
-      <span style={{lineHeight: 0}}>
+      <span style={useTags ? {} : {marginBottom: -4}}>
         <TagActionsPopover
           data={{key: '', value: ''}}
           actions={[
@@ -71,10 +80,12 @@ export const AssetKeyTagCollection: React.FC<{
               {displayNameForAssetKey(assetKey)}
             </Tag>
           ) : (
-            <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-              <Icon color={Colors.Gray400} name="asset" size={16} />
-              {displayNameForAssetKey(assetKey)}
-            </Box>
+            <Link to={assetDetailsPathForKey(assetKey)}>
+              <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+                <Icon color={Colors.Gray400} name="asset" size={16} />
+                {displayNameForAssetKey(assetKey)}
+              </Box>
+            </Link>
           )}
         </TagActionsPopover>
       </span>
@@ -82,7 +93,7 @@ export const AssetKeyTagCollection: React.FC<{
   }
 
   return (
-    <span style={{lineHeight: 0}}>
+    <span style={useTags ? {} : {marginBottom: -4}}>
       <TagActionsPopover
         data={{key: '', value: ''}}
         actions={[
@@ -101,12 +112,14 @@ export const AssetKeyTagCollection: React.FC<{
             {assetKeys.length} assets
           </Tag>
         ) : (
-          <Box flex={{direction: 'row', gap: 8, alignItems: 'center', display: 'inline-flex'}}>
-            <Icon color={Colors.Gray400} name="asset" size={16} />
-            <Box style={{flex: 1}} flex={{wrap: 'wrap', display: 'inline-flex'}}>
-              {`${assetKeys.length} assets`}
+          <ButtonLink onClick={() => setShowMore(true)}>
+            <Box flex={{direction: 'row', gap: 8, alignItems: 'center', display: 'inline-flex'}}>
+              <Icon color={Colors.Gray400} name="asset" size={16} />
+              <Box style={{flex: 1}} flex={{wrap: 'wrap', display: 'inline-flex'}}>
+                {`${assetKeys.length} assets`}
+              </Box>
             </Box>
-          </Box>
+          </ButtonLink>
         )}
       </TagActionsPopover>
       {showMoreDialog}
