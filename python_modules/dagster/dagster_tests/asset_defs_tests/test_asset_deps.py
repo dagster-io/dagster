@@ -10,10 +10,8 @@ from dagster import (
     materialize,
     multi_asset,
 )
-<<<<<<< HEAD
 from dagster._check import CheckError
-=======
->>>>>>> 2d50011d7a (more testing)
+
 from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.errors import DagsterInvalidDefinitionError
@@ -60,8 +58,6 @@ def test_multi_asset_errors():
     ):
         AssetDep(a_multi_asset)
 
-
-<<<<<<< HEAD
 def test_from_coercible():
     # basic coersion
     compare_dep = AssetDep("upstream")
@@ -100,9 +96,6 @@ def test_from_coercible():
     with pytest.raises(CheckError, match="Unexpected type for AssetKey"):
         AssetDep.from_coercible(1)
 
-
-=======
->>>>>>> 2d50011d7a (more testing)
 ### Tests for deps parameter on @asset and @multi_asset
 
 
