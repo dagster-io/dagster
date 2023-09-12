@@ -42,6 +42,7 @@ module.exports = {
         'blurple-darker': '#3F36B1',
         lavender: '#DEDDFF',
         'lavender-darker': '#C9C6FA',
+        orange: '#fdba74',
         primary: {
           900: '#09086E',
           700: '#0E0CA7',
