@@ -1,6 +1,20 @@
-import {Box, ButtonLink, Colors, Icon, useViewport} from '@dagster-io/ui-components';
+import {
+  Box,
+  Button,
+  Colors,
+  Dialog,
+  DialogBody,
+  DialogFooter,
+  Icon,
+  Menu,
+  MenuItem,
+  Popover,
+  useViewport,
+  UnstyledButton,
+} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React from 'react';
+import styled from 'styled-components';
 
 import {withMiddleTruncation} from '../app/Util';
 import {Container, Inner, Row} from '../ui/VirtualizedTable';
@@ -17,6 +31,14 @@ type GroupNode = {
   repositoryName: string;
   id: string;
 };
+
+const indentColors = [
+  Colors.Blue100,
+  Colors.LightPurple,
+  Colors.Yellow200,
+  Colors.Gray300,
+  Colors.KeylineGray,
+];
 
 export const AssetGraphExplorerSidebar = ({
   assetGraphData,
@@ -126,7 +148,7 @@ export const AssetGraphExplorerSidebar = ({
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lastSelectedNode, nodeToGroupId]);
+  }, [lastSelectedNode, nodeToGroupId[lastSelectedNode?.id ?? 0]]);
 
   const {containerProps, viewport} = useViewport();
 
@@ -161,8 +183,7 @@ export const AssetGraphExplorerSidebar = ({
                 node={(assetGraphData.nodes[node.id] ?? rootGroupsWithRootNodes[node.id])!}
                 level={node.level}
                 isSelected={lastSelectedNode?.id === node.id}
-                toggleOpen={(e: React.MouseEvent) => {
-                  selectNode(e, node.id);
+                toggleOpen={() => {
                   setOpenNodes((nodes) => {
                     const openNodes = new Set(nodes);
                     const isOpen = openNodes.has(node.id);
@@ -174,6 +195,7 @@ export const AssetGraphExplorerSidebar = ({
                     return openNodes;
                   });
                 }}
+                selectNode={selectNode}
                 measureElement={measureElement}
               />
             </Row>
@@ -189,6 +211,7 @@ const Node = ({
   node,
   level,
   toggleOpen,
+  selectNode,
   isOpen,
   measureElement,
   isSelected,
@@ -196,7 +219,8 @@ const Node = ({
   assetGraphData: GraphData;
   node: GraphNode | GroupNode;
   level: number;
-  toggleOpen: (e: React.MouseEvent) => void;
+  toggleOpen: () => void;
+  selectNode: (e: React.MouseEvent, nodeId: string) => void;
   isOpen: boolean;
   measureElement: (el: HTMLDivElement) => void;
   isSelected: boolean;
@@ -218,42 +242,145 @@ const Node = ({
     }
   }, [measureElement, isOpen]);
 
+  const [showDownstream, setShowDownstream] = React.useState(false);
+  const [showUpstream, setShowUpstream] = React.useState(false);
+
   return (
     <Box
       ref={elementRef}
-      onClick={toggleOpen}
+      onClick={(e) => selectNode(e, node.id)}
       border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
       style={{
-        ...(downstream ? {cursor: 'pointer'} : {}),
+        ...(downstream && !isGroupNode ? {cursor: 'pointer'} : {}),
         ...(isSelected ? {background: Colors.LightPurple} : {}),
       }}
-      padding={{vertical: 8, left: (8 * level + (downstream.length ? 0 : 20)) as any, right: 24}}
-      flex={{direction: 'row', gap: 4, alignItems: 'center'}}
+      padding={{left: (8 * level) as any, right: 24}}
     >
-      {downstream.length ? (
-        <Icon
-          name="arrow_drop_down"
-          style={{transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)'}}
-        />
-      ) : null}
       <Box
-        flex={{
-          direction: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 12,
-          grow: 1,
-        }}
+        padding={{vertical: 8, left: (downstream.length ? 0 : 20) as any}}
+        border={{side: 'left', width: 1, color: indentColors[level % indentColors.length]!}}
+        flex={{direction: 'row', gap: 4, alignItems: 'center'}}
       >
-        <div
-          data-tooltip={displayName}
-          data-tooltip-style={NameTooltipStyle}
-          style={{overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}
+        {downstream.length ? (
+          <div onClick={toggleOpen} style={{cursor: 'pointer'}}>
+            <Icon
+              name="arrow_drop_down"
+              style={{transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)'}}
+            />
+          </div>
+        ) : null}
+        <Box
+          flex={{
+            direction: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+            grow: 1,
+          }}
         >
-          {withMiddleTruncation(displayName, {maxLength: 30})}
-        </div>
-        {upstream.length > 1 ? <ButtonLink>{upstream.length}</ButtonLink> : null}
+          <div
+            data-tooltip={displayName}
+            data-tooltip-style={NameTooltipStyle}
+            style={{overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}
+          >
+            {withMiddleTruncation(displayName, {maxLength: 30})}
+          </div>
+          <UpstreamDownstreamDialog
+            title="Downstream assets"
+            assets={downstream.map((id) => assetGraphData.nodes[id]!)}
+            isOpen={showDownstream}
+            close={() => {
+              setShowDownstream(false);
+            }}
+            selectNode={selectNode}
+          />
+          <UpstreamDownstreamDialog
+            title="Upstream assets"
+            assets={upstream.map((id) => assetGraphData.nodes[id]!)}
+            isOpen={showUpstream}
+            close={() => {
+              setShowUpstream(false);
+            }}
+            selectNode={selectNode}
+          />
+          <Popover
+            content={
+              <Menu>
+                {upstream.length ? (
+                  <MenuItem
+                    text={`View upstream (${upstream.length})`}
+                    onClick={() => {
+                      setShowUpstream(true);
+                    }}
+                  />
+                ) : null}
+                {downstream.length ? (
+                  <MenuItem
+                    text={`View downstream (${downstream.length})`}
+                    onClick={() => {
+                      setShowDownstream(true);
+                    }}
+                  />
+                ) : null}
+              </Menu>
+            }
+            hoverOpenDelay={100}
+            hoverCloseDelay={100}
+            placement="top"
+            shouldReturnFocusOnClose
+          >
+            <div style={{cursor: 'pointer'}}>
+              <Icon name="more_horiz" />
+            </div>
+          </Popover>
+        </Box>
       </Box>
     </Box>
   );
 };
+
+const UpstreamDownstreamDialog = ({
+  title,
+  assets,
+  isOpen,
+  close,
+  selectNode,
+}: {
+  title: string;
+  assets: GraphNode[];
+  isOpen: boolean;
+  close: () => void;
+  selectNode: (e: React.MouseEvent<any>, nodeId: string) => void;
+}) => {
+  return (
+    <Dialog isOpen={isOpen} onClose={close} title={title}>
+      <DialogBody>
+        {assets.map((asset) => (
+          <UnstyledButton
+            key={asset.id}
+            onClick={(e) => {
+              selectNode(e, asset.id);
+              close();
+            }}
+          >
+            <DialogAssetButton padding={{vertical: 8, horizontal: 12}}>
+              {asset.assetKey.path[asset.assetKey.path.length - 1]}
+            </DialogAssetButton>
+          </UnstyledButton>
+        ))}
+      </DialogBody>
+      <DialogFooter topBorder>
+        <Button onClick={close} intent="primary">
+          Close
+        </Button>
+      </DialogFooter>
+    </Dialog>
+  );
+};
+
+const DialogAssetButton = styled(Box)`
+  border-radius: 8px;
+  &:hover {
+    background: ${Colors.Gray100};
+  }
+`;

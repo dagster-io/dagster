@@ -271,13 +271,19 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
       return;
     }
     const node = assetGraphData.nodes[nodeId];
-    if (node && viewportEl.current) {
+    if (node) {
       onSelectNode(e, node.assetKey, node);
-      if (layout) {
+      if (layout && viewportEl.current) {
         viewportEl.current.zoomToSVGBox(layout.nodes[nodeId]!.bounds, true);
       }
     }
   };
+  React.useEffect(() => {
+    if (layout && lastSelectedNode) {
+      selectNodeById({stopPropagation: () => {}} as any, lastSelectedNode.id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [!!layout]);
 
   const allowGroupsOnlyZoomLevel = !!(layout && Object.keys(layout.groups).length);
 
