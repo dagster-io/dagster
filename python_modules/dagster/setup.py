@@ -157,7 +157,7 @@ setup(
             "types-toml",  # version will be resolved against toml
         ],
         "ruff": [
-            "ruff==0.0.277",
+            "ruff==0.0.289",
         ],
     },
     entry_points={
