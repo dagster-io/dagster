@@ -120,14 +120,15 @@ def test_ext_k8s_pod_file_inject(namespace, cluster_provider):
     # - preserve file injection via config map code
 
     docker_image = get_test_project_docker_image()
+    kubernetes.config.load_kube_config(cluster_provider.kubeconfig_file)
+    client = DagsterKubernetesClient.production_client()
+    injector = ExtConfigMapContextInjector(client, namespace)
 
     @asset
     def number_y(
         context: AssetExecutionContext,
         ext_k8s_pod: ExtK8sPod,
     ):
-        client = DagsterKubernetesClient.production_client()
-        injector = ExtConfigMapContextInjector(client, namespace)
         pod_spec = injector.build_pod_spec(
             image=docker_image,
             command=[
@@ -148,12 +149,11 @@ def test_ext_k8s_pod_file_inject(namespace, cluster_provider):
                 "NUMBER_Y": "2",
             },
             base_pod_spec=pod_spec,
-            context_injector=injector,
         )
 
     result = materialize(
         [number_y],
-        resources={"ext_k8s_pod": ExtK8sPod()},
+        resources={"ext_k8s_pod": ExtK8sPod(context_injector=injector)},
         raise_on_error=False,
     )
     assert result.success

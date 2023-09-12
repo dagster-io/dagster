@@ -89,8 +89,20 @@ class _ExtK8sPod(ExtClient):
         env (Optional[Mapping[str, str]]): An optional dict of environment variables to pass to the subprocess.
     """
 
-    def __init__(self, env: Optional[Mapping[str, str]] = None):
+    def __init__(
+        self,
+        env: Optional[Mapping[str, str]] = None,
+        context_injector: Optional[ExtContextInjector] = None,
+    ):
         self.env = check.opt_mapping_param(env, "env", key_type=str, value_type=str)
+        self.context_injector = (
+            check.opt_inst_param(
+                context_injector,
+                "context_injector",
+                ExtContextInjector,
+            )
+            or ExtEnvContextInjector()
+        )
 
     def run(
         self,
@@ -103,7 +115,6 @@ class _ExtK8sPod(ExtClient):
         base_pod_meta: Optional[Mapping[str, Any]] = None,
         base_pod_spec: Optional[Mapping[str, Any]] = None,
         extras: Optional[ExtExtras] = None,
-        context_injector: Optional[ExtContextInjector] = None,
         message_reader: Optional[ExtMessageReader] = None,
     ) -> None:
         """Publish a kubernetes pod and wait for it to complete, enriched with the ext protocol.
@@ -135,13 +146,12 @@ class _ExtK8sPod(ExtClient):
         """
         client = DagsterKubernetesClient.production_client()
 
-        context_injector = context_injector or ExtEnvContextInjector()
         message_reader = message_reader or K8sPodLogsMessageReader()
 
         with ext_protocol(
             context=context,
             extras=extras,
-            context_injector=context_injector,
+            context_injector=self.context_injector,
             message_reader=message_reader,
         ) as ext_process:
             namespace = namespace or "default"
@@ -196,7 +206,7 @@ def build_pod_body(
         "name": pod_name,
     }
     if "labels" in meta:
-        meta["labels"] = {**get_common_labels(), **meta["labels"]}
+        meta["labels"] = {**get_common_labels(), **meta["labels"]}  # type: ignore
     else:
         meta["labels"] = get_common_labels()
 

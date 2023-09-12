@@ -60,10 +60,21 @@ class _ExtDocker(ExtClient):
     """
 
     def __init__(
-        self, env: Optional[Mapping[str, str]] = None, registry: Optional[Mapping[str, str]] = None
+        self,
+        env: Optional[Mapping[str, str]] = None,
+        registry: Optional[Mapping[str, str]] = None,
+        context_injector: Optional[ExtContextInjector] = None,
     ):
         self.env = check.opt_mapping_param(env, "env", key_type=str, value_type=str)
         self.registry = check.opt_mapping_param(registry, "registry", key_type=str, value_type=str)
+        self.context_injector = (
+            check.opt_inst_param(
+                context_injector,
+                "context_injector",
+                ExtContextInjector,
+            )
+            or ExtEnvContextInjector()
+        )
 
     def run(
         self,
@@ -75,7 +86,6 @@ class _ExtDocker(ExtClient):
         registry: Optional[Mapping[str, str]] = None,
         container_kwargs: Optional[Mapping[str, Any]] = None,
         extras: Optional[ExtExtras] = None,
-        context_injector: Optional[ExtContextInjector] = None,
         message_reader: Optional[ExtMessageReader] = None,
     ) -> None:
         """Create a docker container and run it to completion, enriched with the ext protocol.
@@ -100,12 +110,11 @@ class _ExtDocker(ExtClient):
             message_Reader (Optional[ExtMessageReader]):
                 Override the default ext protocol message reader.
         """
-        context_injector = context_injector or ExtEnvContextInjector()
         message_reader = message_reader or DockerLogsMessageReader()
 
         with ext_protocol(
             context=context,
-            context_injector=context_injector,
+            context_injector=self.context_injector,
             message_reader=message_reader,
             extras=extras,
         ) as ext_context:

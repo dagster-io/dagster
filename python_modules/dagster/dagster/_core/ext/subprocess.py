@@ -28,11 +28,25 @@ class _ExtSubprocess(ExtClient):
     Args:
         env (Optional[Mapping[str, str]]): An optional dict of environment variables to pass to the subprocess.
         cwd (Optional[str]): Working directory in which to launch the subprocess command.
+        context_injector (Optional[ExtContextInjector]): An context injector to use to inject context into the subprocess. Defaults to ExtFileContextInjector.
     """
 
-    def __init__(self, env: Optional[Mapping[str, str]] = None, cwd: Optional[str] = None):
+    def __init__(
+        self,
+        env: Optional[Mapping[str, str]] = None,
+        cwd: Optional[str] = None,
+        context_injector: Optional[ExtContextInjector] = None,
+    ):
         self.env = check.opt_mapping_param(env, "env", key_type=str, value_type=str)
         self.cwd = check.opt_str_param(cwd, "cwd")
+        self.context_injector = (
+            check.opt_inst_param(
+                context_injector,
+                "context_injector",
+                ExtContextInjector,
+            )
+            or ExtTempFileContextInjector()
+        )
 
     def run(
         self,
@@ -40,14 +54,13 @@ class _ExtSubprocess(ExtClient):
         *,
         context: OpExecutionContext,
         extras: Optional[ExtExtras] = None,
-        context_injector: Optional[ExtContextInjector] = None,
         message_reader: Optional[ExtMessageReader] = None,
         env: Optional[Mapping[str, str]] = None,
         cwd: Optional[str] = None,
     ) -> None:
         with ext_protocol(
             context=context,
-            context_injector=context_injector or ExtTempFileContextInjector(),
+            context_injector=self.context_injector,
             message_reader=message_reader or ExtTempFileMessageReader(),
             extras=extras,
         ) as ext_context:
