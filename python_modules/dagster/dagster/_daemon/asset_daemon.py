@@ -291,6 +291,7 @@ def submit_asset_run(
         external_job_origin=external_job.get_external_origin(),
         job_code_origin=external_job.get_python_origin(),
         asset_selection=frozenset(asset_keys),
+        asset_check_selection=None,
     )
     instance.submit_run(run.run_id, workspace)
     return run
