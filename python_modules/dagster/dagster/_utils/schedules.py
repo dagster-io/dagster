@@ -56,6 +56,7 @@ def cron_string_iterator(
 ) -> Iterator[datetime.datetime]:
     """Generator of datetimes >= start_timestamp for the given cron string."""
     timezone_str = execution_timezone if execution_timezone else "UTC"
+    timezone_str = "UTC"
 
     utc_datetime = pytz.utc.localize(datetime.datetime.utcfromtimestamp(start_timestamp))
     start_datetime = utc_datetime.astimezone(pytz.timezone(timezone_str))
@@ -68,6 +69,7 @@ def cron_string_iterator(
     is_wildcard = [len(part) == 1 and part[0] == "*" for part in cron_parts]
 
     delta_fn = None
+    reverse_delta_fn = None
     should_hour_change = False
     expected_hour = None
 
@@ -76,25 +78,39 @@ def cron_string_iterator(
     if not nth_weekday_of_month:
         if all(is_numeric[0:3]) and all(is_wildcard[3:]):  # monthly
             delta_fn = lambda d, num: d.add(months=num)
+            reverse_delta_fn = lambda d, num: d.subtract(months=sum)
             should_hour_change = False
         elif all(is_numeric[0:2]) and is_numeric[4] and all(is_wildcard[2:4]):  # weekly
             delta_fn = lambda d, num: d.add(weeks=num)
+            reverse_delta_fn = lambda d, num: d.subtract(weeks=num)
             should_hour_change = False
         elif all(is_numeric[0:2]) and all(is_wildcard[2:]):  # daily
             delta_fn = lambda d, num: d.add(days=num)
+            reverse_delta_fn = lambda d, num: d.subtract(days=num)
             should_hour_change = False
         elif is_numeric[0] and all(is_wildcard[1:]):  # hourly
             delta_fn = lambda d, num: d.add(hours=num)
+            reverse_delta_fn = lambda d, num: d.subtract(hours=num)
             should_hour_change = True
 
     if is_numeric[1]:
         expected_hour = int(cron_parts[1][0])
 
     date_iter = CroniterShim(cron_string, start_datetime)
-    if delta_fn is not None and start_offset == 0 and _exact_match(cron_string, start_datetime):
+    if delta_fn is not None and _exact_match(cron_string, start_datetime) and start_offset == 0:
         # In simple cases, where you're already on a cron boundary, the below logic is unnecessary
         # and slow
         next_date = start_datetime
+
+        check.invariant(start_offset <= 0)
+
+        if start_offset < 0:
+            next_date = to_timezone(pendulum.instance(next_date), timezone_str)
+            # Not quite right, should share more logic with reverse_cron_string_iterator
+
+            for _ in range(-start_offset):
+                next_date = check.not_none(reverse_delta_fn)(next_date, 1)
+
         # This is already on a cron boundary, so yield it
         yield to_timezone(pendulum.instance(next_date), timezone_str)
     else:
