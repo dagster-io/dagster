@@ -298,7 +298,7 @@ exotic_partition_mapping_scenarios = {
             unevaluated_runs=[],
         ),
         expected_run_requests=[],
-        current_time=create_pendulum_time(year=2020, month=1, day=3, hour=4),
+        current_time=create_pendulum_time(year=2020, month=1, day=3, hour=4, minute=4),
     ),
     "self_dependency_prior_partition_materialized": AssetReconciliationScenario(
         assets=one_asset_self_dependency,

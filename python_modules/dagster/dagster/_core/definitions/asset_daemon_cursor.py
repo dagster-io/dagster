@@ -219,7 +219,8 @@ class AssetDaemonCursor(NamedTuple):
                 ):
                     subset = partitions_def.empty_subset()
             except:
-                handled_root_partitions_by_asset_key[key] = partitions_def.empty_subset()
+                subset = partitions_def.empty_subset()
+            handled_root_partitions_by_asset_key[key] = subset
         return cls(
             latest_storage_id=latest_storage_id,
             handled_root_asset_keys={
