@@ -671,7 +671,11 @@ def multi_asset(
             asset_ins = build_asset_ins(fn, explicit_ins, deps=remaining_upstream_keys)
         else:
             asset_ins = build_asset_ins(
-                fn, ins or {}, deps={dep.asset_key for dep in upstream_asset_deps}
+                fn,
+                ins or {},
+                deps=(
+                    {dep.asset_key for dep in upstream_asset_deps} if upstream_asset_deps else set()
+                ),
             )
             output_tuples_by_asset_key = build_asset_outs(asset_out_map)
             # validate that the asset_deps make sense
