@@ -137,7 +137,7 @@ def test_ext_subprocess(
     if message_reader_spec == "default":
         message_reader = None
     elif message_reader_spec == "user/file":
-        message_reader = ExtFileMessageReader()
+        message_reader = ExtTempFileMessageReader()
     elif message_reader_spec == "user/s3":
         message_reader = ExtS3MessageReader(
             bucket=_S3_TEST_BUCKET, client=s3_client, interval=0.001
