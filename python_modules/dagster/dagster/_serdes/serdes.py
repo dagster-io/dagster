@@ -372,7 +372,7 @@ class UnpackContext:
             for inner in obj:
                 self.clear_ignored_unknown_values(inner)
         elif isinstance(obj, dict):
-            for k, v in obj.items():
+            for v in obj.values():
                 self.clear_ignored_unknown_values(v)
 
         return obj
