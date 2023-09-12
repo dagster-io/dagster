@@ -403,7 +403,10 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                     "checks": [{"name": "my_check", "executionForLatestMaterialization": None}],
                 }
             }, "new materialization should clear latest execution"
-            return instance.get_records_for_run(run.run_id).records[0]
+            records = instance.get_asset_records([AssetKey(["asset_1"])])
+            assert records
+            assert records[0].asset_entry.last_materialization_record
+            return records[0].asset_entry.last_materialization_record
 
         # no materialization, surface latest execution
         run = create_run_for_test(instance)
@@ -507,4 +510,65 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
             }
         }
 
-        new_materialization()
+        materialization_record = new_materialization()
+
+        # run the checks, then materialize. The checks still apply because they're in the same run
+        run = create_run_for_test(instance)
+        instance.event_log_storage.store_event(
+            _planned_event(
+                run.run_id,
+                AssetCheckEvaluationPlanned(asset_key=AssetKey(["asset_1"]), check_name="my_check"),
+            )
+        )
+        instance.event_log_storage.store_event(
+            _evaluation_event(
+                run.run_id,
+                AssetCheckEvaluation(
+                    asset_key=AssetKey(["asset_1"]),
+                    check_name="my_check",
+                    success=True,
+                    metadata={},
+                    target_materialization_data=AssetCheckEvaluationTargetMaterializationData(
+                        storage_id=materialization_record.storage_id,
+                        run_id=materialization_record.event_log_entry.run_id,
+                        timestamp=materialization_record.event_log_entry.timestamp,
+                    ),
+                    severity=AssetCheckSeverity.ERROR,
+                ),
+            )
+        )
+        res = execute_dagster_graphql(
+            graphql_context, GET_LATEST_EXECUTION, variables={"assetKey": {"path": ["asset_1"]}}
+        )
+        assert res.data == {
+            "assetChecksOrError": {
+                "checks": [
+                    {
+                        "name": "my_check",
+                        "executionForLatestMaterialization": {
+                            "runId": run.run_id,
+                            "status": "SUCCEEDED",
+                        },
+                    }
+                ],
+            }
+        }
+        instance.event_log_storage.store_event(
+            _materialization_event(run.run_id, AssetKey(["asset_1"]))
+        )
+        res = execute_dagster_graphql(
+            graphql_context, GET_LATEST_EXECUTION, variables={"assetKey": {"path": ["asset_1"]}}
+        )
+        assert res.data == {
+            "assetChecksOrError": {
+                "checks": [
+                    {
+                        "name": "my_check",
+                        "executionForLatestMaterialization": {
+                            "runId": run.run_id,
+                            "status": "SUCCEEDED",
+                        },
+                    }
+                ],
+            }
+        }
