@@ -290,7 +290,7 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
         <AssetGraphExplorerSidebar
           assetGraphData={assetGraphData}
           lastSelectedNode={lastSelectedNode}
-          selectNode={selectNode}
+          selectNode={selectNodeById}
         />
       }
       second={
