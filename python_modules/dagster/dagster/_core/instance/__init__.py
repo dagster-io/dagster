@@ -1434,7 +1434,9 @@ class DagsterInstance(DynamicPartitionsStore):
         # We are asserting that invariant here to maintain that behavior.
         #
         # Finally, asset_check_selection can be passed along with asset_selection. It
-        # is mutually exclusive with op_selection and resolved_op_selection.
+        # is mutually exclusive with op_selection and resolved_op_selection. A `None`
+        # value will include any asset checks that target selected assets. An empty set
+        # will include no asset checks.
 
         check.opt_set_param(resolved_op_selection, "resolved_op_selection", of_type=str)
         check.opt_sequence_param(op_selection, "op_selection", of_type=str)
