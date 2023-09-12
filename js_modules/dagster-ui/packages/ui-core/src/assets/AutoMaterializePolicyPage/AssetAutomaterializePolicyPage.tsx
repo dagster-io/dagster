@@ -4,8 +4,10 @@ import styled from 'styled-components';
 
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
+import {AssetChecksBanner} from '../asset-checks/AssetChecksBanner';
 import {AssetKey} from '../types';
 
+import {AutoMaterializeExperimentalBanner} from './AutoMaterializeExperimentalBanner';
 import {AutomaterializeLeftPanel} from './AutomaterializeLeftPanel';
 import {AutomaterializeMiddlePanel} from './AutomaterializeMiddlePanel';
 import {AutomaterializeRightPanel} from './AutomaterializeRightPanel';
@@ -78,46 +80,54 @@ export const AssetAutomaterializePolicyPage = ({
   return (
     <AutomaterializePage
       style={{flex: 1, minHeight: 0, color: Colors.Gray700, overflow: 'hidden'}}
-      flex={{direction: 'row'}}
+      flex={{direction: 'column'}}
     >
-      <Box flex={{direction: 'column', grow: 1}}>
-        <Box
-          flex={{alignItems: 'center'}}
-          padding={{vertical: 16, horizontal: 24}}
-          border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-        >
-          <Subheading>Evaluation history</Subheading>
-        </Box>
-        <Box flex={{direction: 'row'}} style={{flex: 1, minHeight: 0}}>
-          <Box
-            border={{side: 'right', color: Colors.KeylineGray, width: 1}}
-            flex={{grow: 0, direction: 'column'}}
-            style={{flex: '0 0 296px'}}
-          >
-            <AutomaterializeLeftPanel
-              assetHasDefinedPartitions={assetHasDefinedPartitions}
-              evaluations={evaluations}
-              evaluationsIncludingEmpty={evaluationsIncludingEmpty}
-              paginationProps={paginationProps}
-              onSelectEvaluation={(evaluation) => {
-                setSelectedEvaluationId(evaluation.evaluationId);
-              }}
-              selectedEvaluation={selectedEvaluation}
-            />
-          </Box>
-          <Box flex={{grow: 1}} style={{minHeight: 0, overflowY: 'auto'}}>
-            <AutomaterializeMiddlePanel
-              assetKey={assetKey}
-              assetHasDefinedPartitions={assetHasDefinedPartitions}
-              // Use the evaluation ID of the current evaluation object, if any. Otherwise
-              // fall back to the evaluation ID from the query parameter, if any.
-              selectedEvaluationId={selectedEvaluation?.evaluationId || selectedEvaluationId}
-            />
-          </Box>
-        </Box>
+      <Box
+        padding={{horizontal: 24, vertical: 12}}
+        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+      >
+        <AutoMaterializeExperimentalBanner />
       </Box>
-      <Box border={{side: 'left', color: Colors.KeylineGray, width: 1}}>
-        <AutomaterializeRightPanel assetKey={assetKey} />
+      <Box flex={{direction: 'row'}}>
+        <Box flex={{direction: 'column', grow: 1}}>
+          <Box
+            flex={{alignItems: 'center'}}
+            padding={{vertical: 16, horizontal: 24}}
+            border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+          >
+            <Subheading>Evaluation history</Subheading>
+          </Box>
+          <Box flex={{direction: 'row'}} style={{flex: 1, minHeight: 0}}>
+            <Box
+              border={{side: 'right', color: Colors.KeylineGray, width: 1}}
+              flex={{grow: 0, direction: 'column'}}
+              style={{flex: '0 0 296px'}}
+            >
+              <AutomaterializeLeftPanel
+                assetHasDefinedPartitions={assetHasDefinedPartitions}
+                evaluations={evaluations}
+                evaluationsIncludingEmpty={evaluationsIncludingEmpty}
+                paginationProps={paginationProps}
+                onSelectEvaluation={(evaluation) => {
+                  setSelectedEvaluationId(evaluation.evaluationId);
+                }}
+                selectedEvaluation={selectedEvaluation}
+              />
+            </Box>
+            <Box flex={{grow: 1}} style={{minHeight: 0, overflowY: 'auto'}}>
+              <AutomaterializeMiddlePanel
+                assetKey={assetKey}
+                assetHasDefinedPartitions={assetHasDefinedPartitions}
+                // Use the evaluation ID of the current evaluation object, if any. Otherwise
+                // fall back to the evaluation ID from the query parameter, if any.
+                selectedEvaluationId={selectedEvaluation?.evaluationId || selectedEvaluationId}
+              />
+            </Box>
+          </Box>
+        </Box>
+        <Box border={{side: 'left', color: Colors.KeylineGray, width: 1}}>
+          <AutomaterializeRightPanel assetKey={assetKey} />
+        </Box>
       </Box>
     </AutomaterializePage>
   );
