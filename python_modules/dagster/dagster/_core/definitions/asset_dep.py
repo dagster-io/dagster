@@ -6,6 +6,7 @@ from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.definitions.source_asset import SourceAsset
+from dagster._core.errors import DagsterInvalidDefinitionError
 
 from .events import (
     AssetKey,
@@ -54,6 +55,16 @@ class AssetDep(
     ):
         if isinstance(asset, AssetSpec):
             asset_key = asset.key
+        elif isinstance(asset, AssetsDefinition):
+            # Only AssetsDefinition with a single asset can be passed
+            if len(asset.keys) > 1:
+                raise DagsterInvalidDefinitionError(
+                    "Cannot pass a multi_asset AssetsDefinition as an argument to deps."
+                    " Instead, specify dependencies on the assets created by the multi_asset"
+                    f" via AssetKeys or strings. For the multi_asset {asset.node_def.name}, the"
+                    f" available keys are: {asset.keys}."
+                )
+            asset_key = AssetKey.from_coercible_or_definition(asset)
         else:
             asset_key = AssetKey.from_coercible_or_definition(asset)
 
