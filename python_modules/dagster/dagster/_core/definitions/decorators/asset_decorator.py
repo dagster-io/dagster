@@ -620,7 +620,7 @@ def multi_asset(
         op_name = name or fn.__name__
 
         if asset_out_map and specs:
-            raise DagsterInvalidDefinitionError("Must specify only outs or assets but not both.")
+            raise DagsterInvalidDefinitionError("Must specify only outs or specs but not both.")
         elif specs:
             output_tuples_by_asset_key = {}
             for asset_spec in specs:
@@ -1268,7 +1268,7 @@ def _deps_and_non_argument_deps_to_asset_deps(
                 except check.CheckError:
                     raise DagsterInvalidDefinitionError(
                         f"Cannot pass an instance of type {type(dep)} to deps parameter of @asset."
-                        " Instead, pass AssetsDefinitions or AssetKeys."
+                        " Instead, pass AssetDeps, AssetsDefinitions, SourceAssets, or AssetKeys."
                     )
 
         upstream_asset_deps = deps
