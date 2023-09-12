@@ -1,3 +1,4 @@
+import calendar
 import datetime
 import functools
 from typing import Iterator, Optional, Sequence, Union
@@ -55,6 +56,24 @@ def cron_string_iterator(
     start_offset: int = 0,
 ) -> Iterator[datetime.datetime]:
     """Generator of datetimes >= start_timestamp for the given cron string."""
+    # leap day special casing
+    if cron_string.endswith(" 29 2 *"):
+        min_hour, _ = cron_string.split(" 29 2 *")
+        day_before = f"{min_hour} 28 2 *"
+        # run the iterator for Feb 28th
+        for dt in cron_string_iterator(
+            start_timestamp=start_timestamp,
+            cron_string=day_before,
+            execution_timezone=execution_timezone,
+            start_offset=start_offset,
+        ):
+            # only return on leap years
+            if calendar.isleap(dt.year):
+                # shift 28th back to 29th
+                shifted_dt = dt + datetime.timedelta(days=1)
+                yield shifted_dt
+        return
+
     timezone_str = execution_timezone if execution_timezone else "UTC"
 
     utc_datetime = pytz.utc.localize(datetime.datetime.utcfromtimestamp(start_timestamp))
