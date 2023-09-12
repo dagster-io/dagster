@@ -888,6 +888,7 @@ def _create_scheduler_run(
         asset_selection=(
             frozenset(run_request.asset_selection) if run_request.asset_selection else None
         ),
+        asset_check_selection=None,
     )
 
 

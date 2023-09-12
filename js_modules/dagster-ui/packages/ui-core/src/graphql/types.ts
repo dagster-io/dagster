@@ -190,6 +190,11 @@ export enum AssetCheckExecutionResolvedStatus {
   SUCCEEDED = 'SUCCEEDED',
 }
 
+export type AssetCheckHandleInput = {
+  assetKey: AssetKeyInput;
+  name: Scalars['String'];
+};
+
 export type AssetCheckNeedsMigrationError = Error & {
   __typename: 'AssetCheckNeedsMigrationError';
   message: Scalars['String'];
@@ -1606,6 +1611,7 @@ export type JobSolidHandlesArgs = {
 };
 
 export type JobOrPipelineSelector = {
+  assetCheckSelection?: InputMaybe<Array<AssetCheckHandleInput>>;
   assetSelection?: InputMaybe<Array<AssetKeyInput>>;
   jobName?: InputMaybe<Scalars['String']>;
   pipelineName?: InputMaybe<Scalars['String']>;
@@ -2685,6 +2691,7 @@ export type PipelineRuns = {
 };
 
 export type PipelineSelector = {
+  assetCheckSelection?: InputMaybe<Array<AssetCheckHandleInput>>;
   assetSelection?: InputMaybe<Array<AssetKeyInput>>;
   pipelineName: Scalars['String'];
   repositoryLocationName: Scalars['String'];
@@ -4557,6 +4564,23 @@ export const buildAssetCheckExecution = (
         ? overrides.status!
         : AssetCheckExecutionResolvedStatus.EXECUTION_FAILED,
     timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 2.57,
+  };
+};
+
+export const buildAssetCheckHandleInput = (
+  overrides?: Partial<AssetCheckHandleInput>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): AssetCheckHandleInput => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetCheckHandleInput');
+  return {
+    assetKey:
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKeyInput')
+        ? ({} as AssetKeyInput)
+        : buildAssetKeyInput({}, relationshipsToOmit),
+    name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'aliquam',
   };
 };
 
@@ -7253,6 +7277,10 @@ export const buildJobOrPipelineSelector = (
   const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
   relationshipsToOmit.add('JobOrPipelineSelector');
   return {
+    assetCheckSelection:
+      overrides && overrides.hasOwnProperty('assetCheckSelection')
+        ? overrides.assetCheckSelection!
+        : [],
     assetSelection:
       overrides && overrides.hasOwnProperty('assetSelection') ? overrides.assetSelection! : [],
     jobName: overrides && overrides.hasOwnProperty('jobName') ? overrides.jobName! : 'quia',
@@ -9414,6 +9442,10 @@ export const buildPipelineSelector = (
   const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
   relationshipsToOmit.add('PipelineSelector');
   return {
+    assetCheckSelection:
+      overrides && overrides.hasOwnProperty('assetCheckSelection')
+        ? overrides.assetCheckSelection!
+        : [],
     assetSelection:
       overrides && overrides.hasOwnProperty('assetSelection') ? overrides.assetSelection! : [],
     pipelineName:

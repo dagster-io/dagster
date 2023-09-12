@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import TYPE_CHECKING, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Union
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental
@@ -36,6 +36,13 @@ class AssetCheckHandle(NamedTuple):
 
     asset_key: PublicAttr[AssetKey]
     name: PublicAttr[str]
+
+    @staticmethod
+    def from_graphql_input(graphql_input: Mapping[str, Any]) -> "AssetCheckHandle":
+        return AssetCheckHandle(
+            asset_key=AssetKey.from_graphql_input(graphql_input["assetKey"]),
+            name=graphql_input["name"],
+        )
 
 
 @experimental

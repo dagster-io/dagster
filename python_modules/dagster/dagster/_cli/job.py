@@ -559,6 +559,7 @@ def _create_external_run(
         external_job_origin=external_job.get_external_origin(),
         job_code_origin=external_job.get_python_origin(),
         asset_selection=None,
+        asset_check_selection=None,
     )
 
 
