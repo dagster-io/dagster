@@ -4,9 +4,10 @@ import * as React from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
 import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
+import {tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetGraphFetchScope} from '../asset-graph/useAssetGraphData';
 import {AssetLocation} from '../asset-graph/useFindAssetLocation';
-import {AssetGroupSelector} from '../graphql/types';
+import {AssetGroupSelector, AssetKeyInput} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
@@ -27,6 +28,21 @@ interface AssetGroupRootParams {
 
 const __GLOBAL__ = '__GLOBAL__';
 
+export function globalAssetGraphPathFor(path: Omit<ExplorerPath, 'pipelineName'>) {
+  const str = explorerPathToString({...path, pipelineName: __GLOBAL__}).replace(__GLOBAL__, '');
+  return `/asset-groups${str}`;
+}
+
+export function globalAssetGraphPathForAssetsAndDescendants(assetKeys: AssetKeyInput[]) {
+  // Note: the max-length of a URL in chrome is 32k characters, and Firefox is 64k characters.
+  // In a perfect world we populate ops query to "asset1*,asset2*" and then select the roots
+  // by passing opNames. If we don't have enough characters to do both, just populate the ops
+  // query. It might still be too long, but we tried.
+  const opsQuery = assetKeys.map((a) => `${tokenForAssetKey(a)}*`).join(', ');
+  const opNames = opsQuery.length > 16000 ? [] : [assetKeys.map(tokenForAssetKey).join(',')];
+  return globalAssetGraphPathFor({opNames, opsQuery});
+}
+
 export const AssetsGroupsGlobalGraphRoot: React.FC = () => {
   const {0: path} = useParams<AssetGroupRootParams>();
   const {allRepos, visibleRepos} = React.useContext(WorkspaceContext);
@@ -41,8 +57,10 @@ export const AssetsGroupsGlobalGraphRoot: React.FC = () => {
 
   const onChangeExplorerPath = React.useCallback(
     (path: ExplorerPath, mode: 'push' | 'replace') => {
-      const str = explorerPathToString({...path, pipelineName: __GLOBAL__}).replace(__GLOBAL__, '');
-      history[mode]({pathname: `/asset-groups${str}`, search: history.location.search});
+      history[mode]({
+        pathname: globalAssetGraphPathFor(path),
+        search: history.location.search,
+      });
     },
     [history],
   );

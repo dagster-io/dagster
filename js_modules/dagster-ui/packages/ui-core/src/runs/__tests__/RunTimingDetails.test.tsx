@@ -3,13 +3,13 @@ import * as React from 'react';
 
 import {TimeProvider} from '../../app/time/TimeContext';
 import {RunStatus, buildRun} from '../../graphql/types';
-import {RunDetails} from '../RunDetails';
+import {RunTimingDetails} from '../RunTimingDetails';
 
 jest.mock('../../app/time/browserTimezone.ts', () => ({
   browserTimezone: () => 'America/Los_Angeles',
 }));
 
-describe('RunDetails', () => {
+describe('RunTimingDetails', () => {
   const START_TIME = 1613571870.934;
   const END_TIME = 1613571916.945;
   const FAKE_NOW = 1613571931.945; // Fifteen seconds later
@@ -37,7 +37,7 @@ describe('RunDetails', () => {
 
     render(
       <TimeProvider>
-        <RunDetails loading={false} run={run} />
+        <RunTimingDetails loading={false} run={run} />
       </TimeProvider>,
     );
 
@@ -61,7 +61,7 @@ describe('RunDetails', () => {
 
     render(
       <TimeProvider>
-        <RunDetails loading={false} run={run} />
+        <RunTimingDetails loading={false} run={run} />
       </TimeProvider>,
     );
 
@@ -81,7 +81,7 @@ describe('RunDetails', () => {
 
     render(
       <TimeProvider>
-        <RunDetails loading={false} run={run} />
+        <RunTimingDetails loading={false} run={run} />
       </TimeProvider>,
     );
 
@@ -101,7 +101,7 @@ describe('RunDetails', () => {
 
     render(
       <TimeProvider>
-        <RunDetails loading={false} run={run} />
+        <RunTimingDetails loading={false} run={run} />
       </TimeProvider>,
     );
 
@@ -121,7 +121,7 @@ describe('RunDetails', () => {
 
     render(
       <TimeProvider>
-        <RunDetails loading={false} run={run} />
+        <RunTimingDetails loading={false} run={run} />
       </TimeProvider>,
     );
 
@@ -141,7 +141,7 @@ describe('RunDetails', () => {
 
     render(
       <TimeProvider>
-        <RunDetails loading={false} run={run} />
+        <RunTimingDetails loading={false} run={run} />
       </TimeProvider>,
     );
 
@@ -161,7 +161,7 @@ describe('RunDetails', () => {
 
     render(
       <TimeProvider>
-        <RunDetails loading={false} run={run} />
+        <RunTimingDetails loading={false} run={run} />
       </TimeProvider>,
     );
 
@@ -181,7 +181,7 @@ describe('RunDetails', () => {
 
     render(
       <TimeProvider>
-        <RunDetails loading={false} run={run} />
+        <RunTimingDetails loading={false} run={run} />
       </TimeProvider>,
     );
 
@@ -201,7 +201,7 @@ describe('RunDetails', () => {
 
     render(
       <TimeProvider>
-        <RunDetails loading={false} run={run} />
+        <RunTimingDetails loading={false} run={run} />
       </TimeProvider>,
     );
 
@@ -221,7 +221,7 @@ describe('RunDetails', () => {
 
     render(
       <TimeProvider>
-        <RunDetails loading={false} run={run} />
+        <RunTimingDetails loading={false} run={run} />
       </TimeProvider>,
     );
 
@@ -241,7 +241,7 @@ describe('RunDetails', () => {
 
     render(
       <TimeProvider>
-        <RunDetails loading={false} run={run} />
+        <RunTimingDetails loading={false} run={run} />
       </TimeProvider>,
     );
 

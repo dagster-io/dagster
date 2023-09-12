@@ -1,19 +1,18 @@
-import {gql, useMutation} from '@apollo/client';
+import {useMutation} from '@apollo/client';
 import {
+  Box,
   Button,
   Colors,
-  DialogFooter,
   Dialog,
+  DialogFooter,
   Group,
   Icon,
-  MenuItem,
   Menu,
-  MetadataTable,
+  MenuItem,
   Popover,
-  Tooltip,
-  Subheading,
-  Box,
   StyledRawCodeMirror,
+  Subheading,
+  Tooltip,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {useHistory} from 'react-router-dom';
@@ -23,14 +22,12 @@ import {AppContext} from '../app/AppContext';
 import {showSharedToaster} from '../app/DomUtils';
 import {useFeatureFlags} from '../app/Flags';
 import {useCopyToClipboard} from '../app/browser';
-import {RunStatus} from '../graphql/types';
 import {FREE_CONCURRENCY_SLOTS_FOR_RUN_MUTATION} from '../instance/InstanceConcurrency';
 import {
   FreeConcurrencySlotsForRunMutation,
   FreeConcurrencySlotsForRunMutationVariables,
 } from '../instance/types/InstanceConcurrency.types';
 import {NO_LAUNCH_PERMISSION_MESSAGE} from '../launchpad/LaunchRootExecutionButton';
-import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {AnchorButton} from '../ui/AnchorButton';
 import {workspacePathFromRunDetails, workspacePipelinePath} from '../workspace/workspacePath';
 
@@ -39,98 +36,7 @@ import {doneStatuses} from './RunStatuses';
 import {RunTags} from './RunTags';
 import {RunsQueryRefetchContext} from './RunUtils';
 import {TerminationDialog} from './TerminationDialog';
-import {TimeElapsed} from './TimeElapsed';
-import {RunDetailsFragment} from './types/RunDetails.types';
 import {RunFragment} from './types/RunFragments.types';
-
-export const timingStringForStatus = (status?: RunStatus) => {
-  switch (status) {
-    case RunStatus.QUEUED:
-      return 'Queued';
-    case RunStatus.CANCELED:
-      return 'Canceled';
-    case RunStatus.CANCELING:
-      return 'Canceling…';
-    case RunStatus.FAILURE:
-      return 'Failed';
-    case RunStatus.NOT_STARTED:
-      return 'Waiting to start…';
-    case RunStatus.STARTED:
-      return 'Started…';
-    case RunStatus.STARTING:
-      return 'Starting…';
-    case RunStatus.SUCCESS:
-      return 'Succeeded';
-    default:
-      return 'None';
-  }
-};
-
-const LoadingOrValue: React.FC<{
-  loading: boolean;
-  children: () => React.ReactNode;
-}> = ({loading, children}) =>
-  loading ? <div style={{color: Colors.Gray400}}>Loading…</div> : <div>{children()}</div>;
-
-const TIME_FORMAT = {showSeconds: true, showTimezone: false};
-
-export const RunDetails: React.FC<{
-  loading: boolean;
-  run: RunDetailsFragment | undefined;
-}> = ({loading, run}) => {
-  return (
-    <MetadataTable
-      spacing={0}
-      rows={[
-        {
-          key: 'Started',
-          value: (
-            <LoadingOrValue loading={loading}>
-              {() => {
-                if (run?.startTime) {
-                  return <TimestampDisplay timestamp={run.startTime} timeFormat={TIME_FORMAT} />;
-                }
-                return (
-                  <div style={{color: Colors.Gray400}}>{timingStringForStatus(run?.status)}</div>
-                );
-              }}
-            </LoadingOrValue>
-          ),
-        },
-        {
-          key: 'Ended',
-          value: (
-            <LoadingOrValue loading={loading}>
-              {() => {
-                if (run?.endTime) {
-                  return <TimestampDisplay timestamp={run.endTime} timeFormat={TIME_FORMAT} />;
-                }
-                return (
-                  <div style={{color: Colors.Gray400}}>{timingStringForStatus(run?.status)}</div>
-                );
-              }}
-            </LoadingOrValue>
-          ),
-        },
-        {
-          key: 'Duration',
-          value: (
-            <LoadingOrValue loading={loading}>
-              {() => {
-                if (run?.startTime) {
-                  return <TimeElapsed startUnix={run.startTime} endUnix={run.endTime} />;
-                }
-                return (
-                  <div style={{color: Colors.Gray400}}>{timingStringForStatus(run?.status)}</div>
-                );
-              }}
-            </LoadingOrValue>
-          ),
-        },
-      ]}
-    />
-  );
-};
 
 type VisibleDialog = 'config' | 'delete' | 'terminate' | 'free_slots' | null;
 
@@ -323,15 +229,5 @@ const CodeMirrorContainer = styled.div`
 
   .CodeMirror {
     height: 100%;
-  }
-`;
-
-export const RUN_DETAILS_FRAGMENT = gql`
-  fragment RunDetailsFragment on Run {
-    id
-    startTime
-    endTime
-    status
-    hasConcurrencyKeySlots
   }
 `;
