@@ -1,7 +1,7 @@
 ---
-title: "Lesson 4: Assets and database execution"
-module: "dagster_essentials"
-lesson: "4"
+title: 'Lesson 4: Assets and database execution'
+module: 'dagster_essentials'
+lesson: '4'
 ---
 
 # Assets and database execution

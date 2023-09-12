@@ -6,6 +6,6 @@ export function Heading({id = '', level = 1, children}) {
     {
       id,
     },
-    children
+    children,
   );
 }

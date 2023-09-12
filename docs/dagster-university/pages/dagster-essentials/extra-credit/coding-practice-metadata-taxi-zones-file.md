@@ -1,7 +1,7 @@
 ---
-title: "Extra credit: Practice: Add metadata to taxi_zones_file"
-module: "dagster_essentials"
-lesson: "extra-credit"
+title: 'Extra credit: Practice: Add metadata to taxi_zones_file'
+module: 'dagster_essentials'
+lesson: 'extra-credit'
 ---
 
 # Practice: Add metadata to taxi_zones_file

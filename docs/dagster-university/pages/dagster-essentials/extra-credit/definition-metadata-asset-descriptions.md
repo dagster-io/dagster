@@ -1,7 +1,7 @@
 ---
-title: "Extra credit: Definition metadata - Asset descriptions"
-module: "dagster_essentials"
-lesson: "extra-credit"
+title: 'Extra credit: Definition metadata - Asset descriptions'
+module: 'dagster_essentials'
+lesson: 'extra-credit'
 ---
 
 # Definition metadata - Asset descriptions
@@ -44,7 +44,7 @@ Another way to add a description to an asset is to use the asset decorator with 
 For example:
 
 ```python
-from dagster import asset 
+from dagster import asset
 
 @asset(
  description="The raw CSV file for the taxi zones dataset. Sourced from the NYC Open Data portal."
@@ -68,21 +68,27 @@ def taxi_zones_file():
 Now that you understand how to define asset descriptions, let’s take a look at them in the Dagster UI.
 
 {% table %}
-* The Assets page
-*
+
+- The Assets page
+
 ---
-* {% width="60%" %}
+
+- {% width="60%" %}
   For each asset in the **Assets** tab, the description will display under each asset key.
 
-* ![The Assets page in the Dagster UI](/images/dagster-essentials/extra-credit/ui-assets-page.png) {% rowspan=2 %}
+- ![The Assets page in the Dagster UI](/images/dagster-essentials/extra-credit/ui-assets-page.png) {% rowspan=2 %}
+
 {% /table %}
 
 {% table %}
-* Global Asset Lineage  
-*
----
-* {% width="60%" %}
-  In the **Global Asset Lineage** page, the description will be included in each of the asset boxes in the DAG. 
 
-* ![The Global Asset Lineage page in the Dagster UI](/images/dagster-essentials/extra-credit/ui-global-asset-lineage.png) {% rowspan=2 %}
+- Global Asset Lineage
+
+---
+
+- {% width="60%" %}
+  In the **Global Asset Lineage** page, the description will be included in each of the asset boxes in the DAG.
+
+- ![The Global Asset Lineage page in the Dagster UI](/images/dagster-essentials/extra-credit/ui-global-asset-lineage.png) {% rowspan=2 %}
+
 {% /table %}

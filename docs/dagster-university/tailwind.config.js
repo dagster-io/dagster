@@ -3,10 +3,7 @@
 const defaultTheme = require('tailwindcss/defaultTheme');
 
 module.exports = {
-  content: [
-    '/pages/**/*.md',
-    '/components/**/*.{html,md}'
-    ],
+  content: ['/pages/**/*.md', '/components/**/*.{html,md}'],
   theme: {
     extend: {
       fontFamily: {
@@ -156,4 +153,4 @@ module.exports = {
     },
   },
   plugins: [require('@tailwindcss/typography')],
-}
+};

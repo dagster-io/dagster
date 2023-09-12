@@ -1,7 +1,7 @@
 ---
 title: "Lesson 3: What's an asset?"
-module: "dagster_essentials"
-lesson: "3"
+module: 'dagster_essentials'
+lesson: '3'
 ---
 
 An asset is an object in persistent storage that captures some understanding of the world. If you have an existing data pipeline, you’re likely already creating assets. For example, your pipeline might incorporate objects like:
