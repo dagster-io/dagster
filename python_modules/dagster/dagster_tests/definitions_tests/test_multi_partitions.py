@@ -601,8 +601,7 @@ def test_multipartitions_self_dependency():
     second_partition_key = MultiPartitionKey({"time": "2020-01-02", "abc": "a"})
 
     class MyIOManager(IOManager):
-        def handle_output(self, context, obj):
-            ...
+        def handle_output(self, context, obj): ...
 
         def load_input(self, context):
             assert context.asset_key.path[-1] == "a"

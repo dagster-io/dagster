@@ -620,8 +620,7 @@ class ExternalExecutionParamsErrorData(
 
 class ExternalPartitionsDefinitionData(ABC):
     @abstractmethod
-    def get_partitions_definition(self) -> PartitionsDefinition:
-        ...
+    def get_partitions_definition(self) -> PartitionsDefinition: ...
 
 
 @whitelist_for_serdes

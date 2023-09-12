@@ -7,8 +7,7 @@ from dagster import build_schedule_from_partitioned_job, job
 
 
 @job(config=my_partitioned_config)
-def do_stuff_partitioned():
-    ...
+def do_stuff_partitioned(): ...
 
 
 do_stuff_partitioned_schedule = build_schedule_from_partitioned_job(
@@ -28,8 +27,7 @@ from dagster import (
 
 
 @asset(partitions_def=HourlyPartitionsDefinition(start_date="2020-01-01-00:00"))
-def hourly_asset():
-    ...
+def hourly_asset(): ...
 
 
 partitioned_asset_job = define_asset_job("partitioned_job", selection=[hourly_asset])

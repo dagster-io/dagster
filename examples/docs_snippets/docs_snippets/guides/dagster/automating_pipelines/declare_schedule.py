@@ -8,8 +8,7 @@ from dagster import (
 
 
 @asset
-def transactions_cleaned():
-    ...
+def transactions_cleaned(): ...
 
 
 @asset(
@@ -17,13 +16,11 @@ def transactions_cleaned():
         maximum_lag_minutes=9 * 24, cron_schedule="0 9 * * *"
     )
 )
-def sales_report(transactions_cleaned):
-    ...
+def sales_report(transactions_cleaned): ...
 
 
 @asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=120))
-def finance_report(transactions_cleaned):
-    ...
+def finance_report(transactions_cleaned): ...
 
 
 defs = Definitions(

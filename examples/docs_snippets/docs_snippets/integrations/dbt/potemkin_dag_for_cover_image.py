@@ -10,12 +10,10 @@ class dagster_fivetran:
     @staticmethod
     def build_fivetran_assets(connector_id, table_names):
         @asset(compute_kind="fivetran")
-        def users():
-            ...
+        def users(): ...
 
         @asset(compute_kind="fivetran")
-        def orders():
-            ...
+        def orders(): ...
 
         return [users, orders]
 
@@ -64,8 +62,7 @@ def dbt_project_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     compute_kind="tensorflow",
     deps=[get_asset_key_for_model([dbt_project_assets], "daily_order_summary")],
 )
-def predicted_orders():
-    ...
+def predicted_orders(): ...
 
 
 # end

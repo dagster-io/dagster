@@ -193,8 +193,7 @@ T_Scalar = TypeVar("T_Scalar", bound=Union[str, int, float, bool, None])
 
 
 @overload
-def whitelist_for_serdes(__cls: T_Type) -> T_Type:
-    ...
+def whitelist_for_serdes(__cls: T_Type) -> T_Type: ...
 
 
 @overload
@@ -208,8 +207,7 @@ def whitelist_for_serdes(
     old_fields: Optional[Mapping[str, JsonSerializableValue]] = ...,
     skip_when_empty_fields: Optional[AbstractSet[str]] = ...,
     field_serializers: Optional[Mapping[str, Type["FieldSerializer"]]] = None,
-) -> Callable[[T_Type], T_Type]:
-    ...
+) -> Callable[[T_Type], T_Type]: ...
 
 
 def whitelist_for_serdes(
@@ -563,8 +561,7 @@ class FieldSerializer(Serializer):
         __unpacked_value: UnpackedValue,
         whitelist_map: WhitelistMap,
         context: UnpackContext,
-    ) -> PackableValue:
-        ...
+    ) -> PackableValue: ...
 
     @abstractmethod
     def pack(
@@ -572,8 +569,7 @@ class FieldSerializer(Serializer):
         __unpacked_value: Any,
         whitelist_map: WhitelistMap,
         descent_path: str,
-    ) -> JsonSerializableValue:
-        ...
+    ) -> JsonSerializableValue: ...
 
 
 class SetToSequenceFieldSerializer(FieldSerializer):
@@ -615,8 +611,7 @@ def pack_value(
     val: T_Scalar,
     whitelist_map: WhitelistMap = ...,
     descent_path: Optional[str] = ...,
-) -> T_Scalar:
-    ...
+) -> T_Scalar: ...
 
 
 @overload
@@ -626,8 +621,7 @@ def pack_value(
     ],
     whitelist_map: WhitelistMap = ...,
     descent_path: Optional[str] = ...,
-) -> Mapping[str, JsonSerializableValue]:
-    ...
+) -> Mapping[str, JsonSerializableValue]: ...
 
 
 @overload
@@ -635,8 +629,7 @@ def pack_value(
     val: Sequence[PackableValue],
     whitelist_map: WhitelistMap = ...,
     descent_path: Optional[str] = ...,
-) -> Sequence[JsonSerializableValue]:
-    ...
+) -> Sequence[JsonSerializableValue]: ...
 
 
 def pack_value(
@@ -743,8 +736,7 @@ def deserialize_value(
     val: str,
     as_type: Tuple[Type[T_PackableValue], Type[U_PackableValue]],
     whitelist_map: WhitelistMap = ...,
-) -> Union[T_PackableValue, U_PackableValue]:
-    ...
+) -> Union[T_PackableValue, U_PackableValue]: ...
 
 
 @overload
@@ -752,8 +744,7 @@ def deserialize_value(
     val: str,
     as_type: Type[T_PackableValue],
     whitelist_map: WhitelistMap = ...,
-) -> T_PackableValue:
-    ...
+) -> T_PackableValue: ...
 
 
 @overload
@@ -761,8 +752,7 @@ def deserialize_value(
     val: str,
     as_type: None = ...,
     whitelist_map: WhitelistMap = ...,
-) -> PackableValue:
-    ...
+) -> PackableValue: ...
 
 
 def deserialize_value(
@@ -854,8 +844,7 @@ def unpack_value(
     as_type: Tuple[Type[T_PackableValue], Type[U_PackableValue]],
     whitelist_map: WhitelistMap = ...,
     context: Optional[UnpackContext] = ...,
-) -> Union[T_PackableValue, U_PackableValue]:
-    ...
+) -> Union[T_PackableValue, U_PackableValue]: ...
 
 
 @overload
@@ -864,8 +853,7 @@ def unpack_value(
     as_type: Type[T_PackableValue],
     whitelist_map: WhitelistMap = ...,
     context: Optional[UnpackContext] = ...,
-) -> T_PackableValue:
-    ...
+) -> T_PackableValue: ...
 
 
 @overload
@@ -874,8 +862,7 @@ def unpack_value(
     as_type: None = ...,
     whitelist_map: WhitelistMap = ...,
     context: Optional[UnpackContext] = ...,
-) -> PackableValue:
-    ...
+) -> PackableValue: ...
 
 
 def unpack_value(

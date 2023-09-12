@@ -140,8 +140,7 @@ class _Op:
 
 
 @overload
-def op(compute_fn: Callable[..., Any]) -> "OpDefinition":
-    ...
+def op(compute_fn: Callable[..., Any]) -> "OpDefinition": ...
 
 
 @overload
@@ -157,8 +156,7 @@ def op(
     version: Optional[str] = ...,
     retry_policy: Optional[RetryPolicy] = ...,
     code_version: Optional[str] = ...,
-) -> _Op:
-    ...
+) -> _Op: ...
 
 
 @deprecated_param(

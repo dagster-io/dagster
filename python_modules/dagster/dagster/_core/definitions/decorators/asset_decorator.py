@@ -56,8 +56,7 @@ from ..utils import DEFAULT_IO_MANAGER_KEY, DEFAULT_OUTPUT, NoValueSentinel
 @overload
 def asset(
     compute_fn: Callable,
-) -> AssetsDefinition:
-    ...
+) -> AssetsDefinition: ...
 
 
 @overload
@@ -88,8 +87,7 @@ def asset(
     key: Optional[CoercibleToAssetKey] = None,
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = ...,
     check_specs: Optional[Sequence[AssetCheckSpec]] = ...,
-) -> Callable[[Callable[..., Any]], AssetsDefinition]:
-    ...
+) -> Callable[[Callable[..., Any]], AssetsDefinition]: ...
 
 
 @experimental_param(param="resource_defs")
@@ -904,8 +902,7 @@ def build_asset_ins(
 @overload
 def graph_asset(
     compose_fn: Callable,
-) -> AssetsDefinition:
-    ...
+) -> AssetsDefinition: ...
 
 
 @overload
@@ -924,8 +921,7 @@ def graph_asset(
     backfill_policy: Optional[BackfillPolicy] = ...,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = ...,
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
-) -> Callable[[Callable[..., Any]], AssetsDefinition]:
-    ...
+) -> Callable[[Callable[..., Any]], AssetsDefinition]: ...
 
 
 def graph_asset(
