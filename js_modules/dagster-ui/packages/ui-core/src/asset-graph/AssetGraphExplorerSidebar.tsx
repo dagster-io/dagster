@@ -237,9 +237,11 @@ const Node = ({
     : Object.keys(assetGraphData.downstream[node.id] ?? {});
   const elementRef = React.useRef<HTMLDivElement | null>(null);
   React.useLayoutEffect(() => {
-    if (elementRef.current) {
-      measureElement(elementRef.current);
-    }
+    setTimeout(() => {
+      if (elementRef.current) {
+        measureElement(elementRef.current);
+      }
+    }, 100);
   }, [measureElement, isOpen]);
 
   const [showDownstream, setShowDownstream] = React.useState(false);
