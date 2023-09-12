@@ -122,7 +122,9 @@ def _execution_targets_latest_materialization(
         # asset hasn't been materialized yet, so no reason to hide the check
         return True
 
-    # if the check is executed in the same run as the materialization, then show it
+    # If the check is executed in the same run as the materialization, then show it.
+    # This is a workaround to support the 'stage then promote' graph asset pattern,
+    # where checks happen before a materialization.
     latest_materialization_run_id = latest_materialization.event_log_entry.run_id
     if latest_materialization_run_id == execution.run_id:
         return True

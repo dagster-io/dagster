@@ -404,6 +404,8 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                 }
             }, "new materialization should clear latest execution"
             records = instance.get_asset_records([AssetKey(["asset_1"])])
+            assert records
+            assert records[0].asset_entry.last_materialization_record
             return records[0].asset_entry.last_materialization_record
 
         # no materialization, surface latest execution
