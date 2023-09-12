@@ -77,7 +77,8 @@ def materializes_asset_sensor():
 
 # start_running_in_code
 @sensor(job=asset_job, default_status=DefaultSensorStatus.RUNNING)
-def my_running_sensor(): ...
+def my_running_sensor():
+    ...
 
 
 # end_running_in_code
@@ -202,10 +203,12 @@ def my_s3_sensor(context):
 
 
 @job
-def the_job(): ...
+def the_job():
+    ...
 
 
-def get_the_db_connection(_): ...
+def get_the_db_connection(_):
+    ...
 
 
 defs = Definitions(

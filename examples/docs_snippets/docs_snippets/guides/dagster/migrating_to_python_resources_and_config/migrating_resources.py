@@ -17,7 +17,8 @@ def initial_code_base() -> Definitions:
         def __init__(self, conn_string: str) -> None:
             self.conn_string = conn_string
 
-        def execute(self, query: str) -> None: ...
+        def execute(self, query: str) -> None:
+            ...
 
     @resource(config_schema={"conn_string": str})
     def fancy_db_resource(context: InitResourceContext) -> FancyDbResource:
@@ -48,7 +49,8 @@ def convert_resource() -> Definitions:
     class FancyDbResource(ConfigurableResource):
         conn_string: str
 
-        def execute(self, query: str) -> None: ...
+        def execute(self, query: str) -> None:
+            ...
 
     # end_convert_resource
 
@@ -79,7 +81,8 @@ def new_style_resource_on_context() -> Definitions:
     class FancyDbResource(ConfigurableResource):
         conn_string: str
 
-        def execute(self, query: str) -> None: ...
+        def execute(self, query: str) -> None:
+            ...
 
     @asset(required_resource_keys={"fancy_db"})
     def asset_one(context: AssetExecutionContext) -> None:
@@ -102,7 +105,8 @@ def new_style_resource_on_param() -> Definitions:
     class FancyDbResource(ConfigurableResource):
         conn_string: str
 
-        def execute(self, query: str) -> None: ...
+        def execute(self, query: str) -> None:
+            ...
 
     # begin_new_style_resource_on_param
     from dagster import AssetExecutionContext, asset
@@ -127,7 +131,8 @@ def old_third_party_resource() -> Definitions:
         def __init__(self, conn_string: str) -> None:
             self.conn_string = conn_string
 
-        def execute_query(self, query: str) -> None: ...
+        def execute_query(self, query: str) -> None:
+            ...
 
     # Alternatively could have been imported from third-party library
     # from fancy_db import FancyDbClient
@@ -154,10 +159,12 @@ def old_third_party_resource() -> Definitions:
     return defs
 
 
-def some_expensive_setup() -> None: ...
+def some_expensive_setup() -> None:
+    ...
 
 
-def some_expensive_teardown() -> None: ...
+def some_expensive_teardown() -> None:
+    ...
 
 
 def old_resource_code_contextmanager() -> Definitions:
@@ -165,7 +172,8 @@ def old_resource_code_contextmanager() -> Definitions:
         def __init__(self, conn_string: str) -> None:
             self.conn_string = conn_string
 
-        def execute_query(self, query: str) -> None: ...
+        def execute_query(self, query: str) -> None:
+            ...
 
     # begin_old_resource_code_contextmanager
 
@@ -201,7 +209,8 @@ def new_resource_code_contextmanager() -> Definitions:
         def __init__(self, conn_string: str) -> None:
             self.conn_string = conn_string
 
-        def execute_query(self, query: str) -> None: ...
+        def execute_query(self, query: str) -> None:
+            ...
 
     # begin_new_resource_code_contextmanager
 
@@ -238,7 +247,8 @@ def new_third_party_resource_old_code_broken() -> Definitions:
         def __init__(self, conn_string: str) -> None:
             self.conn_string = conn_string
 
-        def execute_query(self, query: str) -> None: ...
+        def execute_query(self, query: str) -> None:
+            ...
 
     # begin_new_third_party_resource
     from dagster import ConfigurableResource, asset
@@ -282,7 +292,8 @@ def new_third_party_resource_fixed() -> Definitions:
         def __init__(self, conn_string: str) -> None:
             self.conn_string = conn_string
 
-        def execute_query(self, query: str) -> None: ...
+        def execute_query(self, query: str) -> None:
+            ...
 
     # begin_new_third_party_resource_with_interface
     from dagster import ConfigurableResource, IAttachDifferentObjectToOpContext, asset

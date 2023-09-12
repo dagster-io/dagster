@@ -213,10 +213,12 @@ def use_db_connection(context):
 
 
 @job
-def the_job(): ...
+def the_job():
+    ...
 
 
-def get_the_db_connection(_): ...
+def get_the_db_connection(_):
+    ...
 
 
 # start_build_resources_example
@@ -224,7 +226,8 @@ from dagster import resource, build_resources
 
 
 @resource
-def the_credentials(): ...
+def the_credentials():
+    ...
 
 
 @resource(required_resource_keys={"credentials"})
@@ -260,7 +263,8 @@ def asset_requires_resource(context):
 
 
 @resource
-def foo_resource(): ...
+def foo_resource():
+    ...
 
 
 # start_asset_provide_resource

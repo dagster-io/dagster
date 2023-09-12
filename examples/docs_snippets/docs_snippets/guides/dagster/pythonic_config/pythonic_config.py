@@ -5,7 +5,8 @@ from typing import Dict, List
 
 
 class Engine:
-    def execute(self, query: str): ...
+    def execute(self, query: str):
+        ...
 
 
 def get_engine(connection_url: str) -> Engine:
@@ -122,7 +123,8 @@ def basic_data_structures_config() -> None:
         user_scores: Dict[str, int]
 
     @asset
-    def scoreboard(config: MyDataStructuresConfig): ...
+    def scoreboard(config: MyDataStructuresConfig):
+        ...
 
     result = materialize(
         [scoreboard],
@@ -153,7 +155,8 @@ def nested_schema_config() -> None:
         user_data: Dict[str, UserData]
 
     @asset
-    def average_age(config: MyNestedConfig): ...
+    def average_age(config: MyNestedConfig):
+        ...
 
     result = materialize(
         [average_age],

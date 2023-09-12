@@ -16,7 +16,8 @@ images_partitions_def = DynamicPartitionsDefinition(name="images")
 
 
 @asset(partitions_def=images_partitions_def)
-def images(context): ...
+def images(context):
+    ...
 
 
 # end_dynamic_partitions_marker

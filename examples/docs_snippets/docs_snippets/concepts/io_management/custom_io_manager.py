@@ -62,7 +62,8 @@ class ExternalIOManager(IOManager):
         # setup stateful cache
         self._cache = {}
 
-    def handle_output(self, context, obj): ...
+    def handle_output(self, context, obj):
+        ...
 
     def load_input(self, context):
         if context.asset_key in self._cache:

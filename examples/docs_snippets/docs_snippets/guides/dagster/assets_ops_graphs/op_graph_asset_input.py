@@ -2,11 +2,13 @@ from dagster import asset, job, op
 
 
 @asset
-def emails_to_send(): ...
+def emails_to_send():
+    ...
 
 
 @op
-def send_emails(emails) -> None: ...
+def send_emails(emails) -> None:
+    ...
 
 
 @job

@@ -9,7 +9,8 @@ partitions_def = DailyPartitionsDefinition(start_date="2023-01-21")
 
 
 @asset(partitions_def=partitions_def)
-def events(): ...
+def events():
+    ...
 
 
 @asset(
@@ -22,4 +23,5 @@ def events(): ...
         )
     },
 )
-def yesterday_event_stats(events): ...
+def yesterday_event_stats(events):
+    ...

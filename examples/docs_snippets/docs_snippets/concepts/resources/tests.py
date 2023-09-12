@@ -29,7 +29,8 @@ from dagster import graph, op, ConfigurableResource
 
 
 class MyApi(ConfigurableResource):
-    def call(self): ...
+    def call(self):
+        ...
 
 
 @op

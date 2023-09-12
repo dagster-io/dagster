@@ -124,7 +124,8 @@ class MyDataStructuresConfig(Config):
     user_scores: Dict[str, int]
 
 @asset
-def scoreboard(config: MyDataStructuresConfig): ...
+def scoreboard(config: MyDataStructuresConfig):
+    ...
 
 result = materialize(
     [scoreboard],
@@ -160,7 +161,8 @@ class MyNestedConfig(Config):
     user_data: Dict[str, UserData]
 
 @asset
-def average_age(config: MyNestedConfig): ...
+def average_age(config: MyNestedConfig):
+    ...
 
 result = materialize(
     [average_age],

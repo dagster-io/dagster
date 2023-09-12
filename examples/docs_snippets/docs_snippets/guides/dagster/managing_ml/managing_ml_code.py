@@ -6,13 +6,15 @@ from dagster import AutoMaterializePolicy, asset
 
 
 @asset
-def my_data(): ...
+def my_data():
+    ...
 
 
 @asset(
     auto_materialize_policy=AutoMaterializePolicy.eager(),
 )
-def my_ml_model(my_data): ...
+def my_ml_model(my_data):
+    ...
 
 
 ## eager_materilization_end
@@ -23,14 +25,16 @@ from dagster import AutoMaterializePolicy, asset, FreshnessPolicy
 
 
 @asset
-def my_other_data(): ...
+def my_other_data():
+    ...
 
 
 @asset(
     auto_materialize_policy=AutoMaterializePolicy.lazy(),
     freshness_policy=FreshnessPolicy(maximum_lag_minutes=7 * 24 * 60),
 )
-def my_other_ml_model(my_other_data): ...
+def my_other_ml_model(my_other_data):
+    ...
 
 
 ## lazy_materlization_end
@@ -41,18 +45,21 @@ from dagster import AutoMaterializePolicy, FreshnessPolicy, asset
 
 
 @asset
-def some_data(): ...
+def some_data():
+    ...
 
 
 @asset(auto_materialize_policy=AutoMaterializePolicy.lazy())
-def some_ml_model(some_data): ...
+def some_ml_model(some_data):
+    ...
 
 
 @asset(
     auto_materialize_policy=AutoMaterializePolicy.lazy(),
     freshness_policy=FreshnessPolicy(maximum_lag_minutes=7 * 24 * 60),
 )
-def predictions(some_ml_model): ...
+def predictions(some_ml_model):
+    ...
 
 
 ## without_policy_end

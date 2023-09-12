@@ -97,7 +97,8 @@ def forkserver_job():
         }
     }
 )
-def tag_concurrency_job(): ...
+def tag_concurrency_job():
+    ...
 
 
 # end_tag_concurrency

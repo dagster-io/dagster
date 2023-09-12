@@ -18,10 +18,12 @@ class MyIOManager(IOManager):
 
 def get_assets():
     @asset
-    def asset1(): ...
+    def asset1():
+        ...
 
     @asset
-    def asset2(): ...
+    def asset2():
+        ...
 
     return with_resources(
         [asset1, asset2],
