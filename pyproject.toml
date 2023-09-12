@@ -37,6 +37,7 @@ target-versions = ['py38', 'py39', 'py310', 'py311']
 
 include = [
   ".buildkite/dagster-buildkite",
+  "docs/sphinx/_ext/dagster-sphinx",
   "python_modules",
   "examples",
   "integration_tests",
