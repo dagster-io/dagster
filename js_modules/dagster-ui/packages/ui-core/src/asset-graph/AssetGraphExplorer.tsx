@@ -263,14 +263,13 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
     const layoutWithoutExternalLinks = {...layout, nodes: pickBy(layout.nodes, hasDefinition)};
 
     const nextId = closestNodeInDirection(layoutWithoutExternalLinks, lastSelectedNode.id, dir);
-    const node = nextId && assetGraphData.nodes[nextId];
-    if (node && viewportEl.current) {
-      onSelectNode(e, node.assetKey, node);
-      viewportEl.current.zoomToSVGBox(layout.nodes[nextId]!.bounds, true);
-    }
+    selectNodeById(e, nextId);
   };
 
-  const selectNode = (e: React.MouseEvent<any>, nodeId: string) => {
+  const selectNodeById = (e: React.MouseEvent<any> | React.KeyboardEvent<any>, nodeId?: string) => {
+    if (!nodeId) {
+      return;
+    }
     const node = assetGraphData.nodes[nodeId];
     if (node && viewportEl.current) {
       onSelectNode(e, node.assetKey, node);

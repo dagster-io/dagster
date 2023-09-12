@@ -132,7 +132,6 @@ export const AssetGraphExplorerSidebar = ({
 
   React.useLayoutEffect(() => {
     rowVirtualizer.measure();
-    console.log('measuring');
   }, [viewport.width, viewport.height, rowVirtualizer]);
 
   return (
