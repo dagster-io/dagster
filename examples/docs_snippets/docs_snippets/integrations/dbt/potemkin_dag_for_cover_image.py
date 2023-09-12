@@ -3,9 +3,6 @@
 We pull off some dark magic so that generating the screenshot doesn't involve a whole setup with
 Fivetran and a database.
 """
-
-from pathlib import Path
-
 from dagster import asset
 
 
@@ -45,15 +42,28 @@ class dagster_dbt:
 
 
 # start
-fivetran_assets = dagster_fivetran.build_fivetran_assets(
+from pathlib import Path
+
+from dagster_dbt import DbtCliResource, dbt_assets, get_asset_key_for_model
+from dagster_fivetran import build_fivetran_assets
+
+from dagster import AssetExecutionContext, asset
+
+fivetran_assets = build_fivetran_assets(
     connector_id="postgres",
-    table_names=["users", "orders"],
+    destination_tables=["users", "orders"],
 )
 
-dbt_assets = dagster_dbt.load_assets_from_dbt_manifest(Path("manifest.json"))
+
+@dbt_assets(manifest=Path("manifest.json"))
+def dbt_project_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+    yield from dbt.cli(["build"], context=context).stream()
 
 
-@asset(compute_kind="tensorflow", deps=["daily_order_summary"])
+@asset(
+    compute_kind="tensorflow",
+    deps=[get_asset_key_for_model([dbt_project_assets], "daily_order_summary")],
+)
 def predicted_orders():
     ...
 

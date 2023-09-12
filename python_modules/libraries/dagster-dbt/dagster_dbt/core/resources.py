@@ -502,7 +502,7 @@ class DbtCliClientResource(ConfigurableResourceWithCliFlags, IAttachDifferentObj
         return self.get_dbt_client()
 
 
-@deprecated(breaking_version="0.21", additional_warn_text="Use DbtCli instead.")
+@deprecated(breaking_version="0.21", additional_warn_text="Use DbtCliResource instead.")
 @dagster_maintained_resource
 @resource(config_schema=DbtCliClientResource.to_config_schema())
 def dbt_cli_resource(context) -> DbtCliClient:
