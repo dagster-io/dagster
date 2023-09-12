@@ -1,10 +1,10 @@
 from setuptools import find_packages, setup
 
 setup(
-    name="dagit-screenshot",
+    name="dagster-ui-screenshot",
     version="1!0+dev",
     author_email="hello@dagsterlabs.com",
-    packages=find_packages(exclude=["dagit_screenshot_tests*"]),  # same as name
+    packages=find_packages(exclude=["dagster_ui_screenshot_tests*"]),  # same as name
     install_requires=[
         "click>=6",
         "selenium",
@@ -13,7 +13,7 @@ setup(
     ],  # external packages as dependencies
     author="Dagster Labs",
     license="Apache-2.0",
-    description="Utility for taking automated screenshots from dagit",
+    description="Utility for taking automated screenshots from the Dagster UI",
     classifiers=[
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.8",
@@ -23,7 +23,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "dagit-screenshot = dagit_screenshot.cli:main",
+            "dagster-ui-screenshot = dagster_ui_screenshot.cli:main",
         ]
     },
 )

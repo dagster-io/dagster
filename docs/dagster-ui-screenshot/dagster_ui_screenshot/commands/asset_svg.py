@@ -14,7 +14,7 @@ from typing import Dict, Optional
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 
-from dagit_screenshot.defaults import DEFAULT_OUTPUT_ROOT
+from dagster_ui_screenshot.defaults import DEFAULT_OUTPUT_ROOT
 
 # Time in seconds that we sleep waiting for a dagit route to load
 DAGIT_ROUTE_LOAD_TIME = 2

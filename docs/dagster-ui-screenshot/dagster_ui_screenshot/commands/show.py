@@ -2,7 +2,7 @@ from typing import Optional
 
 import yaml
 
-from dagit_screenshot.utils import load_spec_db
+from dagster_ui_screenshot.utils import load_spec_db
 
 
 def show(spec_db_path: str, prefix: Optional[str]):

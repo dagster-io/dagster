@@ -6,7 +6,7 @@ from typing import Optional
 
 from typing_extensions import TypedDict
 
-from dagit_screenshot.utils import (
+from dagster_ui_screenshot.utils import (
     ScreenshotSpec,
     load_spec_db,
     normalize_output_path,

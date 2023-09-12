@@ -7,7 +7,7 @@ from time import sleep
 
 from selenium import webdriver
 
-from dagit_screenshot.utils import ScreenshotSpec
+from dagster_ui_screenshot.utils import ScreenshotSpec
 
 # Time in seconds that we sleep waiting for a dagit route to load
 DAGIT_ROUTE_LOAD_TIME = 1
@@ -36,8 +36,8 @@ def capture(spec: ScreenshotSpec, output_path: str) -> None:
 
         print("Running `dagster dev`:")
         print("  " + " ".join(command))
+        prev_dagster_home = os.getenv("DAGSTER_HOME", "")
         try:
-            prev_dagster_home = os.environ["DAGSTER_HOME"]
             os.environ["DAGSTER_HOME"] = ""
             dagit_process = subprocess.Popen(command)
         finally:
