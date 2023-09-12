@@ -44,7 +44,7 @@ export const useLiveDataForAssetKeysBatcher = (assetKeys: AssetKeyInput[], batch
     allLiveDataByNode: allLiveDataByNodeRef.current,
     nextBatch: React.useCallback(() => {
       setBatchIndex((currentBatchIndexRef.current + 1) % numberOfBatches);
-    }, []),
+    }, [numberOfBatches]),
     isLastBatch: numberOfBatches === currentBatchIndex + 1,
   };
 };
