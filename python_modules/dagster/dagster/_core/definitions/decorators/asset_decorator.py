@@ -1263,20 +1263,24 @@ def _type_check_deps_and_non_argument_deps(
     return _make_asset_deps(upstream_asset_deps)
 
 
-def _make_asset_deps(deps=Optional[Iterable[CoercibleToAssetDep]]) -> Iterable[AssetDep]:
-    dep_dict = {}
-    if deps:
+def _make_asset_deps(deps: Optional[Iterable[CoercibleToAssetDep]]) -> Optional[Iterable[AssetDep]]:
+    if deps is None:
+        return None
+
+    with disable_dagster_warnings():
+        dep_dict = {}
         for dep in deps:
             asset_dep = AssetDep.from_coercible(dep)
 
-        # we cannot do deduplication via a set because MultiPartitionMappings have an internal
-        # dictionary that cannot be hashed. Instead deduplicate by making a dictionary and checking
-        # for existing keys.
-        if asset_dep.asset_key in dep_dict.keys():
-            raise DagsterInvariantViolationError(
-                f"Cannot set a dependency on asset {asset_dep.asset_key} more than once per asset."
-            )
-        dep_dict[asset_dep.asset_key] = asset_dep
+            # we cannot do deduplication via a set because MultiPartitionMappings have an internal
+            # dictionary that cannot be hashed. Instead deduplicate by making a dictionary and checking
+            # for existing keys.
+            if asset_dep.asset_key in dep_dict.keys():
+                raise DagsterInvariantViolationError(
+                    f"Cannot set a dependency on asset {asset_dep.asset_key} more than once per"
+                    " asset."
+                )
+            dep_dict[asset_dep.asset_key] = asset_dep
 
     return list(dep_dict.values())
 
