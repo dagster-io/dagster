@@ -23,6 +23,7 @@ from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.execution.api import execute_job
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
+from dagster._core.storage.migration.bigint_migration import run_bigint_migration
 from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
 from dagster._daemon.types import DaemonHeartbeat
@@ -895,3 +896,49 @@ def test_add_primary_keys(hostname, conn_string):
                 )
             assert daemon_heartbeats_id_count == daemon_heartbeats_row_count
             assert get_primary_key(instance, "daemon_heartbeats")
+
+
+def test_bigint_migration(hostname, conn_string):
+    _reconstruct_from_file(
+        hostname,
+        conn_string,
+        file_relative_path(
+            __file__,
+            "snapshot_1_1_22_pre_primary_key/postgres/pg_dump.txt",
+        ),
+    )
+
+    def _get_integer_id_tables(conn):
+        inspector = db.inspect(conn)
+        integer_tables = set()
+        for table in inspector.get_table_names():
+            type_by_col_name = {c["name"]: c["type"] for c in db.inspect(conn).get_columns(table)}
+            id_type = type_by_col_name.get("id")
+            if id_type and str(id_type) == "INTEGER":
+                integer_tables.add(table)
+        return integer_tables
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+                template = template_fd.read().format(hostname=hostname)
+                target_fd.write(template)
+
+        with DagsterInstance.from_config(tempdir) as instance:
+            with instance.run_storage.connect() as conn:
+                assert len(_get_integer_id_tables(conn)) > 0
+            with instance.event_log_storage.index_connection() as conn:
+                assert len(_get_integer_id_tables(conn)) > 0
+            with instance.schedule_storage.connect() as conn:
+                assert len(_get_integer_id_tables(conn)) > 0
+
+            run_bigint_migration(instance)
+
+            with instance.run_storage.connect() as conn:
+                assert len(_get_integer_id_tables(conn)) == 0
+            with instance.event_log_storage.index_connection() as conn:
+                assert len(_get_integer_id_tables(conn)) == 0
+            with instance.schedule_storage.connect() as conn:
+                assert len(_get_integer_id_tables(conn)) == 0
