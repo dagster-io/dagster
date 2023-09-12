@@ -1,8 +1,17 @@
 from typing import List, Optional, Tuple, Type, TypeVar
 
 import docutils.nodes as nodes
-from dagster._annotations import is_deprecated, is_public
-from sphinx.addnodes import versionmodified
+from dagster._annotations import (
+    get_deprecated_info,
+    get_deprecated_params,
+    get_experimental_info,
+    get_experimental_params,
+    has_deprecated_params,
+    has_experimental_params,
+    is_deprecated,
+    is_experimental,
+    is_public,
+)
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 from sphinx.ext.autodoc import (
@@ -13,7 +22,20 @@ from sphinx.ext.autodoc import (
 from sphinx.util import logging
 from typing_extensions import Literal, TypeAlias
 
-from dagster_sphinx.configurable import ConfigurableDocumenter
+from dagster_sphinx.configurable import (
+    ConfigurableDocumenter,
+)
+from dagster_sphinx.docstring_flags import (
+    FlagDirective,
+    depart_flag,
+    flag,
+    inline_flag,
+    inline_flag_role,
+    visit_flag,
+    visit_inline_flag,
+)
+
+from .docstring_flags import inject_object_flag, inject_param_flag
 
 logger = logging.getLogger(__name__)
 
@@ -92,15 +114,21 @@ def process_docstring(
 ) -> None:
     assert app.env is not None
 
-    # Insert a "deprecated" sphinx directive (this is built-in to autodoc) for objects flagged with
-    # @deprecated.
     if is_deprecated(obj):
-        # Note that these are in reversed order from how they will appear because we insert at the
-        # front. We insert the <placeholder> string because the directive requires an argument that
-        # we can't supply (we would have to know the version at which the object was deprecated).
-        # We discard the "<placeholder>" string in `substitute_deprecated_text`.
-        for line in ["", ".. deprecated:: <placeholder>"]:
-            lines.insert(0, line)
+        inject_object_flag(obj, get_deprecated_info(obj), lines)
+
+    if has_deprecated_params(obj):
+        params = get_deprecated_params(obj)
+        for param, info in params.items():
+            inject_param_flag(lines, param, info)
+
+    if is_experimental(obj):
+        inject_object_flag(obj, get_experimental_info(obj), lines)
+
+    if has_experimental_params(obj):
+        params = get_experimental_params(obj)
+        for param, info in params.items():
+            inject_param_flag(lines, param, info)
 
 
 T_Node = TypeVar("T_Node", bound=nodes.Node)
@@ -114,15 +142,15 @@ def get_child_as(node: nodes.Node, index: int, node_type: Type[T_Node]) -> T_Nod
     return child
 
 
-def substitute_deprecated_text(app: Sphinx, doctree: nodes.Element, docname: str) -> None:
-    # The `.. deprecated::` directive is rendered as a `versionmodified` node.
-    # Find them all and replace the auto-generated text, which requires a version argument, with a
-    # plain string "Deprecated".
-    for node in doctree.findall(versionmodified):
-        paragraph = get_child_as(node, 0, nodes.paragraph)
-        inline = get_child_as(paragraph, 0, nodes.inline)
-        text = get_child_as(inline, 0, nodes.Text)
-        inline.replace(text, nodes.Text("Deprecated"))
+# def substitute_deprecated_text(app: Sphinx, doctree: nodes.Element, docname: str) -> None:
+#     # The `.. deprecated::` directive is rendered as a `versionmodified` node.
+#     # Find them all and replace the auto-generated text, which requires a version argument, with a
+#     # plain string "Deprecated".
+#     for node in doctree.findall(versionmodified):
+#         paragraph = get_child_as(node, 0, nodes.paragraph)
+#         inline = get_child_as(paragraph, 0, nodes.inline)
+#         text = get_child_as(inline, 0, nodes.Text)
+#         inline.replace(text, nodes.Text("Deprecated"))
 
 
 def check_custom_errors(app: Sphinx, exc: Optional[Exception] = None) -> None:
@@ -140,8 +168,12 @@ def setup(app):
     app.add_autodocumenter(ConfigurableDocumenter)
     # override allows `.. autoclass::` to invoke DagsterClassDocumenter instead of default
     app.add_autodocumenter(DagsterClassDocumenter, override=True)
+    app.add_directive("flag", FlagDirective)
+    app.add_node(inline_flag, html=(visit_inline_flag, depart_flag))
+    app.add_node(flag, html=(visit_flag, depart_flag))
+    app.add_role("inline-flag", inline_flag_role)
     app.connect("autodoc-process-docstring", process_docstring)
-    app.connect("doctree-resolved", substitute_deprecated_text)
+    # app.connect("doctree-resolved", substitute_deprecated_text)
     app.connect("build-finished", check_custom_errors)
 
     return {
