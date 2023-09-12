@@ -36,7 +36,7 @@ from dagster._utils.cached_method import CACHED_METHOD_FIELD_SUFFIX
 from .attach_other_object_to_context import (
     IAttachDifferentObjectToOpContext as IAttachDifferentObjectToOpContext,
 )
-from .conversion_utils import _convert_pydantic_field, _is_pydantic_field_required, safe_is_subclass
+from .conversion_utils import _convert_pydantic_field, safe_is_subclass
 from .typing_utils import BaseConfigMeta
 
 try:
@@ -163,6 +163,9 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
         modified_data = {}
         for key, value in config_dict.items():
             field = self.__fields__.get(key)
+            if field and not field.required and value is None:
+                continue
+
             if field and field.field_info.discriminator:
                 nested_dict = value
 
@@ -186,6 +189,7 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
                 }
             else:
                 modified_data[key] = value
+
         super().__init__(**modified_data)
 
     def _convert_to_config_dictionary(self) -> Mapping[str, Any]:
@@ -213,11 +217,10 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
             if self._is_field_internal(key):
                 continue
             field = self.__fields__.get(key)
-            if field and value is None and not _is_pydantic_field_required(field):
-                continue
 
             if field:
-                output[field.alias] = value
+                alias = field.alias
+                output[alias] = value
             else:
                 output[key] = value
         return output
