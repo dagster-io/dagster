@@ -463,8 +463,7 @@ def test_graph_asset():
 
     @op
     def validate_asset(word):
-        yield AssetCheckResult(check_name="check1", success=True, metadata={"foo": "bar"})
-        return "foo"
+        return AssetCheckResult(check_name="check1", success=True, metadata={"foo": "bar"})
 
     @op(ins={"staging_asset": In(Nothing), "check_result": In(Nothing)})
     def promote_asset():

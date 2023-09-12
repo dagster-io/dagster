@@ -1304,13 +1304,15 @@ def _infer_keys_by_output_names(
             f" {overlapping_asset_and_check_outputs}",
         )
 
+        union_asset_and_check_outputs = set(keys_by_output_name.keys()) | set(
+            check_specs_by_output_name.keys()
+        )
         check.invariant(
-            set(keys_by_output_name.keys()) | set(check_specs_by_output_name.keys())
-            == set(output_names),
+            union_asset_and_check_outputs == set(output_names),
             "The union of the set of output names keys specified in the keys_by_output_name and"
             " check_specs_by_output_name arguments must equal the set of asset keys outputted by"
-            f" {node_def.name}. \nkeys_by_output_name keys:"
-            f" {set(keys_by_output_name.keys())} \nexpected keys: {set(output_names)}",
+            f" {node_def.name}. union keys:"
+            f" {union_asset_and_check_outputs} \nexpected keys: {set(output_names)}",
         )
 
     inferred_keys_by_output_names: Dict[str, AssetKey] = {
