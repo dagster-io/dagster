@@ -1289,23 +1289,25 @@ def _deps_and_non_argument_deps_to_asset_deps(
 def _make_asset_deps(
     deps: Optional[Iterable[Union[AssetDep, CoercibleToAssetKey, AssetsDefinition, SourceAsset]]]
 ) -> Optional[Iterable[AssetDep]]:
-    if deps is None:
-        return None
-    dep_dict = {}
-    for dep in deps:
-        if not isinstance(dep, AssetDep):
-            asset_dep = AssetDep(dep)
-        else:
-            asset_dep = dep
+    with disable_dagster_warnings():
+        if deps is None:
+            return None
+        dep_dict = {}
+        for dep in deps:
+            if not isinstance(dep, AssetDep):
+                asset_dep = AssetDep(dep)
+            else:
+                asset_dep = dep
 
-        # we cannot do deduplication via a set because MultiPartitionMappings have an internal
-        # dictionary that cannot be hashed. Instead deduplicate by making a dictionary and checking
-        # for existing keys.
-        if asset_dep.asset_key in dep_dict.keys():
-            raise DagsterInvariantViolationError(
-                f"Cannot set a dependency on asset {asset_dep.asset_key} more than once per asset."
-            )
-        dep_dict[asset_dep.asset_key] = asset_dep
+            # we cannot do deduplication via a set because MultiPartitionMappings have an internal
+            # dictionary that cannot be hashed. Instead deduplicate by making a dictionary and checking
+            # for existing keys.
+            if asset_dep.asset_key in dep_dict.keys():
+                raise DagsterInvariantViolationError(
+                    f"Cannot set a dependency on asset {asset_dep.asset_key} more than once per"
+                    " asset."
+                )
+            dep_dict[asset_dep.asset_key] = asset_dep
 
     return list(dep_dict.values())
 
