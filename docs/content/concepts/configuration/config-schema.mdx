@@ -178,7 +178,9 @@ def greeting_job():
     print_greeting()
 
 op_result = greeting_job.execute_in_process(
-    run_config=RunConfig({"print_greeting": MyOpConfig(nonexistent_config_value=1)}),
+    run_config=RunConfig(
+        {"print_greeting": MyOpConfig(nonexistent_config_value=1)}
+    ),
 )
 
 asset_result = materialize(

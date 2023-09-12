@@ -100,7 +100,7 @@ def test_invalid_config() -> None:
     with pytest.raises(
         ValidationError,
     ):
-        MyResource(foo="why")  # pyright: ignore[reportGeneralTypeIssues]
+        MyResource(foo="why")
 
 
 @pytest.mark.skipif(sys.version_info < (3, 8), reason="requires python3.8")
