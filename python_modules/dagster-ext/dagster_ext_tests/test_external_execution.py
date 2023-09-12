@@ -130,7 +130,7 @@ def test_ext_subprocess(
     if context_injector_spec == "default":
         context_injector = None
     elif context_injector_spec == "user/file":
-        context_injector = ExtFileContextInjector()
+        context_injector = ExtTempFileContextInjector()
     elif context_injector_spec == "user/env":
         context_injector = ExtEnvContextInjector()
     else:
