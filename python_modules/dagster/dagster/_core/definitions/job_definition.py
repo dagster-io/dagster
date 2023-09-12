@@ -757,9 +757,7 @@ class JobDefinition(IHasInternalInit):
         asset_check_selection: Optional[AbstractSet[AssetCheckHandle]] = None,
     ) -> Self:
         asset_selection = check.opt_set_param(asset_selection, "asset_selection", AssetKey)
-        asset_check_selection = check.opt_set_param(
-            asset_check_selection, "asset_check_selection", AssetCheckHandle
-        )
+        check.opt_set_param(asset_check_selection, "asset_check_selection", AssetCheckHandle)
 
         nonexistent_assets = [
             asset
@@ -785,7 +783,7 @@ class JobDefinition(IHasInternalInit):
 
         nonexistent_asset_checks = [
             asset_check
-            for asset_check in asset_check_selection
+            for asset_check in asset_check_selection or set()
             if asset_check not in all_check_handles
         ]
         nonexistent_asset_check_strings = [

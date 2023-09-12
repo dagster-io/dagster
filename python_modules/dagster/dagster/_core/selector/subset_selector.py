@@ -85,7 +85,7 @@ class AssetSelectionData(
         "_AssetSelectionData",
         [
             ("asset_selection", AbstractSet[AssetKey]),
-            ("asset_check_selection", AbstractSet[AssetCheckHandle]),
+            ("asset_check_selection", Optional[AbstractSet[AssetCheckHandle]]),
             ("parent_job_def", "JobDefinition"),
         ],
     )
@@ -101,17 +101,17 @@ class AssetSelectionData(
     def __new__(
         cls,
         asset_selection: AbstractSet[AssetKey],
-        asset_check_selection: AbstractSet[AssetCheckHandle],
+        asset_check_selection: Optional[AbstractSet[AssetCheckHandle]],
         parent_job_def: "JobDefinition",
     ):
         from dagster._core.definitions.job_definition import JobDefinition
 
+        check.opt_set_param(asset_check_selection, "asset_check_selection", AssetCheckHandle)
+
         return super(AssetSelectionData, cls).__new__(
             cls,
             asset_selection=check.set_param(asset_selection, "asset_selection", AssetKey),
-            asset_check_selection=check.set_param(
-                asset_check_selection, "asset_check_selection", AssetCheckHandle
-            ),
+            asset_check_selection=asset_check_selection,
             parent_job_def=check.inst_param(parent_job_def, "parent_job_def", JobDefinition),
         )
 
