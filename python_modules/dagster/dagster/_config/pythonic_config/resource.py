@@ -875,14 +875,16 @@ def separate_resource_params(cls: Type[BaseModel], data: Dict[str, Any]) -> Sepa
     """Separates out the key/value inputs of fields in a structured config Resource class which
     are marked as resources (ie, using ResourceDependency) from those which are not.
     """
-    keys_by_alias = {field.alias: field for field in cls.__fields__.values()}
+    keys_by_alias = {
+        field.alias if field.alias else key: field for key, field in model_fields(cls).items()
+    }
     data_with_annotation: List[ResourceDataWithAnnotation] = [
         # No longer exists in Pydantic 2.x, will need to be updated when we upgrade
         ResourceDataWithAnnotation(
             key=field_key,
             value=field_value,
             annotation=keys_by_alias[field_key].outer_type_,
-            annotation_metadata=[],
+            annotation_metadata=keys_by_alias[field_key].metadata,
         )
         for field_key, field_value in data.items()
         if field_key in keys_by_alias
