@@ -31,6 +31,10 @@ def test_basic_instantiation():
 
     assert AssetDep("upstream", partitions_mapping).partition_mapping == partitions_mapping
 
+    # test SourceAsset
+    the_source = SourceAsset(key="the_source")
+    assert AssetDep(the_source).asset_key == the_source.key
+
 
 def test_multi_asset_errors():
     @multi_asset(specs=[AssetSpec("asset_1"), AssetSpec("asset_2")])
