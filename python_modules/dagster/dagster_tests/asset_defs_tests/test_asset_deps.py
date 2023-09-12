@@ -5,12 +5,46 @@ from dagster import (
     FilesystemIOManager,
     IOManager,
     SourceAsset,
+    TimeWindowPartitionMapping,
     asset,
     materialize,
     multi_asset,
 )
+from dagster._core.definitions.asset_dep import AssetDep
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.types.dagster_type import DagsterTypeKind
+
+### Tests for AssetDep
+
+
+def test_basic_instantiation():
+    @asset
+    def upstream():
+        pass
+
+    assert AssetDep("upstream").asset_key == upstream.key
+    assert AssetDep(upstream).asset_key == upstream.key
+    assert AssetDep(AssetKey(["upstream"])).asset_key == upstream.key
+
+    partitions_mapping = TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
+
+    assert AssetDep("upstream", partitions_mapping).partition_mapping == partitions_mapping
+
+
+def test_multi_asset_errors():
+    @multi_asset(specs=[AssetSpec("asset_1"), AssetSpec("asset_2")])
+    def a_multi_asset():
+        pass
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Cannot pass a multi_asset AssetsDefinition as an argument to deps",
+    ):
+        AssetDep(a_multi_asset)
+
+
+### Tests for deps parameter on @asset and @multi_asset
 
 
 class TestingIOManager(IOManager):
@@ -20,6 +54,23 @@ class TestingIOManager(IOManager):
     def load_input(self, context):
         # we should be bypassing the IO Manager, so fail if try to load an input
         assert False
+
+
+def test_single_asset_deps_via_asset_dep():
+    @asset
+    def asset_1():
+        return None
+
+    @asset(deps=[AssetDep(asset_1)])
+    def asset_2():
+        return None
+
+    assert len(asset_2.input_names) == 1
+    assert asset_2.op.ins["asset_1"].dagster_type.is_nothing
+
+    res = materialize([asset_1, asset_2], resources={"io_manager": TestingIOManager()})
+
+    assert res.success
 
 
 def test_single_asset_deps_via_assets_definition():
