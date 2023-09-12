@@ -80,14 +80,6 @@ class AssetDep(
 
     @staticmethod
     def from_coercible(arg: "CoercibleToAssetDep"):
-        if isinstance(arg, AssetsDefinition) and len(arg.keys) > 1:
-            # Only AssetsDefinition with a single asset can be passed
-            raise DagsterInvalidDefinitionError(
-                "Cannot pass a multi_asset AssetsDefinition as an argument to deps."
-                " Instead, specify dependencies on the assets created by the multi_asset"
-                f" via AssetKeys or strings. For the multi_asset {arg.node_def.name}, the"
-                f" available keys are: {arg.keys}."
-            )
         if isinstance(arg, AssetDep):
             # we need to retain the partition_mapping, so return the original object
             return arg
