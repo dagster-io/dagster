@@ -17,6 +17,7 @@ import {
   MigrationRequired,
   NoChecks,
 } from './AssetCheckDetailModal';
+import {EvaluateChecksButton} from './EvaluateChecksButton';
 import {VirtualizedAssetCheckTable} from './VirtualizedAssetCheckTable';
 import {AssetChecksQuery, AssetChecksQueryVariables} from './types/AssetChecks.types';
 
@@ -28,9 +29,7 @@ export const AssetChecks = ({
   lastMaterializationTimestamp: string | undefined;
 }) => {
   const queryResult = useQuery<AssetChecksQuery, AssetChecksQueryVariables>(ASSET_CHECKS_QUERY, {
-    variables: {
-      assetKey,
-    },
+    variables: {assetKey},
   });
   const {data} = queryResult;
   useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
@@ -38,11 +37,16 @@ export const AssetChecks = ({
   const [openCheck, setOpenCheck] = useQueryPersistedState<string | undefined>({
     queryKey: 'checkDetail',
   });
+
   function content() {
     if (!data) {
       return <LoadingSpinner purpose="page" />;
     }
+    const assetNode = data.assetNodeOrError;
     const result = data.assetChecksOrError!;
+    if (assetNode?.__typename !== 'AssetNode') {
+      return <span />;
+    }
     if (result.__typename === 'AssetCheckNeedsMigrationError') {
       return <MigrationRequired />;
     }
@@ -50,7 +54,16 @@ export const AssetChecks = ({
     if (!checks.length) {
       return <NoChecks />;
     }
-    return <VirtualizedAssetCheckTable assetKey={assetKey} rows={checks} />;
+    return <VirtualizedAssetCheckTable assetNode={assetNode} rows={checks} />;
+  }
+
+  function executeAllButton() {
+    const assetNode = data?.assetNodeOrError;
+    const checksOrError = data?.assetChecksOrError;
+    if (checksOrError?.__typename !== 'AssetChecks' || assetNode?.__typename !== 'AssetNode') {
+      return <span />;
+    }
+    return <EvaluateChecksButton assetNode={assetNode} checks={checksOrError.checks} />;
   }
 
   const {AssetChecksBanner} = useContext(AssetFeatureContext);
@@ -93,17 +106,7 @@ export const AssetChecks = ({
             <Tag icon="materialization">None </Tag>
           )}
         </Box>
-        {/* TODO: Enable once the mutations are ready */}
-        {/* {data && 'checks' in data.assetChecksOrError! && data.assetChecksOrError.checks.length ? (
-          <Button
-            icon={<Icon name="run" />}
-            onClick={() => {
-              //TODO
-            }}
-          >
-            Execute all checks
-          </Button>
-        ) : null} */}
+        {executeAllButton()}
       </Box>
       {content()}
     </div>
@@ -112,6 +115,23 @@ export const AssetChecks = ({
 
 export const ASSET_CHECKS_QUERY = gql`
   query AssetChecksQuery($assetKey: AssetKeyInput!) {
+    assetNodeOrError(assetKey: $assetKey) {
+      ... on AssetNode {
+        id
+        jobNames
+        assetKey {
+          path
+        }
+        repository {
+          id
+          name
+          location {
+            id
+            name
+          }
+        }
+      }
+    }
     assetChecksOrError(assetKey: $assetKey) {
       ... on AssetCheckNeedsMigrationError {
         message
