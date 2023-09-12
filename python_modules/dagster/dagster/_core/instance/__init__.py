@@ -1252,14 +1252,9 @@ class DagsterInstance(DynamicPartitionsStore):
 
         check.invariant(
             execution_plan_snapshot.job_snapshot_id == job_snapshot_id,
-            (
-                "Snapshot mismatch: Snapshot ID in execution plan snapshot is "
-                '"{ep_pipeline_snapshot_id}" and snapshot_id created in memory is '
-                '"{job_snapshot_id}"'
-            ).format(
-                ep_pipeline_snapshot_id=execution_plan_snapshot.job_snapshot_id,
-                job_snapshot_id=job_snapshot_id,
-            ),
+            "Snapshot mismatch: Snapshot ID in execution plan snapshot is "
+            f'"{execution_plan_snapshot.job_snapshot_id}" and snapshot_id created in memory is '
+            f'"{job_snapshot_id}"',
         )
 
         execution_plan_snapshot_id = create_execution_plan_snapshot_id(execution_plan_snapshot)

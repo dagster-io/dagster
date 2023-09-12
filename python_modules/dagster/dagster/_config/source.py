@@ -14,11 +14,9 @@ def _ensure_env_variable(var):
     value = os.getenv(var)
     if value is None:
         raise PostProcessingError(
-            (
-                'You have attempted to fetch the environment variable "{var}" '
-                "which is not set. In order for this execution to succeed it "
-                "must be set in this environment."
-            ).format(var=var)
+            f'You have attempted to fetch the environment variable "{var}" '
+            "which is not set. In order for this execution to succeed it "
+            "must be set in this environment."
         )
     return value
 
@@ -65,9 +63,7 @@ class IntSourceType(ScalarUnion):
             return int(value)
         except ValueError as e:
             raise PostProcessingError(
-                (
-                    'Value "{value}" stored in env variable "{var}" cannot be coerced into an int.'
-                ).format(value=value, var=cfg)
+                f'Value "{value}" stored in env variable "{cfg}" cannot be coerced into an int.'
             ) from e
 
 

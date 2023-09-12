@@ -271,9 +271,7 @@ def serialize(result: SparkConfigNode) -> bytes:
 @click.command()
 def run() -> None:
     r = requests.get(
-        "https://raw.githubusercontent.com/apache/spark/{}/docs/configuration.md".format(
-            SPARK_VERSION
-        )
+        f"https://raw.githubusercontent.com/apache/spark/{SPARK_VERSION}/docs/configuration.md"
     )
 
     result = extract(r.text)

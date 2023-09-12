@@ -955,8 +955,8 @@ def _check_serdes_tuple_class_invariants(klass: Type[NamedTuple]) -> None:
                 "in the named tuple that are not present as parameters to the "
                 "to the __new__ method. In order for "
                 "both serdes serialization and pickling to work, "
-                "these must match. Missing: {missing_fields}"
-            ).format(missing_fields=repr(list(klass._fields[index:])))
+                f"these must match. Missing: {repr(list(klass._fields[index:]))}"
+            )
 
             raise SerdesUsageError(_with_header(error_msg))
 
@@ -964,9 +964,9 @@ def _check_serdes_tuple_class_invariants(klass: Type[NamedTuple]) -> None:
         if value_param.name != field:
             error_msg = (
                 "Params to __new__ must match the order of field declaration in the namedtuple. "
-                'Declared field number {one_based_index} in the namedtuple is "{field_name}". '
-                'Parameter {one_based_index} in __new__ method is "{param_name}".'
-            ).format(one_based_index=index + 1, field_name=field, param_name=value_param.name)
+                f'Declared field number {index + 1} in the namedtuple is "{field}". '
+                f'Parameter {index + 1} in __new__ method is "{value_param.name}".'
+            )
             raise SerdesUsageError(_with_header(error_msg))
 
     if len(value_params) > len(klass._fields):

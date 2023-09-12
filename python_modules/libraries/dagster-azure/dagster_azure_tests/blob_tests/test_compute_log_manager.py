@@ -127,7 +127,7 @@ def test_compute_log_manager(
 def test_compute_log_manager_from_config(storage_account, container, credential):
     prefix = "foobar"
 
-    dagster_yaml = """
+    dagster_yaml = f"""
 compute_logs:
   module: dagster_azure.blob.compute_log_manager
   class: AzureBlobComputeLogManager
@@ -137,9 +137,7 @@ compute_logs:
     secret_key: {credential}
     local_dir: "/tmp/cool"
     prefix: "{prefix}"
-""".format(
-        storage_account=storage_account, container=container, credential=credential, prefix=prefix
-    )
+"""
 
     with tempfile.TemporaryDirectory() as tempdir:
         with open(os.path.join(tempdir, "dagster.yaml"), "wb") as f:
@@ -343,7 +341,7 @@ def test_compute_log_manager_default_azure_credential(
 def test_compute_log_manager_from_config_default_azure_credential(storage_account, container):
     prefix = "foobar"
 
-    dagster_yaml = """
+    dagster_yaml = f"""
 compute_logs:
   module: dagster_azure.blob.compute_log_manager
   class: AzureBlobComputeLogManager
@@ -354,7 +352,7 @@ compute_logs:
     prefix: "{prefix}"
     default_azure_credential:
       exclude_environment_credentials: true
-""".format(storage_account=storage_account, container=container, prefix=prefix)
+"""
 
     with tempfile.TemporaryDirectory() as tempdir:
         with open(os.path.join(tempdir, "dagster.yaml"), "wb") as f:

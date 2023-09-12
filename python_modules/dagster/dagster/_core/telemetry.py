@@ -347,9 +347,7 @@ def _check_telemetry_instance_param(
             args[instance_index],  # type: ignore
             "instance",
             DagsterInstance,
-            "'instance' argument at position {position} must be a DagsterInstance".format(
-                position=instance_index
-            ),
+            f"'instance' argument at position {instance_index} must be a DagsterInstance",
         )
 
 

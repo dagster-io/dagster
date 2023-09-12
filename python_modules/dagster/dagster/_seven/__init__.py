@@ -33,8 +33,7 @@ def import_module_from_path(module_name: str, path_to_file: str) -> ModuleType:
     spec = importlib.util.spec_from_file_location(module_name, path_to_file)
     if spec is None:
         raise Exception(
-            "Can not import module {module_name} from path {path_to_file}, unable to load spec."
-            .format(module_name=module_name, path_to_file=path_to_file)
+            f"Can not import module {module_name} from path {path_to_file}, unable to load spec."
         )
 
     if sys.modules.get(spec.name) and spec.origin:

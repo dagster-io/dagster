@@ -755,9 +755,7 @@ class AirbyteYAMLCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinition)
                 ]
                 check.invariant(
                     len(state_files) > 0,
-                    "No state files found for connection {} in {}".format(
-                        connection_name, connection_dir
-                    ),
+                    f"No state files found for connection {connection_name} in {connection_dir}",
                 )
                 check.invariant(
                     len(state_files) <= 1,

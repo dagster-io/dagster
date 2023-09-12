@@ -394,9 +394,7 @@ def define_custom_dict(name, permitted_key_names):
         if not isinstance(value, dict):
             return TypeCheck(
                 False,
-                description="Value {value} should be of type {type_name}.".format(
-                    value=value, type_name=name
-                ),
+                description=f"Value {value} should be of type {name}.",
             )
         for key in value:
             if key not in permitted_key_names:

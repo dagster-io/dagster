@@ -544,9 +544,7 @@ def _reexecute_job(
         parent_dagster_run = execute_instance.get_run_by_id(parent_run_id)
         if parent_dagster_run is None:
             check.failed(
-                "No parent run with id {parent_run_id} found in instance.".format(
-                    parent_run_id=parent_run_id
-                ),
+                f"No parent run with id {parent_run_id} found in instance.",
             )
 
         execution_plan: Optional[ExecutionPlan] = None

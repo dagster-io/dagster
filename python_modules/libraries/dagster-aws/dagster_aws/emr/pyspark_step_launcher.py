@@ -288,11 +288,7 @@ class EmrPySparkStepLauncher(StepLauncher):
             def _upload_file_to_s3(local_path, s3_filename):
                 key = self._artifact_s3_key(run_id, step_key, s3_filename)
                 s3_uri = self._artifact_s3_uri(run_id, step_key, s3_filename)
-                log.debug(
-                    "Uploading file {local_path} to {s3_uri}".format(
-                        local_path=local_path, s3_uri=s3_uri
-                    )
-                )
+                log.debug(f"Uploading file {local_path} to {s3_uri}")
                 s3.upload_file(Filename=local_path, Bucket=self.staging_bucket, Key=key)
 
             # Upload main file.

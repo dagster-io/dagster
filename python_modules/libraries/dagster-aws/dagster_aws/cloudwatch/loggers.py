@@ -76,7 +76,7 @@ class CloudwatchLogsHandler(logging.Handler):
         if not log_group_exists:
             raise Exception(
                 "Failed to initialize Cloudwatch logger: Could not find log group with name "
-                "{log_group_name}".format(log_group_name=self.log_group_name)
+                f"{self.log_group_name}"
             )
 
     def check_log_stream(self):
@@ -105,7 +105,7 @@ class CloudwatchLogsHandler(logging.Handler):
         if not log_stream_exists:
             raise Exception(
                 "Failed to initialize Cloudwatch logger: Could not find log stream with name "
-                "{log_stream_name}".format(log_stream_name=self.log_stream_name)
+                f"{self.log_stream_name}"
             )
 
     def log_error(self, record, exc):
@@ -151,15 +151,11 @@ class CloudwatchLogsHandler(logging.Handler):
         except self.client.exceptions.DataAlreadyAcceptedException:
             logging.error(f"Cloudwatch logger: log events already accepted: {res}")
         except self.client.exceptions.InvalidParameterException:
-            logging.error(
-                "Cloudwatch logger: Invalid parameter exception while logging: {res}".format(
-                    res=res
-                )
-            )
+            logging.error(f"Cloudwatch logger: Invalid parameter exception while logging: {res}")
         except self.client.exceptions.ResourceNotFoundException:
             logging.error(
                 "Cloudwatch logger: Resource not found. Check that the log stream or log group "
-                "was not deleted: {res}".format(res=res)
+                f"was not deleted: {res}"
             )
         except self.client.exceptions.ServiceUnavailableException:
             if not retry:
@@ -172,7 +168,7 @@ class CloudwatchLogsHandler(logging.Handler):
             else:
                 logging.error(
                     "Cloudwatch logger: Unrecognized client. Check your AWS access key id and "
-                    "secret key: {res}".format(res=res)
+                    f"secret key: {res}"
                 )
 
 

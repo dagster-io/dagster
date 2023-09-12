@@ -205,9 +205,7 @@ def _run_in_subprocess(
         serializable_error_info = serializable_error_info_from_exc_info(sys.exc_info())
         event = IPCErrorMessage(
             serializable_error_info=serializable_error_info,
-            message="Error during RPC setup for executing run: {message}".format(
-                message=serializable_error_info.message
-            ),
+            message=f"Error during RPC setup for executing run: {serializable_error_info.message}",
         )
         subprocess_status_handler(event)
         subprocess_status_handler(RunInSubprocessComplete())
@@ -321,8 +319,7 @@ def get_external_schedule_execution(
             with user_code_error_boundary(
                 ScheduleExecutionError,
                 lambda: (
-                    "Error occurred during the execution function for schedule {schedule_name}"
-                    .format(schedule_name=schedule_def.name)
+                    f"Error occurred during the execution function for schedule {schedule_def.name}"
                 ),
             ):
                 return schedule_def.evaluate_tick(schedule_context)
