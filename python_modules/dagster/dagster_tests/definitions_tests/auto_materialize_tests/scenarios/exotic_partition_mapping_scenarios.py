@@ -320,6 +320,8 @@ exotic_partition_mapping_scenarios = {
             current_time=create_pendulum_time(year=2020, month=1, day=2, hour=4),
         ),
         expected_run_requests=[run_request(asset_keys=["asset1"], partition_key="2023-01-01")],
+        # this date changing business is not handled by the current implementation of the test
+        supports_with_external_asset_graph=False,
     ),
     "self_dependency_multipartitioned": AssetReconciliationScenario(
         assets=multipartitioned_self_dependency,
