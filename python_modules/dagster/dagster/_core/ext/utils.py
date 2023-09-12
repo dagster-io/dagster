@@ -36,6 +36,7 @@ _CONTEXT_INJECTOR_FILENAME = "context"
 _MESSAGE_READER_FILENAME = "messages"
 
 _CONTEXT_INJECTOR_FILENAME = "context"
+_MESSAGE_READER_FILENAME = "messages"
 
 
 class ExtFileContextInjector(ExtContextInjector):
@@ -74,7 +75,7 @@ class ExtEnvContextInjector(ExtContextInjector):
 
 class ExtFileMessageReader(ExtMessageReader):
     def __init__(self, path: str):
-        self._path = path
+        self._path = check.str_param(path, "path")
 
     @contextmanager
     def read_messages(
