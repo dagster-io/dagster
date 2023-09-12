@@ -38,7 +38,6 @@ from dagster._core.ext.subprocess import (
 )
 from dagster._core.ext.utils import (
     ExtEnvContextInjector,
-    ExtFileMessageReader,
     ExtTempFileContextInjector,
     ExtTempFileMessageReader,
     ext_protocol,
