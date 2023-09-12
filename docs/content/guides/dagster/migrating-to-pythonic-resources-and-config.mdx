@@ -91,8 +91,7 @@ class FancyDbResource:
     def __init__(self, conn_string: str) -> None:
         self.conn_string = conn_string
 
-    def execute(self, query: str) -> None:
-        ...
+    def execute(self, query: str) -> None: ...
 
 @resource(config_schema={"conn_string": str})
 def fancy_db_resource(context: InitResourceContext) -> FancyDbResource:
@@ -124,8 +123,7 @@ from dagster import ConfigurableResource
 class FancyDbResource(ConfigurableResource):
     conn_string: str
 
-    def execute(self, query: str) -> None:
-        ...
+    def execute(self, query: str) -> None: ...
 ```
 
 The attributes declared on a class inheriting from <PyObject object="ConfigurableResource"/> serve as the new way to declare a configuration schema. Now, however, there's a problem: You're migrating an existing codebase that contains numerous callsites to the old `fancy_db_resource` function annotated with `@resource`. You have declared the config schema twice, once on `@resource` and once on the class. This is fine for now as the config schema is simple, but for more complicated schemas this can be a problem.
@@ -161,8 +159,7 @@ from dagster import AssetExecutionContext, ConfigurableResource, Definitions, as
 class FancyDbResource(ConfigurableResource):
     conn_string: str
 
-    def execute(self, query: str) -> None:
-        ...
+    def execute(self, query: str) -> None: ...
 
 @asset(required_resource_keys={"fancy_db"})
 def asset_one(context: AssetExecutionContext) -> None:
@@ -204,8 +201,7 @@ class FancyDbClient:
     def __init__(self, conn_string: str) -> None:
         self.conn_string = conn_string
 
-    def execute_query(self, query: str) -> None:
-        ...
+    def execute_query(self, query: str) -> None: ...
 
 # Alternatively could have been imported from third-party library
 # from fancy_db import FancyDbClient

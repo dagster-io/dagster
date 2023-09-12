@@ -80,8 +80,7 @@ from dagster import (
 
 
 @asset
-def transactions_cleaned():
-    ...
+def transactions_cleaned(): ...
 
 
 @asset(
@@ -89,13 +88,11 @@ def transactions_cleaned():
         maximum_lag_minutes=9 * 24, cron_schedule="0 9 * * *"
     )
 )
-def sales_report(transactions_cleaned):
-    ...
+def sales_report(transactions_cleaned): ...
 
 
 @asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=120))
-def finance_report(transactions_cleaned):
-    ...
+def finance_report(transactions_cleaned): ...
 
 
 defs = Definitions(
@@ -140,13 +137,11 @@ from dagster import AutoMaterializePolicy, asset
 
 
 @asset
-def asset1():
-    ...
+def asset1(): ...
 
 
 @asset(auto_materialize_policy=AutoMaterializePolicy.eager(), deps=[asset1])
-def asset2():
-    ...
+def asset2(): ...
 ```
 
 To learn more about auto-materializing assets, visit the [Concept page](/concepts/assets/asset-auto-execution).

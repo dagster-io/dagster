@@ -305,8 +305,7 @@ from dagster import resource, build_resources
 
 
 @resource
-def the_credentials():
-    ...
+def the_credentials(): ...
 
 
 @resource(required_resource_keys={"credentials"})

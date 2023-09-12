@@ -142,8 +142,7 @@ images_partitions_def = DynamicPartitionsDefinition(name="images")
 
 
 @asset(partitions_def=images_partitions_def)
-def images(context):
-    ...
+def images(context): ...
 ```
 
 For a given dynamic partition set, partition keys can be added and removed. One common pattern is detecting the presence of a new partition through a [sensor](/concepts/partitions-schedules-sensors/sensors), adding the partition, and then triggering a run for that partition:
@@ -250,8 +249,7 @@ partitions_def = DailyPartitionsDefinition(start_date="2023-01-21")
 
 
 @asset(partitions_def=partitions_def)
-def events():
-    ...
+def events(): ...
 
 
 @asset(
@@ -264,8 +262,7 @@ def events():
         )
     },
 )
-def yesterday_event_stats(events):
-    ...
+def yesterday_event_stats(events): ...
 ```
 
 Refer to the [API docs](https://docs.dagster.io/\_apidocs/partitions#partition-mapping) for a list of available `PartitionMappings`.
@@ -289,13 +286,11 @@ hourly_partitions_def = HourlyPartitionsDefinition(start_date="2022-05-31-00:00"
 
 
 @asset(partitions_def=hourly_partitions_def)
-def asset1():
-    ...
+def asset1(): ...
 
 
 @asset(partitions_def=hourly_partitions_def)
-def asset2():
-    ...
+def asset2(): ...
 
 
 partitioned_asset_job = define_asset_job(
@@ -477,8 +472,7 @@ from dagster import build_schedule_from_partitioned_job, job
 
 
 @job(config=my_partitioned_config)
-def do_stuff_partitioned():
-    ...
+def do_stuff_partitioned(): ...
 
 
 do_stuff_partitioned_schedule = build_schedule_from_partitioned_job(

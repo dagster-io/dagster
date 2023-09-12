@@ -30,13 +30,11 @@ from dagster import AutoMaterializePolicy, asset
 
 
 @asset
-def asset1():
-    ...
+def asset1(): ...
 
 
 @asset(auto_materialize_policy=AutoMaterializePolicy.eager(), deps=[asset1])
-def asset2():
-    ...
+def asset2(): ...
 ```
 
 This example assumes that `asset1` will be materialized in some other way - e.g. manually, via a [sensor](/concepts/partitions-schedules-sensors/sensors), or via a [schedule](/concepts/partitions-schedules-sensors/schedules).
@@ -55,13 +53,11 @@ from dagster import (
 
 
 @asset
-def asset1():
-    ...
+def asset1(): ...
 
 
 @asset(deps=[asset1])
-def asset2():
-    ...
+def asset2(): ...
 
 
 defs = Definitions(
@@ -82,8 +78,7 @@ from dagster import AutoMaterializePolicy, FreshnessPolicy, asset
 
 
 @asset
-def asset1():
-    ...
+def asset1(): ...
 
 
 @asset(
@@ -91,8 +86,7 @@ def asset1():
     freshness_policy=FreshnessPolicy(maximum_lag_minutes=24 * 60),
     deps=[asset1],
 )
-def asset2():
-    ...
+def asset2(): ...
 ```
 
 Freshness policies express how fresh an asset needs to be relative to data at the root of the graph. This means that, for an asset to meet it's freshness policy, both it and upstream assets need to be materialized in time.
@@ -104,13 +98,11 @@ from dagster import AutoMaterializePolicy, FreshnessPolicy, asset
 
 
 @asset
-def asset1():
-    ...
+def asset1(): ...
 
 
 @asset(auto_materialize_policy=AutoMaterializePolicy.lazy(), deps=[asset1])
-def asset2():
-    ...
+def asset2(): ...
 
 
 @asset(
@@ -118,8 +110,7 @@ def asset2():
     freshness_policy=FreshnessPolicy(maximum_lag_minutes=24 * 60),
     deps=[asset2],
 )
-def asset3():
-    ...
+def asset3(): ...
 ```
 
 If multiple assets with freshness policies depend on the same upstream asset, Dagster will try to intelligently materialize the upstream asset at times that allow it to minimize the number of runs of the upstream asset, while meeting the downstream freshness policies.
@@ -145,8 +136,7 @@ def source_file():
     deps=[source_file],
     auto_materialize_policy=AutoMaterializePolicy.eager(),
 )
-def asset1():
-    ...
+def asset1(): ...
 ```
 
 ## Auto-materialization and partitions
@@ -168,8 +158,7 @@ from dagster import AutoMaterializePolicy, DailyPartitionsDefinition, asset
     partitions_def=DailyPartitionsDefinition(start_date="2020-10-10"),
     auto_materialize_policy=AutoMaterializePolicy.eager(),
 )
-def asset1():
-    ...
+def asset1(): ...
 
 
 @asset(
@@ -177,8 +166,7 @@ def asset1():
     auto_materialize_policy=AutoMaterializePolicy.eager(),
     deps=[asset1],
 )
-def asset2():
-    ...
+def asset2(): ...
 ```
 
 If the last partition of `asset1` is re-materialized, e.g. manually from the UI, then the corresponding partition of `asset2` will be auto-materialized after.

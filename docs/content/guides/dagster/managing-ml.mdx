@@ -35,15 +35,13 @@ from dagster import AutoMaterializePolicy, asset
 
 
 @asset
-def my_data():
-    ...
+def my_data(): ...
 
 
 @asset(
     auto_materialize_policy=AutoMaterializePolicy.eager(),
 )
-def my_ml_model(my_data):
-    ...
+def my_ml_model(my_data): ...
 ```
 
 Some machine learning models might more be cumbersome to retrain; it also might be less important to update them as soon as new data arrives. For this, a lazy auto-materialization policy which can be used in two different ways. The first, by using it with a `freshness_policy` as shown below. In this case, `my_ml_model` will only be auto-materialized once a week.
@@ -53,16 +51,14 @@ from dagster import AutoMaterializePolicy, asset, FreshnessPolicy
 
 
 @asset
-def my_other_data():
-    ...
+def my_other_data(): ...
 
 
 @asset(
     auto_materialize_policy=AutoMaterializePolicy.lazy(),
     freshness_policy=FreshnessPolicy(maximum_lag_minutes=7 * 24 * 60),
 )
-def my_other_ml_model(my_other_data):
-    ...
+def my_other_ml_model(my_other_data): ...
 ```
 
 This can be useful if you know that you want your machine learning model retrained at least once a week. While Dagster allows you to refresh a machine learning model as often as you like, best practice is to re-train as seldomly as possible. Model retraining can be costly to compute and having a minimal number of model versions can reduce the complexity of reproducing results at a later point in time. In this case, the model is updated once a week for `predictions`, ensuring that `my_ml_model` is retrained before it is used.
@@ -72,21 +68,18 @@ from dagster import AutoMaterializePolicy, FreshnessPolicy, asset
 
 
 @asset
-def some_data():
-    ...
+def some_data(): ...
 
 
 @asset(auto_materialize_policy=AutoMaterializePolicy.lazy())
-def some_ml_model(some_data):
-    ...
+def some_ml_model(some_data): ...
 
 
 @asset(
     auto_materialize_policy=AutoMaterializePolicy.lazy(),
     freshness_policy=FreshnessPolicy(maximum_lag_minutes=7 * 24 * 60),
 )
-def predictions(some_ml_model):
-    ...
+def predictions(some_ml_model): ...
 ```
 
 A more traditional schedule can also be used to update machine learning assets, causing them to be re-materialized or retrained on the latest data. For example, setting up a [cron schedule on a daily basis](/concepts/partitions-schedules-sensors/schedules).

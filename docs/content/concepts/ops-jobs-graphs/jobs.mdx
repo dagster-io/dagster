@@ -119,8 +119,7 @@ from dagster import graph, op, ConfigurableResource
 
 
 class Server(ConfigurableResource):
-    def ping_server(self):
-        ...
+    def ping_server(self): ...
 
 
 @op
@@ -250,8 +249,7 @@ from dagster import Definitions, job
 
 
 @job
-def do_it_all():
-    ...
+def do_it_all(): ...
 
 
 defs = Definitions(jobs=[do_it_all])
