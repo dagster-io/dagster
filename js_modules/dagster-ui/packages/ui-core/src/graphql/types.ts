@@ -2814,6 +2814,7 @@ export type Query = {
   repositoryOrError: RepositoryOrError;
   runConfigSchemaOrError: RunConfigSchemaOrError;
   runGroupOrError: RunGroupOrError;
+  runIdsOrError: RunIdsOrError;
   runOrError: RunOrError;
   runTagKeysOrError: Maybe<RunTagKeysOrError>;
   runTagsOrError: Maybe<RunTagsOrError>;
@@ -2966,6 +2967,12 @@ export type QueryRunConfigSchemaOrErrorArgs = {
 
 export type QueryRunGroupOrErrorArgs = {
   runId: Scalars['ID'];
+};
+
+export type QueryRunIdsOrErrorArgs = {
+  cursor?: InputMaybe<Scalars['String']>;
+  filter?: InputMaybe<RunsFilter>;
+  limit?: InputMaybe<Scalars['Int']>;
 };
 
 export type QueryRunOrErrorArgs = {
@@ -3439,6 +3446,13 @@ export type RunGroups = {
   __typename: 'RunGroups';
   results: Array<RunGroup>;
 };
+
+export type RunIds = {
+  __typename: 'RunIds';
+  results: Array<Scalars['String']>;
+};
+
+export type RunIdsOrError = InvalidPipelineRunsFilterError | PythonError | RunIds;
 
 export type RunLauncher = {
   __typename: 'RunLauncher';
@@ -9754,6 +9768,12 @@ export const buildQuery = (
         : relationshipsToOmit.has('PythonError')
         ? ({} as PythonError)
         : buildPythonError({}, relationshipsToOmit),
+    runIdsOrError:
+      overrides && overrides.hasOwnProperty('runIdsOrError')
+        ? overrides.runIdsOrError!
+        : relationshipsToOmit.has('InvalidPipelineRunsFilterError')
+        ? ({} as InvalidPipelineRunsFilterError)
+        : buildInvalidPipelineRunsFilterError({}, relationshipsToOmit),
     runOrError:
       overrides && overrides.hasOwnProperty('runOrError')
         ? overrides.runOrError!
@@ -10714,6 +10734,18 @@ export const buildRunGroups = (
   relationshipsToOmit.add('RunGroups');
   return {
     __typename: 'RunGroups',
+    results: overrides && overrides.hasOwnProperty('results') ? overrides.results! : [],
+  };
+};
+
+export const buildRunIds = (
+  overrides?: Partial<RunIds>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'RunIds'} & RunIds => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RunIds');
+  return {
+    __typename: 'RunIds',
     results: overrides && overrides.hasOwnProperty('results') ? overrides.results! : [],
   };
 };
