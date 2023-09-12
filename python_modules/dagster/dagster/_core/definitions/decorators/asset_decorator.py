@@ -26,6 +26,7 @@ from dagster._core.definitions.auto_materialize_policy import AutoMaterializePol
 from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping, MetadataUserInput
+from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.definitions.resource_annotation import (
     get_resource_args,
 )
@@ -429,21 +430,9 @@ class _Asset:
             if asset_in.partition_mapping is not None
         }
 
-        # Add PartitionMappings specified via AssetDeps to partition_mappings dictionary. Error on duplicates
-        for dep in self.deps:
-            if dep.partition_mapping is None:
-                continue
-            if partition_mappings.get(dep.asset_key, None) is None:
-                partition_mappings[dep.asset_key] = dep.partition_mapping
-                continue
-            if partition_mappings[dep.asset_key] == dep.partition_mapping:
-                continue
-            else:
-                raise DagsterInvalidDefinitionError(
-                    f"Two different PartitionMappings for {dep.asset_key} provided for"
-                    f" asset {self.key}. Please use the same PartitionMapping for"
-                    f" {dep.asset_key}."
-                )
+        partition_mappings = _get_partition_mappings_from_deps(
+            partition_mappings=partition_mappings, deps=self.deps, asset_name=asset_name
+        )
 
         return AssetsDefinition.dagster_internal_init(
             keys_by_input_name=keys_by_input_name,
@@ -754,22 +743,10 @@ def multi_asset(
             if asset_in.partition_mapping is not None
         }
 
-        # Add PartitionMappings specified via deps to partition_mappings dictionary. Error on duplicates
         if upstream_asset_deps:
-            for dep in upstream_asset_deps:
-                if dep.partition_mapping is None:
-                    continue
-                if partition_mappings.get(dep.asset_key, None) is None:
-                    partition_mappings[dep.asset_key] = dep.partition_mapping
-                    continue
-                if partition_mappings[dep.asset_key] == dep.partition_mapping:
-                    continue
-                else:
-                    raise DagsterInvalidDefinitionError(
-                        f"Two different PartitionMappings for {dep.asset_key} provided for"
-                        f" asset {op_name}. Please use the same PartitionMapping for"
-                        f" {dep.asset_key}."
-                    )
+            partition_mappings = _get_partition_mappings_from_deps(
+                partition_mappings=partition_mappings, deps=upstream_asset_deps, asset_name=op_name
+            )
 
         if specs:
             internal_deps = {
@@ -1270,11 +1247,8 @@ def _deps_and_non_argument_deps_to_asset_deps(
                         f" via AssetKeys or strings. For the multi_asset {dep.node_def.name}, the"
                         f" available keys are: {dep.keys}."
                     )
-            elif isinstance(dep, SourceAsset):
-                # no additional type checking needed for SourceAssets
-                continue
-            elif isinstance(dep, AssetDep):
-                # no additional type checking needed for AssetDeps
+            elif isinstance(dep, (SourceAsset, AssetDep)):
+                # no additional type checking needed for SourceAssets or AssetDeps
                 continue
             else:
                 # confirm that dep is coercible to AssetKey
@@ -1305,10 +1279,7 @@ def _make_asset_deps(
             return None
         dep_dict = {}
         for dep in deps:
-            if not isinstance(dep, AssetDep):
-                asset_dep = AssetDep(dep)
-            else:
-                asset_dep = dep
+            asset_dep = dep if isinstance(dep, AssetDep) else AssetDep(dep)
 
             # we cannot do deduplication via a set because MultiPartitionMappings have an internal
             # dictionary that cannot be hashed. Instead deduplicate by making a dictionary and checking
@@ -1346,3 +1317,25 @@ def _validate_and_assign_output_names_to_check_specs(
             )
 
     return check_specs_by_output_name
+
+
+def _get_partition_mappings_from_deps(
+    partition_mappings: Dict[AssetKey, PartitionMapping], deps: Iterable[AssetDep], asset_name: str
+):
+    # Add PartitionMappings specified via AssetDeps to partition_mappings dictionary. Error on duplicates
+    for dep in deps:
+        if dep.partition_mapping is None:
+            continue
+        if partition_mappings.get(dep.asset_key, None) is None:
+            partition_mappings[dep.asset_key] = dep.partition_mapping
+            continue
+        if partition_mappings[dep.asset_key] == dep.partition_mapping:
+            continue
+        else:
+            raise DagsterInvalidDefinitionError(
+                f"Two different PartitionMappings for {dep.asset_key} provided for"
+                f" asset {asset_name}. Please use the same PartitionMapping for"
+                f" {dep.asset_key}."
+            )
+
+    return partition_mappings
