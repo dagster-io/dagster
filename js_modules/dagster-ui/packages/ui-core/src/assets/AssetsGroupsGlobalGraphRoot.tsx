@@ -4,43 +4,25 @@ import * as React from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
 import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
-import {tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetGraphFetchScope} from '../asset-graph/useAssetGraphData';
 import {AssetLocation} from '../asset-graph/useFindAssetLocation';
-import {AssetGroupSelector, AssetKeyInput} from '../graphql/types';
+import {AssetGroupSelector} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
-import {
-  ExplorerPath,
-  explorerPathFromString,
-  explorerPathToString,
-} from '../pipelines/PipelinePathUtils';
+import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {ReloadAllButton} from '../workspace/ReloadAllButton';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 
 import {AssetGroupSuggest, buildAssetGroupSelector} from './AssetGroupSuggest';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
+import {
+  globalAssetGraphPathFromString,
+  globalAssetGraphPathToString,
+} from './globalAssetGraphPathToString';
 
 interface AssetGroupRootParams {
   0: string;
-}
-
-const __GLOBAL__ = '__GLOBAL__';
-
-export function globalAssetGraphPathFor(path: Omit<ExplorerPath, 'pipelineName'>) {
-  const str = explorerPathToString({...path, pipelineName: __GLOBAL__}).replace(__GLOBAL__, '');
-  return `/asset-groups${str}`;
-}
-
-export function globalAssetGraphPathForAssetsAndDescendants(assetKeys: AssetKeyInput[]) {
-  // Note: the max-length of a URL in chrome is 32k characters, and Firefox is 64k characters.
-  // In a perfect world we populate ops query to "asset1*,asset2*" and then select the roots
-  // by passing opNames. If we don't have enough characters to do both, just populate the ops
-  // query. It might still be too long, but we tried.
-  const opsQuery = assetKeys.map((a) => `${tokenForAssetKey(a)}*`).join(', ');
-  const opNames = opsQuery.length > 16000 ? [] : [assetKeys.map(tokenForAssetKey).join(',')];
-  return globalAssetGraphPathFor({opNames, opsQuery});
 }
 
 export const AssetsGroupsGlobalGraphRoot: React.FC = () => {
@@ -58,7 +40,7 @@ export const AssetsGroupsGlobalGraphRoot: React.FC = () => {
   const onChangeExplorerPath = React.useCallback(
     (path: ExplorerPath, mode: 'push' | 'replace') => {
       history[mode]({
-        pathname: globalAssetGraphPathFor(path),
+        pathname: globalAssetGraphPathToString(path),
         search: history.location.search,
       });
     },
@@ -131,7 +113,7 @@ export const AssetsGroupsGlobalGraphRoot: React.FC = () => {
           </>
         }
         options={{preferAssetRendering: true, explodeComposites: true}}
-        explorerPath={explorerPathFromString(__GLOBAL__ + path || '/')}
+        explorerPath={globalAssetGraphPathFromString(path)}
         onChangeExplorerPath={onChangeExplorerPath}
         onNavigateToSourceAssetNode={onNavigateToSourceAssetNode}
       />

@@ -3,8 +3,8 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {displayNameForAssetKey} from '../asset-graph/Utils';
-import {globalAssetGraphPathForAssetsAndDescendants} from '../assets/AssetsGroupsGlobalGraphRoot';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
+import {globalAssetGraphPathForAssetsAndDescendants} from '../assets/globalAssetGraphPathToString';
 import {AssetKey} from '../assets/types';
 import {TagActionsPopover} from '../ui/TagActions';
 import {VirtualizedItemListForDialog} from '../ui/VirtualizedItemListForDialog';
