@@ -76,12 +76,12 @@ def dbt_assets(
 
             from pathlib import Path
 
-            from dagster import OpExecutionContext
+            from dagster import AssetExecutionContext
             from dagster_dbt import DbtCliResource, dbt_assets
 
 
             @dbt_assets(manifest=Path("target", "manifest.json"))
-            def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+            def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
                 yield from dbt.cli(["build"], context=context).stream()
 
         Running dbt commands with flags:
@@ -90,12 +90,12 @@ def dbt_assets(
 
             from pathlib import Path
 
-            from dagster import OpExecutionContext
+            from dagster import AssetExecutionContext
             from dagster_dbt import DbtCliResource, dbt_assets
 
 
             @dbt_assets(manifest=Path("target", "manifest.json"))
-            def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+            def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
                 yield from dbt.cli(["build", "--full-refresh"], context=context).stream()
 
         Running dbt commands with ``--vars``:
@@ -105,12 +105,12 @@ def dbt_assets(
             import json
             from pathlib import Path
 
-            from dagster import OpExecutionContext
+            from dagster import AssetExecutionContext
             from dagster_dbt import DbtCliResource, dbt_assets
 
 
             @dbt_assets(manifest=Path("target", "manifest.json"))
-            def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+            def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
                 dbt_vars = {"key": "value"}
 
                 yield from dbt.cli(["build", "--vars", json.dumps(dbt_vars)], context=context).stream()
@@ -121,12 +121,12 @@ def dbt_assets(
 
             from pathlib import Path
 
-            from dagster import OpExecutionContext
+            from dagster import AssetExecutionContext
             from dagster_dbt import DbtCliResource, dbt_assets
 
 
             @dbt_assets(manifest=Path("target", "manifest.json"))
-            def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+            def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
                 dbt_build_invocation = dbt.cli(["build"], context=context)
 
                 yield from dbt_build_invocation.stream()
@@ -139,12 +139,12 @@ def dbt_assets(
 
             from pathlib import Path
 
-            from dagster import OpExecutionContext
+            from dagster import AssetExecutionContext
             from dagster_dbt import DbtCliResource, dbt_assets
 
 
             @dbt_assets(manifest=Path("target", "manifest.json"))
-            def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+            def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
                 yield from dbt.cli(["run"], context=context).stream()
                 yield from dbt.cli(["test"], context=context).stream()
 
@@ -154,7 +154,7 @@ def dbt_assets(
 
             from pathlib import Path
 
-            from dagster import OpExecutionContext
+            from dagster import AssetExecutionContext
             from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
 
 
@@ -166,7 +166,7 @@ def dbt_assets(
                 manifest=Path("target", "manifest.json"),
                 dagster_dbt_translator=CustomDagsterDbtTranslator(),
             )
-            def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+            def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
                 yield from dbt.cli(["build"], context=context).stream()
 
         Invoking another Dagster :py:class:`~dagster.ResourceDefinition` alongside dbt:
@@ -175,13 +175,13 @@ def dbt_assets(
 
             from pathlib import Path
 
-            from dagster import OpExecutionContext
+            from dagster import AssetExecutionContext
             from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
             from dagster_slack import SlackResource
 
 
             @dbt_assets(manifest=Path("target", "manifest.json"))
-            def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource, slack: SlackResource):
+            def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource, slack: SlackResource):
                 yield from dbt.cli(["build"], context=context).stream()
 
                 slack_client = slack.get_client()
@@ -193,7 +193,7 @@ def dbt_assets(
 
             from pathlib import Path
 
-            from dagster import Config, OpExecutionContext
+            from dagster import AssetExecutionContext, Config
             from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
 
 
@@ -202,7 +202,7 @@ def dbt_assets(
 
 
             @dbt_assets(manifest=Path("target", "manifest.json"))
-            def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource, config: MyDbtConfig):
+            def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource, config: MyDbtConfig):
                 dbt_build_args = ["build"]
                 if config.full_refresh:
                     dbt_build_args += ["--full-refresh"]
@@ -217,7 +217,7 @@ def dbt_assets(
             import json
             from pathlib import Path
 
-            from dagster import DailyPartitionDefinition, OpExecutionContext
+            from dagster import AssetExecutionContext, DailyPartitionDefinition
             from dagster_dbt import DbtCliResource, dbt_assets
 
 
@@ -225,7 +225,7 @@ def dbt_assets(
                 manifest=Path("target", "manifest.json"),
                 partitions_def=DailyPartitionsDefinition(start_date="2023-01-01")
             )
-            def partitionshop_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+            def partitionshop_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
                 time_window = context.asset_partitions_time_window_for_output(
                     list(context.selected_output_names)[0]
                 )

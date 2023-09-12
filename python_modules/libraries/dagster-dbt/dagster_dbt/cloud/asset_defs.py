@@ -18,13 +18,13 @@ from typing import (
 
 import dagster._check as check
 from dagster import (
+    AssetExecutionContext,
     AssetKey,
     AssetOut,
     AssetsDefinition,
     AutoMaterializePolicy,
     FreshnessPolicy,
     MetadataValue,
-    OpExecutionContext,
     PartitionsDefinition,
     ResourceDefinition,
     multi_asset,
@@ -487,7 +487,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             required_resource_keys={"dbt_cloud"},
             compute_kind="dbt",
         )
-        def _assets(context: OpExecutionContext):
+        def _assets(context: AssetExecutionContext):
             dbt_cloud = cast(DbtCloudClient, context.resources.dbt_cloud)
 
             # Add the partition variable as a variable to the dbt Cloud job command.

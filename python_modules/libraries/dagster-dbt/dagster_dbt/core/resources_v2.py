@@ -23,10 +23,10 @@ import orjson
 from dagster import (
     AssetCheckResult,
     AssetCheckSeverity,
+    AssetExecutionContext,
     AssetObservation,
     AssetsDefinition,
     ConfigurableResource,
-    OpExecutionContext,
     Output,
     get_dagster_logger,
 )
@@ -495,11 +495,11 @@ class DbtCliResource(ConfigurableResource):
 
         return v
 
-    def _get_unique_target_path(self, *, context: Optional[OpExecutionContext]) -> str:
+    def _get_unique_target_path(self, *, context: Optional[AssetExecutionContext]) -> str:
         """Get a unique target path for the dbt CLI invocation.
 
         Args:
-            context (Optional[OpExecutionContext]): The execution context.
+            context (Optional[AssetExecutionContext]): The execution context.
 
         Returns:
             str: A unique target path for the dbt CLI invocation.
@@ -519,7 +519,7 @@ class DbtCliResource(ConfigurableResource):
         raise_on_error: bool = True,
         manifest: Optional[DbtManifestParam] = None,
         dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
-        context: Optional[OpExecutionContext] = None,
+        context: Optional[AssetExecutionContext] = None,
     ) -> DbtCliInvocation:
         """Create a subprocess to execute a dbt CLI command.
 
@@ -533,7 +533,7 @@ class DbtCliResource(ConfigurableResource):
                 nodes to Dagster assets. If an execution context from within `@dbt_assets` is
                 provided to the context argument, then the dagster_dbt_translator provided to
                 `@dbt_assets` will be used.
-            context (Optional[OpExecutionContext]): The execution context from within `@dbt_assets`.
+            context (Optional[AssetExecutionContext]): The execution context from within `@dbt_assets`.
 
         Returns:
             DbtCliInvocation: A invocation instance that can be used to retrieve the output of the
@@ -546,12 +546,12 @@ class DbtCliResource(ConfigurableResource):
 
                 from pathlib import Path
 
-                from dagster import OpExecutionContext
+                from dagster import AssetExecutionContext
                 from dagster_dbt import DbtCliResource, dbt_assets
 
 
                 @dbt_assets(manifest=Path("target", "manifest.json"))
-                def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+                def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
                     yield from dbt.cli(["run"], context=context).stream()
 
             Retrieving a dbt artifact after streaming the Dagster events:
@@ -560,12 +560,12 @@ class DbtCliResource(ConfigurableResource):
 
                 from pathlib import Path
 
-                from dagster import OpExecutionContext
+                from dagster import AssetExecutionContext
                 from dagster_dbt import DbtCliResource, dbt_assets
 
 
                 @dbt_assets(manifest=Path("target", "manifest.json"))
-                def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+                def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
                     dbt_run_invocation = dbt.cli(["run"], context=context)
 
                     yield from dbt_run_invocation.stream()
@@ -582,12 +582,12 @@ class DbtCliResource(ConfigurableResource):
 
                 from pathlib import Path
 
-                from dagster import OpExecutionContext
+                from dagster import AssetExecutionContext
                 from dagster_dbt import DbtCliResource, dbt_assets
 
 
                 @dbt_assets(manifest=Path("target", "manifest.json"))
-                def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+                def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
                     dbt_cli_invocation = dbt.cli(["run"], context=context)
 
                     for dbt_event in dbt_cli_invocation.stream_raw_events():
@@ -608,12 +608,12 @@ class DbtCliResource(ConfigurableResource):
 
                 from pathlib import Path
 
-                from dagster import OpExecutionContext
+                from dagster import AssetExecutionContext
                 from dagster_dbt import DbtCliResource, dbt_assets
 
 
                 @dbt_assets(manifest=Path("target", "manifest.json"))
-                def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+                def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
                     dbt_run_invocation = dbt.cli(["run"], context=context, raise_on_error=False)
 
                     if dbt_run_invocation.is_successful():
@@ -710,7 +710,7 @@ class DbtCliResource(ConfigurableResource):
 
 
 def get_subset_selection_for_context(
-    context: OpExecutionContext,
+    context: AssetExecutionContext,
     manifest: Mapping[str, Any],
     select: Optional[str],
     exclude: Optional[str],
@@ -720,7 +720,7 @@ def get_subset_selection_for_context(
     See https://docs.getdbt.com/reference/node-selection/syntax#how-does-selection-work.
 
     Args:
-        context (OpExecutionContext): The execution context for the current execution step.
+        context (AssetExecutionContext): The execution context for the current execution step.
         select (Optional[str]): A dbt selection string to select resources to materialize.
         exclude (Optional[str]): A dbt selection string to exclude resources from materializing.
 
