@@ -162,7 +162,6 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
       assetKey: {path: string[]},
       node: GraphNode | null,
     ) => {
-      // todo (Toggle sidebar)
       e.stopPropagation();
 
       const token = tokenForAssetKey(assetKey);
