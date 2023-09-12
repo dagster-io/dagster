@@ -1907,7 +1907,7 @@ def define_asset_jobs():
 
 
 @asset_check(asset=asset_1, description="asset_1 check")
-def my_check():
+def my_check(asset_1):
     return AssetCheckResult(
         success=True,
         metadata={

@@ -2177,6 +2177,7 @@ input PipelineSelector {
   repositoryLocationName: String!
   solidSelection: [String!]
   assetSelection: [AssetKeyInput!]
+  assetCheckSelection: [AssetCheckHandleInput!]
 }
 
 input RepositorySelector {

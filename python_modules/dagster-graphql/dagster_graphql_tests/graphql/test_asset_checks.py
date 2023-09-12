@@ -635,16 +635,53 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
         }
         new_materialization()
 
-    @pytest.mark.parametrize(
-        "job_name",
-        ["__ASSET_JOB_0", "asset_check_job"],
-    )
-    def test_launch_subset_with_only_check(
-        self, graphql_context: WorkspaceRequestContext, job_name
-    ):
+    def test_launch_subset_with_only_check(self, graphql_context: WorkspaceRequestContext):
+        # materialize the asset and run the check first
         selector = infer_job_or_pipeline_selector(
             graphql_context,
-            job_name,
+            "asset_check_job",
+            asset_selection=[{"path": ["asset_1"]}],
+        )
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
+            variables={
+                "executionParams": {
+                    "selector": selector,
+                    "mode": "default",
+                    "stepKeys": None,
+                }
+            },
+        )
+        print(result.data)  # ruff: noqa: T201
+        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
+
+        run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+        run = poll_for_finished_run(graphql_context.instance, run_id)
+
+        logs = graphql_context.instance.all_logs(run_id)
+        print(logs)  # ruff: noqa: T201
+        assert run.is_success
+
+        checks = [
+            log
+            for log in logs
+            if log.dagster_event
+            and log.dagster_event.event_type == DagsterEventType.ASSET_CHECK_EVALUATION
+        ]
+        assert len(checks) == 1
+
+        materializations = [
+            log
+            for log in logs
+            if log.dagster_event
+            and log.dagster_event.event_type == DagsterEventType.ASSET_MATERIALIZATION
+        ]
+        assert len(materializations) == 1
+
+        selector = infer_job_or_pipeline_selector(
+            graphql_context,
+            "asset_check_job",
             asset_selection=[],
             asset_check_selection=[{"assetKey": {"path": ["asset_1"]}, "name": "my_check"}],
         )

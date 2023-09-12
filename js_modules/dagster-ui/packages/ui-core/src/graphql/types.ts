@@ -2691,6 +2691,7 @@ export type PipelineRuns = {
 };
 
 export type PipelineSelector = {
+  assetCheckSelection?: InputMaybe<Array<AssetCheckHandleInput>>;
   assetSelection?: InputMaybe<Array<AssetKeyInput>>;
   pipelineName: Scalars['String'];
   repositoryLocationName: Scalars['String'];
@@ -9441,6 +9442,10 @@ export const buildPipelineSelector = (
   const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
   relationshipsToOmit.add('PipelineSelector');
   return {
+    assetCheckSelection:
+      overrides && overrides.hasOwnProperty('assetCheckSelection')
+        ? overrides.assetCheckSelection!
+        : [],
     assetSelection:
       overrides && overrides.hasOwnProperty('assetSelection') ? overrides.assetSelection! : [],
     pipelineName:
