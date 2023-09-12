@@ -4,8 +4,8 @@ import tempfile
 import pytest
 from dagster import AssetExecutionContext, asset, materialize
 from dagster._core.ext.utils import (
+    ExtFileContextInjector,
     ExtFileMessageReader,
-    ExtTempFileContextInjector,
 )
 from dagster_docker.external_resource import ExtDocker
 from dagster_test.test_project import (
@@ -109,7 +109,11 @@ def test_file_io():
 
         result = materialize(
             [number_x],
-            resources={"ext_docker": ExtDocker(context_injector=ExtTempFileContextInjector())},
+            resources={
+                "ext_docker": ExtDocker(
+                    context_injector=ExtFileContextInjector(os.path.join(tempdir, "context"))
+                )
+            },
             raise_on_error=False,
         )
         assert result.success
