@@ -1,7 +1,7 @@
 ---
-title: "Lesson 8: What are partitions and backfills?"
-module: "dagster_essentials"
-lesson: "8"
+title: 'Lesson 8: What are partitions and backfills?'
+module: 'dagster_essentials'
+lesson: '8'
 ---
 
 # What are partitions and backfills?

@@ -1,7 +1,7 @@
 ---
-title: "Lesson 7: Practice: Create a weekly_update_schedule"
-module: "dagster_essentials"
-lesson: "7"
+title: 'Lesson 7: Practice: Create a weekly_update_schedule'
+module: 'dagster_essentials'
+lesson: '7'
 ---
 
 # Practice: Create a weekly_update_schedule

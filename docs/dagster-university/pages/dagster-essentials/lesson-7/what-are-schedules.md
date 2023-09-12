@@ -1,7 +1,7 @@
 ---
-title: "Lesson 7: What are schedules?"
-module: "dagster_essentials"
-lesson: "7"
+title: 'Lesson 7: What are schedules?'
+module: 'dagster_essentials'
+lesson: '7'
 ---
 
 # What are schedules?
@@ -43,30 +43,30 @@ To select only the assets you want to include, you’ll use the `AssetSelection`
 For more info on asset selection, refer to the [asset selection syntax guide in the Dagster docs](https://docs.dagster.io/concepts/assets/asset-selection-syntax).
 
 1. In `jobs/__init__.py`, let’s first define our asset selection. Copy and paste the following snippet into the file:
-    
-    ```python
-    from dagster import AssetSelection
-    
-    trips_by_week = AssetSelection.keys("trips_by_week")
-    ```
-    
-    This uses the `AssetSelection` utility to reference a single asset, `trips_by_week`. We’ll isolate this specifically because we won’t want to run it with the rest of our pipeline and it should be run more frequently.
-    
+
+   ```python
+   from dagster import AssetSelection
+
+   trips_by_week = AssetSelection.keys("trips_by_week")
+   ```
+
+   This uses the `AssetSelection` utility to reference a single asset, `trips_by_week`. We’ll isolate this specifically because we won’t want to run it with the rest of our pipeline and it should be run more frequently.
+
 2. Add `define_asset_job` to your `dagster` import:
-    
-    ```bash
-    from dagster import AssetSelection, define_asset_job
-    ```
-    
+
+   ```bash
+   from dagster import AssetSelection, define_asset_job
+   ```
+
 3. Next, create a job named `trip_update_job` that selects all assets using `AssetSelection.all()` and then omit `trips_by_week` by substracting its selection:
-    
-    ```python
-    trip_update_job = define_asset_job(
-        name="trip_update_job",
-        selection=AssetSelection.all() - trips_by_week
-    )
-    ```
-    
+
+   ```python
+   trip_update_job = define_asset_job(
+       name="trip_update_job",
+       selection=AssetSelection.all() - trips_by_week
+   )
+   ```
+
 4. Save your changes and continue.
 
 Your final code in `jobs/__init__.py` should look like the following:
@@ -98,6 +98,6 @@ Consider the following example:
 
 This expression translates to `Every Monday through Friday of every month at 5:15AM`.
 
-To make creating cron schedules easier, you can use an online tool like [Crontab Guru](https://crontab.guru/). This tool allows you to create and describe cron expressions in a human-readable format and test the execution dates produced by the expression. 
+To make creating cron schedules easier, you can use an online tool like [Crontab Guru](https://crontab.guru/). This tool allows you to create and describe cron expressions in a human-readable format and test the execution dates produced by the expression.
 
 **Note**: While this tool is useful for general cron expression testing, always remember to test your schedules in Dagster to ensure the results are as expected.

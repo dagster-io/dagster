@@ -1,7 +1,7 @@
 ---
-title: "Lesson 4: Practice: Create a taxi_zones asset"
-module: "dagster_essentials"
-lesson: "4"
+title: 'Lesson 4: Practice: Create a taxi_zones asset'
+module: 'dagster_essentials'
+lesson: '4'
 ---
 
 # Practice: Create a taxi_zones asset
