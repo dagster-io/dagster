@@ -48,8 +48,10 @@ def build_library_packages_steps() -> List[BuildkiteStep]:
     )
 
 
-def build_dagit_screenshot_steps() -> List[BuildkiteStep]:
-    return _build_steps_from_package_specs([PackageSpec("docs/dagit-screenshot", run_pytest=False)])
+def build_dagster_ui_screenshot_steps() -> List[BuildkiteStep]:
+    return _build_steps_from_package_specs(
+        [PackageSpec("docs/dagster-ui-screenshot", run_pytest=False)]
+    )
 
 
 def _build_steps_from_package_specs(package_specs: List[PackageSpec]) -> List[BuildkiteStep]:
