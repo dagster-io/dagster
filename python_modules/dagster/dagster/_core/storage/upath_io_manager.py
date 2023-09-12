@@ -436,7 +436,15 @@ class UPathIOManager(MemoizableIOManager):
 
         if context.has_asset_partitions:
             paths = self._get_paths_for_partitions(context)
-            assert len(paths) == 1
+
+            check.invariant(
+                len(paths) == 1,
+                f"The current IO manager {type(self)} does not support persisting an output"
+                " associated with multiple partitions. This error is likely occurring because a"
+                " backfill was launched using the 'single run' option. Instead, launch the"
+                " backfill with the 'multiple runs' option.",
+            )
+
             path = list(paths.values())[0]
         else:
             path = self._get_path(context)
