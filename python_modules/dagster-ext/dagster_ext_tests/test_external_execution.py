@@ -1,5 +1,4 @@
 import inspect
-import os
 import re
 import shutil
 import subprocess
@@ -39,7 +38,6 @@ from dagster._core.ext.subprocess import (
 )
 from dagster._core.ext.utils import (
     ExtEnvContextInjector,
-    ExtFileMessageReader,
     ExtTempFileContextInjector,
     ExtTempFileMessageReader,
     ext_protocol,
@@ -138,7 +136,7 @@ def test_ext_subprocess(
     if message_reader_spec == "default":
         message_reader = None
     elif message_reader_spec == "user/file":
-        message_reader = ExtFileMessageReader(os.path.join(tmpdir, "output"))
+        message_reader = ExtTempFileMessageReader()
     elif message_reader_spec == "user/s3":
         message_reader = ExtS3MessageReader(
             bucket=_S3_TEST_BUCKET, client=s3_client, interval=0.001
@@ -154,14 +152,13 @@ def test_ext_subprocess(
             cmd,
             context=context,
             extras=extras,
-            message_reader=message_reader,
             env={
                 "CONTEXT_INJECTOR_SPEC": context_injector_spec,
                 "MESSAGE_READER_SPEC": message_reader_spec,
             },
         )
 
-    resource = ExtSubprocess(context_injector=context_injector)
+    resource = ExtSubprocess(context_injector=context_injector, message_reader=message_reader)
 
     with instance_for_test() as instance:
         materialize(

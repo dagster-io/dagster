@@ -57,6 +57,8 @@ class _ExtDocker(ExtClient):
     Args:
         env (Optional[Mapping[str, str]]): An optional dict of environment variables to pass to the subprocess.
         register (Optional[Mapping[str, str]]): An optional dict of registry credentials to login the docker client.
+        context_injector (Optional[ExtContextInjector]): An context injector to use to inject context into the docker container process. Defaults to ExtEnvContextInjector.
+        message_reader (Optional[ExtContextInjector]): An context injector to use to read messages from the docker container process. Defaults to DockerLogsMessageReader.
     """
 
     def __init__(
@@ -64,6 +66,7 @@ class _ExtDocker(ExtClient):
         env: Optional[Mapping[str, str]] = None,
         registry: Optional[Mapping[str, str]] = None,
         context_injector: Optional[ExtContextInjector] = None,
+        message_reader: Optional[ExtMessageReader] = None,
     ):
         self.env = check.opt_mapping_param(env, "env", key_type=str, value_type=str)
         self.registry = check.opt_mapping_param(registry, "registry", key_type=str, value_type=str)
@@ -76,6 +79,11 @@ class _ExtDocker(ExtClient):
             or ExtEnvContextInjector()
         )
 
+        self.message_reader = (
+            check.opt_inst_param(message_reader, "message_reader", ExtMessageReader)
+            or DockerLogsMessageReader()
+        )
+
     def run(
         self,
         *,
@@ -86,7 +94,6 @@ class _ExtDocker(ExtClient):
         registry: Optional[Mapping[str, str]] = None,
         container_kwargs: Optional[Mapping[str, Any]] = None,
         extras: Optional[ExtExtras] = None,
-        message_reader: Optional[ExtMessageReader] = None,
     ) -> None:
         """Create a docker container and run it to completion, enriched with the ext protocol.
 
@@ -110,12 +117,10 @@ class _ExtDocker(ExtClient):
             message_Reader (Optional[ExtMessageReader]):
                 Override the default ext protocol message reader.
         """
-        message_reader = message_reader or DockerLogsMessageReader()
-
         with ext_protocol(
             context=context,
             context_injector=self.context_injector,
-            message_reader=message_reader,
+            message_reader=self.message_reader,
             extras=extras,
         ) as ext_context:
             client = docker.client.from_env()
@@ -149,8 +154,8 @@ class _ExtDocker(ExtClient):
 
             result = container.start()
             try:
-                if isinstance(message_reader, DockerLogsMessageReader):
-                    message_reader.consume_docker_logs(container)
+                if isinstance(self.message_reader, DockerLogsMessageReader):
+                    self.message_reader.consume_docker_logs(container)
 
                 result = container.wait()
                 if result["StatusCode"] != 0:

@@ -5,7 +5,6 @@ import pytest
 from dagster import AssetExecutionContext, asset, materialize
 from dagster._core.ext.utils import (
     ExtFileContextInjector,
-    ExtFileMessageReader,
 )
 from dagster_docker.external_resource import ExtDocker
 from dagster_test.test_project import (
@@ -66,7 +65,6 @@ def test_file_io():
         find_local_test_image(docker_image)
 
     with tempfile.TemporaryDirectory() as tempdir:
-        message_reader = ExtFileMessageReader(os.path.join(tempdir, "messages"))
 
         @asset
         def number_x(
@@ -99,7 +97,6 @@ def test_file_io():
                 ],
                 registry=registry,
                 context=context,
-                message_reader=message_reader,
                 extras={"storage_root": container_storage, "multiplier": 2},
                 container_kwargs={
                     "environment": {"PYTHONPATH": "/dagster_test/toys/external_execution/"},
