@@ -330,7 +330,7 @@ class _Asset:
         validate_resource_annotated_function(fn)
         asset_name = self.name or fn.__name__
 
-        asset_ins = build_asset_ins(fn, self.ins or {}, self.deps)
+        asset_ins = build_asset_ins(fn, self.ins or {}, {dep.asset_key for dep in self.deps})
 
         out_asset_key = (
             AssetKey(list(filter(None, [*(self.key_prefix or []), asset_name])))
@@ -668,7 +668,9 @@ def multi_asset(
             remaining_upstream_keys = {key for key in upstream_keys if key not in loaded_upstreams}
             asset_ins = build_asset_ins(fn, explicit_ins, deps=remaining_upstream_keys)
         else:
-            asset_ins = build_asset_ins(fn, ins or {}, deps=upstream_asset_deps)
+            asset_ins = build_asset_ins(
+                fn, ins or {}, deps={dep.asset_key for dep in upstream_asset_deps}
+            )
             output_tuples_by_asset_key = build_asset_outs(asset_out_map)
             # validate that the asset_deps make sense
             valid_asset_deps = set(asset_ins.keys()) | set(output_tuples_by_asset_key.keys())
@@ -749,20 +751,21 @@ def multi_asset(
         }
 
         # Add PartitionMappings specified via deps to partition_mappings dictionary. Error on duplicates
-        for dep in upstream_asset_deps:
-            if dep.partition_mapping is None:
-                continue
-            if partition_mappings.get(dep.asset_key, None) is None:
-                partition_mappings[dep.asset_key] = dep.partition_mapping
-                continue
-            if partition_mappings[dep.asset_key] == dep.partition_mapping:
-                continue
-            else:
-                raise DagsterInvalidDefinitionError(
-                    f"Two different PartitionMappings for {dep.asset_key} provided for"
-                    f" asset {op_name}. Please use the same PartitionMapping for"
-                    f" {dep.asset_key}."
-                )
+        if upstream_asset_deps:
+            for dep in upstream_asset_deps:
+                if dep.partition_mapping is None:
+                    continue
+                if partition_mappings.get(dep.asset_key, None) is None:
+                    partition_mappings[dep.asset_key] = dep.partition_mapping
+                    continue
+                if partition_mappings[dep.asset_key] == dep.partition_mapping:
+                    continue
+                else:
+                    raise DagsterInvalidDefinitionError(
+                        f"Two different PartitionMappings for {dep.asset_key} provided for"
+                        f" asset {op_name}. Please use the same PartitionMapping for"
+                        f" {dep.asset_key}."
+                    )
 
         if specs:
             internal_deps = {
@@ -873,10 +876,10 @@ def stringify_asset_key_to_input_name(asset_key: AssetKey) -> str:
 def build_asset_ins(
     fn: Callable,
     asset_ins: Mapping[str, AssetIn],
-    deps: Optional[Iterable[AssetDep]],
+    deps: Optional[Set[AssetKey]],
 ) -> Mapping[AssetKey, Tuple[str, In]]:
     """Creates a mapping from AssetKey to (name of input, In object)."""
-    deps = check.opt_iterable_param(deps, "deps", AssetDep) or []
+    deps = check.opt_set_param(deps, "deps", AssetKey)
 
     new_input_args = get_function_params_without_context_or_config_or_resources(fn)
 
@@ -921,14 +924,14 @@ def build_asset_ins(
             In(metadata=metadata, input_manager_key=input_manager_key, dagster_type=dagster_type),
         )
 
-    for asset_dep in deps:
-        if asset_dep.asset_key in ins_by_asset_key:
+    for asset_key in deps:
+        if asset_key in ins_by_asset_key:
             raise DagsterInvalidDefinitionError(
-                f"deps value {asset_dep.asset_key} also declared as input/AssetIn"
+                f"deps value {asset_key} also declared as input/AssetIn"
             )
             # mypy doesn't realize that Nothing is a valid type here
-        ins_by_asset_key[asset_dep.asset_key] = (
-            stringify_asset_key_to_input_name(asset_dep.asset_key),
+        ins_by_asset_key[asset_key] = (
+            stringify_asset_key_to_input_name(asset_key),
             In(cast(type, Nothing)),
         )
 
