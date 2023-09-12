@@ -80,7 +80,7 @@ def test_dbt_cli_subprocess_cleanup(caplog: pytest.LogCaptureFixture) -> None:
 
     assert dbt_cli_invocation_1.process.returncode is None
 
-    atexit._run_exitfuncs()  # ruff: noqa: SLF001
+    atexit._run_exitfuncs()  # noqa: SLF001
 
     assert "Terminating the execution of dbt command." in caplog.text
     assert not dbt_cli_invocation_1.is_successful()
@@ -90,7 +90,7 @@ def test_dbt_cli_subprocess_cleanup(caplog: pytest.LogCaptureFixture) -> None:
 
     dbt_cli_invocation_2 = dbt.cli(["run"]).wait()
 
-    atexit._run_exitfuncs()  # ruff: noqa: SLF001
+    atexit._run_exitfuncs()  # noqa: SLF001
 
     assert "Terminating the execution of dbt command." not in caplog.text
     assert dbt_cli_invocation_2.is_successful()
