@@ -234,7 +234,7 @@ class PartialIOManager(Generic[TResValue], PartialResource[TResValue]):
             nested_resources=self._state__internal__.nested_resources,
             input_config_schema=input_config_schema,
             output_config_schema=output_config_schema,
-            dagster_maintained=self.resource_cls._is_dagster_maintained(),  # noqa: SLF001
+            dagster_maintained=self.resource_cls._is_dagster_maintained(),  # noqa: SLF001 # type: ignore
         )
 
 
