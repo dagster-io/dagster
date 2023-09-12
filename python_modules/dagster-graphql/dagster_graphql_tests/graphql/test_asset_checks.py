@@ -1,6 +1,5 @@
 import time
 
-import pytest
 from dagster import AssetKey, DagsterEvent, DagsterEventType
 from dagster._core.definitions.asset_check_evaluation import (
     AssetCheckEvaluation,
