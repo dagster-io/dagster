@@ -662,7 +662,7 @@ class ExtContext:
             self._data["provenance_by_asset_key"], "provenance"
         )
         _assert_single_asset(self._data, "provenance")
-        return list(provenance_by_asset_key.values())[0]
+        return next(iter(provenance_by_asset_key.values()))
 
     @property
     def provenance_by_asset_key(self) -> Mapping[str, Optional[ExtDataProvenance]]:
@@ -677,7 +677,7 @@ class ExtContext:
             self._data["code_version_by_asset_key"], "code_version"
         )
         _assert_single_asset(self._data, "code_version")
-        return list(code_version_by_asset_key.values())[0]
+        return next(iter(code_version_by_asset_key.values()))
 
     @property
     def code_version_by_asset_key(self) -> Mapping[str, Optional[str]]:

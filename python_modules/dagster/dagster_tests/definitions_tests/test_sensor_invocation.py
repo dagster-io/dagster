@@ -1550,9 +1550,13 @@ def test_build_multi_asset_sensor_context_asset_selection_set_to_latest_material
 
     with instance_for_test() as instance:
         result = materialize([my_asset], instance=instance)
-        records = list(
-            instance.get_event_records(EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION))
-        )[0]
+        records = next(
+            iter(
+                instance.get_event_records(
+                    EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION)
+                )
+            )
+        )
         assert records.event_log_entry.run_id == result.run_id
 
         ctx = build_multi_asset_sensor_context(
@@ -1595,9 +1599,13 @@ def test_build_multi_asset_sensor_context_set_to_latest_materializations():
 
     with instance_for_test() as instance:
         result = materialize([my_asset], instance=instance)
-        records = list(
-            instance.get_event_records(EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION))
-        )[0]
+        records = next(
+            iter(
+                instance.get_event_records(
+                    EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION)
+                )
+            )
+        )
         assert records.event_log_entry.run_id == result.run_id
 
         ctx = build_multi_asset_sensor_context(

@@ -73,9 +73,9 @@ def test_io_manager_add_input_metadata():
     )
 
     # confirm loaded_input event contains metadata
-    loaded_input_event = [
+    loaded_input_event = next(
         event for event in result.all_events if event.event_type_value == "LOADED_INPUT"
-    ][0]
+    )
     assert loaded_input_event
     loaded_input_event_metadata = loaded_input_event.event_specific_data.metadata
     assert len(loaded_input_event_metadata) == 2
@@ -99,9 +99,9 @@ def test_input_manager_add_input_metadata():
         my_op()
 
     result = my_job.execute_in_process()
-    loaded_input_event = [
+    loaded_input_event = next(
         event for event in result.all_events if event.event_type_value == "LOADED_INPUT"
-    ][0]
+    )
     metadata = loaded_input_event.event_specific_data.metadata
     assert len(metadata) == 2
     assert "foo" in metadata

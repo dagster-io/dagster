@@ -763,7 +763,7 @@ class ExternalSensor:
 
     def _get_single_target(self) -> Optional[ExternalTargetData]:
         if self._external_sensor_data.target_dict:
-            return list(self._external_sensor_data.target_dict.values())[0]
+            return next(iter(self._external_sensor_data.target_dict.values()))
         else:
             return None
 

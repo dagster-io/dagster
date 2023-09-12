@@ -244,9 +244,9 @@ def test_get_implicit_job_name_for_assets():
 
     partitioned_defs_workspace = make_context(["partitioned_defs"])
     asset_graph = ExternalAssetGraph.from_workspace(partitioned_defs_workspace)
-    external_repo = list(partitioned_defs_workspace.code_locations[0].get_repositories().values())[
-        0
-    ]
+    external_repo = next(
+        iter(partitioned_defs_workspace.code_locations[0].get_repositories().values())
+    )
     assert (
         asset_graph.get_implicit_job_name_for_assets(
             [downstream_of_partitioned_source.key], external_repo=external_repo

@@ -137,13 +137,13 @@ def execute_no_throw(job_def):
 
 def _type_check_data_for_input(result, op_name, input_name):
     events_for_op = result.events_for_node(op_name)
-    step_input_event = [
+    step_input_event = next(
         event
         for event in events_for_op
         if event.event_type == DagsterEventType.STEP_INPUT
         and event.step_handle.to_key() == op_name
         and event.event_specific_data.input_name == input_name
-    ][0]
+    )
     return step_input_event.event_specific_data.type_check_data
 
 

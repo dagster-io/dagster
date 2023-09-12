@@ -987,7 +987,7 @@ class DependencyStructure:
             raise DagsterInvalidDefinitionError(
                 f"{node_input.node.describe_node()} cannot be both downstream of dynamic output "
                 f"{node_output.describe()} and collect over dynamic output "
-                f"{list(self._collect_index[node_input.node_name])[0].describe()}."
+                f"{next(iter(self._collect_index[node_input.node_name])).describe()}."
             )
 
         if self._dynamic_fan_out_index.get(node_input.node_name) is None:

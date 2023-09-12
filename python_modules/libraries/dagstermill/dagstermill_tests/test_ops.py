@@ -333,7 +333,7 @@ def test_hello_world_reexecution():
         assert result.success
 
         output_notebook_path = get_path(
-            [x for x in result.all_events if x.event_type_value == "ASSET_MATERIALIZATION"][0]
+            next(x for x in result.all_events if x.event_type_value == "ASSET_MATERIALIZATION")
         )
 
         with tempfile.NamedTemporaryFile("w+", suffix=".py") as reexecution_notebook_file:

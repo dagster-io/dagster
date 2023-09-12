@@ -42,7 +42,7 @@ CONSTRAINT_BLACKLIST = {ColumnDTypeFnConstraint, ColumnDTypeInSetConstraint}
     )
 )
 def dataframe_loader(_context, config):
-    file_type, file_options = list(config.items())[0]
+    file_type, file_options = next(iter(config.items()))
 
     if file_type == "csv":
         path = file_options["path"]

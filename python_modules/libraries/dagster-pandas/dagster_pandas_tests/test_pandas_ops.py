@@ -20,7 +20,7 @@ def get_op_result_value(op_inst):
         node_defs=[load_num_csv_op("load_csv"), op_inst],
         dependencies={
             op_inst.name: {
-                list(op_inst.input_dict.values())[0].name: DependencyDefinition("load_csv")
+                next(iter(op_inst.input_dict.values())).name: DependencyDefinition("load_csv")
             }
         },
         input_mappings=None,

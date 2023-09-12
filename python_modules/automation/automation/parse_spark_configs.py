@@ -227,7 +227,7 @@ def extract(spark_docs_markdown_text: str) -> SparkConfigNode:
 
     spark_configs = []
     for name, table in tables:
-        parsed_table = list(ptr.HtmlTableTextLoader(table).load())[0]
+        parsed_table = next(iter(ptr.HtmlTableTextLoader(table).load()))
         df = parsed_table.as_dataframe()
         for _, row in df.iterrows():
             s = SparkConfig(row["Property Name"], row["Default"], name + ": " + row["Meaning"])

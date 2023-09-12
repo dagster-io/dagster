@@ -135,7 +135,7 @@ load_from:
             # fake out as if it were loaded by a yaml file in this directory
             file_relative_path(__file__, "not_a_real.yaml"),
         )
-        origin = list(origins.values())[0]
+        origin = next(iter(origins.values()))
         assert origin.use_ssl
 
         # Actually connecting to the server will fail since it's expecting SSL

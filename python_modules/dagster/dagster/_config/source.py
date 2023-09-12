@@ -35,7 +35,7 @@ class StringSourceType(ScalarUnion):
         if not isinstance(value, dict):
             return value
 
-        key, cfg = list(value.items())[0]
+        key, cfg = next(iter(value.items()))
         check.invariant(key == "env", "Only valid key is env")
         return str(_ensure_env_variable(cfg))
 
@@ -56,7 +56,7 @@ class IntSourceType(ScalarUnion):
 
         check.invariant(len(value) == 1, "Selector should have one entry")
 
-        key, cfg = list(value.items())[0]
+        key, cfg = next(iter(value.items()))
         check.invariant(key == "env", "Only valid key is env")
         value = _ensure_env_variable(cfg)
         try:
@@ -83,7 +83,7 @@ class BoolSourceType(ScalarUnion):
 
         check.invariant(len(value) == 1, "Selector should have one entry")
 
-        key, cfg = list(value.items())[0]
+        key, cfg = next(iter(value.items()))
         check.invariant(key == "env", "Only valid key is env")
         value = _ensure_env_variable(cfg)
         try:

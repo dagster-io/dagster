@@ -58,7 +58,7 @@ def resolve_to_config_type(obj: object) -> Union[ConfigType, bool]:
         # Dicts of the special form {type: value} are treated as Maps
         # mapping from the type to value type, otherwise treat as dict type
         if len(obj) == 1:
-            key = list(obj.keys())[0]
+            key = next(iter(obj.keys()))
             key_type = resolve_to_config_type(key)
             if not isinstance(key, str):
                 if not key_type:
