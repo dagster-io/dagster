@@ -19,6 +19,14 @@ if TYPE_CHECKING:
 
 USING_PYDANTIC_2 = int(pydantic.__version__.split(".")[0]) >= 2
 
+PydanticUndefined = None
+try:
+    from pydantic_core import PydanticUndefined as _PydanticUndefined  # type: ignore
+
+    PydanticUndefined = _PydanticUndefined
+except:
+    pass
+
 
 class ModelFieldCompat:
     """Wraps a Pydantic model field to provide a consistent interface for accessing
