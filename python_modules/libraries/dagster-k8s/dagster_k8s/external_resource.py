@@ -43,6 +43,7 @@ def get_pod_name(run_id: str, op_name: str):
 
 DEFAULT_CONTAINER_NAME = "dagster-ext-execution"
 
+
 class K8sPodLogsMessageReader(ExtMessageReader):
     @contextmanager
     def read_messages(
@@ -206,7 +207,7 @@ def build_pod_body(
         "name": pod_name,
     }
     if "labels" in meta:
-        meta["labels"] = {**get_common_labels(), **meta["labels"]} # type: ignore
+        meta["labels"] = {**get_common_labels(), **meta["labels"]}  # type: ignore
     else:
         meta["labels"] = get_common_labels()
 
