@@ -905,6 +905,7 @@ def submit_run_request(
         external_job_origin=external_job.get_external_origin(),
         job_code_origin=external_job.get_python_origin(),
         asset_selection=frozenset(run_request.asset_selection),
+        asset_check_selection=None,
     )
 
     instance.submit_run(run.run_id, workspace)

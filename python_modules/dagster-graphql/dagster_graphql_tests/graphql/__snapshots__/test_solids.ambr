@@ -138,6 +138,14 @@
           'invocations': list([
             dict({
               'pipeline': dict({
+                'name': 'asset_check_job',
+              }),
+              'solidHandle': dict({
+                'handleID': 'asset_1',
+              }),
+            }),
+            dict({
+              'pipeline': dict({
                 'name': 'failure_assets_job',
               }),
               'solidHandle': dict({
@@ -203,6 +211,14 @@
             dict({
               'pipeline': dict({
                 'name': '__ASSET_JOB_6',
+              }),
+              'solidHandle': dict({
+                'handleID': 'asset_1_my_check',
+              }),
+            }),
+            dict({
+              'pipeline': dict({
+                'name': 'asset_check_job',
               }),
               'solidHandle': dict({
                 'handleID': 'asset_1_my_check',

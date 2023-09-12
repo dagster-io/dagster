@@ -1831,6 +1831,7 @@ def define_jobs():
         hanging_partition_asset_job,
         observation_job,
         failure_assets_job,
+        asset_check_job,
         foo_job,
         hanging_graph_asset_job,
         named_groups_job,
@@ -1906,7 +1907,7 @@ def define_asset_jobs():
 
 
 @asset_check(asset=asset_1, description="asset_1 check")
-def my_check():
+def my_check(asset_1):
     return AssetCheckResult(
         success=True,
         metadata={
@@ -1914,6 +1915,9 @@ def my_check():
             "baz": "quux",
         },
     )
+
+
+asset_check_job = build_assets_job("asset_check_job", [asset_1], asset_checks=[my_check])
 
 
 def define_asset_checks():
