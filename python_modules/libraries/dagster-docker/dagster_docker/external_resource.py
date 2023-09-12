@@ -110,12 +110,11 @@ class _ExtDocker(ExtClient):
             message_Reader (Optional[ExtMessageReader]):
                 Override the default ext protocol message reader.
         """
-        context_injector = self.context_injector
         message_reader = message_reader or DockerLogsMessageReader()
 
         with ext_protocol(
             context=context,
-            context_injector=context_injector,
+            context_injector=self.context_injector,
             message_reader=message_reader,
             extras=extras,
         ) as ext_context:

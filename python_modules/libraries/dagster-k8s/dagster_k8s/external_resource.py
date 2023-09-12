@@ -146,13 +146,12 @@ class _ExtK8sPod(ExtClient):
         """
         client = DagsterKubernetesClient.production_client()
 
-        context_injector = self.context_injector
         message_reader = message_reader or K8sPodLogsMessageReader()
 
         with ext_protocol(
             context=context,
             extras=extras,
-            context_injector=context_injector,
+            context_injector=self.context_injector,
             message_reader=message_reader,
         ) as ext_process:
             namespace = namespace or "default"

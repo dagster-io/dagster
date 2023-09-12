@@ -18,8 +18,6 @@ from dagster._core.ext.utils import (
     ext_protocol,
 )
 
-_MESSAGE_READER_FILENAME = "messages"
-
 
 class _ExtSubprocess(ExtClient):
     """An ext client that runs a subprocess with the given command and environment.
@@ -62,7 +60,7 @@ class _ExtSubprocess(ExtClient):
     ) -> None:
         with ext_protocol(
             context=context,
-            context_injector=self.context_injector or ExtTempFileContextInjector(),
+            context_injector=self.context_injector,
             message_reader=message_reader or ExtTempFileMessageReader(),
             extras=extras,
         ) as ext_context:

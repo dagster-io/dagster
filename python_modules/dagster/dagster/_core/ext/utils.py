@@ -17,7 +17,10 @@ from dagster_ext import (
     ExtParams,
 )
 
-from dagster import OpExecutionContext
+from dagster import (
+    OpExecutionContext,
+    _check as check,
+)
 from dagster._core.ext.client import (
     ExtContextInjector,
     ExtMessageReader,
@@ -36,8 +39,8 @@ _CONTEXT_INJECTOR_FILENAME = "context"
 
 
 class ExtFileContextInjector(ExtContextInjector):
-    def __init__(self, path):
-        self._path = path
+    def __init__(self, path: str):
+        self._path = check.str_param(path, "path")
 
     @contextmanager
     def inject_context(self, context_data: "ExtContextData") -> Iterator[ExtParams]:
