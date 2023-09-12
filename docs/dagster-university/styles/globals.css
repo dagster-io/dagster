@@ -22,14 +22,6 @@
     background: #deddff; /* WebKit/Blink Browsers */
     color: #21463d;
   }
-
-  code {
-    background: #231f1b;
-    color: #ccc;
-    font-family: 'Courier New';
-    padding: 4px 6px;
-    border-radius: 4px;
-  }
 }
 
 page {
@@ -38,40 +30,13 @@ page {
   display: flex;
   width: 100vw;
   flex-grow: 1;
-  max-width: 1280px;
+  /* max-width: 1280px; */
 }
 
 main {
   overflow: auto;
   height: calc(100vh - var(--top-nav-height));
-  flexgrow: 1;
-  fontsize: 16px;
+  flex-grow: 1;
+  font-size: 16px;
   padding: 0 5rem 5rem;
-}
-
-p {
-  color: #524e48;
-  font-family: 'Helvetica';
-  font-size: 1.2rem;
-  line-height: 1.3em;
-  font-weight: 400;
-}
-
-h2 {
-  color: #524e48;
-  font-family: 'Helvetica';
-  font-size: 2rem;
-}
-
-h3 {
-  color: #524e48;
-  font-family: 'Helvetica';
-  font-size: 1.5rem;
-}
-
-ul {
-  color: #524e48;
-  font-family: 'Helvetica';
-  font-size: 1.2rem;
-  line-height: 1.3em;
 }

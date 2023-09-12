@@ -748,6 +748,24 @@ __metadata:
   languageName: node
   linkType: hard
 
+"autoprefixer@npm:^10.4.15":
+  version: 10.4.15
+  resolution: "autoprefixer@npm:10.4.15"
+  dependencies:
+    browserslist: ^4.21.10
+    caniuse-lite: ^1.0.30001520
+    fraction.js: ^4.2.0
+    normalize-range: ^0.1.2
+    picocolors: ^1.0.0
+    postcss-value-parser: ^4.2.0
+  peerDependencies:
+    postcss: ^8.1.0
+  bin:
+    autoprefixer: bin/autoprefixer
+  checksum: d490b14fb098c043e109fc13cd23628f146af99a493d35b9df3a26f8ec0b4dd8937c5601cdbaeb465b98ea31d3ea05aa7184711d4d93dfb52358d073dcb67032
+  languageName: node
+  linkType: hard
+
 "available-typed-arrays@npm:^1.0.5":
   version: 1.0.5
   resolution: "available-typed-arrays@npm:1.0.5"
@@ -813,6 +831,20 @@ __metadata:
   languageName: node
   linkType: hard
 
+"browserslist@npm:^4.21.10":
+  version: 4.21.10
+  resolution: "browserslist@npm:4.21.10"
+  dependencies:
+    caniuse-lite: ^1.0.30001517
+    electron-to-chromium: ^1.4.477
+    node-releases: ^2.0.13
+    update-browserslist-db: ^1.0.11
+  bin:
+    browserslist: cli.js
+  checksum: 1e27c0f111a35d1dd0e8fc2c61781b0daefabc2c9471b0b10537ce54843014bceb2a1ce4571af1a82b2bf1e6e6e05d38865916689a158f03bc2c7a4ec2577db8
+  languageName: node
+  linkType: hard
+
 "busboy@npm:1.6.0":
   version: 1.6.0
   resolution: "busboy@npm:1.6.0"
@@ -870,6 +902,13 @@ __metadata:
   version: 1.0.30001527
   resolution: "caniuse-lite@npm:1.0.30001527"
   checksum: 7ad99d78d1a30d494471c8a9ead3fc40a816ee61b16fef330bba5bdae5d7ebaa965becc8cd09c7aa6240125ce790a5213a40cd240ceaa211508744ed86b79783
+  languageName: node
+  linkType: hard
+
+"caniuse-lite@npm:^1.0.30001517, caniuse-lite@npm:^1.0.30001520":
+  version: 1.0.30001528
+  resolution: "caniuse-lite@npm:1.0.30001528"
+  checksum: 7b6a71d41de1ce2b95f5851e7074050b7600157acf02c5701d9650a1faf824e368163f4ede5e269d4ea44fe33e00fe60673cb86f40cac35bd02a9a9a4ef7f162
   languageName: node
   linkType: hard
 
@@ -1103,6 +1142,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"electron-to-chromium@npm:^1.4.477":
+  version: 1.4.510
+  resolution: "electron-to-chromium@npm:1.4.510"
+  checksum: c129dbd5735876fbd25b541cc6fd138914ba8c2189f0c30e2145b645d79d67fcb22f64dc28801ec847e8e71418f89318bd8f0ab02d464979bec2668a06dc4268
+  languageName: node
+  linkType: hard
+
 "emoji-regex@npm:^8.0.0":
   version: 8.0.0
   resolution: "emoji-regex@npm:8.0.0"
@@ -1247,6 +1293,13 @@ __metadata:
     is-date-object: ^1.0.1
     is-symbol: ^1.0.2
   checksum: 4ead6671a2c1402619bdd77f3503991232ca15e17e46222b0a41a5d81aebc8740a77822f5b3c965008e631153e9ef0580540007744521e72de8e33599fca2eed
+  languageName: node
+  linkType: hard
+
+"escalade@npm:^3.1.1":
+  version: 3.1.1
+  resolution: "escalade@npm:3.1.1"
+  checksum: a3e2a99f07acb74b3ad4989c48ca0c3140f69f923e56d0cba0526240ee470b91010f9d39001f2a4a313841d237ede70a729e92125191ba5d21e74b106800b133
   languageName: node
   linkType: hard
 
@@ -1639,6 +1692,13 @@ __metadata:
     cross-spawn: ^7.0.0
     signal-exit: ^4.0.1
   checksum: 139d270bc82dc9e6f8bc045fe2aae4001dc2472157044fdfad376d0a3457f77857fa883c1c8b21b491c6caade9a926a4bed3d3d2e8d3c9202b151a4cbbd0bcd5
+  languageName: node
+  linkType: hard
+
+"fraction.js@npm:^4.2.0":
+  version: 4.3.6
+  resolution: "fraction.js@npm:4.3.6"
+  checksum: e96ae77e64ebfd442d3a5a01a3f0637b0663fc2440bcf2841b3ad9341ba24c81fb2e3e7142e43ef7d088558c6b3f8609df135b201adc7a1c674aea6a71384162
   languageName: node
   linkType: hard
 
@@ -2813,6 +2873,13 @@ next@latest:
   languageName: node
   linkType: hard
 
+"node-releases@npm:^2.0.13":
+  version: 2.0.13
+  resolution: "node-releases@npm:2.0.13"
+  checksum: 17ec8f315dba62710cae71a8dad3cd0288ba943d2ece43504b3b1aa8625bf138637798ab470b1d9035b0545996f63000a8a926e0f6d35d0996424f8b6d36dda3
+  languageName: node
+  linkType: hard
+
 "nopt@npm:^6.0.0":
   version: 6.0.0
   resolution: "nopt@npm:6.0.0"
@@ -2828,6 +2895,13 @@ next@latest:
   version: 3.0.0
   resolution: "normalize-path@npm:3.0.0"
   checksum: 88eeb4da891e10b1318c4b2476b6e2ecbeb5ff97d946815ffea7794c31a89017c70d7f34b3c2ebf23ef4e9fc9fb99f7dffe36da22011b5b5c6ffa34f4873ec20
+  languageName: node
+  linkType: hard
+
+"normalize-range@npm:^0.1.2":
+  version: 0.1.2
+  resolution: "normalize-range@npm:0.1.2"
+  checksum: 9b2f14f093593f367a7a0834267c24f3cb3e887a2d9809c77d8a7e5fd08738bcd15af46f0ab01cc3a3d660386f015816b5c922cea8bf2ee79777f40874063184
   languageName: node
   linkType: hard
 
@@ -3143,7 +3217,7 @@ next@latest:
   languageName: node
   linkType: hard
 
-"postcss-value-parser@npm:^4.0.0":
+"postcss-value-parser@npm:^4.0.0, postcss-value-parser@npm:^4.2.0":
   version: 4.2.0
   resolution: "postcss-value-parser@npm:4.2.0"
   checksum: 819ffab0c9d51cf0acbabf8996dffbfafbafa57afc0e4c98db88b67f2094cb44488758f06e5da95d7036f19556a4a732525e84289a425f4f6fd8e412a9d7442f
@@ -3161,7 +3235,7 @@ next@latest:
   languageName: node
   linkType: hard
 
-"postcss@npm:^8.4.23":
+"postcss@npm:^8.4.23, postcss@npm:^8.4.29":
   version: 8.4.29
   resolution: "postcss@npm:8.4.29"
   dependencies:
@@ -3421,10 +3495,12 @@ react@latest:
     "@types/prismjs": ^1.26.0
     "@types/react": latest
     "@types/react-dom": latest
+    autoprefixer: ^10.4.15
     eslint: 8.48.0
     eslint-config-next: 13.4.19
     eslint-config-prettier: ^9.0.0
     next: latest
+    postcss: ^8.4.29
     prettier: ^3.0.3
     prismjs: latest
     react: latest
@@ -4010,6 +4086,20 @@ typescript@latest:
   dependencies:
     imurmurhash: ^0.1.4
   checksum: 0884b58365af59f89739e6f71e3feacb5b1b41f2df2d842d0757933620e6de08eff347d27e9d499b43c40476cbaf7988638d3acb2ffbcb9d35fd035591adfd15
+  languageName: node
+  linkType: hard
+
+"update-browserslist-db@npm:^1.0.11":
+  version: 1.0.11
+  resolution: "update-browserslist-db@npm:1.0.11"
+  dependencies:
+    escalade: ^3.1.1
+    picocolors: ^1.0.0
+  peerDependencies:
+    browserslist: ">= 4.21.0"
+  bin:
+    update-browserslist-db: cli.js
+  checksum: b98327518f9a345c7cad5437afae4d2ae7d865f9779554baf2a200fdf4bac4969076b679b1115434bd6557376bdd37ca7583d0f9b8f8e302d7d4cc1e91b5f231
   languageName: node
   linkType: hard
 

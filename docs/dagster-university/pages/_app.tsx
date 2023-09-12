@@ -6,9 +6,9 @@ import 'prismjs';
 import 'prismjs/components/prism-bash.min';
 import 'prismjs/themes/prism.css';
 
-import '../public/styles/globals.css';
-import '../public/styles/prism.css';
-import '../public/styles/fonts.css';
+import '../styles/fonts.css';
+import '../styles/globals.css';
+import '../styles/prism.css';
 
 import type {AppProps} from 'next/app';
 import type {MarkdocNextJsPageProps} from '@markdoc/next.js';
@@ -69,7 +69,7 @@ export default function MyApp({Component, pageProps}: AppProps<MyAppProps>) {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <div className="page">
-        <main className="flex column">
+        <main className="flex column prose max-w-none">
           <Component {...pageProps} />
         </main>
       </div>
