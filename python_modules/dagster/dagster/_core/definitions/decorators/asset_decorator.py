@@ -855,7 +855,7 @@ def build_asset_ins(
     deps: Optional[Set[AssetKey]],
 ) -> Mapping[AssetKey, Tuple[str, In]]:
     """Creates a mapping from AssetKey to (name of input, In object)."""
-    deps = check.opt_iterable_param(deps, "deps", AssetDep) or []
+    deps = check.opt_set_param(deps, "deps", AssetKey)
 
     new_input_args = get_function_params_without_context_or_config_or_resources(fn)
 
@@ -900,14 +900,14 @@ def build_asset_ins(
             In(metadata=metadata, input_manager_key=input_manager_key, dagster_type=dagster_type),
         )
 
-    for asset_dep in deps:
-        if asset_dep.asset_key in ins_by_asset_key:
+    for asset_key in deps:
+        if asset_key in ins_by_asset_key:
             raise DagsterInvalidDefinitionError(
-                f"deps value {asset_dep.asset_key} also declared as input/AssetIn"
+                f"deps value {asset_key} also declared as input/AssetIn"
             )
             # mypy doesn't realize that Nothing is a valid type here
-        ins_by_asset_key[asset_dep.asset_key] = (
-            stringify_asset_key_to_input_name(asset_dep.asset_key),
+        ins_by_asset_key[asset_key] = (
+            stringify_asset_key_to_input_name(asset_key),
             In(cast(type, Nothing)),
         )
 
