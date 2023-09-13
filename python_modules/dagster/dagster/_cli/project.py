@@ -1,6 +1,6 @@
 import os
 import sys
-from typing import Optional, Sequence
+from typing import NamedTuple, Optional, Sequence
 
 import click
 import requests
@@ -51,7 +51,12 @@ from_example_command_help_text = (
 list_examples_command_help_text = "List the examples that available to bootstrap with."
 
 
-def check_if_pypi_package_conflict_exists(project_name: str) -> bool:
+class PackageConflictCheckResult(NamedTuple):
+    request_error_msg: Optional[str]
+    conflict_exists: bool = False
+
+
+def check_if_pypi_package_conflict_exists(project_name: str) -> PackageConflictCheckResult:
     """Checks if the project name contains any flagged keywords. If so, raises a warning if a PyPI
     package with the same name exists. This is to prevent import errors from occurring due to a
     project name that conflicts with an imported package.
@@ -60,11 +65,14 @@ def check_if_pypi_package_conflict_exists(project_name: str) -> bool:
     are invalid and cause import errors.
     """
     if any(keyword in project_name for keyword in FLAGGED_PACKAGE_KEYWORDS):
-        res = requests.get(f"https://pypi.org/pypi/{project_name}")
-        if res.status_code == 200:
-            return True
+        try:
+            res = requests.get(f"https://pypi.org/pypi/{project_name}")
+            if res.status_code == 200:
+                return PackageConflictCheckResult(request_error_msg=None, conflict_exists=True)
+        except Exception as e:
+            return PackageConflictCheckResult(request_error_msg=str(e))
 
-    return False
+    return PackageConflictCheckResult(request_error_msg=None, conflict_exists=False)
 
 
 @project_cli.command(
@@ -148,16 +156,33 @@ def scaffold_command(name: str, ignore_package_conflict: bool):
         )
         sys.exit(1)
 
-    if not ignore_package_conflict and check_if_pypi_package_conflict_exists(name):
-        click.echo(
-            click.style(
-                f"The project name '{name}' conflicts with an existing PyPI package. This will"
-                " cause import errors in your project if the package is required. Please choose"
-                " another name, or add the `--ignore-package-conflict` flag to bypass this check.",
-                fg="yellow",
+    if not ignore_package_conflict:
+        package_check_result = check_if_pypi_package_conflict_exists(name)
+        if package_check_result.request_error_msg:
+            click.echo(
+                click.style(
+                    "An error occurred while checking for package conflicts:"
+                    f" {package_check_result.request_error_msg}. \n\nConflicting package names will"
+                    " cause import errors in your project if the existing PyPI package is included"
+                    " as a dependency in your scaffolded project. If desired, this check can be"
+                    " skipped by adding the `--ignore-package-conflict` flag.",
+                    fg="red",
+                )
             )
-        )
-        sys.exit(1)
+            sys.exit(1)
+
+        if package_check_result.conflict_exists:
+            click.echo(
+                click.style(
+                    f"The project name '{name}' conflicts with an existing PyPI package."
+                    " Conflicting package names will cause import errors in your project if the"
+                    " existing PyPI package is included as a dependency in your scaffolded"
+                    " project. Please choose another name, or add the `--ignore-package-conflict`"
+                    " flag to bypass this check.",
+                    fg="yellow",
+                )
+            )
+            sys.exit(1)
 
     generate_project(dir_abspath)
     click.echo(_styled_success_statement(name, dir_abspath))

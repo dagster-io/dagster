@@ -189,13 +189,27 @@ def project_scaffold_command(
     """This command will initialize a new Dagster project and create directories and files that
     load assets from an existing dbt project.
     """
-    if not ignore_package_conflict and check_if_pypi_package_conflict_exists(project_name):
-        raise typer.BadParameter(
-            f"The project name '{project_name}' conflicts with an existing PyPI package. This will"
-            " cause import errors in your project if the package is required. Please choose"
-            " another name, or call `dagster-dbt project scaffold --ignore-package-conflict` to"
-            " bypass this check."
-        )
+    if not ignore_package_conflict:
+        package_check_result = check_if_pypi_package_conflict_exists(project_name)
+
+        if package_check_result.request_error_msg:
+            raise Exception(
+                f"An error occurred while checking if project name '{project_name}' conflicts with"
+                f" an existing PyPI package: {package_check_result.request_error_msg}."
+                " \n\nConflicting package names will cause import errors in your project if the"
+                " existing PyPI package is included as a dependency in your scaffolded project. If"
+                " desired, this check can be skipped by adding the `--ignore-package-conflict`"
+                " flag."
+            )
+
+        if package_check_result.conflict_exists:
+            raise typer.BadParameter(
+                f"The project name '{project_name}' conflicts with an existing PyPI package."
+                " Conflicting package names will cause import errors in your project if the"
+                " existing PyPI package is included as a dependency in your scaffolded project."
+                " Please choose another name, or add the `--ignore-package-conflict` flag to"
+                " bypass this check."
+            )
 
     console = Console()
     console.print(
