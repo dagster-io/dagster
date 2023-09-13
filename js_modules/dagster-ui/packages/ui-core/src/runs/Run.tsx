@@ -362,9 +362,9 @@ const NoStepSelectionState = ({type}: {type: LogType}) => {
       style={{background: '#221F1B'}}
     >
       <NonIdealState
-        title={`Select a step to view ${type.toUpperCase()}`}
+        title={`Select a step to view ${type}`}
         icon="warning"
-        description="Select a step from the dropdown above or by clicking directly on a step in the chart."
+        description="Select a step on the Gantt chart or from the dropdown above to view logs."
       />
     </Box>
   );

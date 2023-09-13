@@ -19,12 +19,7 @@ import {FilterOption, LogFilterSelect} from './LogFilterSelect';
 import {LogLevel} from './LogLevel';
 import {LogsFilterInput} from './LogsFilterInput';
 import {LogFilter, LogFilterValue} from './LogsProvider';
-import {
-  extractLogCaptureStepsFromLegacySteps,
-  ILogCaptureInfo,
-  IRunMetadataDict,
-  IStepState,
-} from './RunMetadataProvider';
+import {extractLogCaptureStepsFromLegacySteps, IRunMetadataDict} from './RunMetadataProvider';
 import {getRunFilterProviders} from './getRunFilterProviders';
 import {EnabledRunLogLevelsKey, validateLogLevels} from './useQueryPersistedLogFilter';
 
@@ -76,9 +71,9 @@ export const LogsToolbar: React.FC<ILogsToolbarProps> = (props) => {
         <ButtonGroup
           activeItems={activeItems}
           buttons={[
-            {id: LogType.structured, icon: 'view_list', label: 'STRUCTURED'},
-            {id: LogType.stdout, icon: 'console', label: 'STDOUT'},
-            {id: LogType.stderr, icon: 'warning', label: 'STDERR'},
+            {id: LogType.structured, icon: 'view_list', label: 'Events'},
+            {id: LogType.stdout, icon: 'console', label: 'stdout'},
+            {id: LogType.stderr, icon: 'warning', label: 'stderr'},
           ]}
           onClick={(id) => onSetLogType(id)}
         />
