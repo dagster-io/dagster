@@ -11,9 +11,8 @@ This reference page provides information for working with [`dagster-deltalake`](
 - [Storing partitioned assets](#storing-partitioned-assets)
 - [Storing tables in multiple schemas](#storing-tables-in-multiple-schemas)
 - [Using the Delta Lake I/O manager with other I/O managers](#using-the-delta-lake-io-manager-with-other-io-managers)
-- [Storing and loading PyArrow Tables or Polars DataFrames in Delta Lake](#storing-and-loading-pyarrow-tables-or-polars-dataframes-in-deltal-lake)
+- [Storing and loading PyArrow Tables or Polars DataFrames in Delta Lake](#storing-and-loading-pyarrow-tables-or-polars-dataframes-in-delta-lake)
 - [Storing multiple DataFrame types in Delta Lake](#storing-multiple-dataframe-types-in-delta-lake)
-- [Executing custom SQL commands with the Delta Lake resource](#executing-custom-sql-commands-with-the-delta-lake-resource)
 
 ---
 
@@ -118,7 +117,7 @@ SELECT *
 ```
 
 </TabItem>
-<TabItem name="Time partitioned assets">
+<TabItem name="Time-partitioned assets">
 
 ### Storing time-partitioned assets
 
@@ -337,7 +336,7 @@ The Delta Lake I/O manager also supports storing and loading PyArrow and Polars 
 
 The `deltalake` package relies heavily on Apache Arrow for efficient data transfer, so PyArrow is natively supported.
 
-You can use the `DeltaLakePyArrowIOManager` in your <PyObject object="Definitions" /> as in [Step 1](/integrations/deltalake/using-deltalake-with-dagster#step-1-configure-the-delta-lake-io-manager) of the [Using Dagster with Delta Lake tutorial](/integrations/deltalake/using-deltalake-with-dagster).
+You can use the `DeltaLakePyArrowIOManager` in a <PyObject object="Definitions" /> object as in [Step 1](/integrations/deltalake/using-deltalake-with-dagster#step-1-configure-the-delta-lake-io-manager) of the [Using Dagster with Delta Lake tutorial](/integrations/deltalake/using-deltalake-with-dagster).
 
 ```python file=/integrations/deltalake/pyarrow_configuration.py startafter=start_configuration endbefore=end_configuration
 from dagster_deltalake import DeltaLakePyarrowIOManager, LocalConfig

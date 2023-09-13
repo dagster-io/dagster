@@ -14,7 +14,7 @@ By the end of the tutorial, you will:
 - Make a Delta Lake table available in Dagster
 - Load Delta tables in downstream assets
 
-This guide focuses on storing and loading Pandas DataFrames in Delta Lakes. Dagster also supports using PyArrow Tables and Polars DataFrames with Delta Lake. The concepts from this guide apply to working with PyArrow tables and Polars DataFrames. Learn more about setting up and using the Delta Lake I/O manager with PyArrow Tables and Polars DataFrames in the [Delta Lake reference](/integrations/deltalake/reference).
+While this guide focuses on storing and loading Pandas DataFrames in Delta Lakes, Dagster also supports using PyArrow Tables and Polars DataFrames. Learn more about setting up and using the Delta Lake I/O manager with PyArrow Tables and Polars DataFrames in the [Delta Lake reference](/integrations/deltalake/reference).
 
 ---
 
@@ -132,7 +132,7 @@ def iris_cleaned(iris_dataset: pd.DataFrame) -> pd.DataFrame:
     return iris_dataset.dropna().drop_duplicates()
 ```
 
-In this example, we want to provide the `iris_dataset` asset from the [Store a Dagster asset as a table in Delta Lake](#store-a-dagster-asset-as-a-table-in-delta-lake) example to the `iris_cleaned` asset.
+In this example, we want to provide the `iris_dataset` asset to the `iris_cleaned` asset. Refer to the the [Store a Dagster asset as a table in Delta Lake](#store-a-dagster-asset-as-a-table-in-delta-lake) example for a look at the `iris_dataset` asset.
 
 In `iris_cleaned`, the `iris_dataset` parameter tells Dagster that the value for the `iris_dataset` asset should be provided as input to `iris_cleaned`. If this feels too magical for you, refer to the [docs for explicitly specifying dependencies](/concepts/assets/software-defined-assets#defining-explicit-managed-loading-dependencies).
 
