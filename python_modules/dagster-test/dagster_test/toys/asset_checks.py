@@ -148,6 +148,30 @@ def multi_asset_1_and_2(context):
         yield Output(1, output_name="two")
 
 
+@asset(
+    group_name="asset_checks",
+    check_specs=[
+        AssetCheckSpec(name=f"check_{i}", asset="asset_with_100_checks") for i in range(100)
+    ],
+)
+def asset_with_100_checks(_):
+    yield Output(1)
+    for i in range(100):
+        yield AssetCheckResult(check_name=f"check_{i}", success=random.random() > 0.2)
+
+
+@asset(
+    group_name="asset_checks",
+    check_specs=[
+        AssetCheckSpec(name=f"check_{i}", asset="asset_with_1000_checks") for i in range(1000)
+    ],
+)
+def asset_with_1000_checks(_):
+    yield Output(1)
+    for i in range(1000):
+        yield AssetCheckResult(check_name=f"check_{i}", success=random.random() > 0.2)
+
+
 @op
 def create_staged_asset():
     return 1
@@ -184,28 +208,84 @@ def stage_then_promote_graph_asset():
     }
 
 
-@asset(
-    group_name="asset_checks",
-    check_specs=[
-        AssetCheckSpec(name=f"check_{i}", asset="asset_with_100_checks") for i in range(100)
-    ],
-)
-def asset_with_100_checks(_):
-    yield Output(1)
-    for i in range(100):
-        yield AssetCheckResult(check_name=f"check_{i}", success=random.random() > 0.2)
+@op
+def test_1(staged_asset):
+    time.sleep(1)
+    result = AssetCheckResult(
+        check_name="check_1",
+        success=True,
+        metadata={"sample": "metadata"},
+    )
+    yield result
+    if not result.success:
+        raise Exception("The check failed, so raising an error to block materializing.")
 
 
-@asset(
+@op
+def test_2(staged_asset):
+    result = AssetCheckResult(
+        check_name="check_2",
+        success=True,
+        metadata={"sample": "metadata"},
+    )
+    yield result
+    if not result.success:
+        raise Exception("The check failed, so raising an error to block materializing.")
+
+
+@op
+def test_3(staged_asset):
+    time.sleep(5)
+    yield AssetCheckResult(
+        check_name="check_3",
+        success=False,
+        severity=AssetCheckSeverity.WARN,
+        metadata={"sample": "metadata"},
+    )
+
+
+@op(ins={"staged_asset": In(), "check_results": In(Nothing)})
+def promote_staged_asset_with_tests(staged_asset):
+    time.sleep(1)
+    return staged_asset
+
+
+@graph_asset(
     group_name="asset_checks",
     check_specs=[
-        AssetCheckSpec(name=f"check_{i}", asset="asset_with_1000_checks") for i in range(1000)
+        AssetCheckSpec(
+            "check_1",
+            asset="many_tests_graph_asset",
+            description="A always passes.",
+        ),
+        AssetCheckSpec(
+            "check_2",
+            asset="many_tests_graph_asset",
+            description="A always passes.",
+        ),
+        AssetCheckSpec(
+            "check_3",
+            asset="many_tests_graph_asset",
+            description="A really slow and unimportant check that always fails.",
+        ),
     ],
 )
-def asset_with_1000_checks(_):
-    yield Output(1)
-    for i in range(1000):
-        yield AssetCheckResult(check_name=f"check_{i}", success=random.random() > 0.2)
+def many_tests_graph_asset():
+    staged_asset = create_staged_asset()
+
+    blocking_check_results = {
+        "many_tests_graph_asset_check_1": test_1(staged_asset),
+        "many_tests_graph_asset_check_2": test_2(staged_asset),
+    }
+    non_blocking_check_results = {"many_tests_graph_asset_check_3": test_3(staged_asset)}
+
+    return {
+        "result": promote_staged_asset_with_tests(
+            staged_asset, list(blocking_check_results.values())
+        ),
+        **blocking_check_results,
+        **non_blocking_check_results,
+    }
 
 
 @asset(
@@ -218,6 +298,7 @@ def asset_with_1000_checks(_):
         AssetKey(["multi_asset_piece_2"]),
         AssetKey(["multi_asset_piece_1"]),
         stage_then_promote_graph_asset,
+        many_tests_graph_asset,
         asset_with_100_checks,
         asset_with_1000_checks,
     ],
@@ -244,4 +325,5 @@ def get_checks_and_assets():
         stage_then_promote_graph_asset,
         asset_with_100_checks,
         asset_with_1000_checks,
+        many_tests_graph_asset,
     ]
