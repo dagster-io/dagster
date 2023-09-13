@@ -10,6 +10,7 @@ from dagster import (
     materialize,
     multi_asset,
 )
+from dagster._check import CheckError
 from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.errors import DagsterInvalidDefinitionError
@@ -36,6 +37,15 @@ def test_basic_instantiation():
     assert AssetDep(the_source).asset_key == the_source.key
 
 
+def test_instantiation_with_asset_dep():
+    partition_mapping = TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
+    og_dep = AssetDep("upstream", partition_mapping)
+
+    # partition_mapping is ignored if instantiated from an AssetDep
+    # TODO - decide if that is the correct behavior
+    assert AssetDep(og_dep) == AssetDep("upstream")
+
+
 def test_multi_asset_errors():
     @multi_asset(specs=[AssetSpec("asset_1"), AssetSpec("asset_2")])
     def a_multi_asset():
@@ -46,6 +56,45 @@ def test_multi_asset_errors():
         match="Cannot pass a multi_asset AssetsDefinition as an argument to deps",
     ):
         AssetDep(a_multi_asset)
+
+
+def test_from_coercible():
+    # basic coersion
+    compare_dep = AssetDep("upstream")
+
+    @asset
+    def upstream():
+        pass
+
+    assert AssetDep.from_coercible(upstream) == compare_dep
+    assert AssetDep.from_coercible("upstream") == compare_dep
+    assert AssetDep.from_coercible(AssetKey(["upstream"])) == compare_dep
+    assert AssetDep.from_coercible(compare_dep) == compare_dep
+
+    # SourceAsset coersion
+    the_source = SourceAsset(key="the_source")
+    source_compare_dep = AssetDep(the_source)
+    assert AssetDep.from_coercible(the_source) == source_compare_dep
+
+    # partition_mapping should be retained when using from_coercible
+    partition_mapping = TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
+    with_partition_mapping = AssetDep("with_partition_mapping", partition_mapping)
+    assert AssetDep.from_coercible(with_partition_mapping) == with_partition_mapping
+
+    # multi_assets cannot be coerced by Definition
+    @multi_asset(specs=[AssetSpec("asset_1"), AssetSpec("asset_2")])
+    def a_multi_asset():
+        pass
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Cannot pass a multi_asset AssetsDefinition as an argument to deps",
+    ):
+        AssetDep.from_coercible(a_multi_asset)
+
+    # Test bad type
+    with pytest.raises(CheckError, match="Unexpected type for AssetKey"):
+        AssetDep.from_coercible(1)
 
 
 ### Tests for deps parameter on @asset and @multi_asset

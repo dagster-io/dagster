@@ -13,6 +13,10 @@ from .events import (
     CoercibleToAssetKey,
 )
 
+CoercibleToAssetDep = Union[
+    CoercibleToAssetKey, AssetSpec, AssetsDefinition, SourceAsset, "AssetDep"
+]
+
 
 @experimental
 class AssetDep(
@@ -50,23 +54,19 @@ class AssetDep(
 
     def __new__(
         cls,
-        asset: Union[CoercibleToAssetKey, AssetSpec, AssetsDefinition, SourceAsset],
+        asset: CoercibleToAssetDep,
         partition_mapping: Optional[PartitionMapping] = None,
     ):
-        if isinstance(asset, AssetSpec):
-            asset_key = asset.key
-        elif isinstance(asset, AssetsDefinition):
+        if isinstance(asset, AssetsDefinition) and len(asset.keys) > 1:
             # Only AssetsDefinition with a single asset can be passed
-            if len(asset.keys) > 1:
-                raise DagsterInvalidDefinitionError(
-                    "Cannot pass a multi_asset AssetsDefinition as an argument to deps."
-                    " Instead, specify dependencies on the assets created by the multi_asset"
-                    f" via AssetKeys or strings. For the multi_asset {asset.node_def.name}, the"
-                    f" available keys are: {asset.keys}."
-                )
-            asset_key = AssetKey.from_coercible_or_definition(asset)
-        else:
-            asset_key = AssetKey.from_coercible_or_definition(asset)
+            raise DagsterInvalidDefinitionError(
+                "Cannot pass a multi_asset AssetsDefinition as an argument to deps."
+                " Instead, specify dependencies on the assets created by the multi_asset"
+                f" via AssetKeys or strings. For the multi_asset {asset.node_def.name}, the"
+                f" available keys are: {asset.keys}."
+            )
+
+        asset_key = AssetKey.from_coercible_to_asset_dep(asset)
 
         return super().__new__(
             cls,
@@ -77,3 +77,10 @@ class AssetDep(
                 PartitionMapping,
             ),
         )
+
+    @staticmethod
+    def from_coercible(arg: "CoercibleToAssetDep"):
+        if isinstance(arg, AssetDep):
+            # we need to retain the partition_mapping, so return the original object
+            return arg
+        return AssetDep(asset=arg)
