@@ -252,12 +252,13 @@ const ResourceConfig: React.FC<{
                 const resourceEntry =
                   resource.type === 'TOP_LEVEL' && resource.resource ? (
                     <ResourceEntry
+                      key={resource.name}
                       url={workspacePathFromAddress(repoAddress, `/resources/${resource.name}`)}
                       name={resourceDisplayName(resource.resource) || ''}
                       description={resource.resource.description || undefined}
                     />
                   ) : (
-                    <ResourceEntry name={resource.name} />
+                    <ResourceEntry key={resource.name} name={resource.name} />
                   );
 
                 return (
@@ -497,55 +498,62 @@ const ResourceUses: React.FC<{
         </Box>
       )}
       {[
-        {name: 'Schedules', objects: resourceDetails.schedulesUsing, icon: 'schedules'},
-        {name: 'Sensors', objects: resourceDetails.sensorsUsing, icon: 'sensors'},
-      ].map(
-        ({name, objects, icon}) =>
-          objects.length > 0 && (
-            <Box>
-              <SectionHeader>
-                <Subheading>{name}</Subheading>
-              </SectionHeader>
-              <Table>
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {resourceDetails.sensorsUsing.map((sensorName) => {
-                    return (
-                      <tr key={sensorName}>
-                        <td>
-                          <Box
-                            flex={{
-                              direction: 'row',
-                              alignItems: 'center',
-                              display: 'inline-flex',
-                              gap: 8,
-                            }}
-                            style={{maxWidth: '100%'}}
-                          >
-                            <Icon name={icon} color={Colors.Gray400} />
+        {
+          name: 'Schedules',
+          objects: resourceDetails.schedulesUsing,
+          icon: <Icon name="schedule" color={Colors.Gray400} />,
+        },
+        {
+          name: 'Sensors',
+          objects: resourceDetails.sensorsUsing,
+          icon: <Icon name="sensors" color={Colors.Gray400} />,
+        },
+      ]
+        .filter(({objects}) => objects.length > 0)
+        .map(({name, objects, icon}) => (
+          <Box key={name}>
+            <SectionHeader>
+              <Subheading>{name}</Subheading>
+            </SectionHeader>
+            <Table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                </tr>
+              </thead>
+              <tbody>
+                {objects.map((itemName) => {
+                  return (
+                    <tr key={name + ':' + itemName}>
+                      <td>
+                        <Box
+                          flex={{
+                            direction: 'row',
+                            alignItems: 'center',
+                            display: 'inline-flex',
+                            gap: 8,
+                          }}
+                          style={{maxWidth: '100%'}}
+                        >
+                          {icon}
 
-                            <Link
-                              to={workspacePathFromAddress(
-                                repoAddress,
-                                `/${name.toLowerCase()}/${sensorName}`,
-                              )}
-                            >
-                              <MiddleTruncate text={sensorName} />
-                            </Link>
-                          </Box>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </Table>
-            </Box>
-          ),
-      )}
+                          <Link
+                            to={workspacePathFromAddress(
+                              repoAddress,
+                              `/${name.toLowerCase()}/${itemName}`,
+                            )}
+                          >
+                            <MiddleTruncate text={itemName} />
+                          </Link>
+                        </Box>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </Table>
+          </Box>
+        ))}
     </>
   );
 };
