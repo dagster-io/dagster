@@ -89,7 +89,6 @@ export const LogsToolbar: React.FC<ILogsToolbarProps> = (props) => {
         <ComputeLogToolbar
           steps={steps}
           metadata={metadata}
-          onSetLogType={onSetLogType}
           computeLogFileKey={computeLogFileKey}
           onSetComputeLogKey={onSetComputeLogKey}
           computeLogUrl={computeLogUrl}
