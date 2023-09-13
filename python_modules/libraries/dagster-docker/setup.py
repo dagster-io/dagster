@@ -32,8 +32,6 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_docker_tests*"]),
-    # urllib3<2 pin needed until docker-py is updated
-    # see: https://github.com/docker/docker-py/issues/3113
-    install_requires=[f"dagster{pin}", "docker", "docker-image-py", "urllib3<2"],
+    install_requires=[f"dagster{pin}", "docker", "docker-image-py"],
     zip_safe=False,
 )
