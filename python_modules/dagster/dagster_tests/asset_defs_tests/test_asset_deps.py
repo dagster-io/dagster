@@ -10,8 +10,7 @@ from dagster import (
     materialize,
     multi_asset,
 )
-from dagster._check import CheckError
-
+from dagster._check import CheckError, ParameterCheckError
 from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.errors import DagsterInvalidDefinitionError
@@ -42,9 +41,8 @@ def test_instantiation_with_asset_dep():
     partition_mapping = TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
     og_dep = AssetDep("upstream", partition_mapping)
 
-    # partition_mapping is ignored if instantiated from an AssetDep
-    # TODO - decide if that is the correct behavior
-    assert AssetDep(og_dep) == AssetDep("upstream")
+    with pytest.raises(ParameterCheckError):
+        assert AssetDep(og_dep) == AssetDep("upstream")
 
 
 def test_multi_asset_errors():

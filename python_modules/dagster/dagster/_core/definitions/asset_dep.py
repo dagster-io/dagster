@@ -54,9 +54,15 @@ class AssetDep(
 
     def __new__(
         cls,
-        asset: CoercibleToAssetDep,
+        asset: Union[CoercibleToAssetKey, AssetSpec, AssetsDefinition, SourceAsset],
         partition_mapping: Optional[PartitionMapping] = None,
     ):
+        if isinstance(asset, list):
+            check.list_param(asset, "asset", of_type=str)
+        else:
+            check.inst_param(
+                asset, "asset", (AssetKey, str, AssetSpec, AssetsDefinition, SourceAsset)
+            )
         if isinstance(asset, AssetsDefinition) and len(asset.keys) > 1:
             # Only AssetsDefinition with a single asset can be passed
             raise DagsterInvalidDefinitionError(
@@ -80,7 +86,5 @@ class AssetDep(
 
     @staticmethod
     def from_coercible(arg: "CoercibleToAssetDep"):
-        if isinstance(arg, AssetDep):
-            # we need to retain the partition_mapping, so return the original object
-            return arg
-        return AssetDep(asset=arg)
+        # if arg is AssetDep, return the original object to retain partition_mapping
+        return arg if isinstance(arg, AssetDep) else AssetDep(asset=arg)

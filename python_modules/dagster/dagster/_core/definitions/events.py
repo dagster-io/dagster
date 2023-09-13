@@ -20,6 +20,7 @@ import dagster._check as check
 import dagster._seven as seven
 from dagster._annotations import PublicAttr, experimental_param, public
 from dagster._core.definitions.data_version import DataVersion
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX, SYSTEM_TAG_PREFIX
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import NamedTupleSerializer
@@ -198,6 +199,14 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
         from dagster._core.definitions.source_asset import SourceAsset
 
         if isinstance(arg, AssetsDefinition):
+            if len(arg.keys) > 1:
+                # Only AssetsDefinition with a single asset can be passed
+                raise DagsterInvalidDefinitionError(
+                    "Cannot pass a multi_asset AssetsDefinition as an argument to deps."
+                    " Instead, specify dependencies on the assets created by the multi_asset"
+                    f" via AssetKeys or strings. For the multi_asset {arg.node_def.name}, the"
+                    f" available keys are: {arg.keys}."
+                )
             return arg.key
         elif isinstance(arg, SourceAsset):
             return arg.key
