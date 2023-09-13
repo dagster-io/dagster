@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import ABC, ABCMeta, abstractmethod
 from typing import (
     AbstractSet,
     Any,
@@ -50,7 +50,12 @@ from dagster._utils.forked_pdb import ForkedPdb
 from .system import StepExecutionContext
 
 
-class AbstractComputeExecutionContext(ABC):
+# This metaclass has to exist for OpExecutionContext to have a metaclass
+class AbstractComputeMetaclass(ABCMeta):
+    pass
+
+
+class AbstractComputeExecutionContext(ABC, metaclass=AbstractComputeMetaclass):
     """Base class for op context implemented by OpExecutionContext and DagstermillExecutionContext."""
 
     @abstractmethod
@@ -97,7 +102,18 @@ class AbstractComputeExecutionContext(ABC):
         """The parsed config specific to this op."""
 
 
-class OpExecutionContext(AbstractComputeExecutionContext):
+class OpExecutionContextMetaClass(AbstractComputeMetaclass):
+    def __instancecheck__(cls, instance) -> bool:
+        # This makes isinstance(context, OpExecutionContext) return True when
+        # the context is an AssetExecutionContext. This makes the new
+        # AssetExecutionContext backwards compatible with the old
+        # OpExecutionContext codepaths.
+        if isinstance(instance, AssetExecutionContext):
+            return True
+        return super().__instancecheck__(instance)
+
+
+class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionContextMetaClass):
     """The ``context`` object that can be made available as the first argument to the function
     used for computing an op or asset.
 
