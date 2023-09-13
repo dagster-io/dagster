@@ -3,6 +3,7 @@ import sys
 from typing import Optional, Sequence
 
 import click
+import requests
 
 from dagster._generate import (
     download_example_from_github,
@@ -12,8 +13,6 @@ from dagster._generate import (
 )
 from dagster._generate.download import AVAILABLE_EXAMPLES
 from dagster.version import __version__ as dagster_version
-
-import requests
 
 
 @click.group(name="project")
@@ -53,8 +52,7 @@ list_examples_command_help_text = "List the examples that available to bootstrap
 
 
 def check_if_pypi_package_conflict_exists(project_name: str) -> bool:
-    """
-    Checks if the project name contains any flagged keywords. If so, raises a warning if a PyPI
+    """Checks if the project name contains any flagged keywords. If so, raises a warning if a PyPI
     package with the same name exists. This is to prevent import errors from occurring due to a
     project name that conflicts with an imported package.
 
@@ -136,13 +134,12 @@ def scaffold_code_location_command(name: str):
     help="Name of the new Dagster project",
 )
 @click.option(
-    "--force",
-    "-f",
+    "--ignore-package-conflict",
     is_flag=True,
     default=False,
-    help="Skip checking if the name conflicts with a PyPI package.",
+    help="Controls whether the project name can conflict with an existing PyPI package.",
 )
-def scaffold_command(name: str, force: bool):
+def scaffold_command(name: str, ignore_package_conflict: bool):
     dir_abspath = os.path.abspath(name)
     if os.path.isdir(dir_abspath) and os.path.exists(dir_abspath):
         click.echo(
@@ -151,12 +148,12 @@ def scaffold_command(name: str, force: bool):
         )
         sys.exit(1)
 
-    if not force and check_if_pypi_package_conflict_exists(name):
+    if not ignore_package_conflict and check_if_pypi_package_conflict_exists(name):
         click.echo(
             click.style(
                 f"The project name '{name}' conflicts with an existing PyPI package. This will"
                 " cause import errors in your project if the package is required. Please choose"
-                " another name, or add the `--force` flag to bypass this check.",
+                " another name, or add the `--ignore-package-conflict` flag to bypass this check.",
                 fg="yellow",
             )
         )
