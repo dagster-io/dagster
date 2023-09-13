@@ -383,6 +383,7 @@ export const IconWrapper = styled.div<WrapperProps>`
         background: ${p.$color};
         mask-size: contain;
         mask-repeat: no-repeat;
+        mask-position: center;
         mask-image: url(${p.$img});
       `}
   object-fit: contain;
