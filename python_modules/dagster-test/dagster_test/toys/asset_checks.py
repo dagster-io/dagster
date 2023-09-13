@@ -132,14 +132,6 @@ def random_fail_check_on_partitioned_asset():
     )
 
 
-@asset(
-    group_name="asset_checks",
-    deps=[checked_asset, asset_with_check_in_same_op, check_exception_asset, partitioned_asset],
-)
-def downstream_asset():
-    return 1
-
-
 @multi_asset(
     outs={
         "one": AssetOut(key="multi_asset_piece_1", group_name="asset_checks", is_required=False),
@@ -192,6 +184,48 @@ def stage_then_promote_graph_asset():
     }
 
 
+@asset(
+    group_name="asset_checks",
+    check_specs=[
+        AssetCheckSpec(name=f"check_{i}", asset="asset_with_100_checks") for i in range(100)
+    ],
+)
+def asset_with_100_checks(_):
+    yield Output(1)
+    for i in range(100):
+        yield AssetCheckResult(check_name=f"check_{i}", success=random.random() > 0.2)
+
+
+@asset(
+    group_name="asset_checks",
+    check_specs=[
+        AssetCheckSpec(name=f"check_{i}", asset="asset_with_1000_checks") for i in range(1000)
+    ],
+)
+def asset_with_1000_checks(_):
+    yield Output(1)
+    for i in range(1000):
+        yield AssetCheckResult(check_name=f"check_{i}", success=random.random() > 0.2)
+
+
+@asset(
+    group_name="asset_checks",
+    deps=[
+        checked_asset,
+        asset_with_check_in_same_op,
+        check_exception_asset,
+        partitioned_asset,
+        AssetKey(["multi_asset_piece_2"]),
+        AssetKey(["multi_asset_piece_1"]),
+        stage_then_promote_graph_asset,
+        asset_with_100_checks,
+        asset_with_1000_checks,
+    ],
+)
+def downstream_asset():
+    return 1
+
+
 def get_checks_and_assets():
     return [
         checked_asset,
@@ -208,4 +242,6 @@ def get_checks_and_assets():
         random_fail_check_on_partitioned_asset,
         multi_asset_1_and_2,
         stage_then_promote_graph_asset,
+        asset_with_100_checks,
+        asset_with_1000_checks,
     ]
