@@ -7,6 +7,7 @@ import pytest
 from dagster import AssetCheckResult, AssetExecutionContext, AssetKey, materialize
 from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster_dbt.asset_decorator import dbt_assets
+from dagster_dbt.asset_defs import load_assets_from_dbt_manifest
 from dagster_dbt.core.resources_v2 import DbtCliResource
 
 pytest.importorskip("dbt.version", minversion="1.4")
@@ -30,21 +31,32 @@ def test_with_asset_checks() -> None:
     def my_dbt_assets_no_checks():
         ...
 
-    # dbt tests are present, but are not modeled as Dagster asset checks
-    assert any(
-        unique_id.startswith("test") for unique_id in manifest_no_asset_checks_json["nodes"].keys()
+    [load_my_dbt_assets_no_checks] = load_assets_from_dbt_manifest(
+        manifest=manifest_no_asset_checks_json
     )
-    assert not my_dbt_assets_no_checks.check_specs_by_output_name
+
+    # dbt tests are present, but are not modeled as Dagster asset checks
+    for asset_def in [my_dbt_assets_no_checks, load_my_dbt_assets_no_checks]:
+        assert any(
+            unique_id.startswith("test")
+            for unique_id in manifest_no_asset_checks_json["nodes"].keys()
+        )
+        assert not asset_def.check_specs_by_output_name
 
     @dbt_assets(manifest=manifest_asset_checks_json)
     def my_dbt_assets_with_checks():
         ...
 
-    # dbt tests are present, and are modeled as Dagster asset checks
-    assert any(
-        unique_id.startswith("test") for unique_id in manifest_asset_checks_json["nodes"].keys()
+    [load_my_dbt_assets_with_checks] = load_assets_from_dbt_manifest(
+        manifest=manifest_asset_checks_json
     )
-    assert my_dbt_assets_with_checks.check_specs_by_output_name
+
+    # dbt tests are present, and are modeled as Dagster asset checks
+    for asset_def in [my_dbt_assets_with_checks, load_my_dbt_assets_with_checks]:
+        assert any(
+            unique_id.startswith("test") for unique_id in manifest_asset_checks_json["nodes"].keys()
+        )
+        assert asset_def.check_specs_by_output_name
 
 
 @pytest.mark.parametrize(
