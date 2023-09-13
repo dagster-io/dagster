@@ -2982,6 +2982,7 @@ type Query {
   runOrError(runId: ID!): RunOrError!
   runTagKeysOrError: RunTagKeysOrError
   runTagsOrError(tagKeys: [String!], valuePrefix: String, limit: Int): RunTagsOrError
+  runIdsOrError(filter: RunsFilter, cursor: String, limit: Int): RunIdsOrError!
   runGroupOrError(runId: ID!): RunGroupOrError!
   isPipelineConfigValid(
     pipeline: PipelineSelector!
@@ -3104,6 +3105,12 @@ union RunTagsOrError = PythonError | RunTags
 
 type RunTags {
   tags: [PipelineTagAndValues!]!
+}
+
+union RunIdsOrError = RunIds | InvalidPipelineRunsFilterError | PythonError
+
+type RunIds {
+  results: [String!]!
 }
 
 input AssetGroupSelector {
