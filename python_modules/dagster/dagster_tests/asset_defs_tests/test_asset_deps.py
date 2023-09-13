@@ -10,7 +10,7 @@ from dagster import (
     materialize,
     multi_asset,
 )
-from dagster._check import CheckError, ParameterCheckError
+from dagster._check import ParameterCheckError
 from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.errors import DagsterInvalidDefinitionError
@@ -56,8 +56,9 @@ def test_multi_asset_errors():
     ):
         AssetDep(a_multi_asset)
 
+
 def test_from_coercible():
-    # basic coersion
+    # basic coercion
     compare_dep = AssetDep("upstream")
 
     @asset
@@ -69,7 +70,7 @@ def test_from_coercible():
     assert AssetDep.from_coercible(AssetKey(["upstream"])) == compare_dep
     assert AssetDep.from_coercible(compare_dep) == compare_dep
 
-    # SourceAsset coersion
+    # SourceAsset coercion
     the_source = SourceAsset(key="the_source")
     source_compare_dep = AssetDep(the_source)
     assert AssetDep.from_coercible(the_source) == source_compare_dep
@@ -91,8 +92,10 @@ def test_from_coercible():
         AssetDep.from_coercible(a_multi_asset)
 
     # Test bad type
-    with pytest.raises(CheckError, match="Unexpected type for AssetKey"):
+    with pytest.raises(ParameterCheckError, match='Param "asset" is not one of'):
+        # full error msg: Param "asset" is not one of ['AssetKey', 'AssetSpec', 'AssetsDefinition', 'SourceAsset', 'str']. Got 1 which is type <class 'int'>.
         AssetDep.from_coercible(1)
+
 
 ### Tests for deps parameter on @asset and @multi_asset
 
