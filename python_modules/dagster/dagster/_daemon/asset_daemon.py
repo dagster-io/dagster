@@ -1,4 +1,4 @@
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import pendulum
 
@@ -19,6 +19,7 @@ from dagster._core.storage.tags import (
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._core.workspace.workspace import IWorkspace
 from dagster._daemon.daemon import DaemonIterator, IntervalDaemon
+from dagster._utils import hash_collection
 
 CURSOR_KEY = "ASSET_DAEMON_CURSOR"
 ASSET_DAEMON_PAUSED_KEY = "ASSET_DAEMON_PAUSED"
@@ -138,6 +139,8 @@ class AssetDaemon(IntervalDaemon):
 
         evaluations_by_asset_key = {evaluation.asset_key: evaluation for evaluation in evaluations}
 
+        pipeline_and_execution_plan_cache: Dict[int, Tuple[ExternalJob, ExternalExecutionPlan]] = {}
+
         submit_job_inputs: List[Tuple[RunRequest, ExternalJob, ExternalExecutionPlan]] = []
 
         # First do work that is most likely to fail before doing any writes (to make
@@ -155,6 +158,7 @@ class AssetDaemon(IntervalDaemon):
                     instance,
                     workspace,
                     asset_graph,
+                    pipeline_and_execution_plan_cache,
                 )
             )
 
@@ -205,7 +209,12 @@ def get_asset_run_submit_input(
     instance: DagsterInstance,
     workspace: IWorkspace,
     asset_graph: ExternalAssetGraph,
+    pipeline_and_execution_plan_cache: Dict[int, Tuple[ExternalJob, ExternalExecutionPlan]] = {},
 ) -> Tuple[RunRequest, ExternalJob, ExternalExecutionPlan]:
+    check.invariant(
+        not run_request.run_config, "Asset materialization run requests have no custom run config"
+    )
+
     asset_keys = check.not_none(run_request.asset_selection)
     check.invariant(len(asset_keys) > 0)
 
@@ -224,23 +233,32 @@ def get_asset_run_submit_input(
         )
     )
 
-    external_job = code_location.get_external_job(
-        JobSubsetSelector(
-            location_name=location_name,
-            repository_name=repository_name,
-            job_name=job_name,
-            op_selection=None,
-            asset_selection=asset_keys,
-        )
+    job_selector = JobSubsetSelector(
+        location_name=location_name,
+        repository_name=repository_name,
+        job_name=job_name,
+        op_selection=None,
+        asset_selection=asset_keys,
     )
 
-    external_execution_plan = code_location.get_external_execution_plan(
-        external_job,
-        run_request.run_config,
-        step_keys_to_execute=None,
-        known_state=None,
-        instance=instance,
-    )
+    selector_id = hash_collection(job_selector)
+
+    if selector_id not in pipeline_and_execution_plan_cache:
+        external_job = code_location.get_external_job(job_selector)
+
+        external_execution_plan = code_location.get_external_execution_plan(
+            external_job,
+            run_config={},
+            step_keys_to_execute=None,
+            known_state=None,
+            instance=instance,
+        )
+        pipeline_and_execution_plan_cache[selector_id] = (
+            external_job,
+            external_execution_plan,
+        )
+
+    external_job, external_execution_plan = pipeline_and_execution_plan_cache[selector_id]
 
     return (run_request, external_job, external_execution_plan)
 
