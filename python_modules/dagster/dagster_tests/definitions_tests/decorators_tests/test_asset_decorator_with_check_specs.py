@@ -465,19 +465,30 @@ def test_graph_asset():
     def validate_asset(word):
         return AssetCheckResult(check_name="check1", success=True, metadata={"foo": "bar"})
 
+    @op
+    def non_blocking_validation(word):
+        return AssetCheckResult(check_name="check2", success=True, metadata={"biz": "buz"})
+
     @op(ins={"staging_asset": In(Nothing), "check_result": In(Nothing)})
     def promote_asset():
         return None
 
     @graph_asset(
         name="foo",
-        check_specs=[AssetCheckSpec("check1", asset="foo", description="desc")],
+        check_specs=[
+            AssetCheckSpec("check1", asset="foo", description="desc"),
+            AssetCheckSpec("check2", asset="foo", description="desc"),
+        ],
     )
     def asset1():
         staging_asset = create_asset()
         check_result = validate_asset(staging_asset)
         promoted_asset = promote_asset(staging_asset=staging_asset, check_result=check_result)
-        return {"result": promoted_asset, "foo_check1": check_result}
+        return {
+            "result": promoted_asset,
+            "foo_check1": check_result,
+            "foo_check2": non_blocking_validation(staging_asset),
+        }
 
     result = materialize(assets=[asset1])
     assert result.success
@@ -485,8 +496,10 @@ def test_graph_asset():
     assert len(result.get_asset_materialization_events()) == 1
 
     check_evals = result.get_asset_check_evaluations()
-    assert len(check_evals) == 1
-    check_eval = check_evals[0]
-    assert check_eval.asset_key == AssetKey("foo")
-    assert check_eval.check_name == "check1"
-    assert check_eval.metadata == {"foo": MetadataValue.text("bar")}
+    evals_by_name = {check_eval.check_name: check_eval for check_eval in check_evals}
+    assert evals_by_name.keys() == {"check1", "check2"}
+    assert evals_by_name["check1"].asset_key == AssetKey("foo")
+    assert evals_by_name["check1"].metadata == {"foo": MetadataValue.text("bar")}
+
+    assert evals_by_name["check2"].asset_key == AssetKey("foo")
+    assert evals_by_name["check2"].metadata == {"biz": MetadataValue.text("buz")}
