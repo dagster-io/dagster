@@ -21,12 +21,12 @@ def iris_data() -> pd.DataFrame:
 
 
 @asset
-def iris_cleaned(iris_data: pd.DataFrame) -> pd.DataFrame:
-    return iris_data.dropna().drop_duplicates()
+def iris_setosa(iris_data: pd.DataFrame) -> pd.DataFrame:
+    return iris_data[iris_data["species"] == "Iris-setosa"]
 
 
 defs = Definitions(
-    assets=[iris_data, iris_harvest_data, iris_cleaned],
+    assets=[iris_data, iris_harvest_data, iris_setosa],
     resources={
         "io_manager": BigQueryPandasIOManager(
             project="my-gcp-project",
