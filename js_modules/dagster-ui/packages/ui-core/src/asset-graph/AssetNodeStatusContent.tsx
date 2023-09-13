@@ -51,7 +51,7 @@ const LOADING_STATUS_CONTENT = {
 
 type StatusContentArgs = {
   assetKey: AssetKeyInput;
-  definition: {opNames: string[]; isSource: boolean; isObservable: boolean};
+  definition?: {opNames: string[]; isSource: boolean; isObservable: boolean};
   liveData: LiveDataForNode | null | undefined;
   expanded?: boolean;
 };
@@ -62,7 +62,7 @@ export function buildAssetNodeStatusContent({
   liveData,
   expanded,
 }: StatusContentArgs) {
-  return definition.isSource
+  return definition?.isSource
     ? _buildSourceAssetNodeStatusContent({
         assetKey,
         definition,
@@ -134,7 +134,7 @@ export function _buildSourceAssetNodeStatusContent({
       ),
     };
   }
-  if (definition.isObservable) {
+  if (definition?.isObservable) {
     return {
       case: StatusCase.SOURCE_NEVER_OBSERVED as const,
       background: Colors.Gray100,
