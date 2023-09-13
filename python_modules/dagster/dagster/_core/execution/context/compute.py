@@ -1331,7 +1331,7 @@ class AssetExecutionContext:
                     " the underlying OpExecutionContext instead by calling"
                     f" context.op_execution_context.{attr}."
                 ),
-                breaking_version="1.7",
+                breaking_version="1.7.0",
                 stacklevel=1,
             )
 
@@ -1347,7 +1347,7 @@ class AssetExecutionContext:
                     " you are using I/O managers the method still exists at"
                     f" context.op_execution_context.{attr}."
                 ),
-                breaking_version="1.7",
+                breaking_version="1.7.0",
                 stacklevel=1,
             )
 
@@ -1355,13 +1355,11 @@ class AssetExecutionContext:
             deprecation_warning(
                 subject=f"AssetExecutionContext.{attr}",
                 additional_warn_text=f"Instead {ALTERNATE_AVAILABLE_METHODS[attr]}.",
-                breaking_version="1.7",
+                breaking_version="1.7.0",
                 stacklevel=1,
             )
 
         return getattr(self._op_execution_context, attr)
-
-    # include all supported methods below
 
     @public
     @property
@@ -1427,8 +1425,7 @@ class AssetExecutionContext:
 
     @property
     def job_name(self) -> Optional[str]:
-        """TODO."""
-        pass
+        return self.op_execution_context.job_name
 
     @property
     def retry_number(self) -> int:
