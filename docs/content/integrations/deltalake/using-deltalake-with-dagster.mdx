@@ -102,8 +102,10 @@ When Dagster materializes the `iris_dataset` asset using the configuration from 
 
 If you already have tables in your Delta Lake, you may want to make them available to other Dagster assets. You can accomplish this by using [source assets](/concepts/assets/software-defined-assets#defining-external-asset-dependencies) for these tables. By creating a source asset for the existing table, you tell Dagster how to find the table so it can be fetched for downstream assets.
 
-```python file=/integrations/duckdb/source_asset.py
-ENOENT: no such file or directory, open '/Users/pedram/projects/dagster-roeap/examples/docs_snippets/docs_snippets/integrations/duckdb/source_asset.py'
+```python file=/integrations/deltalake/source_asset.py
+from dagster import SourceAsset
+
+iris_harvest_data = SourceAsset(key="iris_harvest_data")
 ```
 
 In this example, we create a <PyObject object="SourceAsset" /> for a pre-existing table containing iris harvests data. To make the data available to other Dagster assets, we need to tell the Delta Lake I/O manager how to find the data.
