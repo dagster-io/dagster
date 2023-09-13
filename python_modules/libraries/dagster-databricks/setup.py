@@ -37,7 +37,7 @@ setup(
         f"dagster-pyspark{pin}",
         "databricks-cli~=0.17",  # TODO: Remove this dependency in the next minor release.
         "databricks_api",  # TODO: Remove this dependency in the next minor release.
-        "databricks-sdk<0.7",  # Breaking changes occur in minor versions.
+        "databricks-sdk<0.9",  # Breaking changes occur in minor versions.
     ],
     zip_safe=False,
 )

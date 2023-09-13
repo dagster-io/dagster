@@ -411,6 +411,17 @@ class ExtBlobStoreMessageWriterChannel(ExtMessageWriterChannel):
             time.sleep(1)
 
 
+class ExtBufferedFilesystemMessageWriterChannel(ExtBlobStoreMessageWriterChannel):
+    def __init__(self, path: str, *, interval: float = 10):
+        super().__init__(interval=interval)
+        self._path = path
+
+    def upload_messages_chunk(self, payload: IO, index: int) -> None:
+        message_path = os.path.join(self._path, f"{index}.json")
+        with open(message_path, "w") as f:
+            f.write(payload.read())
+
+
 # ########################
 # ##### IO - DEFAULT
 # ########################
@@ -500,7 +511,6 @@ class ExtS3MessageWriter(ExtBlobStoreMessageWriter):
     # client is a boto3.client("s3") object
     def __init__(self, client: Any, *, interval: float = 10):
         super().__init__(interval=interval)
-        self._interval = _assert_param_type(interval, float, self.__class__.__name__, "interval")
         # Not checking client type for now because it's a boto3.client object and we don't want to
         # depend on boto3.
         self._client = client
@@ -515,7 +525,7 @@ class ExtS3MessageWriter(ExtBlobStoreMessageWriter):
             client=self._client,
             bucket=bucket,
             key_prefix=key_prefix,
-            interval=self._interval,
+            interval=self.interval,
         )
 
 
@@ -535,6 +545,33 @@ class ExtS3MessageChannel(ExtBlobStoreMessageWriterChannel):
             Body=payload.read(),
             Bucket=self._bucket,
             Key=key,
+        )
+
+
+# ########################
+# ##### IO - DBFS
+# ########################
+
+
+class ExtDbfsContextLoader(ExtContextLoader):
+    @contextmanager
+    def load_context(self, params: ExtParams) -> Iterator[ExtContextData]:
+        unmounted_path = _assert_env_param_type(params, "path", str, self.__class__)
+        path = os.path.join("/dbfs", unmounted_path.lstrip("/"))
+        with open(path, "r") as f:
+            data = json.load(f)
+            yield data
+
+
+class ExtDbfsMessageWriter(ExtBlobStoreMessageWriter):
+    def make_channel(
+        self,
+        params: ExtParams,
+    ) -> "ExtBufferedFilesystemMessageWriterChannel":
+        unmounted_path = _assert_env_param_type(params, "path", str, self.__class__)
+        return ExtBufferedFilesystemMessageWriterChannel(
+            path=os.path.join("/dbfs", unmounted_path.lstrip("/")),
+            interval=self.interval,
         )
 
 
