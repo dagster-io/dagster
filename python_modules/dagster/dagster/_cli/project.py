@@ -13,11 +13,17 @@ from dagster._generate import (
 from dagster._generate.download import AVAILABLE_EXAMPLES
 from dagster.version import __version__ as dagster_version
 
+import requests
+
 
 @click.group(name="project")
 def project_cli():
     """Commands for bootstrapping new Dagster projects and code locations."""
 
+
+# Keywords to flag in package names. When a project name contains one of these keywords, we check
+# if a conflicting PyPI package exists.
+FLAGGED_PACKAGE_KEYWORDS = ["dagster", "dbt"]
 
 scaffold_repository_command_help_text = (
     "(DEPRECATED; Use `dagster project scaffold-code-location` instead) "
@@ -44,6 +50,23 @@ from_example_command_help_text = (
 )
 
 list_examples_command_help_text = "List the examples that available to bootstrap with."
+
+
+def check_if_pypi_package_conflict_exists(project_name: str) -> bool:
+    """
+    Checks if the project name contains any flagged keywords. If so, raises a warning if a PyPI
+    package with the same name exists. This is to prevent import errors from occurring due to a
+    project name that conflicts with an imported package.
+
+    Raises an error regardless of hyphen or underscore (i.e. dagster_dbt vs dagster-dbt). Both
+    are invalid and cause import errors.
+    """
+    if any(keyword in project_name for keyword in FLAGGED_PACKAGE_KEYWORDS):
+        res = requests.get(f"https://pypi.org/pypi/{project_name}")
+        if res.status_code == 200:
+            return True
+
+    return False
 
 
 @project_cli.command(
@@ -112,12 +135,30 @@ def scaffold_code_location_command(name: str):
     type=click.STRING,
     help="Name of the new Dagster project",
 )
-def scaffold_command(name: str):
+@click.option(
+    "--force",
+    "-f",
+    is_flag=True,
+    default=False,
+    help="Skip checking if the name conflicts with a PyPI package.",
+)
+def scaffold_command(name: str, force: bool):
     dir_abspath = os.path.abspath(name)
     if os.path.isdir(dir_abspath) and os.path.exists(dir_abspath):
         click.echo(
             click.style(f"The directory {dir_abspath} already exists. ", fg="red")
             + "\nPlease delete the contents of this path or choose another location."
+        )
+        sys.exit(1)
+
+    if not force and check_if_pypi_package_conflict_exists(name):
+        click.echo(
+            click.style(
+                f"The project name '{name}' conflicts with an existing PyPI package. This will"
+                " cause import errors in your project if the package is required. Please choose"
+                " another name, or add the `--force` flag to bypass this check.",
+                fg="yellow",
+            )
         )
         sys.exit(1)
 

@@ -15,6 +15,8 @@ from typing_extensions import Annotated
 from ..include import STARTER_PROJECT_PATH
 from ..version import __version__ as dagster_dbt_version
 
+from dagster._cli.project import check_if_pypi_package_conflict_exists
+
 app = typer.Typer(
     no_args_is_help=True,
     context_settings={
@@ -166,6 +168,15 @@ def project_scaffold_command(
             resolve_path=True,
         ),
     ] = Path.cwd(),
+    ignore_package_conflict: Annotated[
+        bool,
+        typer.Option(
+            default=...,
+            help="Controls whether the project name can conflict with an existing PyPI package.",
+            is_flag=True,
+            hidden=True,
+        ),
+    ] = False,
     use_dbt_project_package_data_dir: Annotated[
         bool,
         typer.Option(
@@ -179,6 +190,15 @@ def project_scaffold_command(
     """This command will initialize a new Dagster project and create directories and files that
     load assets from an existing dbt project.
     """
+
+    if not ignore_package_conflict and check_if_pypi_package_conflict_exists(project_name):
+        raise typer.BadParameter(
+            f"The project name '{project_name}' conflicts with an existing PyPI package. This will"
+            " cause import errors in your project if the package is required. Please choose"
+            " another name, or call `dagster-dbt project scaffold --ignore-package-conflicts` to"
+            " bypass this check."
+        )
+
     console = Console()
     console.print(
         f"Running with dagster-dbt version: [bold green]{dagster_dbt_version}[/bold green]."
