@@ -250,10 +250,10 @@ export function sortAssetKeys(a: {path: string[]}, b: {path: string[]}) {
   return COMMON_COLLATOR.compare(displayNameForAssetKey(a), displayNameForAssetKey(b));
 }
 
-export function stepKeyForAsset(definition?: {opNames: string[]}) {
+export function stepKeyForAsset(definition: {opNames: string[]}) {
   // Used for linking to the run with this step highlighted. We only support highlighting
   // a single step, so just use the first one.
-  const firstOp = definition?.opNames.length ? definition.opNames[0] : null;
+  const firstOp = definition.opNames.length ? definition.opNames[0] : null;
   return firstOp || '';
 }
 
