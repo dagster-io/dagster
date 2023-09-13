@@ -1,6 +1,6 @@
 ---
 title: "dagster-deltalake integration reference"
-description: Store your Dagster assets in a Delta Lake
+description: Store your Dagster assets in Delta Lake
 ---
 
 # dagster-deltalake integration reference
@@ -13,7 +13,7 @@ This reference page provides information for working with [`dagster-deltalake`](
 - [Using the Delta Lake I/O manager with other I/O managers](#using-the-delta-lake-io-manager-with-other-io-managers)
 - [Storing and loading PyArrow Tables or Polars DataFrames in Delta Lake](#storing-and-loading-pyarrow-tables-or-polars-dataframes-in-deltal-lake)
 - [Storing multiple DataFrame types in Delta Lake](#storing-multiple-dataframe-types-in-delta-lake)
-- [Executing custom SQL commands with the DuckDB resource](#executing-custom-sql-commands-with-the-duckdb-resource)
+- [Executing custom SQL commands with the Delta Lake resource](#executing-custom-sql-commands-with-the-delta-lake-resource)
 
 ---
 
@@ -26,7 +26,7 @@ import pandas as pd
 
 from dagster import AssetIn, asset
 
-# this example uses the iris_dataset asset from Step 2 of the Using Dagster with DuckDB tutorial
+# this example uses the iris_dataset asset from Step 2 of the Using Dagster with Delta Lake tutorial
 
 
 @asset(
@@ -44,7 +44,7 @@ def sepal_data(iris_sepal: pd.DataFrame) -> pd.DataFrame:
     return iris_sepal
 ```
 
-In this example, we only use the columns containing sepal data from the `iris_dataset` table created in [Step 2: Create tables in Delta Lake](/integrations/deltalake/using-deltalake-with-dagster#store-a-dagster-asset-as-a-table-in-delta-lake) of the [Using Dagster with Delta Lake tutorial](/integrations/deltalake/using-deltalake-with-dagster). To select specific columns, we can add metadata to the input asset. We do this in the `metadata` parameter of the `AssetIn` that loads the `iris_dataset` asset in the `ins` parameter. We supply the key `columns` with a list of names of the columns we want to fetch.
+In this example, we only use the columns containing sepal data from the `iris_dataset` table created in [Step 2](/integrations/deltalake/using-deltalake-with-dagster#store-a-dagster-asset-as-a-table-in-delta-lake) of the [Using Dagster with Delta Lake tutorial](/integrations/deltalake/using-deltalake-with-dagster). To select specific columns, we can add metadata to the input asset. We do this in the `metadata` parameter of the `AssetIn` that loads the `iris_dataset` asset in the `ins` parameter. We supply the key `columns` with a list of names of the columns we want to fetch.
 
 When Dagster materializes `sepal_data` and loads the `iris_dataset` asset using the Delta Lake I/O manager, it will only fetch the `sepal_length_cm` and `sepal_width_cm` columns of the `iris/iris_dataset` table and pass them to `sepal_data` as a Pandas DataFrame.
 
@@ -120,7 +120,7 @@ SELECT *
 </TabItem>
 <TabItem name="Time partitioned assets">
 
-### Storing time partitioned assets
+### Storing time-partitioned assets
 
 Like static partitioned assets, you can specify `partition_expr` metadata on the asset to tell the Delta Lake I/O manager which column contains the partition data:
 
@@ -230,7 +230,7 @@ SELECT *
 
 You may want to have different assets stored in different Delta Lake schemas. The Delta Lake I/O manager allows you to specify the schema in several ways.
 
-If you want all of your assets to be stored in the same schema, you can specify the schema as configuration to the I/O manager, as we did in [Step 1: Configure the Delta Lake I/O manager](/integrations/duckdb/using-deltalake-with-dagster#step-1-configure-the-delta-lake-io-manager) of the [Using Dagster with Delta Lake tutorial](/integrations/deltalake/using-deltalalke-with-dagster).
+If you want all of your assets to be stored in the same schema, you can specify the schema as configuration to the I/O manager, as we did in [Step 1](/integrations/deltalake/using-deltalake-with-dagster#step-1-configure-the-delta-lake-io-manager) of the [Using Dagster with Delta Lake tutorial](/integrations/deltalake/using-deltalake-with-dagster).
 
 If you want to store assets in different schemas, you can specify the schema as part of the asset's asset key:
 
@@ -326,18 +326,18 @@ In this example:
 
 ---
 
-## Storing and loading PyArrow Tables or Polars DataFrames in Delta Lake
+## Storing and loading PyArrow tables or Polars DataFrames in Delta Lake
 
-The DuckDB I/O manager also supports storing and loading PySpark and Polars DataFrames.
+The Delta Lake I/O manager also supports storing and loading PyArrow and Polars DataFrames.
 
 <TabGroup>
 <TabItem name="PyArrow Tables">
 
 ### Storing and loading PyArrow Tables with Delta Lake
 
-The `deltalake` package relies heavily an Apache Arrow for efficient data transfer, so pyarrow is antively supported.
+The `deltalake` package relies heavily on Apache Arrow for efficient data transfer, so PyArrow is natively supported.
 
-You can use the `DeltaLakePyArrowIOManager` in your <PyObject object="Definitions" /> as in [Step 1: Configure the Dalta Lake I/O manager](/integrations/deltalake/using-deltalake-with-dagster#step-1-configure-the-delta-lae-io-manager) of the [Using Dagster with Delta Lake tutorial](/integrations/deltalake/using-deltalake-with-dagster).
+You can use the `DeltaLakePyArrowIOManager` in your <PyObject object="Definitions" /> as in [Step 1](/integrations/deltalake/using-deltalake-with-dagster#step-1-configure-the-delta-lake-io-manager) of the [Using Dagster with Delta Lake tutorial](/integrations/deltalake/using-deltalake-with-dagster).
 
 ```python file=/integrations/deltalake/pyarrow_configuration.py startafter=start_configuration endbefore=end_configuration
 from dagster_deltalake import DeltaLakePyarrowIOManager, LocalConfig
@@ -365,7 +365,7 @@ defs = Definitions(
 
 If you work with several DataFrame libraries and want a single I/O manager to handle storing and loading these DataFrames in Delta Lake, you can write a new I/O manager that handles the DataFrame types.
 
-To do this, inherit from the <PyObject module="dagster_deltalake" object="DeltaLakeIOManager" /> base class and implement the `type_handlers` and `default_load_type` methods. The resulting I/O manager will inherit the configuration fields of the base `DuckDBIOManager`.
+To do this, inherit from the <PyObject module="dagster_deltalake" object="DeltaLakeIOManager" /> base class and implement the `type_handlers` and `default_load_type` methods. The resulting I/O manager will inherit the configuration fields of the base `DeltaLakePandasIOManager`.
 
 ```python file=/integrations/deltalake/multiple_dataframe_types.py startafter=start_example endbefore=end_example
 from typing import Optional, Type
