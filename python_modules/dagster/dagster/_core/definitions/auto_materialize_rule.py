@@ -369,6 +369,8 @@ class MaterializeOnParentUpdatedRule(
                 # we're within reasonable limits on the number of partitions to check
                 respect_materialization_data_versions=context.daemon_context.respect_materialization_data_versions
                 and len(parent_asset_partitions | has_or_will_update) < 100,
+                # ignore self-dependencies when checking for updated parents, to avoid historical
+                # rematerializations from causing a chain of materializations to be kicked off
                 ignored_parent_keys={context.asset_key},
             )
             updated_parents = {parent.asset_key for parent in updated_parent_asset_partitions}
@@ -441,7 +443,9 @@ class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOut
                 asset_partition=candidate
             ):
                 unreconciled_ancestors.update(
-                    context.instance_queryer.get_root_unreconciled_ancestors(asset_partition=parent)
+                    context.instance_queryer.get_root_unreconciled_ancestors(
+                        asset_partition=parent,
+                    )
                 )
             if unreconciled_ancestors:
                 asset_partitions_by_waiting_on_asset_keys[frozenset(unreconciled_ancestors)].add(
@@ -539,18 +543,19 @@ class SkipOnNotAllParentsUpdatedRule(
                 candidate.partition_key,
             ).parent_partitions
 
-            updated_parent_partitions = context.instance_queryer.get_updated_parent_asset_partitions(
-                candidate,
-                parent_partitions,
-                context.daemon_context.respect_materialization_data_versions,
-                # this is unnecessary to set, as we'll filter out self-dependencies later, but
-                # it doesn't hurt
-                ignored_parent_keys={context.asset_key},
-            ) | set().union(
-                *[
-                    context.will_materialize_mapping.get(parent, set())
-                    for parent in context.asset_graph.get_parents(context.asset_key)
-                ]
+            updated_parent_partitions = (
+                context.instance_queryer.get_updated_parent_asset_partitions(
+                    candidate,
+                    parent_partitions,
+                    context.daemon_context.respect_materialization_data_versions,
+                    ignored_parent_keys=set(),
+                )
+                | set().union(
+                    *[
+                        context.will_materialize_mapping.get(parent, set())
+                        for parent in context.asset_graph.get_parents(context.asset_key)
+                    ]
+                )
             )
 
             if self.require_update_for_all_parent_partitions:
@@ -571,8 +576,8 @@ class SkipOnNotAllParentsUpdatedRule(
                     if not updated_parent_partitions_by_asset_key.get(parent)
                 }
 
-            # do not require past partition of this asset to be updated
-            non_updated_parent_keys.remove(context.asset_key)
+            # do not require past partitions of this asset to be updated
+            non_updated_parent_keys -= {context.asset_key}
 
             if non_updated_parent_keys:
                 asset_partitions_by_waiting_on_asset_keys[frozenset(non_updated_parent_keys)].add(

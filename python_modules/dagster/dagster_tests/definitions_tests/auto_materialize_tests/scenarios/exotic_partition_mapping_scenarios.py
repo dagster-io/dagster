@@ -10,6 +10,7 @@ from dagster import (
     TimeWindowPartitionMapping,
 )
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.time_window_partitions import (
     HourlyPartitionsDefinition,
 )
@@ -21,6 +22,7 @@ from ..base_scenario import (
     run,
     run_request,
     single_asset_run,
+    with_auto_materialize_policy,
 )
 from .partition_scenarios import (
     one_partition_partitions_def,
@@ -356,6 +358,34 @@ exotic_partition_mapping_scenarios = {
             current_time=create_pendulum_time(year=2020, month=1, day=4, hour=4),
         ),
         # should respond to an upstream asset being rematerialized
+        expected_run_requests=[run_request(["asset2", "asset3"], partition_key="2020-01-01")],
+        current_time=create_pendulum_time(year=2020, month=1, day=4, hour=4),
+    ),
+    "self_dependency_upstream_prior_partition_rematerialized_with_not_all_parents_updated": AssetReconciliationScenario(
+        assets=with_auto_materialize_policy(
+            three_assets_self_dependency,
+            AutoMaterializePolicy.eager().with_rules(
+                AutoMaterializeRule.skip_on_not_all_parents_updated()
+            ),
+        ),
+        unevaluated_runs=[single_asset_run(asset_key="asset1", partition_key="2020-01-01")],
+        cursor_from=AssetReconciliationScenario(
+            assets=with_auto_materialize_policy(
+                three_assets_self_dependency,
+                AutoMaterializePolicy.eager().with_rules(
+                    AutoMaterializeRule.skip_on_not_all_parents_updated()
+                ),
+            ),
+            unevaluated_runs=[
+                run(["asset1", "asset2", "asset3"], partition_key="2020-01-01"),
+                run(["asset1", "asset2", "asset3"], partition_key="2020-01-02"),
+                run(["asset1", "asset2", "asset3"], partition_key="2020-01-03"),
+            ],
+            expected_run_requests=[],
+            current_time=create_pendulum_time(year=2020, month=1, day=4, hour=4),
+        ),
+        # should respond to an upstream asset being rematerialized, even though the past time
+        # partition was not updated
         expected_run_requests=[run_request(["asset2", "asset3"], partition_key="2020-01-01")],
         current_time=create_pendulum_time(year=2020, month=1, day=4, hour=4),
     ),

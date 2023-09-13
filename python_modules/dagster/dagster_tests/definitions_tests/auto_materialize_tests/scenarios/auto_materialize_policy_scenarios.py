@@ -1,8 +1,6 @@
 import datetime
-from typing import Sequence
 
 from dagster import (
-    AssetsDefinition,
     PartitionKeyRange,
 )
 from dagster._core.definitions.asset_selection import AssetSelection
@@ -25,6 +23,7 @@ from ..base_scenario import (
     run,
     run_request,
     single_asset_run,
+    with_auto_materialize_policy,
 )
 from .basic_scenarios import diamond
 from .exotic_partition_mapping_scenarios import (
@@ -41,19 +40,6 @@ from .partition_scenarios import (
     two_partitions_partitions_def,
     unpartitioned_with_one_parent_partitioned,
 )
-
-
-def with_auto_materialize_policy(
-    assets_defs: Sequence[AssetsDefinition], auto_materialize_policy: AutoMaterializePolicy
-) -> Sequence[AssetsDefinition]:
-    """Note: this should be implemented in core dagster at some point, and this implementation is
-    a lazy hack.
-    """
-    ret = []
-    for assets_def in assets_defs:
-        ret.append(assets_def.with_attributes(auto_materialize_policy=auto_materialize_policy))
-    return ret
-
 
 lazy_assets_nothing_dep = [
     asset_def("asset1"),
