@@ -57,6 +57,7 @@ def test_step_handler_context():
             run_id=run.run_id,
             step_keys_to_execute=run.step_keys_to_execute,
             instance_ref=None,
+            print_serialized_events=False,
         )
         ctx = StepHandlerContext(
             instance=instance,

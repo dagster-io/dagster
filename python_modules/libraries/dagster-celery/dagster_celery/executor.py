@@ -114,6 +114,7 @@ def _submit_task(app, plan_context, step, queue, priority, known_state):
         instance_ref=plan_context.instance.get_ref(),
         retry_mode=plan_context.executor.retries.for_inner_plan(),
         known_state=known_state,
+        print_serialized_events=True,  # Not actually checked by the celery task
     )
 
     task = create_task(app)

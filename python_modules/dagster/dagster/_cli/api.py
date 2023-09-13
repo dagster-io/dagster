@@ -74,9 +74,6 @@ def execute_run_command(input_json):
                 set_exit_code_on_failure=args.set_exit_code_on_failure or False,
             )
 
-            for line in buffer:
-                click.echo(line)
-
             if return_code != 0:
                 sys.exit(return_code)
 
@@ -174,9 +171,6 @@ def resume_run_command(input_json):
                 send_to_buffer,
                 set_exit_code_on_failure=args.set_exit_code_on_failure or False,
             )
-
-            for line in buffer:
-                click.echo(line)
 
             if return_code != 0:
                 sys.exit(return_code)
@@ -346,8 +340,9 @@ def execute_step_command(input_json, compressed_input_json):
             ):
                 buff.append(serialize_value(event))
 
-            for line in buff:
-                click.echo(line)
+            if args.print_serialized_events:
+                for line in buff:
+                    click.echo(line)
 
 
 def _execute_step_command_body(
