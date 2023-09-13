@@ -512,10 +512,6 @@ class MultiToSingleDimensionPartitionMapping(
         upstream_partitions_def: PartitionsDefinition,
         downstream_partitions_def: PartitionsDefinition,
     ) -> Sequence[DimensionMapping]:
-        # from dagster._core.definitions.time_window_partition_mapping import (
-        #     TimeWindowPartitionMapping,
-        # )
-
         infer_mapping_result = _infer_single_to_multidim_deps(
             upstream_partitions_def, downstream_partitions_def
         )
@@ -527,225 +523,6 @@ class MultiToSingleDimensionPartitionMapping(
 
         return [infer_mapping_result.dimension_mapping]
 
-        # multipartitions_def = cast(
-        #     MultiPartitionsDefinition,
-        #     (
-        #         upstream_partitions_def
-        #         if isinstance(upstream_partitions_def, MultiPartitionsDefinition)
-        #         else downstream_partitions_def
-        #     ),
-        # )
-
-        # single_dimension_partitions_def = (
-        #     upstream_partitions_def
-        #     if not isinstance(upstream_partitions_def, MultiPartitionsDefinition)
-        #     else downstream_partitions_def
-        # )
-
-        # # check that one multipartitions and one single dimension exists
-
-        # matching_dimensions = [
-        #     partitions_def
-        #     for partitions_def in multipartitions_def.partitions_defs
-        #     if partitions_def.partitions_def == single_dimension_partitions_def
-        # ]
-
-        # if len(matching_dimensions) == 1:
-        #     if isinstance(upstream_partitions_def, MultiPartitionsDefinition):
-        #         return [
-        #             DimensionMapping(
-        #                 IdentityPartitionMapping(),
-        #                 upstream_dimension_name=matching_dimensions[0].name,
-        #             )
-        #         ]
-        #     elif isinstance(downstream_partitions_def, MultiPartitionsDefinition):
-        #         return [
-        #             DimensionMapping(
-        #                 IdentityPartitionMapping(),
-        #                 downstream_dimension_name=matching_dimensions[0].name,
-        #             )
-        #         ]
-        #     else:
-        #         check.failed("should not reach")
-
-        # time_dimensions = [
-        #     partitions_def
-        #     for partitions_def in multipartitions_def.partitions_defs
-        #     if isinstance(partitions_def.partitions_def, TimeWindowPartitionsDefinition)
-        # ]
-
-        # if len(time_dimensions) == 1 and isinstance(
-        #     single_dimension_partitions_def, TimeWindowPartitionsDefinition
-        # ):
-        #     if isinstance(upstream_partitions_def, MultiPartitionsDefinition):
-        #         return [
-        #             DimensionMapping(
-        #                 TimeWindowPartitionMapping(),
-        #                 upstream_dimension_name=time_dimensions[0].name,
-        #             )
-        #         ]
-        #     elif isinstance(downstream_partitions_def, MultiPartitionsDefinition):
-        #         return [
-        #             DimensionMapping(
-        #                 TimeWindowPartitionMapping(),
-        #                 downstream_dimension_name=time_dimensions[0].name,
-        #             )
-        #         ]
-        #     else:
-        #         check.failed("should not reach")
-
-        # check.failed("cannot infer relationship")
-
-    # def _check_partitions_defs_and_get_partition_dimension_name(
-    #     self,
-    #     upstream_partitions_def: PartitionsDefinition,
-    #     downstream_partitions_def: PartitionsDefinition,
-    # ) -> None:
-    #     if self.partition_dimension_name:
-    #         multipartitions_defs = [
-    #             partitions_def
-    #             for partitions_def in [upstream_partitions_def, downstream_partitions_def]
-    #             if isinstance(partitions_def, MultiPartitionsDefinition)
-    #         ]
-    #         if len(multipartitions_defs) != 1:
-    #             return InferSingleToMultiPartitionDepsResult(False)
-
-    #         multipartitions_def = cast(MultiPartitionsDefinition, next(iter(multipartitions_defs)))
-
-    #         single_dimension_partitions_def = next(
-    #             iter(
-    #                 {
-    #                     upstream_partitions_def,
-    #                     downstream_partitions_def,
-    #                 }
-    #                 - set(multipartitions_defs)
-    #             )
-    #         )
-
-    #         matching_dimensions = [
-    #             partitions_def
-    #             for partitions_def in upstream_partitions_def.partitions_defs
-    #             if partitions_def.name == self.partition_dimension_name
-    #         ]
-    #         if len(matching_dimensions) != 1:
-    #             check.failed(f"Partition dimension '{self.partition_dimension_name}' not found")
-    #         matching_dimension_def = next(iter(matching_dimensions))
-
-    #         if downstream_partitions_def != matching_dimension_def.partitions_def:
-    #             check.failed(
-    #                 "The single dimension partitions definition does not have the same partitions"
-    #                 f" definition as dimension {matching_dimension_def.name}"
-    #             )
-
-    #     infer_mapping_result = _infer_single_to_multidim_deps(
-    #         upstream_partitions_def, downstream_partitions_def
-    #     )
-
-    #     if not infer_mapping_result.can_infer:
-    #         check.failed(
-    #             "This partition mapping defines a relationship between a multipartitioned and"
-    #             " single dimensional asset. This partition mapping can be used in the following"
-    #             " cases: \n(a) The single dimensional partitions definition is a dimension of the"
-    #             " MultiPartitionsDefinition.\n(b) The single dimensional partitions definition is a"
-    #             " TimeWindowPartitionsDefinition and the MultiPartitionsDefinition has a single"
-    #             " time dimension."
-    #         )
-
-    # multipartitions_def = cast(
-    #     MultiPartitionsDefinition,
-    #     (
-    #         upstream_partitions_def
-    #         if isinstance(upstream_partitions_def, MultiPartitionsDefinition)
-    #         else downstream_partitions_def
-    #     ),
-    # )
-
-    # single_dimension_partitions_def = (
-    #     upstream_partitions_def
-    #     if not isinstance(upstream_partitions_def, MultiPartitionsDefinition)
-    #     else downstream_partitions_def
-    # )
-
-    # if self.partition_dimension_name is None:
-    #     dimension_partitions_defs = [
-    #         partitions_def.partitions_def
-    #         for partitions_def in multipartitions_def.partitions_defs
-    #     ]
-    #     if len(set(dimension_partitions_defs)) != len(dimension_partitions_defs):
-    #         check.failed(
-    #             "Partition dimension name must be specified on the "
-    #             "MultiToSingleDimensionPartitionMapping object when dimensions of a"
-    #             " MultiPartitions definition share the same partitions definition."
-    #         )
-    #     matching_dimension_defs = [
-    #         dimension_def
-    #         for dimension_def in multipartitions_def.partitions_defs
-    #         if dimension_def.partitions_def == single_dimension_partitions_def
-    #     ]
-
-    #     time_dimensions = [
-    #         dimension_def
-    #         for dimension_def in multipartitions_def.partitions_defs
-    #         if isinstance(dimension_def.partitions_def, TimeWindowPartitionsDefinition)
-    #     ]
-
-    #     if len(matching_dimension_defs) != 1:
-    #         check.failed(
-    #             "No partition dimension name was specified and no dimensions of the"
-    #             " MultiPartitionsDefinition match the single dimension"
-    #             " PartitionsDefinition."
-    #         )
-    #     partition_dimension_name = next(iter(matching_dimension_defs)).name
-    # else:
-    #     matching_dimensions = [
-    #         partitions_def
-    #         for partitions_def in multipartitions_def.partitions_defs
-    #         if partitions_def.name == self.partition_dimension_name
-    #     ]
-    #     if len(matching_dimensions) != 1:
-    #         check.failed(f"Partition dimension '{self.partition_dimension_name}' not found")
-    #     matching_dimension_def = next(iter(matching_dimensions))
-
-    #     if single_dimension_partitions_def != matching_dimension_def.partitions_def:
-    #         check.failed(
-    #             "The single dimension partitions definition does not have the same partitions"
-    #             f" definition as dimension {matching_dimension_def.name}"
-    #         )
-    #     partition_dimension_name = self.partition_dimension_name
-
-    # return (upstream_partitions_def, downstream_partitions_def, partition_dimension_name)
-
-    # def _get_matching_multipartition_keys_for_single_dim_subset(
-    #     self,
-    #     partitions_subset: PartitionsSubset,
-    #     multipartitions_def: MultiPartitionsDefinition,
-    #     partition_dimension_name: str,
-    #     dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    # ) -> Sequence[str]:
-    #     matching_keys = []
-    #     for key in multipartitions_def.get_partition_keys(
-    #         current_time=None, dynamic_partitions_store=dynamic_partitions_store
-    #     ):
-    #         key = cast(MultiPartitionKey, key)
-    #         if (
-    #             key.keys_by_dimension[partition_dimension_name]
-    #             in partitions_subset.get_partition_keys()
-    #         ):
-    #             matching_keys.append(key)
-    #     return matching_keys
-
-    # def _get_single_dim_keys_from_multipartitioned_subset(
-    #     self,
-    #     partitions_subset: PartitionsSubset,
-    #     partition_dimension_name: str,
-    # ) -> Set[str]:
-    #     upstream_partitions = set()
-    #     for partition_key in partitions_subset.get_partition_keys():
-    #         if not isinstance(partition_key, MultiPartitionKey):
-    #             check.failed("Partition keys in subset must be MultiPartitionKeys")
-    #         upstream_partitions.add(partition_key.keys_by_dimension[partition_dimension_name])
-    #     return upstream_partitions
-
     def get_upstream_mapped_partitions_result_for_partitions(
         self,
         downstream_partitions_subset: Optional[PartitionsSubset],
@@ -755,14 +532,6 @@ class MultiToSingleDimensionPartitionMapping(
     ) -> UpstreamPartitionsResult:
         if downstream_partitions_subset is None:
             check.failed("downstream asset is not partitioned")
-
-        # (
-        #     upstream_partitions_def,
-        #     _,
-        #     partition_dimension_name,
-        # ) = self._check_partitions_defs_and_get_partition_dimension_name(
-        #     upstream_partitions_def, downstream_partitions_subset.partitions_def
-        # )
 
         result = self._get_dependency_partitions_subset(
             cast(MultiPartitionsDefinition, downstream_partitions_subset.partitions_def),
@@ -787,14 +556,6 @@ class MultiToSingleDimensionPartitionMapping(
     ) -> PartitionsSubset:
         if downstream_partitions_def is None:
             check.failed("downstream asset is not multi-partitioned")
-
-        # (
-        #     _,
-        #     downstream_partitions_def,
-        #     partition_dimension_name,
-        # ) = self._check_partitions_defs_and_get_partition_dimension_name(
-        #     upstream_partitions_subset.partitions_def, downstream_partitions_def
-        # )
 
         result = self._get_dependency_partitions_subset(
             cast(MultiPartitionsDefinition, upstream_partitions_subset.partitions_def),
@@ -948,7 +709,6 @@ class MultiPartitionMapping(
         self,
         upstream_partitions_def: PartitionsDefinition,
         downstream_partitions_def: PartitionsDefinition,
-        # a_upstream_of_b: bool,
     ) -> Sequence[DimensionMapping]:
         return [
             DimensionMapping(
