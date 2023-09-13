@@ -58,7 +58,7 @@
 
 - Adds a check to validate partition mappings when directly constructing `AssetsDefinition` instances.
 - Assets invoked in composition functions like `@graph` and `@job` now work again, fixing a regression introduced in 1.4.5.
-- Fixed an issue where a race condition with parallel runs materializing the same asset could cause a run to hang.
+- Fixed an issue where a race condition with parallel runs materializing the same asset could cause a run to raise a RecursionError during execution.
 - Fixed an issue where including a resource in both a schedule and a job raised a “Cannot specify resource requirements” exception when the definitions were loaded.
 - The `ins` argument to `graph_asset` is now respected correctly.
 - Fixed an issue where the daemon process could sometimes stop with a heartbeat failure when the first sensor it ran took a long time to execute.
