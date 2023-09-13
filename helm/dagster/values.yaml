@@ -19,6 +19,13 @@ global:
   # to false below.
   celeryConfigSecretName: "dagster-celery-config-secret"
 
+  # Globally set image name and image repository for all iterations of the dagster-user-deployments
+  # deployment object. If left blank, 'dagster-user-deployments.deployments[].image.tag' and
+  # 'dagster-user-deployments.deployments[].image.repository' take precedence.
+  image:
+    tag: ""
+    repository: ""
+
 nameOverride: ""
 fullnameOverride: ""
 rbacEnabled: true
