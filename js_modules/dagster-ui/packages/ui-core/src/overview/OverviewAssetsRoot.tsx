@@ -240,13 +240,14 @@ function VirtualRow({height, start, group}: RowProps) {
     }
     Object.keys(liveDataByNode).forEach((key) => {
       const assetLiveData = liveDataByNode[key];
-      const asset = group.assets.find((asset) => toGraphId(asset.key) === key)!;
-      if (!asset.definition) {
+      const asset = group.assets.find((asset) => toGraphId(asset.key) === key);
+      if (!asset?.definition) {
         console.warn('Expected a definition for asset with key', key);
+        return;
       }
       const status = buildAssetNodeStatusContent({
         assetKey: {path: JSON.parse(key)},
-        definition: asset.definition!,
+        definition: asset.definition,
         liveData: assetLiveData,
         expanded: true,
       });
