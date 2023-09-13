@@ -54,6 +54,12 @@ def test_reconciliation(scenario, respect_materialization_data_versions):
                     partition_subsets_by_condition=sorted(
                         evaluation.partition_subsets_by_condition, key=repr
                     )
+                )._replace(
+                    rule_snapshots=(
+                        sorted(evaluation.rule_snapshots, key=repr)
+                        if evaluation.rule_snapshots
+                        else None
+                    )
                 )
                 for evaluation in evaluations
             ],

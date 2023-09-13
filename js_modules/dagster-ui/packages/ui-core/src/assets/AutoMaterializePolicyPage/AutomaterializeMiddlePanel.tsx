@@ -115,7 +115,7 @@ export const AutomaterializeMiddlePanel = (props: Props) => {
     );
   }
 
-  const rules =
+  const currentRules =
     (data?.assetNodeOrError.__typename === 'AssetNode' &&
       data.assetNodeOrError.autoMaterializePolicy?.rules) ||
     [];
@@ -126,7 +126,7 @@ export const AutomaterializeMiddlePanel = (props: Props) => {
 
   return (
     <AutomaterializeMiddlePanelWithData
-      rules={rules}
+      currentRules={currentRules}
       assetHasDefinedPartitions={assetHasDefinedPartitions}
       selectedEvaluation={selectedEvaluation}
     />
@@ -134,11 +134,11 @@ export const AutomaterializeMiddlePanel = (props: Props) => {
 };
 
 export const AutomaterializeMiddlePanelWithData = ({
-  rules,
+  currentRules,
   selectedEvaluation,
   assetHasDefinedPartitions,
 }: {
-  rules: AutoMaterializeRule[];
+  currentRules: AutoMaterializeRule[];
   selectedEvaluation: NoConditionsMetEvaluation | AutoMaterializeAssetEvaluationRecord;
   assetHasDefinedPartitions: boolean;
 }) => {
@@ -150,6 +150,11 @@ export const AutomaterializeMiddlePanelWithData = ({
     selectedEvaluation?.__typename === 'AutoMaterializeAssetEvaluationRecord'
       ? selectedEvaluation.rulesWithRuleEvaluations
       : [];
+  const rules =
+    selectedEvaluation?.__typename === 'AutoMaterializeAssetEvaluationRecord' &&
+    selectedEvaluation.rules
+      ? selectedEvaluation.rules
+      : currentRules;
 
   const headerRight = () => {
     if (runIds.length === 0) {

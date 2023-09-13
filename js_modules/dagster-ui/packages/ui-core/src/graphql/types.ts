@@ -445,6 +445,7 @@ export type AutoMaterializeAssetEvaluationRecord = {
   numDiscarded: Scalars['Int'];
   numRequested: Scalars['Int'];
   numSkipped: Scalars['Int'];
+  rules: Maybe<Array<AutoMaterializeRule>>;
   rulesWithRuleEvaluations: Array<AutoMaterializeRuleWithRuleEvaluations>;
   runIds: Array<Scalars['String']>;
   timestamp: Scalars['Float'];
@@ -480,6 +481,7 @@ export enum AutoMaterializePolicyType {
 
 export type AutoMaterializeRule = {
   __typename: 'AutoMaterializeRule';
+  className: Scalars['String'];
   decisionType: AutoMaterializeDecisionType;
   description: Scalars['String'];
 };
@@ -5112,6 +5114,7 @@ export const buildAutoMaterializeAssetEvaluationRecord = (
     numRequested:
       overrides && overrides.hasOwnProperty('numRequested') ? overrides.numRequested! : 2522,
     numSkipped: overrides && overrides.hasOwnProperty('numSkipped') ? overrides.numSkipped! : 6444,
+    rules: overrides && overrides.hasOwnProperty('rules') ? overrides.rules! : [],
     rulesWithRuleEvaluations:
       overrides && overrides.hasOwnProperty('rulesWithRuleEvaluations')
         ? overrides.rulesWithRuleEvaluations!
@@ -5167,6 +5170,8 @@ export const buildAutoMaterializeRule = (
   relationshipsToOmit.add('AutoMaterializeRule');
   return {
     __typename: 'AutoMaterializeRule',
+    className:
+      overrides && overrides.hasOwnProperty('className') ? overrides.className! : 'voluptatibus',
     decisionType:
       overrides && overrides.hasOwnProperty('decisionType')
         ? overrides.decisionType!

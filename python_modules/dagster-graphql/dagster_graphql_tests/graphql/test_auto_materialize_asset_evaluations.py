@@ -64,6 +64,11 @@ query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: Stri
                         }
                     }
                 }
+                rules {
+                    decisionType
+                    description
+                    className
+                }
             }
             currentEvaluationId
         }
@@ -73,6 +78,54 @@ query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: Stri
 
 
 class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
+    def test_get_historic_rules(self, graphql_context: WorkspaceRequestContext):
+        check.not_none(
+            graphql_context.instance.schedule_storage
+        ).add_auto_materialize_asset_evaluations(
+            evaluation_id=10,
+            asset_evaluations=[
+                AutoMaterializeAssetEvaluation(
+                    asset_key=AssetKey("asset_one"),
+                    partition_subsets_by_condition=[],
+                    num_requested=0,
+                    num_skipped=0,
+                    num_discarded=0,
+                    rule_snapshots=None,
+                ),
+                AutoMaterializeAssetEvaluation(
+                    asset_key=AssetKey("asset_two"),
+                    partition_subsets_by_condition=[],
+                    num_requested=1,
+                    num_skipped=0,
+                    num_discarded=0,
+                    rule_snapshots=[AutoMaterializeRule.materialize_on_missing().to_snapshot()],
+                ),
+            ],
+        )
+
+        results = execute_dagster_graphql(
+            graphql_context,
+            QUERY,
+            variables={"assetKey": {"path": ["asset_one"]}, "limit": 10, "cursor": None},
+        )
+        assert len(results.data["autoMaterializeAssetEvaluationsOrError"]["records"]) == 1
+        assert results.data["autoMaterializeAssetEvaluationsOrError"]["records"][0]["rules"] is None
+
+        results = execute_dagster_graphql(
+            graphql_context,
+            QUERY,
+            variables={"assetKey": {"path": ["asset_two"]}, "limit": 10, "cursor": None},
+        )
+        assert len(results.data["autoMaterializeAssetEvaluationsOrError"]["records"]) == 1
+        assert (
+            len(results.data["autoMaterializeAssetEvaluationsOrError"]["records"][0]["rules"]) == 1
+        )
+        rule = results.data["autoMaterializeAssetEvaluationsOrError"]["records"][0]["rules"][0]
+
+        assert rule["decisionType"] == "MATERIALIZE"
+        assert rule["description"] == "materialization is missing"
+        assert rule["className"] == "MaterializeOnMissingRule"
+
     def _test_get_evaluations(self, graphql_context: WorkspaceRequestContext):
         results = execute_dagster_graphql(
             graphql_context,
