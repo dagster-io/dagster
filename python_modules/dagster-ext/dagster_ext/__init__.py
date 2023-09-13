@@ -572,6 +572,80 @@ class ExtDbfsMessageWriter(ExtBlobStoreMessageWriter):
 # ########################
 
 
+class IContext(ABC):
+    """Base class for asset context implemented by AssetExecutionContext and ExtContext."""
+
+    @property
+    @abstractmethod
+    def is_asset_step(self) -> bool:
+        """TODO."""
+
+    @property
+    @abstractmethod
+    def asset_key(self) -> str:
+        """TODO."""
+
+    @property
+    @abstractmethod
+    def asset_keys(self) -> Sequence[str]:
+        """TODO."""
+
+    @property
+    @abstractmethod
+    def provenance(self) -> Optional[ExtDataProvenance]:
+        """TODO."""
+
+    @property
+    @abstractmethod
+    def provenance_by_asset_key(self) -> Mapping[str, Optional[ExtDataProvenance]]:
+        """TODO."""
+
+    @property
+    @abstractmethod
+    def code_version(self) -> Optional[str]:
+        """TODO."""
+
+    @property
+    @abstractmethod
+    def code_version_by_asset_key(self) -> Mapping[str, Optional[str]]:
+        """TODO."""
+
+    @property
+    @abstractmethod
+    def is_partition_step(self) -> bool:
+        """TODO."""
+
+    @property
+    @abstractmethod
+    def partition_key(self) -> str:
+        """TODO."""
+
+    @property
+    @abstractmethod
+    def partition_key_range(self) -> Optional["ExtPartitionKeyRange"]:
+        """TODO."""
+
+    @property
+    @abstractmethod
+    def partition_time_window(self) -> Optional["ExtTimeWindow"]:
+        """TODO."""
+
+    @property
+    @abstractmethod
+    def run_id(self) -> str:
+        """TODO."""
+
+    @property
+    @abstractmethod
+    def job_name(self) -> Optional[str]:
+        """TODO."""
+
+    @property
+    @abstractmethod
+    def retry_number(self) -> int:
+        """TODO."""
+
+
 def init_dagster_ext(
     *,
     context_loader: Optional[ExtContextLoader] = None,
@@ -599,7 +673,7 @@ def init_dagster_ext(
     return context
 
 
-class ExtContext:
+class ExtContext(IContext):
     _instance: ClassVar[Optional["ExtContext"]] = None
 
     @classmethod
