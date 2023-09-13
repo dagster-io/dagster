@@ -508,10 +508,9 @@ class AssetDaemonContext:
                         check.failed(f"Expected auto materialize policy on asset {asset_key}")
 
                     evaluations_by_key[neighbor_key] = evaluation._replace(
-                        asset_key=neighbor_key
-                    )._replace(
-                        rule_snapshots=auto_materialize_policy.rule_snapshots
-                    )  # Neighbors can have different rule snapshots
+                        asset_key=neighbor_key,
+                        rule_snapshots=auto_materialize_policy.rule_snapshots,  # Neighbors can have different rule snapshots
+                    )
                     will_materialize_mapping[neighbor_key] = {
                         ap._replace(asset_key=neighbor_key) for ap in to_materialize_for_asset
                     }
