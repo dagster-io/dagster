@@ -15,9 +15,9 @@ from dagster import (
     Output,
     asset,
     graph_asset,
+    graph_multi_asset,
     materialize,
     multi_asset,
-    graph_multi_asset,
     op,
 )
 from dagster._core.errors import (
