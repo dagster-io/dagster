@@ -87,8 +87,7 @@ def copy_scaffold(
     dbt_profiles_yaml: Dict[str, Any] = yaml.safe_load(dbt_profiles_path.read_bytes())
 
     # Remove config from profiles.yml
-    if "config" in dbt_profiles_yaml:
-        dbt_profiles_yaml.pop("config", None)
+    dbt_profiles_yaml.pop("config", None)
 
     dbt_adapter_packages = [
         dbt_adapter_pypi_package_for_target_type(target["type"])
@@ -204,8 +203,8 @@ def project_scaffold_command(
         Syntax(
             code="\n".join(
                 [
-                    f"cd '{dagster_project_dir}' \\",
-                    "  && (DAGSTER_DBT_PARSE_PROJECT_ON_LOAD=1 dagster dev)",
+                    f"cd '{dagster_project_dir}'",
+                    "DAGSTER_DBT_PARSE_PROJECT_ON_LOAD=1 dagster dev",
                 ]
             ),
             lexer="bash",
