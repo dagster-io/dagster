@@ -170,7 +170,7 @@ const RunWithData: React.FC<RunWithDataProps> = ({
 
   const [queryLogType, setQueryLogType] = useQueryPersistedState<string>({
     queryKey: 'logType',
-    defaults: {logType: 'structured'},
+    defaults: {logType: LogType.stderr},
   });
 
   const logType = logTypeFromQuery(queryLogType);
@@ -197,6 +197,7 @@ const RunWithData: React.FC<RunWithDataProps> = ({
     stepKeys,
     selectionStepKeys,
     metadata,
+    defaultToFirstStep: false,
   });
 
   const logsFilterStepKeys = runtimeGraph
@@ -309,7 +310,9 @@ const RunWithData: React.FC<RunWithDataProps> = ({
                 counts={logs.counts}
               />
               {logType !== LogType.structured ? (
-                supportsCapturedLogs ? (
+                !computeLogFileKey ? (
+                  <NoStepSelectionState type={logType} />
+                ) : supportsCapturedLogs ? (
                   <CapturedOrExternalLogPanel
                     logKey={computeLogFileKey ? [runId, 'compute_logs', computeLogFileKey] : []}
                     logCaptureInfo={logCaptureInfo}
@@ -346,3 +349,23 @@ const LogsContainer = styled.div`
   flex-direction: column;
   height: 100%;
 `;
+
+const NoStepSelectionState = ({type}: {type: LogType}) => {
+  return (
+    <Box
+      flex={{
+        direction: 'row',
+        grow: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+      style={{background: '#221F1B'}}
+    >
+      <NonIdealState
+        title={`Select a step to view ${type.toUpperCase()}`}
+        icon="warning"
+        description="Select a step from the dropdown above or by clicking directly on a step in the chart."
+      />
+    </Box>
+  );
+};
