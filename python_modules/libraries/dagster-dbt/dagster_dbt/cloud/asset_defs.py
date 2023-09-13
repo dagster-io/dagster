@@ -366,6 +366,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             group_names_by_key,
             freshness_policies_by_key,
             auto_materialize_policies_by_key,
+            _,
             fqns_by_output_name,
             metadata_by_output_name,
         ) = get_asset_deps(
