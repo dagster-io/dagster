@@ -170,7 +170,7 @@ const RunWithData: React.FC<RunWithDataProps> = ({
 
   const [queryLogType, setQueryLogType] = useQueryPersistedState<string>({
     queryKey: 'logType',
-    defaults: {logType: LogType.stderr},
+    defaults: {logType: LogType.structured},
   });
 
   const logType = logTypeFromQuery(queryLogType);
