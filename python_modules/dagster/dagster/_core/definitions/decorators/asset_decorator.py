@@ -1,6 +1,7 @@
 from collections import Counter
 from inspect import Parameter
 from typing import (
+    AbstractSet,
     Any,
     Callable,
     Dict,
@@ -852,7 +853,7 @@ def stringify_asset_key_to_input_name(asset_key: AssetKey) -> str:
 def build_asset_ins(
     fn: Callable,
     asset_ins: Mapping[str, AssetIn],
-    deps: Optional[Set[AssetKey]],
+    deps: Optional[AbstractSet[AssetKey]],
 ) -> Mapping[AssetKey, Tuple[str, In]]:
     """Creates a mapping from AssetKey to (name of input, In object)."""
     deps = check.opt_set_param(deps, "deps", AssetKey)
@@ -1213,7 +1214,7 @@ def build_asset_outs(asset_outs: Mapping[str, AssetOut]) -> Mapping[AssetKey, Tu
     return outs_by_asset_key
 
 
-def _type_check_deps_and_non_argument_deps(
+def _deps_and_non_argument_deps_to_asset_deps(
     deps: Optional[Iterable[CoercibleToAssetDep]],
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]],
 ) -> Optional[Iterable[AssetDep]]:
