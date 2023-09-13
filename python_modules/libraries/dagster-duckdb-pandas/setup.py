@@ -34,8 +34,8 @@ setup(
     packages=find_packages(exclude=["dagster_duckdb_pandas_tests*"]),
     include_package_data=True,
     install_requires=[
-        "dagster==1.4.13rc0",
-        "dagster-duckdb==0.20.13rc0",
+        "dagster==1.4.13rc1",
+        "dagster-duckdb==0.20.13rc1",
         # Pinned pending duckdb removal of broken pandas import. Pin can be
         # removed as soon as it produces a working build.
         "pandas<2.1",
