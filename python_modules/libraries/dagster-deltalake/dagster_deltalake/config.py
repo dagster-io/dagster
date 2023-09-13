@@ -10,13 +10,13 @@ else:
 
 
 class LocalConfig(Config):
-    """Storage configuration for local objet store."""
+    """Storage configuration for local object store."""
 
     provider: Literal["local"] = "local"
 
 
 class AzureConfig(Config):
-    """Storage configuration for Azure Blob or ADLS Gen 2 objet store."""
+    """Storage configuration for Microsoft Azure Blob or ADLS Gen 2 object store."""
 
     provider: Literal["azure"] = "azure"
 
@@ -24,31 +24,31 @@ class AzureConfig(Config):
     """Storage account name"""
 
     client_id: Optional[str]
-    """client id for id / secret based authentication."""
+    """Client ID for ID / secret based authentication."""
 
     client_secret: Optional[str]
-    """client secret for id / secret based authentication."""
+    """Client secret for ID / secret based authentication."""
 
     tenant_id: Optional[str]
-    """tenant id for id / secret based authentication."""
+    """Tenant ID for ID / secret based authentication."""
 
     federated_token_file: Optional[str]
-    """file containing federated credential token"""
+    """File containing federated credential token"""
 
     account_key: Optional[str]
-    """storage account master key"""
+    """Storage account master key"""
 
     sas_key: Optional[str]
-    """shared access signature"""
+    """Shared access signature"""
 
     token: Optional[str]
-    """hard-coded bearer token"""
+    """Hard-coded bearer token"""
 
     msi_resource_id: Optional[str]
 
 
 class S3Config(Config):
-    """Storage configuration for s3 objet store."""
+    """Storage configuration for Amazon Web Services (AWS) S3 object store."""
 
     provider: Literal["s3"] = "s3"
 
@@ -64,9 +64,9 @@ class S3Config(Config):
     session_token: Optional[str]
     imdsv1_fallback: bool = False
     virtual_hosted_style_request: Optional[str]
-    """Bucket is hosted under virtual-hosted-style url"""
+    """Bucket is hosted under virtual-hosted-style URL"""
 
     metadata_endpoint: Optional[str]
-    """Instance metadata endpoint url for fetching credentials"""
+    """Instance metadata endpoint URL for fetching credentials"""
 
     profile: Optional[str]
