@@ -1006,6 +1006,22 @@ class DagsterEvent(
         )
 
     @staticmethod
+    def step_concurrency_blocked(
+        step_context: IStepContext, concurrency_key: str, initial=True
+    ) -> "DagsterEvent":
+        message = (
+            f"Step blocked by concurrency limit for key {concurrency_key}"
+            if initial
+            else f"Step still blocked by concurrency limit for key {concurrency_key}"
+        )
+        return DagsterEvent.from_step(
+            event_type=DagsterEventType.ENGINE_EVENT,
+            step_context=step_context,
+            message=message,
+            event_specific_data=EngineEventData(metadata={"concurrency_key": concurrency_key}),
+        )
+
+    @staticmethod
     def job_start(job_context: IPlanContext) -> "DagsterEvent":
         return DagsterEvent.from_job(
             DagsterEventType.RUN_START,
