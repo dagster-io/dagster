@@ -511,7 +511,7 @@ const ResourceUses: React.FC<{
       ]
         .filter(({objects}) => objects.length > 0)
         .map(({name, objects, icon}) => (
-          <Box key={name}>
+          <div key={name}>
             <SectionHeader>
               <Subheading>{name}</Subheading>
             </SectionHeader>
@@ -552,7 +552,7 @@ const ResourceUses: React.FC<{
                 })}
               </tbody>
             </Table>
-          </Box>
+          </div>
         ))}
     </>
   );

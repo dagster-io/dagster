@@ -163,11 +163,9 @@ query ResourceDetailsQuery($selector: ResourceSelector!) {
 
             jobsOpsUsing {
                 job {
-                    id
                     name
                 }
                 opsUsing {
-                    handleID
                     solid {
                         name
                     }

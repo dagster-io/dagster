@@ -91,12 +91,10 @@
       'jobsOpsUsing': list([
         dict({
           'job': dict({
-            'id': 'bd6544ee6fcf652cbbea285bca66881ec6d3b60f',
             'name': 'my_asset_job',
           }),
           'opsUsing': list([
             dict({
-              'handleID': 'my_asset',
               'solid': dict({
                 'name': 'my_asset',
               }),
