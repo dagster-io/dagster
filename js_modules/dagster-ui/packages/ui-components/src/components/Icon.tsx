@@ -39,6 +39,7 @@ import chevron_left from '../icon-svgs/chevron_left.svg';
 import chevron_right from '../icon-svgs/chevron_right.svg';
 import close from '../icon-svgs/close.svg';
 import concept_book from '../icon-svgs/concept-book.svg';
+import console_icon from '../icon-svgs/console.svg';
 import content_copy from '../icon-svgs/content_copy.svg';
 import date from '../icon-svgs/date.svg';
 import deleteSVG from '../icon-svgs/delete.svg';
@@ -243,6 +244,7 @@ export const Icons = {
   chevron_right,
   chevron_left,
   close,
+  console: console_icon,
   content_copy,
   delete: deleteSVG,
   done,
