@@ -344,6 +344,33 @@ exotic_partition_mapping_scenarios = {
         expected_run_requests=[],
         current_time=create_pendulum_time(year=2020, month=1, day=4, hour=5),
     ),
+    "self_dependency_upstream_prior_partition_materialized": AssetReconciliationScenario(
+        assets=three_assets_self_dependency,
+        unevaluated_runs=[
+            # request from the previous tick
+            run(["asset1"], partition_key="2020-01-01"),
+            # now asset2 is filled in (maybe manually)
+            run(["asset2"], partition_key="2020-01-01"),
+        ],
+        cursor_from=AssetReconciliationScenario(
+            assets=three_assets_self_dependency,
+            # in this case, we materialize the parents out of order (01-02 before 01-01)
+            unevaluated_runs=[
+                run(["asset1"], partition_key="2020-01-02"),
+            ],
+            expected_run_requests=[
+                # asset2 cannot run in the same run as asset1 (so no 01-01), and 01-02 cannot be
+                # executed without the prior day's data
+                run_request(["asset1"], partition_key="2020-01-01"),
+            ],
+            current_time=create_pendulum_time(year=2020, month=1, day=4, hour=4),
+        ),
+        expected_run_requests=[
+            # next self-dependent partition can now be materialized with its downstream
+            run_request(["asset2", "asset3"], partition_key="2020-01-02"),
+        ],
+        current_time=create_pendulum_time(year=2020, month=1, day=4, hour=4),
+    ),
     "self_dependency_upstream_prior_partition_rematerialized": AssetReconciliationScenario(
         assets=three_assets_self_dependency,
         unevaluated_runs=[single_asset_run(asset_key="asset1", partition_key="2020-01-01")],
@@ -368,7 +395,7 @@ exotic_partition_mapping_scenarios = {
                 AutoMaterializeRule.skip_on_not_all_parents_updated()
             ),
         ),
-        unevaluated_runs=[single_asset_run(asset_key="asset1", partition_key="2020-01-01")],
+        unevaluated_runs=[single_asset_run(asset_key="asset1", partition_key="2020-01-02")],
         cursor_from=AssetReconciliationScenario(
             assets=with_auto_materialize_policy(
                 three_assets_self_dependency,
@@ -386,7 +413,7 @@ exotic_partition_mapping_scenarios = {
         ),
         # should respond to an upstream asset being rematerialized, even though the past time
         # partition was not updated
-        expected_run_requests=[run_request(["asset2", "asset3"], partition_key="2020-01-01")],
+        expected_run_requests=[run_request(["asset2", "asset3"], partition_key="2020-01-02")],
         current_time=create_pendulum_time(year=2020, month=1, day=4, hour=4),
     ),
     "self_dependency_upstream_prior_partition_outdated_ignore": AssetReconciliationScenario(
