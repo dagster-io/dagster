@@ -40,6 +40,12 @@ export const RUN_FRAGMENT = gql`
         path
       }
     }
+    assetCheckSelection {
+      name
+      assetKey {
+        path
+      }
+    }
     pipelineSnapshotId
     executionPlan {
       artifactsPersisted
