@@ -39,11 +39,71 @@ Note that several Dagster features, like schedules and sensors, require the Dags
 
 These are the main pages inside the UI:
 
+- [Assets](#assets)
 - [Jobs](#jobs)
 - [Runs](#runs)
-- [Assets](#assets)
 - [Schedules and sensors](#schedules-and-sensors)
 - [Deployment overview](#deployment-overview)
+
+### Assets
+
+<TabGroup>
+<TabItem name="Asset catalog">
+
+#### Asset catalog
+
+- **Description**: The **Asset catalog** page lists all assets, which can be filtered by asset key. Clicking an asset opens the [**Asset details** page](#asset-details) for that asset.
+- **Accessed by:** Clicking **Assets** in the top navigation bar
+
+<!-- ![The Asset Catalog page in the Dagster UI](/images/concepts/webserver/all-assets.png) -->
+
+<Image
+alt="The Asset Catalog page in the Dagster UI"
+src="/images/concepts/webserver/all-assets.png"
+width={3060}
+height={1630}
+/>
+
+---
+
+</TabItem>
+<TabItem name="Global asset lineage">
+
+#### Global asset lineage
+
+- **Description**:
+- **Accessed by**: Clicking **View global asset lineage**, located near the top right corner of the [**Asset catalog**](#asset-catalog)
+
+<!-- ![The Global asset lineage page in the Dagster UI](/images/concepts/webserver/global-asset-lineage.png) -->
+
+<Image
+alt="The Global asset lineage page in the Dagster UI"
+src="/images/concepts/webserver/global-asset-lineage.png"
+width={3056}
+height={1626}
+/>
+
+</TabItem>
+<TabItem name="Asset details">
+
+#### Asset details
+
+- **Description**: The **Asset details** page contains details about a single asset.
+- **Accessed by**: Clicking an asset in the [**Asset catalog**](#asset-catalog)
+
+<!-- ![THe Asset Details page in the Dagster UI](/images/concepts/webserver/asset.png) -->
+
+<Image
+alt="THe Asset Details page in the Dagster UI"
+src="/images/concepts/webserver/asset.png"
+width={3062}
+height={1628}
+/>
+
+</TabItem>
+</TabGroup>
+
+---
 
 ### Jobs
 
@@ -187,46 +247,7 @@ Related runs (e.g., runs created by re-executing the same previous run) are grou
 </TabItem>
 </TabGroup>
 
-### Assets
-
-<TabGroup>
-<TabItem name="Asset catalog">
-
-#### Asset catalog
-
-The **Asset catalog** page lists all assets, which can be filtered by asset key. Click an asset to open the [**Asset details** page](#asset-details):
-
-<!-- ![UI Asset Catalog](/images/concepts/webserver/all-assets.png) -->
-
-<Image
-alt="UI Asset Catalog"
-src="/images/concepts/webserver/all-assets.png"
-width={3574}
-height={1962}
-/>
-
 ---
-
-</TabItem>
-<TabItem name="Asset details">
-
-#### Asset details
-
-The **Asset details** page contains details about a single asset:
-
-<!-- ![UI Asset Details](/images/concepts/webserver/asset.png) -->
-
-<Image
-alt="UI Asset Details"
-src="/images/concepts/webserver/asset.png"
-width={3574}
-height={1962}
-/>
-
----
-
-</TabItem>
-</TabGroup>
 
 ### Schedules and sensors
 
