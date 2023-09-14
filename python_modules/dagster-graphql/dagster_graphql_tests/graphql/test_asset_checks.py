@@ -171,6 +171,25 @@ mutation($executionParams: ExecutionParams!) {
 }
 """
 
+RUN_QUERY = """
+query RunQuery($runId: ID!) {
+  runOrError(runId: $runId) {
+    __typename
+    ... on Run {
+        assetSelection {
+            path
+        }
+        assetCheckSelection {
+            assetKey {
+                path
+            }
+            name
+        }
+      }
+    }
+  }
+"""
+
 
 def _planned_event(run_id: str, planned: AssetCheckEvaluationPlanned) -> EventLogEntry:
     return EventLogEntry(
@@ -656,6 +675,16 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
         assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
 
         run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+
+        result = execute_dagster_graphql(graphql_context, RUN_QUERY, variables={"runId": run_id})
+        assert result.data == {
+            "runOrError": {
+                "__typename": "Run",
+                "assetSelection": [{"path": ["asset_1"]}],
+                "assetCheckSelection": None,
+            }
+        }
+
         run = poll_for_finished_run(graphql_context.instance, run_id)
 
         logs = graphql_context.instance.all_logs(run_id)
@@ -699,6 +728,18 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
         assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
 
         run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+
+        result = execute_dagster_graphql(graphql_context, RUN_QUERY, variables={"runId": run_id})
+        assert result.data == {
+            "runOrError": {
+                "__typename": "Run",
+                "assetSelection": None,
+                "assetCheckSelection": [
+                    {"assetKey": {"path": ["asset_1"]}, "name": "my_check"},
+                ],
+            }
+        }
+
         run = poll_for_finished_run(graphql_context.instance, run_id)
 
         logs = graphql_context.instance.all_logs(run_id)
@@ -738,6 +779,16 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
         assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
 
         run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+
+        result = execute_dagster_graphql(graphql_context, RUN_QUERY, variables={"runId": run_id})
+        assert result.data == {
+            "runOrError": {
+                "__typename": "Run",
+                "assetSelection": [{"path": ["asset_1"]}],
+                "assetCheckSelection": None,
+            }
+        }
+
         run = poll_for_finished_run(graphql_context.instance, run_id)
 
         logs = graphql_context.instance.all_logs(run_id)

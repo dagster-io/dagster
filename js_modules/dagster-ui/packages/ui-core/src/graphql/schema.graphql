@@ -1330,6 +1330,7 @@ type Run implements PipelineRun {
   eventConnection(afterCursor: String): EventConnection!
   parentPipelineSnapshotId: String
   assetSelection: [AssetKey!]
+  assetCheckSelection: [AssetCheckhandle!]
   resolvedOpSelection: [String!]
   assetMaterializations: [MaterializationEvent!]!
   startTime: Float
@@ -1339,6 +1340,11 @@ type Run implements PipelineRun {
   hasTerminatePermission: Boolean!
   hasDeletePermission: Boolean!
   hasConcurrencyKeySlots: Boolean!
+}
+
+type AssetCheckhandle {
+  name: String!
+  assetKey: AssetKey!
 }
 
 type SelectorTypeConfigError implements PipelineConfigValidationError {
