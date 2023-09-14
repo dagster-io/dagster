@@ -82,8 +82,8 @@ def test_execute_asset_and_check():
         assert context.asset_key_for_input("asset1") == asset1.key
         asset_check_spec = context.asset_check_spec
         return AssetCheckResult(
-            asset_key=asset_check_spec.asset_key,
-            check_name=asset_check_spec.name,
+            asset=asset_check_spec.asset_key,
+            name=asset_check_spec.name,
             success=True,
             metadata={"foo": "bar"},
         )
@@ -161,8 +161,8 @@ def test_execute_check_and_asset_in_separate_run():
         assert context.asset_key_for_input("asset1") == asset1.key
         asset_check_spec = context.asset_check_spec
         return AssetCheckResult(
-            asset_key=asset_check_spec.asset_key,
-            check_name=asset_check_spec.name,
+            asset=asset_check_spec.asset_key,
+            name=asset_check_spec.name,
             success=True,
             metadata={"foo": "bar"},
         )
@@ -230,7 +230,7 @@ def test_check_doesnt_execute_if_asset_fails():
 def test_check_decorator_unexpected_asset_key():
     @asset_check(asset="asset1", description="desc")
     def asset1_check():
-        return AssetCheckResult(asset_key=AssetKey("asset2"), success=True)
+        return AssetCheckResult(asset=AssetKey("asset2"), success=True)
 
     with pytest.raises(
         DagsterInvariantViolationError,

@@ -35,7 +35,7 @@ def test_asset_check_same_op():
     @asset(check_specs=[AssetCheckSpec("check1", asset="asset1", description="desc")])
     def asset1():
         yield Output(None)
-        yield AssetCheckResult(check_name="check1", success=True, metadata={"foo": "bar"})
+        yield AssetCheckResult(name="check1", success=True, metadata={"foo": "bar"})
 
     instance = DagsterInstance.ephemeral()
     result = materialize(assets=[asset1], instance=instance)
@@ -66,7 +66,7 @@ def test_asset_check_same_op_with_key_prefix():
     )
     def asset1():
         yield Output(None)
-        yield AssetCheckResult(check_name="check1", success=True, metadata={"foo": "bar"})
+        yield AssetCheckResult(name="check1", success=True, metadata={"foo": "bar"})
 
     instance = DagsterInstance.ephemeral()
     result = materialize(assets=[asset1], instance=instance)
@@ -97,8 +97,8 @@ def test_multiple_asset_checks_same_op():
     )
     def asset1():
         yield Output(None)
-        yield AssetCheckResult(check_name="check1", success=True, metadata={"foo": "bar"})
-        yield AssetCheckResult(check_name="check2", success=False, metadata={"baz": "bla"})
+        yield AssetCheckResult(name="check1", success=True, metadata={"foo": "bar"})
+        yield AssetCheckResult(name="check2", success=False, metadata={"baz": "bla"})
 
     result = materialize(assets=[asset1])
     assert result.success

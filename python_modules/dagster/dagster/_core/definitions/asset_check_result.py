@@ -27,7 +27,7 @@ class AssetCheckResult(
         [
             ("success", PublicAttr[bool]),
             ("asset_key", PublicAttr[Optional[AssetKey]]),
-            ("check_name", PublicAttr[Optional[str]]),
+            ("name", PublicAttr[Optional[str]]),
             ("metadata", PublicAttr[Mapping[str, MetadataValue]]),
             ("severity", PublicAttr[AssetCheckSeverity]),
         ],
@@ -35,13 +35,13 @@ class AssetCheckResult(
 ):
     """The result of an asset check.
 
-    Attributes:
-        asset_key (Optional[AssetKey]):
-            The asset key that was checked.
-        check_name (Optional[str]):
-            The name of the check.
+    Args:
         success (bool):
             The pass/fail result of the check.
+        name (Optional[str]):
+            The name of the check.
+        asset (Union[AssetKey, Sequence[str], str, AssetsDefinition, SourceAsset]):
+            The asset key that was checked.
         metadata (Optional[Dict[str, RawMetadataValue]]):
             Arbitrary metadata about the asset.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
@@ -55,8 +55,8 @@ class AssetCheckResult(
         cls,
         *,
         success: bool,
-        asset_key: Optional[CoercibleToAssetKey] = None,
-        check_name: Optional[str] = None,
+        name: Optional[str] = None,
+        asset: Optional[CoercibleToAssetKey] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         severity: AssetCheckSeverity = AssetCheckSeverity.ERROR,
     ):
@@ -65,8 +65,8 @@ class AssetCheckResult(
         )
         return super().__new__(
             cls,
-            asset_key=AssetKey.from_coercible(asset_key) if asset_key is not None else None,
-            check_name=check.opt_str_param(check_name, "check_name"),
+            asset_key=AssetKey.from_coercible(asset) if asset is not None else None,
+            name=check.opt_str_param(name, "name"),
             success=check.bool_param(success, "success"),
             metadata=normalized_metadata,
             severity=check.inst_param(severity, "severity", AssetCheckSeverity),
@@ -105,16 +105,16 @@ class AssetCheckResult(
             resolved_asset_key = next(iter(asset_keys_with_specs))
 
         check_names_with_specs = spec_check_names_by_asset_key[resolved_asset_key]
-        if self.check_name is not None:
-            if self.check_name not in check_names_with_specs:
+        if self.name is not None:
+            if self.name not in check_names_with_specs:
                 raise DagsterInvariantViolationError(
                     "Received unexpected AssetCheckResult. No checks currently being evaluated"
                     f" target asset '{resolved_asset_key.to_user_string()}' and have name"
-                    f" '{self.check_name}'. Checks being evaluated for this asset:"
+                    f" '{self.name}'. Checks being evaluated for this asset:"
                     f" {check_names_with_specs}"
                 )
 
-            resolved_check_name = self.check_name
+            resolved_check_name = self.name
         else:
             if len(check_names_with_specs) > 1:
                 raise DagsterInvariantViolationError(
