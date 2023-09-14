@@ -6,7 +6,7 @@ from typing_extensions import Annotated, dataclass_transform, get_origin
 
 from dagster._core.errors import DagsterInvalidDagsterTypeInPythonicConfigDefinitionError
 
-from .utils import safe_is_subclass
+from .inheritance_utils import safe_is_subclass
 
 if TYPE_CHECKING:
     from dagster._config.pythonic_config import PartialResource
