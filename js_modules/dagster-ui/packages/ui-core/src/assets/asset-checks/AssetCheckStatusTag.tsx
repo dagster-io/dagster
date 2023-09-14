@@ -83,7 +83,7 @@ export const AssetCheckStatusTag = ({
       actions={[
         {
           label: 'View in run logs',
-          to: `/runs/${runId})}`,
+          to: `/runs/${runId}`,
         },
       ]}
     >
