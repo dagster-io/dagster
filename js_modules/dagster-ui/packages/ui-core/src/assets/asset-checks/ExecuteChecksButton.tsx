@@ -11,10 +11,10 @@ export type EvaluateChecksAssetNode = {
   jobNames: string[];
 };
 
-export const EvaluateChecksButton = ({
+export const ExexcuteChecksButton = ({
   assetNode,
   checks,
-  label = `Evaluate all`,
+  label = `Execute all`,
   icon = true,
 }: {
   assetNode: EvaluateChecksAssetNode;

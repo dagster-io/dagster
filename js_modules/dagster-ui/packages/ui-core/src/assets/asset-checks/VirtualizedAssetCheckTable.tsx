@@ -11,7 +11,7 @@ import {assetDetailsPathForKey} from '../assetDetailsPathForKey';
 
 import {MetadataCell} from './AssetCheckDetailModal';
 import {AssetCheckStatusTag} from './AssetCheckStatusTag';
-import {EvaluateChecksAssetNode, EvaluateChecksButton} from './EvaluateChecksButton';
+import {EvaluateChecksAssetNode, ExexcuteChecksButton} from './ExecuteChecksButton';
 import {AssetChecksQuery} from './types/AssetChecks.types';
 
 type Check = Extract<
@@ -109,10 +109,10 @@ export const VirtualizedAssetCheckRow = ({assetNode, height, start, row}: AssetC
         </RowCell>
         <RowCell>
           <Box flex={{justifyContent: 'flex-end'}}>
-            <EvaluateChecksButton
+            <ExexcuteChecksButton
               assetNode={assetNode}
               checks={[row]}
-              label="Evaluate"
+              label="Execute"
               icon={false}
             />
           </Box>

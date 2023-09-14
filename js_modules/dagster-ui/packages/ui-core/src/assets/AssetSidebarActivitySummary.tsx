@@ -1,11 +1,10 @@
-import {Body, Box, Button, Colors, Icon, Spinner, Table} from '@dagster-io/ui-components';
+import {Body, Box, Colors, Icon, Spinner, Table} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {LiveDataForNode} from '../asset-graph/Utils';
 import {SidebarAssetFragment} from '../asset-graph/types/SidebarAssetInfo.types';
 import {SidebarSection} from '../pipelines/SidebarComponents';
-import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {AssetEventSystemTags} from './AssetEventSystemTags';
 import {AssetMaterializationGraphs} from './AssetMaterializationGraphs';
@@ -18,7 +17,7 @@ import {FailedRunSinceMaterializationBanner} from './FailedRunSinceMaterializati
 import {LatestMaterializationMetadata} from './LastMaterializationMetadata';
 import {OverdueTag, freshnessPolicyDescription} from './OverdueTag';
 import {AssetCheckStatusTag} from './asset-checks/AssetCheckStatusTag';
-import {EvaluateChecksButton} from './asset-checks/EvaluateChecksButton';
+import {ExexcuteChecksButton} from './asset-checks/ExecuteChecksButton';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {useGroupedEvents} from './groupByPartition';
 import {useRecentAssetEvents} from './useRecentAssetEvents';
@@ -171,7 +170,7 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
       {liveData && liveData.assetChecks.length > 0 && (
         <SidebarSection title="Checks">
           <Box padding={{horizontal: 24, vertical: 12}} flex={{gap: 12, alignItems: 'center'}}>
-            <EvaluateChecksButton assetNode={asset} checks={liveData.assetChecks} />
+            <ExexcuteChecksButton assetNode={asset} checks={liveData.assetChecks} />
             <Link to={assetDetailsPathForKey(asset.assetKey, {view: 'checks'})}>
               View all check details
             </Link>

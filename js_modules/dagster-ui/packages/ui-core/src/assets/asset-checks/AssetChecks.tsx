@@ -17,7 +17,7 @@ import {
   MigrationRequired,
   NoChecks,
 } from './AssetCheckDetailModal';
-import {EvaluateChecksButton} from './EvaluateChecksButton';
+import {ExexcuteChecksButton} from './ExecuteChecksButton';
 import {VirtualizedAssetCheckTable} from './VirtualizedAssetCheckTable';
 import {AssetChecksQuery, AssetChecksQueryVariables} from './types/AssetChecks.types';
 
@@ -44,15 +44,15 @@ export const AssetChecks = ({
     }
     const assetNode = data.assetNodeOrError;
     const result = data.assetChecksOrError!;
-    if (assetNode?.__typename !== 'AssetNode') {
-      return <span />;
-    }
     if (result.__typename === 'AssetCheckNeedsMigrationError') {
       return <MigrationRequired />;
     }
     const checks = result.checks;
     if (!checks.length) {
       return <NoChecks />;
+    }
+    if (assetNode?.__typename !== 'AssetNode') {
+      return <span />;
     }
     return <VirtualizedAssetCheckTable assetNode={assetNode} rows={checks} />;
   }
@@ -63,7 +63,7 @@ export const AssetChecks = ({
     if (checksOrError?.__typename !== 'AssetChecks' || assetNode?.__typename !== 'AssetNode') {
       return <span />;
     }
-    return <EvaluateChecksButton assetNode={assetNode} checks={checksOrError.checks} />;
+    return <ExexcuteChecksButton assetNode={assetNode} checks={checksOrError.checks} />;
   }
 
   const {AssetChecksBanner} = useContext(AssetFeatureContext);
