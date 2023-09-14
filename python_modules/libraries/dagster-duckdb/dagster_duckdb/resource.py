@@ -1,4 +1,5 @@
 from contextlib import contextmanager
+from typing import Any, Dict
 
 import duckdb
 from dagster import ConfigurableResource
@@ -33,6 +34,7 @@ class DuckDBResource(ConfigurableResource):
             " database "
         )
     )
+    config: Dict[str, Any] = Field(description="DuckDB configuration options.", default={})
 
     @classmethod
     def _is_dagster_maintained(cls) -> bool:
@@ -43,7 +45,7 @@ class DuckDBResource(ConfigurableResource):
         conn = backoff(
             fn=duckdb.connect,
             retry_on=(RuntimeError, duckdb.IOException),
-            kwargs={"database": self.database, "read_only": False},
+            kwargs={"database": self.database, "read_only": False, "config": self.config},
             max_retries=10,
         )
 

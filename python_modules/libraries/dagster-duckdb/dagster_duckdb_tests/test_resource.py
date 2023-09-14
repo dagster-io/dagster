@@ -1,7 +1,8 @@
 import os
 
 import pandas as pd
-from dagster import asset, materialize
+import pytest
+from dagster import asset, job, materialize, op
 from dagster_duckdb import DuckDBResource
 
 
@@ -24,3 +25,29 @@ def test_resource(tmp_path):
         [create_table, read_table],
         resources={"duckdb": DuckDBResource(database=os.path.join(tmp_path, "unit_test.duckdb"))},
     )
+
+
+@pytest.mark.parametrize(
+    "config",
+    [{"arrow_large_buffer_size": False}, {"arrow_large_buffer_size": True}],
+)
+def test_config(tmp_path, config):
+    @op(required_resource_keys={"duckdb"})
+    def check_config_op(context):
+        with context.resources.duckdb.get_connection() as conn:
+            for name, value in config.items():
+                res = conn.execute(f"SELECT current_setting('{name}')").fetchone()
+
+                assert res[0] == value
+
+    @job(
+        resource_defs={
+            "duckdb": DuckDBResource(
+                database=os.path.join(tmp_path, "unit_test.duckdb"), config=config
+            )
+        }
+    )
+    def check_config_job():
+        check_config_op()
+
+    assert check_config_job.execute_in_process().success
