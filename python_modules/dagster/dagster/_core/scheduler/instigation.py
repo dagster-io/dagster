@@ -394,7 +394,7 @@ class TickData(
             ("instigator_name", str),
             ("instigator_type", InstigatorType),
             ("status", TickStatus),
-            ("timestamp", float),
+            ("timestamp", float),  # Time the tick started
             ("run_ids", Sequence[str]),
             ("run_keys", Sequence[str]),
             ("error", Optional[SerializableErrorInfo]),
@@ -408,6 +408,7 @@ class TickData(
                 "dynamic_partitions_request_results",
                 Sequence[DynamicPartitionsRequestResult],
             ),
+            ("end_timestamp", Optional[float]),  # Time the tick finished
         ],
     )
 ):
@@ -452,6 +453,7 @@ class TickData(
         dynamic_partitions_request_results: Optional[
             Sequence[DynamicPartitionsRequestResult]
         ] = None,
+        end_timestamp: Optional[float] = None,
     ):
         _validate_tick_args(instigator_type, status, run_ids, error, skip_reason)
         check.opt_list_param(log_key, "log_key", of_type=str)
@@ -476,6 +478,7 @@ class TickData(
                 "dynamic_partitions_request_results",
                 of_type=DynamicPartitionsRequestResult,
             ),
+            end_timestamp=end_timestamp,
         )
 
     def with_status(
@@ -484,6 +487,7 @@ class TickData(
         error: Optional[SerializableErrorInfo] = None,
         timestamp: Optional[float] = None,
         failure_count: Optional[int] = None,
+        end_timestamp: Optional[float] = None,
     ) -> "TickData":
         return TickData(
             **merge_dicts(
@@ -494,6 +498,9 @@ class TickData(
                     "timestamp": timestamp if timestamp is not None else self.timestamp,
                     "failure_count": (
                         failure_count if failure_count is not None else self.failure_count
+                    ),
+                    "end_timestamp": (
+                        end_timestamp if end_timestamp is not None else self.end_timestamp
                     ),
                 },
             )

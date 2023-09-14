@@ -164,6 +164,7 @@ class AssetReconciliationScenario(
             ("expected_evaluations", Optional[Sequence[AssetEvaluationSpec]]),
             ("requires_respect_materialization_data_versions", bool),
             ("supports_with_external_asset_graph", bool),
+            ("expected_error_message", Optional[str]),
         ],
     )
 ):
@@ -186,6 +187,7 @@ class AssetReconciliationScenario(
         expected_evaluations: Optional[Sequence[AssetEvaluationSpec]] = None,
         requires_respect_materialization_data_versions: bool = False,
         supports_with_external_asset_graph: bool = True,
+        expected_error_message: Optional[str] = None,
     ) -> "AssetReconciliationScenario":
         # For scenarios with no auto-materialize policies, we infer auto-materialize policies
         # and add them to the assets.
@@ -222,6 +224,7 @@ class AssetReconciliationScenario(
             expected_evaluations=expected_evaluations,
             requires_respect_materialization_data_versions=requires_respect_materialization_data_versions,
             supports_with_external_asset_graph=supports_with_external_asset_graph,
+            expected_error_message=expected_error_message,
         )
 
     def _get_code_location_origin(
@@ -490,7 +493,19 @@ class AssetReconciliationScenario(
                     workspace.get_code_location_error("test_location") is None
                 ), workspace.get_code_location_error("test_location")
 
-                list(AssetDaemon(interval_seconds=42).run_iteration(workspace_context))
+                try:
+                    list(AssetDaemon(interval_seconds=42).run_iteration(workspace_context))
+
+                    if self.expected_error_message:
+                        raise Exception(
+                            f"Failed to raise expected error {self.expected_error_message}"
+                        )
+
+                except Exception:
+                    if not self.expected_error_message:
+                        raise
+
+                    assert self.expected_error_message in str(sys.exc_info())
 
 
 def do_run(
@@ -568,6 +583,7 @@ def asset_def(
     freshness_policy: Optional[FreshnessPolicy] = None,
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
     code_version: Optional[str] = None,
+    config_schema: Optional[Mapping[str, Field]] = None,
 ) -> AssetsDefinition:
     if deps is None:
         non_argument_deps = None
@@ -587,7 +603,7 @@ def asset_def(
         partitions_def=partitions_def,
         deps=non_argument_deps,
         ins=ins,
-        config_schema={"fail": Field(bool, default_value=False)},
+        config_schema=config_schema or {"fail": Field(bool, default_value=False)},
         freshness_policy=freshness_policy,
         auto_materialize_policy=auto_materialize_policy,
         code_version=code_version,
