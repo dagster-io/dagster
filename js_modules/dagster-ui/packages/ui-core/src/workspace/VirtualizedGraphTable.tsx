@@ -35,7 +35,7 @@ export const VirtualizedGraphTable: React.FC<Props> = ({repoAddress, graphs}) =>
   return (
     <>
       <Box
-        border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+        border="top-and-bottom"
         style={{
           display: 'grid',
           gridTemplateColumns: '100%',
@@ -110,7 +110,7 @@ const GraphRow = (props: GraphRowProps) => {
 
   return (
     <Row $height={height} $start={start}>
-      <RowGrid border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}>
+      <RowGrid border="bottom">
         <RowCell>
           <Box flex={{direction: 'column'}}>
             <div style={{whiteSpace: 'nowrap', fontWeight: 500}}>

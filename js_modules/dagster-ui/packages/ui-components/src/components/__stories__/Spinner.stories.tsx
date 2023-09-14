@@ -16,7 +16,7 @@ export default {
 export const Sizes = () => {
   return (
     <Group direction="column" spacing={32}>
-      <Box padding={20} border={{side: 'all', width: 1, color: Colors.Gray100}}>
+      <Box padding={20} border="all">
         <Group direction="column" spacing={16}>
           <Code>purpose=&quot;caption-text&quot;</Code>
           <Group direction="row" spacing={8} alignItems="center">
@@ -25,7 +25,7 @@ export const Sizes = () => {
           </Group>
         </Group>
       </Box>
-      <Box padding={20} border={{side: 'all', width: 1, color: Colors.Gray100}}>
+      <Box padding={20} border="all">
         <Group direction="column" spacing={16}>
           <Code>purpose=&quot;body-text&quot;</Code>
           <Group direction="row" spacing={8} alignItems="center">
@@ -34,7 +34,7 @@ export const Sizes = () => {
           </Group>
         </Group>
       </Box>
-      <Box padding={20} border={{side: 'all', width: 1, color: Colors.Gray100}}>
+      <Box padding={20} border="all">
         <Group direction="column" spacing={16}>
           <Code>purpose=&quot;section&quot;</Code>
           <Box flex={{direction: 'row', justifyContent: 'center', gap: 10}} padding={24}>
@@ -43,7 +43,7 @@ export const Sizes = () => {
           </Box>
         </Group>
       </Box>
-      <Box padding={20} border={{side: 'all', width: 1, color: Colors.Gray100}}>
+      <Box padding={20} border="all">
         <Group direction="column" spacing={16}>
           <Code>purpose=&quot;page&quot;</Code>
           <Box flex={{direction: 'row', justifyContent: 'center', gap: 10}} padding={48}>

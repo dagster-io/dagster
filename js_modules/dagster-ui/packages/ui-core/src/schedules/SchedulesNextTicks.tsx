@@ -359,10 +359,7 @@ const NextTickDialog: React.FC<{
           ) : null}
         </Box>
         <div>
-          <Box
-            border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-            padding={{left: 24, bottom: 16}}
-          >
+          <Box border="bottom" padding={{left: 24, bottom: 16}}>
             <Subheading>Config</Subheading>
           </Box>
           <StyledRawCodeMirror

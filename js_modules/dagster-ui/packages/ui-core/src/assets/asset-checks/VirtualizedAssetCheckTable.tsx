@@ -76,7 +76,7 @@ export const VirtualizedAssetCheckRow = ({assetNode, height, start, row}: AssetC
 
   return (
     <Row $height={height} $start={start} data-testid={testId(`row-#TODO_USE_CHECK_ID`)}>
-      <RowGrid border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}>
+      <RowGrid border="bottom">
         <RowCell style={{flexDirection: 'row', alignItems: 'center'}}>
           <Box flex={{direction: 'column', gap: 4}}>
             <Link
@@ -132,7 +132,7 @@ const CaptionEllipsed = styled(Caption)`
 export const VirtualizedAssetCheckHeader = () => {
   return (
     <Box
-      border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+      border="top-and-bottom"
       style={{
         display: 'grid',
         gridTemplateColumns: TEMPLATE_COLUMNS,

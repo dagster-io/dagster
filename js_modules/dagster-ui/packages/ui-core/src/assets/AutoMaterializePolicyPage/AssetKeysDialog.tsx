@@ -1,7 +1,6 @@
 import {
   Box,
   Button,
-  Colors,
   Dialog,
   DialogFooter,
   NonIdealState,
@@ -49,7 +48,7 @@ export const AssetKeysDialogHeader = (props: HeaderProps) => {
     <Box
       padding={{horizontal: 24, vertical: 16}}
       flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
-      border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+      border="bottom"
     >
       <div style={{fontSize: '16px'}}>{title}</div>
       {showSearch ? (
