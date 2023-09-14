@@ -133,6 +133,13 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             value_type=AssetKey,
         )
 
+        check.opt_mapping_param(
+            check_specs_by_output_name,
+            "check_specs_by_output_name",
+            key_type=str,
+            value_type=AssetCheckSpec,
+        )
+
         # if not specified assume all output assets depend on all input assets
         all_asset_keys = set(keys_by_output_name.values())
         input_asset_keys = set(keys_by_input_name.values())
@@ -247,12 +254,14 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             backfill_policy, "backfill_policy", BackfillPolicy
         )
 
-        self._check_specs_by_output_name = check.opt_mapping_param(
-            check_specs_by_output_name,
-            "check_specs_by_output_name",
-            key_type=str,
-            value_type=AssetCheckSpec,
-        )
+        if selected_asset_keys is None:
+            self._check_specs_by_output_name = check_specs_by_output_name or {}
+        else:
+            self._check_specs_by_output_name = {
+                output_name: check_spec
+                for output_name, check_spec in (check_specs_by_output_name or {}).items()
+                if check_spec.asset_key in selected_asset_keys
+            }
 
         self._check_specs_by_handle = {
             spec.handle: spec for spec in self._check_specs_by_output_name.values()
@@ -350,6 +359,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         ] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
         can_subset: bool = False,
+        check_specs: Optional[Sequence[AssetCheckSpec]] = None,
     ) -> "AssetsDefinition":
         """Constructs an AssetsDefinition from a GraphDefinition.
 
@@ -420,6 +430,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             auto_materialize_policies_by_output_name=auto_materialize_policies_by_output_name,
             backfill_policy=backfill_policy,
             can_subset=can_subset,
+            check_specs=check_specs,
         )
 
     @public
@@ -531,7 +542,12 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         ] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
         can_subset: bool = False,
+        check_specs: Optional[Sequence[AssetCheckSpec]] = None,
     ) -> "AssetsDefinition":
+        from dagster._core.definitions.decorators.asset_decorator import (
+            _validate_and_assign_output_names_to_check_specs,
+        )
+
         node_def = check.inst_param(node_def, "node_def", NodeDefinition)
         keys_by_input_name = _infer_keys_by_input_names(
             node_def,
@@ -561,7 +577,13 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 )
                 transformed_internal_asset_deps[keys_by_output_name[output_name]] = asset_keys
 
-        keys_by_output_name = _infer_keys_by_output_names(node_def, keys_by_output_name or {})
+        check_specs_by_output_name = _validate_and_assign_output_names_to_check_specs(
+            check_specs, list(keys_by_output_name.values())
+        )
+
+        keys_by_output_name = _infer_keys_by_output_names(
+            node_def, keys_by_output_name or {}, check_specs_by_output_name
+        )
 
         keys_by_output_name_with_prefix: Dict[str, AssetKey] = {}
         key_prefix_list = [key_prefix] if isinstance(key_prefix, str) else key_prefix
@@ -652,7 +674,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             ),
             can_subset=can_subset,
             selected_asset_keys=None,  # node has no subselection info
-            check_specs_by_output_name={},
+            check_specs_by_output_name=check_specs_by_output_name,
         )
 
     @public
@@ -1267,16 +1289,30 @@ def _infer_keys_by_input_names(
 
 
 def _infer_keys_by_output_names(
-    node_def: Union["GraphDefinition", OpDefinition], keys_by_output_name: Mapping[str, AssetKey]
+    node_def: Union["GraphDefinition", OpDefinition],
+    keys_by_output_name: Mapping[str, AssetKey],
+    check_specs_by_output_name: Mapping[str, AssetCheckSpec],
 ) -> Mapping[str, AssetKey]:
     output_names = [output_def.name for output_def in node_def.output_defs]
     if keys_by_output_name:
+        overlapping_asset_and_check_outputs = set(keys_by_output_name.keys()) & set(
+            check_specs_by_output_name.keys()
+        )
         check.invariant(
-            set(keys_by_output_name.keys()) == set(output_names),
-            "The set of output names keys specified in the keys_by_output_name argument must "
-            f"equal the set of asset keys outputted by {node_def.name}. \n"
-            f"keys_by_output_name keys: {set(keys_by_output_name.keys())} \n"
-            f"expected keys: {set(output_names)}",
+            not overlapping_asset_and_check_outputs,
+            "The set of output names associated with asset keys and checks overlap:"
+            f" {overlapping_asset_and_check_outputs}",
+        )
+
+        union_asset_and_check_outputs = set(keys_by_output_name.keys()) | set(
+            check_specs_by_output_name.keys()
+        )
+        check.invariant(
+            union_asset_and_check_outputs == set(output_names),
+            "The union of the set of output names keys specified in the keys_by_output_name and"
+            " check_specs_by_output_name arguments must equal the set of asset keys outputted by"
+            f" {node_def.name}. union keys:"
+            f" {union_asset_and_check_outputs} \nexpected keys: {set(output_names)}",
         )
 
     inferred_keys_by_output_names: Dict[str, AssetKey] = {
@@ -1286,6 +1322,7 @@ def _infer_keys_by_output_names(
     if (
         len(output_names) == 1
         and output_names[0] not in keys_by_output_name
+        and output_names[0] not in check_specs_by_output_name
         and output_names[0] == "result"
     ):
         # If there is only one output and the name is the default "result", generate asset key
@@ -1293,7 +1330,10 @@ def _infer_keys_by_output_names(
         inferred_keys_by_output_names[output_names[0]] = AssetKey([node_def.name])
 
     for output_name in output_names:
-        if output_name not in inferred_keys_by_output_names:
+        if (
+            output_name not in inferred_keys_by_output_names
+            and output_name not in check_specs_by_output_name
+        ):
             inferred_keys_by_output_names[output_name] = AssetKey([output_name])
     return inferred_keys_by_output_names
 

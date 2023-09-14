@@ -20,6 +20,7 @@ export type GetEvaluationsQuery = {
             __typename: 'AutoMaterializeRule';
             description: string;
             decisionType: Types.AutoMaterializeDecisionType;
+            className: string;
           }>;
         } | null;
       }
@@ -44,6 +45,7 @@ export type GetEvaluationsQuery = {
               __typename: 'AutoMaterializeRule';
               description: string;
               decisionType: Types.AutoMaterializeDecisionType;
+              className: string;
             };
             ruleEvaluations: Array<{
               __typename: 'AutoMaterializeRuleEvaluation';
@@ -68,6 +70,12 @@ export type GetEvaluationsQuery = {
                 | null;
             }>;
           }>;
+          rules: Array<{
+            __typename: 'AutoMaterializeRule';
+            description: string;
+            decisionType: Types.AutoMaterializeDecisionType;
+            className: string;
+          }> | null;
         }>;
       }
     | null;
@@ -88,6 +96,7 @@ export type AutoMaterializeEvaluationRecordItemFragment = {
       __typename: 'AutoMaterializeRule';
       description: string;
       decisionType: Types.AutoMaterializeDecisionType;
+      className: string;
     };
     ruleEvaluations: Array<{
       __typename: 'AutoMaterializeRuleEvaluation';
@@ -109,6 +118,12 @@ export type AutoMaterializeEvaluationRecordItemFragment = {
         | null;
     }>;
   }>;
+  rules: Array<{
+    __typename: 'AutoMaterializeRule';
+    description: string;
+    decisionType: Types.AutoMaterializeDecisionType;
+    className: string;
+  }> | null;
 };
 
 export type RuleWithEvaluationsFragment = {
@@ -117,6 +132,7 @@ export type RuleWithEvaluationsFragment = {
     __typename: 'AutoMaterializeRule';
     description: string;
     decisionType: Types.AutoMaterializeDecisionType;
+    className: string;
   };
   ruleEvaluations: Array<{
     __typename: 'AutoMaterializeRuleEvaluation';

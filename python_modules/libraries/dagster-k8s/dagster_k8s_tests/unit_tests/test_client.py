@@ -739,9 +739,7 @@ def test_valid_failure_waiting_reasons():
         pod_name = "a_pod"
         with pytest.raises(DagsterK8sError) as exc_info:
             mock_client.wait_for_pod(pod_name=pod_name, namespace="namespace")
-        assert str(exc_info.value) == 'Failed: Reason="{reason}" Message="bad things"'.format(
-            reason=reason
-        )
+        assert f'Failed: Reason="{reason}" Message="bad things"' in str(exc_info.value)
 
 
 def test_bad_waiting_state():

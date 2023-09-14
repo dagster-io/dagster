@@ -185,10 +185,7 @@ const AssetCheckDetailModalImpl = ({
                     )}
                   </td>
                   <td>
-                    <AssetCheckStatusTag
-                      status={execution.status}
-                      severity={execution.evaluation?.severity}
-                    />
+                    <AssetCheckStatusTag check={check} execution={execution} />
                   </td>
                   <td>
                     <MetadataCell metadataEntries={execution.evaluation?.metadataEntries} />

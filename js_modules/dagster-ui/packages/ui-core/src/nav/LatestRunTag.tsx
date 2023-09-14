@@ -5,9 +5,9 @@ import {Link} from 'react-router-dom';
 
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
 import {RunStatus} from '../graphql/types';
-import {timingStringForStatus} from '../runs/RunDetails';
 import {RunStatusIndicator} from '../runs/RunStatusDots';
 import {DagsterTag} from '../runs/RunTag';
+import {timingStringForStatus} from '../runs/RunTimingDetails';
 import {RunTime, RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {repoAddressAsTag} from '../workspace/repoAddressAsString';

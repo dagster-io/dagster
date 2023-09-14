@@ -1,7 +1,7 @@
 ---
-title: "Lesson 8: Practice: Partition the trips_by_week asset"
-module: "dagster_essentials"
-lesson: "8"
+title: 'Lesson 8: Practice: Partition the trips_by_week asset'
+module: 'dagster_essentials'
+lesson: '8'
 ---
 
 # Practice: Partition the trips_by_week asset
@@ -28,7 +28,7 @@ def trips_by_week(context, database: DuckDBResource):
     """
         The number of trips per week, aggregated by week.
     """
-    
+
     period_to_fetch = context.asset_partition_key_for_output()
 
     # get all trips for the week
@@ -41,7 +41,7 @@ def trips_by_week(context, database: DuckDBResource):
 
     with database.get_connection() as conn:
         data_for_month = conn.execute(query).fetch_df()
-    
+
     aggregate = data_for_month.agg({
         "vendor_id": "count",
         "total_amount": "sum",

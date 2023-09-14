@@ -17,12 +17,12 @@ from dagster._core.ext.client import (
     ExtParams,
 )
 from dagster._core.ext.context import (
-    ExtOrchestrationContext,
+    ExtMessageHandler,
 )
 from dagster._core.ext.utils import (
     ExtEnvContextInjector,
+    ext_protocol,
     extract_message_or_forward_to_stdout,
-    io_params_as_env_vars,
 )
 from dagster_ext import (
     ExtDefaultMessageWriter,
@@ -48,18 +48,24 @@ class K8sPodLogsMessageReader(ExtMessageReader):
     @contextmanager
     def read_messages(
         self,
-        _context: ExtOrchestrationContext,
+        handler: ExtMessageHandler,
     ) -> Iterator[ExtParams]:
-        yield {ExtDefaultMessageWriter.STDIO_KEY: ExtDefaultMessageWriter.STDERR}
+        self._handler = handler
+        try:
+            yield {ExtDefaultMessageWriter.STDIO_KEY: ExtDefaultMessageWriter.STDERR}
+        finally:
+            self._handler = None
 
     def consume_pod_logs(
         self,
-        ext_context: ExtOrchestrationContext,
-        client: DagsterKubernetesClient,
+        core_api: kubernetes.client.CoreV1Api,
         pod_name: str,
         namespace: str,
     ):
-        for line in client.core_api.read_namespaced_pod_log(
+        handler = check.not_none(
+            self._handler, "can only consume logs within scope of context manager"
+        )
+        for line in core_api.read_namespaced_pod_log(
             pod_name,
             namespace,
             follow=True,
@@ -67,7 +73,7 @@ class K8sPodLogsMessageReader(ExtMessageReader):
         ).stream():
             log_chunk = line.decode("utf-8")
             for log_line in log_chunk.split("\n"):
-                extract_message_or_forward_to_stdout(ext_context, log_line)
+                extract_message_or_forward_to_stdout(handler, log_line)
 
 
 class _ExtK8sPod(ExtClient):
@@ -81,10 +87,30 @@ class _ExtK8sPod(ExtClient):
 
     Args:
         env (Optional[Mapping[str, str]]): An optional dict of environment variables to pass to the subprocess.
+        context_injector (Optional[ExtContextInjector]): An context injector to use to inject context into the k8s container process. Defaults to ExtEnvContextInjector.
+        message_reader (Optional[ExtContextInjector]): An context injector to use to read messages from the k8s container process. Defaults to K8sPodLogsMessageReader.
     """
 
-    def __init__(self, env: Optional[Mapping[str, str]] = None):
+    def __init__(
+        self,
+        env: Optional[Mapping[str, str]] = None,
+        context_injector: Optional[ExtContextInjector] = None,
+        message_reader: Optional[ExtMessageReader] = None,
+    ):
         self.env = check.opt_mapping_param(env, "env", key_type=str, value_type=str)
+        self.context_injector = (
+            check.opt_inst_param(
+                context_injector,
+                "context_injector",
+                ExtContextInjector,
+            )
+            or ExtEnvContextInjector()
+        )
+
+        self.message_reader = (
+            check.opt_inst_param(message_reader, "message_reader", ExtMessageReader)
+            or K8sPodLogsMessageReader()
+        )
 
     def run(
         self,
@@ -97,8 +123,6 @@ class _ExtK8sPod(ExtClient):
         base_pod_meta: Optional[Mapping[str, Any]] = None,
         base_pod_spec: Optional[Mapping[str, Any]] = None,
         extras: Optional[ExtExtras] = None,
-        context_injector: Optional[ExtContextInjector] = None,
-        message_reader: Optional[ExtMessageReader] = None,
     ) -> None:
         """Publish a kubernetes pod and wait for it to complete, enriched with the ext protocol.
 
@@ -129,11 +153,12 @@ class _ExtK8sPod(ExtClient):
         """
         client = DagsterKubernetesClient.production_client()
 
-        ext_context = ExtOrchestrationContext(context=context, extras=extras)
-        with _setup_ext_protocol(ext_context, context_injector, message_reader) as (
-            protocol_env_vars,
-            resolved_msg_reader,
-        ):
+        with ext_protocol(
+            context=context,
+            extras=extras,
+            context_injector=self.context_injector,
+            message_reader=self.message_reader,
+        ) as ext_process:
             namespace = namespace or "default"
             pod_name = get_pod_name(context.run_id, context.op.name)
             pod_body = build_pod_body(
@@ -141,8 +166,7 @@ class _ExtK8sPod(ExtClient):
                 image=image,
                 command=command,
                 env_vars={
-                    **self.get_base_env(),
-                    **protocol_env_vars,
+                    **ext_process.get_external_process_env_vars(),
                     **(self.env or {}),
                     **(env or {}),
                 },
@@ -152,15 +176,14 @@ class _ExtK8sPod(ExtClient):
             client.core_api.create_namespaced_pod(namespace, pod_body)
             try:
                 # if were doing direct pod reading, wait for pod to start and then stream logs out
-                if isinstance(resolved_msg_reader, K8sPodLogsMessageReader):
+                if isinstance(self.message_reader, K8sPodLogsMessageReader):
                     client.wait_for_pod(
                         pod_name,
                         namespace,
                         wait_for_state=WaitForPodState.Ready,
                     )
-                    resolved_msg_reader.consume_pod_logs(
-                        ext_context=ext_context,
-                        client=client,
+                    self.message_reader.consume_pod_logs(
+                        core_api=client.core_api,
                         pod_name=pod_name,
                         namespace=namespace,
                     )
@@ -196,6 +219,13 @@ def build_pod_body(
     if "containers" not in spec:
         spec["containers"] = [{}]
 
+    if "restart_policy" not in spec:
+        spec["restart_policy"] = "Never"
+    elif spec["restart_policy"] == "Always":
+        raise DagsterInvariantViolationError(
+            "A restart policy of Always is not allowed, computations are expected to complete."
+        )
+
     if "image" not in spec["containers"][0] and not image:
         raise DagsterInvariantViolationError(
             "Must specify image property or provide base_pod_spec with one set."
@@ -222,24 +252,6 @@ def build_pod_body(
             "spec": spec,
         },
     )
-
-
-@contextmanager
-def _setup_ext_protocol(
-    external_context: ExtOrchestrationContext,
-    context_injector: Optional[ExtContextInjector],
-    message_reader: Optional[ExtMessageReader],
-):
-    context_injector = context_injector or ExtEnvContextInjector()
-    message_reader = message_reader or K8sPodLogsMessageReader()
-
-    with context_injector.inject_context(
-        external_context,
-    ) as ci_params, message_reader.read_messages(
-        external_context,
-    ) as mr_params:
-        protocol_envs = io_params_as_env_vars(ci_params, mr_params)
-        yield protocol_envs, message_reader
 
 
 ExtK8sPod = ResourceParam[_ExtK8sPod]

@@ -68,7 +68,7 @@ def test_execute_run():
                 [input_json],
             )
 
-            assert "PIPELINE_SUCCESS" in result.stdout, f"no match, result: {result.stdout}"
+            assert "RUN_SUCCESS" in result.stdout, f"no match, result: {result.stdout}"
 
             # Framework errors (e.g. running a run that has already run) still result in a non-zero error code
             result = runner.invoke(api.execute_run_command, [input_json])
@@ -86,7 +86,7 @@ def needs_env_var_job():
     needs_env_var()
 
 
-def test_execute_run_with_secrets_loader():
+def test_execute_run_with_secrets_loader(capfd):
     recon_job = reconstructable(needs_env_var_job)
     runner = CliRunner()
 
@@ -127,7 +127,11 @@ def test_execute_run_with_secrets_loader():
                 [input_json],
             )
 
-            assert "PIPELINE_SUCCESS" in result.stdout, f"no match, result: {result.stdout}"
+            assert "RUN_SUCCESS" in result.stdout, f"no match, result: {result.stdout}"
+
+            # Step subprocess is logged to capfd since its in a subprocess of the CLi command
+            _, err = capfd.readouterr()
+            assert "STEP_SUCCESS" in err, f"no match, result: {err}"
 
     # Without a secrets loader the run fails due to missing env var
     with instance_for_test(
@@ -158,9 +162,13 @@ def test_execute_run_with_secrets_loader():
             [input_json],
         )
 
+        assert "RUN_FAILURE" in result.stdout, f"no match, result: {result.stdout}"
+
+        # Step subprocess is logged to capfd since its in a subprocess of the CLi command
+        _, err = capfd.readouterr()
         assert (
-            "PIPELINE_FAILURE" in result.stdout and "Exception: Missing env var" in result.stdout
-        ), f"no match, result: {result.stdout}"
+            "STEP_FAILURE" in err and "Exception: Missing env var" in err
+        ), f"no match, result: {err}"
 
 
 def test_execute_run_fail_job():
@@ -329,6 +337,47 @@ def test_execute_step():
             )
 
         assert "STEP_SUCCESS" in result.stdout
+        assert (
+            '{"__class__": "StepSuccessData"' not in result.stdout
+        )  # does not include serialized DagsterEvents
+
+
+def test_execute_step_print_serialized_events():
+    with instance_for_test(
+        overrides={
+            "compute_logs": {
+                "module": "dagster._core.storage.noop_compute_log_manager",
+                "class": "NoOpComputeLogManager",
+            }
+        }
+    ) as instance:
+        with get_foo_job_handle(instance) as job_handle:
+            runner = CliRunner()
+
+            run = create_run_for_test(
+                instance,
+                job_name="foo",
+                run_id="new_run",
+                job_code_origin=job_handle.get_python_origin(),
+            )
+
+            args = ExecuteStepArgs(
+                job_origin=job_handle.get_python_origin(),
+                run_id=run.run_id,
+                step_keys_to_execute=None,
+                instance_ref=instance.get_ref(),
+                print_serialized_events=True,
+            )
+
+            result = runner_execute_step(
+                runner,
+                args.get_command_args()[5:],
+            )
+
+        assert "STEP_SUCCESS" in result.stdout
+        assert (
+            '{"__class__": "StepSuccessData"' in result.stdout
+        )  # includes serialized DagsterEvents
 
 
 def test_execute_step_with_secrets_loader():

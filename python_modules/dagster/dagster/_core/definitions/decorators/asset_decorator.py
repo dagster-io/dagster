@@ -624,9 +624,17 @@ def multi_asset(
                     " the AssetSpecs directly."
                 )
 
-            upstream_keys = {
-                dep for spec in specs for dep in spec.deps if dep not in output_tuples_by_asset_key
-            }
+            upstream_keys = set()
+            for spec in specs:
+                for dep in spec.deps:
+                    if dep.asset_key not in output_tuples_by_asset_key:
+                        upstream_keys.add(dep.asset_key)
+                    if (
+                        dep.asset_key in output_tuples_by_asset_key
+                        and dep.partition_mapping is not None
+                    ):
+                        # self-dependent asset also needs to be considered an upstream_key
+                        upstream_keys.add(dep.asset_key)
 
             explicit_ins = ins or {}
             # get which asset keys have inputs set
@@ -676,7 +684,8 @@ def multi_asset(
             check_specs, list(output_tuples_by_asset_key.keys())
         )
         check_outs_by_output_name: Mapping[str, Out] = {
-            output_name: Out(dagster_type=None) for output_name in check_specs_by_output_name.keys()
+            output_name: Out(dagster_type=None, is_required=not can_subset)
+            for output_name in check_specs_by_output_name.keys()
         }
         overlapping_output_names = (
             asset_outs_by_output_name.keys() & check_outs_by_output_name.keys()
@@ -722,10 +731,31 @@ def multi_asset(
         }
 
         if specs:
-            internal_deps = {spec.asset_key: spec.deps for spec in specs if spec.deps is not None}
+            internal_deps = {
+                spec.asset_key: {dep.asset_key for dep in spec.deps}
+                for spec in specs
+                if spec.deps is not None
+            }
             props_by_asset_key: Mapping[AssetKey, Union[AssetSpec, AssetOut]] = {
                 spec.asset_key: spec for spec in specs
             }
+            # Add PartitionMappings specified via AssetSpec.deps to partition_mappings dictionary. Error on duplicates
+            for spec in specs:
+                for dep in spec.deps:
+                    if dep.partition_mapping is None:
+                        continue
+                    if partition_mappings.get(dep.asset_key, None) is None:
+                        partition_mappings[dep.asset_key] = dep.partition_mapping
+                        continue
+                    if partition_mappings[dep.asset_key] == dep.partition_mapping:
+                        continue
+                    else:
+                        raise DagsterInvalidDefinitionError(
+                            f"Two different PartitionMappings for {dep.asset_key} provided for"
+                            f" multi_asset {op_name}. Please use the same PartitionMapping for"
+                            f" {dep.asset_key}."
+                        )
+
         else:
             internal_deps = {keys_by_output_name[name]: asset_deps[name] for name in asset_deps}
             props_by_asset_key = {
@@ -893,6 +923,7 @@ def graph_asset(
     auto_materialize_policy: Optional[AutoMaterializePolicy] = ...,
     backfill_policy: Optional[BackfillPolicy] = ...,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = ...,
+    check_specs: Optional[Sequence[AssetCheckSpec]] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     ...
 
@@ -912,6 +943,7 @@ def graph_asset(
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+    check_specs: Optional[Sequence[AssetCheckSpec]] = None,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Creates a software-defined asset that's computed using a graph of ops.
 
@@ -986,6 +1018,7 @@ def graph_asset(
             auto_materialize_policy=auto_materialize_policy,
             backfill_policy=backfill_policy,
             resource_defs=resource_defs,
+            check_specs=check_specs,
         )
     else:
         key_prefix = [key_prefix] if isinstance(key_prefix, str) else key_prefix
@@ -1003,11 +1036,24 @@ def graph_asset(
             if asset_in.partition_mapping
         }
 
+        check_specs_by_output_name = _validate_and_assign_output_names_to_check_specs(
+            check_specs, [out_asset_key]
+        )
+        check_outs_by_output_name: Mapping[str, GraphOut] = {
+            output_name: GraphOut() for output_name in check_specs_by_output_name.keys()
+        }
+
+        combined_outs_by_output_name: Mapping = {
+            "result": GraphOut(),
+            **check_outs_by_output_name,
+        }
+
         op_graph = graph(
             name=out_asset_key.to_python_identifier(),
             description=description,
             config=config,
             ins={input_name: GraphIn() for _, (input_name, _) in asset_ins.items()},
+            out=combined_outs_by_output_name,
         )(compose_fn)
         return AssetsDefinition.from_graph(
             op_graph,
@@ -1026,6 +1072,7 @@ def graph_asset(
             backfill_policy=backfill_policy,
             descriptions_by_output_name={"result": description} if description else None,
             resource_defs=resource_defs,
+            check_specs=check_specs,
         )
 
 

@@ -769,19 +769,18 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                 " logging metadata for a dynamic output, it is necessary to provide a mapping key."
             )
 
-        if output_name in self._output_metadata:
-            if not mapping_key or mapping_key in self._output_metadata[output_name]:
-                raise DagsterInvariantViolationError(
-                    f"In {self.op_def.node_type_str} '{self.op.name}', attempted to log"
-                    f" metadata for output '{output_name}' more than once."
-                )
         if mapping_key:
             if output_name not in self._output_metadata:
                 self._output_metadata[output_name] = {}
-            self._output_metadata[output_name][mapping_key] = metadata
-
+            if mapping_key in self._output_metadata[output_name]:
+                self._output_metadata[output_name][mapping_key].update(metadata)
+            else:
+                self._output_metadata[output_name][mapping_key] = metadata
         else:
-            self._output_metadata[output_name] = metadata
+            if output_name in self._output_metadata:
+                self._output_metadata[output_name].update(metadata)
+            else:
+                self._output_metadata[output_name] = metadata
 
     def get_output_metadata(
         self, output_name: str, mapping_key: Optional[str] = None

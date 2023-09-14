@@ -1,7 +1,7 @@
 ---
 title: "Extra credit: What's metadata?"
-module: "dagster_essentials"
-lesson: "extra-credit"
+module: 'dagster_essentials'
+lesson: 'extra-credit'
 ---
 
 # What's metadata?
@@ -15,12 +15,14 @@ In this lesson, we’ll cover two types of metadata: definition and **materializ
 ## Definition metadata
 
 {% table %}
-* {% width="60%" %}
-  *Definition* metadata is, by definition, information that is fixed or doesn’t frequently change.
+
+- {% width="60%" %}
+  _Definition_ metadata is, by definition, information that is fixed or doesn’t frequently change.
 
   In the context of cookies, a piece of definition metadata might be a serving suggestion like the following.
 
-* ![This serving suggestion, a piece of definition metadata, will help you enjoy cookies in the best way](/images/dagster-essentials/extra-credit/definition-cookies.png) {% rowspan=2 %}
+- ![This serving suggestion, a piece of definition metadata, will help you enjoy cookies in the best way](/images/dagster-essentials/extra-credit/definition-cookies.png) {% rowspan=2 %}
+
 {% /table %}
 
 ---
@@ -28,12 +30,14 @@ In this lesson, we’ll cover two types of metadata: definition and **materializ
 ## Materialization metadata
 
 {% table %}
-* {% width="60%" %}
-  *Materialization* metadata is dynamic, meaning the information changes after an action occurs.
+
+- {% width="60%" %}
+  _Materialization_ metadata is dynamic, meaning the information changes after an action occurs.
 
   In the context of cookies, materialization metadata could be the date a batch of cookies was baked, who baked them, and how many cookies are in the batch.
 
-* ![This information, collected after cookies were baked, is an example of materialization metadata](/images/dagster-essentials/extra-credit/materialization-cookies.png) {% rowspan=2 %}
+- ![This information, collected after cookies were baked, is an example of materialization metadata](/images/dagster-essentials/extra-credit/materialization-cookies.png) {% rowspan=2 %}
+
 {% /table %}
 
 ---

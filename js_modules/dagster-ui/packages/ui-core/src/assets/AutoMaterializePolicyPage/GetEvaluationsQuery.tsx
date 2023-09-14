@@ -10,6 +10,7 @@ export const GET_EVALUATIONS_QUERY = gql`
           rules {
             description
             decisionType
+            className
           }
         }
       }
@@ -40,12 +41,18 @@ export const GET_EVALUATIONS_QUERY = gql`
     rulesWithRuleEvaluations {
       ...RuleWithEvaluationsFragment
     }
+    rules {
+      description
+      decisionType
+      className
+    }
   }
 
   fragment RuleWithEvaluationsFragment on AutoMaterializeRuleWithRuleEvaluations {
     rule {
       description
       decisionType
+      className
     }
     ruleEvaluations {
       evaluationData {

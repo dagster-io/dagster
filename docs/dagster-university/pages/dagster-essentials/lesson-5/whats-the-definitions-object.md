@@ -1,7 +1,7 @@
 ---
 title: "Lesson 5: What's the Definitions object?"
-module: "dagster_essentials"
-lesson: "5"
+module: 'dagster_essentials'
+lesson: '5'
 ---
 
 # What's the Definitions object?
@@ -51,7 +51,7 @@ defs = Definitions(
 
 ---
 
-## Anatomy of the __init__.py file
+## Anatomy of the \_\_init\_\_.py file
 
 Let’s break down this file’s code line-by-line.
 

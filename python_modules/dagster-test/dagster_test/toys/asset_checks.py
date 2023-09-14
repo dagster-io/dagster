@@ -5,13 +5,18 @@ from dagster import (
     AssetCheckResult,
     AssetCheckSeverity,
     AssetCheckSpec,
+    AssetKey,
     AssetOut,
     DailyPartitionsDefinition,
+    In,
     MetadataValue,
+    Nothing,
     Output,
     asset,
     asset_check,
+    graph_asset,
     multi_asset,
+    op,
 )
 
 
@@ -127,25 +132,179 @@ def random_fail_check_on_partitioned_asset():
     )
 
 
+@multi_asset(
+    outs={
+        "one": AssetOut(key="multi_asset_piece_1", group_name="asset_checks", is_required=False),
+        "two": AssetOut(key="multi_asset_piece_2", group_name="asset_checks", is_required=False),
+    },
+    check_specs=[AssetCheckSpec("my_check", asset="multi_asset_piece_1")],
+    can_subset=True,
+)
+def multi_asset_1_and_2(context):
+    if AssetKey("multi_asset_piece_1") in context.selected_asset_keys:
+        yield Output(1, output_name="one")
+        yield AssetCheckResult(success=True, metadata={"foo": "bar"})
+    if AssetKey("multi_asset_piece_2") in context.selected_asset_keys:
+        yield Output(1, output_name="two")
+
+
 @asset(
     group_name="asset_checks",
-    deps=[checked_asset, asset_with_check_in_same_op, check_exception_asset, partitioned_asset],
+    check_specs=[
+        AssetCheckSpec(name=f"check_{i}", asset="asset_with_100_checks") for i in range(100)
+    ],
 )
-def downstream_asset():
+def asset_with_100_checks(_):
+    yield Output(1)
+    for i in range(100):
+        yield AssetCheckResult(check_name=f"check_{i}", success=random.random() > 0.2)
+
+
+@asset(
+    group_name="asset_checks",
+    check_specs=[
+        AssetCheckSpec(name=f"check_{i}", asset="asset_with_1000_checks") for i in range(1000)
+    ],
+)
+def asset_with_1000_checks(_):
+    yield Output(1)
+    for i in range(1000):
+        yield AssetCheckResult(check_name=f"check_{i}", success=random.random() > 0.2)
+
+
+@op
+def create_staged_asset():
     return 1
 
 
-@multi_asset(
-    outs={
-        "one": AssetOut(key="multi_asset_piece_1", group_name="asset_checks"),
-        "two": AssetOut(key="multi_asset_piece_2", group_name="asset_checks"),
-    },
-    check_specs=[AssetCheckSpec("my_check", asset="multi_asset_piece_1")],
+@op
+def test_staged_asset(staged_asset):
+    random.seed(time.time())
+    result = AssetCheckResult(
+        success=random.choice([False, True]),
+    )
+    yield result
+    if not result.success:
+        raise Exception("Raising an exception to block promotion.")
+
+
+@op(ins={"staged_asset": In(), "check_result": In(Nothing)})
+def promote_staged_asset(staged_asset):
+    return staged_asset
+
+
+@graph_asset(
+    group_name="asset_checks",
+    check_specs=[
+        AssetCheckSpec("random_fail_and_raise_check", asset="stage_then_promote_graph_asset")
+    ],
 )
-def multi_asset_1_and_2():
-    yield Output(1, output_name="one")
-    yield Output(1, output_name="two")
-    yield AssetCheckResult(success=True, metadata={"foo": "bar"})
+def stage_then_promote_graph_asset():
+    staged_asset = create_staged_asset()
+    check_result = test_staged_asset(staged_asset)
+    return {
+        "result": promote_staged_asset(staged_asset, check_result),
+        "stage_then_promote_graph_asset_random_fail_and_raise_check": check_result,
+    }
+
+
+@op
+def test_1(staged_asset):
+    time.sleep(1)
+    result = AssetCheckResult(
+        check_name="check_1",
+        success=True,
+        metadata={"sample": "metadata"},
+    )
+    yield result
+    if not result.success:
+        raise Exception("The check failed, so raising an error to block materializing.")
+
+
+@op
+def test_2(staged_asset):
+    result = AssetCheckResult(
+        check_name="check_2",
+        success=True,
+        metadata={"sample": "metadata"},
+    )
+    yield result
+    if not result.success:
+        raise Exception("The check failed, so raising an error to block materializing.")
+
+
+@op
+def test_3(staged_asset):
+    time.sleep(5)
+    yield AssetCheckResult(
+        check_name="check_3",
+        success=False,
+        severity=AssetCheckSeverity.WARN,
+        metadata={"sample": "metadata"},
+    )
+
+
+@op(ins={"staged_asset": In(), "check_results": In(Nothing)})
+def promote_staged_asset_with_tests(staged_asset):
+    time.sleep(1)
+    return staged_asset
+
+
+@graph_asset(
+    group_name="asset_checks",
+    check_specs=[
+        AssetCheckSpec(
+            "check_1",
+            asset="many_tests_graph_asset",
+            description="A always passes.",
+        ),
+        AssetCheckSpec(
+            "check_2",
+            asset="many_tests_graph_asset",
+            description="A always passes.",
+        ),
+        AssetCheckSpec(
+            "check_3",
+            asset="many_tests_graph_asset",
+            description="A really slow and unimportant check that always fails.",
+        ),
+    ],
+)
+def many_tests_graph_asset():
+    staged_asset = create_staged_asset()
+
+    blocking_check_results = {
+        "many_tests_graph_asset_check_1": test_1(staged_asset),
+        "many_tests_graph_asset_check_2": test_2(staged_asset),
+    }
+    non_blocking_check_results = {"many_tests_graph_asset_check_3": test_3(staged_asset)}
+
+    return {
+        "result": promote_staged_asset_with_tests(
+            staged_asset, list(blocking_check_results.values())
+        ),
+        **blocking_check_results,
+        **non_blocking_check_results,
+    }
+
+
+@asset(
+    group_name="asset_checks",
+    deps=[
+        checked_asset,
+        asset_with_check_in_same_op,
+        check_exception_asset,
+        partitioned_asset,
+        AssetKey(["multi_asset_piece_2"]),
+        AssetKey(["multi_asset_piece_1"]),
+        stage_then_promote_graph_asset,
+        many_tests_graph_asset,
+        asset_with_100_checks,
+        asset_with_1000_checks,
+    ],
+)
+def downstream_asset():
+    return 1
 
 
 def get_checks_and_assets():
@@ -163,4 +322,8 @@ def get_checks_and_assets():
         partitioned_asset,
         random_fail_check_on_partitioned_asset,
         multi_asset_1_and_2,
+        stage_then_promote_graph_asset,
+        asset_with_100_checks,
+        asset_with_1000_checks,
+        many_tests_graph_asset,
     ]

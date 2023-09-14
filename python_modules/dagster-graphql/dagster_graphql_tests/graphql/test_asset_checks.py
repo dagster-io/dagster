@@ -12,10 +12,12 @@ from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.event_api import EventLogRecord
 from dagster._core.events import StepMaterializationData
 from dagster._core.events.log import EventLogEntry
-from dagster._core.test_utils import create_run_for_test
+from dagster._core.test_utils import create_run_for_test, poll_for_finished_run
 from dagster._core.workspace.context import WorkspaceRequestContext
+from dagster_graphql.client.query import ERROR_FRAGMENT
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
+    infer_job_or_pipeline_selector,
 )
 
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
@@ -108,6 +110,64 @@ query GetLatestExecution($assetKey: AssetKeyInput!) {
             }
         }
     }
+}
+"""
+
+LAUNCH_PIPELINE_EXECUTION_MUTATION = ERROR_FRAGMENT + """
+mutation($executionParams: ExecutionParams!) {
+  launchPipelineExecution(executionParams: $executionParams) {
+    __typename
+
+    ... on InvalidStepError {
+      invalidStepKey
+    }
+    ... on InvalidOutputError {
+      stepKey
+      invalidOutputName
+    }
+    ... on LaunchRunSuccess {
+      run {
+        runId
+        pipeline {
+          name
+        }
+        tags {
+          key
+          value
+        }
+        status
+        runConfigYaml
+        mode
+        resolvedOpSelection
+      }
+    }
+    ... on ConflictingExecutionParamsError {
+      message
+    }
+    ... on PresetNotFoundError {
+      preset
+      message
+    }
+    ... on RunConfigValidationInvalid {
+      pipelineName
+      errors {
+        __typename
+        message
+        path
+        reason
+      }
+    }
+    ... on PipelineNotFoundError {
+      message
+      pipelineName
+    }
+    ... on PythonError {
+      ...errorFragment
+    }
+    ... on InvalidSubsetError {
+        message
+    }
+  }
 }
 """
 
@@ -403,7 +463,10 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                     "checks": [{"name": "my_check", "executionForLatestMaterialization": None}],
                 }
             }, "new materialization should clear latest execution"
-            return instance.get_records_for_run(run.run_id).records[0]
+            records = instance.get_asset_records([AssetKey(["asset_1"])])
+            assert records
+            assert records[0].asset_entry.last_materialization_record
+            return records[0].asset_entry.last_materialization_record
 
         # no materialization, surface latest execution
         run = create_run_for_test(instance)
@@ -507,4 +570,192 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
             }
         }
 
+        materialization_record = new_materialization()
+
+        # run the checks, then materialize. The checks still apply because they're in the same run
+        run = create_run_for_test(instance)
+        instance.event_log_storage.store_event(
+            _planned_event(
+                run.run_id,
+                AssetCheckEvaluationPlanned(asset_key=AssetKey(["asset_1"]), check_name="my_check"),
+            )
+        )
+        instance.event_log_storage.store_event(
+            _evaluation_event(
+                run.run_id,
+                AssetCheckEvaluation(
+                    asset_key=AssetKey(["asset_1"]),
+                    check_name="my_check",
+                    success=True,
+                    metadata={},
+                    target_materialization_data=AssetCheckEvaluationTargetMaterializationData(
+                        storage_id=materialization_record.storage_id,
+                        run_id=materialization_record.event_log_entry.run_id,
+                        timestamp=materialization_record.event_log_entry.timestamp,
+                    ),
+                    severity=AssetCheckSeverity.ERROR,
+                ),
+            )
+        )
+        res = execute_dagster_graphql(
+            graphql_context, GET_LATEST_EXECUTION, variables={"assetKey": {"path": ["asset_1"]}}
+        )
+        assert res.data == {
+            "assetChecksOrError": {
+                "checks": [
+                    {
+                        "name": "my_check",
+                        "executionForLatestMaterialization": {
+                            "runId": run.run_id,
+                            "status": "SUCCEEDED",
+                        },
+                    }
+                ],
+            }
+        }
+        instance.event_log_storage.store_event(
+            _materialization_event(run.run_id, AssetKey(["asset_1"]))
+        )
+        res = execute_dagster_graphql(
+            graphql_context, GET_LATEST_EXECUTION, variables={"assetKey": {"path": ["asset_1"]}}
+        )
+        assert res.data == {
+            "assetChecksOrError": {
+                "checks": [
+                    {
+                        "name": "my_check",
+                        "executionForLatestMaterialization": {
+                            "runId": run.run_id,
+                            "status": "SUCCEEDED",
+                        },
+                    }
+                ],
+            }
+        }
         new_materialization()
+
+    def test_launch_subset_with_only_check(self, graphql_context: WorkspaceRequestContext):
+        # materialize the asset and run the check first
+        selector = infer_job_or_pipeline_selector(
+            graphql_context,
+            "asset_check_job",
+            asset_selection=[{"path": ["asset_1"]}],
+        )
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
+            variables={
+                "executionParams": {
+                    "selector": selector,
+                    "mode": "default",
+                    "stepKeys": None,
+                }
+            },
+        )
+        print(result.data)  # ruff: noqa: T201
+        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
+
+        run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+        run = poll_for_finished_run(graphql_context.instance, run_id)
+
+        logs = graphql_context.instance.all_logs(run_id)
+        print(logs)  # ruff: noqa: T201
+        assert run.is_success
+
+        checks = [
+            log
+            for log in logs
+            if log.dagster_event
+            and log.dagster_event.event_type == DagsterEventType.ASSET_CHECK_EVALUATION
+        ]
+        assert len(checks) == 1
+
+        materializations = [
+            log
+            for log in logs
+            if log.dagster_event
+            and log.dagster_event.event_type == DagsterEventType.ASSET_MATERIALIZATION
+        ]
+        assert len(materializations) == 1
+
+        selector = infer_job_or_pipeline_selector(
+            graphql_context,
+            "asset_check_job",
+            asset_selection=[],
+            asset_check_selection=[{"assetKey": {"path": ["asset_1"]}, "name": "my_check"}],
+        )
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
+            variables={
+                "executionParams": {
+                    "selector": selector,
+                    "mode": "default",
+                    "stepKeys": None,
+                }
+            },
+        )
+        print(result.data)  # ruff: noqa: T201
+        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
+
+        run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+        run = poll_for_finished_run(graphql_context.instance, run_id)
+
+        logs = graphql_context.instance.all_logs(run_id)
+        print(logs)  # ruff: noqa: T201
+        assert run.is_success
+
+        check_evaluations = [
+            log
+            for log in logs
+            if log.dagster_event
+            and log.dagster_event.event_type == DagsterEventType.ASSET_CHECK_EVALUATION
+        ]
+        assert len(check_evaluations) == 1
+
+        for log in logs:
+            if log.dagster_event:
+                assert log.dagster_event.event_type != DagsterEventType.ASSET_MATERIALIZATION.value
+
+    def test_launch_subset_asset_and_included_check(self, graphql_context: WorkspaceRequestContext):
+        selector = infer_job_or_pipeline_selector(
+            graphql_context,
+            "asset_check_job",
+            asset_selection=[{"path": ["asset_1"]}],
+        )
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
+            variables={
+                "executionParams": {
+                    "selector": selector,
+                    "mode": "default",
+                    "stepKeys": None,
+                }
+            },
+        )
+        print(result.data)  # ruff: noqa: T201
+        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
+
+        run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+        run = poll_for_finished_run(graphql_context.instance, run_id)
+
+        logs = graphql_context.instance.all_logs(run_id)
+        print(logs)  # ruff: noqa: T201
+        assert run.is_success
+
+        check_evaluations = [
+            log
+            for log in logs
+            if log.dagster_event
+            and log.dagster_event.event_type == DagsterEventType.ASSET_CHECK_EVALUATION
+        ]
+        assert len(check_evaluations) == 1
+
+        materializations = [
+            log
+            for log in logs
+            if log.dagster_event
+            and log.dagster_event.event_type == DagsterEventType.ASSET_MATERIALIZATION
+        ]
+        assert len(materializations) == 1

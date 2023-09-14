@@ -334,6 +334,7 @@ def create_backfill_run(
         asset_selection=(
             frozenset(backfill_job.asset_selection) if backfill_job.asset_selection else None
         ),
+        asset_check_selection=None,
     )
 
 

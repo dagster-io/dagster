@@ -373,6 +373,7 @@ class AssetLayer(NamedTuple):
     assets_defs_by_node_handle: Mapping[NodeHandle, "AssetsDefinition"]
     asset_keys_by_node_input_handle: Mapping[NodeInputHandle, AssetKey]
     asset_info_by_node_output_handle: Mapping[NodeOutputHandle, AssetOutputInfo]
+    check_handle_by_node_output_handle: Mapping[NodeOutputHandle, AssetCheckHandle]
     asset_deps: Mapping[AssetKey, AbstractSet[AssetKey]]
     dependency_node_handles_by_asset_key: Mapping[AssetKey, Set[NodeHandle]]
     source_assets_by_key: Mapping[AssetKey, "SourceAsset"]
@@ -406,6 +407,7 @@ class AssetLayer(NamedTuple):
         """
         asset_key_by_input: Dict[NodeInputHandle, AssetKey] = {}
         asset_info_by_output: Dict[NodeOutputHandle, AssetOutputInfo] = {}
+        check_handle_by_output: Dict[NodeOutputHandle, AssetCheckHandle] = {}
         asset_deps: Dict[AssetKey, AbstractSet[AssetKey]] = {}
         io_manager_by_asset: Dict[AssetKey, str] = {
             source_asset.key: source_asset.get_io_manager_key() for source_asset in source_assets
@@ -487,6 +489,7 @@ class AssetLayer(NamedTuple):
 
             if len(assets_def.check_specs_by_output_name) > 0:
                 check_names_by_asset_key_by_node_handle[node_handle] = defaultdict(set)
+
                 for output_name, check_spec in assets_def.check_specs_by_output_name.items():
                     inner_output_def, inner_node_handle = (
                         assets_def.node_def.resolve_output_to_origin(
@@ -502,6 +505,7 @@ class AssetLayer(NamedTuple):
                     check_names_by_asset_key_by_node_handle[node_handle][check_spec.asset_key].add(
                         check_spec.name
                     )
+                    check_handle_by_output[node_output_handle] = check_spec.handle
 
         dep_asset_keys_by_node_output_handle = defaultdict(set)
         for asset_key, node_output_handles in dep_node_output_handles_by_asset_key.items():
@@ -521,6 +525,7 @@ class AssetLayer(NamedTuple):
                 check_names_by_asset_key_by_node_handle[node_handle][check_spec.asset_key].add(
                     check_spec.name
                 )
+                check_handle_by_output[node_output_handle] = check_spec.handle
 
             for input_name, asset_key in checks_def.asset_keys_by_input_name.items():
                 input_handle = NodeInputHandle(node_handle, input_name)
@@ -547,6 +552,7 @@ class AssetLayer(NamedTuple):
         return AssetLayer(
             asset_keys_by_node_input_handle=asset_key_by_input,
             asset_info_by_node_output_handle=asset_info_by_output,
+            check_handle_by_node_output_handle=check_handle_by_output,
             asset_deps=asset_deps,
             assets_defs_by_node_handle=assets_defs_by_node_handle,
             dependency_node_handles_by_asset_key=dep_node_handles_by_asset_key,
@@ -577,6 +583,10 @@ class AssetLayer(NamedTuple):
     @property
     def has_assets_defs(self) -> bool:
         return len(self.assets_defs_by_key) > 0
+
+    @property
+    def hash_asset_check_defs(self) -> bool:
+        return len(self.asset_checks_defs_by_node_handle) > 0
 
     def has_assets_def_for_asset(self, asset_key: AssetKey) -> bool:
         return asset_key in self.assets_defs_by_key
@@ -690,19 +700,9 @@ class AssetLayer(NamedTuple):
     def asset_check_handle_for_output(
         self, node_handle: NodeHandle, output_name: str
     ) -> Optional[AssetCheckHandle]:
-        check_names_by_asset_key = self.check_names_by_asset_key_by_node_handle.get(node_handle, {})
-        for asset_key, check_names in check_names_by_asset_key.items():
-            for check_name in check_names:
-                check_handle = AssetCheckHandle(asset_key, check_name)
-                node_output_handle = self.node_output_handles_by_asset_check_handle.get(
-                    check_handle
-                )
-                if (
-                    node_output_handle
-                    and node_output_handle.node_handle == node_handle
-                    and node_output_handle.output_name == output_name
-                ):
-                    return check_handle
+        return self.check_handle_by_node_output_handle.get(
+            NodeOutputHandle(node_handle, output_name)
+        )
 
     def group_names_by_assets(self) -> Mapping[AssetKey, str]:
         group_names: Dict[AssetKey, str] = {
@@ -793,18 +793,42 @@ def build_asset_selection_job(
         build_source_asset_observation_job,
     )
 
-    if asset_selection is not None:
-        (included_assets, excluded_assets) = _subset_assets_defs(assets, asset_selection)
-        included_checks = [
-            asset_check for asset_check in asset_checks if asset_check.asset_key in asset_selection
-        ]
-        included_source_assets = _subset_source_assets(source_assets, asset_selection)
+    asset_check_selection = (
+        asset_selection_data.asset_check_selection if asset_selection_data else None
+    )
 
-    else:
+    if asset_selection is None and asset_check_selection is None:
+        # no selections, include everything
         included_assets = list(assets)
         excluded_assets = []
-        included_checks = list(asset_checks)
         included_source_assets = []
+        included_checks = list(asset_checks)
+    else:
+        if asset_selection is not None:
+            (included_assets, excluded_assets) = _subset_assets_defs(assets, asset_selection)
+            included_source_assets = _subset_source_assets(source_assets, asset_selection)
+        else:
+            # if checks were specified, then exclude all assets
+            included_assets = []
+            excluded_assets = list(assets)
+            included_source_assets = []
+
+        if asset_check_selection is not None:
+            # NOTE: This filters to a checks def if any of the included specs are in the selection.
+            # This needs to change to fully subsetting checks in multi assets.
+            included_checks = [
+                asset_check
+                for asset_check in asset_checks
+                if [spec for spec in asset_check.specs if spec.handle in asset_check_selection]
+            ]
+        else:
+            # If assets were selected and checks weren't, then include all checks on the selected assets.
+            # Note: a future diff needs to add support for selecting assets, and not their checks.
+            included_checks = [
+                asset_check
+                for asset_check in asset_checks
+                if asset_check.asset_key in check.not_none(asset_selection)
+            ]
 
     if partitions_def:
         for asset in included_assets:

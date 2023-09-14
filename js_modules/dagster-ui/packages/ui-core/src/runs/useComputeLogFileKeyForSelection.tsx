@@ -17,10 +17,12 @@ export function useComputeLogFileKeyForSelection({
   stepKeys,
   selectionStepKeys,
   metadata,
+  defaultToFirstStep = true,
 }: {
   stepKeys: string[];
   selectionStepKeys: string[];
   metadata: IRunMetadataDict;
+  defaultToFirstStep?: boolean;
 }) {
   const [computeLogFileKey, setComputeLogFileKey] = useQueryPersistedState<string>({
     queryKey: 'logFileKey',
@@ -28,6 +30,10 @@ export function useComputeLogFileKeyForSelection({
 
   React.useEffect(() => {
     if (!stepKeys?.length || computeLogFileKey) {
+      return;
+    }
+
+    if (!selectionStepKeys.length && !defaultToFirstStep) {
       return;
     }
 
@@ -60,6 +66,7 @@ export function useComputeLogFileKeyForSelection({
     selectionStepKeys,
     metadata.logCaptureSteps,
     setComputeLogFileKey,
+    defaultToFirstStep,
   ]);
 
   const logCaptureInfo: ILogCaptureInfo | undefined =

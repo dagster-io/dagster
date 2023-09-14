@@ -18,6 +18,7 @@ from typing import (
     ClassVar,
     Generic,
     Iterator,
+    Literal,
     Mapping,
     Optional,
     Sequence,
@@ -26,6 +27,7 @@ from typing import (
     TypedDict,
     TypeVar,
     cast,
+    get_args,
 )
 
 if TYPE_CHECKING:
@@ -49,8 +51,10 @@ def _param_name_to_env_key(key: str) -> str:
 
 # ##### PARAMETERS
 
+IS_DAGSTER_EXT_PROCESS_ENV_VAR = "IS_DAGSTER_EXT_PROCESS"
+
 DAGSTER_EXT_ENV_KEYS = {
-    k: _param_name_to_env_key(k) for k in ("is_orchestration_active", "context", "messages")
+    k: _param_name_to_env_key(k) for k in (IS_DAGSTER_EXT_PROCESS_ENV_VAR, "context", "messages")
 }
 
 
@@ -92,6 +96,22 @@ class ExtDataProvenance(TypedDict):
     code_version: str
     input_data_versions: Mapping[str, str]
     is_user_provided: bool
+
+
+ExtMetadataType = Literal[
+    "text",
+    "url",
+    "path",
+    "notebook",
+    "json",
+    "md",
+    "float",
+    "int",
+    "bool",
+    "dagster_run",
+    "asset",
+    "null",
+]
 
 
 # ########################
@@ -217,6 +237,17 @@ def _assert_param_value(value: _T, expected_values: Sequence[_T], method: str, p
     return value
 
 
+def _assert_opt_param_value(
+    value: _T, expected_values: Sequence[_T], method: str, param: str
+) -> _T:
+    if value is not None and value not in expected_values:
+        raise DagsterExtError(
+            f"Invalid value for parameter `{param}` of `{method}`. Expected one of"
+            f" `{expected_values}`, got `{value}`."
+        )
+    return value
+
+
 def _assert_param_json_serializable(value: _T, method: str, param: str) -> _T:
     try:
         json.dumps(value)
@@ -254,8 +285,8 @@ def _env_var_to_param_name(env_var: str) -> str:
     return env_var[len(_ENV_KEY_PREFIX) :].lower()
 
 
-def is_dagster_orchestration_active() -> bool:
-    return _param_from_env_var("is_orchestration_active")
+def is_dagster_ext_process() -> bool:
+    return _param_from_env_var(IS_DAGSTER_EXT_PROCESS_ENV_VAR)
 
 
 def _emit_orchestration_inactive_warning() -> None:
@@ -521,7 +552,7 @@ def init_dagster_ext(
     if ExtContext.is_initialized():
         return ExtContext.get()
 
-    if is_dagster_orchestration_active():
+    if is_dagster_ext_process():
         param_loader = param_loader or ExtEnvVarParamLoader()
         context_params = param_loader.load_context_params()
         messages_params = param_loader.load_messages_params()
@@ -668,15 +699,23 @@ class ExtContext:
     # ##### WRITE
 
     def report_asset_metadata(
-        self, label: str, value: Any, asset_key: Optional[str] = None
+        self,
+        label: str,
+        value: Any,
+        metadata_type: Optional[ExtMetadataType] = None,
+        asset_key: Optional[str] = None,
     ) -> None:
         asset_key = _resolve_optionally_passed_asset_key(
             self._data, asset_key, "report_asset_metadata"
         )
         label = _assert_param_type(label, str, "report_asset_metadata", "label")
         value = _assert_param_json_serializable(value, "report_asset_metadata", "value")
+        metadata_type = _assert_opt_param_value(
+            metadata_type, get_args(ExtMetadataType), "report_asset_metadata", "type"
+        )
         self._write_message(
-            "report_asset_metadata", {"asset_key": asset_key, "label": label, "value": value}
+            "report_asset_metadata",
+            {"asset_key": asset_key, "label": label, "value": value, "type": metadata_type},
         )
 
     def report_asset_data_version(self, data_version: str, asset_key: Optional[str] = None) -> None:

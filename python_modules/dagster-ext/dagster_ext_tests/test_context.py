@@ -79,7 +79,8 @@ def test_single_asset_context():
     assert context.code_version_by_asset_key == {"foo": "beta"}
     assert context.provenance == foo_provenance
     assert context.provenance_by_asset_key == {"foo": foo_provenance}
-    context.report_asset_metadata("bar", "baz")
+    context.report_asset_metadata("bar", "boo")
+    context.report_asset_metadata("baz", 2, "int")
     context.report_asset_data_version("bar")
 
     _assert_unknown_asset_key(context, "report_asset_metadata", "bar", "baz", asset_key="fake")

@@ -57,7 +57,6 @@
     "moment-timezone": "^0.5.42",
     "qs": "^6.10.3",
     "react-chartjs-2": "^3.0.3",
-    "react-codemirror2": "^7.2.1",
     "react-dates": "^21.8.0",
     "react-is": "^18.2.0",
     "react-markdown": "^8.0.6",

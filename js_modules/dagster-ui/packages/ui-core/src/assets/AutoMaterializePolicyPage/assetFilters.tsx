@@ -1,5 +1,6 @@
 import * as React from 'react';
 
+import {sortAssetKeys} from '../../asset-graph/Utils';
 import {AssetKey} from '../types';
 
 export const useFilterAssetKeys = (assetKeys: AssetKey[], queryString: string) => {
@@ -8,9 +9,11 @@ export const useFilterAssetKeys = (assetKeys: AssetKey[], queryString: string) =
     if (queryLowercase === '') {
       return assetKeys;
     }
-    return assetKeys.filter((assetKey) =>
-      assetKey.path.some((part) => part.toLowerCase().includes(queryLowercase)),
-    );
+    return assetKeys
+      .filter((assetKey) =>
+        assetKey.path.some((part) => part.toLowerCase().includes(queryLowercase)),
+      )
+      .sort(sortAssetKeys);
   }, [assetKeys, queryLowercase]);
 };
 

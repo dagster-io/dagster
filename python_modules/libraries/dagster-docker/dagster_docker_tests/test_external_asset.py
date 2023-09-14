@@ -3,7 +3,9 @@ import tempfile
 
 import pytest
 from dagster import AssetExecutionContext, asset, materialize
-from dagster._core.ext.utils import ExtFileContextInjector, ExtFileMessageReader
+from dagster._core.ext.utils import (
+    ExtFileContextInjector,
+)
 from dagster_docker.external_resource import ExtDocker
 from dagster_test.test_project import (
     IS_BUILDKITE,
@@ -63,8 +65,6 @@ def test_file_io():
         find_local_test_image(docker_image)
 
     with tempfile.TemporaryDirectory() as tempdir:
-        context_injector = ExtFileContextInjector(os.path.join(tempdir, "context"))
-        message_reader = ExtFileMessageReader(os.path.join(tempdir, "messages"))
 
         @asset
         def number_x(
@@ -97,8 +97,6 @@ def test_file_io():
                 ],
                 registry=registry,
                 context=context,
-                context_injector=context_injector,
-                message_reader=message_reader,
                 extras={"storage_root": container_storage, "multiplier": 2},
                 container_kwargs={
                     "environment": {"PYTHONPATH": "/dagster_test/toys/external_execution/"},
@@ -108,7 +106,11 @@ def test_file_io():
 
         result = materialize(
             [number_x],
-            resources={"ext_docker": ExtDocker()},
+            resources={
+                "ext_docker": ExtDocker(
+                    context_injector=ExtFileContextInjector(os.path.join(tempdir, "context"))
+                )
+            },
             raise_on_error=False,
         )
         assert result.success

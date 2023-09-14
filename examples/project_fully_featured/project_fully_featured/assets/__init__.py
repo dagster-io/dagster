@@ -1,17 +1,19 @@
-import json
-import os
+from pathlib import Path
+from typing import Any, Mapping
 
-from dagster import load_assets_from_package_module
-from dagster._utils import file_relative_path
-from dagster_dbt import load_assets_from_dbt_manifest
+from dagster import AssetExecutionContext, AssetKey, load_assets_from_package_module
+from dagster_dbt import (
+    DagsterDbtTranslator,
+    DbtCliResource,
+    dbt_assets,
+)
 
 from . import activity_analytics, core, recommender
 
 CORE = "core"
 ACTIVITY_ANALYTICS = "activity_analytics"
 RECOMMENDER = "recommender"
-DBT_PROJECT_DIR = file_relative_path(__file__, "../../dbt_project")
-DBT_PROFILES_DIR = DBT_PROJECT_DIR + "/config"
+DBT_PROJECT_DIR = Path(__file__).joinpath("..", "..", "..", "dbt_project").resolve()
 
 core_assets = load_assets_from_package_module(package_module=core, group_name=CORE)
 
@@ -25,11 +27,17 @@ recommender_assets = load_assets_from_package_module(
     package_module=recommender, group_name=RECOMMENDER
 )
 
-dbt_assets = load_assets_from_dbt_manifest(
-    json.load(open(os.path.join(DBT_PROJECT_DIR, "target", "manifest.json"), encoding="utf-8")),
+
+class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+    @classmethod
+    def get_asset_key(cls, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
+        return super().get_asset_key(dbt_resource_props).with_prefix("snowflake")
+
+
+@dbt_assets(
+    manifest=DBT_PROJECT_DIR.joinpath("target", "manifest.json"),
     io_manager_key="warehouse_io_manager",
-    # the schemas are already specified in dbt, so we don't need to also specify them in the key
-    # prefix here
-    key_prefix=["snowflake"],
-    source_key_prefix=["snowflake"],
+    dagster_dbt_translator=CustomDagsterDbtTranslator(),
 )
+def hacker_news_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+    yield from dbt.cli(["build"], context=context).stream()

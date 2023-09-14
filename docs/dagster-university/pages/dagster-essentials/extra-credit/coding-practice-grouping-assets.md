@@ -1,7 +1,7 @@
 ---
-title: "Extra credit: Practice: Grouping assets"
-module: "dagster_essentials"
-lesson: "extra-credit"
+title: 'Extra credit: Practice: Grouping assets'
+module: 'dagster_essentials'
+lesson: 'extra-credit'
 ---
 
 # Practice: Grouping assets
@@ -9,8 +9,8 @@ lesson: "extra-credit"
 To practice what you’ve learned about asset groups, organize the assets in your project by:
 
 - **Using the asset decorator method to**:
-   - Add `taxi_trips_file` to the `raw_files` group
-   - Add the `taxi_zones` and `taxi_trips` assets into an `ingested` group
+  - Add `taxi_trips_file` to the `raw_files` group
+  - Add the `taxi_zones` and `taxi_trips` assets into an `ingested` group
 - **Using the asset submodule method**, add the `adhoc_request` asset into a `requests` group
 
 ---

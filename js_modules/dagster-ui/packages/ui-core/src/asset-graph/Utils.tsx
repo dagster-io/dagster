@@ -1,6 +1,7 @@
 import {pathVerticalDiagonal, pathHorizontalDiagonal} from '@vx/shape';
 
 import {featureEnabled, FeatureFlag} from '../app/Flags';
+import {COMMON_COLLATOR} from '../app/Util';
 import {
   AssetCheckExecutionResolvedStatus,
   AssetCheckSeverity,
@@ -243,6 +244,10 @@ export function tokenForAssetKey(key: {path: string[]}) {
 
 export function displayNameForAssetKey(key: {path: string[]}) {
   return key.path.join(' / ');
+}
+
+export function sortAssetKeys(a: {path: string[]}, b: {path: string[]}) {
+  return COMMON_COLLATOR.compare(displayNameForAssetKey(a), displayNameForAssetKey(b));
 }
 
 export function stepKeyForAsset(definition: {opNames: string[]}) {
