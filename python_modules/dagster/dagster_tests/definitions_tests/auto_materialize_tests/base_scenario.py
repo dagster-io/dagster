@@ -656,6 +656,18 @@ def observable_source_asset_def(
     return _observable
 
 
+def with_auto_materialize_policy(
+    assets_defs: Sequence[AssetsDefinition], auto_materialize_policy: AutoMaterializePolicy
+) -> Sequence[AssetsDefinition]:
+    """Note: this should be implemented in core dagster at some point, and this implementation is
+    a lazy hack.
+    """
+    ret = []
+    for assets_def in assets_defs:
+        ret.append(assets_def.with_attributes(auto_materialize_policy=auto_materialize_policy))
+    return ret
+
+
 def with_implicit_auto_materialize_policies(
     assets_defs: Sequence[Union[SourceAsset, AssetsDefinition]],
     asset_graph: AssetGraph,
