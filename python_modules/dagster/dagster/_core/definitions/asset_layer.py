@@ -585,7 +585,7 @@ class AssetLayer(NamedTuple):
         return len(self.assets_defs_by_key) > 0
 
     @property
-    def hash_asset_check_defs(self) -> bool:
+    def has_asset_check_defs(self) -> bool:
         return len(self.asset_checks_defs_by_node_handle) > 0
 
     def has_assets_def_for_asset(self, asset_key: AssetKey) -> bool:
