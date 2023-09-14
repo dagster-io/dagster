@@ -63,10 +63,8 @@ SourceAssetObserveFunction: TypeAlias = Callable[..., Any]
 def wrap_source_asset_observe_fn_in_op_compute_fn(
     source_asset: "SourceAsset",
 ) -> "DecoratedOpFunction":
-    from dagster._core.definitions.decorators.op_decorator import (
-        DecoratedOpFunction,
-        is_context_provided,
-    )
+    from dagster._core.decorator_utils import is_context_provided
+    from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
     from dagster._core.execution.context.compute import (
         OpExecutionContext,
     )

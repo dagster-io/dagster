@@ -41,7 +41,6 @@ from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.step_launcher import StepLauncher
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.errors import (
-    DagsterInvalidDefinitionError,
     DagsterInvalidPropertyError,
     DagsterInvariantViolationError,
 )

@@ -21,7 +21,7 @@ from dagster._config import UserConfigSchema
 from dagster._core.decorator_utils import (
     format_docstring_for_description,
     get_function_params,
-    get_valid_name_permutations,
+    is_context_provided,
     param_is_var_keyword,
     positional_arg_name_list,
 )
@@ -340,12 +340,6 @@ class NoContextDecoratedOpFunction(DecoratedOpFunction):
     @lru_cache(maxsize=1)
     def has_context_arg(self) -> bool:
         return False
-
-
-def is_context_provided(params: Sequence[Parameter]) -> bool:
-    if len(params) == 0:
-        return False
-    return params[0].name in get_valid_name_permutations("context")
 
 
 def resolve_checked_op_fn_inputs(

@@ -270,3 +270,9 @@ def is_resource_def(obj: Any) -> TypeGuard["ResourceDefinition"]:
     """
     class_names = [cls.__name__ for cls in inspect.getmro(obj.__class__)]
     return "ResourceDefinition" in class_names
+
+
+def is_context_provided(params: Sequence[Parameter]) -> bool:
+    if len(params) == 0:
+        return False
+    return params[0].name in get_valid_name_permutations("context")
