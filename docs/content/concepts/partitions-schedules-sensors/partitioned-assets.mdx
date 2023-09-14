@@ -108,7 +108,7 @@ If using the default I/O manager, materializing partition `2022-07-23` of this a
   to <strong>two</strong> dimensions.
 </Note>
 
-The <PyObject object="MultiPartitionsDefinition" /> class accepts a mapping of dimension names to partition definitions, creating a partition for each unique combination of dimension partitions.
+The <PyObject object="MultiPartitionsDefinition" /> class accepts a mapping of dimension names to a `PartitionsDefinition`, creating a partition for each unique combination of dimension partitions.
 
 Consider the following asset:
 
@@ -164,7 +164,7 @@ result = materialize(
 
 Sometimes you don't know the set of partitions ahead of time when defining assets. For example, maybe you want to add a new partition every time a new data file lands in a directory or every time you want to experiment with a new set of hyperparameters. In these cases, you can use a <PyObject object="DynamicPartitionsDefinition"/>.
 
-The <PyObject object="DynamicPartitionsDefinition" /> class accepts a name argument, representing the name of the partition set:
+The <PyObject object="DynamicPartitionsDefinition" /> class accepts a `name` argument, representing the name of the partition set:
 
 ```python file=/concepts/partitions_schedules_sensors/dynamic_partitioned_asset.py startafter=start_dynamic_partitions_marker endbefore=end_dynamic_partitions_marker
 images_partitions_def = DynamicPartitionsDefinition(name="images")
