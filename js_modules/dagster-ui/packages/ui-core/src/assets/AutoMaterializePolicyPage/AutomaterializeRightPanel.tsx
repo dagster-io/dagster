@@ -1,7 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
 import {
   Box,
-  Colors,
   Subheading,
   Body,
   ExternalAnchorButton,
@@ -41,12 +40,8 @@ export const AutomaterializeRightPanel = ({assetKey}: Props) => {
   const {data, error} = queryResult;
 
   return (
-    <Box
-      flex={{direction: 'column'}}
-      style={{width: '294px', height: '100%'}}
-      border={{side: 'left', width: 1, color: Colors.KeylineGray}}
-    >
-      <Box padding={16} border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}>
+    <Box flex={{direction: 'column'}} style={{width: '294px', height: '100%'}} border="left">
+      <Box padding={16} border="bottom">
         <Subheading>Overview</Subheading>
       </Box>
       <div style={{overflowY: 'auto'}}>
@@ -167,7 +162,7 @@ const RightPanelSection = ({
   return (
     <Box
       flex={{direction: 'column', gap: 12}}
-      border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+      border="bottom"
       padding={{vertical: 12, horizontal: 16}}
     >
       <Subheading>{title}</Subheading>

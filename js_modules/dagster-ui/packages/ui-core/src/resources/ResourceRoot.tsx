@@ -74,11 +74,7 @@ const resourceDisplayName = (
 
 const SectionHeader = (props: {children: React.ReactNode}) => {
   return (
-    <Box
-      padding={{left: 24, vertical: 16}}
-      background={Colors.Gray50}
-      border={{width: 1, color: Colors.KeylineGray, side: 'all'}}
-    >
+    <Box padding={{left: 24, vertical: 16}} background={Colors.Gray50} border="all">
       {props.children}
     </Box>
   );
