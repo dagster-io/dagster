@@ -2,6 +2,7 @@ import os
 import subprocess
 import tempfile
 import venv
+from pathlib import Path
 
 import git
 import pytest
@@ -134,3 +135,57 @@ def test_main_branch(env, dagster_buildkite, monkeypatch):
 
     # Only our test-project builds are skipped
     assert all(["test-project" in step.name for step in summary.skipped])
+
+
+def test_python_change_no_dependencies(env, dagster_repo, dagster_buildkite):
+    change = (
+        Path(dagster_repo.working_tree_dir)
+        / "python_modules"
+        / "libraries"
+        / "dagster-twilio"
+        / "change.py"
+    )
+    change.touch()
+    dagster_repo.index.add(change)
+    dagster_repo.index.commit("Change dagster-twilio")
+
+    pipeline = yaml.safe_load(
+        subprocess.run(
+            dagster_buildkite,
+            capture_output=True,
+        ).stdout,
+    )
+    summary = PipelineSummary(pipeline)
+
+    # The only python package test suite we run is dagster-twilio because
+    # nothing depends on it.
+    assert any([":pytest: dagster-twilio" in step.name for step in summary.planned])
+    assert sum([":pytest:" in step.name for step in summary.planned]) == 1
+    assert any([":pytest:" in step.name for step in summary.skipped])
+
+
+def test_python_change_dagster(env, dagster_repo, dagster_buildkite):
+    change = Path(dagster_repo.working_tree_dir) / "python_modules" / "dagster" / "change.py"
+    change.touch()
+    dagster_repo.index.add(change)
+    dagster_repo.index.commit("Change dagster")
+
+    pipeline = yaml.safe_load(
+        subprocess.run(
+            dagster_buildkite,
+            capture_output=True,
+        ).stdout,
+    )
+    summary = PipelineSummary(pipeline)
+
+    # Every library test suite depends on dagster
+    libraries = [
+        library.parts[-1]
+        for library in (Path(dagster_repo.working_tree_dir) / "python_modules" / "libraries").glob(
+            "*"
+        )
+        if library.is_dir()
+    ]
+    for library in libraries:
+        assert any([f":pytest: {library} " in step.name for step in summary.planned])
+        assert not any([f":pytest: {library} " in step.name for step in summary.skipped])
