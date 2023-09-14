@@ -21,7 +21,7 @@ export const useLiveDataForAssetKeysBatcher = (assetKeys: AssetKeyInput[], batch
 
   const numberOfBatches = React.useMemo(() => {
     // Try fetching 50 at a time
-    return assetKeys.length / batchSize;
+    return Math.ceil(assetKeys.length / batchSize);
   }, [assetKeys.length, batchSize]);
 
   const currentBatch = React.useMemo(() => {
