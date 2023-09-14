@@ -136,6 +136,28 @@ def copy_scaffold(
     dagster_project_dir.joinpath("scaffold").rename(dagster_project_dir.joinpath(project_name))
 
 
+def _check_and_error_on_package_conflicts(project_name: str) -> None:
+    package_check_result = check_if_pypi_package_conflict_exists(project_name)
+    if package_check_result.request_error_msg:
+        raise typer.Exit(
+            f"An error occurred while checking if project name '{project_name}' conflicts with"
+            f" an existing PyPI package: {package_check_result.request_error_msg}."
+            " \n\nConflicting package names will cause import errors in your project if the"
+            " existing PyPI package is included as a dependency in your scaffolded project. If"
+            " desired, this check can be skipped by adding the `--ignore-package-conflict`"
+            " flag."
+        )
+
+    if package_check_result.conflict_exists:
+        raise typer.BadParameter(
+            f"The project name '{project_name}' conflicts with an existing PyPI package."
+            " Conflicting package names will cause import errors in your project if the"
+            " existing PyPI package is included as a dependency in your scaffolded project."
+            " Please choose another name, or add the `--ignore-package-conflict` flag to"
+            " bypass this check."
+        )
+
+
 @project_app.command(name="scaffold")
 def project_scaffold_command(
     project_name: Annotated[
@@ -190,26 +212,7 @@ def project_scaffold_command(
     load assets from an existing dbt project.
     """
     if not ignore_package_conflict:
-        package_check_result = check_if_pypi_package_conflict_exists(project_name)
-
-        if package_check_result.request_error_msg:
-            raise Exception(
-                f"An error occurred while checking if project name '{project_name}' conflicts with"
-                f" an existing PyPI package: {package_check_result.request_error_msg}."
-                " \n\nConflicting package names will cause import errors in your project if the"
-                " existing PyPI package is included as a dependency in your scaffolded project. If"
-                " desired, this check can be skipped by adding the `--ignore-package-conflict`"
-                " flag."
-            )
-
-        if package_check_result.conflict_exists:
-            raise typer.BadParameter(
-                f"The project name '{project_name}' conflicts with an existing PyPI package."
-                " Conflicting package names will cause import errors in your project if the"
-                " existing PyPI package is included as a dependency in your scaffolded project."
-                " Please choose another name, or add the `--ignore-package-conflict` flag to"
-                " bypass this check."
-            )
+        _check_and_error_on_package_conflicts(project_name)
 
     console = Console()
     console.print(
