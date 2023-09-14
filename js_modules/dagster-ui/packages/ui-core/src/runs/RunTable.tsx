@@ -28,6 +28,7 @@ import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {AnchorButton} from '../ui/AnchorButton';
+import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {useRepositoryForRunWithoutSnapshot} from '../workspace/useRepositoryForRun';
 import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
 
@@ -275,6 +276,14 @@ const RunRow: React.FC<{
     return false;
   }, [repo, pipelineName]);
 
+  const repoAddressGuess = React.useMemo(() => {
+    if (repo) {
+      const {match} = repo;
+      return buildRepoAddress(match.repository.name, match.repositoryLocation.name);
+    }
+    return null;
+  }, [repo]);
+
   const onChange = (e: React.FormEvent<HTMLInputElement>) => {
     if (e.target instanceof HTMLInputElement) {
       const {checked} = e.target;
@@ -465,7 +474,7 @@ const RunRow: React.FC<{
       </td>
       {hideCreatedBy ? null : (
         <td>
-          <RunCreatedByCell tags={run.tags || []} />
+          <RunCreatedByCell repoAddress={repoAddressGuess} tags={run.tags || []} />
         </td>
       )}
       <td>
