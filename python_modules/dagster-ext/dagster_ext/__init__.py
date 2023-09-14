@@ -559,8 +559,7 @@ class ExtDbfsContextLoader(ExtContextLoader):
         unmounted_path = _assert_env_param_type(params, "path", str, self.__class__)
         path = os.path.join("/dbfs", unmounted_path.lstrip("/"))
         with open(path, "r") as f:
-            data = json.load(f)
-            yield data
+            yield json.load(f)
 
 
 class ExtDbfsMessageWriter(ExtBlobStoreMessageWriter):

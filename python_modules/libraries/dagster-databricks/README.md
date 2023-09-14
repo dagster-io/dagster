@@ -3,7 +3,7 @@
 The docs for `dagster-databricks` can be found
 [here](https://docs.dagster.io/_apidocs/libraries/dagster-databricks).
 
-## EXT Example
+## ext example
 
 This package includes a prototype API for launching databricks jobs with
 Dagster's EXT protocol. There are two ways to use the API:
@@ -11,14 +11,14 @@ Dagster's EXT protocol. There are two ways to use the API:
 ### (1) `ExtDatabricks` resource
 
 The `ExtDatabricks` resource provides a high-level API for launching
-databricks jobs using Dagster's EXT protocol.
+databricks jobs using Dagster's ext protocol.
 
-It takes a single `databricks.sdk.service.jobs.SubmitTask` specification. After
-setting up EXT communications channels (which by default use DBFS), it injects
-the information needed to connect to these channels from Databricks into the
-task specification. It then launches a Databricks job by passing the
-specification to `WorkspaceClient.jobs.submit`. It polls the job state and
-exits gracefully on success or failure:
+`ExtDatabricks.run` takes a single `databricks.sdk.service.jobs.SubmitTask`
+specification. After setting up ext communications channels (which by default
+use DBFS), it injects the information needed to connect to these channels from
+Databricks into the task specification. It then launches a Databricks job by
+passing the specification to `WorkspaceClient.jobs.submit`. It polls the job
+state and exits gracefully on success or failure:
 
 
 ```
@@ -46,9 +46,10 @@ def databricks_asset(context: AssetExecutionContext, ext: ExtDatabricks):
         }
     })
 
-    # arbitrary json-serializable data you want access to from the ExtContext
-    # in the databricks runtime
-    extras = {"foo": "bar"}
+    # Arbitrary json-serializable data you want access to from the `ExtContext`
+    # in the databricks runtime. Assume `sample_rate` is a parameter used by
+    # the target job's business logic.
+    extras = {"sample_rate": 1.0}
 
     # synchronously execute the databricks job
     ext.run(
@@ -87,10 +88,10 @@ context = init_dagster_ext(
 )
 
 # Access the `extras` dict passed when launching the job from Dagster.
-foo_extra = context.get_extra("foo")
+sample_rate = context.get_extra("sample_rate")
 
 # Stream log message back to Dagster
-context.log(f"Extra for key 'foo': {foo_extra}")
+context.log(f"Using sample rate: {sample_rate}")
 
 # ... your code that computes and persists the asset
 
@@ -105,13 +106,12 @@ context.report_asset_data_version(get_data_version())
 
 ### (2) `ext_protocol` context manager
 
-Internally, `ExtDatabricks` is using the `ext_protocol` context manager to set
-up communications. If you'd prefer more control over how your databricks job is
-launched and polled, you can skip `ExtDatabricks` and use this lower level API
-directly. All that is necessary is that (1) your Databricks job be launched within
-the scope of the `ext_process` context manager; (2) your job is launched on a
-cluster containing the environment variables available on the yielded
-`ext_context`. 
+If you have existing code to launch/poll the job you do not want to change, or
+you just want more control than is permitted by `ExtDatabricks`, you can use
+`ext_protocol`. All that is necessary is that (1) your Databricks job be
+launched within the scope of the `ext_process` context manager; (2) your job is
+launched on a cluster containing the environment variables available on the
+yielded `ext_context`. 
 
 ```
 import os
@@ -128,9 +128,12 @@ def databricks_asset(context: AssetExecutionContext):
         token=os.environ["DATABRICKS_TOKEN"],
     )
 
-    extras = {"foo": "bar"}
+    # Arbitrary json-serializable data you want access to from the `ExtContext`
+    # in the databricks runtime. Assume `sample_rate` is a parameter used by
+    # the target job's business logic.
+    extras = {"sample_rate": 1.0}
 
-    # Sets up EXT communications channels
+    # Sets up ext communications channels
     with ext_protocol(
         context=context,
         extras=extras,
@@ -141,7 +144,7 @@ def databricks_asset(context: AssetExecutionContext):
         # Dict[str, str] with environment variables containing ext comms info.
         env_vars = ext_context.get_external_process_env_vars()
 
-        # Some function that handles launching/montoring of the databricks job.
+        # Some function that handles launching/monitoring of the databricks job.
         # It must ensure that the `env_vars` are set on the executing cluster.
         custom_databricks_launch_code(env_vars)
 ```

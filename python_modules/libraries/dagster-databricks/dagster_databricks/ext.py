@@ -7,6 +7,7 @@ import time
 from contextlib import contextmanager
 from typing import Iterator, Mapping, Optional
 
+import dagster._check as check
 from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.errors import DagsterExternalExecutionError
 from dagster._core.execution.context.compute import OpExecutionContext
@@ -38,9 +39,25 @@ class _ExtDatabricks(ExtClient):
         description="An optional dict of environment variables to pass to the subprocess.",
     )
 
-    def __init__(self, client: WorkspaceClient, env: Optional[Mapping[str, str]] = None):
+    def __init__(
+        self,
+        client: WorkspaceClient,
+        env: Optional[Mapping[str, str]] = None,
+        context_injector: Optional[ExtContextInjector] = None,
+        message_reader: Optional[ExtMessageReader] = None,
+    ):
         self.client = client
         self.env = env
+        self.context_injector = check.opt_inst_param(
+            context_injector,
+            "context_injector",
+            ExtContextInjector,
+        ) or ExtDbfsContextInjector(client=self.client)
+        self.message_reader = check.opt_inst_param(
+            message_reader,
+            "message_reader",
+            ExtMessageReader,
+        ) or ExtDbfsMessageReader(client=self.client)
 
     def run(
         self,
@@ -48,8 +65,6 @@ class _ExtDatabricks(ExtClient):
         *,
         context: OpExecutionContext,
         extras: Optional[ExtExtras] = None,
-        context_injector: Optional[ExtContextInjector] = None,
-        message_reader: Optional[ExtMessageReader] = None,
         submit_args: Optional[Mapping[str, str]] = None,
     ) -> None:
         """Run a Databricks job with the EXT protocol.
@@ -66,8 +81,8 @@ class _ExtDatabricks(ExtClient):
         with ext_protocol(
             context=context,
             extras=extras,
-            context_injector=context_injector or ExtDbfsContextInjector(client=self.client),
-            message_reader=message_reader or ExtDbfsMessageReader(client=self.client),
+            context_injector=self.context_injector,
+            message_reader=self.message_reader,
         ) as ext_context:
             submit_task_dict = task.as_dict()
             submit_task_dict["new_cluster"]["spark_env_vars"] = {
@@ -83,6 +98,9 @@ class _ExtDatabricks(ExtClient):
 
             while True:
                 run = self.client.jobs.get_run(run_id)
+                context.log.info(
+                    f"Databricks run {run_id} current state: {run.state.life_cycle_state}"
+                )
                 if run.state.life_cycle_state in (
                     jobs.RunLifeCycleState.TERMINATED,
                     jobs.RunLifeCycleState.SKIPPED,
@@ -131,26 +149,22 @@ class ExtDbfsContextInjector(ExtContextInjector):
 
 
 class ExtDbfsMessageReader(ExtBlobStoreMessageReader):
-    tempdir: Optional[str] = None
-
     def __init__(self, *, interval: int = 10, client: WorkspaceClient):
         super().__init__(interval=interval)
         self.dbfs_client = files.DbfsAPI(client.api_client)
 
     @contextmanager
-    def setup(self) -> Iterator[None]:
+    def get_params(self) -> Iterator[ExtParams]:
         with dbfs_tempdir(self.dbfs_client) as tempdir:
-            self.tempdir = tempdir
-            yield
+            yield {"path": tempdir}
 
-    def get_params(self) -> ExtParams:
-        return {"path": self.tempdir}
-
-    def download_messages_chunk(self, index: int) -> Optional[str]:
-        assert self.tempdir
-        message_path = os.path.join(self.tempdir, f"{index}.json")
+    def download_messages_chunk(self, index: int, params: ExtParams) -> Optional[str]:
+        message_path = os.path.join(params["path"], f"{index}.json")
         try:
             raw_message = self.dbfs_client.read(message_path)
             return raw_message.data
+        # An error here is an expected result, since an IOError will be thrown if the next message
+        # chunk doesn't yet exist. Swallowing the error here is equivalent to doing a no-op on a
+        # status check showing a non-existent file.
         except IOError:
             return None

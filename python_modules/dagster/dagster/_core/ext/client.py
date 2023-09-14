@@ -21,7 +21,6 @@ class ExtClient(ABC):
         *,
         context: OpExecutionContext,
         extras: Optional[ExtExtras] = None,
-        message_reader: Optional["ExtMessageReader"] = None,
     ) -> None:
         ...
 
