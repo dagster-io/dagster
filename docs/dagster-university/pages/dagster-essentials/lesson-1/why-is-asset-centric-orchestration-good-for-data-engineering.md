@@ -59,9 +59,9 @@ With a task-centric approach, it may not be immediately obvious how and when ass
 
   In the real world, think of this as the ability to use an asset as input to another asset. For example, creating a database table using multiple tables.
 
-- 1.  Figure out where in the workflow cookie dough is created
-  2.  Add a fork to add in peanuts
-  3.  Remake cookies from start to finish
+- 1. Figure out where in the workflow cookie dough is created
+  2. Add a fork to add in peanuts
+  3. Remake cookies from start to finish
 - 1. Add two new assets: peanuts and peanut cookie dough
   2. Add peanuts to cookie dough
   3. Result is peanut cookie dough
