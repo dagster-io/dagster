@@ -227,7 +227,7 @@ def get_inputs_field(
         elif (
             # if you have asset definitions, input will be loaded from the source asset
             asset_layer.has_assets_defs
-            or asset_layer.hash_asset_check_defs
+            or asset_layer.has_asset_check_defs
             and asset_layer.asset_key_for_input(handle, name)
             and not has_upstream
         ):
