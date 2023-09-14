@@ -331,6 +331,10 @@ def _config_value_to_dict_representation(field: Optional[ModelField], value: Any
             }
         else:
             return {k: v for k, v in value._convert_to_config_dictionary().items()}  # noqa: SLF001
+    elif field and safe_is_subclass(field.type_, Enum) and not isinstance(value, Enum):
+        # If the field is an enum, but the value is not, we try to convert the value to the
+        # appropriate enum value
+        return field.type_(value).name
     elif isinstance(value, Enum):
         return value.name
 
@@ -1532,6 +1536,12 @@ def _convert_pydantic_field(pydantic_field: ModelField, model_cls: Optional[Type
             shape_type=pydantic_field.shape, config_type=config_type, key_type=key_type
         )
 
+        default_value =   (pydantic_field.default
+                if pydantic_field.default is not None
+                else FIELD_NO_DEFAULT_PROVIDED)
+        if isinstance(default_value, Enum):
+            default_value = default_value.name
+
         return Field(
             config=(
                 Noneable(wrapped_config_type) if pydantic_field.allow_none else wrapped_config_type
@@ -1539,9 +1549,7 @@ def _convert_pydantic_field(pydantic_field: ModelField, model_cls: Optional[Type
             description=pydantic_field.field_info.description,
             is_required=_is_pydantic_field_required(pydantic_field),
             default_value=(
-                pydantic_field.default
-                if pydantic_field.default is not None
-                else FIELD_NO_DEFAULT_PROVIDED
+                default_value
             ),
         )
 
