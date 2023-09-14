@@ -1,5 +1,43 @@
 # Changelog
 
+# 1.4.13 / 0.20.13 (libraries)
+
+### New
+
+- `OpExecutionContext.add_output_metadata` can now be called multiple times per output.
+
+### Bugfixes
+
+- The double evaluation of log messages in sensor logging has been fixed (thanks `@janosroden` !)
+- Cron schedules targeting leap day (ending with `29 2 *`) no longer cause exceptions in the UI or daemon.
+- Previously, if multiple partitioned `observable_source_asset`s with different partition definitions existed in the same code location, runs targeting those assets could fail to launch. This has been fixed.
+- When using AutoMaterializePolicies with assets that depended on prior partitions of themselves, updating the `start_date` of their underlying `PartitionsDefinition` could result in runs being launched for partitions that no longer existed. This has been fixed.
+- Fixed an issue where auto-materilization could sometimes produce duplicate runs if there was an error in the middle of an auto-materialization tick.
+- [dagster-census] A recent change to the Census API broke compatibility with
+ this integration. This has been fixed (thanks `@ldnicolasmay`!)
+- [dagster-dbt] Fixed an issue where `DagsterDbtTranslator` did not properly invoke `get_auto_materialize_policy` and `get_freshness_policy` for `load_assets_from_dbt_project`.
+- [ui] Fixed a number of interaction bugs with the Launchpad config editor, including issues with newlines and multiple cursors.
+- [ui] Asset keys and partitions presented in the asset checks UI are sorted to avoid flickering.
+- [ui] Backfill actions (terminate backfill runs, cancel backfill submission) are now available from an actions menu on the asset backfill details page.
+
+### Community Contributions
+
+- Typo fix in run monitoring docs (thanks [c0dk](https://github.com/c0dk))!
+- Grammar fixes in testing docs (thanks [sonnyarora](https://github.com/sonnyarora))!
+- Typo fix in contribution docs (thanks [tab1tha](https://github.com/tab1tha))!
+
+### Experimental
+
+- [dagster-dbt][asset checks] Added support to model dbt tests as Dagster asset checks.
+- [asset checks] Added `@graph_asset` support. This can be used to implement blocking checks, by raising an exception if the check fails.
+- [asset checks] Fixed `@multi_asset` subsetting, so only checks which target assets in the subset will execute.
+- [asset checks] `AssetCheckSpec`s will now cause an error at definition time if they target an asset other than the one they’re defined on.
+- [asset checks] The status of asset checks now appears in the asset graph and asset graph sidebar.
+
+### Dagster Cloud
+
+- [Experimental] Added support for freeing global op concurrency slots after runs have finished, using the deployment setting: `run_monitoring > free_slots_after_run_end_seconds`
+
 # 1.4.12 / 0.20.12 (libraries)
 
 ### New
