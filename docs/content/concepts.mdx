@@ -18,12 +18,16 @@ An asset is an object in persistent storage, such as a table, file, or persisted
     href="/concepts/assets/software-defined-assets"
   ></ArticleListItem>
   <ArticleListItem
-    title="Asset observations"
-    href="/concepts/assets/asset-observations"
-  ></ArticleListItem>
-  <ArticleListItem
     title="Multi-assets"
     href="/concepts/assets/multi-assets"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Graph-backed Assets"
+    href="/concepts/assets/graph-backed-assets"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Asset observations"
+    href="/concepts/assets/asset-observations"
   ></ArticleListItem>
   <ArticleListItem
     title="Asset selection syntax"
@@ -50,6 +54,10 @@ Schedules launch runs on a fixed interval, while sensors allow you to do so base
     title="Sensors"
     href="/concepts/partitions-schedules-sensors/sensors"
   ></ArticleListItem>
+  <ArticleListItem
+    title="Asset Sensors"
+    href="/concepts/partitions-schedules-sensors/asset-sensors"
+  ></ArticleListItem>
 </ArticleList>
 
 ---
@@ -73,7 +81,9 @@ A software-defined asset or job can represent a collection of _partitions_ that 
 
 ## Resources & configuration
 
-Resources enable you to separate logic from external dependencies, making developing and testing possible in multiple environments. [Learn more about resources](/concepts/resources).
+Resources enable you to separate logic from external dependencies, making developing and testing possible in multiple environments.
+
+[Learn more about resources](/concepts/resources).
 
 Additionally, Dagster provides a configuration system that allows you to document, schematize, and error-check your configuration.
 
