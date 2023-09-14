@@ -31,7 +31,7 @@ import {AnchorButton} from '../ui/AnchorButton';
 import {useRepositoryForRunWithoutSnapshot} from '../workspace/useRepositoryForRun';
 import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
 
-import {AssetKeyTagCollection} from './AssetKeyTagCollection';
+import {AssetKeyTagCollection, AssetCheckTagCollection} from './AssetTagCollections';
 import {RunActionsMenu, RunBulkActionsMenu} from './RunActionsMenu';
 import {RunCreatedByCell} from './RunCreatedByCell';
 import {RunStatusTagWithStats} from './RunStatusTag';
@@ -231,6 +231,12 @@ export const RUN_TABLE_RUN_FRAGMENT = gql`
         path
       }
     }
+    assetCheckSelection {
+      name
+      assetKey {
+        path
+      }
+    }
     status
     tags {
       ...RunTagsFragment
@@ -400,7 +406,10 @@ const RunRow: React.FC<{
       <td style={{position: 'relative'}}>
         <Box flex={{direction: 'column', gap: 5}}>
           {isHiddenAssetGroupJob(run.pipelineName) ? (
-            <AssetKeyTagCollection assetKeys={assetKeysForRun(run)} />
+            <>
+              <AssetCheckTagCollection assetChecks={run.assetCheckSelection} />
+              <AssetKeyTagCollection assetKeys={assetKeysForRun(run)} />
+            </>
           ) : (
             <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
               <PipelineReference

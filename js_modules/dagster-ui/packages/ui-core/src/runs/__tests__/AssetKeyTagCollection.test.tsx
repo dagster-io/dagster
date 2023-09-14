@@ -4,7 +4,7 @@ import * as React from 'react';
 import {MemoryRouter} from 'react-router-dom';
 
 import {displayNameForAssetKey} from '../../asset-graph/Utils';
-import {AssetKeyTagCollection} from '../AssetKeyTagCollection';
+import {AssetKeyTagCollection} from '../AssetTagCollections';
 
 describe('AssetKeyTagCollection', () => {
   const makeKeys = (count: number) => {

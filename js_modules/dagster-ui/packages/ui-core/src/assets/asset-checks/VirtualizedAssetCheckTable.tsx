@@ -7,7 +7,7 @@ import styled from 'styled-components';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 import {testId} from '../../testing/testId';
 import {HeaderCell, Row, RowCell, Container, Inner} from '../../ui/VirtualizedTable';
-import {assetDetailsPathForKey} from '../assetDetailsPathForKey';
+import {assetDetailsPathForAssetCheck} from '../assetDetailsPathForKey';
 
 import {MetadataCell} from './AssetCheckDetailModal';
 import {AssetCheckStatusTag} from './AssetCheckStatusTag';
@@ -80,10 +80,7 @@ export const VirtualizedAssetCheckRow = ({assetNode, height, start, row}: AssetC
         <RowCell style={{flexDirection: 'row', alignItems: 'center'}}>
           <Box flex={{direction: 'column', gap: 4}}>
             <Link
-              to={assetDetailsPathForKey(assetNode.assetKey, {
-                view: 'checks',
-                checkDetail: row.name,
-              })}
+              to={assetDetailsPathForAssetCheck({assetKey: assetNode.assetKey, name: row.name})}
             >
               <Body2>{row.name}</Body2>
             </Link>

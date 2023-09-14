@@ -12,7 +12,7 @@ import {isThisThingAJob} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {useRepositoryForRunWithParentSnapshot} from '../workspace/useRepositoryForRun';
 
-import {AssetKeyTagCollection} from './AssetKeyTagCollection';
+import {AssetKeyTagCollection, AssetCheckTagCollection} from './AssetTagCollections';
 import {Run} from './Run';
 import {RunConfigDialog} from './RunConfigDialog';
 import {RUN_PAGE_FRAGMENT} from './RunFragments';
@@ -90,6 +90,7 @@ export const RunRoot = () => {
                     />
                   </Tag>
                 ) : null}
+                <AssetCheckTagCollection useTags assetChecks={run.assetCheckSelection} />
                 <AssetKeyTagCollection
                   useTags
                   assetKeys={
