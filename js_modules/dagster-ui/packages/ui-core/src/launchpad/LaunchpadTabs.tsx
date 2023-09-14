@@ -129,7 +129,7 @@ export const LaunchpadTabs = (props: LaunchpadTabsProps) => {
   };
 
   return (
-    <Box border={{side: 'bottom', width: 1, color: Colors.KeylineGray}} padding={{top: 12}}>
+    <Box border="bottom" padding={{top: 12}}>
       <LaunchpadTabsContainer>
         {sessionKeys.map((key) => (
           <LaunchpadTab

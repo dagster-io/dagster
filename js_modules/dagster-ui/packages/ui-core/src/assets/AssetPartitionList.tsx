@@ -1,4 +1,4 @@
-import {Box, Colors} from '@dagster-io/ui-components';
+import {Box} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 
@@ -83,7 +83,7 @@ export const AssetPartitionList: React.FC<AssetPartitionListProps> = ({
                 style={{height: size}}
                 padding={{left: 24, right: 12}}
                 flex={{direction: 'column', justifyContent: 'center', gap: 8}}
-                border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+                border="bottom"
               >
                 <Box flex={{gap: 4, direction: 'row', alignItems: 'center'}}>
                   {dimensionKey}

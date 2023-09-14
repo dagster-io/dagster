@@ -124,20 +124,12 @@ const StaleCausesPopoverSummary: React.FC<{causes: LiveDataForNode['staleCauses'
   causes,
 }) => (
   <Box style={{width: '300px'}}>
-    <Box
-      padding={12}
-      border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-      style={{fontWeight: 600}}
-    >
+    <Box padding={12} border="bottom" style={{fontWeight: 600}}>
       Changes since last materialization:
     </Box>
     <Box style={{maxHeight: '240px', overflowY: 'auto'}} onClick={(e) => e.stopPropagation()}>
       {causes.map((cause, idx) => (
-        <Box
-          key={idx}
-          border={idx > 0 ? {side: 'top', width: 1, color: Colors.KeylineGray} : null}
-          padding={{vertical: 8, horizontal: 12}}
-        >
+        <Box key={idx} border={idx > 0 ? 'top' : null} padding={{vertical: 8, horizontal: 12}}>
           <Link to={assetDetailsPathForKey(cause.key)}>
             <CaptionMono>{displayNameForAssetKey(cause.key)}</CaptionMono>
           </Link>

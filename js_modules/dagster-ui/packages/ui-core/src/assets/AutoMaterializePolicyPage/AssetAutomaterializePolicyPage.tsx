@@ -81,10 +81,7 @@ export const AssetAutomaterializePolicyPage = ({
       style={{flex: 1, minHeight: 0, color: Colors.Gray700, overflow: 'hidden'}}
       flex={{direction: 'column'}}
     >
-      <Box
-        padding={{horizontal: 24, vertical: 12}}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-      >
+      <Box padding={{horizontal: 24, vertical: 12}} border="bottom">
         <AutoMaterializeExperimentalBanner />
       </Box>
       <Box flex={{direction: 'row'}}>
@@ -92,16 +89,12 @@ export const AssetAutomaterializePolicyPage = ({
           <Box
             flex={{alignItems: 'center'}}
             padding={{vertical: 16, horizontal: 24}}
-            border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+            border="bottom"
           >
             <Subheading>Evaluation history</Subheading>
           </Box>
           <Box flex={{direction: 'row'}} style={{flex: 1, minHeight: 0}}>
-            <Box
-              border={{side: 'right', color: Colors.KeylineGray, width: 1}}
-              flex={{grow: 0, direction: 'column'}}
-              style={{flex: '0 0 296px'}}
-            >
+            <Box border="right" flex={{grow: 0, direction: 'column'}} style={{flex: '0 0 296px'}}>
               <AutomaterializeLeftPanel
                 assetHasDefinedPartitions={assetHasDefinedPartitions}
                 evaluations={evaluations}
@@ -124,7 +117,7 @@ export const AssetAutomaterializePolicyPage = ({
             </Box>
           </Box>
         </Box>
-        <Box border={{side: 'left', color: Colors.KeylineGray, width: 1}}>
+        <Box border="left">
           <AutomaterializeRightPanel assetKey={assetKey} />
         </Box>
       </Box>

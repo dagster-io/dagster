@@ -478,11 +478,7 @@ const Section = ({
 }) => (
   <Box flex={{direction: 'column', gap: 4}}>
     <Subheading>{title}</Subheading>
-    <Box
-      flex={{direction: 'column', gap: 8}}
-      padding={{top: 16}}
-      border={{width: 1, color: Colors.KeylineGray, side: 'top'}}
-    >
+    <Box flex={{direction: 'column', gap: 8}} padding={{top: 16}} border="top">
       {children}
     </Box>
   </Box>

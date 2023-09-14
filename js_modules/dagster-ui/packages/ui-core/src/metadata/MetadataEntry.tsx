@@ -101,7 +101,7 @@ export const MetadataEntry: React.FC<{
               background={Colors.Gray100}
               margin={{bottom: 12}}
               padding={24}
-              border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+              border="bottom"
               style={{whiteSpace: 'pre-wrap', fontFamily: FontFamily.monospace, overflow: 'auto'}}
             >
               {tryPrettyPrintJSON(entry.jsonString)}

@@ -67,7 +67,7 @@ export const VirtualizedJobRow = (props: JobRowProps) => {
 
   return (
     <Row $height={height} $start={start}>
-      <RowGrid border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}>
+      <RowGrid border="bottom">
         <RowCell>
           <div style={{maxWidth: '100%', whiteSpace: 'nowrap', fontWeight: 500}}>
             <Link to={workspacePathFromAddress(repoAddress, `/jobs/${name}`)}>
@@ -130,7 +130,7 @@ export const VirtualizedJobRow = (props: JobRowProps) => {
 export const VirtualizedJobHeader = () => {
   return (
     <Box
-      border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+      border="top-and-bottom"
       style={{
         display: 'grid',
         gridTemplateColumns: TEMPLATE_COLUMNS,

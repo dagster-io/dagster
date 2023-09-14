@@ -150,7 +150,7 @@ export const RunTimeline = (props: Props) => {
         padding={{left: 24}}
         flex={{direction: 'column', justifyContent: 'center'}}
         style={{fontSize: '16px', flex: `0 0 ${DATE_TIME_HEIGHT}px`}}
-        border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+        border="top-and-bottom"
       >
         Jobs
       </Box>
@@ -640,7 +640,7 @@ const RunsEmptyOrLoading = (props: {loading: boolean; includesTicks: boolean}) =
       background={Colors.White}
       padding={{vertical: 24}}
       flex={{direction: 'row', justifyContent: 'center'}}
-      border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+      border="top-and-bottom"
     >
       {content()}
     </Box>
@@ -736,14 +736,14 @@ const RunHoverContent = (props: RunHoverContentProps) => {
 
   return (
     <Box style={{width: '260px'}}>
-      <Box padding={12} border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}>
+      <Box padding={12} border="bottom">
         <HoverContentJobName>{job.jobName}</HoverContentJobName>
       </Box>
       <div style={{maxHeight: '240px', overflowY: 'auto'}}>
         {sliced.map((run, ii) => (
           <Box
             key={run.id}
-            border={ii > 0 ? {side: 'top', width: 1, color: Colors.KeylineGray} : null}
+            border={ii > 0 ? 'top' : null}
             flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
             padding={{vertical: 8, horizontal: 12}}
           >
@@ -768,7 +768,7 @@ const RunHoverContent = (props: RunHoverContentProps) => {
         ))}
       </div>
       {remaining > 0 ? (
-        <Box padding={12} border={{side: 'top', width: 1, color: Colors.KeylineGray}}>
+        <Box padding={12} border="top">
           <Link to={`${job.path}/runs`}>+ {remaining} more</Link>
         </Box>
       ) : null}

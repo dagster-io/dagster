@@ -189,7 +189,7 @@ const TEMPLATE_COLUMNS = '5fr 1fr 1fr 1fr 1fr';
 function VirtualHeaderRow() {
   return (
     <Box
-      border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+      border="top-and-bottom"
       style={{
         display: 'grid',
         gridTemplateColumns: TEMPLATE_COLUMNS,
@@ -302,7 +302,7 @@ function VirtualRow({height, start, group}: RowProps) {
 
   return (
     <Row $height={height} $start={start}>
-      <RowGrid border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}>
+      <RowGrid border="bottom">
         <Cell>
           <Box flex={{direction: 'row', justifyContent: 'space-between', grow: 1}}>
             <Box flex={{direction: 'column', gap: 2, grow: 1}}>
