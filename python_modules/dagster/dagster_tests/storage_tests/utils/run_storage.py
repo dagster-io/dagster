@@ -3,6 +3,7 @@ import tempfile
 import time
 import unittest
 from datetime import datetime, timedelta
+from typing import Sequence
 
 import pendulum
 import pytest
@@ -887,6 +888,52 @@ class TestRunStorage:
         storage.delete_run(run_id)
         assert list(storage.get_runs()) == []
         assert run_id not in [key for key, value in storage.get_run_tags()]
+
+    def _build_n_runs(self, storage, n) -> Sequence[str]:
+        run_ids = []
+        for _ in range(n):
+            run_id = make_new_run_id()
+            storage.add_run(
+                TestRunStorage.build_run(
+                    run_id=run_id, job_name="some_pipeline", tags={run_id: run_id}
+                )
+            )
+            run_ids.append(run_id)
+        return run_ids
+
+    def test_delete_runs(self, storage):
+        if not self.can_delete_runs():
+            pytest.skip("storage cannot delete runs")
+
+        assert storage
+
+        run_ids = self._build_n_runs(storage, 3)
+        assert len(storage.get_runs()) == 3
+
+        storage.delete_runs([])
+        assert len(storage.get_runs()) == 3
+
+        storage.delete_runs(run_ids[0:2])
+        assert len(storage.get_runs()) == 1
+        assert storage.get_run_ids() == [run_ids[2]]
+
+    def test_delete_runs_with_tags(self, storage):
+        if not self.can_delete_runs():
+            pytest.skip("storage cannot delete runs")
+
+        assert storage
+        run_ids = self._build_n_runs(storage, 3)
+        assert len(storage.get_runs()) == 3
+
+        for run_id in run_ids:
+            assert run_id in [key for key, value in storage.get_run_tags()]
+
+        storage.delete_runs(run_ids[0:2])
+        assert len(storage.get_runs()) == 1
+        remaining_tags = [key for key, value in storage.get_run_tags()]
+        assert run_ids[0] not in remaining_tags
+        assert run_ids[1] not in remaining_tags
+        assert run_ids[2] in remaining_tags
 
     def test_wipe_tags(self, storage: RunStorage):
         if not self.can_delete_runs():

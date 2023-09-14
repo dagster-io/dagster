@@ -574,6 +574,27 @@ class TestEventLogStorage:
         storage.delete_events(test_run_id)
         assert len(storage.get_logs_for_run(test_run_id)) == 0
 
+    def test_event_log_delete_with_multiple_runs(self, instance, storage):
+        run_a = "run_a"
+        run_b = "run_b"
+        run_c = "run_c"
+        with create_and_delete_test_runs(instance, [run_a, run_b, run_c]):
+            storage.store_event(create_test_event_log_record("A", run_id=run_a))
+            storage.store_event(create_test_event_log_record("B", run_id=run_b))
+            storage.store_event(create_test_event_log_record("B", run_id=run_c))
+
+            storage.delete_events_for_runs([])
+
+            assert len(storage.get_logs_for_run(run_a)) == 1
+            assert len(storage.get_logs_for_run(run_b)) == 1
+            assert len(storage.get_logs_for_run(run_c)) == 1
+
+            storage.delete_events_for_runs([run_a, run_b])
+
+            assert len(storage.get_logs_for_run(run_a)) == 0
+            assert len(storage.get_logs_for_run(run_b)) == 0
+            assert len(storage.get_logs_for_run(run_c)) == 1
+
     def test_event_log_get_stats_without_start_and_success(self, test_run_id, storage):
         # When an event log doesn't have a PIPELINE_START or PIPELINE_SUCCESS | PIPELINE_FAILURE event,
         # we want to ensure storage.get_stats_for_run(...) doesn't throw an error.
