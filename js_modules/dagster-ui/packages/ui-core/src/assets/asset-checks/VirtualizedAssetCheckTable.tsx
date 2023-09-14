@@ -4,7 +4,6 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {AssetKeyInput} from '../../graphql/types';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 import {testId} from '../../testing/testId';
 import {HeaderCell, Row, RowCell, Container, Inner} from '../../ui/VirtualizedTable';
@@ -12,6 +11,7 @@ import {assetDetailsPathForKey} from '../assetDetailsPathForKey';
 
 import {MetadataCell} from './AssetCheckDetailModal';
 import {AssetCheckStatusTag} from './AssetCheckStatusTag';
+import {EvaluateChecksAssetNode, ExexcuteChecksButton} from './ExecuteChecksButton';
 import {AssetChecksQuery} from './types/AssetChecks.types';
 
 type Check = Extract<
@@ -20,11 +20,11 @@ type Check = Extract<
 >['checks'][0];
 
 type Props = {
-  assetKey: AssetKeyInput;
+  assetNode: EvaluateChecksAssetNode;
   rows: Check[];
 };
 
-export const VirtualizedAssetCheckTable: React.FC<Props> = ({assetKey, rows}: Props) => {
+export const VirtualizedAssetCheckTable: React.FC<Props> = ({assetNode, rows}: Props) => {
   const parentRef = React.useRef<HTMLDivElement | null>(null);
   const count = rows.length;
 
@@ -47,7 +47,7 @@ export const VirtualizedAssetCheckTable: React.FC<Props> = ({assetKey, rows}: Pr
             const row: Check = rows[index]!;
             return (
               <VirtualizedAssetCheckRow
-                assetKey={assetKey}
+                assetNode={assetNode}
                 key={key}
                 height={size}
                 start={start}
@@ -61,16 +61,16 @@ export const VirtualizedAssetCheckTable: React.FC<Props> = ({assetKey, rows}: Pr
   );
 };
 
-const TEMPLATE_COLUMNS = '2fr 150px 1fr 1fr';
+const TEMPLATE_COLUMNS = '2fr 150px 1fr 1fr 140px';
 
 interface AssetCheckRowProps {
-  assetKey: AssetKeyInput;
+  assetNode: EvaluateChecksAssetNode;
   height: number;
   start: number;
   row: Check;
 }
 
-export const VirtualizedAssetCheckRow = ({assetKey, height, start, row}: AssetCheckRowProps) => {
+export const VirtualizedAssetCheckRow = ({assetNode, height, start, row}: AssetCheckRowProps) => {
   const execution = row.executionForLatestMaterialization;
   const timestamp = execution?.evaluation?.timestamp;
 
@@ -80,7 +80,7 @@ export const VirtualizedAssetCheckRow = ({assetKey, height, start, row}: AssetCh
         <RowCell style={{flexDirection: 'row', alignItems: 'center'}}>
           <Box flex={{direction: 'column', gap: 4}}>
             <Link
-              to={assetDetailsPathForKey(assetKey, {
+              to={assetDetailsPathForKey(assetNode.assetKey, {
                 view: 'checks',
                 checkDetail: row.name,
               })}
@@ -106,6 +106,16 @@ export const VirtualizedAssetCheckRow = ({assetKey, height, start, row}: AssetCh
         </RowCell>
         <RowCell>
           <MetadataCell metadataEntries={execution?.evaluation?.metadataEntries} />
+        </RowCell>
+        <RowCell>
+          <Box flex={{justifyContent: 'flex-end'}}>
+            <ExexcuteChecksButton
+              assetNode={assetNode}
+              checks={[row]}
+              label="Execute"
+              icon={false}
+            />
+          </Box>
         </RowCell>
       </RowGrid>
     </Row>
@@ -135,6 +145,7 @@ export const VirtualizedAssetCheckHeader = () => {
       <HeaderCell>Status</HeaderCell>
       <HeaderCell>Evaluation timestamp</HeaderCell>
       <HeaderCell>Evaluation metadata</HeaderCell>
+      <HeaderCell>Actions</HeaderCell>
     </Box>
   );
 };
