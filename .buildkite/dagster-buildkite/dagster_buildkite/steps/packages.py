@@ -630,6 +630,6 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     ),
     PackageSpec(
         ".buildkite/dagster-buildkite",
-        run_pytest=False,
+        run_pytest=True,
     ),
 ]
