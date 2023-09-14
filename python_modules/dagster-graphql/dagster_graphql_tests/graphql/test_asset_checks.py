@@ -812,3 +812,31 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
             and log.dagster_event.event_type == DagsterEventType.ASSET_MATERIALIZATION
         ]
         assert len(materializations) == 1
+
+    def test_check_subset_error(self, graphql_context: WorkspaceRequestContext):
+        selector = infer_job_or_pipeline_selector(
+            graphql_context,
+            "asset_check_job",
+            asset_check_selection=[
+                {"assetKey": {"path": ["asset_1"]}, "name": "non-existent-check"}
+            ],
+        )
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
+            variables={
+                "executionParams": {
+                    "selector": selector,
+                    "mode": "default",
+                    "stepKeys": None,
+                }
+            },
+        )
+        print(result.data)  # ruff: noqa: T201
+        assert result.data["launchPipelineExecution"]["__typename"] == "InvalidSubsetError"
+        assert (
+            result.data["launchPipelineExecution"]["message"]
+            == "dagster._core.errors.DagsterInvalidSubsetError: Asset checks provided in"
+            " asset_check_selection argument AssetCheckHandle(asset_key=AssetKey(['asset_1']),"
+            " name='non-existent-check') do not exist in parent asset group or job.\n"
+        )
