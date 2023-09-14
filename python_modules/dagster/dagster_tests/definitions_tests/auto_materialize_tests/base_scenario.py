@@ -341,7 +341,7 @@ class AssetReconciliationScenario(
                 cursor = AssetDaemonCursor.from_serialized(cursor.serialize(), repo.asset_graph)
 
             else:
-                cursor = AssetDaemonCursor.empty(asset_graph)
+                cursor = AssetDaemonCursor.empty(AssetGraph.from_assets(self.assets))
 
         start = datetime.datetime.now()
 

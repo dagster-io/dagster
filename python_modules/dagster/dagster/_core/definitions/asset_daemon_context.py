@@ -357,6 +357,7 @@ class AssetDaemonContext:
                         asset_partitions,
                     )
                 )
+                self._logger.debug(f"Rule returned {len(asset_partitions)} partitions")
             for evaluation_data, asset_partitions in net_new_results:
                 to_materialize.update(asset_partitions)
                 net_new_to_materialize.update(asset_partitions)
@@ -368,7 +369,6 @@ class AssetDaemonContext:
                         asset_partitions,
                     )
                 )
-            self._logger.debug(f"Rule returned {len(asset_partitions)} partitions")
             self._logger.debug("Done evaluating materialize rule")
 
         # These should be conditions, but aren't currently, so we just manually strip out things
@@ -624,9 +624,12 @@ class AssetDaemonContext:
                 for evaluation in evaluations.values()
                 if sum([evaluation.num_requested, evaluation.num_skipped, evaluation.num_discarded])
                 > 0
-                and not evaluation.equivalent_to_stored_record(
-                    self.instance_queryer.get_previous_asset_evaluation_record(
-                        asset_key=evaluation.asset_key
+                and (
+                    True
+                    or not evaluation.equivalent_to_stored_record(
+                        self.instance_queryer.get_previous_asset_evaluation_record(
+                            asset_key=evaluation.asset_key
+                        )
                     )
                 )
             ],
