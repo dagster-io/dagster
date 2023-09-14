@@ -7,6 +7,7 @@ export type SidebarAssetFragment = {
   id: string;
   description: string | null;
   opVersion: string | null;
+  jobNames: Array<string>;
   metadataEntries: Array<
     | {
         __typename: 'AssetMetadataEntry';
@@ -15551,6 +15552,7 @@ export type SidebarAssetQuery = {
         id: string;
         description: string | null;
         opVersion: string | null;
+        jobNames: Array<string>;
         metadataEntries: Array<
           | {
               __typename: 'AssetMetadataEntry';
