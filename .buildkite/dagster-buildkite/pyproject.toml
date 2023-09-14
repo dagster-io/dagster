@@ -1,0 +1,10 @@
+[tool.pytest.ini_options]
+
+# Overload top level pyproject.toml because we sometimes filter
+# dagster warnings there and we don't install dagster here
+filterwarnings = [
+  "ignore::DeprecationWarning",
+  "ignore::UserWarning",
+  "ignore::pytest.PytestCollectionWarning",
+]
+
