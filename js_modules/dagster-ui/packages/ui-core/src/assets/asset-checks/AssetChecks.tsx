@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Body2, Box, Colors, Tag} from '@dagster-io/ui-components';
+import {Body2, Box, Tag} from '@dagster-io/ui-components';
 import React, {useContext} from 'react';
 import {Link} from 'react-router-dom';
 
@@ -77,16 +77,13 @@ export const AssetChecks = ({
           setOpenCheck(undefined);
         }}
       />
-      <Box
-        padding={{horizontal: 24, vertical: 12}}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-      >
+      <Box padding={{horizontal: 24, vertical: 12}} border="bottom">
         <AssetChecksBanner />
       </Box>
       <Box
         flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 32}}
         padding={{horizontal: 24, vertical: 16}}
-        border={{side: 'bottom', color: Colors.KeylineGray, width: 1}}
+        border="bottom"
       >
         <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
           <Body2>Latest materialization:</Body2>

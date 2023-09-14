@@ -66,14 +66,10 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
         <>
           <FailedRunSinceMaterializationBanner
             stepKey={stepKey}
-            border={{side: 'top', width: 1, color: Colors.KeylineGray}}
+            border="top"
             run={liveData?.runWhichFailedToMaterialize || null}
           />
-          <CurrentRunsBanner
-            stepKey={stepKey}
-            border={{side: 'top', width: 1, color: Colors.KeylineGray}}
-            liveData={liveData}
-          />
+          <CurrentRunsBanner stepKey={stepKey} border="top" liveData={liveData} />
         </>
       )}
 

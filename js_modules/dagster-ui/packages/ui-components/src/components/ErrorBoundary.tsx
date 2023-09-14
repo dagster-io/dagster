@@ -64,7 +64,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
       return (
         <Box
           style={{width: '100%', height: '100%', flex: 1, overflow: 'hidden'}}
-          border={{width: 1, side: 'all', color: Colors.HighlightRed}}
+          border={{side: 'all', color: Colors.HighlightRed}}
           flex={{direction: 'column', gap: 8}}
           padding={16}
         >

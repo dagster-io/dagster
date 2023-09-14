@@ -142,11 +142,7 @@ const LaunchButtonContainer: React.FC<{
 }> = ({launchpadType, children}) => {
   if (launchpadType === 'asset') {
     return (
-      <Box
-        flex={{direction: 'row'}}
-        border={{side: 'top', width: 1, color: Colors.KeylineGray}}
-        padding={{right: 12, vertical: 8}}
-      >
+      <Box flex={{direction: 'row'}} border="top" padding={{right: 12, vertical: 8}}>
         <div style={{flexGrow: 1}} />
         {children}
       </Box>
@@ -678,7 +674,7 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
             {pipeline.tags.length || tagsFromSession.length ? (
               <Box
                 padding={{vertical: 8, left: 12, right: 0}}
-                border={{side: 'bottom', width: 1, color: Colors.Gray200}}
+                border={{side: 'bottom', color: Colors.Gray200}}
               >
                 <TagContainer
                   tagsFromDefinition={pipeline.tags}
@@ -690,7 +686,7 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
             {refreshableSessionBase ? (
               <Box
                 padding={{vertical: 8, horizontal: 12}}
-                border={{side: 'bottom', width: 1, color: Colors.Gray200}}
+                border={{side: 'bottom', color: Colors.Gray200}}
               >
                 <Group direction="row" spacing={8} alignItems="center">
                   <Icon name="warning" color={Colors.Yellow500} />

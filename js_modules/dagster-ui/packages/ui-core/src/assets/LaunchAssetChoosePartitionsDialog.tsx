@@ -484,11 +484,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
             {selections.map((range, idx) => (
               <Box
                 key={range.dimension.name}
-                border={{
-                  side: 'bottom',
-                  width: 1,
-                  color: Colors.KeylineGray,
-                }}
+                border="bottom"
                 padding={{vertical: 12, horizontal: 24}}
               >
                 <Box as={Subheading} flex={{alignItems: 'center', gap: 8}}>
@@ -634,7 +630,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
               margin={{top: 16}}
               flex={{direction: 'column', gap: 8}}
               padding={{vertical: 16, horizontal: 20}}
-              border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+              border="top-and-bottom"
               background={Colors.Gray100}
               style={{
                 marginLeft: -20,
@@ -882,7 +878,7 @@ const ToggleableSection = ({
       <Box
         onClick={() => setIsOpen(!isOpen)}
         background={background ?? Colors.Gray50}
-        border={{side: 'bottom', color: Colors.KeylineGray, width: 1}}
+        border="bottom"
         flex={{alignItems: 'center', direction: 'row'}}
         padding={{vertical: 12, horizontal: 24}}
         style={{cursor: 'pointer'}}

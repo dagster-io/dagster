@@ -283,7 +283,7 @@ export const OverviewSchedulesRoot = () => {
       {activeFiltersJsx.length ? (
         <Box
           padding={{vertical: 8, horizontal: 24}}
-          border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+          border="top-and-bottom"
           flex={{direction: 'row', gap: 8}}
         >
           {activeFiltersJsx}
@@ -303,7 +303,7 @@ export const OverviewSchedulesRoot = () => {
           <SchedulerInfo
             daemonHealth={data?.instance.daemonHealth}
             padding={{vertical: 16, horizontal: 24}}
-            border={{side: 'top', width: 1, color: Colors.KeylineGray}}
+            border="top"
           />
           {content()}
         </>
@@ -325,10 +325,7 @@ const UnloadableSchedulesAlert: React.FC<{
 
   return (
     <>
-      <Box
-        padding={{vertical: 16, horizontal: 24}}
-        border={{side: 'top', width: 1, color: Colors.KeylineGray}}
-      >
+      <Box padding={{vertical: 16, horizontal: 24}} border="top">
         <Alert
           intent="warning"
           title={title}

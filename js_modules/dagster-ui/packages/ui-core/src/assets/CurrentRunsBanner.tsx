@@ -1,5 +1,5 @@
 import {Alert, Box, Spinner} from '@dagster-io/ui-components';
-import {BorderSetting} from '@dagster-io/ui-components/src/components/types';
+import {BorderSide, BorderSetting} from '@dagster-io/ui-components/src/components/types';
 import React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -9,7 +9,7 @@ import {useStepLogs} from '../runs/StepLogsDialog';
 
 export const CurrentRunsBanner: React.FC<{
   liveData?: LiveDataForNode;
-  border: BorderSetting;
+  border: BorderSide | BorderSetting;
   stepKey: string;
 }> = ({stepKey, liveData, border}) => {
   const {inProgressRunIds = [], unstartedRunIds = []} = liveData || {};

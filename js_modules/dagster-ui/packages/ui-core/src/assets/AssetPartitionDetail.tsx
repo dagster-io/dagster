@@ -197,11 +197,7 @@ export const AssetPartitionDetail: React.FC<{
 
   return (
     <Box padding={{horizontal: 24, bottom: 24}} style={{flex: 1}}>
-      <Box
-        padding={{vertical: 24}}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-        flex={{alignItems: 'center'}}
-      >
+      <Box padding={{vertical: 24}} border="bottom" flex={{alignItems: 'center'}}>
         {partition ? (
           <Box flex={{gap: 12, alignItems: 'center'}}>
             <Heading>{partition}</Heading>
@@ -228,7 +224,7 @@ export const AssetPartitionDetail: React.FC<{
           run={currentRun}
           stepKey={stepKey}
           padding={{horizontal: 0, vertical: 16}}
-          border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+          border="bottom"
         />
       )}
       {currentRun && currentRunStatusMessage && (
@@ -246,7 +242,7 @@ export const AssetPartitionDetail: React.FC<{
 
       <Box
         style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 16, minHeight: 76}}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+        border="bottom"
         padding={{vertical: 16}}
       >
         {!latest ? (
