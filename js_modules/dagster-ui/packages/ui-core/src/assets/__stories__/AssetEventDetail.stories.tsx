@@ -16,7 +16,7 @@ import {
 
 // eslint-disable-next-line import/no-default-export
 export default {
-  title: 'Asset Details/Event',
+  title: 'Asset Details/Event Detail',
   component: AssetEventDetail,
 };
 

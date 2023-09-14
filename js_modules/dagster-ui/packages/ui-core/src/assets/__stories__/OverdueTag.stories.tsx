@@ -21,7 +21,7 @@ import {OverduePopoverQuery, OverduePopoverQueryVariables} from '../types/Overdu
 
 // eslint-disable-next-line import/no-default-export
 export default {
-  title: 'Assets/Overdue Tag',
+  title: 'Assets/OverdueTag',
   component: OverdueTag,
 };
 

@@ -15,7 +15,7 @@ import {PartitionDimensionSelection, usePartitionHealthData} from '../usePartiti
 
 // eslint-disable-next-line import/no-default-export
 export default {
-  title: 'Assets/Partition Health Summary',
+  title: 'Assets/PartitionHealthSummary',
   component: PartitionHealthSummary,
 };
 

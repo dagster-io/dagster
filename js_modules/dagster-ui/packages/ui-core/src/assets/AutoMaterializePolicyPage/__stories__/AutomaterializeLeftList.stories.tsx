@@ -10,7 +10,7 @@ import {EvaluationOrEmpty} from '../types';
 
 // eslint-disable-next-line import/no-default-export
 export default {
-  title: 'Asset Details/Automaterialize/Left',
+  title: 'Asset Details/Automaterialize/AutomaterializeLeftList',
   component: AutomaterializeLeftList,
 };
 

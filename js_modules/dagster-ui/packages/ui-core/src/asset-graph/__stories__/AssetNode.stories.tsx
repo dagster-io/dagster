@@ -9,7 +9,7 @@ import {getAssetNodeDimensions} from '../layout';
 
 // eslint-disable-next-line import/no-default-export
 export default {
-  title: 'Asset Graph/Node',
+  title: 'Asset Graph/AssetNode',
   component: AssetNode,
 };
 

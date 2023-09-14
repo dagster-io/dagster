@@ -11,7 +11,7 @@ import {buildRunStatusOnlyQuery} from '../__fixtures__/RunStatusOnlyQuery.fixtur
 
 // eslint-disable-next-line import/no-default-export
 export default {
-  title: 'Asset Details/Automaterialize/Middle',
+  title: 'Asset Details/Automaterialize/AutomaterializeMiddlePanelWithData',
   component: AutomaterializeMiddlePanelWithData,
 };
 

@@ -7,7 +7,7 @@ import {buildRunStatusAndPartitionKeyQuery} from '../__fixtures__/Automaterializ
 
 // eslint-disable-next-line import/no-default-export
 export default {
-  title: 'Asset Details/Automaterialize/Links',
+  title: 'Asset Details/Automaterialize/AutomaterializeRequestedPartitionsLink',
   component: AutomaterializeRequestedPartitionsLink,
 };
 
