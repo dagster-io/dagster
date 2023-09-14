@@ -47,7 +47,7 @@ If you don’t still have the Dagster UI running from Lesson 2, use the command 
 dagster dev
 ```
 
-Navigate to `[localhost:3000](http://localhost:3000/)` in your browser. The page should look like the following - if it doesn’t, click **Overview** in the top navigation bar:
+Navigate to [`localhost:3000`](http://localhost:3000/) in your browser. The page should look like the following - if it doesn’t, click **Overview** in the top navigation bar:
 
 ![The Overview page in the Dagster UI](/images/dagster-essentials/lesson-3/overview-page.png)
 
