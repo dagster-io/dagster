@@ -17,6 +17,7 @@ import {FailedRunSinceMaterializationBanner} from './FailedRunSinceMaterializati
 import {LatestMaterializationMetadata} from './LastMaterializationMetadata';
 import {OverdueTag, freshnessPolicyDescription} from './OverdueTag';
 import {AssetCheckStatusTag} from './asset-checks/AssetCheckStatusTag';
+import {ExexcuteChecksButton} from './asset-checks/ExecuteChecksButton';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {useGroupedEvents} from './groupByPartition';
 import {useRecentAssetEvents} from './useRecentAssetEvents';
@@ -168,7 +169,8 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
       </SidebarSection>
       {liveData && liveData.assetChecks.length > 0 && (
         <SidebarSection title="Checks">
-          <Box padding={{horizontal: 24, vertical: 12}}>
+          <Box padding={{horizontal: 24, vertical: 12}} flex={{gap: 12, alignItems: 'center'}}>
+            <ExexcuteChecksButton assetNode={asset} checks={liveData.assetChecks} />
             <Link to={assetDetailsPathForKey(asset.assetKey, {view: 'checks'})}>
               View all check details
             </Link>

@@ -1086,6 +1086,7 @@ def graph_multi_asset(
     group_name: Optional[str] = None,
     can_subset: bool = False,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+    check_specs: Optional[Sequence[AssetCheckSpec]] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a combined definition of multiple assets that are computed using the same graph of
     ops, and the same upstream assets.
@@ -1119,9 +1120,22 @@ def graph_multi_asset(
             input_name: asset_key for asset_key, (input_name, _) in asset_ins.items()
         }
         asset_outs = build_asset_outs(outs)
+
+        check_specs_by_output_name = _validate_and_assign_output_names_to_check_specs(
+            check_specs, list(asset_outs.keys())
+        )
+        check_outs_by_output_name: Mapping[str, GraphOut] = {
+            output_name: GraphOut() for output_name in check_specs_by_output_name.keys()
+        }
+
+        combined_outs_by_output_name = {
+            **{output_name: GraphOut() for output_name, _ in asset_outs.values()},
+            **check_outs_by_output_name,
+        }
+
         op_graph = graph(
             name=name or fn.__name__,
-            out={out_name: GraphOut() for out_name, _ in asset_outs.values()},
+            out=combined_outs_by_output_name,
         )(fn)
 
         # source metadata from the AssetOuts (if any)
@@ -1168,6 +1182,7 @@ def graph_multi_asset(
             backfill_policy=backfill_policy,
             descriptions_by_output_name=descriptions_by_output_name,
             resource_defs=resource_defs,
+            check_specs=check_specs,
         )
 
     return inner

@@ -7,7 +7,7 @@ from dagster._core.definitions.asset_check_evaluation import (
     AssetCheckEvaluation,
     AssetCheckEvaluationTargetMaterializationData,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
+from dagster._core.definitions.asset_check_spec import AssetCheckHandle, AssetCheckSeverity
 from dagster._core.host_representation.external_data import ExternalAssetCheck
 from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,
@@ -179,3 +179,14 @@ class GrapheneAssetChecksOrError(graphene.Union):
             GrapheneAssetCheckNeedsMigrationError,
         )
         name = "AssetChecksOrError"
+
+
+class GrapheneAssetCheckHandle(graphene.ObjectType):
+    name = graphene.NonNull(graphene.String)
+    assetKey = graphene.NonNull(GrapheneAssetKey)
+
+    class Meta:
+        name = "AssetCheckhandle"
+
+    def __init__(self, handle: AssetCheckHandle):
+        super().__init__(name=handle.name, assetKey=GrapheneAssetKey(path=handle.asset_key.path))
