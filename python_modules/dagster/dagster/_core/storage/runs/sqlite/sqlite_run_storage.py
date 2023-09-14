@@ -1,6 +1,6 @@
 import os
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Iterator, Optional
+from typing import TYPE_CHECKING, Iterator, Optional, Sequence
 from urllib.parse import urljoin, urlparse
 
 import sqlalchemy as db
@@ -144,13 +144,13 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
                 self.add_run(run)
             os.unlink(path_to_old_db)
 
-    def delete_run(self, run_id: str) -> None:
+    def delete_runs(self, run_ids: Sequence[str]) -> None:
         """Override the default sql delete run implementation until we can get full
         support on cascading deletes.
         """
-        check.str_param(run_id, "run_id")
-        remove_tags = db.delete(RunTagsTable).where(RunTagsTable.c.run_id == run_id)
-        remove_run = db.delete(RunsTable).where(RunsTable.c.run_id == run_id)
+        check.sequence_param(run_ids, "run_ids", of_type=str)
+        remove_tags = db.delete(RunTagsTable).where(RunTagsTable.c.run_id.in_(run_ids))
+        remove_run = db.delete(RunsTable).where(RunsTable.c.run_id.in_(run_ids))
         with self.connect() as conn:
             conn.execute(remove_tags)
             conn.execute(remove_run)
