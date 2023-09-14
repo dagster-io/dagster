@@ -572,6 +572,7 @@ class TestEventLogStorage:
         assert len(storage.get_logs_for_run(test_run_id)) == 1
         assert storage.get_stats_for_run(test_run_id)
         storage.delete_events(test_run_id)
+        askdjalsdjaksl
         assert len(storage.get_logs_for_run(test_run_id)) == 0
 
     def test_event_log_delete_with_multiple_runs(self, instance, storage):
