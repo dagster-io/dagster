@@ -139,7 +139,7 @@ def copy_scaffold(
 def _check_and_error_on_package_conflicts(project_name: str) -> None:
     package_check_result = check_if_pypi_package_conflict_exists(project_name)
     if package_check_result.request_error_msg:
-        raise typer.Exit(
+        typer.echo(
             f"An error occurred while checking if project name '{project_name}' conflicts with"
             f" an existing PyPI package: {package_check_result.request_error_msg}."
             " \n\nConflicting package names will cause import errors in your project if the"
@@ -147,6 +147,7 @@ def _check_and_error_on_package_conflicts(project_name: str) -> None:
             " desired, this check can be skipped by adding the `--ignore-package-conflict`"
             " flag."
         )
+        raise typer.Exit(1)
 
     if package_check_result.conflict_exists:
         raise typer.BadParameter(
