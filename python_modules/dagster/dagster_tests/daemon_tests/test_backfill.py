@@ -793,12 +793,6 @@ def test_backfill_with_asset_selection(
         assert step_succeeded(instance, run, "foo")
         assert step_succeeded(instance, run, "reusable")
         assert step_succeeded(instance, run, "bar")
-    # selected
-    for asset_key in asset_selection:
-        assert len(instance.run_ids_for_asset_key(asset_key)) == 3
-    # not selected
-    for asset_key in [AssetKey("a2"), AssetKey("b2"), AssetKey("baz")]:
-        assert len(instance.run_ids_for_asset_key(asset_key)) == 0
 
 
 def test_pure_asset_backfill_with_multiple_assets_selected(
@@ -907,12 +901,6 @@ def test_pure_asset_backfill(
         assert step_succeeded(instance, run, "foo")
         assert step_succeeded(instance, run, "reusable")
         assert step_succeeded(instance, run, "bar")
-    # selected
-    for asset_key in asset_selection:
-        assert len(instance.run_ids_for_asset_key(asset_key)) == 3
-    # not selected
-    for asset_key in [AssetKey("a2"), AssetKey("b2"), AssetKey("baz")]:
-        assert len(instance.run_ids_for_asset_key(asset_key)) == 0
 
     list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
     backfill = instance.get_backfill("backfill_with_asset_selection")

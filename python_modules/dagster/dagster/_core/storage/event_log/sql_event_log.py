@@ -1582,30 +1582,6 @@ class SqlEventLogStorage(EventLogStorage):
 
         return list(tags_by_event_id.values())
 
-    def get_asset_run_ids(self, asset_key: AssetKey) -> Sequence[str]:
-        check.inst_param(asset_key, "asset_key", AssetKey)
-        query = (
-            db_select(
-                [SqlEventLogStorageTable.c.run_id, db.func.max(SqlEventLogStorageTable.c.timestamp)]
-            )
-            .where(
-                SqlEventLogStorageTable.c.asset_key == asset_key.to_string(),
-            )
-            .group_by(
-                SqlEventLogStorageTable.c.run_id,
-            )
-            .order_by(db.func.max(SqlEventLogStorageTable.c.timestamp).desc())
-        )
-
-        asset_keys = [asset_key]
-        asset_details = self._get_assets_details(asset_keys)
-        query = self._add_assets_wipe_filter_to_query(query, asset_details, asset_keys)
-
-        with self.index_connection() as conn:
-            results = conn.execute(query).fetchall()
-
-        return [run_id for (run_id, _timestamp) in results]
-
     def _asset_materialization_from_json_column(
         self, json_str: str
     ) -> Optional[AssetMaterialization]:
