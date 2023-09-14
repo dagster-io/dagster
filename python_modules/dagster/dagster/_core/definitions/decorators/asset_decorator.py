@@ -1040,11 +1040,12 @@ def graph_asset(
             check_specs, [out_asset_key]
         )
         check_outs_by_output_name: Mapping[str, GraphOut] = {
-            output_name: GraphOut() for output_name in check_specs_by_output_name.keys()
+            output_name: GraphOut(description=check_spec.description)
+            for output_name, check_spec in check_specs_by_output_name.items()
         }
 
         combined_outs_by_output_name: Mapping = {
-            "result": GraphOut(),
+            "result": GraphOut(description=description),
             **check_outs_by_output_name,
         }
 
@@ -1125,11 +1126,15 @@ def graph_multi_asset(
             check_specs, list(asset_outs.keys())
         )
         check_outs_by_output_name: Mapping[str, GraphOut] = {
-            output_name: GraphOut() for output_name in check_specs_by_output_name.keys()
+            output_name: GraphOut(description=check_spec.description)
+            for output_name, check_spec in check_specs_by_output_name.items()
         }
 
         combined_outs_by_output_name = {
-            **{output_name: GraphOut() for output_name, _ in asset_outs.values()},
+            **{
+                output_name: GraphOut(description=out.description)
+                for output_name, out in asset_outs.values()
+            },
             **check_outs_by_output_name,
         }
 

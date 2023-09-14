@@ -197,7 +197,11 @@ def promote_staged_asset(staged_asset):
 @graph_asset(
     group_name="asset_checks",
     check_specs=[
-        AssetCheckSpec("random_fail_and_raise_check", asset="stage_then_promote_graph_asset")
+        AssetCheckSpec(
+            "random_fail_and_raise_check",
+            asset="stage_then_promote_graph_asset",
+            description="A check that fails and raises an exception half the time.",
+        )
     ],
 )
 def stage_then_promote_graph_asset():
