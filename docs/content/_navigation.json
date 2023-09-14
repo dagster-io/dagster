@@ -123,7 +123,21 @@
         "children": [
           {
             "title": "Partitions",
-            "path": "/concepts/partitions-schedules-sensors/partitions"
+            "path": "/concepts/partitions-schedules-sensors/partitions",
+            "children": [
+              {
+                "title": "Partitioned assets",
+                "path": "/concepts/partitions-schedules-sensors/partitioned-assets"
+              },
+              {
+                "title": "Partitioned op jobs (Advanced)",
+                "path": "/concepts/partitions-schedules-sensors/partitioned-op-jobs"
+              },
+              {
+                "title": "Testing partitions",
+                "path": "/concepts/partitions-schedules-sensors/testing-partitions"
+              }
+            ]
           },
           {
             "title": "Backfills",
