@@ -432,8 +432,10 @@ class DatabricksJobRunner:
     ) -> Optional[Tuple[Optional[str], Optional[str]]]:
         """Retrieve the stdout and stderr logs for a run."""
         run = self.client.workspace_client.jobs.get_run(databricks_run_id)
-        cluster_id = run.cluster_instance.cluster_id
-        if not cluster_id:
+        cluster_instance = run.cluster_instance
+        if cluster_instance:
+            cluster_id = cluster_instance.cluster_id
+        else:
             # Currently pyspark step launcher runs jobs with singleton tasks.
             cluster_id = run.tasks[0].cluster_instance.cluster_id
         check.str_param(
