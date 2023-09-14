@@ -263,6 +263,7 @@ const SIDEBAR_ASSET_FRAGMENT = gql`
       }
     }
     opVersion
+    jobNames
     repository {
       id
       name
