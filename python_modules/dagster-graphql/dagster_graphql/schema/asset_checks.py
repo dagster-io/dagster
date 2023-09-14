@@ -108,6 +108,14 @@ class GrapheneAssetCheckExecution(graphene.ObjectType):
         self.timestamp = execution.create_timestamp
 
 
+class GrapheneAssetCheckCanExecuteIndividually(graphene.Enum):
+    class Meta:
+        name = "AssetCheckCanExecuteIndividually"
+
+    CAN_EXECUTE = "CAN_EXECUTE"
+    NEEDS_USER_CODE_UPGRADE = "NEEDS_USER_CODE_UPGRADE"
+
+
 class GrapheneAssetCheck(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     assetKey = graphene.NonNull(GrapheneAssetKey)
@@ -118,12 +126,18 @@ class GrapheneAssetCheck(graphene.ObjectType):
         cursor=graphene.String(),
     )
     executionForLatestMaterialization = graphene.Field(GrapheneAssetCheckExecution)
+    canExecuteIndividually = graphene.NonNull(GrapheneAssetCheckCanExecuteIndividually)
 
     class Meta:
         name = "AssetCheck"
 
-    def __init__(self, asset_check: ExternalAssetCheck):
+    def __init__(
+        self,
+        asset_check: ExternalAssetCheck,
+        can_execute_individually: GrapheneAssetCheckCanExecuteIndividually,
+    ):
         self._asset_check = asset_check
+        self._can_execute_individually = can_execute_individually
 
     def resolve_assetKey(self, _):
         return self._asset_check.asset_key
@@ -155,6 +169,9 @@ class GrapheneAssetCheck(graphene.ObjectType):
         return fetch_execution_for_latest_materialization(
             graphene_info.context.instance, self._asset_check
         )
+
+    def resolve_canExecuteIndividually(self, _) -> GrapheneAssetCheckCanExecuteIndividually:
+        return self._can_execute_individually
 
 
 class GrapheneAssetChecks(graphene.ObjectType):

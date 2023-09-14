@@ -844,6 +844,7 @@ type AssetCheck {
   description: String
   executions(limit: Int!, cursor: String): [AssetCheckExecution!]!
   executionForLatestMaterialization: AssetCheckExecution
+  canExecuteIndividually: AssetCheckCanExecuteIndividually!
 }
 
 type AssetCheckExecution {
@@ -881,6 +882,11 @@ type AssetCheckEvaluationTargetMaterializationData {
 enum AssetCheckSeverity {
   WARN
   ERROR
+}
+
+enum AssetCheckCanExecuteIndividually {
+  CAN_EXECUTE
+  NEEDS_USER_CODE_UPGRADE
 }
 
 enum EvaluationErrorReason {

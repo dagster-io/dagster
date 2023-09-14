@@ -34,6 +34,7 @@ query GetAssetChecksQuery($assetKey: AssetKeyInput!, $checkName: String) {
                     path
                 }
                 description
+                canExecuteIndividually
             }
         }
     }
@@ -235,6 +236,7 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                             "path": ["asset_1"],
                         },
                         "description": "asset_1 check",
+                        "canExecuteIndividually": "CAN_EXECUTE",
                     }
                 ]
             }
