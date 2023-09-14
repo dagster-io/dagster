@@ -67,6 +67,11 @@ export type LaunchedRunListQuery = {
             repositoryLocationName: string;
           } | null;
           assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
+          assetCheckSelection: Array<{
+            __typename: 'AssetCheckhandle';
+            name: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }> | null;
           tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
         }>;
       };
