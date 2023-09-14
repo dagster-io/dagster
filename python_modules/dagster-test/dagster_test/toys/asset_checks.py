@@ -18,6 +18,7 @@ from dagster import (
     multi_asset,
     op,
 )
+from dagster._core.definitions.decorators.asset_decorator import graph_multi_asset
 
 
 @asset(key_prefix="test_prefix", group_name="asset_checks")
@@ -235,7 +236,6 @@ def test_2(staged_asset):
 
 @op
 def test_3(staged_asset):
-    time.sleep(5)
     yield AssetCheckResult(
         check_name="check_3",
         success=False,
@@ -288,6 +288,109 @@ def many_tests_graph_asset():
     }
 
 
+@op
+def graph_multi_asset_check_1(staged_asset):
+    time.sleep(1)
+    result = AssetCheckResult(
+        asset_key="graph_multi_asset_one",
+        check_name="check_1",
+        success=True,
+        metadata={"sample": "metadata"},
+    )
+    yield result
+    if not result.success:
+        raise Exception("The check failed, so raising an error to block materializing.")
+
+
+@op
+def graph_multi_asset_check_2(staged_asset):
+    result = AssetCheckResult(
+        asset_key="graph_multi_asset_one",
+        check_name="check_2",
+        success=True,
+        metadata={"sample": "metadata"},
+    )
+    yield result
+    if not result.success:
+        raise Exception("The check failed, so raising an error to block materializing.")
+
+
+@op
+def graph_multi_asset_check_3(staged_asset):
+    yield AssetCheckResult(
+        asset_key="graph_multi_asset_one",
+        check_name="check_3",
+        success=False,
+        severity=AssetCheckSeverity.WARN,
+        metadata={"sample": "metadata"},
+    )
+
+
+@op
+def graph_multi_asset_2_check_1(staged_asset):
+    result = AssetCheckResult(
+        asset_key="graph_multi_asset_two",
+        check_name="check_1",
+        success=False,
+        metadata={"sample": "metadata"},
+    )
+    yield result
+    if not result.success:
+        raise Exception("The check failed, so raising an error to block materializing.")
+
+
+@graph_multi_asset(
+    group_name="asset_checks",
+    outs={"graph_multi_asset_one": AssetOut(), "graph_multi_asset_two": AssetOut()},
+    check_specs=[
+        AssetCheckSpec(
+            "check_1",
+            asset="graph_multi_asset_one",
+            description="A always passes.",
+        ),
+        AssetCheckSpec(
+            "check_2",
+            asset="graph_multi_asset_one",
+            description="A always passes.",
+        ),
+        AssetCheckSpec(
+            "check_3",
+            asset="graph_multi_asset_one",
+            description="A really slow and unimportant check that always fails.",
+        ),
+        AssetCheckSpec(
+            "check_1",
+            asset="graph_multi_asset_two",
+            description="A always passes.",
+        ),
+    ],
+)
+def many_tests_graph_multi_asset():
+    staged_asset = create_staged_asset()
+    staged_asset_2 = create_staged_asset()
+
+    blocking_asset_1_check_results = {
+        "graph_multi_asset_one_check_1": graph_multi_asset_check_1(staged_asset),
+        "graph_multi_asset_one_check_2": graph_multi_asset_check_2(staged_asset),
+    }
+
+    blocking_asset_2_check_results = {
+        "graph_multi_asset_two_check_1": graph_multi_asset_2_check_1(staged_asset_2)
+    }
+
+    return {
+        "graph_multi_asset_one": promote_staged_asset_with_tests(
+            staged_asset, list(blocking_asset_1_check_results.values())
+        ),
+        **blocking_asset_1_check_results,
+        "graph_multi_asset_one_check_3": graph_multi_asset_check_3(staged_asset),
+        "graph_multi_asset_two": promote_staged_asset_with_tests(
+            staged_asset_2, list(blocking_asset_2_check_results.values())
+        ),
+        **blocking_asset_2_check_results,
+    }
+
+
 @asset(
     group_name="asset_checks",
     deps=[
@@ -326,4 +429,5 @@ def get_checks_and_assets():
         asset_with_100_checks,
         asset_with_1000_checks,
         many_tests_graph_asset,
+        many_tests_graph_multi_asset,
     ]
