@@ -205,6 +205,12 @@ export enum AssetCheckSeverity {
   WARN = 'WARN',
 }
 
+export type AssetCheckhandle = {
+  __typename: 'AssetCheckhandle';
+  assetKey: AssetKey;
+  name: Scalars['String'];
+};
+
 export type AssetChecks = {
   __typename: 'AssetChecks';
   checks: Array<AssetCheck>;
@@ -3277,6 +3283,7 @@ export type ResumeBackfillSuccess = {
 
 export type Run = PipelineRun & {
   __typename: 'Run';
+  assetCheckSelection: Maybe<Array<AssetCheckhandle>>;
   assetMaterializations: Array<MaterializationEvent>;
   assetSelection: Maybe<Array<AssetKey>>;
   assets: Array<Asset>;
@@ -4593,6 +4600,24 @@ export const buildAssetCheckNeedsMigrationError = (
   return {
     __typename: 'AssetCheckNeedsMigrationError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'enim',
+  };
+};
+
+export const buildAssetCheckhandle = (
+  overrides?: Partial<AssetCheckhandle>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetCheckhandle'} & AssetCheckhandle => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetCheckhandle');
+  return {
+    __typename: 'AssetCheckhandle',
+    assetKey:
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKey')
+        ? ({} as AssetKey)
+        : buildAssetKey({}, relationshipsToOmit),
+    name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'est',
   };
 };
 
@@ -10401,6 +10426,10 @@ export const buildRun = (
   relationshipsToOmit.add('Run');
   return {
     __typename: 'Run',
+    assetCheckSelection:
+      overrides && overrides.hasOwnProperty('assetCheckSelection')
+        ? overrides.assetCheckSelection!
+        : [],
     assetMaterializations:
       overrides && overrides.hasOwnProperty('assetMaterializations')
         ? overrides.assetMaterializations!
