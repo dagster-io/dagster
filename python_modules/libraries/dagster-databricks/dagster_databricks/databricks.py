@@ -432,12 +432,20 @@ class DatabricksJobRunner:
     ) -> Optional[Tuple[Optional[str], Optional[str]]]:
         """Retrieve the stdout and stderr logs for a run."""
         run = self.client.workspace_client.jobs.get_run(databricks_run_id)
-        cluster = self.client.workspace_client.clusters.get(run.cluster_instance.cluster_id)
+        cluster_id = run.cluster_instance.cluster_id
+        if not cluster_id:
+            # Currently pyspark step launcher runs jobs with singleton tasks.
+            cluster_id = run.tasks[0].cluster_instance.cluster_id
+        check.str_param(
+            cluster_id,
+            f"cluster_id should be string like `1234-123456-abcdefgh` got: `{cluster_id}`"
+        )
+        cluster = self.client.workspace_client.clusters.get(cluster_id)
         log_config = cluster.cluster_log_conf
         if log_config is None:
             log.warn(
                 "Logs not configured for cluster {cluster} used for run {run}".format(
-                    cluster=cluster.cluster_id, run=databricks_run_id
+                    cluster=cluster_id, run=databricks_run_id
                 )
             )
             return None
@@ -447,8 +455,8 @@ class DatabricksJobRunner:
             return None
         elif cast(Optional[compute.DbfsStorageInfo], log_config.dbfs) is not None:
             logs_prefix = log_config.dbfs.destination
-            stdout = self.wait_for_dbfs_logs(log, logs_prefix, cluster.cluster_id, "stdout")
-            stderr = self.wait_for_dbfs_logs(log, logs_prefix, cluster.cluster_id, "stderr")
+            stdout = self.wait_for_dbfs_logs(log, logs_prefix, cluster_id, "stdout")
+            stderr = self.wait_for_dbfs_logs(log, logs_prefix, cluster_id, "stderr")
             return stdout, stderr
 
     def wait_for_dbfs_logs(
