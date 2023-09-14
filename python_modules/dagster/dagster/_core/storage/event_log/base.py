@@ -226,9 +226,14 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
             event (EventLogEntry): The event to store.
         """
 
-    @abstractmethod
     def delete_events(self, run_id: str) -> None:
         """Remove events for a given run id."""
+        self.delete_events_for_runs([run_id])
+
+    @abstractmethod
+    @abstractmethod
+    def delete_events_for_runs(self, run_ids: Sequence[str]) -> None:
+        """Remove events for a set of run ids."""
 
     @abstractmethod
     def upgrade(self) -> None:

@@ -533,9 +533,9 @@ class SqlRunStorage(RunStorage):
         check.str_param(run_id, "run_id")
         return bool(self._get_run_by_id(run_id))
 
-    def delete_run(self, run_id: str) -> None:
-        check.str_param(run_id, "run_id")
-        query = db.delete(RunsTable).where(RunsTable.c.run_id == run_id)
+    def delete_runs(self, run_ids: Sequence[str]) -> None:
+        check.sequence_param(run_ids, "run_ids", of_type=str)
+        query = db.delete(RunsTable).where(RunsTable.c.run_id.in_(run_ids))
         with self.connect() as conn:
             conn.execute(query)
 

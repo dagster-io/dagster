@@ -687,17 +687,23 @@ class SqlEventLogStorage(EventLogStorage):
             if self.has_table("asset_check_executions"):
                 conn.execute(AssetCheckExecutionsTable.delete())
 
-    def delete_events(self, run_id: str) -> None:
-        with self.run_connection(run_id) as conn:
-            self.delete_events_for_run(conn, run_id)
-        with self.index_connection() as conn:
-            self.delete_events_for_run(conn, run_id)
+    def delete_events_for_runs(self, run_ids: Sequence[str]) -> None:
+        check.sequence_param(run_ids, "run_ids", of_type=str)
+        for run_id in run_ids:
+            with self.run_connection(run_id) as conn:
+                conn.execute(
+                    SqlEventLogStorageTable.delete().where(
+                        SqlEventLogStorageTable.c.run_id == run_id
+                    )
+                )
 
-    def delete_events_for_run(self, conn: Connection, run_id: str) -> None:
-        check.str_param(run_id, "run_id")
-        conn.execute(
-            SqlEventLogStorageTable.delete().where(SqlEventLogStorageTable.c.run_id == run_id)
-        )
+        # delete the mirrored event in the cross-run index database
+        with self.index_connection() as conn:
+            conn.execute(
+                SqlEventLogStorageTable.delete().where(
+                    SqlEventLogStorageTable.c.run_id.in_(run_ids)
+                )
+            )
 
     @property
     def is_persistent(self) -> bool:

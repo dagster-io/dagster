@@ -287,8 +287,8 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
     def wipe(self) -> None:
         return self._storage.run_storage.wipe()
 
-    def delete_run(self, run_id: str) -> None:
-        return self._storage.run_storage.delete_run(run_id)
+    def delete_runs(self, run_ids: Sequence[str]) -> None:
+        return self._storage.run_storage.delete_runs(run_ids)
 
     def migrate(self, print_fn: Optional[PrintFn] = None, force_rebuild_all: bool = False) -> None:
         return self._storage.run_storage.migrate(print_fn, force_rebuild_all)
@@ -403,8 +403,8 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     def store_event(self, event: "EventLogEntry") -> None:
         return self._storage.event_log_storage.store_event(event)
 
-    def delete_events(self, run_id: str) -> None:
-        return self._storage.event_log_storage.delete_events(run_id)
+    def delete_events_for_runs(self, run_ids: Sequence[str]) -> None:
+        return self._storage.event_log_storage.delete_events_for_runs(run_ids)
 
     def upgrade(self) -> None:
         return self._storage.event_log_storage.upgrade()
