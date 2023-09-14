@@ -30,6 +30,7 @@ export type AssetChecksQuery = {
           __typename: 'AssetCheck';
           name: string;
           description: string | null;
+          canExecuteIndividually: Types.AssetCheckCanExecuteIndividually;
           executionForLatestMaterialization: {
             __typename: 'AssetCheckExecution';
             id: string;
