@@ -93,6 +93,11 @@ In your `assets.py`, make a new asset called `signups`. In this asset, you'll us
 Copy and paste the code below into the appropriate sections of your `asset.py`.
 
 ```python file=/tutorial/connecting/assets.py startafter=start_add_signsup_asset endbefore=end_add_signsup_asset
+from dagster import (
+    # ... existing imports
+    ResourceParam, # Update the imports at the top to include this
+)
+
 from .resources import DataGeneratorResource
 
 # ...
@@ -100,7 +105,7 @@ from .resources import DataGeneratorResource
 
 @asset
 def signups(
-    context: AssetExecutionContext, hackernews_api: DataGeneratorResource
+    context: AssetExecutionContext, hackernews_api: ResourceParam[DataGeneratorResource]
 ) -> pd.DataFrame:
     signups = pd.DataFrame(hackernews_api.get_signups())
 
