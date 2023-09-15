@@ -13,7 +13,7 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
-import {useHistory} from 'react-router';
+import {useHistory} from 'react-router-dom';
 
 import {PipelineRunTag} from '../app/ExecutionSessionStorage';
 import {filterByQuery} from '../app/GraphQueryImpl';
