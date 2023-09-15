@@ -290,6 +290,9 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
     def delete_run(self, run_id: str) -> None:
         return self._storage.run_storage.delete_run(run_id)
 
+    def delete_all_queued_runs(self) -> None:
+        return self._storage.run_storage.delete_all_queued_runs()
+
     def migrate(self, print_fn: Optional[PrintFn] = None, force_rebuild_all: bool = False) -> None:
         return self._storage.run_storage.migrate(print_fn, force_rebuild_all)
 

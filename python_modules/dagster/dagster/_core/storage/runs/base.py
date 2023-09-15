@@ -315,6 +315,10 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
     def delete_run(self, run_id: str) -> None:
         """Remove a run from storage."""
 
+    @abstractmethod
+    def delete_all_queued_runs(self) -> None:
+        """Remove all queued runs from storage."""
+
     @property
     def supports_bucket_queries(self) -> bool:
         return False

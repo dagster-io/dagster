@@ -888,6 +888,45 @@ class TestRunStorage:
         assert list(storage.get_runs()) == []
         assert run_id not in [key for key, value in storage.get_run_tags()]
 
+    def _build_run(self, storage, status: DagsterRunStatus) -> str:
+        run_id = make_new_run_id()
+
+        origin_one = self.fake_job_origin("some_pipeline", "fake_repo_one")
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id=run_id,
+                job_name="some_pipeline",
+                external_job_origin=origin_one if status == DagsterRunStatus.QUEUED else None,
+                tags={run_id: run_id},
+                status=status,
+            )
+        )
+        return run_id
+
+    def test_delete_all_queued_runs(self, storage):
+        if not self.can_delete_runs():
+            pytest.skip("storage cannot delete runs")
+
+        assert storage
+
+        run_ids = [
+            self._build_run(storage, DagsterRunStatus.QUEUED),
+            self._build_run(storage, DagsterRunStatus.QUEUED),
+            self._build_run(storage, DagsterRunStatus.NOT_STARTED),
+        ]
+
+        assert len(storage.get_runs()) == 3
+        for run_id in run_ids:
+            assert run_id in [key for key, _ in storage.get_run_tags()]
+
+        storage.delete_all_queued_runs()
+        assert storage.get_run_ids() == [run_ids[2]]
+
+        remaining_run_ids = [key for key, _ in storage.get_run_tags()]
+        assert run_ids[0] not in remaining_run_ids
+        assert run_ids[1] not in remaining_run_ids
+        assert run_ids[2] in remaining_run_ids
+
     def test_wipe_tags(self, storage: RunStorage):
         if not self.can_delete_runs():
             pytest.skip("storage cannot delete")

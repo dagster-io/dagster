@@ -13,6 +13,7 @@ from dagster import (
     _check as check,
 )
 from dagster._config.config_schema import UserConfigSchema
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.sql import (
     AlembicVersion,
     check_alembic_revision,
@@ -21,6 +22,10 @@ from dagster._core.storage.sql import (
     run_alembic_downgrade,
     run_alembic_upgrade,
     stamp_alembic_rev,
+)
+from dagster._core.storage.sqlalchemy_compat import (
+    db_select,
+    db_subquery,
 )
 from dagster._core.storage.sqlite import create_db_conn_string
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
@@ -154,6 +159,25 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
         with self.connect() as conn:
             conn.execute(remove_tags)
             conn.execute(remove_run)
+
+    def delete_all_queued_runs(self) -> None:
+        """Override the default sql delete run implementation until we can get full
+        support on cascading deletes.
+        """
+        queued_run_ids = db_subquery(
+            db_select([RunTagsTable.c.run_id]).where(
+                db.and_(RunTagsTable.c.run_id == RunsTable.c.run_id, RunsTable.c.status == "QUEUED")
+            ),
+            "queued_run_ids",
+        )
+
+        remove_tags = db.delete(RunTagsTable).where(RunTagsTable.c.run_id.in_(queued_run_ids))
+        remove_runs = db.delete(RunsTable).where(
+            RunsTable.c.status == DagsterRunStatus.QUEUED.value
+        )
+        with self.connect() as conn:
+            conn.execute(remove_tags)
+            conn.execute(remove_runs)
 
     def alembic_version(self) -> AlembicVersion:
         alembic_config = get_alembic_config(__file__)

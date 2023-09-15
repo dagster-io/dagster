@@ -1755,6 +1755,11 @@ class DagsterInstance(DynamicPartitionsStore):
         self._run_storage.delete_run(run_id)
         self._event_storage.delete_events(run_id)
 
+    @traced
+    def delete_all_queued_runs(self) -> None:
+        """Delete all queued runs from storage."""
+        self._run_storage.delete_all_queued_runs()
+
     # event storage
     @traced
     def logs_after(

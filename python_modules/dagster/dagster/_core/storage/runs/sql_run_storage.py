@@ -539,6 +539,11 @@ class SqlRunStorage(RunStorage):
         with self.connect() as conn:
             conn.execute(query)
 
+    def delete_all_queued_runs(self) -> None:
+        query = db.delete(RunsTable).where(RunsTable.c.status == DagsterRunStatus.QUEUED.value)
+        with self.connect() as conn:
+            conn.execute(query)
+
     def has_job_snapshot(self, job_snapshot_id: str) -> bool:
         check.str_param(job_snapshot_id, "job_snapshot_id")
         return self._has_snapshot_id(job_snapshot_id)
