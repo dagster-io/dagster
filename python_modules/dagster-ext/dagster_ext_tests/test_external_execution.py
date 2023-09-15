@@ -9,6 +9,7 @@ from typing import Any, Callable, Iterator
 
 import boto3
 import pytest
+from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.data_version import (
     DATA_VERSION_IS_USER_PROVIDED_TAG,
@@ -44,6 +45,7 @@ from dagster._core.ext.utils import (
     ext_protocol,
 )
 from dagster._core.instance_for_test import instance_for_test
+from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 from dagster_aws.ext import ExtS3MessageReader
 from moto.server import ThreadedMotoServer
 
@@ -96,6 +98,15 @@ def external_script() -> Iterator[str]:
             metadata={"bar": {"raw_value": context.get_extra("bar"), "type": "md"}},
             data_version="alpha",
         )
+        context.report_asset_check(
+            "foo_check",
+            success=True,
+            severity="WARN",
+            metadata={
+                "meta_1": 1,
+                "meta_2": {"raw_value": "foo", "type": "text"},
+            },
+        )
 
     with temp_script(script_fn) as script_path:
         yield script_path
@@ -147,7 +158,7 @@ def test_ext_subprocess(
     else:
         assert False, "Unreachable"
 
-    @asset
+    @asset(check_specs=[AssetCheckSpec(name="foo_check", asset=AssetKey(["foo"]))])
     def foo(context: AssetExecutionContext, ext: ExtSubprocess):
         extras = {"bar": "baz"}
         cmd = [_PYTHON_EXECUTABLE, external_script]
@@ -175,6 +186,14 @@ def test_ext_subprocess(
 
         captured = capsys.readouterr()
         assert re.search(r"dagster - INFO - [^\n]+ - hello world\n", captured.err, re.MULTILINE)
+
+        asset_check_executions = instance.event_log_storage.get_asset_check_executions(
+            asset_key=foo.key,
+            check_name="foo_check",
+            limit=1,
+        )
+        assert len(asset_check_executions) == 1
+        assert asset_check_executions[0].status == AssetCheckExecutionRecordStatus.SUCCEEDED
 
 
 def test_ext_multi_asset():
@@ -335,7 +354,7 @@ def test_ext_no_orchestration():
 
 
 def test_ext_no_client(external_script):
-    @asset
+    @asset(check_specs=[AssetCheckSpec(name="foo_check", asset=AssetKey(["subproc_run"]))])
     def subproc_run(context: AssetExecutionContext):
         extras = {"bar": "baz"}
         cmd = [_PYTHON_EXECUTABLE, external_script]
@@ -360,6 +379,14 @@ def test_ext_no_client(external_script):
         assert mat.asset_materialization.tags
         assert mat.asset_materialization.tags[DATA_VERSION_TAG] == "alpha"
         assert mat.asset_materialization.tags[DATA_VERSION_IS_USER_PROVIDED_TAG]
+
+        asset_check_executions = instance.event_log_storage.get_asset_check_executions(
+            asset_key=subproc_run.key,
+            check_name="foo_check",
+            limit=1,
+        )
+        assert len(asset_check_executions) == 1
+        assert asset_check_executions[0].status == AssetCheckExecutionRecordStatus.SUCCEEDED
 
 
 def test_ext_no_client_no_yield():
