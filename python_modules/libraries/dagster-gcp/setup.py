@@ -33,8 +33,8 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_gcp_tests*"]),
     install_requires=[
-        "dagster==1.4.13",
-        "dagster_pandas==0.20.13",
+        "dagster==1.4.14",
+        "dagster_pandas==0.20.14",
         "db-dtypes",  # Required as per https://github.com/googleapis/python-bigquery/issues/1188
         "google-api-python-client",
         "google-cloud-bigquery",
