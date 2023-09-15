@@ -38,6 +38,7 @@ export type AssetNodeLiveFragment = {
   assetChecks: Array<{
     __typename: 'AssetCheck';
     name: string;
+    canExecuteIndividually: Types.AssetCheckCanExecuteIndividually;
     executionForLatestMaterialization: {
       __typename: 'AssetCheckExecution';
       id: string;
@@ -102,6 +103,7 @@ export type AssetGraphLiveQuery = {
     assetChecks: Array<{
       __typename: 'AssetCheck';
       name: string;
+      canExecuteIndividually: Types.AssetCheckCanExecuteIndividually;
       executionForLatestMaterialization: {
         __typename: 'AssetCheckExecution';
         id: string;

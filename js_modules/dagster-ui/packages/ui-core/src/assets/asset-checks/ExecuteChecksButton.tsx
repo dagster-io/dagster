@@ -1,24 +1,24 @@
+import {gql} from '@apollo/client';
 import {Button, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
 import React, {useState} from 'react';
 
 import {usePermissionsForLocation} from '../../app/Permissions';
-import {AssetKeyInput} from '../../graphql/types';
+import {AssetCheckCanExecuteIndividually} from '../../graphql/types';
 import {useLaunchPadHooks} from '../../launchpad/LaunchpadHooksContext';
 
-export type EvaluateChecksAssetNode = {
-  assetKey: AssetKeyInput;
-  repository: {name: string; location: {name: string}};
-  jobNames: string[];
-};
+import {
+  ExecuteChecksButtonAssetNodeFragment,
+  ExecuteChecksButtonCheckFragment,
+} from './types/ExecuteChecksButton.types';
 
-export const ExexcuteChecksButton = ({
+export const ExecuteChecksButton = ({
   assetNode,
   checks,
   label = `Execute all`,
   icon = true,
 }: {
-  assetNode: EvaluateChecksAssetNode;
-  checks: {name: string}[];
+  assetNode: ExecuteChecksButtonAssetNodeFragment;
+  checks: ExecuteChecksButtonCheckFragment[];
   label?: string;
   icon?: boolean;
 }) => {
@@ -28,6 +28,9 @@ export const ExexcuteChecksButton = ({
 
   const {useLaunchWithTelemetry} = useLaunchPadHooks();
   const launchWithTelemetry = useLaunchWithTelemetry();
+  const launchable = checks.filter(
+    (c) => c.canExecuteIndividually === AssetCheckCanExecuteIndividually.CAN_EXECUTE,
+  );
 
   const iconEl = launching ? (
     <Spinner purpose="caption-text" />
@@ -35,9 +38,17 @@ export const ExexcuteChecksButton = ({
     <Icon name="execute" />
   ) : null;
 
-  if (!permissions.canLaunchPipelineExecution) {
+  const disabledReason = !permissions.canLaunchPipelineExecution
+    ? disabledReasons.canLaunchPipelineExecution
+    : checks.length > 0 && launchable.length === 0
+    ? 'Invidiual launch is not supported. Upgrade your user code version of dagster.'
+    : checks.length === 0
+    ? 'No checks are defined on this asset.'
+    : '';
+
+  if (disabledReason) {
     return (
-      <Tooltip content={disabledReasons.canLaunchPipelineExecution}>
+      <Tooltip content={disabledReason}>
         <Button icon={iconEl} disabled>
           {label}
         </Button>
@@ -66,7 +77,7 @@ export const ExexcuteChecksButton = ({
           repositoryLocationName: repository.location.name,
           repositoryName: repository.name,
           jobName,
-          assetCheckSelection: checks.map((c) => ({
+          assetCheckSelection: launchable.map((c) => ({
             assetKey: {path: assetKey.path},
             name: c.name,
           })),
@@ -84,3 +95,28 @@ export const ExexcuteChecksButton = ({
     </Button>
   );
 };
+
+export const EXECUTE_CHECKS_BUTTON_CHECK_FRAGMENT = gql`
+  fragment ExecuteChecksButtonCheckFragment on AssetCheck {
+    name
+    canExecuteIndividually
+  }
+`;
+
+export const EXECUTE_CHECKS_BUTTON_ASSET_NODE_FRAGMENT = gql`
+  fragment ExecuteChecksButtonAssetNodeFragment on AssetNode {
+    id
+    jobNames
+    assetKey {
+      path
+    }
+    repository {
+      id
+      name
+      location {
+        id
+        name
+      }
+    }
+  }
+`;
