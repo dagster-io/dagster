@@ -31,6 +31,7 @@ from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.types.dagster_type import DagsterTypeKind, is_generic_output_annotation
+from dagster._utils import is_named_tuple_instance
 from dagster._utils.warnings import disable_dagster_warnings
 
 from ..context.compute import OpExecutionContext
@@ -133,12 +134,43 @@ def _coerce_op_compute_fn_to_iterator(
 def _zip_and_iterate_op_result(
     result: Any, context: OpExecutionContext, output_defs: Sequence[OutputDefinition]
 ) -> Iterator[Tuple[int, Any, OutputDefinition]]:
-    if len(output_defs) > 1:
-        result = _validate_multi_return(context, result, output_defs)
-        for position, (output_def, element) in enumerate(zip(output_defs, result)):
+    # Filtering the expected output defs here is an unfortunate temporary solution to deal with the
+    # change in expected outputs that occurs as a result of putting `AssetCheckResults` onto
+    # `MaterializeResults`. Prior to this, `AssetCheckResults` were yielded/returned directly, and
+    # thus were expected to always be included in the result tuple. Thus we need to remove them from
+    # the expected output defs if they have been included indirectly via embedding in a
+    # `MaterializeResult`.
+    #
+    # A better solution is surely possible here in a future refactor. The major complicating element
+    # is the conversion of MaterializeResult into Output, which currently happens in
+    # execute_step.py and leverages job_def.asset_layer. There is difficulty in moving that logic up
+    # to here because we can't rely on the presence of asset layer here, since the present code path
+    # is used by direct invocation. Probably the solution is to expose an asset layer on the
+    # invocation context.
+    expected_return_outputs = _filter_expected_output_defs(result, context, output_defs)
+    if len(expected_return_outputs) > 1:
+        result = _validate_multi_return(context, result, expected_return_outputs)
+        for position, (output_def, element) in enumerate(zip(expected_return_outputs, result)):
             yield position, output_def, element
     else:
         yield 0, output_defs[0], result
+
+
+# Filter out output_defs corresponding to asset check results that already exist on a
+# MaterializeResult.
+def _filter_expected_output_defs(
+    result: Any, context: OpExecutionContext, output_defs: Sequence[OutputDefinition]
+) -> Sequence[OutputDefinition]:
+    result_tuple = (
+        (result,) if not isinstance(result, tuple) or is_named_tuple_instance(result) else result
+    )
+    materialize_results = [x for x in result_tuple if isinstance(x, MaterializeResult)]
+    remove_outputs = [
+        r.get_spec_python_identifier(x.asset_key or context.asset_key)
+        for x in materialize_results
+        for r in x.check_results or []
+    ]
+    return [out for out in output_defs if out.name not in remove_outputs]
 
 
 def _validate_multi_return(

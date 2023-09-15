@@ -36,6 +36,8 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._core.definitions import AssetIn, SourceAsset, asset, multi_asset
+from dagster._core.definitions.asset_check_result import AssetCheckResult
+from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
@@ -49,6 +51,7 @@ from dagster._core.errors import (
     DagsterStepOutputNotFoundError,
 )
 from dagster._core.instance import DagsterInstance
+from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 from dagster._core.storage.mem_io_manager import InMemoryIOManager
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.dagster_type import Nothing
@@ -1705,6 +1708,27 @@ def test_return_materialization():
         match="Asset key random not found in AssetsDefinition",
     ):
         mats = _exec_asset(ret_mismatch)
+
+
+def test_return_materialization_with_asset_checks():
+    with instance_for_test() as instance:
+
+        @asset(check_specs=[AssetCheckSpec(name="foo_check", asset=AssetKey("ret_checks"))])
+        def ret_checks(context: AssetExecutionContext):
+            return MaterializeResult(
+                check_results=[
+                    AssetCheckResult(check_name="foo_check", metadata={"one": 1}, success=True)
+                ]
+            )
+
+        materialize([ret_checks], instance=instance)
+        asset_check_executions = instance.event_log_storage.get_asset_check_executions(
+            asset_key=ret_checks.key,
+            check_name="foo_check",
+            limit=1,
+        )
+        assert len(asset_check_executions) == 1
+        assert asset_check_executions[0].status == AssetCheckExecutionRecordStatus.SUCCEEDED
 
 
 def test_return_materialization_multi_asset():
