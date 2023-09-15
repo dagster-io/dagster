@@ -14,7 +14,6 @@ from dagster import (
     materialize,
 )
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
-from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster_dbt import DbtCliResource
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
@@ -345,18 +344,17 @@ def test_dbt_config_group() -> None:
     }
 
 
-def test_dbt_with_downstream_asset_errors():
+def test_dbt_with_downstream_asset_via_definition():
     @dbt_assets(manifest=test_dagster_metadata_manifest)
     def my_dbt_assets(): ...
 
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match="Cannot pass a multi_asset AssetsDefinition as an argument to deps.",
-    ):
+    @asset(deps=[my_dbt_assets])
+    def downstream_of_dbt():
+        return None
 
-        @asset(deps=[my_dbt_assets])
-        def downstream_of_dbt():
-            return None
+    assert len(downstream_of_dbt.input_names) == 8
+    for input_name in downstream_of_dbt.input_names:
+        assert downstream_of_dbt.op.ins[input_name].dagster_type.is_nothing
 
 
 def test_dbt_with_downstream_asset():
