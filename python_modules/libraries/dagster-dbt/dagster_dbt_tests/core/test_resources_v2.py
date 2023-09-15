@@ -16,7 +16,7 @@ from dagster import (
     materialize,
     op,
 )
-from dagster._core.execution.context.compute import OpExecutionContext
+from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster_dbt import dbt_assets
 from dagster_dbt.asset_utils import build_dbt_asset_selection
 from dagster_dbt.core.resources_v2 import (
@@ -209,7 +209,7 @@ def test_dbt_with_partial_parse() -> None:
 
 def test_dbt_cli_debug_execution() -> None:
     @dbt_assets(manifest=manifest)
-    def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         yield from dbt.cli(["--debug", "run"], context=context).stream()
 
     result = materialize(
@@ -230,7 +230,7 @@ def test_dbt_cli_subsetted_execution() -> None:
     )
 
     @dbt_assets(manifest=manifest, select=dbt_select)
-    def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         dbt_cli_invocation = dbt.cli(["run"], context=context)
 
         assert dbt_cli_invocation.process.args == ["dbt", "run", "--select", dbt_select]
@@ -253,7 +253,7 @@ def test_dbt_cli_asset_selection() -> None:
     ]
 
     @dbt_assets(manifest=manifest)
-    def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         dbt_cli_invocation = dbt.cli(["run"], context=context)
 
         dbt_cli_args: List[str] = list(dbt_cli_invocation.process.args)  # type: ignore
@@ -283,7 +283,7 @@ def test_dbt_cli_asset_selection() -> None:
 @pytest.mark.parametrize("exclude", [None, "fqn:dagster_dbt_test_project.subdir.least_caloric"])
 def test_dbt_cli_default_selection(exclude: Optional[str]) -> None:
     @dbt_assets(manifest=manifest, exclude=exclude)
-    def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         dbt_cli_invocation = dbt.cli(["run"], context=context)
 
         expected_args = ["dbt", "run", "--select", "fqn:*"]
