@@ -23,7 +23,7 @@ class AssetSpec(
     NamedTuple(
         "_AssetSpec",
         [
-            ("asset_key", PublicAttr[AssetKey]),
+            ("key", PublicAttr[AssetKey]),
             ("deps", PublicAttr[Iterable["AssetDep"]]),
             ("description", PublicAttr[Optional[str]]),
             ("metadata", PublicAttr[Optional[Mapping[str, Any]]]),
@@ -39,7 +39,7 @@ class AssetSpec(
     function that defines how it materialized.
 
     Attributes:
-        asset_key (AssetKey): The unique identifier for this asset.
+        key (AssetKey): The unique identifier for this asset.
         deps (Optional[AbstractSet[AssetKey]]): The asset keys for the upstream assets that
             materializing this asset depends on.
         description (Optional[str]): Human-readable description of this asset.
@@ -61,7 +61,7 @@ class AssetSpec(
 
     def __new__(
         cls,
-        asset_key: CoercibleToAssetKey,
+        key: CoercibleToAssetKey,
         *,
         deps: Optional[
             Iterable[
@@ -92,13 +92,13 @@ class AssetSpec(
                 if asset_dep.asset_key in dep_set.keys():
                     raise DagsterInvariantViolationError(
                         f"Cannot set a dependency on asset {asset_dep.asset_key} more than once for"
-                        f" AssetSpec {asset_key}"
+                        f" AssetSpec {key}"
                     )
                 dep_set[asset_dep.asset_key] = asset_dep
 
         return super().__new__(
             cls,
-            asset_key=AssetKey.from_coercible(asset_key),
+            key=AssetKey.from_coercible(key),
             deps=list(dep_set.values()),
             description=check.opt_str_param(description, "description"),
             metadata=check.opt_mapping_param(metadata, "metadata", key_type=str),

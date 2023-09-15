@@ -574,13 +574,13 @@ def test_identity_partition_mapping():
 
 
 def test_partition_mapping_with_asset_deps():
-    asset_1 = AssetSpec(asset_key="asset_1")
-    asset_2 = AssetSpec(asset_key="asset_2")
+    asset_1 = AssetSpec(key="asset_1")
+    asset_2 = AssetSpec(key="asset_2")
 
     asset_1_partition_mapping = TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
     asset_2_partition_mapping = TimeWindowPartitionMapping(start_offset=-2, end_offset=-2)
     asset_3 = AssetSpec(
-        asset_key="asset_3",
+        key="asset_3",
         deps=[
             AssetDep(
                 asset=asset_1,
@@ -593,7 +593,7 @@ def test_partition_mapping_with_asset_deps():
         ],
     )
     asset_4 = AssetSpec(
-        asset_key="asset_4",
+        key="asset_4",
         deps=[
             AssetDep(
                 asset=asset_1,
@@ -639,13 +639,13 @@ def test_partition_mapping_with_asset_deps():
 
 
 def test_conflicting_mappings_with_asset_deps():
-    asset_1 = AssetSpec(asset_key="asset_1")
-    asset_2 = AssetSpec(asset_key="asset_2")
+    asset_1 = AssetSpec(key="asset_1")
+    asset_2 = AssetSpec(key="asset_2")
 
     asset_1_partition_mapping = TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
     asset_2_partition_mapping = TimeWindowPartitionMapping(start_offset=-2, end_offset=-2)
     asset_3 = AssetSpec(
-        asset_key="asset_3",
+        key="asset_3",
         deps=[
             AssetDep(
                 asset=asset_1,
@@ -658,7 +658,7 @@ def test_conflicting_mappings_with_asset_deps():
         ],
     )
     asset_4 = AssetSpec(
-        asset_key="asset_4",
+        key="asset_4",
         deps=[
             AssetDep(
                 asset=asset_1,
@@ -684,7 +684,7 @@ def test_conflicting_mappings_with_asset_deps():
 
 def test_self_dependent_partition_mapping_with_asset_deps():
     asset_1 = AssetSpec(
-        asset_key="asset_1",
+        key="asset_1",
         deps=[
             AssetDep(
                 asset="asset_1",
@@ -710,10 +710,10 @@ def test_dynamic_partition_mapping_with_asset_deps():
     partitions_def = DynamicPartitionsDefinition(name="fruits")
 
     asset_1 = AssetSpec(
-        asset_key="asset_1",
+        key="asset_1",
     )
     asset_2 = AssetSpec(
-        asset_key="asset_2",
+        key="asset_2",
         deps=[
             AssetDep(
                 asset=asset_1,
