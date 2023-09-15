@@ -19,7 +19,7 @@ import {AssetNodeDefinition} from '../AssetNodeDefinition';
 
 // eslint-disable-next-line import/no-default-export
 export default {
-  title: 'AssetNodeDefinition',
+  title: 'Asset Details/Definition',
   component: AssetNodeDefinition,
 } as Meta;
 
