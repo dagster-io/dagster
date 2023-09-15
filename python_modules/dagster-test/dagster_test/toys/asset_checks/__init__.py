@@ -20,6 +20,8 @@ from dagster import (
 )
 from dagster._core.definitions.decorators.asset_decorator import graph_multi_asset
 
+from .blocking_check import blocking_graph_asset
+
 
 @asset(key_prefix="test_prefix", group_name="asset_checks")
 def checked_asset():
@@ -404,6 +406,7 @@ def many_tests_graph_multi_asset():
         many_tests_graph_asset,
         asset_with_100_checks,
         asset_with_1000_checks,
+        blocking_graph_asset,
     ],
 )
 def downstream_asset():
@@ -430,4 +433,5 @@ def get_checks_and_assets():
         asset_with_1000_checks,
         many_tests_graph_asset,
         many_tests_graph_multi_asset,
+        blocking_graph_asset,
     ]
