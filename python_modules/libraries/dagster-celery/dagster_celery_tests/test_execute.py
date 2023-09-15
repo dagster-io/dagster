@@ -138,16 +138,10 @@ def test_execute_eagerly_on_celery(instance: DagsterInstance):
             dagster_event = event.dagster_event
             if dagster_event and dagster_event.is_engine_event:
                 if dagster_event.engine_event_data.marker_start:
-                    key = "{step}.{marker}".format(
-                        step=event.step_key,
-                        marker=dagster_event.engine_event_data.marker_start,
-                    )
+                    key = f"{event.step_key}.{dagster_event.engine_event_data.marker_start}"
                     start_markers[key] = event.timestamp
                 if dagster_event.engine_event_data.marker_end:
-                    key = "{step}.{marker}".format(
-                        step=event.step_key,
-                        marker=dagster_event.engine_event_data.marker_end,
-                    )
+                    key = f"{event.step_key}.{dagster_event.engine_event_data.marker_end}"
                     end_markers[key] = event.timestamp
 
         seen = set()

@@ -106,7 +106,7 @@ def test_tags_to_plan():
         )()
 
     plan = create_execution_plan(k8s_ready)
-    step = list(plan.step_dict.values())[0]
+    step = next(iter(plan.step_dict.values()))
 
     user_defined_k8s_config = get_user_defined_k8s_config(step.tags)
 

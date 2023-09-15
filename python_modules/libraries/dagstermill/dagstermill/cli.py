@@ -110,11 +110,9 @@ def execute_create_notebook(notebook: str, force_overwrite: bool, kernel: str):
 
     if not force_overwrite and safe_isfile(notebook_path):
         click.confirm(
-            (
-                "Warning, {notebook_path} already exists and continuing "
-                "will overwrite the existing notebook. "
-                "Are you sure you want to continue?"
-            ).format(notebook_path=notebook_path),
+            f"Warning, {notebook_path} already exists and continuing "
+            "will overwrite the existing notebook. "
+            "Are you sure you want to continue?",
             abort=True,
         )
 

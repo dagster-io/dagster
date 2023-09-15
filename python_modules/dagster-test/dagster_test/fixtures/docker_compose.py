@@ -128,37 +128,17 @@ def connect_container_to_network(container, network):
     # trying to connect a container to a network that it's already connected to
     try:
         subprocess.check_call(["docker", "network", "connect", network, container])
-        logging.info(
-            "Connected {container} to network {network}.".format(
-                container=container,
-                network=network,
-            )
-        )
+        logging.info(f"Connected {container} to network {network}.")
     except subprocess.CalledProcessError:
-        logging.warning(
-            "Unable to connect {container} to network {network}.".format(
-                container=container,
-                network=network,
-            )
-        )
+        logging.warning(f"Unable to connect {container} to network {network}.")
 
 
 def disconnect_container_from_network(container, network):
     try:
         subprocess.check_call(["docker", "network", "disconnect", network, container])
-        logging.info(
-            "Disconnected {container} from network {network}.".format(
-                container=container,
-                network=network,
-            )
-        )
+        logging.info(f"Disconnected {container} from network {network}.")
     except subprocess.CalledProcessError:
-        logging.warning(
-            "Unable to disconnect {container} from network {network}.".format(
-                container=container,
-                network=network,
-            )
-        )
+        logging.warning(f"Unable to disconnect {container} from network {network}.")
 
 
 def hostnames(network):

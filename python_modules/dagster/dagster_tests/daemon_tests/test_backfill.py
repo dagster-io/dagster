@@ -934,7 +934,7 @@ def test_backfill_from_failure_for_subselection(
 
     assert instance.get_runs_count() == 1
     wait_for_all_runs_to_finish(instance)
-    run = list(instance.get_runs())[0]
+    run = next(iter(instance.get_runs()))
     assert run.status == DagsterRunStatus.FAILURE
 
     external_partition_set = external_repo.get_external_partition_set(
@@ -956,7 +956,7 @@ def test_backfill_from_failure_for_subselection(
 
     list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
     assert instance.get_runs_count() == 2
-    child_run = list(instance.get_runs(limit=1))[0]
+    child_run = next(iter(instance.get_runs(limit=1)))
     assert child_run.resolved_op_selection == run.resolved_op_selection
     assert child_run.op_selection == run.op_selection
 

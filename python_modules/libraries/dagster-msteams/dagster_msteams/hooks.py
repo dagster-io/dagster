@@ -72,10 +72,7 @@ def teams_on_failure(
     def _hook(context: HookContext):
         text = message_fn(context)
         if webserver_base_url:
-            text += "<a href='{base_url}/runs/{run_id}'>View in Dagster UI</a>".format(
-                base_url=webserver_base_url,
-                run_id=context.run_id,
-            )
+            text += f"<a href='{webserver_base_url}/runs/{context.run_id}'>View in Dagster UI</a>"
         card = Card()
         card.add_attachment(text_message=text)
         context.resources.msteams.post_message(payload=card.payload)
@@ -132,10 +129,7 @@ def teams_on_success(
     def _hook(context: HookContext):
         text = message_fn(context)
         if webserver_base_url:
-            text += "<a href='{base_url}/runs/{run_id}'>View in webserver</a>".format(
-                base_url=webserver_base_url,
-                run_id=context.run_id,
-            )
+            text += f"<a href='{webserver_base_url}/runs/{context.run_id}'>View in webserver</a>"
         card = Card()
         card.add_attachment(text_message=text)
         context.resources.msteams.post_message(payload=card.payload)

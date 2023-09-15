@@ -13,7 +13,7 @@ from dagstermill.examples.repository import custom_io_mgr_key_asset
 
 
 def get_path(materialization_event):
-    for key, value in materialization_event.event_specific_data.materialization.metadata.items():
+    for value in materialization_event.event_specific_data.materialization.metadata.values():
         if isinstance(value, (NotebookMetadataValue, PathMetadataValue)):
             return value.path
 

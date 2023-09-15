@@ -574,10 +574,8 @@ def construct_config_type_dictionary(
         if name and name in type_dict_by_name:
             if type(config_type) is not type(type_dict_by_name[name]):
                 raise DagsterInvalidDefinitionError(
-                    (
-                        "Type names must be unique. You have constructed two different "
-                        'instances of types with the same name "{name}".'
-                    ).format(name=name)
+                    "Type names must be unique. You have constructed two different "
+                    f'instances of types with the same name "{name}".'
                 )
         elif name:
             type_dict_by_name[name] = config_type

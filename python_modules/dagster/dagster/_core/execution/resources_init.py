@@ -89,9 +89,7 @@ def ensure_resource_deps_satisfiable(resource_deps: Mapping[str, AbstractSet[str
         for reqd_resource_key in resource_deps[resource_key]:
             if reqd_resource_key in path:
                 raise DagsterInvariantViolationError(
-                    'Resource key "{key}" transitively depends on itself.'.format(
-                        key=reqd_resource_key
-                    )
+                    f'Resource key "{reqd_resource_key}" transitively depends on itself.'
                 )
             if reqd_resource_key not in resource_deps:
                 raise DagsterInvariantViolationError(
@@ -312,9 +310,7 @@ def single_resource_event_generator(
     context: InitResourceContext, resource_name: str, resource_def: ResourceDefinition
 ) -> Generator[InitializedResource, None, None]:
     try:
-        msg_fn = lambda: "Error executing resource_fn on ResourceDefinition {name}".format(
-            name=resource_name
-        )
+        msg_fn = lambda: f"Error executing resource_fn on ResourceDefinition {resource_name}"
         with user_code_error_boundary(
             DagsterResourceFunctionError, msg_fn, log_manager=context.log
         ):

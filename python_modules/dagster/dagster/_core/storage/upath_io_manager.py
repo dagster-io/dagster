@@ -407,10 +407,10 @@ class UPathIOManager(MemoizableIOManager):
             elif len(asset_partition_keys) == 1:
                 paths = self._get_paths_for_partitions(context)
                 check.invariant(len(paths) == 1, f"Expected 1 path, but got {len(paths)}")
-                path = list(paths.values())[0]
+                path = next(iter(paths.values()))
                 backcompat_paths = self._get_multipartition_backcompat_paths(context)
                 backcompat_path = (
-                    None if not backcompat_paths else list(backcompat_paths.values())[0]
+                    None if not backcompat_paths else next(iter(backcompat_paths.values()))
                 )
 
                 return self._load_single_input(path, context, backcompat_path)
@@ -445,7 +445,7 @@ class UPathIOManager(MemoizableIOManager):
                 " backfill with the 'multiple runs' option.",
             )
 
-            path = list(paths.values())[0]
+            path = next(iter(paths.values()))
         else:
             path = self._get_path(context)
         self.make_directory(path.parent)

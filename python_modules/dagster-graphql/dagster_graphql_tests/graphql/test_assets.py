@@ -2406,11 +2406,11 @@ class TestCrossRepoAssetDependedBy(AllRepositoryGraphQLContextTestMatrix):
             CROSS_REPO_ASSET_GRAPH,
         )
         asset_nodes = result.data["assetNodes"]
-        derived_asset = [
+        derived_asset = next(
             node
             for node in asset_nodes
             if node["id"] == 'cross_asset_repos.upstream_assets_repository.["derived_asset"]'
-        ][0]
+        )
         dependent_asset_keys = [
             {"path": ["downstream_asset1"]},
             {"path": ["downstream_asset2"]},
@@ -2427,9 +2427,9 @@ class TestCrossRepoAssetDependedBy(AllRepositoryGraphQLContextTestMatrix):
             CROSS_REPO_ASSET_GRAPH,
         )
         asset_nodes = result.data["assetNodes"]
-        always_source_asset = [node for node in asset_nodes if "always_source_asset" in node["id"]][
-            0
-        ]
+        always_source_asset = next(
+            node for node in asset_nodes if "always_source_asset" in node["id"]
+        )
         dependent_asset_keys = [
             {"path": ["downstream_asset1"]},
             {"path": ["downstream_asset2"]},

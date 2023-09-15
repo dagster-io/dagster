@@ -54,7 +54,7 @@ class HNSnapshotClient(HNClient):
         return int(list(self.load_items().keys())[-1])
 
     def min_item_id(self) -> int:
-        return int(list(self.load_items().keys())[0])
+        return int(next(iter(self.load_items().keys())))
 
 
 class HNAPISubsampleClient(HNClient):

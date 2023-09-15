@@ -362,8 +362,8 @@ class InProcessCodeLocation(CodeLocation):
         check.inst_param(selector, "selector", JobSubsetSelector)
         check.invariant(
             selector.location_name == self.name,
-            "PipelineSelector location_name mismatch, got {selector.location_name} expected"
-            " {self.name}".format(self=self, selector=selector),
+            f"PipelineSelector location_name mismatch, got {selector.location_name} expected"
+            f" {self.name}",
         )
 
         from dagster._grpc.impl import get_external_pipeline_subset_result
@@ -766,8 +766,8 @@ class GrpcServerCodeLocation(CodeLocation):
         check.inst_param(selector, "selector", JobSubsetSelector)
         check.invariant(
             selector.location_name == self.name,
-            "PipelineSelector location_name mismatch, got {selector.location_name} expected"
-            " {self.name}".format(self=self, selector=selector),
+            f"PipelineSelector location_name mismatch, got {selector.location_name} expected"
+            f" {self.name}",
         )
 
         external_repository = self.get_repository(selector.repository_name)

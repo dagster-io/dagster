@@ -312,7 +312,7 @@ def test_ext_no_client(external_script):
             ExtTempFileMessageReader(),
             extras=extras,
         ) as ext_context:
-            subprocess.run(cmd, env=ext_context.get_external_process_env_vars())
+            subprocess.run(cmd, env=ext_context.get_external_process_env_vars(), check=False)
 
     with instance_for_test() as instance:
         materialize(

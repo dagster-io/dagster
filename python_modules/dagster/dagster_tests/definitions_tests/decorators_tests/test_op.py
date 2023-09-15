@@ -778,7 +778,7 @@ def test_type_annotations_with_generator():
     def my_op_yields_output() -> Generator[Output, None, None]:
         yield Output(5)
 
-    assert list(my_op_yields_output())[0].value == 5
+    assert next(iter(my_op_yields_output())).value == 5
     result = execute_op_in_graph(my_op_yields_output)
     assert result.output_for_node("my_op_yields_output") == 5
 

@@ -126,9 +126,7 @@ class SqlRunStorage(RunStorage):
 
         if dagster_run.job_snapshot_id and not self.has_job_snapshot(dagster_run.job_snapshot_id):
             raise DagsterSnapshotDoesNotExist(
-                "Snapshot {ss_id} does not exist in run storage".format(
-                    ss_id=dagster_run.job_snapshot_id
-                )
+                f"Snapshot {dagster_run.job_snapshot_id} does not exist in run storage"
             )
 
         has_tags = dagster_run.tags and len(dagster_run.tags) > 0

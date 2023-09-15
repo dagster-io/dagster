@@ -892,16 +892,9 @@ def runner_job_execute(runner, cli_args):
     if result.exit_code != 0:
         # CliRunner captures stdout so printing it out here
         raise Exception(
-            (
-                "dagster job execute commands with cli_args {cli_args} "
-                'returned exit_code {exit_code} with stdout:\n"{stdout}" and '
-                '\nresult as string: "{result}"'
-            ).format(
-                cli_args=cli_args,
-                exit_code=result.exit_code,
-                stdout=result.stdout,
-                result=result,
-            )
+            f"dagster job execute commands with cli_args {cli_args} "
+            f'returned exit_code {result.exit_code} with stdout:\n"{result.stdout}" and '
+            f'\nresult as string: "{result}"'
         )
     return result
 

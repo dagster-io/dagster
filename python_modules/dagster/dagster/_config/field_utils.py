@@ -395,7 +395,7 @@ def expand_map(original_root: object, the_dict: Mapping[object, object], stack: 
             original_root, the_dict, stack, "Map dict must be of length 1"
         )
 
-    key = list(the_dict.keys())[0]
+    key = next(iter(the_dict.keys()))
     key_type = _convert_potential_type(original_root, key, stack)
     if not key_type or not key_type.kind == ConfigTypeKind.SCALAR:
         raise DagsterInvalidConfigDefinitionError(
@@ -428,7 +428,7 @@ def _convert_potential_type(original_root: object, potential_type, stack: List[s
     if isinstance(potential_type, Mapping):
         # A dictionary, containing a single key which is a type (int, str, etc) and not a string is interpreted as a Map
         if len(potential_type) == 1:
-            key = list(potential_type.keys())[0]
+            key = next(iter(potential_type.keys()))
             if not isinstance(key, str) and _convert_potential_type(original_root, key, stack):
                 return expand_map(original_root, potential_type, stack)
 

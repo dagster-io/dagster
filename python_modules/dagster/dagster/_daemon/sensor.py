@@ -630,11 +630,7 @@ def _submit_run_request(
     try:
         logger.info(f"Launching run for {external_sensor.name}")
         instance.submit_run(run.run_id, workspace_process_context.create_request_context())
-        logger.info(
-            "Completed launch of run {run_id} for {sensor_name}".format(
-                run_id=run.run_id, sensor_name=external_sensor.name
-            )
-        )
+        logger.info(f"Completed launch of run {run.run_id} for {external_sensor.name}")
     except Exception:
         error_info = serializable_error_info_from_exc_info(sys.exc_info())
         logger.error(f"Run {run.run_id} created successfully but failed to launch: {error_info}")

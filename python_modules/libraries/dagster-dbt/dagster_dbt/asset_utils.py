@@ -183,7 +183,7 @@ def get_asset_key_for_source(dbt_assets: Sequence[AssetsDefinition], source_name
             " source."
         )
 
-    return list(asset_keys_by_output_name.values())[0]
+    return next(iter(asset_keys_by_output_name.values()))
 
 
 def build_dbt_asset_selection(
