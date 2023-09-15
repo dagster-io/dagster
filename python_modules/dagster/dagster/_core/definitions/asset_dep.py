@@ -86,7 +86,7 @@ class AssetDep(
         )
 
     @staticmethod
-    def from_coercible(arg: "CoercibleToAssetDep"):
+    def from_coercible(arg: "CoercibleToAssetDep") -> "AssetDep":
         # if arg is AssetDep, return the original object to retain partition_mapping
         return arg if isinstance(arg, AssetDep) else AssetDep(asset=arg)
 
