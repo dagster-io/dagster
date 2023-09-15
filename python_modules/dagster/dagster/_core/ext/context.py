@@ -1,5 +1,8 @@
 from dataclasses import dataclass
 from typing import Any, Mapping, Optional
+from typing import Any, Mapping, Optional, get_args
+from typing import Any, Dict, Iterator, Mapping, Optional, Set
+from typing import Any, Dict, Mapping, Optional, Tuple, get_args
 
 from dagster_ext import (
     DAGSTER_EXT_ENV_KEYS,
@@ -20,7 +23,9 @@ from dagster._core.definitions.data_version import DataProvenance, DataVersion
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataValue, normalize_metadata_value
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.result import MaterializeResult
 from dagster._core.definitions.time_window_partitions import TimeWindow
+from dagster._core.errors import DagsterExternalExecutionError
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.execution.context.invocation import BoundOpExecutionContext
 
@@ -104,6 +109,7 @@ class ExtOrchestrationContext:
     message_handler: ExtMessageHandler
     context_injector_params: ExtParams
     message_reader_params: ExtParams
+    is_task_finished: bool = False
 
     def get_external_process_env_vars(self):
         return {
@@ -113,6 +119,24 @@ class ExtOrchestrationContext:
                 message_reader_params=self.message_reader_params,
             ),
         }
+
+    def get_materialize_results(self) -> Tuple[MaterializeResult, ...]:
+        if not self.is_task_finished:
+            raise DagsterExternalExecutionError(
+                "`get_materialize_results` must be called after the `ext_protocol` context manager"
+                " has exited."
+            )
+        return tuple(
+            self._materialize_result_for_asset(AssetKey.from_user_string(key))
+            for key in self.context_data["asset_keys"] or []
+        )
+
+    def _materialize_result_for_asset(self, asset_key: AssetKey):
+        return MaterializeResult(
+            asset_key=asset_key,
+            metadata=self.message_handler.metadata.get(asset_key),
+            data_version=self.message_handler.data_versions.get(asset_key),
+        )
 
 
 def build_external_execution_context_data(

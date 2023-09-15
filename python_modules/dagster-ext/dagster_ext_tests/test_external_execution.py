@@ -150,7 +150,7 @@ def test_ext_subprocess(
     def foo(context: AssetExecutionContext, ext: ExtSubprocess):
         extras = {"bar": "baz"}
         cmd = [_PYTHON_EXECUTABLE, external_script]
-        ext.run(
+        return ext.run(
             cmd,
             context=context,
             extras=extras,
@@ -207,7 +207,7 @@ def test_ext_typed_metadata():
     def foo(context: AssetExecutionContext, ext: ExtSubprocess):
         with temp_script(script_fn) as script_path:
             cmd = [_PYTHON_EXECUTABLE, script_path]
-            ext.run(cmd, context=context)
+            return ext.run(cmd, context=context)
 
     with instance_for_test() as instance:
         materialize(
@@ -321,6 +321,9 @@ def test_ext_no_client(external_script):
             extras=extras,
         ) as ext_context:
             subprocess.run(cmd, env=ext_context.get_external_process_env_vars(), check=False)
+            _ext_context = ext_context
+        mat_results = _ext_context.get_materialize_results()
+        return mat_results[0] if len(mat_results) == 1 else mat_results
 
     with instance_for_test() as instance:
         materialize(
@@ -333,3 +336,30 @@ def test_ext_no_client(external_script):
         assert mat.asset_materialization.tags
         assert mat.asset_materialization.tags[DATA_VERSION_TAG] == "alpha"
         assert mat.asset_materialization.tags[DATA_VERSION_IS_USER_PROVIDED_TAG]
+
+
+def test_ext_no_client_premature_get_results(external_script):
+    @asset
+    def subproc_run(context: AssetExecutionContext):
+        extras = {"bar": "baz"}
+        cmd = [_PYTHON_EXECUTABLE, external_script]
+
+        with ext_protocol(
+            context,
+            ExtTempFileContextInjector(),
+            ExtTempFileMessageReader(),
+            extras=extras,
+        ) as ext_context:
+            subprocess.run(cmd, env=ext_context.get_external_process_env_vars(), check=False)
+            return ext_context.get_materialize_results()
+
+    with pytest.raises(
+        DagsterExternalExecutionError,
+        match=(
+            "`get_materialize_results` must be called after the `ext_protocol` context manager has"
+            " exited."
+        ),
+    ):
+        materialize(
+            [subproc_run],
+        )

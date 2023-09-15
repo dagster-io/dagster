@@ -202,9 +202,11 @@ def ext_protocol(
     ) as ci_params, message_reader.read_messages(
         message_handler,
     ) as mr_params:
-        yield ExtOrchestrationContext(
+        ext_context = ExtOrchestrationContext(
             context_data=context_data,
             message_handler=message_handler,
             context_injector_params=ci_params,
             message_reader_params=mr_params,
         )
+        yield ext_context
+        ext_context.is_task_finished = True
