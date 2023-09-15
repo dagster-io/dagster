@@ -35,9 +35,8 @@ If release name contains chart name it will be used as a full name.
 
   {{- with index . 1 }}
     {{- /* Filter the tag to parse strings, string integers, and string floats. */}}
-    {{- $global := $.Values.global | default dict -}}
-    {{- $tag := (or (.tag) ($global.image.tag)) | default $.Chart.Version | toYaml | trimAll "\"" }}
-    {{- printf "%s:%s" ($global.image.repository | default .repository) $tag }}
+    {{- $tag := .tag | default $.Chart.Version | toYaml | trimAll "\"" }}
+    {{- printf "%s:%s" .repository $tag }}
   {{- end }}
 {{- end }}
 
