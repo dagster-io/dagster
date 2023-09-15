@@ -336,6 +336,34 @@ def test_direct_asset_invocation_plain_arg_with_resource_definition_no_inputs_no
     assert executed["yes"]
 
 
+from dagster import build_asset_context
+
+
+def test_direct_asset_invocation_ctx() -> None:
+    @asset
+    def hello_asset(context):
+        return "hello"
+
+    @asset
+    def world_asset(an_asset: str, context) -> str:
+        return an_asset + " world"
+
+    assert (
+        world_asset(
+            hello_asset(build_asset_context()),
+            build_asset_context(),
+        )
+        == "hello world"
+    )
+    assert (
+        world_asset(
+            an_asset=hello_asset(build_asset_context()),
+            context=build_asset_context(),
+        )
+        == "hello world"
+    )
+
+
 def test_direct_asset_invocation_kwarg_with_resource_definition_no_inputs_no_context() -> None:
     class NumResource(ConfigurableResource):
         num: int
