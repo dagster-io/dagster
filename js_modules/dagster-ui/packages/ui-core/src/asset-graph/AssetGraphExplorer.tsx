@@ -314,10 +314,7 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
               {graphQueryItems.length === 0 ? (
                 <EmptyDAGNotice nodeType="asset" isGraph />
               ) : applyingEmptyDefault ? (
-                <LargeDAGNotice
-                  nodeType="asset"
-                  anchorLeft={fetchOptionFilters ? '300px' : '40px'}
-                />
+                <LargeDAGNotice nodeType="asset" anchorLeft="40px" />
               ) : Object.keys(assetGraphData.nodes).length === 0 ? (
                 <EntirelyFilteredDAGNotice nodeType="asset" />
               ) : undefined}
@@ -440,10 +437,7 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
                 </OptionsOverlay>
               )}
 
-              <Box
-                flex={{direction: 'column', alignItems: 'flex-end', gap: 8}}
-                style={{position: 'absolute', right: 12, top: 8}}
-              >
+              <Box style={{position: 'absolute', right: 12, top: 8}}>
                 <Box flex={{alignItems: 'center', gap: 12}}>
                   <QueryRefreshCountdown
                     refreshState={liveDataRefreshState}

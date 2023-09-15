@@ -250,7 +250,7 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
             <Container
               ref={parentRef}
               style={{
-                maxHeight: '500px',
+                maxHeight: `min(500px, 50vh)`,
                 overflowY: 'auto',
                 width: selectedFilter?.menuWidth || 'auto',
               }}
