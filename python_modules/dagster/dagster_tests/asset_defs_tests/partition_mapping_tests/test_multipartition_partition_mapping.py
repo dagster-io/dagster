@@ -785,8 +785,8 @@ def test_multi_partition_mapping_with_asset_deps():
     }
 
     ### With @multi_asset and AssetSpec
-    asset_1 = AssetSpec(asset="asset_1")
-    asset_2 = AssetSpec(asset="asset_2")
+    asset_1 = AssetSpec(key="asset_1")
+    asset_2 = AssetSpec(key="asset_2")
 
     asset_1_partition_mapping = MultiPartitionMapping(
         {
