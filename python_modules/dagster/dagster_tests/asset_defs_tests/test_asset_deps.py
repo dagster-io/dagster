@@ -55,7 +55,7 @@ def test_multi_asset_errors():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Cannot pass a multi_asset AssetsDefinition as an argument to deps",
+        match="Cannot create an AssetDep from a multi_asset AssetsDefinition",
     ):
         AssetDep(a_multi_asset)
 
@@ -90,7 +90,7 @@ def test_from_coercible():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Cannot pass a multi_asset AssetsDefinition as an argument to deps",
+        match="Cannot create an AssetDep from a multi_asset AssetsDefinition",
     ):
         AssetDep.from_coercible(a_multi_asset)
 
