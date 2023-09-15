@@ -145,7 +145,7 @@ DEFAULT_POOL_RECYCLE = 3600  # 1 hr
     "--dagster-log-level",
     help="Set the log level for dagster log events.",
     show_default=True,
-    default="warning",
+    default="info",
     type=click.Choice(["critical", "error", "warning", "info", "debug"], case_sensitive=False),
 )
 @click.option(
