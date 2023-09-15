@@ -139,14 +139,14 @@ In this tutorial, we're going with the first option: When we ran `dagster dev`, 
 Once you've got a path to a `manifest.json`, it's time to define your Dagster assets using it. The following code, in your project's `assets.py`, does this:
 
 ```python file=integrations/dbt/tutorial/load_dbt_models/assets.py startafter=start_dbt_assets endbefore=end_dbt_assets
-from dagster import OpExecutionContext
+from dagster import AssetExecutionContext
 from dagster_dbt import DbtCliResource, dbt_assets
 
 from .constants import dbt_manifest_path
 
 
 @dbt_assets(manifest=dbt_manifest_path)
-def jaffle_shop_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+def jaffle_shop_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
 ```
 
