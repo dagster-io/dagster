@@ -288,7 +288,8 @@ def test_load_from_instance_with_downstream_asset_errors():
         match=(
             "Cannot pass an instance of type <class"
             " 'dagster_airbyte.asset_defs.AirbyteInstanceCacheableAssetsDefinition'> to deps"
-            " parameter of @asset. Instead, pass AssetsDefinitions or AssetKeys."
+            " parameter of @asset. Instead, pass AssetDeps, AssetsDefinitions, SourceAssets, or"
+            " AssetKeys."
         ),
     ):
 
