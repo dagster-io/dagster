@@ -26,7 +26,7 @@ It is recommended to start with the built-in <PyObject object="AutoMaterializePo
 | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | <PyObject object="AutoMaterializeRule" method="materialize_on_parent_updated" />         | Materialize an asset partition if one of its parents has been updated more recently than it has.                                                                         |
 | <PyObject object="AutoMaterializeRule" method="materialize_on_missing" />                | Materialize an asset partition if it has never been materialized before.                                                                                                 |
-| <PyObject object="AutoMaterializeRule" method="materialize_on_required_for_freshness" /> | Materialize an asset partition if it is required to satisfy a freshness policy of this asset or one of its downstream assets.                                            |
+| <PyObject object="AutoMaterializeRule" method="materialize_on_required_for_freshness" /> | Materialize an asset partition if it is required to satisfy a <PyObject object="FreshnessPolicy" /> of this asset or one of its downstream assets.                       |
 | <PyObject object="AutoMaterializeRule" method="skip_on_parent_missing" />                | Skip materializing an asset partition if one of its parent asset partitions has never been materialized (for regular assets) or observed (for observable source assets). |
 | <PyObject object="AutoMaterializeRule" method="skip_on_parent_outdated" />               | Skip materializing an asset partition if any of its parents has not incorporated the latest data from its ancestors.                                                     |
 | <PyObject object="AutoMaterializeRule" method="skip_on_not_all_parents_updated" />       | Skip materializing an asset partition if any of its parents have not been updated since the asset's last materialization.                                                |
@@ -81,7 +81,7 @@ defs = Definitions(
 
 ### Run tags
 
-Runs triggered by auto-materialize policies are tagged with `dagster/auto_materialize`: `true`. Additional tags can be configured in [`dagster.yaml` (OSS)](/deployment/dagster-instance#auto-materialize) or [deployment settings (Cloud)](/dagster-cloud/managing-deployments/deployment-settings-reference#auto-materialize).
+Runs triggered by auto-materialize policies are tagged with `dagster/auto_materialize: true`. Additional tags can be configured in [`dagster.yaml` (OSS)](/deployment/dagster-instance#auto-materialize) or [deployment settings (Cloud)](/dagster-cloud/managing-deployments/deployment-settings-reference#auto-materialize).
 
 ### Customizing auto-materialize policies
 
@@ -106,10 +106,10 @@ def asset1(upstream1, upstream2):
 
 #### Auto-materialize even if some parents are missing
 
-By default, the eager policy will refuse to materialize an asset if any of its parents are missing. In some cases, it's desirable to allow the downstream asset to be materialized, even if some of its parent assets / partitions are missing. To enable this, the `skip_on_parent_missing` rule can be removed from a given policy to prevent this from blocking materialization of an asset.
+By default, the eager policy won't materialize an asset if any of its parents are missing. In some cases, it's desirable to allow the downstream asset to be materialized, even if some of its parent assets/partitions are missing. To enable this, the `skip_on_parent_missing` rule can be removed from a given policy to prevent this from blocking the materialization of an asset.
 
 ```python file=/concepts/assets/auto_materialize_with_missing_parents.py
-from dagster import asset, AutoMaterializePolicy, AutoMaterializeRule
+from dagster import AutoMaterializePolicy, AutoMaterializeRule, asset
 
 allow_missing_parents_policy = AutoMaterializePolicy.eager().without_rules(
     AutoMaterializeRule.skip_on_parent_missing(),
@@ -153,25 +153,29 @@ def asset2():
 
 If the last partition of `asset1` is re-materialized, e.g. manually from the UI, then the corresponding partition of `asset2` will be auto-materialized after.
 
-By default, a given <PyObject object="AutoMaterializePolicy" /> will not allow more than `1` partition of that asset to be materialized per minute, discarding any partitions above that threshold, and therefore requiring manual intervention in order to materialize those discarded partitions. This threshold may be increased as follows:
+By default, a given <PyObject object="AutoMaterializePolicy" /> will not allow more than one partition of an asset to be materialized per minute. Any partitions exceeding this threshold will be discarded. Manual intervention will be required to materialize the discarded partitions.
+
+This threshold may be increased as follows:
 
 ```python file=/concepts/assets/auto_materialize_max_materializations_per_minute.py
-from dagster import AutoMaterializePolicy, asset, DailyPartitionsDefinition
+from dagster import AutoMaterializePolicy, DailyPartitionsDefinition, asset
 
 
 @asset(
     partitions_def=DailyPartitionsDefinition(start_date="2020-10-10"),
-    auto_materialize_policy=AutoMaterializePolicy.eager(max_materializations_per_minute=7),
+    auto_materialize_policy=AutoMaterializePolicy.eager(
+        max_materializations_per_minute=7
+    ),
 )
 def asset1():
     ...
 ```
 
-For time-partitioned assets, the `N` most recent partitions will be selected from the set of candidates to be materialized, and for other types of partitioned assets, the selection will be random.
+For time-partitioned assets, the `N` most recent partitions will be selected from the set of candidates to be materialized. For other types of partitioned assets, the selection will be random.
 
 ### Auto-materialize policies and data versions
 
-_Observable source assets_ are assets that your code doesn't materialize, but that you provide a function for that can tell when they've changed. The <PyObject object="AutoMaterializeRule" method="materialize_on_parent_updated" /> rule incorporates the observed data versions of these assets when determining if it should fire for a downstream asset.
+[Observable source assets](/concepts/assets/asset-observations#observable-source-assets) are assets that your code doesn't materialize, but that you provide a function for that can tell when they've changed. The <PyObject object="AutoMaterializeRule" method="materialize_on_parent_updated" /> rule incorporates the observed data versions of these assets when determining if it should fire for a downstream asset.
 
 In this example, we check every minute to see whether `source_file` was modified. If it was, then the <PyObject object="AutoMaterializePolicy" /> on `asset1` will cause it to be materialized.
 
@@ -202,6 +206,8 @@ def asset1():
   assets.{" "}
 </Note>
 
+Freshness policies express how fresh an asset needs to be relative to data at the root of the graph. This means that, for an asset to meet its freshness policy, both it and upstream assets need to be materialized in time.
+
 Instead of auto-materializing downstream assets immediately after new upstream data arrives, you can use <PyObject object="AutoMaterializePolicy" method="lazy" /> to materialize assets only when needed to meet an asset's <PyObject object="FreshnessPolicy" />. This allows you to avoid unnecessary materializations.
 
 In this example, even if `asset1` is materialized every hour, `asset2` will only be materialized roughly once per day:
@@ -224,9 +230,7 @@ def asset2():
     ...
 ```
 
-Freshness policies express how fresh an asset needs to be relative to data at the root of the graph. This means that, for an asset to meet it's freshness policy, both it and upstream assets need to be materialized in time.
-
-Setting a lazy auto-materialize policy on an asset allows it to be auto-materialized to help downstream assets meet their freshness policies. In this example, both `asset2` and `asset3` will be auto-materialized up to once per day, to help `asset3` meet its freshness policy. Conversely, if `asset2`, did not have an auto-materialize policy, then `asset3` would never become fresh, unless `asset2` were materialized in some other way.
+Setting a lazy auto-materialize policy on an asset allows it to be auto-materialized to help downstream assets meet their freshness policies. In this example, both `asset2` and `asset3` will be auto-materialized up to once per day to help `asset3` meet its freshness policy. Conversely, if `asset2` did not have an auto-materialize policy, then `asset3` would never become fresh unless `asset2` were materialized in some other way.
 
 ```python file=/concepts/assets/auto_materialize_lazy_transitive.py
 from dagster import AutoMaterializePolicy, FreshnessPolicy, asset
@@ -251,4 +255,4 @@ def asset3():
     ...
 ```
 
-If multiple assets with freshness policies depend on the same upstream asset, Dagster will try to intelligently materialize the upstream asset at times that allow it to minimize the number of runs of the upstream asset, while meeting the downstream freshness policies.
+If multiple assets with freshness policies depend on the same upstream asset, Dagster will try to materialize the upstream asset at times that allow it to minimize the number of runs of the upstream asset while meeting the downstream freshness policies.
