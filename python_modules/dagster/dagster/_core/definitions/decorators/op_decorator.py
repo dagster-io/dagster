@@ -307,8 +307,9 @@ class DecoratedOpFunction(NamedTuple):
     def validate_malformed_config(self) -> None:
         from dagster._config.pythonic_config.config import Config
         from dagster._config.pythonic_config.inheritance_utils import safe_is_subclass
+        positional_inputs = self.positional_inputs()
         for param in get_function_params(self.decorated_fn):
-            if safe_is_subclass(param.annotation, Config) and not param.name == "config":
+            if safe_is_subclass(param.annotation, Config) and param.name in positional_inputs:
                 raise DagsterInvalidDefinitionError(
                     f"Parameter '{param.name}' on op/asset function '{self.name}' was annotated as a dagster.Config type. Did you mean to name this parameter 'config' instead?",
                 )
