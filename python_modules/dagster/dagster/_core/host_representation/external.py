@@ -592,6 +592,14 @@ class ExternalResource:
         return self._external_resource_data.job_ops_using
 
     @property
+    def schedules_using(self) -> List[str]:
+        return self._external_resource_data.schedules_using
+
+    @property
+    def sensors_using(self) -> List[str]:
+        return self._external_resource_data.sensors_using
+
+    @property
     def is_dagster_maintained(self) -> bool:
         return self._external_resource_data.dagster_maintained
 

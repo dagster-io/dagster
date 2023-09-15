@@ -2036,6 +2036,8 @@ type ResourceDetails {
   resourceType: String!
   assetKeysUsing: [AssetKey!]!
   jobsOpsUsing: [JobWithOps!]!
+  schedulesUsing: [String!]!
+  sensorsUsing: [String!]!
 }
 
 type ConfiguredValue {

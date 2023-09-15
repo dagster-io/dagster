@@ -3202,6 +3202,8 @@ export type ResourceDetails = {
   nestedResources: Array<NestedResourceEntry>;
   parentResources: Array<NestedResourceEntry>;
   resourceType: Scalars['String'];
+  schedulesUsing: Array<Scalars['String']>;
+  sensorsUsing: Array<Scalars['String']>;
 };
 
 export type ResourceDetailsList = {
@@ -10279,6 +10281,10 @@ export const buildResourceDetails = (
       overrides && overrides.hasOwnProperty('parentResources') ? overrides.parentResources! : [],
     resourceType:
       overrides && overrides.hasOwnProperty('resourceType') ? overrides.resourceType! : 'sed',
+    schedulesUsing:
+      overrides && overrides.hasOwnProperty('schedulesUsing') ? overrides.schedulesUsing! : [],
+    sensorsUsing:
+      overrides && overrides.hasOwnProperty('sensorsUsing') ? overrides.sensorsUsing! : [],
   };
 };
 
