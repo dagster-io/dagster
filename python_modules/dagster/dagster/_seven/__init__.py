@@ -6,7 +6,7 @@ import sys
 import threading
 import time
 from contextlib import contextmanager
-from datetime import timezone
+from datetime import datetime, timezone
 from types import ModuleType
 from typing import Any, Callable, List, Sequence, Type
 
@@ -128,7 +128,7 @@ def get_current_datetime_in_utc() -> Any:
     return pendulum.now("UTC")
 
 
-def get_timestamp_from_utc_datetime(utc_datetime):
+def get_timestamp_from_utc_datetime(utc_datetime: datetime) -> float:
     if isinstance(utc_datetime, PendulumDateTime):
         return utc_datetime.timestamp()
 
