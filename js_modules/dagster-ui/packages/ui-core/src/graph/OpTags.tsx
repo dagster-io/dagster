@@ -378,7 +378,7 @@ function generateColorForLabel(label = '') {
     label
       .split('')
       .map((c) => c.charCodeAt(0))
-      .reduce((n, a) => n + a) % 360
+      .reduce((n, a) => n + a, 0) % 360
   }, 75%, 45%)`;
 }
 
