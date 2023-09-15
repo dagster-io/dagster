@@ -1238,8 +1238,7 @@ def test_graph_with_mapped_out():
 
 def test_infer_graph_input_type_from_inner_input():
     @op(ins={"in1": In(Nothing)})
-    def op1():
-        ...
+    def op1(): ...
 
     @graph
     def graph1(in1):
@@ -1266,8 +1265,7 @@ def test_infer_graph_input_type_from_inner_input_int():
 
 def test_infer_graph_input_type_from_inner_input_explicit_any():
     @op(ins={"in1": In(Nothing)})
-    def op1():
-        ...
+    def op1(): ...
 
     @graph
     def graph1(in1: Any):
@@ -1280,8 +1278,7 @@ def test_infer_graph_input_type_from_inner_input_explicit_any():
 
 def test_infer_graph_input_type_from_inner_input_explicit_graphin_type():
     @op(ins={"in1": In(Nothing)})
-    def op1():
-        ...
+    def op1(): ...
 
     @graph
     def graph1(in1: int):
@@ -1292,12 +1289,10 @@ def test_infer_graph_input_type_from_inner_input_explicit_graphin_type():
 
 def test_infer_graph_input_type_from_multiple_inner_inputs():
     @op(ins={"in1": In(Nothing)})
-    def op1():
-        ...
+    def op1(): ...
 
     @op(ins={"in2": In(Nothing)})
-    def op2():
-        ...
+    def op2(): ...
 
     @graph
     def graph1(in1):
@@ -1311,8 +1306,7 @@ def test_infer_graph_input_type_from_multiple_inner_inputs():
 
 def test_dont_infer_graph_input_type_from_different_inner_inputs():
     @op(ins={"in1": In(Nothing)})
-    def op1():
-        ...
+    def op1(): ...
 
     @op
     def op2(in2):
@@ -1331,8 +1325,7 @@ def test_dont_infer_graph_input_type_from_different_inner_inputs():
 
 def test_infer_graph_input_type_from_inner_inner_input():
     @op(ins={"in1": In(Nothing)})
-    def op1():
-        ...
+    def op1(): ...
 
     @graph
     def inner(in1):

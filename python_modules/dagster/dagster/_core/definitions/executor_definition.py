@@ -195,8 +195,7 @@ class ExecutorDefinition(NamedConfigurableDefinition):
 
 
 @overload
-def executor(name: ExecutorCreationFunction) -> ExecutorDefinition:
-    ...
+def executor(name: ExecutorCreationFunction) -> ExecutorDefinition: ...
 
 
 @overload
@@ -206,8 +205,7 @@ def executor(
     requirements: Optional[
         Union[ExecutorRequirementsFunction, Sequence[ExecutorRequirement]]
     ] = ...,
-) -> "_ExecutorDecoratorCallable":
-    ...
+) -> "_ExecutorDecoratorCallable": ...
 
 
 def executor(

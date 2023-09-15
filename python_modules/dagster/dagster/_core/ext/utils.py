@@ -152,12 +152,10 @@ class ExtBlobStoreMessageReader(ExtMessageReader):
 
     @abstractmethod
     @contextmanager
-    def get_params(self) -> Iterator[ExtParams]:
-        ...
+    def get_params(self) -> Iterator[ExtParams]: ...
 
     @abstractmethod
-    def download_messages_chunk(self, index: int, params: ExtParams) -> Optional[str]:
-        ...
+    def download_messages_chunk(self, index: int, params: ExtParams) -> Optional[str]: ...
 
     def _reader_thread(
         self, handler: "ExtMessageHandler", params: ExtParams, is_task_complete: Event

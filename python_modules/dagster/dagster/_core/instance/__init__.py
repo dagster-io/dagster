@@ -275,12 +275,10 @@ class MayHaveInstanceWeakref(Generic[T_DagsterInstance]):
 @runtime_checkable
 class DynamicPartitionsStore(Protocol):
     @abstractmethod
-    def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
-        ...
+    def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]: ...
 
     @abstractmethod
-    def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
-        ...
+    def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool: ...
 
 
 class DagsterInstance(DynamicPartitionsStore):

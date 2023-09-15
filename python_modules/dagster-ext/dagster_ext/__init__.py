@@ -312,8 +312,7 @@ def _get_mock() -> "MagicMock":
 class ExtContextLoader(ABC):
     @abstractmethod
     @contextmanager
-    def load_context(self, params: ExtParams) -> Iterator[ExtContextData]:
-        ...
+    def load_context(self, params: ExtParams) -> Iterator[ExtContextData]: ...
 
 
 T_MessageChannel = TypeVar("T_MessageChannel", bound="ExtMessageWriterChannel")
@@ -322,24 +321,20 @@ T_MessageChannel = TypeVar("T_MessageChannel", bound="ExtMessageWriterChannel")
 class ExtMessageWriter(ABC, Generic[T_MessageChannel]):
     @abstractmethod
     @contextmanager
-    def open(self, params: ExtParams) -> Iterator[T_MessageChannel]:
-        ...
+    def open(self, params: ExtParams) -> Iterator[T_MessageChannel]: ...
 
 
 class ExtMessageWriterChannel(ABC, Generic[T_MessageChannel]):
     @abstractmethod
-    def write_message(self, message: ExtMessage) -> None:
-        ...
+    def write_message(self, message: ExtMessage) -> None: ...
 
 
 class ExtParamLoader(ABC):
     @abstractmethod
-    def load_context_params(self) -> ExtParams:
-        ...
+    def load_context_params(self) -> ExtParams: ...
 
     @abstractmethod
-    def load_messages_params(self) -> ExtParams:
-        ...
+    def load_messages_params(self) -> ExtParams: ...
 
 
 T_BlobStoreMessageWriterChannel = TypeVar(
@@ -358,8 +353,7 @@ class ExtBlobStoreMessageWriter(ExtMessageWriter[T_BlobStoreMessageWriterChannel
             yield channel
 
     @abstractmethod
-    def make_channel(self, params: ExtParams) -> T_BlobStoreMessageWriterChannel:
-        ...
+    def make_channel(self, params: ExtParams) -> T_BlobStoreMessageWriterChannel: ...
 
 
 class ExtBlobStoreMessageWriterChannel(ExtMessageWriterChannel):
@@ -380,8 +374,7 @@ class ExtBlobStoreMessageWriterChannel(ExtMessageWriterChannel):
             return messages
 
     @abstractmethod
-    def upload_messages_chunk(self, payload: StringIO, index: int) -> None:
-        ...
+    def upload_messages_chunk(self, payload: StringIO, index: int) -> None: ...
 
     @contextmanager
     def buffered_upload_loop(self) -> Iterator[None]:

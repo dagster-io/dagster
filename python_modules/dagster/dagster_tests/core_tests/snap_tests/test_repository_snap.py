@@ -611,12 +611,10 @@ def test_asset_check():
         pass
 
     @asset_check(asset=my_asset)
-    def my_asset_check():
-        ...
+    def my_asset_check(): ...
 
     @asset_check(asset=my_asset)
-    def my_asset_check_2():
-        ...
+    def my_asset_check_2(): ...
 
     defs = Definitions(
         assets=[my_asset],
@@ -642,8 +640,7 @@ def test_asset_check_in_asset_op():
         pass
 
     @asset_check(asset=my_asset)
-    def my_asset_check():
-        ...
+    def my_asset_check(): ...
 
     defs = Definitions(
         assets=[my_asset],
@@ -669,8 +666,7 @@ def test_asset_check_multiple_jobs():
         pass
 
     @asset_check(asset=my_asset)
-    def my_asset_check():
-        ...
+    def my_asset_check(): ...
 
     my_job = build_assets_job("my_job", [my_asset])
 

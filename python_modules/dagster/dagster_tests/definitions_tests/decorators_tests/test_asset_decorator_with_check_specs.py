@@ -202,8 +202,7 @@ def test_asset_check_fails_downstream_still_executes():
         yield AssetCheckResult(success=False)
 
     @asset(deps=[asset1])
-    def asset2():
-        ...
+    def asset2(): ...
 
     result = materialize(assets=[asset1, asset2])
     assert result.success
@@ -265,8 +264,7 @@ def test_duplicate_checks_same_asset():
                 AssetCheckSpec("check1", asset="asset1", description="desc2"),
             ]
         )
-        def asset1():
-            ...
+        def asset1(): ...
 
 
 def test_check_wrong_asset():
@@ -280,8 +278,7 @@ def test_check_wrong_asset():
                 AssetCheckSpec("check1", asset="other_asset", description="desc1"),
             ]
         )
-        def asset1():
-            ...
+        def asset1(): ...
 
 
 def test_multi_asset_with_check():
