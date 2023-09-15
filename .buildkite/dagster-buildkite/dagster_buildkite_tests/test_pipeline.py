@@ -10,14 +10,14 @@ import pytest
 import yaml
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def temporary_directory():
     with tempfile.TemporaryDirectory() as path:
         os.chdir(path)
         yield path
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def python(temporary_directory):
     path = os.path.join(temporary_directory, ".venv")
     venv.create(path, with_pip=True)
@@ -27,9 +27,9 @@ def python(temporary_directory):
     yield python
 
 
-@pytest.fixture
-def dagster_repo(temporary_directory, request):
-    src_path = (Path(request.fspath) / ".." / ".." / ".." / "..").resolve()
+@pytest.fixture(scope="session")
+def dagster_repo(temporary_directory, python):
+    src_path = (Path(__file__) / ".." / ".." / ".." / "..").resolve()
     dst_path = Path(temporary_directory) / "dagster"
 
     repo = git.Repo.clone_from(
@@ -51,14 +51,26 @@ def dagster_repo(temporary_directory, request):
 
     os.chdir(dst_path)
 
-    def touch(path: Path):
-        path.touch()
-        repo.index.add(str(path))
-        repo.index.commit(f"Change {path}")
-
-    repo.touch = touch
+    subprocess.run(
+        [python, "-m", "pip", "install", "-e", ".buildkite/dagster-buildkite"],
+        check=True,
+    )
 
     yield repo
+
+
+@pytest.fixture
+def commit(dagster_repo):
+    head = dagster_repo.head.commit
+
+    def _commit(path: Path):
+        path.touch()
+        dagster_repo.index.add(str(path))
+        dagster_repo.index.commit(f"Change {path}")
+
+    yield _commit
+
+    dagster_repo.git.reset("--hard", head)
 
 
 @pytest.fixture
@@ -75,10 +87,6 @@ def env(monkeypatch):
 
 @pytest.fixture
 def dagster_buildkite(env, python, dagster_repo):
-    subprocess.run(
-        [python, "-m", "pip", "install", "-e", ".buildkite/dagster-buildkite"],
-        check=True,
-    )
     executable = python.replace("python", "dagster-buildkite")
 
     yield lambda: PipelineSummary(
@@ -163,8 +171,8 @@ def test_main_branch(dagster_buildkite, monkeypatch):
     assert all(["test-project" in step.name for step in output.skipped])
 
 
-def test_python_change_no_dependencies(dagster_repo, dagster_buildkite, libraries):
-    dagster_repo.touch(
+def test_python_change_no_dependencies(dagster_repo, dagster_buildkite, libraries, commit):
+    commit(
         Path(dagster_repo.working_tree_dir)
         / "python_modules"
         / "libraries"
@@ -185,10 +193,8 @@ def test_python_change_no_dependencies(dagster_repo, dagster_buildkite, librarie
             assert any([f":pytest: {library} " in step.name for step in output.skipped])
 
 
-def test_python_change_dagster(dagster_repo, dagster_buildkite, libraries):
-    dagster_repo.touch(
-        Path(dagster_repo.working_tree_dir) / "python_modules" / "dagster" / "change.py"
-    )
+def test_python_change_dagster(dagster_repo, dagster_buildkite, libraries, commit):
+    commit(Path(dagster_repo.working_tree_dir) / "python_modules" / "dagster" / "change.py")
 
     output = dagster_buildkite()
 
@@ -198,11 +204,9 @@ def test_python_change_dagster(dagster_repo, dagster_buildkite, libraries):
         assert not any([f":pytest: {library} " in step.name for step in output.skipped])
 
 
-def test_python_change_dagster_buildkite(dagster_repo, dagster_buildkite):
+def test_python_change_dagster_buildkite(dagster_repo, dagster_buildkite, commit):
     assert any([":pytest: dagster-buildkite" in step.name for step in dagster_buildkite().skipped])
 
-    dagster_repo.touch(
-        Path(dagster_repo.working_tree_dir) / ".buildkite" / "dagster-buildkite" / "change.py"
-    )
+    commit(Path(dagster_repo.working_tree_dir) / ".buildkite" / "dagster-buildkite" / "change.py")
 
     assert any([":pytest: dagster-buildkite" in step.name for step in dagster_buildkite().planned])
