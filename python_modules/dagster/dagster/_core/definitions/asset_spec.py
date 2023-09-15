@@ -62,6 +62,7 @@ class AssetSpec(
     def __new__(
         cls,
         asset_key: CoercibleToAssetKey,
+        *,
         deps: Optional[
             Iterable[
                 Union[CoercibleToAssetKey, "AssetSpec", AssetsDefinition, SourceAsset, "AssetDep"]
