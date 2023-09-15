@@ -38,10 +38,22 @@ class DatabricksClient:
         token: Optional[str] = None,
         oauth_client_id: Optional[str] = None,
         oauth_client_secret: Optional[str] = None,
+        azure_client_id: Optional[str] = None,
+        azure_client_secret: Optional[str] = None,
+        azure_tenant_id: Optional[str] = None,
         workspace_id: Optional[str] = None,
     ):
         self.host = host
         self.workspace_id = workspace_id
+
+        if oauth_client_id and oauth_client_secret:
+            auth_type = "oauth-m2m"
+        elif token:
+            auth_type = "pat"
+        elif azure_client_id and azure_client_secret and azure_tenant_id:
+            auth_type = "azure-client-secret"
+        else:
+            raise ValueError("Unexpected combination of token, oauth credentials, and azure credentials, or missing both.")
 
         self._workspace_client = WorkspaceClient(
             host=host,
@@ -50,6 +62,10 @@ class DatabricksClient:
             client_secret=oauth_client_secret,
             product="dagster-databricks",
             product_version=__version__,
+            auth_type=auth_type,
+            azure_client_id=azure_client_id,
+            azure_client_secret=azure_client_secret,
+            azure_tenant_id=azure_tenant_id,
         )
 
         # TODO: This is the old shim client that we were previously using. Arguably this is
