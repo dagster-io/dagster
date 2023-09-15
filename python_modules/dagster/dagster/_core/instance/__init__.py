@@ -32,10 +32,13 @@ import yaml
 from typing_extensions import Protocol, Self, TypeAlias, TypeVar, runtime_checkable
 
 import dagster._check as check
-from dagster._annotations import public
-from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluationPlanned
+from dagster._annotations import experimental, public
+from dagster._core.definitions.asset_check_evaluation import (
+    AssetCheckEvaluation,
+    AssetCheckEvaluationPlanned,
+)
 from dagster._core.definitions.data_version import extract_data_provenance_from_entry
-from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.events import AssetKey, AssetObservation
 from dagster._core.errors import (
     DagsterHomeNotSetError,
     DagsterInvalidInvocationError,
@@ -90,6 +93,13 @@ from .ref import InstanceRef
 AIRFLOW_EXECUTION_DATE_STR = "airflow_execution_date"
 IS_AIRFLOW_INGEST_PIPELINE_STR = "is_airflow_ingest_pipeline"
 
+# Our internal guts can handle empty strings for job name and run id
+# However making these named constants for documentation, to encode where we are making the assumption,
+# and to allow us to change this more easily in the future, provided we are disciplined about
+# actually using this constants.
+RUNLESS_RUN_ID = ""
+RUNLESS_JOB_NAME = ""
+
 if TYPE_CHECKING:
     from dagster._core.debug import DebugRunPayload
     from dagster._core.definitions.asset_check_spec import AssetCheckHandle
@@ -102,7 +112,12 @@ if TYPE_CHECKING:
     )
     from dagster._core.definitions.run_request import InstigatorType
     from dagster._core.event_api import EventHandlerFn
-    from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
+    from dagster._core.events import (
+        AssetMaterialization,
+        DagsterEvent,
+        DagsterEventType,
+        EngineEventData,
+    )
     from dagster._core.events.log import EventLogEntry
     from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
     from dagster._core.execution.plan.plan import ExecutionPlan
@@ -2820,3 +2835,41 @@ class DagsterInstance(DynamicPartitionsStore):
                 result[asset_key] = data_provenance.code_version if data_provenance else None
 
         return result
+
+    @experimental
+    def report_runless_asset_event(
+        self,
+        asset_event: Union["AssetMaterialization", "AssetObservation", "AssetCheckEvaluation"],
+    ):
+        """Record an event log entry related to assets that does not belong to a Dagster run."""
+        from dagster._core.events import (
+            AssetMaterialization,
+            AssetObservationData,
+            DagsterEvent,
+            DagsterEventType,
+            StepMaterializationData,
+        )
+
+        if isinstance(asset_event, AssetMaterialization):
+            event_type_value = DagsterEventType.ASSET_MATERIALIZATION.value
+            data_payload = StepMaterializationData(asset_event)
+        elif isinstance(asset_event, AssetCheckEvaluation):
+            event_type_value = DagsterEventType.ASSET_CHECK_EVALUATION.value
+            data_payload = asset_event
+        elif isinstance(asset_event, AssetObservation):
+            event_type_value = DagsterEventType.ASSET_OBSERVATION.value
+            data_payload = AssetObservationData(asset_event)
+        else:
+            raise DagsterInvariantViolationError(
+                f"Received unexpected asset event type {asset_event}, expected"
+                " AssetMaterialization, AssetObservation or AssetCheckEvaluation"
+            )
+
+        return self.report_dagster_event(
+            run_id=RUNLESS_RUN_ID,
+            dagster_event=DagsterEvent(
+                event_type_value=event_type_value,
+                event_specific_data=data_payload,
+                job_name=RUNLESS_JOB_NAME,
+            ),
+        )
