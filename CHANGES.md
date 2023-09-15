@@ -8,7 +8,7 @@
 
 ### Bugfixes
 
-- [ui] Fixed an issue where Re-execution a job wouldn’t navigate to the newly created run
+- [ui] Fixed an issue where re-executing a run from a particular run's page wouldn’t navigate to the newly created run
 
 ### Experimental
 
