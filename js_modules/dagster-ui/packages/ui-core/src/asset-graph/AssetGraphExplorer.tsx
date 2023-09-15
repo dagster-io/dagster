@@ -17,7 +17,7 @@ import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {LaunchAssetObservationButton} from '../assets/LaunchAssetObservationButton';
 import {AssetKey} from '../assets/types';
-import {SVGViewport} from '../graph/SVGViewport';
+import {DEFAULT_MAX_ZOOM, SVGViewport} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
 import {closestNodeInDirection} from '../graph/common';
 import {
@@ -333,7 +333,7 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
                     viewportEl.current?.autocenter(true);
                     e.stopPropagation();
                   }}
-                  maxZoom={1.2}
+                  maxZoom={DEFAULT_MAX_ZOOM}
                   maxAutocenterZoom={1.0}
                 >
                   {({scale}) => (

@@ -12,6 +12,7 @@ import {
   TextInput,
   MiddleTruncate,
   useViewport,
+  MenuDivider,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React from 'react';
@@ -345,6 +346,7 @@ const Node = ({
                   <Menu>
                     {/* TODO: Hook up materialization */}
                     <MenuItem icon="materialization" text="Materialize" />
+                    {upstream.length || downstream.length ? <MenuDivider /> : null}
                     {upstream.length ? (
                       <MenuItem
                         text="Select upstream"
@@ -367,6 +369,7 @@ const Node = ({
                         }}
                       />
                     ) : null}
+                    {upstream.length || downstream.length ? <MenuDivider /> : null}
                     {upstream.length ? (
                       <MenuItem
                         text="Show upstream graph"

@@ -9,7 +9,7 @@ import {AssetGroupNode} from '../asset-graph/AssetGroupNode';
 import {AssetNodeMinimal, AssetNode} from '../asset-graph/AssetNode';
 import {AssetNodeLink} from '../asset-graph/ForeignNode';
 import {GraphData, LiveData, toGraphId} from '../asset-graph/Utils';
-import {SVGViewport} from '../graph/SVGViewport';
+import {DEFAULT_MAX_ZOOM, SVGViewport} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
 import {AssetKeyInput} from '../graphql/types';
 import {getJSONForKey} from '../hooks/useStateWithStorage';
@@ -64,8 +64,8 @@ export const AssetNodeLineageGraph: React.FC<{
         viewportEl.current?.autocenter(true);
         e.stopPropagation();
       }}
-      maxZoom={1.2}
-      maxAutocenterZoom={1.2}
+      maxZoom={DEFAULT_MAX_ZOOM}
+      maxAutocenterZoom={DEFAULT_MAX_ZOOM}
     >
       {({scale}) => (
         <SVGContainer width={layout.width} height={layout.height}>
