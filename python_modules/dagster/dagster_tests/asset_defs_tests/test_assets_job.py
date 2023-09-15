@@ -284,6 +284,7 @@ def test_source_asset():
                 AssetKey("source1"), io_manager_key="special_io_manager", metadata={"a": "b"}
             )
         ],
+        resolved_source_assets=asset1.to_source_assets(),
         resource_defs={
             "special_io_manager": my_io_manager.configured({"a": 7}),
             "subresource": ResourceDefinition.hardcoded_resource(9),
@@ -315,9 +316,7 @@ def test_missing_io_manager():
 
 
 def test_source_op_asset():
-    @asset(io_manager_key="special_io_manager")
-    def source1():
-        pass
+    source1 = SourceAsset(AssetKey("source1"), io_manager_key="special_io_manager")
 
     @asset
     def asset1(source1):
@@ -339,6 +338,7 @@ def test_source_op_asset():
         "a",
         [asset1],
         source_assets=[source1],
+        resolved_source_assets=asset1.to_source_assets(),
         resource_defs={"special_io_manager": my_io_manager},
     )
     assert job.graph.node_defs == [asset1.op]
