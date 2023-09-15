@@ -137,6 +137,7 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
   applyingEmptyDefault,
   fetchOptions,
   fetchOptionFilters,
+  allAssetKeys,
 }) => {
   const findAssetLocation = useFindAssetLocation();
   const {layout, loading, async} = useAssetLayout(assetGraphData);
@@ -294,9 +295,12 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
       firstInitialPercent={0}
       first={
         <AssetGraphExplorerSidebar
+          allAssetKeys={allAssetKeys}
           assetGraphData={assetGraphData}
           lastSelectedNode={lastSelectedNode}
           selectNode={selectNodeById}
+          explorerPath={explorerPath}
+          onChangeExplorerPath={onChangeExplorerPath}
         />
       }
       second={
