@@ -17,6 +17,8 @@ import {useVirtualizer} from '@tanstack/react-virtual';
 import React from 'react';
 import styled from 'styled-components';
 
+import {AssetKey} from '../assets/types';
+import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {Container, Inner, Row} from '../ui/VirtualizedTable';
 
 import {GraphData, GraphNode} from './Utils';
@@ -27,12 +29,32 @@ export const AssetGraphExplorerSidebar = React.memo(
   ({
     assetGraphData,
     lastSelectedNode,
-    selectNode,
+    selectNode: _selectNode,
+    explorerPath,
+    onChangeExplorerPath,
+    allAssetKeys,
   }: {
     assetGraphData: GraphData;
     lastSelectedNode: GraphNode;
     selectNode: (e: React.MouseEvent<any> | React.KeyboardEvent<any>, nodeId: string) => void;
+    explorerPath: ExplorerPath;
+    onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
+    allAssetKeys: AssetKey[];
   }) => {
+    const selectNode: typeof _selectNode = (e, id) => {
+      _selectNode(e, id);
+      if (!assetGraphData.nodes[id]) {
+        const path = JSON.parse(id);
+        const nextOpsQuery = `${explorerPath.opsQuery} \"${path[path.length - 1]}\"`;
+        onChangeExplorerPath(
+          {
+            ...explorerPath,
+            opsQuery: nextOpsQuery,
+          },
+          'push',
+        );
+      }
+    };
     const [openNodes, setOpenNodes] = React.useState<Set<string>>(new Set());
     const [selectedNode, setSelectedNode] = React.useState<null | {id: string; path: string}>(null);
 
@@ -139,11 +161,11 @@ export const AssetGraphExplorerSidebar = React.memo(
         <Box flex={{direction: 'column'}} padding={8}>
           <SearchFilter
             values={React.useMemo(() => {
-              return Object.entries(assetGraphData.nodes).map(([id, node]) => ({
-                value: id,
-                label: getDisplayName(node),
+              return allAssetKeys.map((key) => ({
+                value: JSON.stringify(key.path),
+                label: key.path[key.path.length - 1]!,
               }));
-            }, [assetGraphData.nodes])}
+            }, [allAssetKeys])}
             onSelectValue={selectNode}
           />
         </Box>
@@ -188,6 +210,8 @@ export const AssetGraphExplorerSidebar = React.memo(
                           selectNode(e, node.id);
                           setSelectedNode(node);
                         }}
+                        explorerPath={explorerPath}
+                        onChangeExplorerPath={onChangeExplorerPath}
                       />
                     ) : null}
                   </Row>
@@ -210,6 +234,8 @@ const Node = ({
   isOpen,
   isSelected,
   selectThisNode,
+  explorerPath,
+  onChangeExplorerPath,
 }: {
   assetGraphData: GraphData;
   node: GraphNode;
@@ -219,39 +245,61 @@ const Node = ({
   selectNode: (e: React.MouseEvent<any> | React.KeyboardEvent<any>, nodeId: string) => void;
   isOpen: boolean;
   isSelected: boolean;
+  explorerPath: ExplorerPath;
+  onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
 }) => {
   const displayName = getDisplayName(node);
 
-  const upstream = Object.keys(assetGraphData.upstream[node.id] ?? {}).filter(
-    (id) => !!assetGraphData.nodes[id],
-  );
-  const downstream = Object.keys(assetGraphData.downstream[node.id] ?? {}).filter(
-    (id) => !!assetGraphData.nodes[id],
-  );
+  const upstream = Object.keys(assetGraphData.upstream[node.id] ?? {});
+  const downstream = Object.keys(assetGraphData.downstream[node.id] ?? {});
   const elementRef = React.useRef<HTMLDivElement | null>(null);
 
-  const [showDownstream, setShowDownstream] = React.useState(false);
-  const [showUpstream, setShowUpstream] = React.useState(false);
+  const [showDownstreamDialog, setShowDownstreamDialog] = React.useState(false);
+  const [showUpstreamDialog, setShowUpstreamDialog] = React.useState(false);
+
+  function showDownstreamGraph() {
+    const path = JSON.parse(node.id);
+    const nextOpsQuery = `${explorerPath.opsQuery} \"${path[path.length - 1]}\"*`;
+    onChangeExplorerPath(
+      {
+        ...explorerPath,
+        opsQuery: nextOpsQuery,
+      },
+      'push',
+    );
+  }
+
+  function showUpstreamGraph() {
+    const path = JSON.parse(node.id);
+    const nextOpsQuery = `${explorerPath.opsQuery} *\"${path[path.length - 1]}\"`;
+    onChangeExplorerPath(
+      {
+        ...explorerPath,
+        opsQuery: nextOpsQuery,
+      },
+      'push',
+    );
+  }
 
   return (
     <>
       <UpstreamDownstreamDialog
         title="Downstream assets"
         assets={downstream}
-        assetGraphData={assetGraphData}
-        isOpen={showDownstream}
+        isOpen={showDownstreamDialog}
         close={() => {
-          setShowDownstream(false);
+          setShowDownstreamDialog(false);
         }}
-        selectNode={selectNode}
+        selectNode={(e, id) => {
+          selectNode(e, id);
+        }}
       />
       <UpstreamDownstreamDialog
         title="Upstream assets"
         assets={upstream}
-        assetGraphData={assetGraphData}
-        isOpen={showUpstream}
+        isOpen={showUpstreamDialog}
         close={() => {
-          setShowUpstream(false);
+          setShowUpstreamDialog(false);
         }}
         selectNode={selectNode}
       />
@@ -261,7 +309,7 @@ const Node = ({
             padding={{right: 12, vertical: 2}}
             flex={{direction: 'row', gap: 2, alignItems: 'center'}}
           >
-            {downstream.length ? (
+            {downstream.filter((id) => assetGraphData.nodes[id]).length ? (
               <div
                 onClick={(e) => {
                   e.stopPropagation();
@@ -292,38 +340,64 @@ const Node = ({
               }}
             >
               <MiddleTruncate text={displayName} />
-              {upstream.length || downstream.length ? (
-                <Popover
-                  content={
-                    <Menu>
-                      {upstream.length ? (
-                        <MenuItem
-                          text={`View upstream (${upstream.length})`}
-                          onClick={() => {
-                            setShowUpstream(true);
-                          }}
-                        />
-                      ) : null}
-                      {downstream.length ? (
-                        <MenuItem
-                          text={`View downstream (${downstream.length})`}
-                          onClick={() => {
-                            setShowDownstream(true);
-                          }}
-                        />
-                      ) : null}
-                    </Menu>
-                  }
-                  hoverOpenDelay={100}
-                  hoverCloseDelay={100}
-                  placement="right"
-                  shouldReturnFocusOnClose
-                >
-                  <ExpandMore style={{cursor: 'pointer'}}>
-                    <Icon name="expand_more" color={Colors.Gray500} />
-                  </ExpandMore>
-                </Popover>
-              ) : null}
+              <Popover
+                content={
+                  <Menu>
+                    {/* TODO: Hook up materialization */}
+                    <MenuItem icon="materialization" text="Materialize" />
+                    {upstream.length ? (
+                      <MenuItem
+                        text="Select upstream"
+                        icon="panel_show_left"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // TODO: Hook up selecting the nodes
+                          showUpstreamGraph();
+                        }}
+                      />
+                    ) : null}
+                    {downstream.length ? (
+                      <MenuItem
+                        text="Select downstream"
+                        icon="panel_show_right"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // TODO: Hook up selecting the nodes
+                          showDownstreamGraph();
+                        }}
+                      />
+                    ) : null}
+                    {upstream.length ? (
+                      <MenuItem
+                        text="Show upstream graph"
+                        icon="arrow_back"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          showUpstreamGraph();
+                        }}
+                      />
+                    ) : null}
+                    {downstream.length ? (
+                      <MenuItem
+                        text="Show downstream graph"
+                        icon="arrow_forward"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          showDownstreamGraph();
+                        }}
+                      />
+                    ) : null}
+                  </Menu>
+                }
+                hoverOpenDelay={100}
+                hoverCloseDelay={100}
+                placement="right"
+                shouldReturnFocusOnClose
+              >
+                <ExpandMore style={{cursor: 'pointer'}}>
+                  <Icon name="expand_more" color={Colors.Gray500} />
+                </ExpandMore>
+              </Popover>
             </GrayOnHoverBox>
           </Box>
         </BoxWrapper>
@@ -335,14 +409,12 @@ const Node = ({
 const UpstreamDownstreamDialog = ({
   title,
   assets,
-  assetGraphData,
   isOpen,
   close,
   selectNode,
 }: {
   title: string;
   assets: string[];
-  assetGraphData: GraphData;
   isOpen: boolean;
   close: () => void;
   selectNode: (e: React.MouseEvent<any> | React.KeyboardEvent<any>, nodeId: string) => void;
@@ -352,16 +424,14 @@ const UpstreamDownstreamDialog = ({
       <DialogBody>
         <Menu>
           {assets.map((assetId) => {
-            const asset = assetGraphData.nodes[assetId];
-            if (!asset) {
-              return null;
-            }
+            const path = JSON.parse(assetId);
             return (
               <MenuItem
-                text={asset.assetKey.path[asset.assetKey.path.length - 1]}
-                key={asset.id}
+                icon="asset"
+                text={path[path.length - 1]}
+                key={assetId}
                 onClick={(e) => {
-                  selectNode(e, asset.id);
+                  selectNode(e, assetId);
                   close();
                 }}
               />
