@@ -66,13 +66,13 @@ class AssetDep(
         if isinstance(asset, AssetsDefinition) and len(asset.keys) > 1:
             # Only AssetsDefinition with a single asset can be passed
             raise DagsterInvalidDefinitionError(
-                "Cannot pass a multi_asset AssetsDefinition as an argument to deps."
+                "Cannot create an AssetDep from a multi_asset AssetsDefinition."
                 " Instead, specify dependencies on the assets created by the multi_asset"
                 f" via AssetKeys or strings. For the multi_asset {asset.node_def.name}, the"
                 f" available keys are: {asset.keys}."
             )
 
-        asset_key = AssetKey.from_coercible_to_asset_dep(asset)
+        asset_key = _get_asset_key(asset)
 
         return super().__new__(
             cls,
@@ -88,3 +88,14 @@ class AssetDep(
     def from_coercible(arg: "CoercibleToAssetDep"):
         # if arg is AssetDep, return the original object to retain partition_mapping
         return arg if isinstance(arg, AssetDep) else AssetDep(asset=arg)
+
+
+def _get_asset_key(arg: "CoercibleToAssetDep") -> AssetKey:
+    if isinstance(arg, (AssetsDefinition, SourceAsset)):
+        return arg.key
+    elif isinstance(
+        arg, (AssetDep, AssetSpec)
+    ):  # TODO - move AssetSpec to above condition when https://github.com/dagster-io/dagster/pull/16544 merges
+        return arg.asset_key
+    else:
+        return AssetKey.from_coercible(arg)

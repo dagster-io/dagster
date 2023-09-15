@@ -1236,15 +1236,14 @@ def _deps_and_non_argument_deps_to_asset_deps(
     with disable_dagster_warnings():
         if deps is not None:
             for dep in deps:
-                if isinstance(dep, AssetsDefinition):
+                if isinstance(dep, AssetsDefinition) and len(dep.keys) > 1:
                     # Only AssetsDefinition with a single asset can be passed
-                    if len(dep.keys) > 1:
-                        raise DagsterInvalidDefinitionError(
-                            "Cannot pass a multi_asset AssetsDefinition as an argument to deps."
-                            " Instead, specify dependencies on the assets created by the"
-                            " multi_asset via AssetKeys or strings. For the multi_asset"
-                            f" {dep.node_def.name}, the available keys are: {dep.keys}."
-                        )
+                    raise DagsterInvalidDefinitionError(
+                        "Cannot pass a multi_asset AssetsDefinition as an argument to deps."
+                        " Instead, specify dependencies on the assets created by the"
+                        " multi_asset via AssetKeys or strings. For the multi_asset"
+                        f" {dep.node_def.name}, the available keys are: {dep.keys}."
+                    )
                 else:
                     # confirm that dep is coercible to AssetDep
                     try:
