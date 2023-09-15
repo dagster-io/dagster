@@ -473,6 +473,53 @@ class BaseMultiPartitionMapping(ABC):
                 ),
             )
 
+    def get_upstream_mapped_partitions_result_for_partitions(
+        self,
+        downstream_partitions_subset: Optional[PartitionsSubset],
+        upstream_partitions_def: PartitionsDefinition,
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> UpstreamPartitionsResult:
+        if downstream_partitions_subset is None:
+            check.failed("downstream asset is not partitioned")
+
+        result = self._get_dependency_partitions_subset(
+            cast(MultiPartitionsDefinition, downstream_partitions_subset.partitions_def),
+            downstream_partitions_subset,
+            cast(MultiPartitionsDefinition, upstream_partitions_def),
+            a_upstream_of_b=False,
+            dynamic_partitions_store=dynamic_partitions_store,
+            current_time=current_time,
+        )
+
+        if not isinstance(result, UpstreamPartitionsResult):
+            check.failed("Expected UpstreamPartitionsResult")
+
+        return result
+
+    def get_downstream_partitions_for_partitions(
+        self,
+        upstream_partitions_subset: PartitionsSubset,
+        downstream_partitions_def: PartitionsDefinition,
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> PartitionsSubset:
+        if upstream_partitions_subset is None:
+            check.failed("upstream asset is not partitioned")
+
+        result = self._get_dependency_partitions_subset(
+            cast(MultiPartitionsDefinition, upstream_partitions_subset.partitions_def),
+            upstream_partitions_subset,
+            cast(MultiPartitionsDefinition, downstream_partitions_def),
+            a_upstream_of_b=True,
+            dynamic_partitions_store=dynamic_partitions_store,
+        )
+
+        if isinstance(result, UpstreamPartitionsResult):
+            check.failed("Expected PartitionsSubset")
+
+        return result
+
 
 @experimental
 @whitelist_for_serdes
@@ -520,54 +567,6 @@ class MultiToSingleDimensionPartitionMapping(
             check.failed(cast(str, infer_mapping_result.inference_failure_reason))
 
         return [cast(DimensionDependency, infer_mapping_result.dimension_dependency)]
-
-    def get_upstream_mapped_partitions_result_for_partitions(
-        self,
-        downstream_partitions_subset: Optional[PartitionsSubset],
-        upstream_partitions_def: PartitionsDefinition,
-        current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> UpstreamPartitionsResult:
-        if downstream_partitions_subset is None:
-            check.failed("downstream asset is not partitioned")
-
-        result = self._get_dependency_partitions_subset(
-            cast(MultiPartitionsDefinition, downstream_partitions_subset.partitions_def),
-            downstream_partitions_subset,
-            cast(MultiPartitionsDefinition, upstream_partitions_def),
-            a_upstream_of_b=False,
-            dynamic_partitions_store=dynamic_partitions_store,
-            current_time=current_time,
-        )
-
-        if not isinstance(result, UpstreamPartitionsResult):
-            check.failed("Expected UpstreamPartitionsResult")
-
-        return result
-
-    def get_downstream_partitions_for_partitions(
-        self,
-        upstream_partitions_subset: PartitionsSubset,
-        downstream_partitions_def: PartitionsDefinition,
-        current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> PartitionsSubset:
-        if downstream_partitions_def is None:
-            check.failed("downstream asset is not multi-partitioned")
-
-        result = self._get_dependency_partitions_subset(
-            cast(MultiPartitionsDefinition, upstream_partitions_subset.partitions_def),
-            upstream_partitions_subset,
-            cast(MultiPartitionsDefinition, downstream_partitions_def),
-            a_upstream_of_b=True,
-            dynamic_partitions_store=dynamic_partitions_store,
-            current_time=current_time,
-        )
-
-        if isinstance(result, UpstreamPartitionsResult):
-            check.failed("Expected PartitionsSubset")
-
-        return result
 
 
 @whitelist_for_serdes
@@ -708,6 +707,11 @@ class MultiPartitionMapping(
         upstream_partitions_def: PartitionsDefinition,
         downstream_partitions_def: PartitionsDefinition,
     ) -> Sequence[DimensionDependency]:
+        self._check_all_dimensions_accounted_for(
+            upstream_partitions_def,
+            downstream_partitions_def,
+        )
+
         return [
             DimensionDependency(
                 mapping.partition_mapping,
@@ -756,62 +760,6 @@ class MultiPartitionMapping(
 
             upstream_dimension_names.remove(upstream_dimension_name)
             dimension_names.remove(dimension_mapping.dimension_name)
-
-    def get_upstream_mapped_partitions_result_for_partitions(
-        self,
-        downstream_partitions_subset: Optional[PartitionsSubset],
-        upstream_partitions_def: PartitionsDefinition,
-        current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> UpstreamPartitionsResult:
-        if downstream_partitions_subset is None:
-            check.failed("downstream asset is not partitioned")
-
-        self._check_all_dimensions_accounted_for(
-            upstream_partitions_def,
-            downstream_partitions_subset.partitions_def,
-        )
-
-        result = self._get_dependency_partitions_subset(
-            cast(MultiPartitionsDefinition, downstream_partitions_subset.partitions_def),
-            downstream_partitions_subset,
-            cast(MultiPartitionsDefinition, upstream_partitions_def),
-            a_upstream_of_b=False,
-            dynamic_partitions_store=dynamic_partitions_store,
-        )
-
-        if not isinstance(result, UpstreamPartitionsResult):
-            check.failed("Expected UpstreamPartitionsResult")
-
-        return result
-
-    def get_downstream_partitions_for_partitions(
-        self,
-        upstream_partitions_subset: PartitionsSubset,
-        downstream_partitions_def: PartitionsDefinition,
-        current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> PartitionsSubset:
-        if upstream_partitions_subset is None:
-            check.failed("upstream asset is not partitioned")
-
-        self._check_all_dimensions_accounted_for(
-            upstream_partitions_subset.partitions_def,
-            downstream_partitions_def,
-        )
-
-        result = self._get_dependency_partitions_subset(
-            cast(MultiPartitionsDefinition, upstream_partitions_subset.partitions_def),
-            upstream_partitions_subset,
-            cast(MultiPartitionsDefinition, downstream_partitions_def),
-            a_upstream_of_b=True,
-            dynamic_partitions_store=dynamic_partitions_store,
-        )
-
-        if isinstance(result, UpstreamPartitionsResult):
-            check.failed("Expected PartitionsSubset")
-
-        return result
 
 
 @whitelist_for_serdes
