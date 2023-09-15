@@ -21,8 +21,6 @@ class ExtClient(ABC):
         *,
         context: OpExecutionContext,
         extras: Optional[ExtExtras] = None,
-        context_injector: Optional["ExtContextInjector"] = None,
-        message_reader: Optional["ExtMessageReader"] = None,
     ) -> None:
         ...
 

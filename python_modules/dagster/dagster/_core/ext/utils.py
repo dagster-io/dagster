@@ -124,7 +124,7 @@ class ExtBlobStoreMessageReader(ExtMessageReader):
         self,
         handler: "ExtMessageHandler",
     ) -> Iterator[ExtParams]:
-        with self.setup():
+        with self.get_params() as params:
             is_task_complete = Event()
             thread = None
             try:
@@ -132,35 +132,35 @@ class ExtBlobStoreMessageReader(ExtMessageReader):
                     target=self._reader_thread,
                     args=(
                         handler,
+                        params,
                         is_task_complete,
                     ),
                     daemon=True,
                 )
                 thread.start()
-                yield self.get_params()
+                yield params
             finally:
                 is_task_complete.set()
                 if thread:
                     thread.join()
 
+    @abstractmethod
     @contextmanager
-    def setup(self) -> Iterator[None]:
-        yield
-
-    @abstractmethod
-    def get_params(self) -> ExtParams:
+    def get_params(self) -> Iterator[ExtParams]:
         ...
 
     @abstractmethod
-    def download_messages_chunk(self, index: int) -> Optional[str]:
+    def download_messages_chunk(self, index: int, params: ExtParams) -> Optional[str]:
         ...
 
-    def _reader_thread(self, handler: "ExtMessageHandler", is_task_complete: Event) -> None:
+    def _reader_thread(
+        self, handler: "ExtMessageHandler", params: ExtParams, is_task_complete: Event
+    ) -> None:
         start_or_last_download = datetime.datetime.now()
         while True:
             now = datetime.datetime.now()
             if (now - start_or_last_download).seconds > self.interval or is_task_complete.is_set():
-                chunk = self.download_messages_chunk(self.counter)
+                chunk = self.download_messages_chunk(self.counter, params)
                 start_or_last_download = now
                 if chunk:
                     for line in chunk.split("\n"):

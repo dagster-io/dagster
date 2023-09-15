@@ -34,10 +34,11 @@ setup(
     include_package_data=True,
     install_requires=[
         "dagster==1.4.13",
+        "dagster-ext-process==1.4.13",
         "dagster-pyspark==0.20.13",
         "databricks-cli~=0.17",  # TODO: Remove this dependency in the next minor release.
         "databricks_api",  # TODO: Remove this dependency in the next minor release.
-        "databricks-sdk<0.7",  # Breaking changes occur in minor versions.
+        "databricks-sdk<0.9",  # Breaking changes occur in minor versions.
     ],
     zip_safe=False,
 )
