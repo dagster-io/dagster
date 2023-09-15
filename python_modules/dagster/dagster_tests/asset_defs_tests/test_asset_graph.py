@@ -31,7 +31,10 @@ from dagster._core.definitions.partition import PartitionsDefinition, Partitions
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partition_mapping import UpstreamPartitionsResult
 from dagster._core.definitions.source_asset import SourceAsset
-from dagster._core.host_representation.external_data import external_asset_nodes_from_defs
+from dagster._core.errors import (
+    DagsterDefinitionChangedDeserializationError,
+)
+from dagster._core.host_representation.external_data import external_asset_graph_from_defs
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.test_utils import instance_for_test
 from dagster._seven.compat.pendulum import create_pendulum_time
@@ -483,4 +486,186 @@ def test_bfs_filter_asset_subsets_different_mappings(asset_graph_from_assets):
             current_time=pendulum.now("UTC"),
         )
         == expected_asset_graph_subset
+    )
+
+
+def test_asset_graph_subset_contains() -> None:
+    daily_partitions_def = DailyPartitionsDefinition(start_date="2022-01-01")
+
+    @asset(partitions_def=daily_partitions_def)
+    def partitioned1(): ...
+
+    @asset(partitions_def=daily_partitions_def)
+    def partitioned2(): ...
+
+    @asset
+    def unpartitioned1(): ...
+
+    @asset
+    def unpartitioned2(): ...
+
+    asset_graph = AssetGraph.from_assets(
+        [partitioned1, partitioned2, unpartitioned1, unpartitioned2]
+    )
+
+    asset_graph_subset = AssetGraphSubset(
+        asset_graph,
+        partitions_subsets_by_asset_key={
+            partitioned1.key: daily_partitions_def.subset_with_partition_keys(["2022-01-01"]),
+            partitioned2.key: daily_partitions_def.empty_subset(),
+        },
+        non_partitioned_asset_keys={unpartitioned1.key},
+    )
+
+    assert unpartitioned1.key in asset_graph_subset
+    assert AssetKeyPartitionKey(unpartitioned1.key) in asset_graph_subset
+    assert partitioned1.key in asset_graph_subset
+    assert AssetKeyPartitionKey(partitioned1.key, "2022-01-01") in asset_graph_subset
+    assert AssetKeyPartitionKey(partitioned1.key, "2022-01-02") not in asset_graph_subset
+    assert unpartitioned2.key not in asset_graph_subset
+    assert AssetKeyPartitionKey(unpartitioned2.key) not in asset_graph_subset
+    assert partitioned2.key not in asset_graph_subset
+    assert AssetKeyPartitionKey(partitioned2.key, "2022-01-01") not in asset_graph_subset
+
+
+def test_asset_graph_difference():
+    daily_partitions_def = DailyPartitionsDefinition(start_date="2022-01-01")
+
+    @asset(partitions_def=daily_partitions_def)
+    def partitioned1(): ...
+
+    @asset(partitions_def=daily_partitions_def)
+    def partitioned2(): ...
+
+    @asset
+    def unpartitioned1(): ...
+
+    @asset
+    def unpartitioned2(): ...
+
+    asset_graph = AssetGraph.from_assets(
+        [partitioned1, partitioned2, unpartitioned1, unpartitioned2]
+    )
+
+    subset1 = AssetGraphSubset(
+        asset_graph,
+        partitions_subsets_by_asset_key={
+            partitioned1.key: daily_partitions_def.subset_with_partition_keys(
+                ["2022-01-01", "2022-01-02", "2022-01-03"]
+            ),
+            partitioned2.key: daily_partitions_def.subset_with_partition_keys(
+                ["2022-01-01", "2022-01-02"]
+            ),
+        },
+        non_partitioned_asset_keys={unpartitioned1.key},
+    )
+
+    subset2 = AssetGraphSubset(
+        asset_graph,
+        partitions_subsets_by_asset_key={
+            partitioned1.key: daily_partitions_def.subset_with_partition_keys(
+                ["2022-01-02", "2022-01-03", "2022-01-04"]
+            ),
+            partitioned2.key: daily_partitions_def.subset_with_partition_keys(
+                ["2022-01-01", "2022-01-02", "2022-01-03", "2022-01-04"]
+            ),
+        },
+        non_partitioned_asset_keys={unpartitioned1.key, unpartitioned2.key},
+    )
+
+    assert len(list((subset1 - subset1).iterate_asset_partitions())) == 0
+    assert len(list((subset2 - subset2).iterate_asset_partitions())) == 0
+    assert subset1 - subset2 == AssetGraphSubset(
+        asset_graph,
+        partitions_subsets_by_asset_key={
+            partitioned1.key: daily_partitions_def.subset_with_partition_keys(["2022-01-01"]),
+            partitioned2.key: daily_partitions_def.empty_subset(),
+        },
+        non_partitioned_asset_keys=set(),
+    )
+    assert subset2 - subset1 == AssetGraphSubset(
+        asset_graph,
+        partitions_subsets_by_asset_key={
+            partitioned1.key: daily_partitions_def.subset_with_partition_keys(["2022-01-04"]),
+            partitioned2.key: daily_partitions_def.subset_with_partition_keys(
+                ["2022-01-03", "2022-01-04"]
+            ),
+        },
+        non_partitioned_asset_keys={unpartitioned2.key},
+    )
+
+
+def test_asset_graph_partial_deserialization():
+    daily_partitions_def = DailyPartitionsDefinition(start_date="2022-01-01")
+    static_partitions_def = StaticPartitionsDefinition(["a", "b", "c"])
+
+    def get_ag1() -> AssetGraph:
+        @asset(partitions_def=daily_partitions_def)
+        def partitioned1(): ...
+
+        @asset(partitions_def=daily_partitions_def)
+        def partitioned2(): ...
+
+        @asset
+        def unpartitioned1(): ...
+
+        @asset
+        def unpartitioned2(): ...
+
+        return AssetGraph.from_assets([partitioned1, partitioned2, unpartitioned1, unpartitioned2])
+
+    def get_ag2() -> AssetGraph:
+        @asset(partitions_def=daily_partitions_def)
+        def partitioned1(): ...
+
+        # new partitions_def
+        @asset(partitions_def=static_partitions_def)
+        def partitioned2(): ...
+
+        # new asset
+        @asset(partitions_def=static_partitions_def)
+        def partitioned3(): ...
+
+        @asset
+        def unpartitioned2(): ...
+
+        @asset
+        def unpartitioned3(): ...
+
+        return AssetGraph.from_assets(
+            [partitioned1, partitioned2, partitioned3, unpartitioned2, unpartitioned3]
+        )
+
+    ag1_storage_dict = AssetGraphSubset(
+        get_ag1(),
+        partitions_subsets_by_asset_key={
+            AssetKey("partitioned1"): daily_partitions_def.subset_with_partition_keys(
+                ["2022-01-01", "2022-01-02", "2022-01-03"]
+            ),
+            AssetKey("partitioned2"): daily_partitions_def.subset_with_partition_keys(
+                ["2022-01-01", "2022-01-02", "2022-01-03"]
+            ),
+        },
+        non_partitioned_asset_keys={AssetKey("unpartitioned1"), AssetKey("unpartitioned2")},
+    ).to_storage_dict(None)
+
+    asset_graph2 = get_ag2()
+    assert not AssetGraphSubset.can_deserialize(ag1_storage_dict, asset_graph2)
+    with pytest.raises(DagsterDefinitionChangedDeserializationError):
+        AssetGraphSubset.from_storage_dict(
+            ag1_storage_dict,
+            asset_graph=asset_graph2,
+        )
+
+    ag2_subset = AssetGraphSubset.from_storage_dict(
+        ag1_storage_dict, asset_graph=asset_graph2, allow_partial=True
+    )
+    assert ag2_subset == AssetGraphSubset(
+        asset_graph2,
+        partitions_subsets_by_asset_key={
+            AssetKey("partitioned1"): daily_partitions_def.subset_with_partition_keys(
+                ["2022-01-01", "2022-01-02", "2022-01-03"]
+            )
+        },
+        non_partitioned_asset_keys={AssetKey("unpartitioned2")},
     )
