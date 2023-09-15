@@ -67,6 +67,7 @@ class AssetSpec(
                 Union[CoercibleToAssetKey, "AssetSpec", AssetsDefinition, SourceAsset, "AssetDep"]
             ]
         ] = None,
+        *,
         description: Optional[str] = None,
         metadata: Optional[MetadataUserInput] = None,
         skippable: bool = False,
