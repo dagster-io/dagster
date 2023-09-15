@@ -512,8 +512,8 @@ def test_bad_types():
     not_an_asset = NotAnAsset()
 
     with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match=(r"Cannot pass an instance of type .*" " to deps parameter of @asset"),
+        ParameterCheckError,
+        match='Param "asset" is not one of ',
     ):
 
         @asset(deps=[not_an_asset])
