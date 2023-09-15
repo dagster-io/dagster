@@ -1,6 +1,7 @@
 import random
 import string
-from typing import Optional
+from contextlib import contextmanager
+from typing import Iterator, Optional
 
 import boto3
 import dagster._check as check
@@ -18,10 +19,11 @@ class ExtS3MessageReader(ExtBlobStoreMessageReader):
         self.key_prefix = "".join(random.choices(string.ascii_letters, k=30))
         self.client = client
 
-    def get_params(self) -> ExtParams:
-        return {"bucket": self.bucket, "key_prefix": self.key_prefix}
+    @contextmanager
+    def get_params(self) -> Iterator[ExtParams]:
+        yield {"bucket": self.bucket, "key_prefix": self.key_prefix}
 
-    def download_messages_chunk(self, index: int) -> Optional[str]:
+    def download_messages_chunk(self, index: int, params: ExtParams) -> Optional[str]:
         key = f"{self.key_prefix}/{index}.json"
         try:
             obj = self.client.get_object(Bucket=self.bucket, Key=key)
