@@ -15,14 +15,12 @@ from dagster._core.definitions.events import (
     normalize_metadata,
 )
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster._serdes import whitelist_for_serdes
 
 if TYPE_CHECKING:
     from dagster._core.execution.context.compute import StepExecutionContext
 
 
 @experimental
-@whitelist_for_serdes
 class AssetCheckResult(
     NamedTuple(
         "_AssetCheckResult",
