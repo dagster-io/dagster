@@ -9,29 +9,19 @@ import {
   Menu,
   MenuItem,
   Popover,
-  useViewport,
-  UnstyledButton,
   TextInput,
+  MiddleTruncate,
+  useViewport,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React from 'react';
 import styled from 'styled-components';
 
-import {withMiddleTruncation} from '../app/Util';
 import {Container, Inner, Row} from '../ui/VirtualizedTable';
 
-import {NameTooltipStyle} from './AssetNode';
 import {GraphData, GraphNode} from './Utils';
 
 const COLLATOR = new Intl.Collator(navigator.language, {sensitivity: 'base', numeric: true});
-
-type GroupNode = {
-  nodes: string[];
-  groupName: string | null;
-  repositoryLocationName: string;
-  repositoryName: string;
-  id: string;
-};
 
 export const AssetGraphExplorerSidebar = React.memo(
   ({
@@ -41,95 +31,92 @@ export const AssetGraphExplorerSidebar = React.memo(
   }: {
     assetGraphData: GraphData;
     lastSelectedNode: GraphNode;
-    selectNode: (e: React.MouseEvent<any>, nodeId: string) => void;
+    selectNode: (e: React.MouseEvent<any> | React.KeyboardEvent<any>, nodeId: string) => void;
   }) => {
-    const {rootGroupsWithRootNodes, nodeToGroupId} = React.useMemo(() => {
-      const nodeToGroupId: Record<string, string> = {};
-      const groups: Record<string, GroupNode> = {};
-      Object.entries(assetGraphData.nodes).forEach(([_, node]) => {
-        const groupName = node.definition.groupName;
-        const repositoryLocationName = node.definition.repository.location.name;
-        const repositoryName = node.definition.repository.name;
-        const groupId = `${groupName}@${repositoryName}@${repositoryLocationName}`;
-        groups[groupId] = groups[groupId] || {
-          nodes: [],
-          groupName,
-          repositoryLocationName,
-          repositoryName,
-          id: groupId,
-        };
-        groups[groupId]!.nodes.push(node.id);
-        nodeToGroupId[node.id] = groupId;
-      });
-      Object.entries(groups).forEach(([_, group]) => {
-        group.nodes = group.nodes
-          // Exclude nodes without data, these are nodes from another group which we don't have graph data for,
-          // We don't want those nodes to show up as roots in the sidebar
-          .filter(
-            (nodeId) =>
-              Object.keys(assetGraphData.upstream[nodeId] || {}).filter(
-                (id) => !!assetGraphData.nodes[id],
-              ).length === 0,
-          )
-          .sort((nodeA, nodeB) => COLLATOR.compare(nodeA, nodeB));
-      });
-      return {rootGroupsWithRootNodes: groups, nodeToGroupId};
-    }, [assetGraphData]);
+    const [openNodes, setOpenNodes] = React.useState<Set<string>>(new Set());
+    const [selectedNode, setSelectedNode] = React.useState<null | {id: string; path: string}>(null);
 
-    const [openNodes, setOpenNodes] = React.useState<Set<string>>(() => {
-      const set = new Set<string>();
-      if (Object.keys(rootGroupsWithRootNodes).length === 1) {
-        set.add(Object.keys(rootGroupsWithRootNodes)[0]!);
-      }
-      return set;
-    });
+    const rootNodes = React.useMemo(
+      () =>
+        Object.keys(assetGraphData.nodes)
+          .filter((id) => !assetGraphData.upstream[id])
+          .sort((a, b) =>
+            COLLATOR.compare(
+              getDisplayName(assetGraphData.nodes[a]!),
+              getDisplayName(assetGraphData.nodes[b]!),
+            ),
+          ),
+      [assetGraphData],
+    );
 
     const renderedNodes = React.useMemo(() => {
-      const queue = Object.entries(rootGroupsWithRootNodes).map(([_, {id}]) => ({level: 1, id}));
+      const queue = rootNodes.map((id) => ({level: 1, id, path: id}));
 
-      const renderedNodes: {level: number; id: string}[] = [];
+      const renderedNodes: {level: number; id: string; path: string}[] = [];
       while (queue.length) {
         const node = queue.shift()!;
         renderedNodes.push(node);
-        if (openNodes.has(node.id)) {
-          const groupNode = rootGroupsWithRootNodes[node.id];
-          let downstream;
-          if (groupNode) {
-            downstream = groupNode.nodes;
-          } else {
-            downstream = Object.keys(assetGraphData.downstream[node.id] || {});
-          }
+        if (openNodes.has(node.path)) {
+          const downstream = Object.keys(assetGraphData.downstream[node.id] || {});
           if (downstream) {
-            queue.unshift(...downstream.map((id) => ({level: node.level + 1, id})));
+            queue.unshift(
+              ...downstream
+                .filter((id) => assetGraphData.nodes[id])
+                .map((id) => ({level: node.level + 1, id, path: `${node.path}:${id}`})),
+            );
           }
         }
       }
-      return renderedNodes.filter(
-        // Exclude nodes without data, these are nodes from another group which we don't have graph data for,
-        // We don't want those nodes to show up as leaf nodes in the sidebar
-        ({id}) => !!assetGraphData.nodes[id] || !!rootGroupsWithRootNodes[id],
-      );
-    }, [assetGraphData, openNodes, rootGroupsWithRootNodes]);
+      return renderedNodes;
+    }, [assetGraphData.downstream, assetGraphData.nodes, openNodes, rootNodes]);
 
     const containerRef = React.useRef<HTMLDivElement | null>(null);
-    const {containerProps, viewport} = useViewport();
 
     const rowVirtualizer = useVirtualizer({
       count: renderedNodes.length,
       getScrollElement: () => containerRef.current,
-      estimateSize: () => 34,
-
-      // TODO: Figure out why virtualizer isn't filling up all of the space automatically...
-      overscan: viewport.height / 34,
+      estimateSize: () => 38,
+      overscan: 10,
     });
 
     const totalHeight = rowVirtualizer.getTotalSize();
     const items = rowVirtualizer.getVirtualItems();
 
+    React.useLayoutEffect(() => {
+      if (lastSelectedNode && lastSelectedNode.id !== selectedNode?.id) {
+        setOpenNodes((prevOpenNodes) => {
+          let path = lastSelectedNode.id;
+          let currentId = lastSelectedNode.id;
+          let next: string | undefined;
+          while ((next = Object.keys(assetGraphData.upstream[currentId] ?? {})[0])) {
+            path = `${next}:${path}`;
+            currentId = next;
+          }
+
+          const nextOpenNodes = new Set(prevOpenNodes);
+
+          const nodesInPath = path.split(':');
+          let currentPath = nodesInPath[0]!;
+
+          nextOpenNodes.add(currentPath);
+          for (let i = 1; i < nodesInPath.length; i++) {
+            currentPath = `${currentPath}:${nodesInPath[i]}`;
+            nextOpenNodes.add(currentPath);
+          }
+          setSelectedNode({id: lastSelectedNode.id, path: currentPath});
+          return nextOpenNodes;
+        });
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [lastSelectedNode]);
+
     const indexOfLastSelectedNode = React.useMemo(
       () =>
-        lastSelectedNode ? renderedNodes.findIndex((node) => node.id === lastSelectedNode.id) : -1,
-      [renderedNodes, lastSelectedNode],
+        selectedNode?.path
+          ? renderedNodes.findIndex((node) => node.path === selectedNode?.path)
+          : -1,
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      [renderedNodes, selectedNode?.path],
     );
 
     React.useLayoutEffect(() => {
@@ -138,54 +125,25 @@ export const AssetGraphExplorerSidebar = React.memo(
       }
     }, [indexOfLastSelectedNode, rowVirtualizer]);
 
-    React.useEffect(() => {
-      if (lastSelectedNode) {
-        setOpenNodes((nodes) => {
-          const nextOpenNodes = new Set(nodes);
-          nextOpenNodes.add(lastSelectedNode.id);
-          const upstreamQueue = Object.keys(assetGraphData.upstream[lastSelectedNode.id] ?? {});
-          while (upstreamQueue.length) {
-            const next = upstreamQueue.pop()!;
-            const nextUpstream = Object.keys(assetGraphData.upstream[next] ?? {});
-            upstreamQueue.push(...nextUpstream);
-            nextOpenNodes.add(next);
-          }
-          nextOpenNodes.add(nodeToGroupId[lastSelectedNode.id]!);
-          return nextOpenNodes;
-        });
-      }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [lastSelectedNode, nodeToGroupId[lastSelectedNode?.id ?? 0]]);
-
     return (
-      <Box flex={{direction: 'column'}} style={{height: '100%'}}>
+      <div style={{display: 'grid', gridTemplateRows: 'auto minmax(0, 1fr)', height: '100%'}}>
         <Box flex={{direction: 'column'}} padding={8}>
-          <SearchContainer>
-            <Box flex={{direction: 'row', gap: 4}}>
-              <Icon name="search" color={Colors.Gray200} size={20} />
-              <Box flex={{direction: 'column', grow: 1}}>
-                <SearchInput />
-              </Box>
-            </Box>
-          </SearchContainer>
+          <SearchFilter
+            values={React.useMemo(() => {
+              return Object.entries(assetGraphData.nodes).map(([id, node]) => ({
+                value: id,
+                label: getDisplayName(node),
+              }));
+            }, [assetGraphData.nodes])}
+            onSelectValue={selectNode}
+          />
         </Box>
-        <Box flex={{grow: 1}}>
-          <Container
-            style={{width: '100%'}}
-            {...containerProps}
-            ref={(el) => {
-              if (el) {
-                console.log({el});
-                containerProps.ref(el);
-                containerRef.current = el;
-              }
-            }}
-          >
+        <div>
+          <Container ref={containerRef}>
             <Inner $totalHeight={totalHeight}>
               {items.map(({index, key, size, start, measureElement}) => {
                 const node = renderedNodes[index]!;
-                const row = assetGraphData.nodes[node.id] ?? rootGroupsWithRootNodes[node.id];
-                setTimeout(measureElement, 100);
+                const row = assetGraphData.nodes[node.id];
                 return (
                   <Row
                     $height={size}
@@ -200,21 +158,27 @@ export const AssetGraphExplorerSidebar = React.memo(
                         assetGraphData={assetGraphData}
                         node={row}
                         level={node.level}
-                        isSelected={lastSelectedNode?.id === node.id}
+                        isSelected={selectedNode?.path === node.path}
                         toggleOpen={() => {
+                          setSelectedNode(node);
                           setOpenNodes((nodes) => {
                             const openNodes = new Set(nodes);
-                            const isOpen = openNodes.has(node.id);
+                            const isOpen = openNodes.has(node.path);
                             if (isOpen) {
-                              openNodes.delete(node.id);
+                              openNodes.delete(node.path);
                             } else {
-                              openNodes.add(node.id);
+                              openNodes.add(node.path);
                             }
                             return openNodes;
                           });
                         }}
-                        selectNode={selectNode}
-                        measureElement={measureElement}
+                        selectNode={(e, id) => {
+                          selectNode(e, id);
+                        }}
+                        selectThisNode={(e) => {
+                          selectNode(e, node.id);
+                          setSelectedNode(node);
+                        }}
                       />
                     ) : null}
                   </Row>
@@ -222,8 +186,8 @@ export const AssetGraphExplorerSidebar = React.memo(
               })}
             </Inner>
           </Container>
-        </Box>
-      </Box>
+        </div>
+      </div>
     );
   },
 );
@@ -235,142 +199,127 @@ const Node = ({
   toggleOpen,
   selectNode,
   isOpen,
-  measureElement,
   isSelected,
+  selectThisNode,
 }: {
   assetGraphData: GraphData;
-  node: GraphNode | GroupNode;
+  node: GraphNode;
   level: number;
   toggleOpen: () => void;
-  selectNode: (e: React.MouseEvent, nodeId: string) => void;
+  selectThisNode: (e: React.MouseEvent<any> | React.KeyboardEvent<any>) => void;
+  selectNode: (e: React.MouseEvent<any> | React.KeyboardEvent<any>, nodeId: string) => void;
   isOpen: boolean;
-  measureElement: (el: HTMLDivElement) => void;
   isSelected: boolean;
 }) => {
-  const isGroupNode = 'groupName' in node;
+  const displayName = getDisplayName(node);
 
-  const displayName = isGroupNode
-    ? `${node.groupName ?? 'default'} in ${node.repositoryName}@${node.repositoryLocationName}`
-    : node.assetKey.path[node.assetKey.path.length - 1]!;
-
-  const upstream = isGroupNode
-    ? []
-    : Object.keys(assetGraphData.upstream[node.id] ?? {}).filter(
-        (id) => !!assetGraphData.nodes[id],
-      );
-  const downstream = isGroupNode
-    ? node.nodes
-    : Object.keys(assetGraphData.downstream[node.id] ?? {}).filter(
-        (id) => !!assetGraphData.nodes[id],
-      );
+  const upstream = Object.keys(assetGraphData.upstream[node.id] ?? {}).filter(
+    (id) => !!assetGraphData.nodes[id],
+  );
+  const downstream = Object.keys(assetGraphData.downstream[node.id] ?? {}).filter(
+    (id) => !!assetGraphData.nodes[id],
+  );
   const elementRef = React.useRef<HTMLDivElement | null>(null);
-  React.useLayoutEffect(() => {
-    setTimeout(() => {
-      if (elementRef.current) {
-        measureElement(elementRef.current);
-      }
-    }, 100);
-  }, [measureElement, isOpen]);
 
   const [showDownstream, setShowDownstream] = React.useState(false);
   const [showUpstream, setShowUpstream] = React.useState(false);
 
   return (
-    <Box
-      ref={elementRef}
-      onClick={(e) => selectNode(e, node.id)}
-      style={{
-        ...(downstream && !isGroupNode ? {cursor: 'pointer'} : {}),
-      }}
-    >
-      <BoxWrapper level={level}>
-        <Box padding={{right: 12}} flex={{direction: 'row', gap: 2, alignItems: 'center'}}>
-          {downstream.length ? (
-            <div
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleOpen();
-              }}
-              style={{cursor: 'pointer'}}
-            >
-              <Icon
-                name="arrow_drop_down"
-                style={{transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)'}}
-              />
-            </div>
-          ) : null}
+    <>
+      <UpstreamDownstreamDialog
+        title="Downstream assets"
+        assets={downstream}
+        assetGraphData={assetGraphData}
+        isOpen={showDownstream}
+        close={() => {
+          setShowDownstream(false);
+        }}
+        selectNode={selectNode}
+      />
+      <UpstreamDownstreamDialog
+        title="Upstream assets"
+        assets={upstream}
+        assetGraphData={assetGraphData}
+        isOpen={showUpstream}
+        close={() => {
+          setShowUpstream(false);
+        }}
+        selectNode={selectNode}
+      />
+      <Box ref={elementRef} onClick={selectThisNode}>
+        <BoxWrapper level={level}>
           <Box
-            flex={{
-              direction: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 12,
-              grow: 1,
-            }}
-            padding={{horizontal: 12, vertical: 8}}
-            style={{borderRadius: '8px', ...(isSelected ? {background: Colors.Gray100} : {})}}
+            padding={{right: 12, vertical: 2}}
+            flex={{direction: 'row', gap: 2, alignItems: 'center'}}
           >
-            <div
-              data-tooltip={displayName}
-              data-tooltip-style={NameTooltipStyle}
-              style={{overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}
-            >
-              {withMiddleTruncation(displayName, {maxLength: 30})}
-            </div>
-            <UpstreamDownstreamDialog
-              title="Downstream assets"
-              assets={downstream}
-              assetGraphData={assetGraphData}
-              isOpen={showDownstream}
-              close={() => {
-                setShowDownstream(false);
-              }}
-              selectNode={selectNode}
-            />
-            <UpstreamDownstreamDialog
-              title="Upstream assets"
-              assets={upstream}
-              assetGraphData={assetGraphData}
-              isOpen={showUpstream}
-              close={() => {
-                setShowUpstream(false);
-              }}
-              selectNode={selectNode}
-            />
-            <Popover
-              content={
-                <Menu>
-                  {upstream.length ? (
-                    <MenuItem
-                      text={`View upstream (${upstream.length})`}
-                      onClick={() => {
-                        setShowUpstream(true);
-                      }}
-                    />
-                  ) : null}
-                  {downstream.length ? (
-                    <MenuItem
-                      text={`View downstream (${downstream.length})`}
-                      onClick={() => {
-                        setShowDownstream(true);
-                      }}
-                    />
-                  ) : null}
-                </Menu>
-              }
-              hoverOpenDelay={100}
-              hoverCloseDelay={100}
-              placement="right"
-              shouldReturnFocusOnClose
-            >
-              <div style={{cursor: 'pointer'}}>
-                <Icon name="expand_more" color={Colors.Gray500} />
+            {downstream.length ? (
+              <div
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleOpen();
+                }}
+                style={{cursor: 'pointer'}}
+              >
+                <Icon
+                  name="arrow_drop_down"
+                  style={{transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)'}}
+                />
               </div>
-            </Popover>
+            ) : null}
+            <GrayOnHoverBox
+              flex={{
+                direction: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 12,
+                grow: 1,
+                shrink: 1,
+              }}
+              padding={{horizontal: 12, vertical: 8}}
+              style={{
+                width: '100%',
+                borderRadius: '8px',
+                ...(isSelected ? {background: Colors.LightPurple} : {}),
+              }}
+            >
+              <MiddleTruncate text={displayName} />
+              {upstream.length || downstream.length ? (
+                <Popover
+                  content={
+                    <Menu>
+                      {upstream.length ? (
+                        <MenuItem
+                          text={`View upstream (${upstream.length})`}
+                          onClick={() => {
+                            setShowUpstream(true);
+                          }}
+                        />
+                      ) : null}
+                      {downstream.length ? (
+                        <MenuItem
+                          text={`View downstream (${downstream.length})`}
+                          onClick={() => {
+                            setShowDownstream(true);
+                          }}
+                        />
+                      ) : null}
+                    </Menu>
+                  }
+                  hoverOpenDelay={100}
+                  hoverCloseDelay={100}
+                  placement="right"
+                  shouldReturnFocusOnClose
+                >
+                  <ExpandMore style={{cursor: 'pointer'}}>
+                    <Icon name="expand_more" color={Colors.Gray500} />
+                  </ExpandMore>
+                </Popover>
+              ) : null}
+            </GrayOnHoverBox>
           </Box>
-        </Box>
-      </BoxWrapper>
-    </Box>
+        </BoxWrapper>
+      </Box>
+    </>
   );
 };
 
@@ -387,30 +336,29 @@ const UpstreamDownstreamDialog = ({
   assetGraphData: GraphData;
   isOpen: boolean;
   close: () => void;
-  selectNode: (e: React.MouseEvent<any>, nodeId: string) => void;
+  selectNode: (e: React.MouseEvent<any> | React.KeyboardEvent<any>, nodeId: string) => void;
 }) => {
   return (
     <Dialog isOpen={isOpen} onClose={close} title={title}>
       <DialogBody>
-        {assets.map((assetId) => {
-          const asset = assetGraphData.nodes[assetId];
-          if (!asset) {
-            return null;
-          }
-          return (
-            <UnstyledButton
-              key={asset.id}
-              onClick={(e) => {
-                selectNode(e, asset.id);
-                close();
-              }}
-            >
-              <DialogAssetButton padding={{vertical: 8, horizontal: 12}}>
-                {asset.assetKey.path[asset.assetKey.path.length - 1]}
-              </DialogAssetButton>
-            </UnstyledButton>
-          );
-        })}
+        <Menu>
+          {assets.map((assetId) => {
+            const asset = assetGraphData.nodes[assetId];
+            if (!asset) {
+              return null;
+            }
+            return (
+              <MenuItem
+                text={asset.assetKey.path[asset.assetKey.path.length - 1]}
+                key={asset.id}
+                onClick={(e) => {
+                  selectNode(e, asset.id);
+                  close();
+                }}
+              />
+            );
+          })}
+        </Menu>
       </DialogBody>
       <DialogFooter topBorder>
         <Button onClick={close} intent="primary">
@@ -420,13 +368,6 @@ const UpstreamDownstreamDialog = ({
     </Dialog>
   );
 };
-
-const DialogAssetButton = styled(Box)`
-  border-radius: 8px;
-  &:hover {
-    background: ${Colors.Gray100};
-  }
-`;
 
 const BoxWrapper = ({level, children}: {level: number; children: React.ReactNode}) => {
   const wrapper = React.useMemo(() => {
@@ -444,21 +385,89 @@ const BoxWrapper = ({level, children}: {level: number; children: React.ReactNode
   return <>{wrapper}</>;
 };
 
-const SearchInput = styled.input`
-  border: none;
-  color: ${Colors.Gray600};
-  font-size: 18px;
-  margin-left: 4px;
-  outline: none;
-  width: 100%;
+function getDisplayName(node: GraphNode) {
+  return node.assetKey.path[node.assetKey.path.length - 1]!;
+}
 
-  &::placeholder {
-    color: ${Colors.Gray200};
+const SearchFilter = <T,>({
+  values,
+  onSelectValue,
+}: {
+  values: {label: string; value: T}[];
+  onSelectValue: (e: React.MouseEvent<any>, value: T) => void;
+}) => {
+  const [searchValue, setSearchValue] = React.useState('');
+  const filteredValues = React.useMemo(() => {
+    if (searchValue) {
+      return values.filter(({label}) => label.toLowerCase().includes(searchValue.toLowerCase()));
+    }
+    return values;
+  }, [searchValue, values]);
+
+  const {viewport, containerProps} = useViewport();
+  return (
+    <Popover
+      placement="bottom-start"
+      targetTagName="div"
+      content={
+        searchValue ? (
+          <Box
+            style={{
+              width: viewport.width + 'px',
+              borderRadius: '8px',
+              maxHeight: 'min(500px, 50vw)',
+              overflow: 'auto',
+            }}
+          >
+            <Menu>
+              {filteredValues.length ? (
+                filteredValues.map((value) => (
+                  <MenuItem
+                    key={value.label}
+                    onClick={(e) => {
+                      onSelectValue(e, value.value);
+                      setSearchValue('');
+                    }}
+                    text={value.label}
+                  />
+                ))
+              ) : (
+                <Box padding={8}>No results</Box>
+              )}
+            </Menu>
+          </Box>
+        ) : (
+          <div />
+        )
+      }
+    >
+      <div style={{display: 'grid', gridTemplateColumns: '1fr'}}>
+        <TextInput
+          icon="search"
+          value={searchValue}
+          onChange={(e) => {
+            setSearchValue(e.target.value);
+          }}
+          placeholder="Search assets"
+          {...(containerProps as any)}
+        />
+      </div>
+    </Popover>
+  );
+};
+
+const ExpandMore = styled.div``;
+
+const GrayOnHoverBox = styled(Box)`
+  border-radius: 8px;
+  &:hover {
+    background: ${Colors.Gray100};
+    transition: background 100ms linear;
+    ${ExpandMore} {
+      visibility: visible;
+    }
   }
-`;
-
-const SearchContainer = styled.div`
-  background-color: ${Colors.White};
-  border-radius: 4px;
-  box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
+  ${ExpandMore} {
+    visibility: hidden;
+  }
 `;

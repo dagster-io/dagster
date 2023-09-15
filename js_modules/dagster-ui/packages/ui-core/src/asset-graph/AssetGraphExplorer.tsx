@@ -220,13 +220,13 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
       );
     },
     [
+      assetGraphData,
       explorerPath,
+      findAssetLocation,
+      layout?.nodes,
       onChangeExplorerPath,
       onNavigateToSourceAssetNode,
-      findAssetLocation,
       selectedGraphNodes,
-      assetGraphData,
-      layout,
     ],
   );
 
@@ -266,18 +266,22 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
     selectNodeById(e, nextId);
   };
 
-  const selectNodeById = (e: React.MouseEvent<any> | React.KeyboardEvent<any>, nodeId?: string) => {
-    if (!nodeId) {
-      return;
-    }
-    const node = assetGraphData.nodes[nodeId];
-    if (node) {
-      onSelectNode(e, node.assetKey, node);
-      if (layout && viewportEl.current) {
-        viewportEl.current.zoomToSVGBox(layout.nodes[nodeId]!.bounds, true);
+  const selectNodeById = React.useCallback(
+    (e: React.MouseEvent<any> | React.KeyboardEvent<any>, nodeId?: string) => {
+      if (!nodeId) {
+        return;
       }
-    }
-  };
+      const node = assetGraphData.nodes[nodeId];
+      if (node) {
+        onSelectNode(e, node.assetKey, node);
+        if (layout && viewportEl.current) {
+          viewportEl.current.zoomToSVGBox(layout.nodes[nodeId]!.bounds, true);
+        }
+      }
+    },
+    [assetGraphData.nodes, layout, onSelectNode],
+  );
+
   React.useEffect(() => {
     if (layout && lastSelectedNode) {
       selectNodeById({stopPropagation: () => {}} as any, lastSelectedNode.id);
@@ -296,7 +300,12 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
         <AssetGraphExplorerSidebar
           assetGraphData={assetGraphData}
           lastSelectedNode={lastSelectedNode}
-          selectNode={selectNodeById}
+          selectNode={React.useCallback(
+            (e, nodeId) => {
+              selectNodeById(e, nodeId);
+            },
+            [selectNodeById],
+          )}
         />
       }
       second={
