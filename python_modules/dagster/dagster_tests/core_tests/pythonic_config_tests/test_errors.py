@@ -455,14 +455,15 @@ This config type can be a:
 
 
 def test_config_named_wrong_thing() -> None:
-
-   
     class DoSomethingConfig(Config):
         a_str: str
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Parameter 'config_named_wrong' on op/asset function 'my_op' was annotated as a dagster.Config type. Did you mean to name this parameter 'config' instead?",
+        match=(
+            "Parameter 'config_named_wrong' on op/asset function 'my_op' was annotated as a"
+            " dagster.Config type. Did you mean to name this parameter 'config' instead?"
+        ),
     ):
 
         @op
@@ -471,7 +472,10 @@ def test_config_named_wrong_thing() -> None:
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Parameter 'config_named_wrong' on op/asset function 'my_asset' was annotated as a dagster.Config type. Did you mean to name this parameter 'config' instead?",
+        match=(
+            "Parameter 'config_named_wrong' on op/asset function 'my_asset' was annotated as a"
+            " dagster.Config type. Did you mean to name this parameter 'config' instead?"
+        ),
     ):
 
         @asset
