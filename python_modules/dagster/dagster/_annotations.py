@@ -208,6 +208,7 @@ def deprecated_param(
     breaking_version: str,
     additional_warn_text: Optional[str] = ...,
     emit_runtime_warning: bool = ...,
+    require_param_in_signature: bool = True,
 ) -> Callable[[T_Annotatable], T_Annotatable]:
     ...
 
@@ -219,6 +220,7 @@ def deprecated_param(
     breaking_version: str,
     additional_warn_text: Optional[str] = None,
     emit_runtime_warning: bool = True,
+    require_param_in_signature: bool = True,
 ) -> T_Annotatable:
     """Mark a parameter of a class initializer or function/method as deprecated. This appends some
     metadata to the decorated object that causes the specified argument to be rendered with a
@@ -243,12 +245,14 @@ def deprecated_param(
             breaking_version=breaking_version,
             additional_warn_text=additional_warn_text,
             emit_runtime_warning=emit_runtime_warning,
+            require_param_in_signature=require_param_in_signature,
         )
     else:
-        check.invariant(
-            _annotatable_has_param(__obj, param),
-            f"Attempted to mark undefined parameter `{param}` deprecated.",
-        )
+        if require_param_in_signature:
+            check.invariant(
+                _annotatable_has_param(__obj, param),
+                f"Attempted to mark undefined parameter `{param}` deprecated.",
+            )
         target = _get_annotation_target(__obj)
         if not hasattr(target, _DEPRECATED_PARAM_ATTR_NAME):
             setattr(target, _DEPRECATED_PARAM_ATTR_NAME, {})
@@ -450,10 +454,10 @@ def experimental_param(
             emit_runtime_warning=emit_runtime_warning,
         )
     else:
-        check.invariant(
-            _annotatable_has_param(__obj, param),
-            f"Attempted to mark undefined parameter `{param}` experimental.",
-        )
+        # check.invariant(
+        #     _annotatable_has_param(__obj, param),
+        #     f"Attempted to mark undefined parameter `{param}` experimental.",
+        # )
         target = _get_annotation_target(__obj)
 
         if not hasattr(target, _EXPERIMENTAL_PARAM_ATTR_NAME):
