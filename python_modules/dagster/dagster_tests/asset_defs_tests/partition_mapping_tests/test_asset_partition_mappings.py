@@ -364,7 +364,7 @@ def test_partition_keys_in_range():
     downstream_job = build_assets_job(
         "downstream_job",
         assets=[downstream],
-        source_assets=[upstream],
+        resolved_source_assets=upstream.to_source_assets(),
         resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
     )
     downstream_job.execute_in_process(partition_key="2022-09-11")

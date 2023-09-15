@@ -358,7 +358,7 @@ def test_cross_job_different_partitions():
     daily_job = build_assets_job(
         name="daily_job",
         assets=[daily_asset],
-        source_assets=[hourly_asset],
+        resolved_source_assets=hourly_asset.to_source_assets(),
         resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(CustomIOManager())},
     )
     assert daily_job.execute_in_process(partition_key="2021-06-06").success
