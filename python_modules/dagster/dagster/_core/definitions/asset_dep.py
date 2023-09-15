@@ -92,11 +92,9 @@ class AssetDep(
 
 
 def _get_asset_key(arg: "CoercibleToAssetDep") -> AssetKey:
-    if isinstance(arg, (AssetsDefinition, SourceAsset)):
+    if isinstance(arg, (AssetsDefinition, SourceAsset, AssetSpec)):
         return arg.key
-    elif isinstance(
-        arg, (AssetDep, AssetSpec)
-    ):  # TODO - move AssetSpec to above condition when https://github.com/dagster-io/dagster/pull/16544 merges
+    elif isinstance(arg, AssetDep):
         return arg.asset_key
     else:
         return AssetKey.from_coercible(arg)
