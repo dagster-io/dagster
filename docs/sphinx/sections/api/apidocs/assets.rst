@@ -6,7 +6,7 @@ Software-Defined Assets
 An asset is an object in persistent storage, such as a table, file, or persisted machine learning model. A software-defined asset is a Dagster object that couples an asset to the function and upstream assets that are used to produce its contents.
 
 .. autodecorator:: asset
-
+gt
 .. autoclass:: MaterializeResult
 
 .. autoclass:: AssetSpec
