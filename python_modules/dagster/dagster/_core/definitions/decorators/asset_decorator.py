@@ -153,7 +153,8 @@ def asset(
             about the input.
         deps (Optional[Sequence[Union[AssetDep, AssetsDefinition, SourceAsset, AssetKey, str]]]):
             The assets that are upstream dependencies, but do not correspond to a parameter of the
-            decorated function.
+            decorated function. If the AssetsDefinition for a multi_asset is provided, dependencies on
+            all assets created by the multi_asset will be created.
         config_schema (Optional[ConfigSchema): The configuration schema for the asset's underlying
             op. If set, Dagster will check that config provided for the op matches this schema and fail
             if it does not. If not set, Dagster will accept any config provided for the op.
@@ -503,7 +504,8 @@ def multi_asset(
             about the input.
         deps (Optional[Sequence[Union[AssetsDefinition, SourceAsset, AssetKey, str]]]):
             The assets that are upstream dependencies, but do not correspond to a parameter of the
-            decorated function.
+            decorated function. If the AssetsDefinition for a multi_asset is provided, dependencies on
+            all assets created by the multi_asset will be created.
         config_schema (Optional[ConfigSchema): The configuration schema for the asset's underlying
             op. If set, Dagster will check that config provided for the op matches this schema and fail
             if it does not. If not set, Dagster will accept any config provided for the op.
