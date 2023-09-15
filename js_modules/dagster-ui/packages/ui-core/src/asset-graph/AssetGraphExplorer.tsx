@@ -220,13 +220,13 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
       );
     },
     [
-      assetGraphData,
       explorerPath,
-      findAssetLocation,
-      layout?.nodes,
       onChangeExplorerPath,
       onNavigateToSourceAssetNode,
+      findAssetLocation,
       selectedGraphNodes,
+      assetGraphData,
+      layout,
     ],
   );
 
@@ -241,7 +241,10 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
     // focus on the selected node. (If selection was specified in the URL).
     // Don't animate this change.
     if (lastSelectedNode) {
-      // viewportEl.current.zoomToSVGBox(layout.nodes[lastSelectedNode.id].bounds, false);
+      const layoutNode = layout.nodes[lastSelectedNode.id];
+      if (layoutNode) {
+        viewportEl.current.zoomToSVGBox(layoutNode.bounds, false);
+      }
       viewportEl.current.focus();
     } else {
       viewportEl.current.autocenter(false);
@@ -281,13 +284,6 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
     },
     [assetGraphData.nodes, layout, onSelectNode],
   );
-
-  React.useEffect(() => {
-    if (layout && lastSelectedNode) {
-      selectNodeById({stopPropagation: () => {}} as any, lastSelectedNode.id);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [!!layout]);
 
   const allowGroupsOnlyZoomLevel = !!(layout && Object.keys(layout.groups).length);
 
