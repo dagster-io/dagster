@@ -320,7 +320,7 @@ def test_multi_asset_deps_with_set():
     assert res.success
 
 
-def test_multi_asset_deps_via_assets_definition_fails():
+def test_multi_asset_deps_via_assets_definition():
     @multi_asset(
         outs={
             "asset_1": AssetOut(),
@@ -330,14 +330,18 @@ def test_multi_asset_deps_via_assets_definition_fails():
     def a_multi_asset():
         return None, None
 
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match="For the multi_asset a_multi_asset, the available keys are: ",
-    ):
+    @asset(deps=[a_multi_asset])
+    def depends_on_both_sub_assets():
+        return None
 
-        @asset(deps=[a_multi_asset])
-        def depends_on_both_sub_assets():
-            return None
+    assert len(depends_on_both_sub_assets.input_names) == 2
+    assert depends_on_both_sub_assets.op.ins["asset_1"].dagster_type.is_nothing
+    assert depends_on_both_sub_assets.op.ins["asset_2"].dagster_type.is_nothing
+
+    res = materialize(
+        [a_multi_asset, depends_on_both_sub_assets], resources={"io_manager": TestingIOManager()}
+    )
+    assert res.success
 
 
 def test_multi_asset_downstream_deps_via_assets_definition():

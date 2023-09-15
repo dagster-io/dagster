@@ -1219,60 +1219,36 @@ def _deps_and_non_argument_deps_to_asset_deps(
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]],
 ) -> Optional[Iterable[AssetDep]]:
     """Helper function for managing deps and non_argument_deps while non_argument_deps is still an accepted parameter.
-    Ensures:
-    1. only one of deps and non_argument_deps is provided.
-    2. multi assets AssetsDefinition is not passed to deps.
-    3. deprecation warning is fired for non_argument_deps.
-
-    Converts the deps to `AssetDep`s
+    Ensures only one of deps and non_argument_deps is provided, then converts the deps to AssetDeps.
     """
     if non_argument_deps is not None and deps is not None:
         raise DagsterInvalidDefinitionError(
             "Cannot specify both deps and non_argument_deps to @asset. Use only deps instead."
         )
 
-    upstream_asset_deps: Optional[Iterable[CoercibleToAssetDep]] = None
-
-    with disable_dagster_warnings():
-        if deps is not None:
-            for dep in deps:
-                if isinstance(dep, AssetsDefinition) and len(dep.keys) > 1:
-                    # Only AssetsDefinition with a single asset can be passed
-                    raise DagsterInvalidDefinitionError(
-                        "Cannot pass a multi_asset AssetsDefinition as an argument to deps."
-                        " Instead, specify dependencies on the assets created by the"
-                        " multi_asset via AssetKeys or strings. For the multi_asset"
-                        f" {dep.node_def.name}, the available keys are: {dep.keys}."
-                    )
-                else:
-                    # confirm that dep is coercible to AssetDep
-                    try:
-                        AssetDep.from_coercible(dep)
-                    except check.CheckError:
-                        raise DagsterInvalidDefinitionError(
-                            f"Cannot pass an instance of type {type(dep)} to deps parameter of"
-                            " @asset. Instead, pass AssetDeps, AssetsDefinitions, SourceAssets, or"
-                            " AssetKeys."
-                        )
-
-        upstream_asset_deps = deps
+    if deps is not None:
+        return _make_asset_deps(deps)
 
     if non_argument_deps is not None:
-        # this set -> list conversion is a side effect of the type changing from
-        # Union[Set[AssetKey], Set[str]] to Sequence[Union[AssetsDefinition, CoercibleToAssetKey, SourceAsset]]
         check.set_param(non_argument_deps, "non_argument_deps", of_type=(AssetKey, str))
-        upstream_asset_deps = list(non_argument_deps)
-
-    return _make_asset_deps(upstream_asset_deps)
+        return _make_asset_deps(non_argument_deps)
 
 
 def _make_asset_deps(deps: Optional[Iterable[CoercibleToAssetDep]]) -> Optional[Iterable[AssetDep]]:
     if deps is None:
         return None
 
+    # expand any multi_assets into a list of keys
+    all_deps = []
+    for dep in deps:
+        if isinstance(dep, AssetsDefinition) and len(dep.keys) > 1:
+            all_deps.extend(dep.keys)
+        else:
+            all_deps.append(dep)
+
     with disable_dagster_warnings():
         dep_dict = {}
-        for dep in deps:
+        for dep in all_deps:
             asset_dep = AssetDep.from_coercible(dep)
 
             # we cannot do deduplication via a set because MultiPartitionMappings have an internal
