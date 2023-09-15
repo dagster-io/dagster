@@ -13,11 +13,14 @@ import {
   MiddleTruncate,
   useViewport,
   MenuDivider,
+  Spinner,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React from 'react';
 import styled from 'styled-components';
 
+import {showSharedToaster} from '../app/DomUtils';
+import {useMaterializationAction} from '../assets/LaunchAssetExecutionButton';
 import {AssetKey} from '../assets/types';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {Container, Inner, Row} from '../ui/VirtualizedTable';
@@ -282,8 +285,11 @@ const Node = ({
     );
   }
 
+  const {onClick, loading, launchpadElement} = useMaterializationAction();
+
   return (
     <>
+      {launchpadElement}
       <UpstreamDownstreamDialog
         title="Downstream assets"
         assets={downstream}
@@ -344,8 +350,23 @@ const Node = ({
               <Popover
                 content={
                   <Menu>
-                    {/* TODO: Hook up materialization */}
-                    <MenuItem icon="materialization" text="Materialize" />
+                    <MenuItem
+                      icon="materialization"
+                      text={
+                        <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+                          <span>Materialize</span>
+                          {loading ? <Spinner purpose="body-text" /> : null}
+                        </Box>
+                      }
+                      onClick={async (e) => {
+                        await showSharedToaster({
+                          intent: 'primary',
+                          message: 'Initiating materialization',
+                          icon: 'materialization',
+                        });
+                        onClick([node.assetKey], e, false);
+                      }}
+                    />
                     {upstream.length || downstream.length ? <MenuDivider /> : null}
                     {upstream.length ? (
                       <MenuItem
