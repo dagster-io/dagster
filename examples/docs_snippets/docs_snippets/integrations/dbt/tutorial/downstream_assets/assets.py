@@ -5,7 +5,7 @@ import os
 import duckdb
 import pandas as pd
 import plotly.express as px
-from dagster import MetadataValue, OpExecutionContext, asset
+from dagster import MetadataValue, AssetExecutionContext, asset
 from dagster_dbt import DbtCliResource, dbt_assets, get_asset_key_for_model
 
 from .constants import dbt_manifest_path, dbt_project_dir
@@ -29,7 +29,7 @@ def raw_customers(context) -> None:
 
 
 @dbt_assets(manifest=dbt_manifest_path)
-def jaffle_shop_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+def jaffle_shop_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
 
 
