@@ -28,9 +28,12 @@ def test_basic_instantiation():
     assert AssetDep(upstream).asset_key == upstream.key
     assert AssetDep(AssetKey(["upstream"])).asset_key == upstream.key
 
-    partitions_mapping = TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
+    partition_mapping = TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
 
-    assert AssetDep("upstream", partitions_mapping).partition_mapping == partitions_mapping
+    assert (
+        AssetDep("upstream", partition_mapping=partition_mapping).partition_mapping
+        == partition_mapping
+    )
 
     # test SourceAsset
     the_source = SourceAsset(key="the_source")
@@ -39,7 +42,7 @@ def test_basic_instantiation():
 
 def test_instantiation_with_asset_dep():
     partition_mapping = TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
-    og_dep = AssetDep("upstream", partition_mapping)
+    og_dep = AssetDep("upstream", partition_mapping=partition_mapping)
 
     with pytest.raises(ParameterCheckError):
         assert AssetDep(og_dep) == AssetDep("upstream")
@@ -77,7 +80,7 @@ def test_from_coercible():
 
     # partition_mapping should be retained when using from_coercible
     partition_mapping = TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
-    with_partition_mapping = AssetDep("with_partition_mapping", partition_mapping)
+    with_partition_mapping = AssetDep("with_partition_mapping", partition_mapping=partition_mapping)
     assert AssetDep.from_coercible(with_partition_mapping) == with_partition_mapping
 
     # multi_assets cannot be coerced by Definition

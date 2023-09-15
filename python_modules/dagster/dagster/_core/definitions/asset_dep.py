@@ -55,6 +55,7 @@ class AssetDep(
     def __new__(
         cls,
         asset: Union[CoercibleToAssetKey, AssetSpec, AssetsDefinition, SourceAsset],
+        *,
         partition_mapping: Optional[PartitionMapping] = None,
     ):
         if isinstance(asset, list):
