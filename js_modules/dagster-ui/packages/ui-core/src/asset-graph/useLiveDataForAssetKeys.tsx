@@ -178,6 +178,7 @@ const ASSET_NODE_LIVE_FRAGMENT = gql`
     }
     assetChecks {
       name
+      canExecuteIndividually
       executionForLatestMaterialization {
         id
         runId

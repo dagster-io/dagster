@@ -11,14 +11,13 @@ import {AssetFeatureContext} from '../AssetFeatureContext';
 import {assetDetailsPathForKey} from '../assetDetailsPathForKey';
 import {AssetKey} from '../types';
 
+import {AssetCheckDetailModal, MigrationRequired, NoChecks} from './AssetCheckDetailModal';
 import {
-  ASSET_CHECK_EXECUTION_FRAGMENT,
-  AssetCheckDetailModal,
-  MigrationRequired,
-  NoChecks,
-} from './AssetCheckDetailModal';
-import {ExexcuteChecksButton} from './ExecuteChecksButton';
-import {VirtualizedAssetCheckTable} from './VirtualizedAssetCheckTable';
+  EXECUTE_CHECKS_BUTTON_ASSET_NODE_FRAGMENT,
+  EXECUTE_CHECKS_BUTTON_CHECK_FRAGMENT,
+  ExecuteChecksButton,
+} from './ExecuteChecksButton';
+import {ASSET_CHECK_TABLE_FRAGMENT, VirtualizedAssetCheckTable} from './VirtualizedAssetCheckTable';
 import {AssetChecksQuery, AssetChecksQueryVariables} from './types/AssetChecks.types';
 
 export const AssetChecks = ({
@@ -63,7 +62,7 @@ export const AssetChecks = ({
     if (checksOrError?.__typename !== 'AssetChecks' || assetNode?.__typename !== 'AssetNode') {
       return <span />;
     }
-    return <ExexcuteChecksButton assetNode={assetNode} checks={checksOrError.checks} />;
+    return <ExecuteChecksButton assetNode={assetNode} checks={checksOrError.checks} />;
   }
 
   const {AssetChecksBanner} = useContext(AssetFeatureContext);
@@ -118,18 +117,7 @@ export const ASSET_CHECKS_QUERY = gql`
     assetNodeOrError(assetKey: $assetKey) {
       ... on AssetNode {
         id
-        jobNames
-        assetKey {
-          path
-        }
-        repository {
-          id
-          name
-          location {
-            id
-            name
-          }
-        }
+        ...ExecuteChecksButtonAssetNodeFragment
       }
     }
     assetChecksOrError(assetKey: $assetKey) {
@@ -138,14 +126,13 @@ export const ASSET_CHECKS_QUERY = gql`
       }
       ... on AssetChecks {
         checks {
-          name
-          description
-          executionForLatestMaterialization {
-            ...AssetCheckExecutionFragment
-          }
+          ...AssetCheckTableFragment
+          ...ExecuteChecksButtonCheckFragment
         }
       }
     }
   }
-  ${ASSET_CHECK_EXECUTION_FRAGMENT}
+  ${EXECUTE_CHECKS_BUTTON_ASSET_NODE_FRAGMENT}
+  ${EXECUTE_CHECKS_BUTTON_CHECK_FRAGMENT}
+  ${ASSET_CHECK_TABLE_FRAGMENT}
 `;
