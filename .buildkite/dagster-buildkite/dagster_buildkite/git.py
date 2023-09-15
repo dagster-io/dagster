@@ -21,7 +21,11 @@ def get_commit_message(rev):
 @dataclass
 class GitInfo:
     directory: Path
-    base_branch: Optional[str] = "master"
+    base_branch: Optional[str] = None
+
+    def __post_init__(self):
+        if not self.base_branch:
+            self.base_branch = os.getenv("BUILDKITE_DEFAULT_BASE_BRANCH", "master")
 
 
 class ChangedFiles:

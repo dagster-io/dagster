@@ -28,23 +28,20 @@ def python(temporary_directory):
 
 
 @pytest.fixture
-def dagster_repo(temporary_directory):
-    path = os.path.join(temporary_directory, "dagster")
+def dagster_repo(temporary_directory, request):
+    src_path = (Path(request.fspath) / ".." / ".." / ".." / "..").resolve()
+    dst_path = Path(temporary_directory) / "dagster"
 
-    # Do a fresh clone so our repo has no changes. This should largely isolate
-    # tests from failing because of unrelated commits on a branch
     repo = git.Repo.clone_from(
-        "https://github.com/dagster-io/dagster.git",
-        path,
+        src_path,
+        dst_path,
         filter=["tree:0"],
     )
 
-    # But copy in our .buildkite directory so we can still test our
-    # changes to our pipeline generation logic. This has the somewhat odd side
-    # often recognizing `dagster-buildkite` as a changed package in all tests
-    # if you're doing active development on it.
-    dagster_buildkite_src = Path(os.getenv("DAGSTER_GIT_REPO_DIR")) / ".buildkite"
-    dagster_buildkite_dst = Path(path) / ".buildkite"
+    # Copy in our .buildkite directory so we can still test our
+    # changes during local development before committing
+    dagster_buildkite_src = src_path / ".buildkite"
+    dagster_buildkite_dst = dst_path / ".buildkite"
 
     shutil.copytree(
         dagster_buildkite_src,
@@ -52,7 +49,7 @@ def dagster_repo(temporary_directory):
         dirs_exist_ok=True,
     )
 
-    os.chdir(path)
+    os.chdir(dst_path)
 
     def touch(path: Path):
         path.touch()
@@ -72,6 +69,8 @@ def env(monkeypatch):
     monkeypatch.setenv("BUILDKITE_WINDOWS_QUEUE", "fake")
     monkeypatch.setenv("BUILDKITE_COMMIT", "fake")
     monkeypatch.setenv("BUILDKITE_MESSAGE", "fake")
+    # Limit test comparisons to only commits changed in the test
+    monkeypatch.setenv("BUILDKITE_DEFAULT_BASE_BRANCH", "HEAD")
 
 
 @pytest.fixture
@@ -200,6 +199,8 @@ def test_python_change_dagster(dagster_repo, dagster_buildkite, libraries):
 
 
 def test_python_change_dagster_buildkite(dagster_repo, dagster_buildkite):
+    assert any([":pytest: dagster-buildkite" in step.name for step in dagster_buildkite().skipped])
+
     dagster_repo.touch(
         Path(dagster_repo.working_tree_dir) / ".buildkite" / "dagster-buildkite" / "change.py"
     )
