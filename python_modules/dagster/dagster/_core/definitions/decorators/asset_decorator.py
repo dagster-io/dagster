@@ -86,8 +86,8 @@ def asset(
     retry_policy: Optional[RetryPolicy] = ...,
     code_version: Optional[str] = ...,
     key: Optional[CoercibleToAssetKey] = None,
-    non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = ...,
     check_specs: Optional[Sequence[AssetCheckSpec]] = ...,
+    **kwargs,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     ...
 
@@ -97,7 +97,10 @@ def asset(
 @experimental_param(param="auto_materialize_policy")
 @experimental_param(param="backfill_policy")
 @deprecated_param(
-    param="non_argument_deps", breaking_version="2.0.0", additional_warn_text="use `deps` instead."
+    param="non_argument_deps",
+    breaking_version="2.0.0",
+    additional_warn_text="use `deps` instead.",
+    require_param_in_signature=False,
 )
 def asset(
     compute_fn: Optional[Callable] = None,
@@ -125,8 +128,8 @@ def asset(
     retry_policy: Optional[RetryPolicy] = None,
     code_version: Optional[str] = None,
     key: Optional[CoercibleToAssetKey] = None,
-    non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
+    **kwargs,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Create a definition for how to compute an asset.
 
@@ -197,8 +200,9 @@ def asset(
             output when given the same inputs.
         check_specs (Optional[Sequence[AssetCheckSpec]]): (Experimental) Specs for asset checks that
             execute in the decorated function after materializing the asset.
-        non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Deprecated, use deps instead.
-            Set of asset keys that are upstream dependencies, but do not pass an input to the asset.
+        non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Deprecated use deps instead. This
+        is not in the function signature but can be passed as a kwarg.  Set of asset keys that are
+        upstream dependencies, but do not pass an input to the asset.
 
     Examples:
         .. code-block:: python
@@ -207,8 +211,18 @@ def asset(
             def my_asset(my_upstream_asset: int) -> int:
                 return my_upstream_asset + 1
     """
+    if "non_argument_deps" in kwargs:
+        # cast lies a little bit here. Does not check that it is all strs or all asset keys
+        non_argument_deps = cast(
+            Union[Set[str], Set[AssetKey]],
+            check.opt_set_param(
+                kwargs.get("non_argument_deps"), "non_argument_deps", of_type=(AssetKey, str)
+            ),
+        )
+    else:
+        non_argument_deps = None
 
-    def create_asset():
+    def create_asset() -> _Asset:
         upstream_asset_deps = _type_check_deps_and_non_argument_deps(
             deps=deps, non_argument_deps=non_argument_deps
         )
