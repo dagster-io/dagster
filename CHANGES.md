@@ -1,5 +1,22 @@
 # Changelog
 
+# 1.4.14 / 0.20.14 (libraries)
+
+### New
+
+- Added a new tooltip to asset runs to either view the asset list or lineage
+
+### Bugfixes
+
+- [ui] Fixed an issue where Re-execution a job wouldn’t navigate to the newly created run
+
+### Experimental
+
+- [dagster-ext] An initial version of the `dagster-ext` module along with subprocess, docker, databricks, and k8s pod integrations are now available. Read more at https://github.com/dagster-io/dagster/discussions/16319. Note that the module is temporarily being published to PyPI under `dagster-ext-process`, but is available in python as `import dagster_ext`.
+- [asset checks] Added an ‘execute’ button to run checks without materializing the asset. Currently this is only supported for checks defined with `@asset_check` or `AssetChecksDefinition`.
+- [asset checks] Added `check_specs` argument to `@graph_multi_asset`
+- [asset checks] Fixed a bug with checks on `@graph_asset` that would raise an error about nonexistant checks
+
 # 1.4.13 / 0.20.13 (libraries)
 
 ### New
@@ -14,7 +31,7 @@
 - When using AutoMaterializePolicies with assets that depended on prior partitions of themselves, updating the `start_date` of their underlying `PartitionsDefinition` could result in runs being launched for partitions that no longer existed. This has been fixed.
 - Fixed an issue where auto-materilization could sometimes produce duplicate runs if there was an error in the middle of an auto-materialization tick.
 - [dagster-census] A recent change to the Census API broke compatibility with
- this integration. This has been fixed (thanks `@ldnicolasmay`!)
+  this integration. This has been fixed (thanks `@ldnicolasmay`!)
 - [dagster-dbt] Fixed an issue where `DagsterDbtTranslator` did not properly invoke `get_auto_materialize_policy` and `get_freshness_policy` for `load_assets_from_dbt_project`.
 - [ui] Fixed a number of interaction bugs with the Launchpad config editor, including issues with newlines and multiple cursors.
 - [ui] Asset keys and partitions presented in the asset checks UI are sorted to avoid flickering.
