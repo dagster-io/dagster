@@ -123,12 +123,7 @@ def asset1(upstream1, upstream2):
 
 ### Auto-materialization and partitions
 
-<PyObject object="AutoMaterializeRule" pluralize /> generally apply individually
-to each partition of a partitioned asset. Here's a pipeline with two daily-partitioned
-assets that have eager auto-materialize policies. At the end of each day, a partition
-for that day will be added to the set of partitions for each of the assets. Dagster
-will notice that the new partitions exist, but have no materializations, and then
-auto-materialize them.
+Each <PyObject object="AutoMaterializeRule" /> generally applies individually to each partition of a partitioned asset. Here's a pipeline with two daily-partitioned assets that have eager auto-materialize policies. At the end of each day, a partition for that day will be added to the set of partitions for each of the assets. Dagster will notice that the new partitions exist, but have no materializations, and then auto-materialize them.
 
 ```python file=/concepts/assets/auto_materialize_time_partitions.py
 from dagster import AutoMaterializePolicy, DailyPartitionsDefinition, asset
