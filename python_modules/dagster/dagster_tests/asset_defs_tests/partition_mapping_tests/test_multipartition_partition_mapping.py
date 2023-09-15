@@ -176,8 +176,8 @@ weekly_multipartitions_def = MultiPartitionsDefinition(
         (
             daily_partitions_def,
             daily_partitions_def.empty_subset()
-            .with_partition_key_range(PartitionKeyRange(start='2023-01-08', end='2023-01-14'))
-            .with_partition_key_range(PartitionKeyRange(start='2023-01-29', end='2023-02-04')),
+            .with_partition_key_range(PartitionKeyRange(start="2023-01-08", end="2023-01-14"))
+            .with_partition_key_range(PartitionKeyRange(start="2023-01-29", end="2023-02-04")),
             weekly_multipartitions_def.empty_subset().with_partition_keys(
                 {
                     MultiPartitionKey({"ab": "a", "week": "2023-01-08"}),

@@ -1,6 +1,6 @@
 import collections.abc
 import itertools
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 from collections import defaultdict
 from datetime import datetime
 from typing import (
@@ -11,7 +11,6 @@ from typing import (
     NamedTuple,
     Optional,
     Sequence,
-    Set,
     Tuple,
     Type,
     Union,
@@ -276,7 +275,7 @@ class SpecificPartitionsPartitionMapping(
         return downstream_partitions_def.empty_subset()
 
 
-class DimensionMapping(NamedTuple):
+class DimensionDependency(NamedTuple):
     partition_mapping: PartitionMapping
     upstream_dimension_name: Optional[str] = None
     downstream_dimension_name: Optional[str] = None
@@ -284,12 +283,20 @@ class DimensionMapping(NamedTuple):
 
 class BaseMultiPartitionMapping(ABC):
     @abstractmethod
-    def get_downstream_mappings_by_upstream_dimension(
+    def get_dimension_dependencies(
         self,
         upstream_partitions_def: PartitionsDefinition,
         downstream_partitions_def: PartitionsDefinition,
-    ) -> Sequence[DimensionMapping]:
-        ...
+    ) -> Sequence[DimensionDependency]: ...
+
+    def get_partitions_def(
+        self, partitions_def: PartitionsDefinition, dimension_name: Optional[str]
+    ) -> PartitionsDefinition:
+        if isinstance(partitions_def, MultiPartitionsDefinition):
+            if not isinstance(dimension_name, str):
+                check.failed("Expected dimension_name to be a string")
+            return partitions_def.get_partitions_def_for_dimension(dimension_name)
+        return partitions_def
 
     def _get_dependency_partitions_subset(
         self,
@@ -342,7 +349,7 @@ class BaseMultiPartitionMapping(ABC):
                     dimension_mapping.downstream_dimension_name,
                     dimension_mapping.partition_mapping,
                 )
-                for dimension_mapping in self.get_downstream_mappings_by_upstream_dimension(
+                for dimension_mapping in self.get_dimension_dependencies(
                     a_partitions_def, b_partitions_def
                 )
             }
@@ -353,15 +360,11 @@ class BaseMultiPartitionMapping(ABC):
                         b_dim_name,
                         dimension_mapping,
                     ) = a_dim_to_dependency_b_dim[a_dim_name]
-                    a_dimension_partitions_def = (
-                        a_partitions_def.get_partitions_def_for_dimension(a_dim_name)
-                        if isinstance(a_partitions_def, MultiPartitionsDefinition)
-                        else a_partitions_def
+                    a_dimension_partitions_def = self.get_partitions_def(
+                        a_partitions_def, a_dim_name
                     )
-                    b_dimension_partitions_def = (
-                        b_partitions_def.get_partitions_def_for_dimension(cast(str, b_dim_name))
-                        if isinstance(b_partitions_def, MultiPartitionsDefinition)
-                        else b_partitions_def
+                    b_dimension_partitions_def = self.get_partitions_def(
+                        b_partitions_def, b_dim_name
                     )
                     for key in keys:
                         # if downstream dimension mapping exists, for a given key, get the list of
@@ -386,7 +389,7 @@ class BaseMultiPartitionMapping(ABC):
                     dimension_mapping.upstream_dimension_name,
                     dimension_mapping.partition_mapping,
                 )
-                for dimension_mapping in self.get_downstream_mappings_by_upstream_dimension(
+                for dimension_mapping in self.get_dimension_dependencies(
                     b_partitions_def, a_partitions_def
                 )
             }
@@ -397,15 +400,11 @@ class BaseMultiPartitionMapping(ABC):
                         b_dim_name,
                         partition_mapping,
                     ) = a_dim_to_dependency_b_dim[a_dim_name]
-                    a_dimension_partitions_def = (
-                        a_partitions_def.get_partitions_def_for_dimension(a_dim_name)
-                        if isinstance(a_partitions_def, MultiPartitionsDefinition)
-                        else a_partitions_def
+                    a_dimension_partitions_def = self.get_partitions_def(
+                        a_partitions_def, a_dim_name
                     )
-                    b_dimension_partitions_def = (
-                        b_partitions_def.get_partitions_def_for_dimension(cast(str, b_dim_name))
-                        if isinstance(b_partitions_def, MultiPartitionsDefinition)
-                        else b_partitions_def
+                    b_dimension_partitions_def = self.get_partitions_def(
+                        b_partitions_def, b_dim_name
                     )
                     for key in keys:
                         mapped_partitions_result = (
@@ -507,21 +506,20 @@ class MultiToSingleDimensionPartitionMapping(
             ),
         )
 
-    def get_downstream_mappings_by_upstream_dimension(
+    def get_dimension_dependencies(
         self,
         upstream_partitions_def: PartitionsDefinition,
         downstream_partitions_def: PartitionsDefinition,
-    ) -> Sequence[DimensionMapping]:
-        infer_mapping_result = _infer_single_to_multidim_deps(
+    ) -> Sequence[DimensionDependency]:
+        infer_mapping_result = _get_infer_single_to_multi_dimension_deps_result(
             upstream_partitions_def, downstream_partitions_def
         )
 
-        if not infer_mapping_result.can_infer or infer_mapping_result.dimension_mapping is None:
-            if infer_mapping_result.why_cant_i_infer is None:
-                check.failed("should not reach")
-            check.failed(infer_mapping_result.why_cant_i_infer)
+        if not infer_mapping_result.can_infer:
+            check.invariant(isinstance(infer_mapping_result.inference_failure_reason, str))
+            check.failed(cast(str, infer_mapping_result.inference_failure_reason))
 
-        return [infer_mapping_result.dimension_mapping]
+        return [cast(DimensionDependency, infer_mapping_result.dimension_dependency)]
 
     def get_upstream_mapped_partitions_result_for_partitions(
         self,
@@ -705,13 +703,13 @@ class MultiPartitionMapping(
             ),
         )
 
-    def get_downstream_mappings_by_upstream_dimension(
+    def get_dimension_dependencies(
         self,
         upstream_partitions_def: PartitionsDefinition,
         downstream_partitions_def: PartitionsDefinition,
-    ) -> Sequence[DimensionMapping]:
+    ) -> Sequence[DimensionDependency]:
         return [
-            DimensionMapping(
+            DimensionDependency(
                 mapping.partition_mapping,
                 upstream_dimension_name=upstream_dimension,
                 downstream_dimension_name=mapping.dimension_name,
@@ -930,17 +928,40 @@ class StaticPartitionMapping(
         return UpstreamPartitionsResult(upstream_subset.with_partition_keys(upstream_keys), [])
 
 
-class InferSingleToMultiPartitionDepsResult(NamedTuple):
-    can_infer: bool
-    why_cant_i_infer: Optional[str] = None  # Only defined if can_infer is False
-    dimension_mapping: Optional[DimensionMapping] = None  # Only defined if can_infer is True
+class InferSingleToMultiDimensionDepsResult(
+    NamedTuple(
+        "_InferSingleToMultiDimensionDepsResult",
+        [
+            ("can_infer", bool),
+            ("inference_failure_reason", Optional[str]),
+            ("dimension_dependency", Optional[DimensionDependency]),
+        ],
+    )
+):
+    def __new__(
+        cls,
+        can_infer: bool,
+        inference_failure_reason: Optional[str] = None,
+        dimension_dependency: Optional[DimensionDependency] = None,
+    ):
+        if can_infer and dimension_dependency is None:
+            check.failed("dimension_dependency must be provided if can_infer is True")
+        if not can_infer and inference_failure_reason is None:
+            check.failed("inference_failure_reason must be provided if can_infer is False")
+
+        return super(InferSingleToMultiDimensionDepsResult, cls).__new__(
+            cls,
+            can_infer,
+            inference_failure_reason,
+            dimension_dependency,
+        )
 
 
-def _infer_single_to_multidim_deps(
+def _get_infer_single_to_multi_dimension_deps_result(
     upstream_partitions_def: PartitionsDefinition,
     downstream_partitions_def: PartitionsDefinition,
     partition_dimension_name: Optional[str] = None,
-) -> InferSingleToMultiPartitionDepsResult:
+) -> InferSingleToMultiDimensionDepsResult:
     from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 
     upstream_is_multipartitioned = isinstance(upstream_partitions_def, MultiPartitionsDefinition)
@@ -951,7 +972,7 @@ def _infer_single_to_multidim_deps(
         if isinstance(partitions_def, MultiPartitionsDefinition)
     ]
     if len(multipartitions_defs) != 1:
-        return InferSingleToMultiPartitionDepsResult(
+        return InferSingleToMultiDimensionDepsResult(
             False,
             "Can only use MultiToSingleDimensionPartitionMapping when upstream asset is"
             " multipartitioned and the downstream asset is single dimensional, or vice versa."
@@ -982,7 +1003,7 @@ def _infer_single_to_multidim_deps(
 
     if partition_dimension_name:
         if len(filtered_multipartition_dims) != 1:
-            return InferSingleToMultiPartitionDepsResult(
+            return InferSingleToMultiDimensionDepsResult(
                 False,
                 f"Provided partition dimension name {partition_dimension_name} not found in"
                 f" multipartitions definition {multipartitions_def}.",
@@ -995,9 +1016,9 @@ def _infer_single_to_multidim_deps(
     ]
 
     if len(matching_dimension_defs) == 1:
-        return InferSingleToMultiPartitionDepsResult(
+        return InferSingleToMultiDimensionDepsResult(
             True,
-            dimension_mapping=DimensionMapping(
+            dimension_dependency=DimensionDependency(
                 IdentityPartitionMapping(),
                 upstream_dimension_name=(
                     matching_dimension_defs[0].name if upstream_is_multipartitioned else None
@@ -1008,7 +1029,7 @@ def _infer_single_to_multidim_deps(
             ),
         )
     elif len(matching_dimension_defs) > 1:
-        return InferSingleToMultiPartitionDepsResult(
+        return InferSingleToMultiDimensionDepsResult(
             False,
             "partition dimension name must be specified when multiple dimensions of the"
             " MultiPartitionsDefinition match the single dimension partitions def",
@@ -1023,9 +1044,9 @@ def _infer_single_to_multidim_deps(
     if len(time_dimensions) == 1 and isinstance(
         single_dimension_partitions_def, TimeWindowPartitionsDefinition
     ):
-        return InferSingleToMultiPartitionDepsResult(
+        return InferSingleToMultiDimensionDepsResult(
             True,
-            dimension_mapping=DimensionMapping(
+            dimension_dependency=DimensionDependency(
                 TimeWindowPartitionMapping(),
                 upstream_dimension_name=(
                     time_dimensions[0].name if upstream_is_multipartitioned else None
@@ -1036,7 +1057,7 @@ def _infer_single_to_multidim_deps(
             ),
         )
 
-    return InferSingleToMultiPartitionDepsResult(
+    return InferSingleToMultiDimensionDepsResult(
         False,
         "MultiToSingleDimensionPartitionMapping can only be used when: \n(a) The single dimensional"
         " partitions definition is a dimension of the MultiPartitionsDefinition.\n(b) The single"
@@ -1055,7 +1076,7 @@ def infer_partition_mapping(
     if partition_mapping is not None:
         return partition_mapping
     elif upstream_partitions_def and downstream_partitions_def:
-        if _infer_single_to_multidim_deps(
+        if _get_infer_single_to_multi_dimension_deps_result(
             upstream_partitions_def, downstream_partitions_def
         ).can_infer:
             with disable_dagster_warnings():
