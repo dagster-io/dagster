@@ -39,7 +39,15 @@ export const AssetGraphExplorerSidebar = React.memo(
     const rootNodes = React.useMemo(
       () =>
         Object.keys(assetGraphData.nodes)
-          .filter((id) => !assetGraphData.upstream[id])
+          .filter(
+            (id) =>
+              // When we filter to a subgraph, the nodes at the root aren't real roots, but since
+              // their upstream graph is cutoff we want to show them as roots in the sidebar.
+              // Find these nodes by filtering on whether there parent nodes are in assetGraphData
+              !Object.keys(assetGraphData.upstream[id] ?? {}).filter(
+                (id) => assetGraphData.nodes[id],
+              ).length,
+          )
           .sort((a, b) =>
             COLLATOR.compare(
               getDisplayName(assetGraphData.nodes[a]!),
@@ -57,14 +65,12 @@ export const AssetGraphExplorerSidebar = React.memo(
         const node = queue.shift()!;
         renderedNodes.push(node);
         if (openNodes.has(node.path)) {
-          const downstream = Object.keys(assetGraphData.downstream[node.id] || {});
-          if (downstream) {
-            queue.unshift(
-              ...downstream
-                .filter((id) => assetGraphData.nodes[id])
-                .map((id) => ({level: node.level + 1, id, path: `${node.path}:${id}`})),
-            );
-          }
+          const downstream = Object.keys(assetGraphData.downstream[node.id] || {}).filter(
+            (id) => assetGraphData.nodes[id],
+          );
+          queue.unshift(
+            ...downstream.map((id) => ({level: node.level + 1, id, path: `${node.path}:${id}`})),
+          );
         }
       }
       return renderedNodes;
@@ -89,6 +95,9 @@ export const AssetGraphExplorerSidebar = React.memo(
           let currentId = lastSelectedNode.id;
           let next: string | undefined;
           while ((next = Object.keys(assetGraphData.upstream[currentId] ?? {})[0])) {
+            if (!assetGraphData.nodes[next]) {
+              break;
+            }
             path = `${next}:${path}`;
             currentId = next;
           }
@@ -108,7 +117,7 @@ export const AssetGraphExplorerSidebar = React.memo(
         });
       }
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [lastSelectedNode]);
+    }, [lastSelectedNode, assetGraphData]);
 
     const indexOfLastSelectedNode = React.useMemo(
       () =>
