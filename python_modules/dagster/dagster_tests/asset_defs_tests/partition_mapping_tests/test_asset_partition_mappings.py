@@ -584,7 +584,12 @@ def test_partition_mapping_with_asset_deps():
 
     @asset(
         partitions_def=partitions_def,
-        deps=[AssetDep(upstream, TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))],
+        deps=[
+            AssetDep(
+                upstream,
+                partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
+            )
+        ],
     )
     def downstream(context: AssetExecutionContext):
         upstream_key = datetime.strptime(
@@ -675,8 +680,14 @@ def test_conflicting_mappings_with_asset_deps():
         @asset(
             partitions_def=partitions_def,
             deps=[
-                AssetDep(upstream, TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)),
-                AssetDep(upstream, TimeWindowPartitionMapping(start_offset=-2, end_offset=-2)),
+                AssetDep(
+                    upstream,
+                    partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
+                ),
+                AssetDep(
+                    upstream,
+                    partition_mapping=TimeWindowPartitionMapping(start_offset=-2, end_offset=-2),
+                ),
             ],
         )
         def downstream():
@@ -733,7 +744,10 @@ def test_self_dependent_partition_mapping_with_asset_deps():
     @asset(
         partitions_def=partitions_def,
         deps=[
-            AssetDep("self_dependent", TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+            AssetDep(
+                "self_dependent",
+                partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
+            )
         ],
     )
     def self_dependent(context: AssetExecutionContext):
@@ -785,7 +799,7 @@ def test_dynamic_partition_mapping_with_asset_deps():
 
     @asset(
         partitions_def=partitions_def,
-        deps=[AssetDep(upstream, SpecificPartitionsPartitionMapping(["apple"]))],
+        deps=[AssetDep(upstream, partition_mapping=SpecificPartitionsPartitionMapping(["apple"]))],
     )
     def downstream(context: AssetExecutionContext):
         assert context.asset_partition_key_for_input("upstream") == "apple"

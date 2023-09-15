@@ -756,7 +756,7 @@ def test_multi_partition_mapping_with_asset_deps():
         }
     )
 
-    @asset(partitions_def=partitions_def, deps=[AssetDep(upstream, mapping)])
+    @asset(partitions_def=partitions_def, deps=[AssetDep(upstream, partition_mapping=mapping)])
     def downstream(context: AssetExecutionContext):
         upstream_mp_key = context.asset_partition_key_for_input("upstream")
         current_mp_key = context.partition_key
