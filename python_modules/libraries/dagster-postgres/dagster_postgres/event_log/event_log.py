@@ -278,6 +278,16 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 .on_conflict_do_nothing(),
             )
 
+    def delete_events_for_runs(self, run_ids: Sequence[str]) -> None:
+        check.sequence_param(run_ids, "run_ids", of_type=str)
+        # Delete from index connection because PostgresEventLogStorage is not run sharded
+        with self.index_connection() as conn:
+            conn.execute(
+                SqlEventLogStorageTable.delete().where(
+                    SqlEventLogStorageTable.c.run_id.in_(run_ids)
+                )
+            )
+
     def _connect(self) -> ContextManager[Connection]:
         return create_pg_connection(self._engine)
 
