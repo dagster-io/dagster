@@ -117,6 +117,7 @@ export type AssetBackfillStatus = AssetPartitionsStatusCounts | UnpartitionedAss
 export type AssetCheck = {
   __typename: 'AssetCheck';
   assetKey: AssetKey;
+  canExecuteIndividually: AssetCheckCanExecuteIndividually;
   description: Maybe<Scalars['String']>;
   executionForLatestMaterialization: Maybe<AssetCheckExecution>;
   executions: Array<AssetCheckExecution>;
@@ -127,6 +128,11 @@ export type AssetCheckExecutionsArgs = {
   cursor?: InputMaybe<Scalars['String']>;
   limit: Scalars['Int'];
 };
+
+export enum AssetCheckCanExecuteIndividually {
+  CAN_EXECUTE = 'CAN_EXECUTE',
+  NEEDS_USER_CODE_UPGRADE = 'NEEDS_USER_CODE_UPGRADE',
+}
 
 export type AssetCheckEvaluation = {
   __typename: 'AssetCheckEvaluation';
@@ -4447,6 +4453,10 @@ export const buildAssetCheck = (
         : relationshipsToOmit.has('AssetKey')
         ? ({} as AssetKey)
         : buildAssetKey({}, relationshipsToOmit),
+    canExecuteIndividually:
+      overrides && overrides.hasOwnProperty('canExecuteIndividually')
+        ? overrides.canExecuteIndividually!
+        : AssetCheckCanExecuteIndividually.CAN_EXECUTE,
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'omnis',
     executionForLatestMaterialization:
