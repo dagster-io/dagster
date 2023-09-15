@@ -1867,8 +1867,8 @@ def test_multi_asset_no_out():
         pass
 
     _exec_asset(basic_deps)
-    assert table_A.asset_key in basic_deps.asset_deps[table_C.asset_key]
-    assert table_B.asset_key in basic_deps.asset_deps[table_C.asset_key]
+    assert table_A.key in basic_deps.asset_deps[table_C.key]
+    assert table_B.key in basic_deps.asset_deps[table_C.key]
 
     result = basic_deps()
     assert result is None
@@ -1885,8 +1885,8 @@ def test_multi_asset_no_out():
             yield MaterializeResult(asset_key=key)
 
     mats = _exec_asset(basic_subset, ["table_A"])
-    assert table_A.asset_key in {mat.asset_key for mat in mats}
-    assert table_B.asset_key not in {mat.asset_key for mat in mats}
+    assert table_A.key in {mat.asset_key for mat in mats}
+    assert table_B.key not in {mat.asset_key for mat in mats}
 
     # selected_asset_keys breaks direct invocation
     # basic_subset(build_asset_context())
@@ -1901,8 +1901,8 @@ def test_multi_asset_no_out():
         yield MaterializeResult(asset_key="table_A")
 
     mats = _exec_asset(basic_optional)
-    assert table_A.asset_key in {mat.asset_key for mat in mats}
-    assert table_B.asset_key not in {mat.asset_key for mat in mats}
+    assert table_A.key in {mat.asset_key for mat in mats}
+    assert table_B.key not in {mat.asset_key for mat in mats}
 
     basic_optional(build_asset_context())
 
@@ -2050,7 +2050,7 @@ def test_multi_asset_asset_key_on_context():
 
     # test with AssetSpecs
 
-    spec1 = AssetSpec(asset_key="spec1")
+    spec1 = AssetSpec(key="spec1")
 
     @multi_asset(specs=[spec1])
     def asset_key_context_with_specs(context: AssetExecutionContext):
@@ -2058,8 +2058,8 @@ def test_multi_asset_asset_key_on_context():
 
     materialize([asset_key_context_with_specs])
 
-    spec2 = AssetSpec(asset_key="spec2")
-    spec3 = AssetSpec(asset_key="spec3")
+    spec2 = AssetSpec(key="spec2")
+    spec3 = AssetSpec(key="spec3")
 
     @multi_asset(specs=[spec2, spec3])
     def asset_key_context_with_two_specs(context: AssetExecutionContext):

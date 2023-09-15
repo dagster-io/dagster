@@ -53,7 +53,7 @@ class AssetDep(
         partition_mapping: Optional[PartitionMapping] = None,
     ):
         if isinstance(asset, AssetSpec):
-            asset_key = asset.asset_key
+            asset_key = asset.key
         else:
             asset_key = AssetKey.from_coercible_or_definition(asset)
 

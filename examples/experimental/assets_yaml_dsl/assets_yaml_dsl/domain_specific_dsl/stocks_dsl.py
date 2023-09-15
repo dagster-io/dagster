@@ -77,7 +77,7 @@ def assets_defs_from_stock_assets(stock_assets: StockAssets) -> List[AssetsDefin
     def spec_for_stock_info(stock_info: StockInfo) -> AssetSpec:
         ticker = stock_info.ticker
         return AssetSpec(
-            asset_key=AssetKey(ticker),
+            key=AssetKey(ticker),
             group_name=group_name,
             description=f"Fetch {ticker} from internal service",
         )

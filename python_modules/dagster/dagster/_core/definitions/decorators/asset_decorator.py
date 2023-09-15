@@ -603,8 +603,8 @@ def multi_asset(
             output_tuples_by_asset_key = {}
             for asset_spec in specs:
                 # output names are asset keys joined with _
-                output_name = "_".join(asset_spec.asset_key.path)
-                output_tuples_by_asset_key[asset_spec.asset_key] = (
+                output_name = "_".join(asset_spec.key.path)
+                output_tuples_by_asset_key[asset_spec.key] = (
                     output_name,
                     Out(
                         Nothing,
@@ -730,12 +730,12 @@ def multi_asset(
 
         if specs:
             internal_deps = {
-                spec.asset_key: {dep.asset_key for dep in spec.deps}
+                spec.key: {dep.asset_key for dep in spec.deps}
                 for spec in specs
                 if spec.deps is not None
             }
             props_by_asset_key: Mapping[AssetKey, Union[AssetSpec, AssetOut]] = {
-                spec.asset_key: spec for spec in specs
+                spec.key: spec for spec in specs
             }
             # Add PartitionMappings specified via AssetSpec.deps to partition_mappings dictionary. Error on duplicates
             for spec in specs:
