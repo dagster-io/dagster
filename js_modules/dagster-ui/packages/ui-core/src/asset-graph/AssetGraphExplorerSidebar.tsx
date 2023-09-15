@@ -14,6 +14,8 @@ import {
   useViewport,
   MenuDivider,
   Spinner,
+  ButtonGroup,
+  Tooltip,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React from 'react';
@@ -24,10 +26,19 @@ import {useMaterializationAction} from '../assets/LaunchAssetExecutionButton';
 import {AssetKey} from '../assets/types';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {Container, Inner, Row} from '../ui/VirtualizedTable';
+import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 
 import {GraphData, GraphNode} from './Utils';
 
 const COLLATOR = new Intl.Collator(navigator.language, {sensitivity: 'base', numeric: true});
+
+type FolderNodeNonAssetType =
+  | {groupName: string; id: string; level: number}
+  | {locationName: string; id: string; level: number};
+
+type FolderNodeType = FolderNodeNonAssetType | {path: string; id: string; level: number};
+
+type TreeNodeType = {level: number; id: string; path: string};
 
 export const AssetGraphExplorerSidebar = React.memo(
   ({
@@ -37,6 +48,7 @@ export const AssetGraphExplorerSidebar = React.memo(
     explorerPath,
     onChangeExplorerPath,
     allAssetKeys,
+    hideSidebar,
   }: {
     assetGraphData: GraphData;
     lastSelectedNode: GraphNode;
@@ -44,23 +56,33 @@ export const AssetGraphExplorerSidebar = React.memo(
     explorerPath: ExplorerPath;
     onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
     allAssetKeys: AssetKey[];
+    hideSidebar: () => void;
   }) => {
     const selectNode: typeof _selectNode = (e, id) => {
       _selectNode(e, id);
       if (!assetGraphData.nodes[id]) {
-        const path = JSON.parse(id);
-        const nextOpsQuery = `${explorerPath.opsQuery} \"${path[path.length - 1]}\"`;
-        onChangeExplorerPath(
-          {
-            ...explorerPath,
-            opsQuery: nextOpsQuery,
-          },
-          'push',
-        );
+        try {
+          const path = JSON.parse(id);
+          const nextOpsQuery = `${explorerPath.opsQuery} \"${path[path.length - 1]}\"`;
+          onChangeExplorerPath(
+            {
+              ...explorerPath,
+              opsQuery: nextOpsQuery,
+            },
+            'push',
+          );
+        } catch (e) {
+          // Ignore errors. The selected node might be a group or code location so trying to JSON.parse the id will error.
+          // For asset nodes the id is always a JSON array
+        }
       }
     };
     const [openNodes, setOpenNodes] = React.useState<Set<string>>(new Set());
-    const [selectedNode, setSelectedNode] = React.useState<null | {id: string; path: string}>(null);
+    const [selectedNode, setSelectedNode] = React.useState<
+      null | {id: string; path: string} | {id: string}
+    >(null);
+
+    const [viewType, setViewType] = React.useState<'tree' | 'folder'>('tree');
 
     const rootNodes = React.useMemo(
       () =>
@@ -83,13 +105,13 @@ export const AssetGraphExplorerSidebar = React.memo(
       [assetGraphData],
     );
 
-    const renderedNodes = React.useMemo(() => {
+    const treeNodes = React.useMemo(() => {
       const queue = rootNodes.map((id) => ({level: 1, id, path: id}));
 
-      const renderedNodes: {level: number; id: string; path: string}[] = [];
+      const treeNodes: TreeNodeType[] = [];
       while (queue.length) {
         const node = queue.shift()!;
-        renderedNodes.push(node);
+        treeNodes.push(node);
         if (openNodes.has(node.path)) {
           const downstream = Object.keys(assetGraphData.downstream[node.id] || {}).filter(
             (id) => assetGraphData.nodes[id],
@@ -99,15 +121,74 @@ export const AssetGraphExplorerSidebar = React.memo(
           );
         }
       }
-      return renderedNodes;
+      return treeNodes;
     }, [assetGraphData.downstream, assetGraphData.nodes, openNodes, rootNodes]);
+
+    const folderNodes = React.useMemo(() => {
+      const folderNodes: FolderNodeType[] = [];
+
+      // Map of Code Locations -> Groups -> Assets
+      const codeLocationNodes: Record<
+        string,
+        {
+          locationName: string;
+          groups: Record<
+            string,
+            {
+              groupName: string;
+              assets: string[];
+            }
+          >;
+        }
+      > = {};
+      Object.entries(assetGraphData.nodes).forEach(([id, node]) => {
+        const locationName = node.definition.repository.location.name;
+        const repositoryName = node.definition.repository.name;
+        const groupName = node.definition.groupName || 'default';
+        const codeLocation = buildRepoPathForHuman(repositoryName, locationName);
+        codeLocationNodes[codeLocation] = codeLocationNodes[codeLocation] || {
+          locationName: codeLocation,
+          groups: {},
+        };
+        codeLocationNodes[codeLocation]!.groups[groupName] = codeLocationNodes[codeLocation]!
+          .groups[groupName] || {
+          groupName,
+          assets: [],
+        };
+        codeLocationNodes[codeLocation]!.groups[groupName]!.assets.push(id);
+      });
+      Object.entries(codeLocationNodes).forEach(([locationName, locationNode]) => {
+        folderNodes.push({locationName, id: locationName, level: 1});
+        if (openNodes.has(locationName)) {
+          Object.entries(locationNode.groups).forEach(([groupName, groupNode]) => {
+            const groupId = locationName + ':' + groupName;
+            folderNodes.push({groupName, id: groupId, level: 2});
+            if (openNodes.has(groupId)) {
+              groupNode.assets
+                .sort((a, b) => COLLATOR.compare(a, b))
+                .forEach((assetKey) => {
+                  folderNodes.push({
+                    id: assetKey,
+                    path: locationName + ':' + groupName + ':' + assetKey,
+                    level: 3,
+                  });
+                });
+            }
+          });
+        }
+      });
+
+      return folderNodes;
+    }, [assetGraphData.nodes, openNodes]);
+
+    const renderedNodes = viewType === 'tree' ? treeNodes : folderNodes;
 
     const containerRef = React.useRef<HTMLDivElement | null>(null);
 
     const rowVirtualizer = useVirtualizer({
       count: renderedNodes.length,
       getScrollElement: () => containerRef.current,
-      estimateSize: () => 38,
+      estimateSize: () => 28,
       overscan: 10,
     });
 
@@ -115,8 +196,23 @@ export const AssetGraphExplorerSidebar = React.memo(
     const items = rowVirtualizer.getVirtualItems();
 
     React.useLayoutEffect(() => {
-      if (lastSelectedNode && lastSelectedNode.id !== selectedNode?.id) {
+      if (lastSelectedNode) {
         setOpenNodes((prevOpenNodes) => {
+          if (viewType === 'folder') {
+            const nextOpenNodes = new Set(prevOpenNodes);
+            const assetNode = assetGraphData.nodes[lastSelectedNode.id];
+            if (assetNode) {
+              const locationName = buildRepoPathForHuman(
+                assetNode.definition.repository.name,
+                assetNode.definition.repository.location.name,
+              );
+              const groupName = assetNode.definition.groupName || 'default';
+              nextOpenNodes.add(locationName);
+              nextOpenNodes.add(locationName + ':' + groupName);
+            }
+            setSelectedNode({id: lastSelectedNode.id});
+            return nextOpenNodes;
+          }
           let path = lastSelectedNode.id;
           let currentId = lastSelectedNode.id;
           let next: string | undefined;
@@ -143,15 +239,23 @@ export const AssetGraphExplorerSidebar = React.memo(
         });
       }
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [lastSelectedNode, assetGraphData]);
+    }, [lastSelectedNode, assetGraphData, viewType]);
 
     const indexOfLastSelectedNode = React.useMemo(
-      () =>
-        selectedNode?.path
-          ? renderedNodes.findIndex((node) => node.path === selectedNode?.path)
-          : -1,
+      () => {
+        if (!selectedNode) {
+          return -1;
+        }
+        if (viewType === 'tree') {
+          return 'path' in selectedNode
+            ? renderedNodes.findIndex((node) => 'path' in node && node.path === selectedNode.path)
+            : -1;
+        } else {
+          return renderedNodes.findIndex((node) => node.id === selectedNode?.id);
+        }
+      },
       // eslint-disable-next-line react-hooks/exhaustive-deps
-      [renderedNodes, selectedNode?.path],
+      [viewType, renderedNodes, selectedNode],
     );
 
     React.useLayoutEffect(() => {
@@ -161,8 +265,33 @@ export const AssetGraphExplorerSidebar = React.memo(
     }, [indexOfLastSelectedNode, rowVirtualizer]);
 
     return (
-      <div style={{display: 'grid', gridTemplateRows: 'auto minmax(0, 1fr)', height: '100%'}}>
-        <Box flex={{direction: 'column'}} padding={8}>
+      <div style={{display: 'grid', gridTemplateRows: 'auto auto minmax(0, 1fr)', height: '100%'}}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr auto',
+            gap: '6px',
+            padding: '12px 24px',
+            borderBottom: `1px solid ${Colors.KeylineGray}`,
+          }}
+        >
+          <ButtonGroupWrapper>
+            <ButtonGroup
+              activeItems={new Set([viewType])}
+              buttons={[
+                {id: 'tree', label: 'Tree view', icon: 'gantt_flat'},
+                {id: 'folder', label: 'Folder view', icon: 'folder_open'},
+              ]}
+              onClick={(id: 'tree' | 'folder') => {
+                setViewType(id);
+              }}
+            />
+          </ButtonGroupWrapper>
+          <Tooltip content="Hide sidebar">
+            <Button icon={<Icon name="panel_show_right" />} onClick={hideSidebar} />
+          </Tooltip>
+        </div>
+        <Box padding={{vertical: 8, horizontal: 24}}>
           <SearchFilter
             values={React.useMemo(() => {
               return allAssetKeys.map((key) => ({
@@ -178,7 +307,10 @@ export const AssetGraphExplorerSidebar = React.memo(
             <Inner $totalHeight={totalHeight}>
               {items.map(({index, key, size, start, measureElement}) => {
                 const node = renderedNodes[index]!;
-                const row = assetGraphData.nodes[node.id];
+                const isCodelocationNode = 'locationName' in node;
+                const isGroupNode = 'groupName' in node;
+                const row =
+                  !isCodelocationNode && !isGroupNode ? assetGraphData.nodes[node.id] : node;
                 return (
                   <Row
                     $height={size}
@@ -189,20 +321,25 @@ export const AssetGraphExplorerSidebar = React.memo(
                   >
                     {row ? (
                       <Node
-                        isOpen={openNodes.has(node.id)}
+                        viewType={viewType}
+                        isOpen={openNodes.has(nodeId(node))}
                         assetGraphData={assetGraphData}
                         node={row}
                         level={node.level}
-                        isSelected={selectedNode?.path === node.path}
+                        isSelected={
+                          selectedNode && 'path' in node && 'path' in selectedNode
+                            ? selectedNode.path === node.path
+                            : selectedNode?.id === node.id
+                        }
                         toggleOpen={() => {
                           setSelectedNode(node);
                           setOpenNodes((nodes) => {
                             const openNodes = new Set(nodes);
-                            const isOpen = openNodes.has(node.path);
+                            const isOpen = openNodes.has(nodeId(node));
                             if (isOpen) {
-                              openNodes.delete(node.path);
+                              openNodes.delete(nodeId(node));
                             } else {
-                              openNodes.add(node.path);
+                              openNodes.add(nodeId(node));
                             }
                             return openNodes;
                           });
@@ -240,9 +377,10 @@ const Node = ({
   selectThisNode,
   explorerPath,
   onChangeExplorerPath,
+  viewType,
 }: {
   assetGraphData: GraphData;
-  node: GraphNode;
+  node: GraphNode | FolderNodeNonAssetType;
   level: number;
   toggleOpen: () => void;
   selectThisNode: (e: React.MouseEvent<any> | React.KeyboardEvent<any>) => void;
@@ -251,8 +389,21 @@ const Node = ({
   isSelected: boolean;
   explorerPath: ExplorerPath;
   onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
+  viewType: 'tree' | 'folder';
 }) => {
-  const displayName = getDisplayName(node);
+  const isGroupNode = 'groupName' in node;
+  const isLocationNode = 'locationName' in node;
+  const isAssetNode = !isGroupNode && !isLocationNode;
+
+  const displayName = React.useMemo(() => {
+    if (isAssetNode) {
+      return getDisplayName(node);
+    } else if (isGroupNode) {
+      return node.groupName;
+    } else {
+      return node.locationName;
+    }
+  }, [isAssetNode, isGroupNode, node]);
 
   const upstream = Object.keys(assetGraphData.upstream[node.id] ?? {});
   const downstream = Object.keys(assetGraphData.downstream[node.id] ?? {});
@@ -263,7 +414,10 @@ const Node = ({
 
   function showDownstreamGraph() {
     const path = JSON.parse(node.id);
-    const nextOpsQuery = `${explorerPath.opsQuery} \"${path[path.length - 1]}\"*`;
+    const newQuery = `\"${path[path.length - 1]}\"*`;
+    const nextOpsQuery = explorerPath.opsQuery.includes(newQuery)
+      ? explorerPath.opsQuery
+      : `${explorerPath.opsQuery} ${newQuery}`;
     onChangeExplorerPath(
       {
         ...explorerPath,
@@ -275,7 +429,10 @@ const Node = ({
 
   function showUpstreamGraph() {
     const path = JSON.parse(node.id);
-    const nextOpsQuery = `${explorerPath.opsQuery} *\"${path[path.length - 1]}\"`;
+    const newQuery = `*\"${path[path.length - 1]}\"`;
+    const nextOpsQuery = explorerPath.opsQuery.includes(newQuery)
+      ? explorerPath.opsQuery
+      : `${explorerPath.opsQuery} ${newQuery}`;
     onChangeExplorerPath(
       {
         ...explorerPath,
@@ -312,11 +469,9 @@ const Node = ({
       />
       <Box ref={elementRef} onClick={selectThisNode}>
         <BoxWrapper level={level}>
-          <Box
-            padding={{right: 12, vertical: 2}}
-            flex={{direction: 'row', gap: 2, alignItems: 'center'}}
-          >
-            {downstream.filter((id) => assetGraphData.nodes[id]).length ? (
+          <Box padding={{right: 12}} flex={{direction: 'row', gap: 2, alignItems: 'center'}}>
+            {!isAssetNode ||
+            (viewType === 'tree' && downstream.filter((id) => assetGraphData.nodes[id]).length) ? (
               <div
                 onClick={(e) => {
                   e.stopPropagation();
@@ -335,93 +490,105 @@ const Node = ({
                 direction: 'row',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                gap: 12,
+                gap: 6,
                 grow: 1,
                 shrink: 1,
               }}
-              padding={{horizontal: 12, vertical: 8}}
+              padding={{horizontal: 8, vertical: 5 as any}}
               style={{
                 width: '100%',
                 borderRadius: '8px',
                 ...(isSelected ? {background: Colors.LightPurple} : {}),
               }}
             >
-              <MiddleTruncate text={displayName} />
-              <Popover
-                content={
-                  <Menu>
-                    <MenuItem
-                      icon="materialization"
-                      text={
-                        <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-                          <span>Materialize</span>
-                          {loading ? <Spinner purpose="body-text" /> : null}
-                        </Box>
-                      }
-                      onClick={async (e) => {
-                        await showSharedToaster({
-                          intent: 'primary',
-                          message: 'Initiating materialization',
-                          icon: 'materialization',
-                        });
-                        onClick([node.assetKey], e, false);
-                      }}
-                    />
-                    {upstream.length || downstream.length ? <MenuDivider /> : null}
-                    {upstream.length ? (
-                      <MenuItem
-                        text="Select upstream"
-                        icon="panel_show_left"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          // TODO: Hook up selecting the nodes
-                          showUpstreamGraph();
-                        }}
-                      />
-                    ) : null}
-                    {downstream.length ? (
-                      <MenuItem
-                        text="Select downstream"
-                        icon="panel_show_right"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          // TODO: Hook up selecting the nodes
-                          showDownstreamGraph();
-                        }}
-                      />
-                    ) : null}
-                    {upstream.length || downstream.length ? <MenuDivider /> : null}
-                    {upstream.length ? (
-                      <MenuItem
-                        text="Show upstream graph"
-                        icon="arrow_back"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          showUpstreamGraph();
-                        }}
-                      />
-                    ) : null}
-                    {downstream.length ? (
-                      <MenuItem
-                        text="Show downstream graph"
-                        icon="arrow_forward"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          showDownstreamGraph();
-                        }}
-                      />
-                    ) : null}
-                  </Menu>
-                }
-                hoverOpenDelay={100}
-                hoverCloseDelay={100}
-                placement="right"
-                shouldReturnFocusOnClose
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns:
+                    isGroupNode || isLocationNode ? 'auto minmax(0, 1fr)' : 'minmax(0, 1fr)',
+                  gap: '6px',
+                }}
               >
-                <ExpandMore style={{cursor: 'pointer'}}>
-                  <Icon name="expand_more" color={Colors.Gray500} />
-                </ExpandMore>
-              </Popover>
+                {isGroupNode ? <Icon name="asset_group" /> : null}
+                {isLocationNode ? <Icon name="folder_open" /> : null}
+                <MiddleTruncate text={displayName} />
+              </div>
+              {isAssetNode ? (
+                <div
+                  onClick={(e) => {
+                    // stop propagation outside of the popover to prevent parent onClick from being selected
+                    e.stopPropagation();
+                  }}
+                >
+                  <Popover
+                    content={
+                      <Menu>
+                        <MenuItem
+                          icon="materialization"
+                          text={
+                            <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+                              <span>Materialize</span>
+                              {loading ? <Spinner purpose="body-text" /> : null}
+                            </Box>
+                          }
+                          onClick={async (e) => {
+                            await showSharedToaster({
+                              intent: 'primary',
+                              message: 'Initiating materialization',
+                              icon: 'materialization',
+                            });
+                            onClick([node.assetKey], e, false);
+                          }}
+                        />
+                        {upstream.length || downstream.length ? <MenuDivider /> : null}
+                        {upstream.length ? (
+                          <MenuItem
+                            text="Select upstream"
+                            icon="panel_show_left"
+                            onClick={() => {
+                              // TODO: Hook up selecting the nodes
+                              showUpstreamGraph();
+                            }}
+                          />
+                        ) : null}
+                        {downstream.length ? (
+                          <MenuItem
+                            text="Select downstream"
+                            icon="panel_show_right"
+                            onClick={() => {
+                              // TODO: Hook up selecting the nodes
+                              showDownstreamGraph();
+                            }}
+                          />
+                        ) : null}
+                        {upstream.length || downstream.length ? <MenuDivider /> : null}
+                        {upstream.length ? (
+                          <MenuItem
+                            text="Show upstream graph"
+                            icon="arrow_back"
+                            onClick={showUpstreamGraph}
+                          />
+                        ) : null}
+                        {downstream.length ? (
+                          <MenuItem
+                            text="Show downstream graph"
+                            icon="arrow_forward"
+                            onClick={showDownstreamGraph}
+                          />
+                        ) : null}
+                      </Menu>
+                    }
+                    hoverOpenDelay={100}
+                    hoverCloseDelay={100}
+                    placement="right"
+                    shouldReturnFocusOnClose
+                  >
+                    <ExpandMore style={{cursor: 'pointer'}}>
+                      <Icon name="expand_more" color={Colors.Gray500} />
+                    </ExpandMore>
+                  </Popover>
+                </div>
+              ) : null}
             </GrayOnHoverBox>
           </Box>
         </BoxWrapper>
@@ -477,7 +644,11 @@ const BoxWrapper = ({level, children}: {level: number; children: React.ReactNode
     let sofar = children;
     for (let i = 0; i < level; i++) {
       sofar = (
-        <Box padding={{left: 12}} border={{side: 'left', width: 1, color: Colors.KeylineGray}}>
+        <Box
+          padding={{left: 8}}
+          margin={{left: 8}}
+          border={{side: 'left', width: 1, color: Colors.KeylineGray}}
+        >
           {sofar}
         </Box>
       );
@@ -574,3 +745,17 @@ const GrayOnHoverBox = styled(Box)`
     visibility: hidden;
   }
 `;
+
+const ButtonGroupWrapper = styled.div`
+  > * {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    > * {
+      place-content: center;
+    }
+  }
+`;
+
+function nodeId(node: TreeNodeType | FolderNodeType) {
+  return 'path' in node ? node.path : node.id;
+}
