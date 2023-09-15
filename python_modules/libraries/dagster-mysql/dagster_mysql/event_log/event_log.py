@@ -1,4 +1,4 @@
-from typing import ContextManager, Optional, cast
+from typing import ContextManager, Optional, Sequence, cast
 
 import dagster._check as check
 import sqlalchemy as db
@@ -13,6 +13,7 @@ from dagster._core.storage.event_log import (
     AssetKeyTable,
     SqlEventLogStorage,
     SqlEventLogStorageMetadata,
+    SqlEventLogStorageTable,
     SqlPollingEventWatcher,
 )
 from dagster._core.storage.event_log.base import EventLogCursor
@@ -174,6 +175,16 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                     )
                 except db_exc.IntegrityError:
                     pass
+
+    def delete_events_for_runs(self, run_ids: Sequence[str]) -> None:
+        check.sequence_param(run_ids, "run_ids", of_type=str)
+        # Delete from index connection because MySQLEventLogStorage is not run sharded
+        with self.index_connection() as conn:
+            conn.execute(
+                SqlEventLogStorageTable.delete().where(
+                    SqlEventLogStorageTable.c.run_id.in_(run_ids)
+                )
+            )
 
     def _connect(self) -> ContextManager[Connection]:
         return create_mysql_connection(self._engine, __file__, "event log")
