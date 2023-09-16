@@ -19,7 +19,68 @@ if TYPE_CHECKING:
 
 
 @experimental
-class AssetSpec:
+class ObservableAssetSpec:
+    def __init__(
+        self,
+        key: CoercibleToAssetKey,
+        *,
+        deps: Optional[
+            Iterable[
+                Union[CoercibleToAssetKey, "AssetSpec", AssetsDefinition, SourceAsset, "AssetDep"]
+            ]
+        ] = None,
+        description: Optional[str] = None,
+        metadata: Optional[MetadataUserInput] = None,
+        group_name: Optional[str] = None,
+    ):
+        from dagster._core.definitions.asset_dep import AssetDep
+
+        dep_set = {}
+        if deps:
+            for dep in deps:
+                if not isinstance(dep, AssetDep):
+                    asset_dep = AssetDep(dep)
+                else:
+                    asset_dep = dep
+
+                # we cannot do deduplication via a set because MultiPartitionMappings have an internal
+                # dictionary that cannot be hashed. Instead deduplicate by making a dictionary and checking
+                # for existing keys.
+                if asset_dep.asset_key in dep_set.keys():
+                    raise DagsterInvariantViolationError(
+                        f"Cannot set a dependency on asset {asset_dep.asset_key} more than once for"
+                        f" AssetSpec {key}"
+                    )
+                dep_set[asset_dep.asset_key] = asset_dep
+
+        self._key = AssetKey.from_coercible(key)
+        self._deps = list(dep_set.values())
+        self._description = check.opt_str_param(description, "description")
+        self._metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
+        self._group_name = check.opt_str_param(group_name, "group_name")
+
+    @property
+    def key(self) -> AssetKey:
+        return self._key
+
+    @property
+    def deps(self) -> Iterable["AssetDep"]:
+        return self._deps
+
+    @property
+    def description(self) -> Optional[str]:
+        return self._description
+
+    @property
+    def metadata(self) -> Optional[Mapping[str, Any]]:
+        return self._metadata
+
+    @property
+    def group_name(self) -> Optional[str]:
+        return self._group_name
+
+@experimental
+class AssetSpec(ObservableAssetSpec):
     """Specifies the core attributes of an asset. This object is attached to the decorated
     function that defines how it materialized.
 
@@ -61,32 +122,7 @@ class AssetSpec:
         freshness_policy: Optional[FreshnessPolicy] = None,
         auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
     ):
-        from dagster._core.definitions.asset_dep import AssetDep
-
-        dep_set = {}
-        if deps:
-            for dep in deps:
-                if not isinstance(dep, AssetDep):
-                    asset_dep = AssetDep(dep)
-                else:
-                    asset_dep = dep
-
-                # we cannot do deduplication via a set because MultiPartitionMappings have an internal
-                # dictionary that cannot be hashed. Instead deduplicate by making a dictionary and checking
-                # for existing keys.
-                if asset_dep.asset_key in dep_set.keys():
-                    raise DagsterInvariantViolationError(
-                        f"Cannot set a dependency on asset {asset_dep.asset_key} more than once for"
-                        f" AssetSpec {key}"
-                    )
-                dep_set[asset_dep.asset_key] = asset_dep
-
-        self._key = AssetKey.from_coercible(key)
-        self._deps = list(dep_set.values())
-        self._description = check.opt_str_param(description, "description")
-        self._metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
         self._skippable = check.bool_param(skippable, "skippable")
-        self._group_name = check.opt_str_param(group_name, "group_name")
         self._code_version = check.opt_str_param(code_version, "code_version")
         self._freshness_policy = check.opt_inst_param(
             freshness_policy,
@@ -98,26 +134,10 @@ class AssetSpec:
             "auto_materialize_policy",
             AutoMaterializePolicy,
         )
+        super().__init__(
+            key=key, deps=deps, description=description, metadata=metadata, group_name=group_name
+        )
 
-    @property
-    def key(self) -> AssetKey:
-        return self._key
-
-    @property
-    def deps(self) -> Iterable["AssetDep"]:
-        return self._deps
-
-    @property
-    def description(self) -> Optional[str]:
-        return self._description
-
-    @property
-    def metadata(self) -> Optional[Mapping[str, Any]]:
-        return self._metadata
-
-    @property
-    def group_name(self) -> Optional[str]:
-        return self._group_name
 
     @property
     def code_version(self) -> Optional[str]:
