@@ -15,6 +15,52 @@ from dagster._core.test_utils import instance_for_test
 from dagster._legacy import build_assets_job
 
 
+def test_asset_mat_planned_event_step_key():
+    @asset
+    def my_asset():
+        return 0
+
+    asset_job = build_assets_job("asset_job", [my_asset])
+
+    with instance_for_test() as instance:
+        result = asset_job.execute_in_process(instance=instance)
+        records = instance.get_event_records(
+            EventRecordsFilter(
+                DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                AssetKey("my_asset"),
+            )
+        )
+        assert result.run_id == records[0].event_log_entry.run_id
+        assert records[0].event_log_entry.dagster_event.step_key == "my_asset"
+
+
+def test_multi_asset_mat_planned_event_step_key():
+    @multi_asset(
+        outs={
+            "my_out_name": AssetOut(key=AssetKey("my_asset_name")),
+            "my_other_out_name": AssetOut(key=AssetKey("my_other_asset")),
+        }
+    )
+    def my_asset():
+        yield Output(1, "my_out_name")
+        yield Output(2, "my_other_out_name")
+
+    assets_job = build_assets_job("assets_job", [my_asset])
+
+    with instance_for_test() as instance:
+        result = assets_job.execute_in_process(instance=instance)
+        records = instance.get_event_records(
+            EventRecordsFilter(
+                DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                AssetKey("my_asset_name"),
+            )
+        )
+        assert result.run_id == records[0].event_log_entry.run_id
+        assert all(
+            record.event_log_entry.dagster_event.step_key == "my_asset" for record in records
+        )
+
+
 def test_asset_materialization_planned_event_yielded():
     @asset
     def asset_one():
