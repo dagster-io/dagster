@@ -4,7 +4,7 @@
 from docs_snippets.concepts.partitions_schedules_sensors.partitioned_job import (
     do_stuff_partitioned,
 )
-from dagster import job, op
+from dagster import OpExecutionContext, job, op
 
 
 # start_partition_config
@@ -59,7 +59,7 @@ class ProcessDataConfig(Config):
 
 
 @op
-def process_data(context, config: ProcessDataConfig):
+def process_data(context: OpExecutionContext, config: ProcessDataConfig):
     s = config.start
     e = config.end
     context.log.info(f"processing data for {s} - {e}")
