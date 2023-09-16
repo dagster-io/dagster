@@ -133,6 +133,22 @@
         dict({
           '__typename': 'UsedSolid',
           'definition': dict({
+            'name': 'an_asset',
+          }),
+          'invocations': list([
+            dict({
+              'pipeline': dict({
+                'name': 'executable_test_job',
+              }),
+              'solidHandle': dict({
+                'handleID': 'an_asset',
+              }),
+            }),
+          ]),
+        }),
+        dict({
+          '__typename': 'UsedSolid',
+          'definition': dict({
             'name': 'asset_1',
           }),
           'invocations': list([
@@ -654,6 +670,22 @@
               }),
               'solidHandle': dict({
                 'handleID': 'emit_ten',
+              }),
+            }),
+          ]),
+        }),
+        dict({
+          '__typename': 'UsedSolid',
+          'definition': dict({
+            'name': 'executable_asset',
+          }),
+          'invocations': list([
+            dict({
+              'pipeline': dict({
+                'name': 'executable_test_job',
+              }),
+              'solidHandle': dict({
+                'handleID': 'executable_asset',
               }),
             }),
           ]),

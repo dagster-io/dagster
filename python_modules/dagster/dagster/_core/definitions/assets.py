@@ -873,11 +873,9 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             AssetVarietal,
         )
 
-        return AssetVarietal(
-            self._metadata_by_key.get(asset_key, {}).get(
-                SYSTEM_METADATA_KEY_ASSET_VARIETAL, AssetVarietal.MATERIALIZEABLE.value
-            )
-        ) in {AssetVarietal.MATERIALIZEABLE}
+        return AssetVarietal.is_executable(
+            self._metadata_by_key.get(asset_key, {}).get(SYSTEM_METADATA_KEY_ASSET_VARIETAL)
+        )
 
     def get_partition_mapping_for_input(self, input_name: str) -> Optional[PartitionMapping]:
         return self._partition_mappings.get(self._keys_by_input_name[input_name])

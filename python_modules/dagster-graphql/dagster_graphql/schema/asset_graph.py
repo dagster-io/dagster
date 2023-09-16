@@ -12,6 +12,7 @@ from dagster._core.definitions.data_version import (
     StaleStatus,
 )
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+from dagster._core.definitions.metadata import TextMetadataValue
 from dagster._core.definitions.partition import CachingDynamicPartitionsLoader, PartitionsDefinition
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import EventRecordsFilter
@@ -223,6 +224,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     graphName = graphene.String()
     groupName = graphene.String()
     id = graphene.NonNull(graphene.ID)
+    isExecutable = graphene.NonNull(graphene.Boolean)
     isObservable = graphene.NonNull(graphene.Boolean)
     isPartitioned = graphene.NonNull(graphene.Boolean)
     isSource = graphene.NonNull(graphene.Boolean)
@@ -820,6 +822,22 @@ class GrapheneAssetNode(graphene.ObjectType):
 
     def resolve_isObservable(self, _graphene_info: ResolveInfo) -> bool:
         return self._external_asset_node.is_observable
+
+    def resolve_isExecutable(self, _graphene_info: ResolveInfo) -> bool:
+        from dagster._core.definitions.asset_spec import (
+            SYSTEM_METADATA_KEY_ASSET_VARIETAL,
+            AssetVarietal,
+        )
+
+        metadata_value = self._external_asset_node.metadata.get(SYSTEM_METADATA_KEY_ASSET_VARIETAL)
+        if not metadata_value:
+            varietal_text = None
+        else:
+            check.inst(metadata_value, TextMetadataValue)  # for guaranteed runtime error
+            assert isinstance(metadata_value, TextMetadataValue)  # for type checker
+            varietal_text = metadata_value.value
+
+        return AssetVarietal.is_executable(varietal_text)
 
     def resolve_latestMaterializationByPartition(
         self,

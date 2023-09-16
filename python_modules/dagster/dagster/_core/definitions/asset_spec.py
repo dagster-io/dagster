@@ -12,6 +12,7 @@ from .events import (
 )
 from .freshness_policy import FreshnessPolicy
 from .metadata import MetadataUserInput
+from enum import Enum
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
@@ -28,6 +29,16 @@ SYSTEM_METADATA_KEY_ASSET_VARIETAL = "dagster/asset_varietal"
 class AssetVarietal(Enum):
     UNEXECUTABLE = "UNEXECUTABLE"
     MATERIALIZEABLE = "MATERIALIZEABLE"
+
+    @staticmethod
+    def is_executable(varietal_str: Optional[str]) -> bool:
+        return AssetVarietal.str_to_enum(varietal_str) in {AssetVarietal.MATERIALIZEABLE}
+
+    @staticmethod
+    def str_to_enum(varietal_str: Optional[str]) -> "AssetVarietal":
+        return (
+            AssetVarietal.MATERIALIZEABLE if varietal_str is None else AssetVarietal(varietal_str)
+        )
 
 
 @experimental
