@@ -124,7 +124,7 @@ class AssetSpec:
         return self._code_version
 
     @property
-    def skipable(self) -> bool:
+    def skippable(self) -> bool:
         return self._skippable
 
     @property
