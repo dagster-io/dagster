@@ -125,7 +125,6 @@ def test_emit_asset_observation_in_user_space() -> None:
     assert observation
     assert observation.asset_key == AssetKey("asset_in_user_space")
 
-
     mat_event = instance.get_latest_materialization_event(asset_key=AssetKey("asset_in_user_space"))
 
     # we actually want this to be false once we make changes down the stack
