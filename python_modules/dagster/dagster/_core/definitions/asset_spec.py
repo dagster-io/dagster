@@ -1,7 +1,7 @@
-from typing import TYPE_CHECKING, Any, Iterable, Mapping, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, Any, Iterable, Mapping, Optional, Union
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, experimental
+from dagster._annotations import experimental
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.errors import DagsterInvariantViolationError
@@ -19,22 +19,7 @@ if TYPE_CHECKING:
 
 
 @experimental
-class AssetSpec(
-    NamedTuple(
-        "_AssetSpec",
-        [
-            ("key", PublicAttr[AssetKey]),
-            ("deps", PublicAttr[Iterable["AssetDep"]]),
-            ("description", PublicAttr[Optional[str]]),
-            ("metadata", PublicAttr[Optional[Mapping[str, Any]]]),
-            ("group_name", PublicAttr[Optional[str]]),
-            ("skippable", PublicAttr[bool]),
-            ("code_version", PublicAttr[Optional[str]]),
-            ("freshness_policy", PublicAttr[Optional[FreshnessPolicy]]),
-            ("auto_materialize_policy", PublicAttr[Optional[AutoMaterializePolicy]]),
-        ],
-    )
-):
+class AssetSpec:
     """Specifies the core attributes of an asset. This object is attached to the decorated
     function that defines how it materialized.
 
@@ -59,8 +44,8 @@ class AssetSpec(
         backfill_policy (Optional[BackfillPolicy]): BackfillPolicy to apply to the specified asset.
     """
 
-    def __new__(
-        cls,
+    def __init__(
+        self,
         key: CoercibleToAssetKey,
         *,
         deps: Optional[
@@ -70,9 +55,9 @@ class AssetSpec(
         ] = None,
         description: Optional[str] = None,
         metadata: Optional[MetadataUserInput] = None,
-        skippable: bool = False,
         group_name: Optional[str] = None,
         code_version: Optional[str] = None,
+        skippable: bool = False,
         freshness_policy: Optional[FreshnessPolicy] = None,
         auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
     ):
@@ -96,23 +81,56 @@ class AssetSpec(
                     )
                 dep_set[asset_dep.asset_key] = asset_dep
 
-        return super().__new__(
-            cls,
-            key=AssetKey.from_coercible(key),
-            deps=list(dep_set.values()),
-            description=check.opt_str_param(description, "description"),
-            metadata=check.opt_mapping_param(metadata, "metadata", key_type=str),
-            skippable=check.bool_param(skippable, "skippable"),
-            group_name=check.opt_str_param(group_name, "group_name"),
-            code_version=check.opt_str_param(code_version, "code_version"),
-            freshness_policy=check.opt_inst_param(
-                freshness_policy,
-                "freshness_policy",
-                FreshnessPolicy,
-            ),
-            auto_materialize_policy=check.opt_inst_param(
-                auto_materialize_policy,
-                "auto_materialize_policy",
-                AutoMaterializePolicy,
-            ),
+        self._key = AssetKey.from_coercible(key)
+        self._deps = list(dep_set.values())
+        self._description = check.opt_str_param(description, "description")
+        self._metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
+        self._skippable = check.bool_param(skippable, "skippable")
+        self._group_name = check.opt_str_param(group_name, "group_name")
+        self._code_version = check.opt_str_param(code_version, "code_version")
+        self._freshness_policy = check.opt_inst_param(
+            freshness_policy,
+            "freshness_policy",
+            FreshnessPolicy,
         )
+        self._auto_materialize_policy = check.opt_inst_param(
+            auto_materialize_policy,
+            "auto_materialize_policy",
+            AutoMaterializePolicy,
+        )
+
+    @property
+    def key(self) -> AssetKey:
+        return self._key
+
+    @property
+    def deps(self) -> Iterable["AssetDep"]:
+        return self._deps
+
+    @property
+    def description(self) -> Optional[str]:
+        return self._description
+
+    @property
+    def metadata(self) -> Optional[Mapping[str, Any]]:
+        return self._metadata
+
+    @property
+    def group_name(self) -> Optional[str]:
+        return self._group_name
+
+    @property
+    def code_version(self) -> Optional[str]:
+        return self._code_version
+
+    @property
+    def skippable(self) -> bool:
+        return self._skippable
+
+    @property
+    def freshness_policy(self) -> Optional[FreshnessPolicy]:
+        return self._freshness_policy
+
+    @property
+    def auto_materialize_policy(self) -> Optional[AutoMaterializePolicy]:
+        return self._auto_materialize_policy
