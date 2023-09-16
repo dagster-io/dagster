@@ -566,6 +566,13 @@ def _get_output_asset_materializations(
     # materialization.
     step_context.wipe_input_asset_version_info(asset_key)
 
+    step_output_handle = StepOutputHandle(step_context.step.key, output_def.name)
+    assets_def = step_context.get_assets_def_for_step_output(step_output_handle)
+
+    if assets_def and not assets_def.is_asset_materializable(asset_key):
+        yield from ()
+        return
+
     tags: Dict[str, str]
     if (
         step_context.is_external_input_asset_version_info_loaded
@@ -694,7 +701,7 @@ def _store_output(
 
     manager_materializations = []
     manager_metadata: Dict[str, MetadataValue] = {}
-
+    assets_def = step_context.get_assets_def_for_step_output(step_output_handle)
     # don't store asset check outputs
     if step_context.step.step_output_named(
         step_output_handle.output_name
@@ -718,6 +725,14 @@ def _store_output(
                 yield gen_output
 
         handle_output_gen = _gen_fn()
+    elif assets_def and not assets_def.is_asset_materializable(
+        assets_def.keys_by_output_name[step_output_handle.output_name]
+    ):  # handle case where asset def is not materializable
+
+        def _no_op() -> Iterator[DagsterEvent]:
+            yield from ()
+
+        handle_output_gen = _no_op()
     else:
         handle_output_gen = output_manager.handle_output(output_context, output.value)
 
