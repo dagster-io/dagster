@@ -79,6 +79,7 @@ class ObservableAssetSpec:
     def group_name(self) -> Optional[str]:
         return self._group_name
 
+
 @experimental
 class AssetSpec(ObservableAssetSpec):
     """Specifies the core attributes of an asset. This object is attached to the decorated
@@ -137,7 +138,6 @@ class AssetSpec(ObservableAssetSpec):
         super().__init__(
             key=key, deps=deps, description=description, metadata=metadata, group_name=group_name
         )
-
 
     @property
     def code_version(self) -> Optional[str]:
