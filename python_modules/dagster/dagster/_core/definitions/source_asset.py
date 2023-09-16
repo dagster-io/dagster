@@ -14,7 +14,7 @@ from typing_extensions import TypeAlias
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental_param, public
 from dagster._core.decorator_utils import get_function_params
-from dagster._core.definitions.asset_spec import ReadonlyAssetSpec
+from dagster._core.definitions.asset_spec import ObservableAssetSpec
 from dagster._core.definitions.data_version import (
     DATA_VERSION_TAG,
     DataVersion,
@@ -55,7 +55,7 @@ SourceAssetObserveFunction: TypeAlias = Callable[..., Any]
 
 @experimental_param(param="resource_defs")
 @experimental_param(param="io_manager_def")
-class SourceAsset(ReadonlyAssetSpec, ResourceAddable):
+class SourceAsset(ObservableAssetSpec, ResourceAddable):
     """A SourceAsset represents an asset that will be loaded by (but not updated by) Dagster.
 
     Attributes:

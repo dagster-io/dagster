@@ -1,5 +1,5 @@
 from dagster import Definitions, sensor
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.asset_spec import ObservableAssetSpec
 from dagster._core.definitions.data_version import DataVersion
 from dagster._core.definitions.events import AssetMaterialization, AssetObservation
 from dagster._core.definitions.sensor_definition import SensorEvaluationContext
@@ -54,8 +54,8 @@ def an_observing_sensor():
 #     yield DataVersion("a_version")
 
 # This code location defines metadata exclusively. It expects execution to happen elsewhere.
-asset_one = AssetSpec(key="observable_asset_one")
-asset_two = AssetSpec(key="observable_asset_two", deps=[asset_one])
+asset_one = ObservableAssetSpec(key="observable_asset_one")
+asset_two = ObservableAssetSpec(key="observable_asset_two", deps=[asset_one])
 # defs = Definitions(assets=[asset_one, asset_two, actively_observed_asset])
 
 

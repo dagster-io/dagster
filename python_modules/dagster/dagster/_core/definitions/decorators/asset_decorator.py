@@ -87,7 +87,6 @@ def asset(
     key: Optional[CoercibleToAssetKey] = None,
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = ...,
     check_specs: Optional[Sequence[AssetCheckSpec]] = ...,
-    materializeable: Optional[bool] = True,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]: ...
 
 
@@ -126,7 +125,6 @@ def asset(
     key: Optional[CoercibleToAssetKey] = None,
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
-    materializeable: Optional[bool] = True,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Create a definition for how to compute an asset.
 
@@ -238,7 +236,6 @@ def asset(
             code_version=code_version,
             check_specs=check_specs,
             key=key,
-            materializeable=materializeable,
         )
 
     if compute_fn is not None:
@@ -282,7 +279,6 @@ class _Asset:
         code_version: Optional[str] = None,
         key: Optional[CoercibleToAssetKey] = None,
         check_specs: Optional[Sequence[AssetCheckSpec]] = None,
-        materializeable: bool = True,
     ):
         self.name = name
 
@@ -312,7 +308,6 @@ class _Asset:
         self.backfill_policy = backfill_policy
         self.code_version = code_version
         self.check_specs = check_specs
-        self.materializeable = materializeable
 
         if (name or key_prefix) and key:
             raise DagsterInvalidDefinitionError(
@@ -453,7 +448,6 @@ class _Asset:
             metadata_by_key={out_asset_key: self.metadata} if self.metadata else None,
             descriptions_by_key=None,  # not supported for now
             check_specs_by_output_name=check_specs_by_output_name,
-            materializeable_by_output_name={"result": self.materializeable},
         )
 
 
@@ -814,8 +808,6 @@ def multi_asset(
             descriptions_by_key=None,  # not supported for now
             metadata_by_key=metadata_by_key,
             check_specs_by_output_name=check_specs_by_output_name,
-            # materializeable_by_output_name not supported for now in multi_asset
-            materializeable_by_output_name={},
         )
 
     return inner

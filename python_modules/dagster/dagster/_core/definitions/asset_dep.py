@@ -2,7 +2,7 @@ from typing import NamedTuple, Optional, Union
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental
-from dagster._core.definitions.asset_spec import ReadonlyAssetSpec
+from dagster._core.definitions.asset_spec import ObservableAssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.definitions.source_asset import SourceAsset
@@ -49,10 +49,10 @@ class AssetDep(
 
     def __new__(
         cls,
-        asset: Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset, ReadonlyAssetSpec],
+        asset: Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset, ObservableAssetSpec],
         partition_mapping: Optional[PartitionMapping] = None,
     ):
-        if isinstance(asset, ReadonlyAssetSpec):
+        if isinstance(asset, ObservableAssetSpec):
             asset_key = asset.key
         else:
             asset_key = AssetKey.from_coercible_or_definition(asset)

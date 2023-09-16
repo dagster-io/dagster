@@ -21,8 +21,7 @@ if TYPE_CHECKING:
 # define the body of an observable asset as a function. It can execute either in the context of a sensor or in the context of a vanilla assets definition
 
 
-@experimental
-class ReadonlyAssetSpec:
+class _ReadonlyAssetSpec:
     """Specifies the core attributes of an asset in the graph.
 
     Attributes:
@@ -51,7 +50,7 @@ class ReadonlyAssetSpec:
             Iterable[
                 Union[
                     CoercibleToAssetKey,
-                    "ReadonlyAssetSpec",
+                    "ObservableAssetSpec",
                     AssetsDefinition,
                     "SourceAsset",
                     "AssetDep",
@@ -90,7 +89,12 @@ class ReadonlyAssetSpec:
 
 
 @experimental
-class AssetSpec(ReadonlyAssetSpec):
+class ObservableAssetSpec(_ReadonlyAssetSpec):
+    pass
+
+
+@experimental
+class AssetSpec(_ReadonlyAssetSpec):
     """Specifies the core attributes of an asset. This object is attached to the decorated
     function that defines how it materialized.
 
@@ -129,7 +133,7 @@ class AssetSpec(ReadonlyAssetSpec):
             Iterable[
                 Union[
                     CoercibleToAssetKey,
-                    "AssetSpec",
+                    "ObservableAssetSpec",
                     AssetsDefinition,
                     "SourceAsset",
                     "AssetDep",

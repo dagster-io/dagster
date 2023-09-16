@@ -19,7 +19,7 @@ from dagster._config.pythonic_config import (
 )
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_graph import InternalAssetGraph
-from dagster._core.definitions.asset_spec import ReadonlyAssetSpec
+from dagster._core.definitions.asset_spec import ObservableAssetSpec
 from dagster._core.definitions.decorators import asset
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
@@ -245,8 +245,12 @@ def _attach_resources_to_jobs_and_instigator_jobs(
 # button in the UI (it would act more like a source asset). However
 # this allows Dagster to act as a data observability tool and lineage
 # tool for assets defined elsewhere
-def create_observable_asset(asset_spec: ReadonlyAssetSpec) -> AssetsDefinition:
-    @asset(key=asset_spec.key, deps=[dep.asset_key for dep in asset_spec.deps])
+def create_observable_asset(asset_spec: ObservableAssetSpec) -> AssetsDefinition:
+    @asset(
+        key=asset_spec.key,
+        deps=[dep.asset_key for dep in asset_spec.deps],
+        metadata={"dagster/observable": True},
+    )
     def _observable_asset(_) -> None:
         raise Exception("Illegal to materialize an observable asset")
 
@@ -260,7 +264,7 @@ def create_observable_asset(asset_spec: ReadonlyAssetSpec) -> AssetsDefinition:
 def _create_repository_using_definitions_args(
     name: str,
     assets: Optional[
-        Iterable[Union[AssetsDefinition, ReadonlyAssetSpec, CacheableAssetsDefinition]]
+        Iterable[Union[AssetsDefinition, ObservableAssetSpec, CacheableAssetsDefinition]]
     ] = None,
     schedules: Optional[
         Iterable[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]
@@ -273,7 +277,7 @@ def _create_repository_using_definitions_args(
     asset_checks: Optional[Iterable[AssetChecksDefinition]] = None,
 ):
     check.opt_iterable_param(
-        assets, "assets", (AssetsDefinition, ReadonlyAssetSpec, CacheableAssetsDefinition)
+        assets, "assets", (AssetsDefinition, ObservableAssetSpec, CacheableAssetsDefinition)
     )
     check.opt_iterable_param(
         schedules, "schedules", (ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition)
@@ -290,7 +294,7 @@ def _create_repository_using_definitions_args(
 
     new_assets = []
     for asset_ in assets or []:
-        if isinstance(asset_, ReadonlyAssetSpec) and not isinstance(asset, SourceAsset):
+        if isinstance(asset_, ObservableAssetSpec) and not isinstance(asset, SourceAsset):
             new_assets.append(create_observable_asset(asset_))
         else:
             new_assets.append(asset_)
@@ -444,7 +448,7 @@ class Definitions:
     def __init__(
         self,
         assets: Optional[
-            Iterable[Union[AssetsDefinition, ReadonlyAssetSpec, CacheableAssetsDefinition]]
+            Iterable[Union[AssetsDefinition, ObservableAssetSpec, CacheableAssetsDefinition]]
         ] = None,
         schedules: Optional[
             Iterable[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]

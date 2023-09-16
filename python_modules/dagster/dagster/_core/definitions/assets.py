@@ -89,7 +89,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     _backfill_policy: Optional[BackfillPolicy]
     _code_versions_by_key: Mapping[AssetKey, Optional[str]]
     _descriptions_by_key: Mapping[AssetKey, str]
-    _materializeable_by_output_name: Mapping[str, bool]
 
     def __init__(
         self,
@@ -110,7 +109,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         backfill_policy: Optional[BackfillPolicy] = None,
         descriptions_by_key: Optional[Mapping[AssetKey, str]] = None,
         check_specs_by_output_name: Optional[Mapping[str, AssetCheckSpec]] = None,
-        materializeable_by_output_name: Optional[Mapping[str, bool]] = None,
         # if adding new fields, make sure to handle them in the with_attributes, from_graph, and
         # get_attributes_dict methods
     ):
@@ -281,15 +279,16 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 "Non partitioned asset can only have single run backfill policy",
             )
 
-        self._materializeable_by_output_name = materializeable_by_output_name or {}
-        print(f"self._materializeable_by_output_name: {self._materializeable_by_output_name}")
-
         _validate_self_deps(
             input_keys=self._keys_by_input_name.values(),
             output_keys=self._selected_asset_keys,
             partition_mappings=self._partition_mappings,
             partitions_def=self._partitions_def,
         )
+
+    def is_materializable(self, key: AssetKey) -> bool:
+        for_key = self._metadata_by_key.get(key, {})
+        return not (bool(for_key.get("dagster/observable", False)))
 
     @staticmethod
     def dagster_internal_init(
@@ -310,7 +309,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         backfill_policy: Optional[BackfillPolicy],
         descriptions_by_key: Optional[Mapping[AssetKey, str]],
         check_specs_by_output_name: Optional[Mapping[str, AssetCheckSpec]],
-        materializeable_by_output_name: Optional[Mapping[str, bool]],
     ) -> "AssetsDefinition":
         return AssetsDefinition(
             keys_by_input_name=keys_by_input_name,
@@ -329,7 +327,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             backfill_policy=backfill_policy,
             descriptions_by_key=descriptions_by_key,
             check_specs_by_output_name=check_specs_by_output_name,
-            materializeable_by_output_name=materializeable_by_output_name,
         )
 
     def __call__(self, *args: object, **kwargs: object) -> object:
@@ -461,7 +458,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         ] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
         can_subset: bool = False,
-        materializeable_by_output_name: Optional[Mapping[str, bool]] = None,
     ) -> "AssetsDefinition":
         """Constructs an AssetsDefinition from an OpDefinition.
 
@@ -527,7 +523,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             auto_materialize_policies_by_output_name=auto_materialize_policies_by_output_name,
             backfill_policy=backfill_policy,
             can_subset=can_subset,
-            materializeable_by_output_name=materializeable_by_output_name,
         )
 
     @staticmethod
@@ -552,7 +547,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         backfill_policy: Optional[BackfillPolicy] = None,
         can_subset: bool = False,
         check_specs: Optional[Sequence[AssetCheckSpec]] = None,
-        materializeable_by_output_name: Optional[Mapping[str, bool]] = None,
     ) -> "AssetsDefinition":
         from dagster._core.definitions.decorators.asset_decorator import (
             _validate_and_assign_output_names_to_check_specs,
@@ -685,7 +679,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             can_subset=can_subset,
             selected_asset_keys=None,  # node has no subselection info
             check_specs_by_output_name=check_specs_by_output_name,
-            materializeable_by_output_name=materializeable_by_output_name,
         )
 
     @public
@@ -1056,7 +1049,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             auto_materialize_policies_by_key=replaced_auto_materialize_policies_by_key,
             backfill_policy=backfill_policy if backfill_policy else self.backfill_policy,
             descriptions_by_key=replaced_descriptions_by_key,
-            materializable_by_output_name=self._materializeable_by_output_name,
         )
 
         return self.__class__(**merge_dicts(self.get_attributes_dict(), replaced_attributes))
@@ -1276,7 +1268,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             backfill_policy=self._backfill_policy,
             descriptions_by_key=self._descriptions_by_key,
             check_specs_by_output_name=self._check_specs_by_output_name,
-            materializeable_by_output_name=self._materializeable_by_output_name,
         )
 
 
