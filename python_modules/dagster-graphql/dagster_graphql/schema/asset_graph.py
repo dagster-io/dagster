@@ -223,6 +223,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     graphName = graphene.String()
     groupName = graphene.String()
     id = graphene.NonNull(graphene.ID)
+    isExecutable = graphene.NonNull(graphene.Boolean)
     isObservable = graphene.NonNull(graphene.Boolean)
     isPartitioned = graphene.NonNull(graphene.Boolean)
     isSource = graphene.NonNull(graphene.Boolean)
@@ -820,6 +821,11 @@ class GrapheneAssetNode(graphene.ObjectType):
 
     def resolve_isObservable(self, _graphene_info: ResolveInfo) -> bool:
         return self._external_asset_node.is_observable
+
+    def resolve_isExecutable(self, _graphene_info: ResolveInfo) -> bool:
+        from dagster._core.definitions.asset_spec import SYSTEM_METADATA_KEY_EXECUTABLE
+
+        return not self._external_asset_node.metadata.get(SYSTEM_METADATA_KEY_EXECUTABLE, False)
 
     def resolve_latestMaterializationByPartition(
         self,
