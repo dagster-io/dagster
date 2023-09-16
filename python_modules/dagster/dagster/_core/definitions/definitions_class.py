@@ -249,7 +249,7 @@ def create_observable_asset(asset_spec: ObservableAssetSpec) -> AssetsDefinition
     @asset(
         key=asset_spec.key,
         deps=[dep.asset_key for dep in asset_spec.deps],
-        metadata={"dagster/observable": True},
+        metadata={"dagster/observable": False}
     )
     def _observable_asset(_) -> None:
         raise Exception("Illegal to materialize an observable asset")

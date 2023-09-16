@@ -26,6 +26,8 @@ from dagster._annotations import deprecated, experimental_param, public
 from dagster._config import Field, Shape, StringSource
 from dagster._config.config_type import ConfigType
 from dagster._config.validate import validate_config
+
+# from dagster._core.definitions import op_selection
 from dagster._core.definitions.asset_check_spec import AssetCheckHandle
 from dagster._core.definitions.dependency import (
     Node,
@@ -83,6 +85,7 @@ from .resource_definition import ResourceDefinition
 from .run_request import RunRequest
 from .utils import DEFAULT_IO_MANAGER_KEY, validate_tags
 from .version_strategy import VersionStrategy
+from dagster._core.definitions import asset_layer
 
 if TYPE_CHECKING:
     from dagster._config.snap import ConfigSchemaSnapshot
@@ -1357,3 +1360,46 @@ def _create_run_config_schema(
         config_type_dict_by_key=config_type_dict_by_key,
         config_mapping=job_def.config_mapping,
     )
+
+
+# @dataclass
+class ExecutionSelection:
+    op_selection: Optional[AbstractSet[str]] = None
+    asset_selection: Optional[AbstractSet[AssetKey]] = None
+
+
+class JobExecutionSelection:
+    def __init__(
+        self,
+        job_def: JobDefinition,
+        subset_job_def: JobDefinition,
+        execution_selection: ExecutionSelection,
+    ):
+        self.job_def = job_def
+        self.execution_selection = execution_selection
+        self.subset_job_def = subset_job_def
+
+    @property
+    def is_executable(self) -> bool:
+        if not self.job_def.asset_layer:
+            return True
+
+        for assets_def in self.job_def.asset_layer.assets_defs_by_key.values():
+            if not assets_def.is_executable:
+                return False
+        return True
+
+    @staticmethod
+    def for_job(
+        job_def: JobDefinition, execution_selection: ExecutionSelection
+    ) -> "JobExecutionSelection":
+        op_selection = execution_selection.op_selection
+        asset_selection = execution_selection.asset_selection
+        return JobExecutionSelection(
+            job_def,
+            job_def.get_subset(
+                op_selection=op_selection,
+                asset_selection=frozenset(asset_selection) if asset_selection else None,
+            ),
+            execution_selection,
+        )

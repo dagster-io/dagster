@@ -286,9 +286,9 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             partitions_def=self._partitions_def,
         )
 
-    def is_materializable(self, key: AssetKey) -> bool:
+    def is_executable(self, key: AssetKey) -> bool:
         for_key = self._metadata_by_key.get(key, {})
-        return not (bool(for_key.get("dagster/observable", False)))
+        return bool(for_key.get("dagster/executable", True))
 
     @staticmethod
     def dagster_internal_init(

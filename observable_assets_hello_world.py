@@ -1,4 +1,4 @@
-from dagster import Definitions, sensor
+from dagster import Definitions, materialize, sensor
 from dagster._core.definitions.asset_spec import ObservableAssetSpec
 from dagster._core.definitions.data_version import DataVersion
 from dagster._core.definitions.events import AssetMaterialization, AssetObservation
@@ -71,3 +71,5 @@ defs = Definitions(
 # sensors=[sensor_that_emits_materializations, sensor_that_observes],
 
 # actively_observed_asset()
+
+materialize(defs.get_asset_graph().assets)
