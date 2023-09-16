@@ -70,10 +70,6 @@ def get_base_asset_jobs(
     for assets_def in assets:
         assets_by_partitions_def[assets_def.partitions_def].append(assets_def)
 
-    resolved_source_assets: List[SourceAsset] = []
-    for asset in assets:
-        resolved_source_assets += asset.to_source_assets()
-
     # We need to create "empty" jobs for each partitions def that is used by an observable but no
     # materializable asset. They are empty because we don't assign the source asset to the `assets`,
     # but rather the `source_assets` argument of `build_assets_job`.
@@ -87,7 +83,6 @@ def get_base_asset_jobs(
                 assets=assets,
                 asset_checks=asset_checks,
                 source_assets=source_assets,
-                resolved_source_assets=resolved_source_assets,
                 executor_def=executor_def,
                 resource_defs=resource_defs,
             )
@@ -97,6 +92,11 @@ def get_base_asset_jobs(
         partitioned_assets_by_partitions_def = {
             k: v for k, v in assets_by_partitions_def.items() if k is not None
         }
+
+        resolved_source_assets: List[SourceAsset] = []
+        for asset in assets:
+            resolved_source_assets += asset.to_source_assets()
+
         jobs = []
 
         # sort to ensure some stability in the ordering
