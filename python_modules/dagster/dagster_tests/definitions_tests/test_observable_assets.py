@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Iterator, Optional
 
 from dagster import AssetKey, AssetsDefinition, DagsterInstance, Output, asset, materialize
 from dagster._core.definitions.asset_spec import ObservableAssetSpec
@@ -109,7 +109,7 @@ def test_report_runless_observation() -> None:
 
 def test_emit_asset_observation_in_user_space() -> None:
     @asset(key="asset_in_user_space")
-    def active_observable_asset_in_user_space():
+    def active_observable_asset_in_user_space() -> Iterator:
         # not ideal but it works
         yield AssetObservation(asset_key="asset_in_user_space", metadata={"foo": "bar"})
         yield Output(None)
