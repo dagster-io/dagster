@@ -70,8 +70,6 @@ def report_runless_asset_observation(
     asset_observation: AssetObservation,
     instance: Optional[DagsterInstance] = None,
 ):
-    # instance.report_dagster_event(dagster_event, run_id=run_id or "runless")
-
     report_runless_event(
         instance or DagsterInstance.get(),
         DagsterEventType.ASSET_OBSERVATION,
