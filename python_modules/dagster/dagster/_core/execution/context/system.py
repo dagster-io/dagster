@@ -72,11 +72,13 @@ from dagster._core.types.dagster_type import DagsterType
 from .input import InputContext
 from .output import OutputContext, get_output_context
 
+
 if TYPE_CHECKING:
     from dagster._core.definitions.data_version import (
         DataVersion,
     )
     from dagster._core.definitions.dependency import NodeHandle
+    from dagster._core.definitions.assets import AssetsDefinition
     from dagster._core.definitions.resource_definition import Resources
     from dagster._core.event_api import EventLogRecord
     from dagster._core.execution.plan.plan import ExecutionPlan
@@ -1232,6 +1234,15 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             output_capture=self._output_capture,
             known_state=self._known_state,
         )
+
+    def get_assets_def_for_step_output(
+        self, step_output_handle: StepOutputHandle
+    ) -> Optional["AssetsDefinition"]:
+        asset_layer = self.job_def.asset_layer
+        asset_info = asset_layer.asset_info_for_output(
+            self.node_handle, output_name=step_output_handle.output_name
+        )
+        return asset_layer.assets_def_for_asset(asset_info.key) if asset_info else None
 
 
 class TypeCheckContext:
