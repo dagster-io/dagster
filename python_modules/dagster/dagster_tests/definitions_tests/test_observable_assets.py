@@ -1,4 +1,6 @@
-from dagster import AssetKey, AssetsDefinition, DagsterInstance, asset
+from typing import Optional
+
+from dagster import AssetKey, AssetsDefinition, DagsterInstance, Output, asset, materialize
 from dagster._core.definitions.asset_spec import ObservableAssetSpec
 from dagster._core.definitions.events import AssetMaterialization, AssetObservation
 from dagster._core.definitions.observable_asset import (
@@ -6,7 +8,7 @@ from dagster._core.definitions.observable_asset import (
     report_runless_asset_materialization,
     report_runless_asset_observation,
 )
-from dagster._core.event_api import EventRecordsFilter
+from dagster._core.event_api import EventLogRecord, EventRecordsFilter
 from dagster._core.events import DagsterEventType
 
 
@@ -77,6 +79,18 @@ def test_report_runless_materialization() -> None:
     assert mat_event.asset_materialization.asset_key == AssetKey("observable_asset_one")
 
 
+def get_latest_observation_for_asset_key(
+    instance: DagsterInstance, asset_key: AssetKey
+) -> Optional[EventLogRecord]:
+    observations = instance.get_event_records(
+        EventRecordsFilter(event_type=DagsterEventType.ASSET_OBSERVATION, asset_key=asset_key),
+        limit=1,
+    )
+
+    observation = next(iter(observations), None)
+    return observation
+
+
 def test_report_runless_observation() -> None:
     instance = DagsterInstance.ephemeral()
 
@@ -85,15 +99,28 @@ def test_report_runless_observation() -> None:
         instance=instance,
     )
 
-    observations = instance.get_event_records(
-        EventRecordsFilter(
-            event_type=DagsterEventType.ASSET_OBSERVATION,
-            asset_key=AssetKey("observable_asset_one"),
-        ),
-        limit=1,
+    observation = get_latest_observation_for_asset_key(
+        instance, asset_key=AssetKey("observable_asset_one")
     )
-
-    observation = next(iter(observations), None)
     assert observation
 
     assert observation.asset_key == AssetKey("observable_asset_one")
+
+
+def test_emit_asset_observation_in_user_space() -> None:
+    @asset(key="asset_in_user_space")
+    def active_observable_asset_in_user_space():
+        # not ideal but it works
+        yield AssetObservation(asset_key="asset_in_user_space", metadata={"foo": "bar"})
+        yield Output(None)
+
+    instance = DagsterInstance.ephemeral()
+
+    # to avoid breaking your brain, think of this as "execute" or "refresh", not "materialize"
+    assert materialize(assets=[active_observable_asset_in_user_space], instance=instance).success
+
+    observation = get_latest_observation_for_asset_key(
+        instance, asset_key=AssetKey("asset_in_user_space")
+    )
+    assert observation
+    assert observation.asset_key == AssetKey("asset_in_user_space")
