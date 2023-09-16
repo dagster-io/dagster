@@ -154,7 +154,8 @@ class DuckDBIOManager(ConfigurableIOManagerFactory):
             # my_table will just contain the data from column "a"
             ...
 
-    Set DuckDB configuration options using the config field.
+    Set DuckDB configuration options using the config field. See
+    https://duckdb.org/docs/sql/configuration.html for all available settings.
 
     .. code-block:: python
 
