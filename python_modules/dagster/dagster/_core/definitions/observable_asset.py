@@ -1,19 +1,29 @@
-from dagster._core.definitions.asset_spec import ObservableAssetSpec
-from dagster._core.definitions.decorators import asset
+from typing import Sequence
+
+from dagster._core.definitions.asset_spec import (
+    SYSTEM_METADATA_KEY_ASSET_VARIETAL,
+    AssetSpec,
+    AssetVarietal,
+    ObservableAssetSpec,
+)
+from dagster._core.definitions.decorators.asset_decorator import multi_asset
 
 
-def create_unexecutable_observable_assets_def(observable_asset_spec: ObservableAssetSpec):
-    # This function is to be used in the internals of repository definition to coerce
-    # an ObservableAssetSepc into an AssetsDefinition
-    # TODO: will make this use multi_asset later in the stack
-    @asset(
-        key=observable_asset_spec.key,
-        description=observable_asset_spec.description,
-        metadata=observable_asset_spec.metadata,
-        group_name=observable_asset_spec.group_name,
-        deps=[
-            dep.asset_key for dep in observable_asset_spec.deps
-        ],  # switch to not using .asset_key once jamie's diff lands
+def create_unexecutable_observable_assets_def(specs: Sequence[ObservableAssetSpec]):
+    @multi_asset(
+        specs=[
+            AssetSpec(
+                key=spec.key,
+                description=spec.description,
+                group_name=spec.group_name,
+                metadata={
+                    **(spec.metadata or {}),
+                    **{SYSTEM_METADATA_KEY_ASSET_VARIETAL: AssetVarietal.UNEXECUTABLE.value},
+                },
+                deps=[dep.asset_key for dep in spec.deps],
+            )
+            for spec in specs
+        ]
     )
     def an_asset() -> None:
         raise NotImplementedError()
