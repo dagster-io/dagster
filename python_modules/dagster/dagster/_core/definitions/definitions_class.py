@@ -19,6 +19,8 @@ from dagster._config.pythonic_config import (
 )
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_graph import InternalAssetGraph
+from dagster._core.definitions.asset_spec import ReadonlyAssetSpec
+from dagster._core.definitions.decorators import asset
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
@@ -28,7 +30,7 @@ from dagster._core.executor.base import Executor
 from dagster._core.instance import DagsterInstance
 from dagster._utils.cached_method import cached_method
 
-from .assets import AssetsDefinition, SourceAsset
+from .assets import AssetsDefinition
 from .cacheable_assets import CacheableAssetsDefinition
 from .decorators import repository
 from .job_definition import JobDefinition, default_job_io_manager
@@ -40,6 +42,7 @@ from .repository_definition import (
 )
 from .schedule_definition import ScheduleDefinition
 from .sensor_definition import SensorDefinition
+from .source_asset import SourceAsset
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
 if TYPE_CHECKING:
@@ -237,10 +240,27 @@ def _attach_resources_to_jobs_and_instigator_jobs(
     return _AttachedObjects(jobs_with_resources, updated_schedules, updated_sensors)
 
 
+# This creates an AssetsDefinition that contains an asset that is never
+# meant to be materialized by Dagster, only observed. Presumably we would disable
+# button in the UI (it would act more like a source asset). However
+# this allows Dagster to act as a data observability tool and lineage
+# tool for assets defined elsewhere
+def create_observable_asset(asset_spec: ReadonlyAssetSpec) -> AssetsDefinition:
+    @asset(key=asset_spec.key, deps=[dep.asset_key for dep in asset_spec.deps])
+    def _observable_asset(_) -> None:
+        raise Exception("Illegal to materialize an observable asset")
+
+    # this is not working
+    # @multi_asset(specs=[asset_spec])
+    # def _dummy_asset(_):
+    #     raise Exception("illegal to materialize this asset")
+    return _observable_asset
+
+
 def _create_repository_using_definitions_args(
     name: str,
     assets: Optional[
-        Iterable[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]
+        Iterable[Union[AssetsDefinition, ReadonlyAssetSpec, CacheableAssetsDefinition]]
     ] = None,
     schedules: Optional[
         Iterable[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]
@@ -253,7 +273,7 @@ def _create_repository_using_definitions_args(
     asset_checks: Optional[Iterable[AssetChecksDefinition]] = None,
 ):
     check.opt_iterable_param(
-        assets, "assets", (AssetsDefinition, SourceAsset, CacheableAssetsDefinition)
+        assets, "assets", (AssetsDefinition, ReadonlyAssetSpec, CacheableAssetsDefinition)
     )
     check.opt_iterable_param(
         schedules, "schedules", (ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition)
@@ -267,6 +287,13 @@ def _create_repository_using_definitions_args(
         if isinstance(executor, ExecutorDefinition) or executor is None
         else ExecutorDefinition.hardcoded_executor(executor)
     )
+
+    new_assets = []
+    for asset_ in assets or []:
+        if isinstance(asset_, ReadonlyAssetSpec) and not isinstance(asset, SourceAsset):
+            new_assets.append(create_observable_asset(asset_))
+        else:
+            new_assets.append(asset_)
 
     # Generate a mapping from each top-level resource instance ID to its resource key
     resource_key_mapping = {id(v): k for k, v in resources.items()} if resources else {}
@@ -300,9 +327,9 @@ def _create_repository_using_definitions_args(
         _top_level_resources=resource_defs,
         _resource_key_mapping=resource_key_mapping,
     )
-    def created_repo():
+    def created_repo() -> Any:
         return [
-            *with_resources(assets or [], resource_defs),
+            *with_resources(new_assets, resource_defs),
             *with_resources(asset_checks or [], resource_defs),
             *(schedules_with_resources),
             *(sensors_with_resources),
@@ -417,7 +444,7 @@ class Definitions:
     def __init__(
         self,
         assets: Optional[
-            Iterable[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]
+            Iterable[Union[AssetsDefinition, ReadonlyAssetSpec, CacheableAssetsDefinition]]
         ] = None,
         schedules: Optional[
             Iterable[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]

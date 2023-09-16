@@ -14,6 +14,7 @@ from typing_extensions import TypeAlias
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental_param, public
 from dagster._core.decorator_utils import get_function_params
+from dagster._core.definitions.asset_spec import ReadonlyAssetSpec
 from dagster._core.definitions.data_version import (
     DATA_VERSION_TAG,
     DataVersion,
@@ -22,7 +23,6 @@ from dagster._core.definitions.data_version import (
 from dagster._core.definitions.events import AssetKey, AssetObservation, CoercibleToAssetKey
 from dagster._core.definitions.metadata import (
     ArbitraryMetadataMapping,
-    MetadataMapping,
     normalize_metadata,
 )
 from dagster._core.definitions.op_definition import OpDefinition
@@ -39,7 +39,6 @@ from dagster._core.definitions.resource_requirement import (
 from dagster._core.definitions.utils import (
     DEFAULT_GROUP_NAME,
     DEFAULT_IO_MANAGER_KEY,
-    validate_group_name,
 )
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
@@ -56,7 +55,7 @@ SourceAssetObserveFunction: TypeAlias = Callable[..., Any]
 
 @experimental_param(param="resource_defs")
 @experimental_param(param="io_manager_def")
-class SourceAsset(ResourceAddable):
+class SourceAsset(ReadonlyAssetSpec, ResourceAddable):
     """A SourceAsset represents an asset that will be loaded by (but not updated by) Dagster.
 
     Attributes:
@@ -74,13 +73,10 @@ class SourceAsset(ResourceAddable):
     """
 
     key: PublicAttr[AssetKey]
-    metadata: PublicAttr[MetadataMapping]
     raw_metadata: PublicAttr[ArbitraryMetadataMapping]
     io_manager_key: PublicAttr[Optional[str]]
     _io_manager_def: PublicAttr[Optional[IOManagerDefinition]]
-    description: PublicAttr[Optional[str]]
     partitions_def: PublicAttr[Optional[PartitionsDefinition]]
-    group_name: PublicAttr[str]
     resource_defs: PublicAttr[Dict[str, ResourceDefinition]]
     observe_fn: PublicAttr[Optional[SourceAssetObserveFunction]]
     _node_def: Optional[OpDefinition]  # computed lazily
@@ -114,7 +110,6 @@ class SourceAsset(ResourceAddable):
         self.key = AssetKey.from_coercible(key)
         metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
         self.raw_metadata = metadata
-        self.metadata = normalize_metadata(metadata, allow_invalid=True)
 
         resource_defs_dict = dict(check.opt_mapping_param(resource_defs, "resource_defs"))
         if io_manager_def:
@@ -138,8 +133,6 @@ class SourceAsset(ResourceAddable):
         self.partitions_def = check.opt_inst_param(
             partitions_def, "partitions_def", PartitionsDefinition
         )
-        self.group_name = validate_group_name(group_name)
-        self.description = check.opt_str_param(description, "description")
         self.observe_fn = check.opt_callable_param(observe_fn, "observe_fn")
         self._required_resource_keys = check.opt_set_param(
             _required_resource_keys, "_required_resource_keys", of_type=str
@@ -147,6 +140,13 @@ class SourceAsset(ResourceAddable):
         self._node_def = None
         self.auto_observe_interval_minutes = check.opt_numeric_param(
             auto_observe_interval_minutes, "auto_observe_interval_minutes"
+        )
+        super().__init__(
+            asset_key=self.key,
+            metadata=normalize_metadata(metadata, allow_invalid=True),
+            description=description,
+            group_name=group_name,
+            deps=None,
         )
 
     def get_io_manager_key(self) -> str:

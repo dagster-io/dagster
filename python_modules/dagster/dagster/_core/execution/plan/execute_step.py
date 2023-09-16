@@ -136,6 +136,21 @@ def _process_user_event(
         yield asset_check_evaluation
 
         yield output
+    elif isinstance(user_event, DataVersion):
+        assets_def = step_context.job_def.asset_layer.assets_def_for_node(step_context.node_handle)
+        if not assets_def:
+            raise DagsterInvariantViolationError(
+                "DataVersion is only valid within asset computations, no backing"
+                " AssetsDefinition found."
+            )
+        asset_key = assets_def.key
+        yield AssetObservation(asset_key=asset_key)
+        output_name = assets_def.get_output_name_for_asset_key(asset_key)
+        output = Output(
+            value=None,
+            output_name=output_name,
+        )
+        yield output
     else:
         yield user_event
 
@@ -565,6 +580,12 @@ def _get_output_asset_materializations(
     # Clear any cached record associated with this asset, since we are about to generate a new
     # materialization.
     step_context.wipe_input_asset_version_info(asset_key)
+    step_output_handle = StepOutputHandle(step_context.step.key, output_def.name)
+    assets_def = step_context.get_assets_def_for_step_output(step_output_handle)
+
+    if assets_def and not assets_def._materializeable_by_output_name[output_def.name]:
+        yield from ()
+        return
 
     tags: Dict[str, str]
     if (
@@ -691,6 +712,7 @@ def _store_output(
     output_def = step_context.op_def.output_def_named(step_output_handle.output_name)
     output_manager = step_context.get_io_manager(step_output_handle)
     output_context = step_context.get_output_context(step_output_handle)
+    assets_def = step_context.get_assets_def_for_step_output(step_output_handle)
 
     manager_materializations = []
     manager_metadata: Dict[str, MetadataValue] = {}
@@ -718,6 +740,15 @@ def _store_output(
                 yield gen_output
 
         handle_output_gen = _gen_fn()
+    elif (
+        assets_def
+        and not assets_def._materializeable_by_output_name[step_output_handle.output_name]
+    ):  # handle case where asset def is not materializable
+
+        def _no_op() -> Iterator[DagsterEvent]:
+            yield from ()
+
+        handle_output_gen = _no_op()
     else:
         handle_output_gen = output_manager.handle_output(output_context, output.value)
 

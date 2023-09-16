@@ -409,6 +409,34 @@ class DagsterEvent(
     """
 
     @staticmethod
+    def from_external(
+        event_type: "DagsterEventType",
+        event_specific_data: Optional["EventSpecificData"] = None,
+        message: Optional[str] = None,
+        job_name: Optional[str] = None,
+    ):
+        event = DagsterEvent(
+            event_type_value=check.inst_param(event_type, "event_type", DagsterEventType).value,
+            job_name=job_name or "TODO",
+            step_handle=None,
+            node_handle=None,
+            step_kind_value=None,
+            logging_tags=None,
+            event_specific_data=_validate_event_specific_data(event_type, event_specific_data),
+            message=check.opt_str_param(message, "message"),
+            pid=os.getpid(),
+        )
+
+        # get a log manager here
+        # log_manager.log_dagster_event(
+        #     level=log_level,
+        #     msg=event.message or f"{event_type} for step {step_context.step.key}",
+        #     dagster_event=event,
+        # )
+
+        return event
+
+    @staticmethod
     def from_step(
         event_type: "DagsterEventType",
         step_context: IStepContext,
