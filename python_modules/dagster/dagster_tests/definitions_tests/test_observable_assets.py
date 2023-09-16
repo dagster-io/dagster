@@ -1,4 +1,4 @@
-from dagster import AssetKey, AssetsDefinition
+from dagster import AssetKey, AssetsDefinition, asset
 from dagster._core.definitions.asset_spec import ObservableAssetSpec
 from dagster._core.definitions.observable_asset import create_observable_asset
 
@@ -18,8 +18,16 @@ def test_observable_asset_basic_creation() -> None:
 
     assert assets_def.key == expected_key
     assert assets_def.descriptions_by_key[expected_key] == "desc"
-    assert assets_def.metadata_by_key[expected_key] == {"user_metadata": "value"}
+    assert assets_def.metadata_by_key[expected_key]["user_metadata"] == "value"
     assert assets_def.group_names_by_key[expected_key] == "a_group"
+    assert assets_def.is_asset_materializable(expected_key) is False
+
+
+def test_normal_asset_mateiralizeable() -> None:
+    @asset
+    def an_asset() -> None: ...
+
+    assert an_asset.is_asset_materializable(AssetKey(["an_asset"])) is True
 
 
 def test_observable_asset_creation_with_deps() -> None:
