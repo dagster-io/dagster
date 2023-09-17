@@ -1,11 +1,11 @@
 from typing import Sequence
 
-from dagster import multi_asset
 from dagster._core.definitions.asset_spec import (
     SYSTEM_METADATA_KEY_EXECUTABLE,
     AssetSpec,
     ObservableAssetSpec,
 )
+from dagster._core.definitions.decorators.asset_decorator import multi_asset
 
 
 def create_observable_assets_def(specs: Sequence[ObservableAssetSpec]):
