@@ -701,6 +701,7 @@ def _store_output(
 
     manager_materializations = []
     manager_metadata: Dict[str, MetadataValue] = {}
+
     # don't store asset check outputs
     if step_context.step.step_output_named(
         step_output_handle.output_name
