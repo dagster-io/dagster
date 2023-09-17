@@ -17,10 +17,7 @@ from .metadata import MetadataUserInput
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_dep import AssetDep
 
-# dagit is silently not loading a definition with a leading dagster/
-# just doing vanilla key for now
-SYSTEM_METADATA_KEY_EXECUTABLE = "dagster__executable"
-# SYSTEM_METADATA_KEY_EXECUTABLE = "dagster/executable"
+SYSTEM_METADATA_KEY_EXECUTABLE = "dagster/executable"
 
 
 @experimental
