@@ -706,6 +706,15 @@ def create_execution_plan(
     else:
         job_def = job
 
+    if job_def.asset_layer:
+        for assets_def in job_def.asset_layer.assets_defs:
+            if not assets_def.is_executable:
+                check.failed(
+                    "Cannot pass unexecutable assets defs to create_execution_plan with keys:"
+                    f" {assets_def.keys}. Please call create_untainted_job_for_execution on the "
+                    "job definition before passing it to the execution API you are using"
+                )
+
     run_config = check.opt_mapping_param(run_config, "run_config", key_type=str)
     check.opt_nullable_sequence_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
     check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)
