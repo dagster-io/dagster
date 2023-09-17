@@ -1,4 +1,4 @@
-from typing import Iterator, Optional
+from typing import Iterable, Iterator, Optional
 
 import pytest
 from dagster import (
@@ -13,7 +13,9 @@ from dagster import (
     Output,
     _check as check,
     asset,
+    job,
     materialize,
+    op,
 )
 from dagster._check import CheckError
 from dagster._core.definitions.asset_spec import AssetSpec
@@ -225,3 +227,28 @@ def test_execute_job_that_explicitly_includes_non_executable_asset() -> None:
         " This is not allowed as it is not executable."
         in str(exc_info.value)
     )
+
+
+def test_demonstrate_op_job_over_observable_assets() -> None:
+    @op
+    def an_op_that_emits() -> Iterable:
+        yield AssetMaterialization(asset_key="asset_one")
+        yield Output(None)
+
+    @job
+    def a_job_that_emits() -> None:
+        an_op_that_emits()
+
+    instance = DagsterInstance.ephemeral()
+
+    asset_one = create_unexecutable_observable_assets_def([AssetSpec("asset_one")])
+
+    defs = Definitions(assets=[asset_one], jobs=[a_job_that_emits])
+
+    assert defs.get_job_def("a_job_that_emits").execute_in_process(instance=instance).success
+
+    mat_event = instance.get_latest_materialization_event(asset_key=AssetKey("asset_one"))
+
+    assert mat_event
+    assert mat_event.asset_materialization
+    assert mat_event.asset_materialization.asset_key == AssetKey("asset_one")
