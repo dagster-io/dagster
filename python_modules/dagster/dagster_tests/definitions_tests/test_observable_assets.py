@@ -1,7 +1,19 @@
 from typing import Iterator, Optional
 
-from dagster import AssetKey, AssetsDefinition, DagsterInstance, Output, asset, materialize
-from dagster._core.definitions.asset_spec import ObservableAssetSpec
+import pytest
+from dagster import (
+    AssetKey,
+    AssetsDefinition,
+    DagsterInstance,
+    DagsterInvariantViolationError,
+    Definitions,
+    Output,
+    asset,
+    materialize,
+)
+from dagster._core.definitions.asset_spec import (
+    ObservableAssetSpec,
+)
 from dagster._core.definitions.events import AssetMaterialization, AssetObservation
 from dagster._core.definitions.observable_asset import (
     create_unexecutable_observable_assets_def,
@@ -134,3 +146,28 @@ def test_emit_asset_observation_in_user_space() -> None:
     # we actually want this to be false once we make changes to make mainline assets
     # replace observable source assets
     assert mat_event
+
+
+def test_executable_upstream_of_nonexecutable_illegal() -> None:
+    pass
+
+    @asset
+    def upstream_asset() -> None: ...
+
+    downstream_asset = create_unexecutable_observable_assets_def(
+        specs=[
+            ObservableAssetSpec(
+                "downstream_asset",
+                deps=[upstream_asset],
+            )
+        ]
+    )
+
+    with pytest.raises(DagsterInvariantViolationError) as exc_info:
+        Definitions(assets=[upstream_asset, downstream_asset])
+
+    assert (
+        "An executable asset cannot be upstream of a non-executable asset. Non-executable asset"
+        ' "downstream_asset" downstream of executable asset "upstream_asset"'
+        in str(exc_info.value)
+    )

@@ -18,7 +18,7 @@ from toposort import CircularDependencyError, toposort
 
 import dagster._check as check
 from dagster._core.definitions.hook_definition import HookDefinition
-from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.selector.subset_selector import AssetSelectionData
 from dagster._utils.merger import merge_dicts
 
@@ -191,6 +191,8 @@ def build_assets_job(
         elif isinstance(asset, SourceAsset):
             resolved_source_assets.append(asset)
 
+    check_for_executable_upstream_of_nonexecutable(assets)
+
     resolved_asset_deps = ResolvedAssetDependencies(assets, resolved_source_assets)
     deps, assets_defs_by_node_handle, asset_checks_defs_by_node_handle = build_node_deps(
         assets, asset_checks, resolved_asset_deps
@@ -265,6 +267,27 @@ def build_assets_job(
         hooks=hooks,
         _asset_selection_data=_asset_selection_data,
     )
+
+
+def check_for_executable_upstream_of_nonexecutable(assets) -> None:
+    assets_defs_by_key = {}
+    for assets_def in assets:
+        for key in assets_def.keys:
+            assets_defs_by_key[key] = assets_def
+
+    for assets_def in assets:
+        for key in assets_def.keys:
+            if assets_defs_by_key[key].is_executable:
+                continue
+
+            # we are now not executable. Disallowing upstream dependencies on executable
+            for upstream_of_nonexecutable_key in assets_def.asset_deps[key]:
+                if assets_defs_by_key[upstream_of_nonexecutable_key].is_executable:
+                    raise DagsterInvariantViolationError(
+                        "An executable asset cannot be upstream of a non-executable asset."
+                        f' Non-executable asset "{key.to_user_string()}" downstream of executable'
+                        f' asset "{upstream_of_nonexecutable_key.to_user_string()}"'
+                    )
 
 
 def build_source_asset_observation_job(

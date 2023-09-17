@@ -858,6 +858,13 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         """
         return self._check_specs_by_output_name.values()
 
+    @property
+    def is_executable(self) -> bool:
+        for key in self.keys:
+            if not self.is_asset_executable(key):
+                return False
+        return True
+
     @public
     def is_asset_executable(self, asset_key: AssetKey) -> bool:
         """Returns True if the asset key is materializable by this AssetsDefinition.
