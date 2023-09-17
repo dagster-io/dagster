@@ -1,6 +1,7 @@
 import base64
 import logging
 import time
+from enum import Enum
 from typing import IO, Any, Mapping, Optional, Tuple, Union, cast
 
 import dagster
@@ -29,6 +30,63 @@ class DatabricksError(Exception):
     pass
 
 
+class AuthTypeEnum(Enum):
+    OAUTH_M2M = "oauth-m2m"
+    PAT = "pat"
+    AZURE_CLIENT_SECRET = "azure-client-secret"
+
+
+def check_credentials(
+    token: Optional[str],
+    oauth_client_id: Optional[str] = None,
+    oauth_client_secret: Optional[str] = None,
+    azure_client_id: Optional[str] = None,
+    azure_client_secret: Optional[str] = None,
+    azure_tenant_id: Optional[str] = None,
+):
+    """Ensure that credentials are provided in a valid combination. Either token OR oauth OR azure credentials
+    should be provided, but not more than one
+    """
+    is_token_present = token is not None
+    are_oauth_creds_present = oauth_client_id is not None and oauth_client_secret is not None
+    are_azure_creds_present = (
+        azure_client_id is not None
+        and azure_client_secret is not None
+        and azure_tenant_id is not None
+    )
+
+    assert is_token_present or are_oauth_creds_present or are_azure_creds_present, (
+        "Either token OR (oauth_client_id AND oauth_client_secret) OR (azure_client_id AND"
+        " azure_client_secret AND azure_tenant_id) must be present as non-None"
+    )
+
+    assert (
+        sum([is_token_present, are_oauth_creds_present, are_azure_creds_present]) == 1
+    ), "Only one of the sets of credentials (token, oauth, azure) should be present"
+
+
+def get_auth_type(
+    token: Optional[str],
+    oauth_client_id: Optional[str] = None,
+    oauth_client_secret: Optional[str] = None,
+    azure_client_id: Optional[str] = None,
+    azure_client_secret: Optional[str] = None,
+    azure_tenant_id: Optional[str] = None,
+) -> AuthTypeEnum:
+    if oauth_client_id and oauth_client_secret:
+        auth_type = AuthTypeEnum.OAUTH_M2M
+    elif token:
+        auth_type = AuthTypeEnum.PAT
+    elif azure_client_id and azure_client_secret and azure_tenant_id:
+        auth_type = AuthTypeEnum.AZURE_CLIENT_SECRET
+    else:
+        raise ValueError(
+            "Unexpected combination of token, oauth credentials, and azure credentials, or missing"
+            " both."
+        )
+    return auth_type
+
+
 class DatabricksClient:
     """A thin wrapper over the Databricks REST API."""
 
@@ -46,14 +104,22 @@ class DatabricksClient:
         self.host = host
         self.workspace_id = workspace_id
 
-        if oauth_client_id and oauth_client_secret:
-            auth_type = "oauth-m2m"
-        elif token:
-            auth_type = "pat"
-        elif azure_client_id and azure_client_secret and azure_tenant_id:
-            auth_type = "azure-client-secret"
-        else:
-            raise ValueError("Unexpected combination of token, oauth credentials, and azure credentials, or missing both.")
+        check_credentials(
+            token,
+            oauth_client_id,
+            oauth_client_secret,
+            azure_client_id,
+            azure_client_secret,
+            azure_tenant_id,
+        )
+        auth_type = get_auth_type(
+            token,
+            oauth_client_id,
+            oauth_client_secret,
+            azure_client_id,
+            azure_client_secret,
+            azure_tenant_id,
+        )
 
         self._workspace_client = WorkspaceClient(
             host=host,
@@ -62,7 +128,7 @@ class DatabricksClient:
             client_secret=oauth_client_secret,
             product="dagster-databricks",
             product_version=__version__,
-            auth_type=auth_type,
+            auth_type=auth_type.value,
             azure_client_id=azure_client_id,
             azure_client_secret=azure_client_secret,
             azure_tenant_id=azure_tenant_id,
@@ -326,6 +392,9 @@ class DatabricksJobRunner:
         token: Optional[str] = None,
         oauth_client_id: Optional[str] = None,
         oauth_client_secret: Optional[str] = None,
+        azure_client_id: Optional[str] = None,
+        azure_client_secret: Optional[str] = None,
+        azure_tenant_id: Optional[str] = None,
         poll_interval_sec: float = 5,
         max_wait_time_sec: int = DEFAULT_RUN_MAX_WAIT_TIME_SEC,
     ):
@@ -335,16 +404,23 @@ class DatabricksJobRunner:
             "Must provide either databricks_token or oauth_credentials, but cannot provide both",
         )
         self.token = check.opt_str_param(token, "token")
-        self.oauth_client_id = check.opt_str_param(oauth_client_id, "oauth_client_id")
-        self.oauth_client_secret = check.opt_str_param(oauth_client_secret, "oauth_client_secret")
         self.poll_interval_sec = check.numeric_param(poll_interval_sec, "poll_interval_sec")
         self.max_wait_time_sec = check.int_param(max_wait_time_sec, "max_wait_time_sec")
+
+        oauth_client_id = check.opt_str_param(oauth_client_id, "oauth_client_id")
+        oauth_client_secret = check.opt_str_param(oauth_client_secret, "oauth_client_secret")
+        azure_client_id = check.opt_str_param(azure_client_id, "azure_client_id")
+        azure_client_secret = check.opt_str_param(azure_client_secret, "azure_client_secret")
+        azure_tenant_id = check.opt_str_param(azure_tenant_id, "azure_tenant_id")
 
         self._client: DatabricksClient = DatabricksClient(
             host=self.host,
             token=self.token,
             oauth_client_id=oauth_client_id,
             oauth_client_secret=oauth_client_secret,
+            azure_client_id=azure_client_id,
+            azure_client_secret=azure_client_secret,
+            azure_tenant_id=azure_tenant_id,
         )
 
     @property

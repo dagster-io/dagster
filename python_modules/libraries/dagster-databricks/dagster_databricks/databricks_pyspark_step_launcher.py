@@ -201,6 +201,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         max_completion_wait_time_seconds: int,
         databricks_token: Optional[str] = None,
         oauth_credentials: Optional[Mapping[str, str]] = None,
+        azure_credentials: Optional[Mapping[str, str]] = None,
         env_variables: Optional[Mapping[str, str]] = None,
         storage: Optional[Mapping[str, Any]] = None,
         poll_interval_sec: int = 5,
@@ -214,8 +215,8 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         self.databricks_host = check.str_param(databricks_host, "databricks_host")
 
         check.invariant(
-            databricks_token is not None or oauth_credentials is not None,
-            "Must provide either databricks_token or oauth_credentials",
+            any([databricks_token, oauth_credentials, azure_credentials]),
+            "Must provide either databricks_token, oauth_credentials, or azure_credentials",
         )
         check.invariant(
             databricks_token is None or oauth_credentials is None,
@@ -225,6 +226,12 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         oauth_credentials = check.opt_mapping_param(
             oauth_credentials,
             "oauth_credentials",
+            key_type=str,
+            value_type=str,
+        )
+        azure_credentials = check.opt_mapping_param(
+            azure_credentials,
+            "azure_credentials",
             key_type=str,
             value_type=str,
         )
@@ -257,6 +264,9 @@ class DatabricksPySparkStepLauncher(StepLauncher):
             token=databricks_token,
             oauth_client_id=oauth_credentials.get("client_id"),
             oauth_client_secret=oauth_credentials.get("client_secret"),
+            azure_client_id=azure_credentials.get("client_id"),
+            azure_client_secret=azure_credentials.get("client_secret"),
+            azure_tenant_id=azure_credentials.get("tenant_id"),
             poll_interval_sec=poll_interval_sec,
             max_wait_time_sec=max_completion_wait_time_seconds,
         )
