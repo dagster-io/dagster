@@ -72,13 +72,12 @@ from dagster._core.types.dagster_type import DagsterType
 from .input import InputContext
 from .output import OutputContext, get_output_context
 
-
 if TYPE_CHECKING:
+    from dagster._core.definitions.assets import AssetsDefinition
     from dagster._core.definitions.data_version import (
         DataVersion,
     )
     from dagster._core.definitions.dependency import NodeHandle
-    from dagster._core.definitions.assets import AssetsDefinition
     from dagster._core.definitions.resource_definition import Resources
     from dagster._core.event_api import EventLogRecord
     from dagster._core.execution.plan.plan import ExecutionPlan

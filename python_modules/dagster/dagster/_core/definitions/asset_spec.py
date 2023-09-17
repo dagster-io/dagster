@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from dagster._core.definitions.asset_dep import AssetDep
 
 SYSTEM_METADATA_KEY_EXECUTABLE = "dagster/executable"
+SYSTEM_METADATA_KEY_PRODUCES_MATERIALIZATION = "dagster/produces_materialization"
 
 
 @experimental
