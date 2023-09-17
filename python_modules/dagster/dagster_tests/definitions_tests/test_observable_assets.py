@@ -1,7 +1,7 @@
 from typing import Iterator, Optional
 
 from dagster import AssetKey, AssetsDefinition, DagsterInstance, Output, asset, materialize
-from dagster._core.definitions.asset_spec import ObservableAssetSpec
+from dagster._core.definitions.asset_spec import SYSTEM_METADATA_KEY_UNMATERIALIZEABLE, ObservableAssetSpec
 from dagster._core.definitions.events import AssetMaterialization, AssetObservation
 from dagster._core.definitions.observable_asset import (
     create_observable_assets_def,
@@ -108,7 +108,7 @@ def test_report_runless_observation() -> None:
 
 
 def test_emit_asset_observation_in_user_space() -> None:
-    @asset(key="asset_in_user_space")
+    @asset(key="asset_in_user_space", metadata={SYSTEM_METADATA_KEY_UNMATERIALIZEABLE: True})
     def active_observable_asset_in_user_space() -> Iterator:
         # not ideal but it works
         yield AssetObservation(asset_key="asset_in_user_space", metadata={"foo": "bar"})
@@ -127,5 +127,4 @@ def test_emit_asset_observation_in_user_space() -> None:
 
     mat_event = instance.get_latest_materialization_event(asset_key=AssetKey("asset_in_user_space"))
 
-    # we actually want this to be false once we make changes down the stack
-    assert mat_event
+    assert not mat_event
