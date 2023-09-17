@@ -19,9 +19,13 @@ from dagster._config.pythonic_config import (
 )
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_graph import InternalAssetGraph
+from dagster._core.definitions.asset_spec import ObservableAssetSpec
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
+from dagster._core.definitions.observable_asset import (
+    create_observable_assets_def,
+)
 from dagster._core.execution.build_resources import wrap_resources_for_execution
 from dagster._core.execution.with_resources import with_resources
 from dagster._core.executor.base import Executor
@@ -240,7 +244,9 @@ def _attach_resources_to_jobs_and_instigator_jobs(
 def _create_repository_using_definitions_args(
     name: str,
     assets: Optional[
-        Iterable[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]
+        Iterable[
+            Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition, ObservableAssetSpec]
+        ]
     ] = None,
     schedules: Optional[
         Iterable[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]
@@ -253,7 +259,9 @@ def _create_repository_using_definitions_args(
     asset_checks: Optional[Iterable[AssetChecksDefinition]] = None,
 ):
     check.opt_iterable_param(
-        assets, "assets", (AssetsDefinition, SourceAsset, CacheableAssetsDefinition)
+        assets,
+        "assets",
+        (AssetsDefinition, SourceAsset, CacheableAssetsDefinition, ObservableAssetSpec),
     )
     check.opt_iterable_param(
         schedules, "schedules", (ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition)
@@ -293,6 +301,13 @@ def _create_repository_using_definitions_args(
         sensors_with_resources,
     ) = _attach_resources_to_jobs_and_instigator_jobs(jobs, schedules, sensors, resource_defs)
 
+    asset_esque_things_to_pass = []
+    for asset_ish in assets or []:
+        if isinstance(asset_ish, ObservableAssetSpec):
+            asset_esque_things_to_pass.append(create_observable_assets_def([asset_ish]))
+        else:
+            asset_esque_things_to_pass.append(asset_ish)
+
     @repository(
         name=name,
         default_executor_def=executor_def,
@@ -302,7 +317,7 @@ def _create_repository_using_definitions_args(
     )
     def created_repo():
         return [
-            *with_resources(assets or [], resource_defs),
+            *with_resources(asset_esque_things_to_pass or [], resource_defs),
             *with_resources(asset_checks or [], resource_defs),
             *(schedules_with_resources),
             *(sensors_with_resources),
@@ -417,7 +432,9 @@ class Definitions:
     def __init__(
         self,
         assets: Optional[
-            Iterable[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]
+            Iterable[
+                Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition, ObservableAssetSpec]
+            ]
         ] = None,
         schedules: Optional[
             Iterable[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]
