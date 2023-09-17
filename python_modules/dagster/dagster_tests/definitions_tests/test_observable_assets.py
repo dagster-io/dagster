@@ -3,12 +3,19 @@ from dagster import (
     AssetKey,
     AssetsDefinition,
     AutoMaterializePolicy,
+    DagsterInstance,
+    Definitions,
+    IOManager,
+    SourceAsset,
     _check as check,
     asset,
 )
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._core.definitions.observable_asset import create_unexecutable_observable_assets_def
+from dagster._core.definitions.observable_asset import (
+    create_unexecutable_observable_assets_def,
+    create_unexecutable_observable_assets_def_from_source_asset,
+)
 
 
 def test_observable_asset_basic_creation() -> None:
@@ -72,3 +79,46 @@ def test_observable_asset_creation_with_deps() -> None:
     assert assets_def.asset_deps[expected_key] == {
         AssetKey(["observable_asset_two"]),
     }
+
+
+def test_how_source_assets_are_backwards_compatible() -> None:
+    class DummyIOManager(IOManager):
+        def handle_output(self, context, obj) -> None:
+            pass
+
+        def load_input(self, context) -> str:
+            return "hardcoded"
+
+    source_asset = SourceAsset(key="source_asset", io_manager_def=DummyIOManager())
+
+    @asset
+    def an_asset(source_asset: str) -> str:
+        return "hardcoded" + "-computed"
+
+    defs_with_source = Definitions(assets=[source_asset, an_asset])
+
+    instance = DagsterInstance.ephemeral()
+
+    result_one = defs_with_source.get_implicit_global_asset_job_def().execute_in_process(
+        instance=instance
+    )
+
+    assert result_one.success
+    assert result_one.output_for_node("an_asset") == "hardcoded-computed"
+
+    defs_with_shim = Definitions(
+        assets=[create_unexecutable_observable_assets_def_from_source_asset(source_asset), an_asset]
+    )
+
+    assert isinstance(defs_with_shim.get_assets_def("source_asset"), AssetsDefinition)
+
+    result_two = defs_with_shim.get_implicit_global_asset_job_def().execute_in_process(
+        instance=instance,
+        # currently we have to explicitly select the asset to exclude the source from execution
+        asset_selection=[
+            AssetKey("an_asset")
+        ],
+    )
+
+    assert result_two.success
+    assert result_two.output_for_node("an_asset") == "hardcoded-computed"
