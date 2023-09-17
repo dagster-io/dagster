@@ -41,8 +41,10 @@ def create_unexecutable_observable_assets_def(specs: Sequence[AssetSpec]):
 
     @multi_asset(specs=new_specs)
     def an_asset() -> None:
+        keys = [spec.key for spec in specs]
         raise DagsterInvariantViolationError(
-            f"You have attempted to execute an unexecutable asset {[spec.key for spec in specs]}"
+            f"Asset {keys} is not executable. This is an internal framework error and should have"
+            " been caught earlier."
         )
 
     return an_asset
