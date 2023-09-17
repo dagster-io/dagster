@@ -140,3 +140,16 @@ def test_emit_asset_observation_in_user_space() -> None:
     mat_event = instance.get_latest_materialization_event(asset_key=AssetKey("asset_in_user_space"))
 
     assert not mat_event
+
+
+def test_attempt_to_materialize_observable_asset() -> None:
+    assets_def = create_observable_assets_def(
+        specs=[
+            ObservableAssetSpec(
+                key="observable_asset_one",
+            )
+        ]
+    )
+    assert isinstance(assets_def, AssetsDefinition)
+
+    assert materialize(assets=[assets_def], instance=DagsterInstance.ephemeral()).success is False
