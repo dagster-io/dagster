@@ -20,14 +20,14 @@ def test_observable_asset_basic_creation() -> None:
     assert assets_def.descriptions_by_key[expected_key] == "desc"
     assert assets_def.metadata_by_key[expected_key]["user_metadata"] == "value"
     assert assets_def.group_names_by_key[expected_key] == "a_group"
-    assert assets_def.is_asset_materializable(expected_key) is False
+    assert assets_def.is_asset_executable(expected_key) is False
 
 
 def test_normal_asset_mateiralizeable() -> None:
     @asset
     def an_asset() -> None: ...
 
-    assert an_asset.is_asset_materializable(AssetKey(["an_asset"])) is True
+    assert an_asset.is_asset_executable(AssetKey(["an_asset"])) is True
 
 
 def test_observable_asset_creation_with_deps() -> None:

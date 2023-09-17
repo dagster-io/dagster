@@ -1,5 +1,5 @@
 from dagster._core.definitions.asset_spec import (
-    SYSTEM_METADATA_KEY_UNMATERIALIZEABLE,
+    SYSTEM_METADATA_KEY_EXECUTABLE,
     ObservableAssetSpec,
 )
 from dagster._core.definitions.decorators import asset
@@ -11,7 +11,7 @@ def create_observable_asset(observable_asset_spec: ObservableAssetSpec):
         description=observable_asset_spec.description,
         metadata={
             **(observable_asset_spec.metadata or {}),
-            **{SYSTEM_METADATA_KEY_UNMATERIALIZEABLE: True},
+            **{SYSTEM_METADATA_KEY_EXECUTABLE: False},
         },
         group_name=observable_asset_spec.group_name,
         deps=[

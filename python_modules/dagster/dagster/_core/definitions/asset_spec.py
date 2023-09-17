@@ -17,7 +17,7 @@ from .metadata import MetadataUserInput
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_dep import AssetDep
 
-SYSTEM_METADATA_KEY_UNMATERIALIZEABLE = "dagster/unmaterializeable"
+SYSTEM_METADATA_KEY_EXECUTABLE = "dagster/executable"
 
 
 @experimental

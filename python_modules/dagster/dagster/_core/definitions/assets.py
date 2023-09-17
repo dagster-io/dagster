@@ -859,7 +859,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         return self._check_specs_by_output_name.values()
 
     @public
-    def is_asset_materializable(self, asset_key: AssetKey) -> bool:
+    def is_asset_executable(self, asset_key: AssetKey) -> bool:
         """Returns True if the asset key is materializable by this AssetsDefinition.
 
         Args:
@@ -868,11 +868,11 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         Returns:
             bool: True if the asset key is materializable by this AssetsDefinition.
         """
-        from dagster._core.definitions.asset_spec import SYSTEM_METADATA_KEY_UNMATERIALIZEABLE
+        from dagster._core.definitions.asset_spec import SYSTEM_METADATA_KEY_EXECUTABLE
 
-        return not bool(
+        return bool(
             self._metadata_by_key.get(asset_key, {}).get(
-                SYSTEM_METADATA_KEY_UNMATERIALIZEABLE, False
+                SYSTEM_METADATA_KEY_EXECUTABLE, True
             )
         )
 
