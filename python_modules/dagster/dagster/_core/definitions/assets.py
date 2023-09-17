@@ -871,9 +871,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         from dagster._core.definitions.asset_spec import SYSTEM_METADATA_KEY_EXECUTABLE
 
         return bool(
-            self._metadata_by_key.get(asset_key, {}).get(
-                SYSTEM_METADATA_KEY_EXECUTABLE, True
-            )
+            self._metadata_by_key.get(asset_key, {}).get(SYSTEM_METADATA_KEY_EXECUTABLE, True)
         )
 
     def get_partition_mapping_for_input(self, input_name: str) -> Optional[PartitionMapping]:
