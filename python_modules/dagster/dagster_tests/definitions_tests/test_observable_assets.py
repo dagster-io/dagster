@@ -1,6 +1,16 @@
 from typing import Iterator, Optional
 
-from dagster import AssetKey, AssetsDefinition, DagsterInstance, Output, asset, materialize
+import pytest
+from dagster import (
+    AssetKey,
+    AssetsDefinition,
+    DagsterInstance,
+    DagsterInvariantViolationError,
+    Definitions,
+    Output,
+    asset,
+    materialize,
+)
 from dagster._core.definitions.asset_spec import (
     SYSTEM_METADATA_KEY_PRODUCES_MATERIALIZATION,
     ObservableAssetSpec,
@@ -152,4 +162,21 @@ def test_attempt_to_materialize_observable_asset() -> None:
     )
     assert isinstance(assets_def, AssetsDefinition)
 
-    assert materialize(assets=[assets_def], instance=DagsterInstance.ephemeral()).success is False
+    with pytest.raises(DagsterInvariantViolationError) as exc_info:
+        materialize(assets=[assets_def], instance=DagsterInstance.ephemeral())
+
+    assert "that is not executable" in str(exc_info.value)
+
+
+def test_construct_definitions_with_only_observable_assets() -> None:
+    assets_def = create_observable_assets_def(
+        specs=[
+            ObservableAssetSpec(
+                key="observable_asset_one",
+            )
+        ]
+    )
+    assert isinstance(assets_def, AssetsDefinition)
+
+    defs = Definitions(assets=[assets_def])
+    assert len(defs.get_asset_graph().assets) == 1

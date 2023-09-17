@@ -18,7 +18,7 @@ from toposort import CircularDependencyError, toposort
 
 import dagster._check as check
 from dagster._core.definitions.hook_definition import HookDefinition
-from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.selector.subset_selector import AssetSelectionData
 from dagster._utils.merger import merge_dicts
 
@@ -64,6 +64,31 @@ def get_base_asset_jobs(
     resource_defs: Optional[Mapping[str, ResourceDefinition]],
     executor_def: Optional[ExecutorDefinition],
 ) -> Sequence[JobDefinition]:
+    # in the case where none of the assets are executable, there are no base jobs
+    unexecutables = []
+    executable_defs = []
+    jobs = []
+    for assets_def in assets:
+        if not assets_def.is_executable:
+            unexecutables.append(assets_def)
+        else:
+            executable_defs.append(assets_def)
+
+    if unexecutables:
+        jobs.append(
+            build_assets_job(
+                name="ALL_UNEXECUTABLES",
+                assets=unexecutables,
+                executor_def=executor_def,
+                resource_defs=resource_defs,
+                asset_checks=[],
+                source_assets=[],
+                _allow_unexecutable=True,
+            )
+        )
+
+    assets = executable_defs
+
     assets_by_partitions_def: Dict[Optional[PartitionsDefinition], List[AssetsDefinition]] = (
         defaultdict(list)
     )
@@ -92,7 +117,6 @@ def get_base_asset_jobs(
         partitioned_assets_by_partitions_def = {
             k: v for k, v in assets_by_partitions_def.items() if k is not None
         }
-        jobs = []
 
         # sort to ensure some stability in the ordering
         for i, (partitions_def, assets_with_partitions) in enumerate(
@@ -130,6 +154,7 @@ def build_assets_job(
     partitions_def: Optional[PartitionsDefinition] = None,
     hooks: Optional[AbstractSet[HookDefinition]] = None,
     _asset_selection_data: Optional[AssetSelectionData] = None,
+    _allow_unexecutable: Optional[bool] = False,
 ) -> JobDefinition:
     """Builds a job that materializes the given assets.
 
@@ -175,6 +200,16 @@ def build_assets_job(
     )
     check.opt_str_param(description, "description")
     check.opt_inst_param(_asset_selection_data, "_asset_selection_data", AssetSelectionData)
+
+    if not _allow_unexecutable:
+        for assets_def in assets:
+            for key in assets_def.keys:
+                if not assets_def.is_asset_executable(key):
+                    raise DagsterInvariantViolationError(
+                        f"You are attempting to construct a job {name} that contains an an"
+                        " assets_def that is not executable that contains an an assets_def that is"
+                        f" not executable. The keys of the def are {assets_def.keys}."
+                    )
 
     # figure out what partitions (if any) exist for this job
     partitions_def = partitions_def or build_job_partitions_from_assets(assets)
