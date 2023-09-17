@@ -292,3 +292,17 @@ def test_how_source_assets_are_backwards_compatible() -> None:
 
     assert result_two.success
     assert result_two.output_for_node("an_asset") == "hardcoded-computed"
+
+
+def test_direct_passing_of_observable_asset_spec_to_definitions() -> None:
+    asset_one = AssetSpec(
+        key="observable_asset_one",
+        # multi-asset does not support description lol
+        # description="desc",
+        metadata={"user_metadata": "value"},
+        group_name="a_group",
+    )
+    # using undocumented API in test case
+    defs = Definitions(assets=[asset_one])  # type: ignore
+
+    assert defs.get_asset_graph().assets_def_for_key("observable_asset_one")
