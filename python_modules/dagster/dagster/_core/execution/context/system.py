@@ -1241,7 +1241,14 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         asset_info = asset_layer.asset_info_for_output(
             self.node_handle, output_name=step_output_handle.output_name
         )
-        return asset_layer.assets_def_for_asset(asset_info.key) if asset_info else None
+        if not asset_info:
+            return None
+        if not asset_layer.has_assets_def_for_asset(asset_info.key):
+            return None
+        # These are some backfill codepaths where you can get asset_info but not an assets_def?
+        # test_backfill_with_asset_selection
+        # test_pure_asset_backfill
+        return asset_layer.assets_def_for_asset(asset_info.key)
 
 
 class TypeCheckContext:
