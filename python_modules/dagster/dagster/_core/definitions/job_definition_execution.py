@@ -6,6 +6,7 @@ from typing import (
 
 from dagster._core.definitions.asset_check_spec import AssetCheckHandle
 from dagster._core.definitions.events import AssetKey
+from dagster._core.errors import DagsterInvariantViolationError
 
 from .job_definition import EXECUTION_TAINT_PROPERTY, JobDefinition
 
@@ -54,6 +55,18 @@ def create_untainted_job_for_execution(
     asset_selection: Optional[AbstractSet[AssetKey]],
     asset_check_selection: Optional[AbstractSet[AssetCheckHandle]],
 ):
+    if asset_selection:
+        for asset_key in asset_selection:
+            if asset_key not in job_def.asset_layer.assets_defs_by_key:
+                # disconnected asset key
+                continue
+
+            if not job_def.asset_layer.assets_defs_by_key[asset_key].is_asset_executable(asset_key):
+                raise DagsterInvariantViolationError(
+                    f'You have attempted to explicitly select asset "{asset_key.to_user_string()}"'
+                    " for execution. This is not allowed as it is not executable."
+                )
+
     return _remove_execution_taint(
         job_def.get_subset(
             op_selection=op_selection,

@@ -23,6 +23,7 @@ from dagster._core.definitions.observable_asset import (
 )
 from dagster._core.event_api import EventLogRecord, EventRecordsFilter
 from dagster._core.events import DagsterEventType
+from dagster._core.execution.api import create_execution_plan
 
 
 def get_latest_observation_for_asset_key(
@@ -174,7 +175,7 @@ def test_executable_upstream_of_nonexecutable_illegal() -> None:
     )
 
 
-def test_execute_job_that_includes_non_executable_asset() -> None:
+def test_execute_job_that_implicitly_includes_non_executable_asset() -> None:
     upstream_asset = create_unexecutable_observable_assets_def(
         specs=[
             ObservableAssetSpec(
@@ -194,12 +195,35 @@ def test_execute_job_that_includes_non_executable_asset() -> None:
         .success
     )
 
-    # ensure that explict selection fails
     with pytest.raises(CheckError) as exc_info:
-        defs.get_implicit_global_asset_job_def().execute_in_process(
-            instance=DagsterInstance.ephemeral(), asset_selection=[AssetKey("upstream_asset")]
-        )
+        create_execution_plan(defs.get_implicit_global_asset_job_def())
 
     assert "Cannot pass unexecutable assets defs to create_execution_plan with keys:" in str(
         exc_info.value
+    )
+
+
+def test_execute_job_that_explicitly_includes_non_executable_asset() -> None:
+    upstream_asset = create_unexecutable_observable_assets_def(
+        specs=[
+            ObservableAssetSpec(
+                "upstream_asset",
+            )
+        ]
+    )
+
+    @asset(deps=[upstream_asset])
+    def downstream_asset() -> None: ...
+
+    defs = Definitions(assets=[upstream_asset, downstream_asset])
+
+    with pytest.raises(DagsterInvariantViolationError) as exc_info:
+        defs.get_implicit_global_asset_job_def().execute_in_process(
+            instance=DagsterInstance.ephemeral(), asset_selection=[upstream_asset.key]
+        )
+
+    assert (
+        'You have attempted to explicitly select asset "upstream_asset" for execution.'
+        " This is not allowed as it is not executable."
+        in str(exc_info.value)
     )
