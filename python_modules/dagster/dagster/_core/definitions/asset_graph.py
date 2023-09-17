@@ -36,7 +36,7 @@ from dagster._utils.cached_method import cached_method
 from .asset_checks import AssetChecksDefinition
 from .assets import AssetsDefinition
 from .backfill_policy import BackfillPolicy
-from .events import AssetKey, AssetKeyPartitionKey
+from .events import AssetKey, AssetKeyPartitionKey, CoercibleToAssetKey
 from .freshness_policy import FreshnessPolicy
 from .partition import PartitionsDefinition, PartitionsSubset
 from .partition_key_range import PartitionKeyRange
@@ -717,6 +717,14 @@ class InternalAssetGraph(AssetGraph):
     @property
     def asset_checks(self) -> Sequence[AssetChecksDefinition]:
         return self._asset_checks
+
+    def assets_def_for_key(self, key: CoercibleToAssetKey) -> AssetsDefinition:
+        asset_key = AssetKey.from_coercible(key)
+        for assets_def in self._assets:
+            if asset_key in assets_def.keys:
+                return assets_def
+
+        check.failed(f"Could not find assets def for key {key}")
 
 
 def sort_key_for_asset_partition(
