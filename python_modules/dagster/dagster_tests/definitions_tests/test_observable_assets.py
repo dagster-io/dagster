@@ -8,6 +8,8 @@ from dagster import (
     AssetsDefinition,
     AutoMaterializePolicy,
     DagsterInstance,
+    DagsterInvariantViolationError,
+    Definitions,
     Output,
     _check as check,
     asset,
@@ -155,3 +157,23 @@ def test_emit_asset_observation_in_user_space() -> None:
     # we actually want this to be false once we make changes to make mainline assets
     # replace observable source assets
     assert mat_event
+
+
+def test_executable_upstream_of_nonexecutable_illegal() -> None:
+    pass
+
+    @asset
+    def upstream_asset() -> None: ...
+
+    downstream_asset = create_unexecutable_observable_assets_def(
+        specs=[AssetSpec("downstream_asset", deps=[upstream_asset])]
+    )
+
+    with pytest.raises(DagsterInvariantViolationError) as exc_info:
+        Definitions(assets=[upstream_asset, downstream_asset])
+
+    assert (
+        "An executable asset cannot be upstream of a non-executable asset. Non-executable asset"
+        ' "downstream_asset" downstream of executable asset "upstream_asset"'
+        in str(exc_info.value)
+    )
