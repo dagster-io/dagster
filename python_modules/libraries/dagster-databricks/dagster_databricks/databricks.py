@@ -36,7 +36,7 @@ class AuthTypeEnum(Enum):
     AZURE_CLIENT_SECRET = "azure-client-secret"
 
 
-def check_credentials(
+def _check_credentials(
     token: Optional[str],
     oauth_client_id: Optional[str] = None,
     oauth_client_secret: Optional[str] = None,
@@ -65,7 +65,7 @@ def check_credentials(
     ), "Only one of the sets of credentials (token, oauth, azure) should be present"
 
 
-def get_auth_type(
+def _get_auth_type(
     token: Optional[str],
     oauth_client_id: Optional[str] = None,
     oauth_client_secret: Optional[str] = None,
@@ -73,6 +73,8 @@ def get_auth_type(
     azure_client_secret: Optional[str] = None,
     azure_tenant_id: Optional[str] = None,
 ) -> AuthTypeEnum:
+    """Get the type of authentication used to initialize the WorkspaceClient"""
+    _check_credentials(token, oauth_client_id, oauth_client_secret, azure_client_id, azure_client_secret, azure_tenant_id)
     if oauth_client_id and oauth_client_secret:
         auth_type = AuthTypeEnum.OAUTH_M2M
     elif token:
@@ -104,15 +106,7 @@ class DatabricksClient:
         self.host = host
         self.workspace_id = workspace_id
 
-        check_credentials(
-            token,
-            oauth_client_id,
-            oauth_client_secret,
-            azure_client_id,
-            azure_client_secret,
-            azure_tenant_id,
-        )
-        auth_type = get_auth_type(
+        auth_type = _get_auth_type(
             token,
             oauth_client_id,
             oauth_client_secret,

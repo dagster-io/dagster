@@ -5,8 +5,8 @@ import dagster_databricks
 import dagster_pyspark
 import pytest
 from dagster import build_op_context
-from dagster_databricks.databricks import (DatabricksClient, DatabricksError, DatabricksJobRunner, check_credentials,
-                                           get_auth_type, AuthTypeEnum)
+from dagster_databricks.databricks import (DatabricksClient, DatabricksError, DatabricksJobRunner, _check_credentials,
+                                           _get_auth_type, AuthTypeEnum)
 from dagster_databricks.types import (
     DatabricksRunLifeCycleState,
     DatabricksRunResultState,
@@ -206,64 +206,28 @@ def test_dagster_databricks_user_agent() -> None:
     assert "dagster-databricks" in databricks_client.workspace_client.config.user_agent
 
 
-class TestCheckCredentials:
-    def test_token_only_present(self):
-        check_credentials("my_token")
-
-    def test_oauth_only_present(self):
-        check_credentials(None, "client_id", "client_secret")
-
-    def test_azure_only_present(self):
-        check_credentials(None, None, None, "client_id", "client_secret", "tenant_id")
-
-    def test_multiple_present(self):
-        with pytest.raises(AssertionError):
-            check_credentials("my_token", "client_id", "client_secret")
-
-    def test_none_present(self):
-        with pytest.raises(AssertionError):
-            check_credentials(None)
-
-    def test_partial_oauth_creds(self):
-        with pytest.raises(AssertionError):
-            check_credentials(None, "client_id", None)
-
-    def test_partial_azure_creds(self):
-        with pytest.raises(AssertionError):
-            check_credentials(None, None, None, "client_id", None, None)
-
-
 class TestGetAuthType:
-    def test_token_auth_type(self):
-        assert (
-            get_auth_type("my_token")
-            == AuthTypeEnum.PAT
-        ), "Test failed when only token is present"
+    @pytest.mark.parametrize(
+        "input_params, expected",
+        [
+            (("my_token", None, None, None, None, None), AuthTypeEnum.PAT),
+            ((None, "client_id", "client_secret", None, None, None), AuthTypeEnum.OAUTH_M2M),
+            ((None, None, None, "client_id", "client_secret", "tenant_id"), AuthTypeEnum.AZURE_CLIENT_SECRET),
+        ],
+    )
+    def test_auth_type(self, input_params, expected):
+        assert _get_auth_type(*input_params) == expected
 
-    def test_oauth_auth_type(self):
-        assert (
-            get_auth_type(None, "client_id", "client_secret")
-            == AuthTypeEnum.OAUTH_M2M
-        ), "Test failed when only oauth credentials are present"
-
-    def test_azure_auth_type(self):
-        assert (
-            get_auth_type(None, None, None, "azure_client_id", "azure_client_secret", "azure_tenant_id")
-            == AuthTypeEnum.AZURE_CLIENT_SECRET
-        ), "Test failed when only Azure client ID, client secret, and tenant ID are present"
-
-    def test_multiple_present(self):
-        with pytest.raises(ValueError):
-            get_auth_type("my_token", "client_id", "client_secret")
-
-    def test_none_present(self):
-        with pytest.raises(ValueError):
-            get_auth_type(None)
-
-    def test_partial_oauth_creds(self):
-        with pytest.raises(ValueError):
-            get_auth_type(None, "client_id", None)
-
-    def test_partial_azure_creds(self):
-        with pytest.raises(ValueError):
-            get_auth_type(None, None, None, "client_id", None, None)
+    @pytest.mark.parametrize(
+        "input_params",
+        [
+            ("my_token", "client_id", "client_secret", None, None, None),
+            (None, None, None, None, None),
+            (None, "client_id", None, None, None, None),
+            (None, None, None, "client_id", None, None),
+        ],
+    )
+    def test_bad_combinations(self, input_params):
+        print(input_params)
+        with pytest.raises(AssertionError):
+            _get_auth_type(*input_params)
