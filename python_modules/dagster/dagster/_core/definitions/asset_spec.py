@@ -21,6 +21,8 @@ if TYPE_CHECKING:
 # just doing vanilla key for now
 SYSTEM_METADATA_KEY_EXECUTABLE = "dagster__executable"
 # SYSTEM_METADATA_KEY_EXECUTABLE = "dagster/executable"
+SYSTEM_METADATA_KEY_PRODUCES_MATERIALIZATION = "dagster__produces_materialization"
+# SYSTEM_METADATA_KEY_PRODUCES_MATERIALIZATION = "dagster/produces_materialization"
 
 
 @experimental

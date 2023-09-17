@@ -569,7 +569,7 @@ def _get_output_asset_materializations(
     step_output_handle = StepOutputHandle(step_context.step.key, output_def.name)
     assets_def = step_context.get_assets_def_for_step_output(step_output_handle)
 
-    if assets_def and not assets_def.is_asset_materializable(asset_key):
+    if assets_def and not assets_def.produces_materialization(asset_key):
         yield from ()
         return
 
@@ -725,7 +725,7 @@ def _store_output(
                 yield gen_output
 
         handle_output_gen = _gen_fn()
-    elif assets_def and not assets_def.is_asset_materializable(
+    elif assets_def and not assets_def.produces_materialization(
         assets_def.keys_by_output_name[step_output_handle.output_name]
     ):  # handle case where asset def is not materializable
 
