@@ -24,6 +24,7 @@ from typing import (
 
 import dagster._check as check
 from dagster._annotations import public
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.data_version import (
     DATA_VERSION_TAG,
     SKIP_PARTITION_DATA_VERSION_DEPENDENCY_THRESHOLD,
@@ -491,6 +492,7 @@ class InputAssetVersionInfo:
     timestamp: float
 
 
+# TODO add way to get assets definition here
 class StepExecutionContext(PlanExecutionContext, IStepContext):
     """Context for the execution of a step. Users should not instantiate this class directly.
 
@@ -590,6 +592,15 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
     @property
     def op(self) -> OpNode:
         return self.job_def.get_op(self._step.node_handle)
+
+    def get_assets_def_for_step_output(
+        self, step_output_handle: StepOutputHandle
+    ) -> Optional[AssetsDefinition]:
+        asset_layer = self.job_def.asset_layer
+        asset_info = asset_layer.asset_info_for_output(
+            self.node_handle, output_name=step_output_handle.output_name
+        )
+        return asset_layer.assets_def_for_asset(asset_info.key) if asset_info else None
 
     @property
     def op_retry_policy(self) -> Optional[RetryPolicy]:
