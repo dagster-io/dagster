@@ -11,6 +11,7 @@ from dagster import (
     asset,
     materialize,
 )
+from dagster._check import CheckError
 from dagster._core.definitions.asset_spec import (
     ObservableAssetSpec,
 )
@@ -170,4 +171,35 @@ def test_executable_upstream_of_nonexecutable_illegal() -> None:
         "An executable asset cannot be upstream of a non-executable asset. Non-executable asset"
         ' "downstream_asset" downstream of executable asset "upstream_asset"'
         in str(exc_info.value)
+    )
+
+
+def test_execute_job_that_includes_non_executable_asset() -> None:
+    upstream_asset = create_unexecutable_observable_assets_def(
+        specs=[
+            ObservableAssetSpec(
+                "upstream_asset",
+            )
+        ]
+    )
+
+    @asset(deps=[upstream_asset])
+    def downstream_asset() -> None: ...
+
+    defs = Definitions(assets=[upstream_asset, downstream_asset])
+
+    assert (
+        defs.get_implicit_global_asset_job_def()
+        .execute_in_process(instance=DagsterInstance.ephemeral())
+        .success
+    )
+
+    # ensure that explict selection fails
+    with pytest.raises(CheckError) as exc_info:
+        defs.get_implicit_global_asset_job_def().execute_in_process(
+            instance=DagsterInstance.ephemeral(), asset_selection=[AssetKey("upstream_asset")]
+        )
+
+    assert "Cannot pass unexecutable assets defs to create_execution_plan with keys:" in str(
+        exc_info.value
     )

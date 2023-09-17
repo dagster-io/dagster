@@ -97,6 +97,9 @@ if TYPE_CHECKING:
 
 DEFAULT_EXECUTOR_DEF = multi_or_in_process_executor
 
+# See create_untainted_job_for_execution for the sad tale of the execution taint in all its glory
+EXECUTION_TAINT_PROPERTY = "__execution_taint"
+
 
 @experimental_param(param="version_strategy")
 class JobDefinition(IHasInternalInit):
@@ -253,6 +256,8 @@ class JobDefinition(IHasInternalInit):
                     f"Error when constructing JobDefinition '{self.name}': Input value provided for"
                     f" key '{input_name}', but job has no top-level input with that name."
                 )
+
+        setattr(self, EXECUTION_TAINT_PROPERTY, True)
 
     def dagster_internal_init(
         *,
@@ -633,6 +638,10 @@ class JobDefinition(IHasInternalInit):
         from dagster._core.execution.build_resources import wrap_resources_for_execution
         from dagster._core.execution.execute_in_process import core_execute_in_process
 
+        # TODO: Move this entire method body into a function in job_definition_execution
+        # to avoid this set of circular imports
+        from .job_definition_execution import create_untainted_job_for_execution
+
         run_config = check.opt_mapping_param(convert_config_input(run_config), "run_config")
         op_selection = check.opt_sequence_param(op_selection, "op_selection", str)
         asset_selection = check.opt_sequence_param(asset_selection, "asset_selection", AssetKey)
@@ -655,7 +664,7 @@ class JobDefinition(IHasInternalInit):
         input_values = merge_dicts(self.input_values, input_values)
 
         bound_resource_defs = dict(self.resource_defs)
-        ephemeral_job = JobDefinition.dagster_internal_init(
+        base_job = JobDefinition.dagster_internal_init(
             name=self._name,
             graph_def=self._graph_def,
             resource_defs={**_swap_default_io_man(bound_resource_defs, self), **resource_defs},
@@ -675,9 +684,11 @@ class JobDefinition(IHasInternalInit):
             _was_explicitly_provided_resources=True,
         )
 
-        ephemeral_job = ephemeral_job.get_subset(
+        untainted_job_for_execution = create_untainted_job_for_execution(
+            job_def=base_job,
             op_selection=op_selection,
             asset_selection=frozenset(asset_selection) if asset_selection else None,
+            asset_check_selection=None,  # asset_check_selection currently unsupported in this code path
         )
 
         merged_tags = merge_dicts(self.tags, tags or {})
@@ -700,7 +711,7 @@ class JobDefinition(IHasInternalInit):
             )
 
         return core_execute_in_process(
-            ephemeral_job=ephemeral_job,
+            ephemeral_job=untainted_job_for_execution,
             run_config=run_config,
             instance=instance,
             output_capturing_enabled=True,

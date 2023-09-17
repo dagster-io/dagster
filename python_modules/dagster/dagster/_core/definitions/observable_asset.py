@@ -35,7 +35,11 @@ def create_unexecutable_observable_assets_def(specs: Sequence[ObservableAssetSpe
         ]
     )
     def an_asset() -> None:
-        raise NotImplementedError()
+        keys = [spec.key for spec in specs]
+        raise NotImplementedError(
+            f"Asset {keys} is not executable. This is an internal framework error and should have"
+            " been caught earlier."
+        )
 
     return an_asset
 

@@ -585,6 +585,19 @@ class AssetLayer(NamedTuple):
         return len(self.assets_defs_by_key) > 0
 
     @property
+    def assets_defs(self) -> Iterable["AssetsDefinition"]:
+        # relying on id is actually quite dangerous, but we do it elsewhere
+        # in the codebase (resolve_assets_def_deps).
+        #
+        # It would be much preferable to generate a data structure that is
+        # the hash of the asset keys and ensures no key collisions during
+        # construction.
+        assets_defs_by_id: Dict[int, "AssetsDefinition"] = {}
+        for assets_def in self.assets_defs_by_key.values():
+            assets_defs_by_id[id(assets_def)] = assets_def
+        return assets_defs_by_id.values()
+
+    @property
     def has_asset_check_defs(self) -> bool:
         return len(self.asset_checks_defs_by_node_handle) > 0
 
