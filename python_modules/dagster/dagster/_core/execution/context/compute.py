@@ -1479,17 +1479,13 @@ class AssetExecutionContext(OpExecutionContext):
     # deprecated methods. All remaining methods on OpExecutionContext should be here with the
     # appropriate deprecation warning
 
-    @deprecated(
-        **_get_deprecation_kwargs("op_config"),
-    )
+    @deprecated(**_get_deprecation_kwargs("op_config"))
     @public
     @property
     def op_config(self) -> Any:
         return super().op_config
 
-    @deprecated(
-        **_get_deprecation_kwargs("file_manager"),
-    )
+    @deprecated(**_get_deprecation_kwargs("file_manager"))
     @property
     def file_manager(self):
         return super().file_manager
