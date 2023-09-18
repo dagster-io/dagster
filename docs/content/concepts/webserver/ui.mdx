@@ -266,6 +266,78 @@ height={1628}
 
 ---
 
+## Resources
+
+<TabGroup>
+<TabItem name="All resources">
+
+### All resources
+
+- **Description**: The **Resources** page lists all [resources](/concepts/resources/) defined in your Dagster deployment, across all code locations. Clicking a resource will open the [**Resource details**](#resource-details) page.
+
+- **Accessed by**: Clicking **Overview (top nav) > Resources tab**
+
+<!-- ![UI Resources page](/images/concepts/webserver/resources-tab.png) -->
+
+<Image
+alt="UI Resources page"
+src="/images/concepts/webserver/resources-tab.png"
+width={3576}
+height={1942}
+/>
+
+</TabItem>
+<TabItem name="Resource details">
+
+### Resource details
+
+- **Description**: The **Resource details** page contains detailed information about a resource, including its configuration, description, and uses. Click the tabs below for more information about the tabs on this page.
+
+- **Accessed by**: Clicking a resource in the [**Resources**](#all-resources) page
+
+<TabGroup>
+<TabItem name="Configuration tab">
+
+#### Configuration tab
+
+- **Description**: The **Configuration** tab contains detailed information about a resource's configuration, including the name of each key, type, and value of each config value. If a key's value is an [environment variable](/guides/dagster/using-environment-variables-and-secrets), an `Env var` badge will display next to the value.
+
+- **Accessed by**: Clicking the **Configuration tab** in the [**Resource details**](#resource-details) page
+
+<!-- ![UI Resource details - Configuration tab](/images/concepts/webserver/resource-details-configuration-tab.png) -->
+
+<Image
+alt="UI Resource details - Configuration tab"
+src="/images/concepts/webserver/resource-details-configuration-tab.png"
+width={3046}
+height={1618}
+/>
+
+</TabItem>
+<TabItem name="Uses tab">
+
+#### Uses tab
+
+- **Description**: The **Uses** tab contains information about the other Dagster definitions that use the resource, including [assets](/concepts/assets/software-defined-assets), [jobs](/concepts/ops-jobs-graphs/jobs), and [ops](/concepts/ops-jobs-graphs/ops). Clicking on any of these definitions will open the details page for that definition type.
+
+- **Accessed by**: Clicking the **Uses tab** in the [**Resource details**](#resource-details) page
+
+<!-- ![UI Resource details - Uses tab](/images/concepts/webserver/resource-details-uses-tab.png) -->
+
+<Image
+alt="UI Resource details - Uses tab"
+src="/images/concepts/webserver/resource-details-uses-tab.png"
+width={3046}
+height={1618}
+/>
+
+</TabItem>
+</TabGroup>
+</TabItem>
+</TabGroup>
+
+---
+
 ## Jobs
 
 <TabGroup>
@@ -320,7 +392,7 @@ height={1628}
 
 - **Description**: The **Launchpad tab** provides a configuration editor to let you experiment with configuration and launch runs. **Note**: This tab will display only if the job requires config.
 
-- **Accessed by:** Clicking the **Launchpad** tab tab in the [**Job details**](#job-details) page
+- **Accessed by:** Clicking the **Launchpad** tab in the [**Job details**](#job-details) page
 
 <!-- ![UI Launchpad](/images/concepts/webserver/job-launchpad-tab.png) -->
 
@@ -471,10 +543,10 @@ height={1632}
 </TabItem>
 <TabItem name="Environmental variables tab">
 
-#### Environmental variables tab
+#### Environment variables tab
 
 - **Description**: The **Agents** tab contains information about the environment variables configured in a Dagster Cloud deployment. Refer to the [Dagster Cloud environment variables and secrets documentation](/dagster-cloud/managing-deployments/environent-variables-and-secrets) for more info.
-- **Accessed by**: Clicking the **Environmental variables** tab in the [**Deployment overview**](#code-locations-tab) page
+- **Accessed by**: Clicking the **Environment variables** tab in the [**Deployment overview**](#code-locations-tab) page
 
 <!-- ![UI Cloud Deployment - Environment variables tab](/images/concepts/webserver/deployment-cloud-environment-variables-tab.png) -->
 
