@@ -208,13 +208,7 @@ def test_execute_job_that_implicitly_includes_non_executable_asset() -> None:
 
 
 def test_execute_job_that_explicitly_includes_non_executable_asset() -> None:
-    upstream_asset = create_unexecutable_observable_assets_def(
-        specs=[
-            ObservableAssetSpec(
-                "upstream_asset",
-            )
-        ]
-    )
+    upstream_asset = create_unexecutable_observable_assets_def(specs=[AssetSpec("upstream_asset")])
 
     @asset(deps=[upstream_asset])
     def downstream_asset() -> None: ...
