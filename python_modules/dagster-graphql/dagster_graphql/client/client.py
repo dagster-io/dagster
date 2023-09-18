@@ -3,7 +3,7 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Union
 
 import dagster._check as check
 import requests.exceptions
-from dagster import DagsterRunStatus
+from dagster import DagsterRunStatus, OpExecutionContext
 from dagster._annotations import experimental, public
 from dagster._core.definitions.run_config import RunConfig, convert_config_input
 from dagster._core.definitions.utils import validate_tags
@@ -12,18 +12,21 @@ from gql.transport import Transport
 from gql.transport.requests import RequestsHTTPTransport
 
 from .client_queries import (
-    STORE_METRICS_MUTATION,
     CLIENT_GET_REPO_LOCATIONS_NAMES_AND_PIPELINES_QUERY,
     CLIENT_SUBMIT_PIPELINE_RUN_MUTATION,
     GET_PIPELINE_RUN_STATUS_QUERY,
+    PUT_CLOUD_METRICS_MUTATION,
     RELOAD_REPOSITORY_LOCATION_MUTATION,
     SHUTDOWN_REPOSITORY_LOCATION_MUTATION,
     TERMINATE_RUN_JOB_MUTATION,
 )
 from .utils import (
+    AssetMetric,
     DagsterGraphQLClientError,
     InvalidOutputErrorInfo,
     JobInfo,
+    JobMetric,
+    Metric,
     ReloadRepositoryLocationInfo,
     ReloadRepositoryLocationStatus,
     ShutdownRepositoryLocationInfo,
@@ -398,28 +401,188 @@ class DagsterGraphQLClient:
         else:
             raise DagsterGraphQLClientError(query_result_type, query_result["message"])
 
+    @experimental
     @public
-    def store_metrics(self, metrics: List[Mapping[str, Any]]):
+    def put_metrics(self, metrics: List[Union[AssetMetric, JobMetric]]):
         """Store metrics in the dagster metrics store. This method is useful when you would like to
-        store asset or asset group materialization metric data to view in the reporting UI.
+        store run, asset or asset group materialization metric data to view in the insights UI.
+
+        Currently only supported in Dagster Cloud
+
+        Args:
+            metrics (List[Union[AssetMetric, JobMetric]]): metrics to store in the dagster metrics store
+        """
+        check.list_param(metrics, "metrics", of_type=(AssetMetric, JobMetric))
+
+        metric_graphql_inputs = {}
+        for metric in metrics:
+            key = (
+                metric.run_id,
+                metric.step_key,
+                metric.code_location_name,
+                metric.repository_name,
+            )
+            if isinstance(metric, AssetMetric):
+                if key not in metric_graphql_inputs.keys():
+                    metric_graphql_inputs[key] = {
+                        "runId": metric.run_id,
+                        "stepKey": metric.step_key,
+                        "codeLocationName": metric.code_location_name,
+                        "repositoryName": metric.repository_name,
+                        "assetMetricDefinitions": [
+                            {
+                                "assetKey": metric.asset_key,
+                                "assetGroup": metric.asset_group,
+                                "metricValues": [
+                                    {
+                                        "metricValue": metric_def.metric_value,
+                                        "metricName": metric_def.metric_name,
+                                    }
+                                    for metric_def in metric.metrics
+                                ],
+                            }
+                        ],
+                        "jobMetricDefinitions": [],
+                    }
+                else:
+                    metric_graphql_inputs[key]["assetMetricDefinitions"].append(
+                        {
+                            "assetKey": metric.asset_key,
+                            "assetGroup": metric.asset_group,
+                            "metricValues": [
+                                {
+                                    "metricValue": metric_def.metric_value,
+                                    "metricName": metric_def.metric_name,
+                                }
+                                for metric_def in metric.metrics
+                            ],
+                        }
+                    )
+            elif isinstance(metric, JobMetric):
+                if key not in metric_graphql_inputs.keys():
+                    metric_graphql_inputs[key] = {
+                        "runId": metric.run_id,
+                        "stepKey": metric.step_key,
+                        "codeLocationName": metric.code_location_name,
+                        "repositoryName": metric.repository_name,
+                        "assetMetricDefinitions": [],
+                        "jobMetricDefinitions": [
+                            {
+                                "metricValues": [
+                                    {
+                                        "metricValue": metric_def.metric_value,
+                                        "metricName": metric_def.metric_name,
+                                    }
+                                    for metric_def in metric.metrics
+                                ],
+                            }
+                        ],
+                    }
+                else:
+                    metric_graphql_inputs[key]["jobMetricDefinitions"].append(
+                        {
+                            "metricValues": [
+                                {
+                                    "metricValue": metric_def.metric_value,
+                                    "metricName": metric_def.metric_name,
+                                }
+                                for metric_def in metric.metrics
+                            ],
+                        }
+                    )
+            else:
+                raise DagsterGraphQLClientError(
+                    "InvalidMetricTypeError",
+                    f"Metric {metric} is not of type AssetMetric or JobMetric",
+                )
+
+        res_data: Dict[str, Dict[str, Any]] = self._execute(
+            PUT_CLOUD_METRICS_MUTATION,
+            {"metrics": metric_graphql_inputs.values()},
+        )
+
+        store_metric_result: Dict[str, Any] = res_data["createExternalMetrics"]
+        store_metric_result_type: str = store_metric_result["__typename"]
+        if store_metric_result_type == "CreateExternalMetricsSuccess":
+            return
+
+        raise DagsterGraphQLClientError(store_metric_result_type, store_metric_result["message"])
+
+    @experimental
+    @public
+    def put_context_metrics(
+        self,
+        context: OpExecutionContext,
+        metrics: List[Metric],
+    ):
+        """Store metrics in the dagster cloud metrics store. This method is useful when you would like to
+        store run, asset or asset group materialization metric data to view in the insights UI.
+
+        Currently only supported in Dagster Cloud
 
         Args:
             metrics (Mapping[str, Any]): metrics to store in the dagster metrics store
         """
-        check.list_param(metrics, "metrics")
-        for i, metric in enumerate(metrics):
-            check.mapping_param(metric, f'metrics[{i}]')
+        check.list_param(metrics, "metrics", of_type=Metric)
+        check.inst_param(context, "context", OpExecutionContext)
+        metric_graphql_input = {}
+
+        if context.dagster_run.external_job_origin is None:
+            raise Exception("dagster run for this context has not started yet")
+
+        if context.has_assets_def:
+            metric_graphql_input = {
+                "assetMetricDefinitions": [
+                    {
+                        "runId": context.run_id,
+                        "stepKey": context.get_step_execution_context().step.key,
+                        "codeLocationName": context.dagster_run.external_job_origin.location_name,
+                        "repositoryName": (
+                            context.dagster_run.external_job_origin.external_repository_origin.repository_name
+                        ),
+                        "assetKey": selected_asset_key,
+                        "assetGroup": context.assets_def.group_names_by_key.get(
+                            selected_asset_key, None
+                        ),
+                        "metricValues": [
+                            {
+                                "metricValue": metric_def.metric_value,
+                                "metricName": metric_def.metric_name,
+                            }
+                            for metric_def in metrics
+                        ],
+                    }
+                    for selected_asset_key in context.selected_asset_keys
+                ]
+            }
+        else:
+            metric_graphql_input = {
+                "jobMetricDefinitions": [
+                    {
+                        "runId": context.run_id,
+                        "stepKey": context.get_step_execution_context().step.key,
+                        "codeLocationName": context.dagster_run.external_job_origin.location_name,
+                        "repositoryName": (
+                            context.dagster_run.external_job_origin.external_repository_origin.repository_name
+                        ),
+                        "metricValues": [
+                            {
+                                "metricValue": metric_def.metric_value,
+                                "metricName": metric_def.metric_name,
+                            }
+                            for metric_def in metrics
+                        ],
+                    }
+                ]
+            }
 
         res_data: Dict[str, Dict[str, Any]] = self._execute(
-            STORE_METRICS_MUTATION, {"runId": metrics}
+            PUT_CLOUD_METRICS_MUTATION, {"metrics": [metric_graphql_input]}
         )
 
-        store_metric_result: Dict[str, Any] = res_data["storeMetrics"]
+        store_metric_result: Dict[str, Any] = res_data["createExternalMetrics"]
         store_metric_result_type: str = store_metric_result["__typename"]
-        if store_metric_result_type == "StoreMetricsSuccess":
+        if store_metric_result_type == "CreateExternalMetricsSuccess":
             return
 
-        elif store_metric_result_type == "StoreMetricsFailure":
-            raise DagsterGraphQLClientError("StoreMetricsFailure", f"Failed to store metrics")
-        else:
-            raise DagsterGraphQLClientError(store_metric_result_type, store_metric_result["message"])
+        raise DagsterGraphQLClientError(store_metric_result_type, store_metric_result["message"])

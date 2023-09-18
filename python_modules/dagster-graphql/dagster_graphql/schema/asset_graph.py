@@ -192,6 +192,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         non_null_list(GrapheneMaterializationEvent),
         partitions=graphene.List(graphene.NonNull(graphene.String)),
         beforeTimestampMillis=graphene.String(),
+        afterTimestampMillis=graphene.String(),
         limit=graphene.Int(),
     )
     assetMaterializationUsedData = graphene.Field(
@@ -202,6 +203,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         non_null_list(GrapheneObservationEvent),
         partitions=graphene.List(graphene.NonNull(graphene.String)),
         beforeTimestampMillis=graphene.String(),
+        afterTimestampMillis=graphene.String(),
         limit=graphene.Int(),
     )
     computeKind = graphene.String()
@@ -516,6 +518,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         graphene_info: ResolveInfo,
         partitions: Optional[Sequence[str]] = None,
         beforeTimestampMillis: Optional[str] = None,
+        afterTimestampMillis: Optional[str] = None,
         limit: Optional[int] = None,
     ) -> Sequence[GrapheneMaterializationEvent]:
         try:
@@ -524,12 +527,17 @@ class GrapheneAssetNode(graphene.ObjectType):
             )
         except ValueError:
             before_timestamp = None
+        try:
+            after_timestamp = int(afterTimestampMillis) / 1000.0 if afterTimestampMillis else None
+        except ValueError:
+            after_timestamp = None
 
         if (
             self._latest_materialization_loader
             and limit == 1
             and not partitions
             and not before_timestamp
+            and not after_timestamp
         ):
             latest_materialization_event = (
                 self._latest_materialization_loader.get_latest_materialization_for_asset_key(
@@ -549,6 +557,7 @@ class GrapheneAssetNode(graphene.ObjectType):
                 self._external_asset_node.asset_key,
                 partitions,
                 before_timestamp=before_timestamp,
+                after_timestamp=after_timestamp,
                 limit=limit,
             )
         ]
@@ -558,6 +567,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         graphene_info: ResolveInfo,
         partitions: Optional[Sequence[str]] = None,
         beforeTimestampMillis: Optional[str] = None,
+        afterTimestampMillis: Optional[str] = None,
         limit: Optional[int] = None,
     ) -> Sequence[GrapheneObservationEvent]:
         try:
@@ -566,6 +576,10 @@ class GrapheneAssetNode(graphene.ObjectType):
             )
         except ValueError:
             before_timestamp = None
+        try:
+            after_timestamp = int(afterTimestampMillis) / 1000.0 if afterTimestampMillis else None
+        except ValueError:
+            after_timestamp = None
         return [
             GrapheneObservationEvent(event=event)
             for event in get_asset_observations(
@@ -573,6 +587,7 @@ class GrapheneAssetNode(graphene.ObjectType):
                 self._external_asset_node.asset_key,
                 partitions,
                 before_timestamp=before_timestamp,
+                after_timestamp=after_timestamp,
                 limit=limit,
             )
         ]

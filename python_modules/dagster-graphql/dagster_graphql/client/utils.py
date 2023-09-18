@@ -86,3 +86,56 @@ class InvalidOutputErrorInfo(NamedTuple):
 
     step_key: str
     invalid_output_name: str
+
+
+class Metric(NamedTuple):
+    """This class gives information about a Metric.
+
+    Args:
+        metric_name (str): name of the metric
+        metric_value (float): value of the metric
+    """
+
+    metric_name: str
+    metric_value: float
+
+
+class AssetMetric(NamedTuple):
+    """This class gives information about an AssetMetric for a given asset.
+
+    Args:
+        run_id (str): id of the run that materialized the asset
+        step_key (str): key of the step that materialized the asset
+        code_location_name (str): name of the code location that materialized the asset
+        repository_name (str): name of the repository that materialized the asset
+        asset_key (str): key of the asset that was materialized
+        metric_name (str): name of the metric
+        metric_value (float): value of the metric
+    """
+
+    run_id = str
+    step_key = str
+    code_location_name = str
+    repository_name = str
+    asset_key: str
+    metrics: List[Metric]
+    asset_group: Optional[str] = None
+
+
+class JobMetric(NamedTuple):
+    """This class gives information about a JobMetric for a given job.
+
+    Args:
+        run_id (str): id of the job run
+        step_key (str): key of the step in the job
+        code_location_name (str): name of the code location containing the job
+        repository_name (str): name of the repository containing the job
+        metric_name (str): name of the metric
+        metric_value (float): value of the metric
+    """
+
+    run_id = str
+    step_key = str
+    code_location_name = str
+    repository_name = str
+    metrics: List[Metric]

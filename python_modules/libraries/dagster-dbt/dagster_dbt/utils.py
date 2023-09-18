@@ -25,8 +25,6 @@ from dagster._core.definitions.metadata import RawMetadataValue
 
 from .types import DbtOutput
 
-from dagster_graphql import DagsterGraphQLClient
-from gql.transport.requests import RequestsHTTPTransport
 # dbt resource types that may be considered assets
 ASSET_RESOURCE_TYPES = ["model", "seed", "snapshot"]
 
@@ -84,6 +82,19 @@ def _timing_to_metadata(timings: Sequence[Mapping[str, Any]]) -> Mapping[str, Ra
     return metadata
 
 
+def _adapter_response_to_metadata(
+    adapter_response: Mapping[str, Any]
+) -> Mapping[str, RawMetadataValue]:
+    metadata: Dict[str, RawMetadataValue] = {}
+    if adapter_response.get("query_id") is not None:
+        metadata.update({"Query ID": adapter_response.get("query_id")})
+    if adapter_response.get("rows_affected") is not None:
+        metadata.update({"Rows Affected": adapter_response.get("rows_affected")})
+    if adapter_response.get("bytes_processed") is not None:
+        metadata.update({"Bytes Processed": adapter_response.get("bytes_processed")})
+    return metadata
+
+
 def result_to_events(
     result: Mapping[str, Any],
     docs_url: Optional[str] = None,
@@ -114,6 +125,7 @@ def result_to_events(
     # all versions represent timing the same way
     metadata = {"Status": status, "Execution Time (seconds)": result["execution_time"]}
     metadata.update(_timing_to_metadata(result["timing"]))
+    metadata.update(_adapter_response_to_metadata(result["timing"]))
 
     # working with a response that contains the node block (RPC and CLI 0.18.x)
     if "node" in result:
