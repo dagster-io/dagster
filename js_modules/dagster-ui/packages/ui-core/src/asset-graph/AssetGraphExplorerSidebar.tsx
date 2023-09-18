@@ -58,8 +58,23 @@ export const AssetGraphExplorerSidebar = React.memo(
     allAssetKeys: AssetKey[];
     hideSidebar: () => void;
   }) => {
+    const [selectWhenDataAvailable, setSelectWhenDataAvailable] = React.useState<
+      [React.MouseEvent<any> | React.KeyboardEvent<any>, string] | null
+    >(null);
+    const selectedNodeHasDataAvailable = selectWhenDataAvailable
+      ? !!assetGraphData.nodes[selectWhenDataAvailable[1]]
+      : false;
+
+    React.useEffect(() => {
+      if (selectWhenDataAvailable) {
+        const [e, id] = selectWhenDataAvailable;
+        _selectNode(e, id);
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectWhenDataAvailable, selectedNodeHasDataAvailable]);
+
     const selectNode: typeof _selectNode = (e, id) => {
-      _selectNode(e, id);
+      setSelectWhenDataAvailable([e, id]);
       if (!assetGraphData.nodes[id]) {
         try {
           const path = JSON.parse(id);
@@ -238,8 +253,20 @@ export const AssetGraphExplorerSidebar = React.memo(
           return nextOpenNodes;
         });
       }
+    }, [
+      lastSelectedNode,
+      assetGraphData,
+      viewType,
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [lastSelectedNode, assetGraphData, viewType]);
+      lastSelectedNode &&
+        renderedNodes.findIndex((node) => nodeId(lastSelectedNode) === nodeId(node)),
+    ]);
+
+    console.log(
+      lastSelectedNode,
+      lastSelectedNode &&
+        renderedNodes.findIndex((node) => nodeId(lastSelectedNode) === nodeId(node)),
+    );
 
     const indexOfLastSelectedNode = React.useMemo(
       () => {
@@ -251,7 +278,7 @@ export const AssetGraphExplorerSidebar = React.memo(
             ? renderedNodes.findIndex((node) => 'path' in node && node.path === selectedNode.path)
             : -1;
         } else {
-          return renderedNodes.findIndex((node) => node.id === selectedNode?.id);
+          return renderedNodes.findIndex((node) => nodeId(node) === nodeId(selectedNode));
         }
       },
       // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -756,6 +783,6 @@ const ButtonGroupWrapper = styled.div`
   }
 `;
 
-function nodeId(node: TreeNodeType | FolderNodeType) {
+function nodeId(node: {path: string; id: string} | {id: string}) {
   return 'path' in node ? node.path : node.id;
 }
