@@ -57,9 +57,10 @@ def create_untainted_job_for_execution(
     asset_check_selection: Optional[AbstractSet[AssetCheckHandle]],
 ):
     check.invariant(
-        not job_has_execution_taint(job_def),
-        "Job definition already has an execution taint. This should only be called once during the"
-        " execution code paths",
+        job_has_execution_taint(job_def),
+        f'Job definition "{job_def.name}" already has execution taint removed.'
+        " created_untainted_job_for_execution should only be called once during the execution code"
+        " paths",
     )
 
     if asset_selection:

@@ -732,7 +732,7 @@ class GraphDefinition(NodeDefinition):
             instance=instance,
             raise_on_error=raise_on_error,
             run_id=run_id,
-            op_selection=op_selection
+            op_selection=op_selection,
         )
 
     @property
