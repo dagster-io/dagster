@@ -27,16 +27,16 @@ SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE = "dagster/asset_execution_type"
 
 class AssetExecutionType(Enum):
     UNEXECUTABLE = "UNEXECUTABLE"
-    MATERIALIZEABLE = "MATERIALIZEABLE"
+    MATERIALIZATION = "MATERIALIZATION"
 
     @staticmethod
     def is_executable(varietal_str: Optional[str]) -> bool:
-        return AssetExecutionType.str_to_enum(varietal_str) in {AssetExecutionType.MATERIALIZEABLE}
+        return AssetExecutionType.str_to_enum(varietal_str) in {AssetExecutionType.MATERIALIZATION}
 
     @staticmethod
     def str_to_enum(varietal_str: Optional[str]) -> "AssetExecutionType":
         return (
-            AssetExecutionType.MATERIALIZEABLE
+            AssetExecutionType.MATERIALIZATION
             if varietal_str is None
             else AssetExecutionType(varietal_str)
         )
