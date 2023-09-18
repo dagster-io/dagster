@@ -373,16 +373,136 @@ height={1624}
 </TabItem>
 </TabGroup>
 
-### Deployment overview
 ---
 
-The Deployment overview page includes information about the status of the code locations in your deployment, daemon (Open Source) or agent (Cloud) health, schedules, sensors, and configuration details:
+## Deployment
 
-<!-- ![UI Deployment overview page](/images/concepts/webserver/deployment-status.png) -->
+The **Deployment** page includes information about the status of the code locations in your Dagster deployment, daemon (Open Source) or agent (Cloud) health, schedules, sensors, and configuration details.
+
+<TabGroup>
+<TabItem name="Code locations tab">
+
+- **Description**: The **Code locations** tab contains information about the code locations in your Dagster deployment, including their current status, when they were last updated, and high-level details about the definitions they contain. You can reload Dagster definitions by:
+
+  - Clicking **Reload all** to reload all definitions in all code locations
+  - Clicking **Reload** next to a specific code location to reload only that code location's definitions
+
+- **Accessed by**:
+  - Clicking **Deployment** in the top navigation bar
+  - Clicking the **Code locations** tab in the **Deployment overview** page
+
+<!-- ![UI Deployment overview page](/images/concepts/webserver/deployment-code-locations.png) -->
 
 <Image
 alt="UI Deployment overview page"
-src="/images/concepts/webserver/deployment-status.png"
-width={2311}
-height={1300}
+src="/images/concepts/webserver/deployment-code-locations.png"
+width={3564}
+height={1944}
 />
+
+</TabItem>
+<TabItem name="Open Source (OSS)">
+
+### Open Source (OSS)
+
+In addition to the [**Code locations** tab](#code-locations-tab), Dagster OSS deployments contain a few additional tabs. Click the tabs below for more information.
+
+<TabGroup>
+<TabItem name="Daemons tab">
+
+#### Daemons tab
+
+- **Description**: The **Daemons** tab contains information about the [daemons](/deployment/dagster-daemon) in an Open Source Dagster deployment, including their current status and when their last heartbeat was detected.
+- **Accessed by**: Clicking the **Daemons** tab in the [**Deployment overview**](#code-locations-tab) page
+
+<!-- ![UI Deployment - Daemons tab](/images/concepts/webserver/deployment-daemons-tab.png) -->
+
+<Image
+alt="UI Deployment - Daemons tab"
+src="/images/concepts/webserver/deployment-daemons-tab.png"
+width={3060}
+height={1626}
+/>
+
+</TabItem>
+<TabItem name="Configuration tab">
+
+#### Configuration tab
+
+- **Description**: The **Configuration** tab displays information about the configuration for a Dagster deployment, which is managed through the [`dagster.yaml`](/deployment/dagster-instance) file
+- **Accessed by**: Clicking the **Configuration** tab in the [**Deployment overview**](#code-locations-tab) page
+
+<!-- ![UI Deployment - Configuration tab](/images/concepts/webserver/deployment-configuration-tab.png) -->
+
+<Image
+alt="UI Deployment - Configuration tab"
+src="/images/concepts/webserver/deployment-configuration-tab.png"
+width={3566}
+height={1942}
+/>
+
+</TabItem>
+</TabGroup>
+</TabItem>
+
+<TabItem name="Cloud">
+
+### Cloud
+
+In addition to the [**Code locations** tab](#code-locations-tab), Dagster Cloud deployments contain a few additional tabs. Click the tabs below for more information.
+
+<TabGroup>
+<TabItem name="Agents tab">
+
+#### Agents tab
+
+- **Description**: The **Agents** tab contains information about the agents in a Dagster Cloud deployment. Refer to the [Dagster Cloud agent documentation](/dagster-cloud/deployment/agents) for more info.
+- **Accessed by**: Clicking the **Agents** tab in the [**Deployment overview**](#code-locations-tab) page
+
+<!-- ![UI Cloud Deployment - Agents tab](/images/concepts/webserver/deployment-cloud-agents-tab.png) -->
+
+<Image
+alt="UI Cloud Deployment - Agents tab"
+src="/images/concepts/webserver/deployment-cloud-agents-tab.png"
+width={3060}
+height={1632}
+/>
+
+</TabItem>
+<TabItem name="Environmental variables tab">
+
+#### Environmental variables tab
+
+- **Description**: The **Agents** tab contains information about the environment variables configured in a Dagster Cloud deployment. Refer to the [Dagster Cloud environment variables and secrets documentation](/dagster-cloud/managing-deployments/environent-variables-and-secrets) for more info.
+- **Accessed by**: Clicking the **Environmental variables** tab in the [**Deployment overview**](#code-locations-tab) page
+
+<!-- ![UI Cloud Deployment - Environment variables tab](/images/concepts/webserver/deployment-cloud-environment-variables-tab.png) -->
+
+<Image
+alt="UI Cloud Deployment - Environment variables tab"
+src="/images/concepts/webserver/deployment-cloud-environment-variables-tab.png"
+width={3046}
+height={1618}
+/>
+
+</TabItem>
+<TabItem name="Alerts tab">
+
+#### Alerts tab
+
+- **Description**: The **Alerts** tab contains information about the alert policies configured for a Dagster Cloud deployment. Refer to the [Setting up alerts guide](/dagster-cloud/managing-deployments/setting-up-alerts) for more info.
+- **Accessed by**: Clicking the **Alerts** tab in the [**Deployment overview**](#code-locations-tab) page
+
+<!-- ![UI Cloud Deployment - Alerts tab](/images/concepts/webserver/deployment-cloud-alerts-tab.png) -->
+
+<Image
+alt="UI Cloud Deployment - Alerts tab"
+src="/images/concepts/webserver/deployment-cloud-alerts-tab.png"
+width={3064}
+height={1620}
+/>
+
+</TabItem>
+</TabGroup>
+</TabItem>
+</TabGroup>
