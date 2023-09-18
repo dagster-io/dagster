@@ -20,9 +20,11 @@ from dagster import (
 from dagster._check import ParameterCheckError
 from dagster._core.definitions import AssetIn, SourceAsset, asset, build_assets_job, multi_asset
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.metadata import MetadataValue, TextMetadataValue, normalize_metadata
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
+from dagster._core.definitions.observable_asset import create_unexecutable_observable_assets_def
 from dagster._core.definitions.partition import ScheduleType
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
@@ -1183,10 +1185,6 @@ def test_external_time_window_valid_partition_key():
             datetime.strptime("2023-03-11-15:00", "%Y-%m-%d-%H:%M"), tz="UTC"
         ).timestamp()
     )
-
-
-from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.observable_asset import create_unexecutable_observable_assets_def
 
 
 def test_unexecutable_external_asset_node() -> None:
