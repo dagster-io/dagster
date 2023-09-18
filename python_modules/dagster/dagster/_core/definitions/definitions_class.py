@@ -432,9 +432,7 @@ class Definitions:
     def __init__(
         self,
         assets: Optional[
-            Iterable[
-                Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition, ObservableAssetSpec]
-            ]
+            Iterable[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]
         ] = None,
         schedules: Optional[
             Iterable[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]

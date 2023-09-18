@@ -298,16 +298,14 @@ def test_how_source_assets_are_backwards_compatible() -> None:
 
 
 def test_direct_passing_of_observable_asset_spec_to_definitions() -> None:
-    defs = Definitions(
-        assets=[
-            ObservableAssetSpec(
-                key="observable_asset_one",
-                # multi-asset does not support description lol
-                # description="desc",
-                metadata={"user_metadata": "value"},
-                group_name="a_group",
-            )
-        ]
+    asset_one = ObservableAssetSpec(
+        key="observable_asset_one",
+        # multi-asset does not support description lol
+        # description="desc",
+        metadata={"user_metadata": "value"},
+        group_name="a_group",
     )
+    # using undocumented API in test case
+    defs = Definitions(assets=[asset_one])  # type: ignore
 
     assert defs.get_asset_graph().assets_def_for_key("observable_asset_one")
