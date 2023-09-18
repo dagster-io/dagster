@@ -2466,7 +2466,10 @@ class SqlEventLogStorage(EventLogStorage):
         if event.dagster_event_type == DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED:
             self._store_asset_check_evaluation_planned(event, event_id)
         if event.dagster_event_type == DagsterEventType.ASSET_CHECK_EVALUATION:
-            self._update_asset_check_evaluation(event, event_id)
+            if event.run_id == "" or event.run_id is None:
+                self._store_runless_asset_check_evaluation(event, event_id)
+            else:
+                self._update_asset_check_evaluation(event, event_id)
 
     def _store_asset_check_evaluation_planned(
         self, event: EventLogEntry, event_id: Optional[int]
@@ -2481,6 +2484,34 @@ class SqlEventLogStorage(EventLogStorage):
                     check_name=planned.check_name,
                     run_id=event.run_id,
                     execution_status=AssetCheckExecutionRecordStatus.PLANNED.value,
+                )
+            )
+
+    def _store_runless_asset_check_evaluation(
+        self, event: EventLogEntry, event_id: Optional[int]
+    ) -> None:
+        evaluation = cast(
+            AssetCheckEvaluation, check.not_none(event.dagster_event).event_specific_data
+        )
+        with self.index_connection() as conn:
+            conn.execute(
+                AssetCheckExecutionsTable.insert().values(
+                    asset_key=evaluation.asset_key.to_string(),
+                    check_name=evaluation.check_name,
+                    run_id=event.run_id,
+                    execution_status=(
+                        AssetCheckExecutionRecordStatus.SUCCEEDED.value
+                        if evaluation.success
+                        else AssetCheckExecutionRecordStatus.FAILED.value
+                    ),
+                    evaluation_event=serialize_value(event),
+                    evaluation_event_timestamp=datetime.utcfromtimestamp(event.timestamp),
+                    evaluation_event_storage_id=event_id,
+                    materialization_event_storage_id=(
+                        evaluation.target_materialization_data.storage_id
+                        if evaluation.target_materialization_data
+                        else None
+                    ),
                 )
             )
 
