@@ -1,5 +1,5 @@
 import {useQuery} from '@apollo/client';
-import {Box, Colors, NonIdealState, Subheading} from '@dagster-io/ui-components';
+import {Box, NonIdealState, Subheading} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {ErrorWrapper} from '../../app/PythonErrorInfo';
@@ -78,7 +78,7 @@ export const AutomaterializeMiddlePanel = (props: Props) => {
       <Box flex={{direction: 'column', grow: 1}}>
         <Box
           style={{flex: '0 0 48px'}}
-          border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+          border="bottom"
           padding={{horizontal: 16}}
           flex={{alignItems: 'center', justifyContent: 'space-between'}}
         >
@@ -177,7 +177,7 @@ export const AutomaterializeMiddlePanelWithData = ({
       <Box
         style={{flex: '0 0 48px'}}
         padding={{horizontal: 16}}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+        border="bottom"
         flex={{alignItems: 'center', justifyContent: 'space-between'}}
       >
         <Subheading>Result</Subheading>

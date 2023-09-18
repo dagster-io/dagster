@@ -144,9 +144,7 @@ def _poll_process(ipc_process: "Optional[Popen[bytes]]") -> None:
         return
     if ipc_process.poll() is not None:
         raise DagsterIPCProtocolError(
-            "Process exited with return code {return_code} while waiting for events".format(
-                return_code=ipc_process.returncode
-            )
+            f"Process exited with return code {ipc_process.returncode} while waiting for events"
         )
 
 
@@ -163,9 +161,7 @@ def ipc_read_event_stream(
 
     if not os.path.exists(file_path):
         raise DagsterIPCProtocolError(
-            "Timeout: read stream has not received any data in {timeout} seconds".format(
-                timeout=timeout
-            )
+            f"Timeout: read stream has not received any data in {timeout} seconds"
         )
 
     with open(os.path.abspath(file_path), "r", encoding="utf8") as file_pointer:
@@ -179,8 +175,8 @@ def ipc_read_event_stream(
         # Process start message
         if not isinstance(message, IPCStartMessage):
             raise DagsterIPCProtocolError(
-                "Attempted to read stream at file {file_path}, but first message was not an "
-                "IPCStartMessage".format(file_path=file_path)
+                f"Attempted to read stream at file {file_path}, but first message was not an "
+                "IPCStartMessage"
             )
 
         message = _process_line(file_pointer)

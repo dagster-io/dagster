@@ -36,7 +36,7 @@ export const AssetEventDetail: React.FC<{
     <Box padding={{horizontal: 24, bottom: 24}} style={{flex: 1}}>
       <Box
         padding={{vertical: 24}}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+        border="bottom"
         flex={{alignItems: 'center', justifyContent: 'space-between'}}
       >
         <Heading>
@@ -45,7 +45,7 @@ export const AssetEventDetail: React.FC<{
       </Box>
       <Box
         style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 16}}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+        border="bottom"
         padding={{vertical: 16}}
       >
         <Box flex={{gap: 4, direction: 'column'}}>
@@ -143,14 +143,14 @@ export const AssetEventDetailEmpty = () => (
   <Box padding={{horizontal: 24}} style={{flex: 1}}>
     <Box
       padding={{vertical: 24}}
-      border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+      border="bottom"
       flex={{alignItems: 'center', justifyContent: 'space-between'}}
     >
       <Heading color={Colors.Gray400}>No event selected</Heading>
     </Box>
     <Box
       style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 16}}
-      border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+      border="bottom"
       padding={{vertical: 16}}
     >
       <Box flex={{gap: 4, direction: 'column'}}>

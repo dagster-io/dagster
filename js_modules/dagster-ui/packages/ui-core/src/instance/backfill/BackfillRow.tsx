@@ -12,7 +12,7 @@ import {isHiddenAssetGroupJob} from '../../asset-graph/Utils';
 import {BulkActionStatus, RunStatus} from '../../graphql/types';
 import {PartitionStatus, PartitionStatusHealthSourceOps} from '../../partitions/PartitionStatus';
 import {PipelineReference} from '../../pipelines/PipelineReference';
-import {AssetKeyTagCollection} from '../../runs/AssetKeyTagCollection';
+import {AssetKeyTagCollection} from '../../runs/AssetTagCollections';
 import {inProgressStatuses} from '../../runs/RunStatuses';
 import {RunStatusTagsWithCounts} from '../../runs/RunTimeline';
 import {runsPathWithFilters} from '../../runs/RunsFilterInput';

@@ -95,7 +95,12 @@ export function useLiveDataForAssetKeys(assetKeys: AssetKeyInput[], batched?: bo
 
   // If the event log storage does not support streaming us asset events, fall back to
   // a polling approach and trigger a single refresh when a run is launched for immediate feedback
-  const liveDataRefreshState = useQueryRefreshAtInterval(liveResult, SUBSCRIPTION_IDLE_POLL_RATE);
+  const liveDataRefreshState = useQueryRefreshAtInterval(
+    liveResult,
+    SUBSCRIPTION_IDLE_POLL_RATE,
+    true,
+    refetch,
+  );
 
   useDidLaunchEvent(refetch, SUBSCRIPTION_MAX_POLL_RATE);
 
@@ -173,6 +178,7 @@ const ASSET_NODE_LIVE_FRAGMENT = gql`
     }
     assetChecks {
       name
+      canExecuteIndividually
       executionForLatestMaterialization {
         id
         runId

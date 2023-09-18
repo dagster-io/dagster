@@ -47,6 +47,8 @@ export type OverviewResourcesQuery = {
                     name: string;
                     description: string | null;
                     resourceType: string;
+                    schedulesUsing: Array<string>;
+                    sensorsUsing: Array<string>;
                     parentResources: Array<{__typename: 'NestedResourceEntry'; name: string}>;
                     assetKeysUsing: Array<{__typename: 'AssetKey'; path: Array<string>}>;
                     jobsOpsUsing: Array<{

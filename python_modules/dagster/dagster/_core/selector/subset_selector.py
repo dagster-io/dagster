@@ -456,9 +456,7 @@ def parse_step_selection(
         subset = clause_to_subset(graph, clause, lambda x: x)
         if len(subset) == 0:
             raise DagsterInvalidSubsetError(
-                "No qualified steps to execute found for step_selection={requested}".format(
-                    requested=step_selection
-                ),
+                f"No qualified steps to execute found for step_selection={step_selection}",
             )
         steps_set.update(subset)
 

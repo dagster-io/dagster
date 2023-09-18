@@ -74,11 +74,7 @@ const resourceDisplayName = (
 
 const SectionHeader = (props: {children: React.ReactNode}) => {
   return (
-    <Box
-      padding={{left: 24, vertical: 16}}
-      background={Colors.Gray50}
-      border={{width: 1, color: Colors.KeylineGray, side: 'all'}}
-    >
+    <Box padding={{left: 24, vertical: 16}} background={Colors.Gray50} border="all">
       {props.children}
     </Box>
   );
@@ -111,7 +107,9 @@ export const ResourceRoot: React.FC<Props> = (props) => {
     queryResult.data?.topLevelResourceDetailsOrError.__typename === 'ResourceDetails'
       ? queryResult.data.topLevelResourceDetailsOrError.parentResources.length +
         queryResult.data.topLevelResourceDetailsOrError.assetKeysUsing.length +
-        queryResult.data.topLevelResourceDetailsOrError.jobsOpsUsing.length
+        queryResult.data.topLevelResourceDetailsOrError.jobsOpsUsing.length +
+        queryResult.data.topLevelResourceDetailsOrError.schedulesUsing.length +
+        queryResult.data.topLevelResourceDetailsOrError.sensorsUsing.length
       : 0;
 
   const tab = useRouteMatch<{tab?: string}>(['/locations/:repoPath/resources/:name/:tab?'])?.params
@@ -254,12 +252,13 @@ const ResourceConfig: React.FC<{
                 const resourceEntry =
                   resource.type === 'TOP_LEVEL' && resource.resource ? (
                     <ResourceEntry
+                      key={resource.name}
                       url={workspacePathFromAddress(repoAddress, `/resources/${resource.name}`)}
                       name={resourceDisplayName(resource.resource) || ''}
                       description={resource.resource.description || undefined}
                     />
                   ) : (
-                    <ResourceEntry name={resource.name} />
+                    <ResourceEntry key={resource.name} name={resource.name} />
                   );
 
                 return (
@@ -498,6 +497,63 @@ const ResourceUses: React.FC<{
           </Table>
         </Box>
       )}
+      {[
+        {
+          name: 'Schedules',
+          objects: resourceDetails.schedulesUsing,
+          icon: <Icon name="schedule" color={Colors.Gray400} />,
+        },
+        {
+          name: 'Sensors',
+          objects: resourceDetails.sensorsUsing,
+          icon: <Icon name="sensors" color={Colors.Gray400} />,
+        },
+      ]
+        .filter(({objects}) => objects.length > 0)
+        .map(({name, objects, icon}) => (
+          <div key={name}>
+            <SectionHeader>
+              <Subheading>{name}</Subheading>
+            </SectionHeader>
+            <Table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                </tr>
+              </thead>
+              <tbody>
+                {objects.map((itemName) => {
+                  return (
+                    <tr key={name + ':' + itemName}>
+                      <td>
+                        <Box
+                          flex={{
+                            direction: 'row',
+                            alignItems: 'center',
+                            display: 'inline-flex',
+                            gap: 8,
+                          }}
+                          style={{maxWidth: '100%'}}
+                        >
+                          {icon}
+
+                          <Link
+                            to={workspacePathFromAddress(
+                              repoAddress,
+                              `/${name.toLowerCase()}/${itemName}`,
+                            )}
+                          >
+                            <MiddleTruncate text={itemName} />
+                          </Link>
+                        </Box>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </Table>
+          </div>
+        ))}
     </>
   );
 };
@@ -580,6 +636,8 @@ const RESOURCE_DETAILS_FRAGMENT = gql`
     assetKeysUsing {
       path
     }
+    schedulesUsing
+    sensorsUsing
     jobsOpsUsing {
       job {
         id

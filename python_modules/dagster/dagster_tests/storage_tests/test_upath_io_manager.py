@@ -488,9 +488,9 @@ def test_upath_io_manager_custom_metadata(tmp_path: Path, json_data: Any):
         [my_asset],
         resources={"io_manager": manager},
     )
-    handled_output_data = list(filter(lambda evt: evt.is_handled_output, result.all_node_events))[
-        0
-    ].event_specific_data
+    handled_output_data = next(
+        iter(filter(lambda evt: evt.is_handled_output, result.all_node_events))
+    ).event_specific_data
     assert isinstance(handled_output_data, HandledOutputData)
     assert handled_output_data.metadata["length"] == MetadataValue.int(get_length(json_data))
 

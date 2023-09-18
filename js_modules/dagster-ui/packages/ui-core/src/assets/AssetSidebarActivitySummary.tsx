@@ -1,4 +1,4 @@
-import {Body, Box, Colors, Icon, Spinner, Table} from '@dagster-io/ui-components';
+import {Body, Box, Colors, Icon, MiddleTruncate, Spinner} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -17,7 +17,7 @@ import {FailedRunSinceMaterializationBanner} from './FailedRunSinceMaterializati
 import {LatestMaterializationMetadata} from './LastMaterializationMetadata';
 import {OverdueTag, freshnessPolicyDescription} from './OverdueTag';
 import {AssetCheckStatusTag} from './asset-checks/AssetCheckStatusTag';
-import {ExexcuteChecksButton} from './asset-checks/ExecuteChecksButton';
+import {ExecuteChecksButton} from './asset-checks/ExecuteChecksButton';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {useGroupedEvents} from './groupByPartition';
 import {useRecentAssetEvents} from './useRecentAssetEvents';
@@ -66,14 +66,10 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
         <>
           <FailedRunSinceMaterializationBanner
             stepKey={stepKey}
-            border={{side: 'top', width: 1, color: Colors.KeylineGray}}
+            border="top"
             run={liveData?.runWhichFailedToMaterialize || null}
           />
-          <CurrentRunsBanner
-            stepKey={stepKey}
-            border={{side: 'top', width: 1, color: Colors.KeylineGray}}
-            liveData={liveData}
-          />
+          <CurrentRunsBanner stepKey={stepKey} border="top" liveData={liveData} />
         </>
       )}
 
@@ -170,27 +166,31 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
       {liveData && liveData.assetChecks.length > 0 && (
         <SidebarSection title="Checks">
           <Box padding={{horizontal: 24, vertical: 12}} flex={{gap: 12, alignItems: 'center'}}>
-            <ExexcuteChecksButton assetNode={asset} checks={liveData.assetChecks} />
+            <ExecuteChecksButton assetNode={asset} checks={liveData.assetChecks} />
             <Link to={assetDetailsPathForKey(asset.assetKey, {view: 'checks'})}>
               View all check details
             </Link>
           </Box>
 
-          <Table $compact>
-            <tbody>
-              {liveData.assetChecks.map((check) => (
-                <tr key={check.name}>
-                  <td style={{paddingLeft: 24}}>{check.name}</td>
-                  <td>
-                    <AssetCheckStatusTag
-                      check={check}
-                      execution={check.executionForLatestMaterialization}
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
+          {liveData.assetChecks.map((check) => (
+            <Box
+              key={check.name}
+              border={{side: 'top', width: 1, color: Colors.KeylineGray}}
+              padding={{vertical: 8, right: 12, left: 24}}
+              flex={{
+                gap: 8,
+                direction: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <MiddleTruncate text={`${check.name}`} />
+              <AssetCheckStatusTag
+                check={check}
+                execution={check.executionForLatestMaterialization}
+              />
+            </Box>
+          ))}
         </SidebarSection>
       )}
     </>

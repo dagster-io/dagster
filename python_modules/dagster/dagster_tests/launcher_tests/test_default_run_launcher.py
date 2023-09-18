@@ -48,7 +48,7 @@ def noop_job():
 
 @op
 def crashy_op(_):
-    os._exit(1)  # noqa: SLF001
+    os._exit(1)
 
 
 @job

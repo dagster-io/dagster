@@ -871,11 +871,8 @@ class DagsterApiServer(DagsterApiServicer):
                     # subprocess died unexpectedly
                     success = False
                     message = (
-                        "GRPC server: Subprocess for {run_id} terminated unexpectedly with "
-                        "exit code {exit_code}".format(
-                            run_id=run_id,
-                            exit_code=execution_process.exitcode,
-                        )
+                        f"GRPC server: Subprocess for {run_id} terminated unexpectedly with "
+                        f"exit code {execution_process.exitcode}"
                     )
                     serializable_error_info = serializable_error_info_from_exc_info(sys.exc_info())
             else:

@@ -20,7 +20,10 @@ import {OVERDUE_POPOVER_QUERY, OverdueTag} from '../OverdueTag';
 import {OverduePopoverQuery, OverduePopoverQueryVariables} from '../types/OverdueTag.types';
 
 // eslint-disable-next-line import/no-default-export
-export default {component: OverdueTag};
+export default {
+  title: 'Assets/OverdueTag',
+  component: OverdueTag,
+};
 
 const TEST_LAG_MINUTES = 4 * 60 + 30;
 const TEST_TIME = Date.now();

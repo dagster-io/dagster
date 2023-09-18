@@ -21,7 +21,7 @@ export const PageHeader = (props: Props) => {
     <PageHeaderContainer
       background={Colors.Gray50}
       padding={{top: 16, left: 24, right: 12}}
-      border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+      border="bottom"
     >
       <Box flex={{direction: 'row', justifyContent: 'space-between'}} padding={{bottom: 16}}>
         <Box flex={{direction: 'row', alignItems: 'flex-start', gap: 12, wrap: 'wrap'}}>

@@ -6,7 +6,10 @@ import {AutomaterializeRequestedPartitionsLink} from '../AutomaterializeRequeste
 import {buildRunStatusAndPartitionKeyQuery} from '../__fixtures__/AutomaterializeRequestedPartitionsLink.fixtures';
 
 // eslint-disable-next-line import/no-default-export
-export default {component: AutomaterializeRequestedPartitionsLink};
+export default {
+  title: 'Asset Details/Automaterialize/AutomaterializeRequestedPartitionsLink',
+  component: AutomaterializeRequestedPartitionsLink,
+};
 
 export const ManyPartitionsAndRuns = () => {
   const partitionKeys = new Array(40).fill(null).map((_) => faker.lorem.words(3));

@@ -275,12 +275,10 @@ class MayHaveInstanceWeakref(Generic[T_DagsterInstance]):
 @runtime_checkable
 class DynamicPartitionsStore(Protocol):
     @abstractmethod
-    def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
-        ...
+    def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]: ...
 
     @abstractmethod
-    def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
-        ...
+    def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool: ...
 
 
 class DagsterInstance(DynamicPartitionsStore):
@@ -1252,14 +1250,9 @@ class DagsterInstance(DynamicPartitionsStore):
 
         check.invariant(
             execution_plan_snapshot.job_snapshot_id == job_snapshot_id,
-            (
-                "Snapshot mismatch: Snapshot ID in execution plan snapshot is "
-                '"{ep_pipeline_snapshot_id}" and snapshot_id created in memory is '
-                '"{job_snapshot_id}"'
-            ).format(
-                ep_pipeline_snapshot_id=execution_plan_snapshot.job_snapshot_id,
-                job_snapshot_id=job_snapshot_id,
-            ),
+            "Snapshot mismatch: Snapshot ID in execution plan snapshot is "
+            f'"{execution_plan_snapshot.job_snapshot_id}" and snapshot_id created in memory is '
+            f'"{job_snapshot_id}"',
         )
 
         execution_plan_snapshot_id = create_execution_plan_snapshot_id(execution_plan_snapshot)
@@ -1326,6 +1319,7 @@ class DagsterInstance(DynamicPartitionsStore):
                             event_specific_data=AssetMaterializationPlannedData(
                                 asset_key, partition=partition
                             ),
+                            step_key=step.key,
                         )
                         self.report_dagster_event(event, dagster_run.run_id, logging.DEBUG)
 
@@ -1440,7 +1434,9 @@ class DagsterInstance(DynamicPartitionsStore):
         # We are asserting that invariant here to maintain that behavior.
         #
         # Finally, asset_check_selection can be passed along with asset_selection. It
-        # is mutually exclusive with op_selection and resolved_op_selection.
+        # is mutually exclusive with op_selection and resolved_op_selection. A `None`
+        # value will include any asset checks that target selected assets. An empty set
+        # will include no asset checks.
 
         check.opt_set_param(resolved_op_selection, "resolved_op_selection", of_type=str)
         check.opt_sequence_param(op_selection, "op_selection", of_type=str)

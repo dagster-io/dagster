@@ -75,7 +75,7 @@ def test_load_grpc_server(entrypoint):
         subprocess.check_call(["dagster", "api", "grpc-health-check", "--port", str(port)])
 
         ssl_result = subprocess.run(
-            ["dagster", "api", "grpc-health-check", "--port", str(port), "--use-ssl"]
+            ["dagster", "api", "grpc-health-check", "--port", str(port), "--use-ssl"], check=False
         )
         assert ssl_result.returncode == 1
 

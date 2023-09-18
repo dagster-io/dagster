@@ -117,6 +117,7 @@ export type AssetBackfillStatus = AssetPartitionsStatusCounts | UnpartitionedAss
 export type AssetCheck = {
   __typename: 'AssetCheck';
   assetKey: AssetKey;
+  canExecuteIndividually: AssetCheckCanExecuteIndividually;
   description: Maybe<Scalars['String']>;
   executionForLatestMaterialization: Maybe<AssetCheckExecution>;
   executions: Array<AssetCheckExecution>;
@@ -127,6 +128,11 @@ export type AssetCheckExecutionsArgs = {
   cursor?: InputMaybe<Scalars['String']>;
   limit: Scalars['Int'];
 };
+
+export enum AssetCheckCanExecuteIndividually {
+  CAN_EXECUTE = 'CAN_EXECUTE',
+  NEEDS_USER_CODE_UPGRADE = 'NEEDS_USER_CODE_UPGRADE',
+}
 
 export type AssetCheckEvaluation = {
   __typename: 'AssetCheckEvaluation';
@@ -3196,6 +3202,8 @@ export type ResourceDetails = {
   nestedResources: Array<NestedResourceEntry>;
   parentResources: Array<NestedResourceEntry>;
   resourceType: Scalars['String'];
+  schedulesUsing: Array<Scalars['String']>;
+  sensorsUsing: Array<Scalars['String']>;
 };
 
 export type ResourceDetailsList = {
@@ -4447,6 +4455,10 @@ export const buildAssetCheck = (
         : relationshipsToOmit.has('AssetKey')
         ? ({} as AssetKey)
         : buildAssetKey({}, relationshipsToOmit),
+    canExecuteIndividually:
+      overrides && overrides.hasOwnProperty('canExecuteIndividually')
+        ? overrides.canExecuteIndividually!
+        : AssetCheckCanExecuteIndividually.CAN_EXECUTE,
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'omnis',
     executionForLatestMaterialization:
@@ -10269,6 +10281,10 @@ export const buildResourceDetails = (
       overrides && overrides.hasOwnProperty('parentResources') ? overrides.parentResources! : [],
     resourceType:
       overrides && overrides.hasOwnProperty('resourceType') ? overrides.resourceType! : 'sed',
+    schedulesUsing:
+      overrides && overrides.hasOwnProperty('schedulesUsing') ? overrides.schedulesUsing! : [],
+    sensorsUsing:
+      overrides && overrides.hasOwnProperty('sensorsUsing') ? overrides.sensorsUsing! : [],
   };
 };
 

@@ -13,10 +13,11 @@ from dagster import (
     io_manager,
     materialize,
 )
+from dagster._check import ParameterCheckError
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
-from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
+from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.execution.context.init import build_init_resource_context
 from dagster._core.execution.with_resources import with_resources
 from dagster._core.instance_for_test import environ
@@ -284,12 +285,8 @@ def test_load_from_instance_with_downstream_asset_errors():
     )
 
     with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match=(
-            "Cannot pass an instance of type <class"
-            " 'dagster_airbyte.asset_defs.AirbyteInstanceCacheableAssetsDefinition'> to deps"
-            " parameter of @asset. Instead, pass AssetsDefinitions or AssetKeys."
-        ),
+        ParameterCheckError,
+        match='Param "asset" is not one of ',
     ):
 
         @asset(deps=[ab_cacheable_assets])

@@ -13,7 +13,7 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
-import {useHistory} from 'react-router';
+import {useHistory} from 'react-router-dom';
 
 import {PipelineRunTag} from '../app/ExecutionSessionStorage';
 import {filterByQuery} from '../app/GraphQueryImpl';
@@ -478,11 +478,7 @@ const Section = ({
 }) => (
   <Box flex={{direction: 'column', gap: 4}}>
     <Subheading>{title}</Subheading>
-    <Box
-      flex={{direction: 'column', gap: 8}}
-      padding={{top: 16}}
-      border={{width: 1, color: Colors.KeylineGray, side: 'top'}}
-    >
+    <Box flex={{direction: 'column', gap: 8}} padding={{top: 16}} border="top">
       {children}
     </Box>
   </Box>

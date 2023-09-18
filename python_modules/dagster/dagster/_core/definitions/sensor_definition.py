@@ -1094,7 +1094,7 @@ T = TypeVar("T")
 
 def get_sensor_context_from_args_or_kwargs(
     fn: Callable,
-    args: Tuple[Any],
+    args: Tuple[Any, ...],
     kwargs: Dict[str, Any],
     context_type: Type[T],
 ) -> Optional[T]:

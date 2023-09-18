@@ -11,7 +11,7 @@ from dagster._core.ext.utils import ExtEnvContextInjector, ext_protocol
 from dagster_ext import ExtContextData, ExtDefaultContextLoader
 from dagster_k8s import execute_k8s_job
 from dagster_k8s.client import DagsterKubernetesClient
-from dagster_k8s.external_resource import ExtK8sPod, K8sPodLogsMessageReader
+from dagster_k8s.ext import ExtK8sPod, K8sPodLogsMessageReader
 from dagster_test.test_project import (
     get_test_project_docker_image,
 )

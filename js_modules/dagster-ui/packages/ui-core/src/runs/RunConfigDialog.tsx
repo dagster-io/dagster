@@ -2,7 +2,6 @@ import {useMutation} from '@apollo/client';
 import {
   Box,
   Button,
-  Colors,
   Dialog,
   DialogFooter,
   Group,
@@ -161,10 +160,7 @@ export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({r
               </div>
             </Box>
             <Box flex={{direction: 'column'}} style={{flex: 1, overflow: 'hidden'}}>
-              <Box
-                border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-                padding={{left: 24, bottom: 16}}
-              >
+              <Box border="bottom" padding={{left: 24, bottom: 16}}>
                 <Subheading>Config</Subheading>
               </Box>
               <CodeMirrorContainer>

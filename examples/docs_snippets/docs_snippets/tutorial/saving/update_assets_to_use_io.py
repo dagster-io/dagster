@@ -89,7 +89,7 @@ def most_frequent_words(
     }
 
     plt.figure(figsize=(10, 6))
-    plt.bar(top_words.keys(), top_words.values())
+    plt.bar(list(top_words.keys()), list(top_words.values()))
     plt.xticks(rotation=45, ha="right")
     plt.title("Top 25 Words in Hacker News Titles")
     plt.tight_layout()

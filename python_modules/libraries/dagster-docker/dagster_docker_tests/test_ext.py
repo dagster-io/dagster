@@ -6,7 +6,7 @@ from dagster import AssetExecutionContext, asset, materialize
 from dagster._core.ext.utils import (
     ExtFileContextInjector,
 )
-from dagster_docker.external_resource import ExtDocker
+from dagster_docker.ext import ExtDocker
 from dagster_test.test_project import (
     IS_BUILDKITE,
     find_local_test_image,

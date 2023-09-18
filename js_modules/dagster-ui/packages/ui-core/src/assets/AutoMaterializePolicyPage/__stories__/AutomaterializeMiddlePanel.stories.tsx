@@ -10,7 +10,10 @@ import {Evaluations, TEST_EVALUATION_ID} from '../__fixtures__/AutoMaterializePo
 import {buildRunStatusOnlyQuery} from '../__fixtures__/RunStatusOnlyQuery.fixtures';
 
 // eslint-disable-next-line import/no-default-export
-export default {component: AutomaterializeMiddlePanelWithData};
+export default {
+  title: 'Asset Details/Automaterialize/AutomaterializeMiddlePanelWithData',
+  component: AutomaterializeMiddlePanelWithData,
+};
 
 const path = ['test'];
 

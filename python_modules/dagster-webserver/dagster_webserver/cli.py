@@ -145,7 +145,7 @@ DEFAULT_POOL_RECYCLE = 3600  # 1 hr
     "--dagster-log-level",
     help="Set the log level for dagster log events.",
     show_default=True,
-    default="warning",
+    default="info",
     type=click.Choice(["critical", "error", "warning", "info", "debug"], case_sensitive=False),
 )
 @click.option(
@@ -248,9 +248,7 @@ def host_dagster_ui_with_workspace_process_context(
             port = DEFAULT_WEBSERVER_PORT
 
     logger.info(
-        "Serving dagster-webserver on http://{host}:{port}{path_prefix} in process {pid}".format(
-            host=host, port=port, path_prefix=path_prefix, pid=os.getpid()
-        )
+        f"Serving dagster-webserver on http://{host}:{port}{path_prefix} in process {os.getpid()}"
     )
     log_action(workspace_process_context.instance, START_DAGSTER_WEBSERVER)
     with uploading_logging_thread():

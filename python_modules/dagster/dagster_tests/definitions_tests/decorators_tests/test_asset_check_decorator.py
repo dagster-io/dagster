@@ -32,8 +32,7 @@ def execute_assets_and_checks(
 
 def test_asset_check_decorator():
     @asset_check(asset="asset1", description="desc")
-    def check1():
-        ...
+    def check1(): ...
 
     assert check1.name == "check1"
     assert check1.description == "desc"
@@ -42,40 +41,34 @@ def test_asset_check_decorator():
 
 def test_asset_check_decorator_name():
     @asset_check(asset="asset1", description="desc", name="check1")
-    def _check():
-        ...
+    def _check(): ...
 
     assert _check.name == "check1"
 
 
 def test_asset_check_with_prefix():
     @asset(key_prefix="prefix")
-    def asset1():
-        ...
+    def asset1(): ...
 
     @asset_check(asset=asset1)
-    def my_check():
-        ...
+    def my_check(): ...
 
     assert my_check.asset_key == AssetKey(["prefix", "asset1"])
 
 
 def test_asset_check_input_with_prefix():
     @asset(key_prefix="prefix")
-    def asset1():
-        ...
+    def asset1(): ...
 
     @asset_check(asset=asset1)
-    def my_check(asset1):
-        ...
+    def my_check(asset1): ...
 
     assert my_check.asset_key == AssetKey(["prefix", "asset1"])
 
 
 def test_execute_asset_and_check():
     @asset
-    def asset1():
-        ...
+    def asset1(): ...
 
     @asset_check(asset=asset1, description="desc")
     def check1(context):
@@ -153,8 +146,7 @@ def test_execute_check_without_asset():
 
 def test_execute_check_and_asset_in_separate_run():
     @asset
-    def asset1():
-        ...
+    def asset1(): ...
 
     @asset_check(asset=asset1, description="desc")
     def check1(context):
@@ -188,8 +180,7 @@ def test_execute_check_and_asset_in_separate_run():
 
 def test_execute_check_and_unrelated_asset():
     @asset
-    def asset2():
-        ...
+    def asset2(): ...
 
     @asset_check(asset="asset1", description="desc")
     def check1():
@@ -244,16 +235,14 @@ def test_check_decorator_unexpected_asset_key():
 
 def test_asset_check_separate_op_downstream_still_executes():
     @asset
-    def asset1():
-        ...
+    def asset1(): ...
 
     @asset_check(asset=asset1)
     def asset1_check(context):
         return AssetCheckResult(success=False)
 
     @asset(deps=[asset1])
-    def asset2():
-        ...
+    def asset2(): ...
 
     result = execute_assets_and_checks(assets=[asset1, asset2], asset_checks=[asset1_check])
     assert result.success
@@ -273,16 +262,14 @@ def test_error_severity_skip_downstream():
     pytest.skip("Currently users should raise exceptions instead of using checks for control flow.")
 
     @asset
-    def asset1():
-        ...
+    def asset1(): ...
 
     @asset_check(asset=asset1, severity=AssetCheckSeverity.ERROR)
     def check1(context):
         return AssetCheckResult(success=False)
 
     @asset(deps=[asset1])
-    def asset2():
-        ...
+    def asset2(): ...
 
     result = execute_assets_and_checks(
         assets=[asset1, asset2], asset_checks=[check1], raise_on_error=False
@@ -316,8 +303,7 @@ def test_error_severity_with_source_asset_fail():
         return AssetCheckResult(success=False)
 
     @asset(deps=[asset1])
-    def asset2():
-        ...
+    def asset2(): ...
 
     result = execute_assets_and_checks(
         assets=[asset1, asset2], asset_checks=[check1], raise_on_error=False
@@ -381,8 +367,7 @@ def test_error_severity_with_source_asset_success():
 def test_definitions_conflicting_checks():
     def make_check():
         @asset_check(asset="asset1")
-        def check1(context):
-            ...
+        def check1(context): ...
 
         return check1
 
@@ -396,8 +381,7 @@ def test_definitions_conflicting_checks():
 def test_definitions_same_name_different_asset():
     def make_check_for_asset(asset_key: str):
         @asset_check(asset=asset_key)
-        def check1(context):
-            ...
+        def check1(context): ...
 
         return check1
 
@@ -407,8 +391,7 @@ def test_definitions_same_name_different_asset():
 def test_definitions_same_asset_different_name():
     def make_check(check_name: str):
         @asset_check(asset="asset1", name=check_name)
-        def _check(context):
-            ...
+        def _check(context): ...
 
         return _check
 
@@ -429,12 +412,10 @@ def test_resource_params():
 
 def test_job_only_execute_checks_downstream_of_selected_assets():
     @asset
-    def asset1():
-        ...
+    def asset1(): ...
 
     @asset
-    def asset2():
-        ...
+    def asset2(): ...
 
     @asset_check(asset=asset1)
     def check1():
@@ -464,8 +445,7 @@ def test_asset_not_provided():
     with pytest.raises(Exception):
 
         @asset_check(description="desc")
-        def check1():
-            ...
+        def check1(): ...
 
 
 def test_managed_input():
@@ -483,8 +463,7 @@ def test_managed_input():
             assert context.asset_key == asset1.key
             return 4
 
-        def handle_output(self, context, obj):
-            ...
+        def handle_output(self, context, obj): ...
 
     assert check1.name == "check1"
     assert check1.asset_key == asset1.key
@@ -504,8 +483,7 @@ def test_multiple_managed_inputs():
     ):
 
         @asset_check(asset="asset1", description="desc")
-        def check1(asset1, asset2):
-            ...
+        def check1(asset1, asset2): ...
 
 
 def test_managed_input_with_context():

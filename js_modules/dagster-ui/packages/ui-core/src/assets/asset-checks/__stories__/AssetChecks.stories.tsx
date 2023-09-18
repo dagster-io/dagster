@@ -28,6 +28,7 @@ import {AssetChecksQuery, AssetChecksQueryVariables} from '../types/AssetChecks.
 
 // eslint-disable-next-line import/no-default-export
 export default {
+  title: 'Asset Details/Checks',
   component: AssetChecks,
 } as Meta;
 

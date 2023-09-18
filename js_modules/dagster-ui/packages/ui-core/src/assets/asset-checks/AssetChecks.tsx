@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Body2, Box, Colors, Tag} from '@dagster-io/ui-components';
+import {Body2, Box, Tag} from '@dagster-io/ui-components';
 import React, {useContext} from 'react';
 import {Link} from 'react-router-dom';
 
@@ -11,14 +11,13 @@ import {AssetFeatureContext} from '../AssetFeatureContext';
 import {assetDetailsPathForKey} from '../assetDetailsPathForKey';
 import {AssetKey} from '../types';
 
+import {AssetCheckDetailModal, MigrationRequired, NoChecks} from './AssetCheckDetailModal';
 import {
-  ASSET_CHECK_EXECUTION_FRAGMENT,
-  AssetCheckDetailModal,
-  MigrationRequired,
-  NoChecks,
-} from './AssetCheckDetailModal';
-import {ExexcuteChecksButton} from './ExecuteChecksButton';
-import {VirtualizedAssetCheckTable} from './VirtualizedAssetCheckTable';
+  EXECUTE_CHECKS_BUTTON_ASSET_NODE_FRAGMENT,
+  EXECUTE_CHECKS_BUTTON_CHECK_FRAGMENT,
+  ExecuteChecksButton,
+} from './ExecuteChecksButton';
+import {ASSET_CHECK_TABLE_FRAGMENT, VirtualizedAssetCheckTable} from './VirtualizedAssetCheckTable';
 import {AssetChecksQuery, AssetChecksQueryVariables} from './types/AssetChecks.types';
 
 export const AssetChecks = ({
@@ -63,7 +62,7 @@ export const AssetChecks = ({
     if (checksOrError?.__typename !== 'AssetChecks' || assetNode?.__typename !== 'AssetNode') {
       return <span />;
     }
-    return <ExexcuteChecksButton assetNode={assetNode} checks={checksOrError.checks} />;
+    return <ExecuteChecksButton assetNode={assetNode} checks={checksOrError.checks} />;
   }
 
   const {AssetChecksBanner} = useContext(AssetFeatureContext);
@@ -77,16 +76,13 @@ export const AssetChecks = ({
           setOpenCheck(undefined);
         }}
       />
-      <Box
-        padding={{horizontal: 24, vertical: 12}}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-      >
+      <Box padding={{horizontal: 24, vertical: 12}} border="bottom">
         <AssetChecksBanner />
       </Box>
       <Box
         flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 32}}
         padding={{horizontal: 24, vertical: 16}}
-        border={{side: 'bottom', color: Colors.KeylineGray, width: 1}}
+        border="bottom"
       >
         <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
           <Body2>Latest materialization:</Body2>
@@ -118,18 +114,7 @@ export const ASSET_CHECKS_QUERY = gql`
     assetNodeOrError(assetKey: $assetKey) {
       ... on AssetNode {
         id
-        jobNames
-        assetKey {
-          path
-        }
-        repository {
-          id
-          name
-          location {
-            id
-            name
-          }
-        }
+        ...ExecuteChecksButtonAssetNodeFragment
       }
     }
     assetChecksOrError(assetKey: $assetKey) {
@@ -138,14 +123,13 @@ export const ASSET_CHECKS_QUERY = gql`
       }
       ... on AssetChecks {
         checks {
-          name
-          description
-          executionForLatestMaterialization {
-            ...AssetCheckExecutionFragment
-          }
+          ...AssetCheckTableFragment
+          ...ExecuteChecksButtonCheckFragment
         }
       }
     }
   }
-  ${ASSET_CHECK_EXECUTION_FRAGMENT}
+  ${EXECUTE_CHECKS_BUTTON_ASSET_NODE_FRAGMENT}
+  ${EXECUTE_CHECKS_BUTTON_CHECK_FRAGMENT}
+  ${ASSET_CHECK_TABLE_FRAGMENT}
 `;

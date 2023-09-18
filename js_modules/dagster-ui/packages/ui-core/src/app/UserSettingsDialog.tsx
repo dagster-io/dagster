@@ -3,7 +3,6 @@ import {
   Button,
   ButtonLink,
   Checkbox,
-  Colors,
   Dialog,
   DialogBody,
   DialogFooter,
@@ -134,7 +133,7 @@ const UserSettingsDialogContent: React.FC<DialogContentProps> = ({onClose, visib
             ]}
           />
         </Box>
-        <Box padding={{top: 16}} border={{side: 'top', width: 1, color: Colors.KeylineGray}}>
+        <Box padding={{top: 16}} border="top">
           <Box padding={{bottom: 8}}>
             <Subheading>Experimental features</Subheading>
           </Box>

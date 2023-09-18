@@ -639,25 +639,25 @@ class TestEventLogStorage:
         step_stats = storage.get_step_stats_for_run(test_run_id)
         assert len(step_stats) == 4
 
-        a_stats = [stats for stats in step_stats if stats.step_key == "A"][0]
+        a_stats = next(stats for stats in step_stats if stats.step_key == "A")
         assert a_stats.step_key == "A"
         assert a_stats.status.value == "SUCCESS"
         assert a_stats.end_time - a_stats.start_time == 100
         assert len(a_stats.attempts_list) == 1
 
-        b_stats = [stats for stats in step_stats if stats.step_key == "B"][0]
+        b_stats = next(stats for stats in step_stats if stats.step_key == "B")
         assert b_stats.step_key == "B"
         assert b_stats.status.value == "FAILURE"
         assert b_stats.end_time - b_stats.start_time == 50
         assert len(b_stats.attempts_list) == 1
 
-        c_stats = [stats for stats in step_stats if stats.step_key == "C"][0]
+        c_stats = next(stats for stats in step_stats if stats.step_key == "C")
         assert c_stats.step_key == "C"
         assert c_stats.status.value == "SKIPPED"
         assert c_stats.end_time - c_stats.start_time == 25
         assert len(c_stats.attempts_list) == 1
 
-        d_stats = [stats for stats in step_stats if stats.step_key == "D"][0]
+        d_stats = next(stats for stats in step_stats if stats.step_key == "D")
         assert d_stats.step_key == "D"
         assert d_stats.status.value == "SUCCESS"
         assert d_stats.end_time - d_stats.start_time == 150
@@ -2711,9 +2711,9 @@ class TestEventLogStorage:
                 assert len(records) == 1
                 asset_entry = records[0].asset_entry
                 assert asset_entry.asset_key == my_asset_key
-                materialize_event = [
+                materialize_event = next(
                     event for event in result.all_events if event.is_step_materialization
-                ][0]
+                )
                 assert asset_entry.last_materialization.dagster_event == materialize_event
                 assert asset_entry.last_run_id == result.run_id
                 assert asset_entry.asset_details is None
@@ -2750,9 +2750,9 @@ class TestEventLogStorage:
                     )  # order by asset key
                     asset_entry = records[0].asset_entry
                     assert asset_entry.asset_key == my_asset_key
-                    materialize_event = [
+                    materialize_event = next(
                         event for event in result.all_events if event.is_step_materialization
-                    ][0]
+                    )
                     assert asset_entry.last_materialization.dagster_event == materialize_event
                     assert asset_entry.last_run_id == result.run_id
                     assert isinstance(asset_entry.asset_details, AssetDetails)
@@ -3391,11 +3391,11 @@ class TestEventLogStorage:
                 materialization = (
                     record.event_log_entry.dagster_event.step_materialization_data.materialization
                 )
-                date_dimension = [
+                date_dimension = next(
                     dimension
                     for dimension in materialization.partition.dimension_keys
                     if dimension.dimension_name == "date"
-                ][0]
+                )
                 assert date_dimension.partition_key == "2022-10-13"
 
     def test_event_records_filter_tags_requires_asset_key(self, storage):

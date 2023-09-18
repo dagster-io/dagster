@@ -312,8 +312,7 @@ def _get_mock() -> "MagicMock":
 class ExtContextLoader(ABC):
     @abstractmethod
     @contextmanager
-    def load_context(self, params: ExtParams) -> Iterator[ExtContextData]:
-        ...
+    def load_context(self, params: ExtParams) -> Iterator[ExtContextData]: ...
 
 
 T_MessageChannel = TypeVar("T_MessageChannel", bound="ExtMessageWriterChannel")
@@ -322,24 +321,20 @@ T_MessageChannel = TypeVar("T_MessageChannel", bound="ExtMessageWriterChannel")
 class ExtMessageWriter(ABC, Generic[T_MessageChannel]):
     @abstractmethod
     @contextmanager
-    def open(self, params: ExtParams) -> Iterator[T_MessageChannel]:
-        ...
+    def open(self, params: ExtParams) -> Iterator[T_MessageChannel]: ...
 
 
 class ExtMessageWriterChannel(ABC, Generic[T_MessageChannel]):
     @abstractmethod
-    def write_message(self, message: ExtMessage) -> None:
-        ...
+    def write_message(self, message: ExtMessage) -> None: ...
 
 
 class ExtParamLoader(ABC):
     @abstractmethod
-    def load_context_params(self) -> ExtParams:
-        ...
+    def load_context_params(self) -> ExtParams: ...
 
     @abstractmethod
-    def load_messages_params(self) -> ExtParams:
-        ...
+    def load_messages_params(self) -> ExtParams: ...
 
 
 T_BlobStoreMessageWriterChannel = TypeVar(
@@ -358,8 +353,7 @@ class ExtBlobStoreMessageWriter(ExtMessageWriter[T_BlobStoreMessageWriterChannel
             yield channel
 
     @abstractmethod
-    def make_channel(self, params: ExtParams) -> T_BlobStoreMessageWriterChannel:
-        ...
+    def make_channel(self, params: ExtParams) -> T_BlobStoreMessageWriterChannel: ...
 
 
 class ExtBlobStoreMessageWriterChannel(ExtMessageWriterChannel):
@@ -380,8 +374,7 @@ class ExtBlobStoreMessageWriterChannel(ExtMessageWriterChannel):
             return messages
 
     @abstractmethod
-    def upload_messages_chunk(self, payload: StringIO, index: int) -> None:
-        ...
+    def upload_messages_chunk(self, payload: StringIO, index: int) -> None: ...
 
     @contextmanager
     def buffered_upload_loop(self) -> Iterator[None]:
@@ -409,6 +402,17 @@ class ExtBlobStoreMessageWriterChannel(ExtMessageWriterChannel):
                 start_or_last_upload = now
                 self._counter += 1
             time.sleep(1)
+
+
+class ExtBufferedFilesystemMessageWriterChannel(ExtBlobStoreMessageWriterChannel):
+    def __init__(self, path: str, *, interval: float = 10):
+        super().__init__(interval=interval)
+        self._path = path
+
+    def upload_messages_chunk(self, payload: IO, index: int) -> None:
+        message_path = os.path.join(self._path, f"{index}.json")
+        with open(message_path, "w") as f:
+            f.write(payload.read())
 
 
 # ########################
@@ -500,7 +504,6 @@ class ExtS3MessageWriter(ExtBlobStoreMessageWriter):
     # client is a boto3.client("s3") object
     def __init__(self, client: Any, *, interval: float = 10):
         super().__init__(interval=interval)
-        self._interval = _assert_param_type(interval, float, self.__class__.__name__, "interval")
         # Not checking client type for now because it's a boto3.client object and we don't want to
         # depend on boto3.
         self._client = client
@@ -515,7 +518,7 @@ class ExtS3MessageWriter(ExtBlobStoreMessageWriter):
             client=self._client,
             bucket=bucket,
             key_prefix=key_prefix,
-            interval=self._interval,
+            interval=self.interval,
         )
 
 
@@ -535,6 +538,32 @@ class ExtS3MessageChannel(ExtBlobStoreMessageWriterChannel):
             Body=payload.read(),
             Bucket=self._bucket,
             Key=key,
+        )
+
+
+# ########################
+# ##### IO - DBFS
+# ########################
+
+
+class ExtDbfsContextLoader(ExtContextLoader):
+    @contextmanager
+    def load_context(self, params: ExtParams) -> Iterator[ExtContextData]:
+        unmounted_path = _assert_env_param_type(params, "path", str, self.__class__)
+        path = os.path.join("/dbfs", unmounted_path.lstrip("/"))
+        with open(path, "r") as f:
+            yield json.load(f)
+
+
+class ExtDbfsMessageWriter(ExtBlobStoreMessageWriter):
+    def make_channel(
+        self,
+        params: ExtParams,
+    ) -> "ExtBufferedFilesystemMessageWriterChannel":
+        unmounted_path = _assert_env_param_type(params, "path", str, self.__class__)
+        return ExtBufferedFilesystemMessageWriterChannel(
+            path=os.path.join("/dbfs", unmounted_path.lstrip("/")),
+            interval=self.interval,
         )
 
 
@@ -626,7 +655,7 @@ class ExtContext:
             self._data["provenance_by_asset_key"], "provenance"
         )
         _assert_single_asset(self._data, "provenance")
-        return list(provenance_by_asset_key.values())[0]
+        return next(iter(provenance_by_asset_key.values()))
 
     @property
     def provenance_by_asset_key(self) -> Mapping[str, Optional[ExtDataProvenance]]:
@@ -641,7 +670,7 @@ class ExtContext:
             self._data["code_version_by_asset_key"], "code_version"
         )
         _assert_single_asset(self._data, "code_version")
-        return list(code_version_by_asset_key.values())[0]
+        return next(iter(code_version_by_asset_key.values()))
 
     @property
     def code_version_by_asset_key(self) -> Mapping[str, Optional[str]]:

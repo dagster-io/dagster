@@ -53,12 +53,10 @@ def test_asset_reconciliation_cursor_auto_observe_backcompat():
     partitions_def = StaticPartitionsDefinition(["a", "b", "c"])
 
     @asset(partitions_def=partitions_def)
-    def asset1():
-        ...
+    def asset1(): ...
 
     @asset
-    def asset2():
-        ...
+    def asset2(): ...
 
     handled_root_partitions_by_asset_key = {
         asset1.key: partitions_def.subset_with_partition_keys(["a", "b"])
