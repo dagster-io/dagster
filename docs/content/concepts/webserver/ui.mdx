@@ -128,52 +128,54 @@ height={1628}
 
 ---
 
-### Jobs
-
-The Job page offers tools to explore a job definition and launch runs for that job.
+## Runs
 
 <TabGroup>
-<TabItem name="Overview tab">
+<TabItem name="All runs">
 
-#### Overview tab
+### All runs
 
-The **Overview** tab shows the graph of ops that make up a job.
+- **Description**: The **Runs** page lists all job runs, which can be filtered by job name, run ID, execution status, or tag. Click a run ID to open the [**Run details** page](#run-details) and view details for that run.
 
-- [Job definition](#job-definition)
-- [Op definition](#op-definition)
+- **Accessed by**: Clicking **Runs** in the top navigation bar
 
-##### **Job definition**
-
-In this tab, you can view the definition of a job:
-
-<!-- ![UI Job Definition](/images/tutorial/complex-job.png) -->
+<!-- ![UI Runs page](/images/concepts/webserver/runs-page.png) -->
 
 <Image
-alt="UI Job Definition"
-src="/images/tutorial/complex-job.png"
-width={2313}
-height={1298}
+alt="UI Runs page"
+src="/images/concepts/webserver/runs-page.png"
+width={3578}
+height={1940}
 />
 
-<br></br>
+</TabItem>
+<TabItem name="Run details">
 
-##### **Op definition**
+### Run details
 
-To view detailed information about an op in the job, click an op to open a panel on the right side of the page:
+- **Description**: The **Run details** page contains details about a single run, including timing information, errors, and logs. The upper left pane contains a Gantt chart, indicating how long each asset or op took to execute. The bottom pane displays filterable events and logs emitted during execution.
 
-<!-- ![UI Op Definition](/images/concepts/webserver/op-definition.png) -->
+  You can also re-execute a run using the same configuration by clicking the **Re-execute** button. Related runs (e.g., runs created by re-executing the same previous run) are grouped in the right pane for easy reference.
+
+  There are several re-execution options:
+
+  - **All steps**: Re-execute the run from scratch.
+  - **Selected steps**: Re-execute the selected steps.
+  - **From selected**: Re-execute the steps downstream from the selected steps
+  - **From failure**: Retry the run, skipping steps completed successfully. This is only enabled when the run has failed.
+
+- **Accessed by**: Clicking a run in the [**Run details**](#run-details) page
+
+<!-- ![UI Job run](/images/concepts/webserver/run-details.png) -->
 
 <Image
-alt="UI Op Definition"
-src="/images/concepts/webserver/op-definition.png"
-width={2315}
-height={1299}
 />
+
+</TabItem>
+</TabGroup>
 
 ---
 
-</TabItem>
-<TabItem name="Launchpad tab">
 
 #### Launchpad tab
 
