@@ -129,8 +129,14 @@ def test_instance_check():
     warnings.filterwarnings("error")
 
     @asset
-    def test_instance_check(context: AssetExecutionContext):
+    def test_op_context_instance_check(context: AssetExecutionContext):
         isinstance(context, OpExecutionContext)
 
     with pytest.raises(DeprecationWarning):
-        materialize([test_instance_check])
+        materialize([test_op_context_instance_check])
+
+    @asset
+    def test_asset_context_instance_check(context: AssetExecutionContext):
+        isinstance(context, AssetExecutionContext)
+
+    materialize([test_asset_context_instance_check])
