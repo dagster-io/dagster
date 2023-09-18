@@ -52,54 +52,70 @@ height={1010}
 
 ---
 
+## Assets
+
 <TabGroup>
 <TabItem name="Asset catalog">
 
-#### Asset catalog
+### Asset catalog
 
-- **Description**: The **Asset catalog** page lists all assets, which can be filtered by asset key. Clicking an asset opens the [**Asset details** page](#asset-details) for that asset.
+- **Description**: The **Asset catalog** page lists all [assets](/concepts/assets/software-defined-assets) in your Dagster deployment, which can be filtered by asset key and/or [asset group](/concepts/assets/software-defined-assets#grouping-assets). Clicking an asset opens the [**Asset details** page](#asset-details) for that asset. You can also navigate to the [Global asset lineage](#global-asset-lineage) page, reload definitions, and materialize assets.
+
 - **Accessed by:** Clicking **Assets** in the top navigation bar
 
-<!-- ![The Asset Catalog page in the Dagster UI](/images/concepts/webserver/all-assets.png) -->
+<!-- ![The Asset Catalog page in the Dagster UI](/images/concepts/webserver/asset-catalog.png) -->
 
 <Image
 alt="The Asset Catalog page in the Dagster UI"
-src="/images/concepts/webserver/all-assets.png"
-width={3060}
-height={1630}
+src="/images/concepts/webserver/asset-catalog.png"
+width={3572}
+height={1944}
 />
-
----
 
 </TabItem>
 <TabItem name="Global asset lineage">
 
-#### Global asset lineage
+### Global asset lineage
 
-- **Description**:
-- **Accessed by**: Clicking **View global asset lineage**, located near the top right corner of the [**Asset catalog**](#asset-catalog)
+- **Description**: The **Global asset lineage** page displays dependencies between all of the assets in your Dagster deployment, across all code locations. On this page, you can:
+
+  - Filter assets by [group](/concepts/assets/software-defined-assets#grouping-assets)
+  - Filter a subset of assets by using [asset selection syntax](/concepts/assets/asset-selection-syntax)
+  - Reload definitions
+  - Materialize all or a selection of assets
+  - View [run details](#run-details) for the latest materialization of any asset
+
+  - **From the [Asset catalog](#asset-catalog)**: Clicking **View global asset lineage**, located near the top right corner of the page
+  - **From the [Asset details](#asset-details) page**: Clicking the **Lineage tab**
 
 <!-- ![The Global asset lineage page in the Dagster UI](/images/concepts/webserver/global-asset-lineage.png) -->
 
 <Image
 alt="The Global asset lineage page in the Dagster UI"
 src="/images/concepts/webserver/global-asset-lineage.png"
-width={3056}
-height={1626}
+width={3574}
+height={1944}
 />
 
 </TabItem>
 <TabItem name="Asset details">
 
-#### Asset details
+### Asset details
 
-- **Description**: The **Asset details** page contains details about a single asset.
+- **Description**: The **Asset details** page contains details about a single asset. On this page, you can:
+
+  - View the asset's **Event** (materialization) history
+  - View any **Plots** associated with the asset
+  - View the asset's **Definition**
+  - View the asset's **Lineage** in the [**Global asset lineage** page](#global-asset-lineage)
+  - Materialize the asset
+
 - **Accessed by**: Clicking an asset in the [**Asset catalog**](#asset-catalog)
 
-<!-- ![THe Asset Details page in the Dagster UI](/images/concepts/webserver/asset.png) -->
+<!-- ![The Asset Details page in the Dagster UI](/images/concepts/webserver/asset.png) -->
 
 <Image
-alt="THe Asset Details page in the Dagster UI"
+alt="The Asset Details page in the Dagster UI"
 src="/images/concepts/webserver/asset.png"
 width={3062}
 height={1628}
