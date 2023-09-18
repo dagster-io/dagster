@@ -723,7 +723,8 @@ class InternalAssetGraph(AssetGraph):
         for assets_def in self._assets:
             if asset_key in assets_def.keys:
                 return assets_def
-        raise Exception(f"Could not find assets def for key {key}")
+
+        check.failed(f"Could not find assets def for key {key}")
 
 
 def sort_key_for_asset_partition(

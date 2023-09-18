@@ -24,7 +24,7 @@ from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.definitions.observable_asset import (
-    create_observable_assets_def,
+    create_unexecutable_observable_assets_def,
 )
 from dagster._core.execution.build_resources import wrap_resources_for_execution
 from dagster._core.execution.with_resources import with_resources
@@ -304,7 +304,7 @@ def _create_repository_using_definitions_args(
     asset_esque_things_to_pass = []
     for asset_ish in assets or []:
         if isinstance(asset_ish, ObservableAssetSpec):
-            asset_esque_things_to_pass.append(create_observable_assets_def([asset_ish]))
+            asset_esque_things_to_pass.append(create_unexecutable_observable_assets_def([asset_ish]))
         else:
             asset_esque_things_to_pass.append(asset_ish)
 
