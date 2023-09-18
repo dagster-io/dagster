@@ -42,9 +42,11 @@ export const LaunchpadTransientSessionContainer = (props: Props) => {
     rootDefaultYaml,
     !flagDisableAutoLoadDefaults,
   );
+
+  // Avoid supplying an undefined `runConfigYaml` to the session.
   const initialSessionComplete = createSingleSession({
     ...sessionPresets,
-    runConfigYaml: initialData.runConfigYaml,
+    ...(initialData.runConfigYaml ? {runConfigYaml: initialData.runConfigYaml} : {}),
   });
 
   const [session, setSession] = React.useState<IExecutionSession>(initialSessionComplete);
