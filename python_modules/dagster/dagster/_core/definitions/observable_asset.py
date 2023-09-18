@@ -99,7 +99,7 @@ def create_unexecutable_observable_assets_def_from_source_asset(source_asset: So
     )
     check.invariant(
         source_asset.auto_observe_interval_minutes is None,
-        "Observable source assets not supported yet: auto_observe_interval_minutes should be none",
+        "Observable source assets not supported yet: auto_observe_interval_minutes should be None",
     )
 
     kwargs = {
