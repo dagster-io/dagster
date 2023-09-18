@@ -32,6 +32,7 @@ def build_integration_steps() -> List[BuildkiteStep]:
     # test suites
     steps += build_backcompat_suite_steps()
     steps += build_celery_k8s_suite_steps()
+    # schrockn (2023-09-18) Temporarily due to aws incident
     # steps += build_k8s_suite_steps()
     steps += build_daemon_suite_steps()
 
