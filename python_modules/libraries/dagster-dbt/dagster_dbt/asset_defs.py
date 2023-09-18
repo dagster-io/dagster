@@ -67,6 +67,7 @@ from dagster_dbt.errors import DagsterDbtError
 from dagster_dbt.types import DbtOutput
 from dagster_dbt.utils import (
     ASSET_RESOURCE_TYPES,
+    _adapter_response_to_metadata,
     output_name_fn,
     result_to_events,
     select_unique_ids_from_manifest,
@@ -174,6 +175,7 @@ def _events_for_structured_json_line(
         Callable[[OpExecutionContext, Mapping[str, Any]], Mapping[str, RawMetadataValue]]
     ],
     manifest_json: Mapping[str, Any],
+    dbt_resource: DbtCliClient,
 ) -> Iterator[Union[AssetObservation, Output]]:
     """Parses a json line into a Dagster event. Attempts to replicate the behavior of result_to_events
     as closely as possible.
@@ -203,6 +205,15 @@ def _events_for_structured_json_line(
         started_at = dateutil.parser.isoparse(started_at_str)  # type: ignore
         completed_at = dateutil.parser.isoparse(finished_at_str)  # type: ignore
         duration = completed_at - started_at
+        run_results = dbt_resource.get_run_results_json()
+        if run_results is not None:
+            try:
+                for result in run_results["results"]:
+                    if result["unique_id"] == unique_id:
+                        metadata.update(_adapter_response_to_metadata(result["adapter_response"]))
+            except KeyError:
+                pass
+
         metadata.update(
             {
                 "Execution Started At": started_at.isoformat(timespec="seconds"),
@@ -262,6 +273,7 @@ def _stream_event_iterator(
                 node_info_to_asset_key,
                 runtime_metadata_fn,
                 manifest_json,
+                dbt_resource,
             )
     else:
         if runtime_metadata_fn is not None:

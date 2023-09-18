@@ -82,6 +82,21 @@ def _timing_to_metadata(timings: Sequence[Mapping[str, Any]]) -> Mapping[str, Ra
     return metadata
 
 
+def _adapter_response_to_metadata(
+    adapter_response: Mapping[str, Any]
+) -> Mapping[str, RawMetadataValue]:
+    # adds adapter specific information to output metadata from
+    # https://docs.getdbt.com/reference/artifacts/run-results-json
+    metadata: Dict[str, RawMetadataValue] = {}
+    if adapter_response.get("query_id") is not None:
+        metadata.update({"Query ID": adapter_response.get("query_id")})
+    if adapter_response.get("rows_affected") is not None:
+        metadata.update({"Rows Affected": adapter_response.get("rows_affected")})
+    if adapter_response.get("bytes_processed") is not None:
+        metadata.update({"Bytes Processed": adapter_response.get("bytes_processed")})
+    return metadata
+
+
 def result_to_events(
     result: Mapping[str, Any],
     docs_url: Optional[str] = None,
@@ -112,6 +127,7 @@ def result_to_events(
     # all versions represent timing the same way
     metadata = {"Status": status, "Execution Time (seconds)": result["execution_time"]}
     metadata.update(_timing_to_metadata(result["timing"]))
+    metadata.update(_adapter_response_to_metadata(result["adapter_response"]))
 
     # working with a response that contains the node block (RPC and CLI 0.18.x)
     if "node" in result:
@@ -227,7 +243,9 @@ def generate_materializations(
             asset_key_prefix + info["unique_id"].split(".")
         ),
     ):
-        yield check.inst(cast(AssetMaterialization, event), AssetMaterialization)
+        asset_materialization = cast(AssetMaterialization, event)
+        if check.inst(asset_materialization, AssetMaterialization):
+            yield asset_materialization
 
 
 def select_unique_ids_from_manifest(
