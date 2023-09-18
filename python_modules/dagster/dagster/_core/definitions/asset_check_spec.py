@@ -30,9 +30,7 @@ class AssetCheckSeverity(Enum):
 @experimental
 @whitelist_for_serdes
 class AssetCheckHandle(NamedTuple):
-    """Check names are expected to be unique per-asset. Thus, this combination of asset key and
-    check name uniquely identifies an asset check within a deployment.
-    """
+    """Object that uniquely identifies an asset check within a deployment."""
 
     asset_key: PublicAttr[AssetKey]
     name: PublicAttr[str]

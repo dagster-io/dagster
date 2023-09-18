@@ -2,12 +2,11 @@ from typing import List, Optional, cast
 
 import dagster._check as check
 import graphene
-from dagster import EventLogEntry
+from dagster import AssetCheckHandle, AssetCheckSeverity, EventLogEntry
 from dagster._core.definitions.asset_check_evaluation import (
     AssetCheckEvaluation,
     AssetCheckEvaluationTargetMaterializationData,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckHandle, AssetCheckSeverity
 from dagster._core.host_representation.external_data import ExternalAssetCheck
 from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,

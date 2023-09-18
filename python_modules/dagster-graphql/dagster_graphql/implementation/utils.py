@@ -22,8 +22,7 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._core.definitions.asset_check_spec import AssetCheckHandle
-from dagster._core.definitions.events import AssetKey
+from dagster import AssetCheckHandle, AssetKey
 from dagster._core.definitions.selector import GraphSelector, JobSubsetSelector
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
 from dagster._utils.error import serializable_error_info_from_exc_info
