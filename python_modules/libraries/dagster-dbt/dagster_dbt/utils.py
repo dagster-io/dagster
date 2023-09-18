@@ -83,17 +83,13 @@ def _timing_to_metadata(timings: Sequence[Mapping[str, Any]]) -> Mapping[str, Ra
 
 
 def _adapter_response_to_metadata(
-    adapter_response: Mapping[str, Any]
+    adapter_response: Mapping[str, Any] = {}
 ) -> Mapping[str, RawMetadataValue]:
     # adds adapter specific information to output metadata from
     # https://docs.getdbt.com/reference/artifacts/run-results-json
     metadata: Dict[str, RawMetadataValue] = {}
-    if adapter_response.get("query_id") is not None:
-        metadata.update({"Query ID": adapter_response.get("query_id")})
-    if adapter_response.get("rows_affected") is not None:
-        metadata.update({"Rows Affected": adapter_response.get("rows_affected")})
-    if adapter_response.get("bytes_processed") is not None:
-        metadata.update({"Bytes Processed": adapter_response.get("bytes_processed")})
+    for key in adapter_response.keys():
+        metadata.update({key: adapter_response.get(key)})
     return metadata
 
 
