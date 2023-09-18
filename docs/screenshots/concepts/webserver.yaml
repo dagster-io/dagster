@@ -18,7 +18,7 @@
   route: /instance/runs/606af723-9aed-4a12-aba3-f2bdb7d53616
   vetted: false
 
-- id: all-runs.png
+- id: runs-page.png
   base_url: https://demo.elementl.show
   route: /instance/runs
   vetted: false
