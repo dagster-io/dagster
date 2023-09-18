@@ -25,6 +25,10 @@ class AssetCheckEvaluationPlanned(
             check_name=check.str_param(check_name, "check_name"),
         )
 
+    @property
+    def asset_check_handle(self) -> AssetCheckHandle:
+        return AssetCheckHandle(self.asset_key, self.check_name)
+
 
 @whitelist_for_serdes
 class AssetCheckEvaluationTargetMaterializationData(
