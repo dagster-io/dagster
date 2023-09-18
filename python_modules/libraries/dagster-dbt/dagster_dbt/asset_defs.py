@@ -207,8 +207,6 @@ def _events_for_structured_json_line(
         duration = completed_at - started_at
         run_results = dbt_resource.get_run_results_json()
         if run_results is not None:
-            # adds adapter specific information to output metadata from
-            # https://docs.getdbt.com/reference/artifacts/run-results-json
             try:
                 for result in run_results["results"]:
                     if result["unique_id"] == unique_id:

@@ -85,6 +85,8 @@ def _timing_to_metadata(timings: Sequence[Mapping[str, Any]]) -> Mapping[str, Ra
 def _adapter_response_to_metadata(
     adapter_response: Mapping[str, Any]
 ) -> Mapping[str, RawMetadataValue]:
+    # adds adapter specific information to output metadata from
+    # https://docs.getdbt.com/reference/artifacts/run-results-json
     metadata: Dict[str, RawMetadataValue] = {}
     if adapter_response.get("query_id") is not None:
         metadata.update({"Query ID": adapter_response.get("query_id")})
@@ -125,7 +127,7 @@ def result_to_events(
     # all versions represent timing the same way
     metadata = {"Status": status, "Execution Time (seconds)": result["execution_time"]}
     metadata.update(_timing_to_metadata(result["timing"]))
-    metadata.update(_adapter_response_to_metadata(result["timing"]))
+    metadata.update(_adapter_response_to_metadata(result["adapter_response"]))
 
     # working with a response that contains the node block (RPC and CLI 0.18.x)
     if "node" in result:
