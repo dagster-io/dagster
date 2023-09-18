@@ -2,9 +2,9 @@ from typing import Sequence
 
 from dagster import _check as check
 from dagster._core.definitions.asset_spec import (
-    SYSTEM_METADATA_KEY_ASSET_VARIETAL,
+    SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
+    AssetExecutionType,
     AssetSpec,
-    AssetVarietal,
 )
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.errors import DagsterInvariantViolationError
@@ -33,7 +33,11 @@ def create_unexecutable_observable_assets_def(specs: Sequence[AssetSpec]):
                 group_name=spec.group_name,
                 metadata={
                     **(spec.metadata or {}),
-                    **{SYSTEM_METADATA_KEY_ASSET_VARIETAL: AssetVarietal.UNEXECUTABLE.value},
+                    **{
+                        SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: (
+                            AssetExecutionType.UNEXECUTABLE.value
+                        )
+                    },
                 },
                 deps=spec.deps,
             )

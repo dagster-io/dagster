@@ -1203,7 +1203,7 @@ def test_historical_external_asset_node() -> None:
         dependencies=[],
         depended_by=[],
         # purposefully not using constants here so we know when we are breaking ourselves
-        metadata={"dagster/asset_varietal": TextMetadataValue("UNEXECUTABLE")},
+        metadata={"dagster/asset_execution_type": TextMetadataValue("UNEXECUTABLE")},
     ).is_executable
 
     assert ExternalAssetNode(
