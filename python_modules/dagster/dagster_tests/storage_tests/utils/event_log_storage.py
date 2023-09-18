@@ -67,6 +67,7 @@ from dagster._core.host_representation.origin import (
     ExternalRepositoryOrigin,
     InProcessCodeLocationOrigin,
 )
+from dagster._core.instance import RUNLESS_JOB_NAME, RUNLESS_RUN_ID
 from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecordStatus,
 )
@@ -3965,3 +3966,26 @@ class TestEventLogStorage:
             AssetKey(["my_asset"]), "my_check", limit=10, materialization_event_storage_id=42
         )
         assert len(checks) == 1
+
+    def test_external_asset_event(self, storage):
+        key = AssetKey("test_asset")
+        log_entry = EventLogEntry(
+            error_info=None,
+            user_message="",
+            level="debug",
+            run_id=RUNLESS_RUN_ID,
+            timestamp=time.time(),
+            dagster_event=DagsterEvent(
+                event_type_value=DagsterEventType.ASSET_MATERIALIZATION.value,
+                job_name=RUNLESS_JOB_NAME,
+                event_specific_data=StepMaterializationData(
+                    materialization=AssetMaterialization(asset_key=key, metadata={"was": "here"})
+                ),
+            ),
+        )
+
+        storage.store_event(log_entry)
+
+        mats = storage.get_latest_materialization_events([key])
+        assert mats
+        assert mats[key].asset_materialization.metadata["was"].value == "here"
