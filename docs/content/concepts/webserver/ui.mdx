@@ -266,73 +266,115 @@ height={1628}
 
 ---
 
+## Jobs
+
+<TabGroup>
+<TabItem name="All jobs">
+
+### All jobs
+
+- **Description**: The **Jobs** page lists all [jobs](/concepts/ops-jobs-graphs/jobs) defined in your Dagster deployment across all code locations. It also includes information about the job's schedule or sensor, its latest run time, and its history. Click a job to open the [**Job details**](#job-details) page.
+
+- **Accessed by**: Clicking **Overview (top nav) > Jobs tab**
+
+<!-- ![UI Job Definition](/images/concepts/webserver/jobs-tab.png) -->
+
 <Image
-alt="UI job re-execution button"
-src="/images/concepts/webserver/single-run.png"
-width={2318}
-height={1298}
+alt="UI Job Definition"
+src="/images/concepts/webserver/jobs-tab.png"
+width={3064}
+height={1618}
 />
 
-There are several re-execution options:
+</TabItem>
+<TabItem name="Job details">
 
-- **All Steps**: Re-execute the run from scratch.
-- **Selected Steps**: Re-execute the selected steps.
-- **From Selected**: Re-execute the steps downstream from the selected steps
-- **From Failure**: Retry the run, skipping steps completed successfully. This is only enabled when the run has failed.
+### Job details
 
-Related runs (e.g., runs created by re-executing the same previous run) are grouped together in the right pane for easy reference.
+- **Description**: The **Job details** page contains detailed information about a job. Click the tabs below for more information about the tabs on this page.
+
+- **Accessed by**: Clicking a job in the [**Jobs** page](#all-jobs)
+
+<TabGroup>
+<TabItem name="Overview tab">
+
+#### Overview tab
+
+- **Description**: The **Overview** tab in the **Job details** page shows the graph of assets and/or ops that make up a job.
+
+- **Accessed by:** Clicking the **Overview** tab in the [**Job details**](#job-details) page
+
+<!-- ![UI Job Definition](/images/concepts/webserver/jobs-overview-tab.png) -->
+
+<Image
+alt="UI Job Definition"
+src="/images/concepts/webserver/jobs-overview-tab.png"
+width={3066}
+height={1628}
+/>
+
+</TabItem>
+<TabItem name="Launchpad tab">
+
+#### Launchpad tab
+
+- **Description**: The **Launchpad tab** provides a configuration editor to let you experiment with configuration and launch runs. **Note**: This tab will display only if the job requires config.
+
+- **Accessed by:** Clicking the **Launchpad** tab tab in the [**Job details**](#job-details) page
+
+<!-- ![UI Launchpad](/images/concepts/webserver/job-launchpad-tab.png) -->
+
+<Image
+alt="UI Launchpad"
+src="/images/concepts/webserver/job-launchpad-tab.png"
+width={1920}
+height={1025}
+/>
+
+</TabItem>
+<TabItem name="Runs tab">
+
+#### Runs tab
+
+- **Description**: The **Runs** tab displays a list of recent runs for a job. Clicking a run will open the [**Run details**](#run-details) page.
+
+- **Accessed by:** Clicking the **Runs** tab in the [**Job details**](#job-details) page
+
+<!-- ![UI Job runs tab](/images/concepts/webserver/jobs-runs-tab.png) -->
+
+<Image
+alt="UI Job runs tab"
+src="/images/concepts/webserver/jobs-runs-tab.png"
+width={3060}
+height={1624}
+/>
+
+</TabItem>
+<TabItem name="Partitions tab">
+
+#### Partitions tab
+
+- **Description**: The **Partitions** tab displays information about the [partitions](/concepts/partitions-schedules-sensors/partitions) associated with the job, including the total number of partitions, the number of missing partitions, and the job's backfill history. **Note**: This tab will display only if the job contains partitions.
+
+- **Accessed by:** Clicking the **Partitions** tab in the [**Job details**](#job-details) page
+
+<!-- ![UI Job Partitions tab](/images/concepts/webserver/jobs-partitions-tab.png) -->
+
+<Image
+alt="UI Job Partitions tab"
+src="/images/concepts/webserver/jobs-partitions-tab.png"
+width={3060}
+height={1624}
+/>
 
 </TabItem>
 </TabGroup>
-
----
-
-### Schedules and sensors
-
-<TabGroup>
-<TabItem name="Schedules">
-
-#### Schedules
-
-The Schedules page lists all schedules defined in your workspace, as well as information about upcoming ticks for anticipated scheduled runs.
-
-Click a schedule to view details about the schedule, including its recent tick history and recent runs.
-
-<!-- ![UI Schedules page](/images/concepts/webserver/schedules.png) -->
-
-<Image
-alt="UI Schedules page"
-src="/images/concepts/webserver/schedules.png"
-width={2315}
-height={1300}
-/>
-
----
-
-</TabItem>
-<TabItem name="Sensors">
-
-#### Sensors
-
-The Sensors page lists all sensors defined in your workspace, as well as information about the sensor's frequency and its last tick.
-
-Click a sensor to view details about the sensor, including its recent tick history and recent runs.
-
-<!-- ![UI Sensors page](/images/concepts/webserver/sensors.png) -->
-
-<Image
-alt="UI Sensors page"
-src="/images/concepts/webserver/sensors.png"
-width={2311}
-height={1299}
-/>
-
----
 
 </TabItem>
 </TabGroup>
 
 ### Deployment overview
+---
 
 The Deployment overview page includes information about the status of the code locations in your deployment, daemon (Open Source) or agent (Cloud) health, schedules, sensors, and configuration details:
 
