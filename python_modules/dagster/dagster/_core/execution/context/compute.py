@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import ABC, ABCMeta, abstractmethod
 from typing import (
     AbstractSet,
     Any,
@@ -11,8 +11,6 @@ from typing import (
     Set,
     cast,
 )
-
-from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import deprecated, experimental, public
@@ -46,11 +44,17 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._utils.forked_pdb import ForkedPdb
+from dagster._utils.warnings import deprecation_warning
 
 from .system import StepExecutionContext
 
 
-class AbstractComputeExecutionContext(ABC):
+# This metaclass has to exist for OpExecutionContext to have a metaclass
+class AbstractComputeMetaclass(ABCMeta):
+    pass
+
+
+class AbstractComputeExecutionContext(ABC, metaclass=AbstractComputeMetaclass):
     """Base class for op context implemented by OpExecutionContext and DagstermillExecutionContext."""
 
     @abstractmethod
@@ -97,7 +101,25 @@ class AbstractComputeExecutionContext(ABC):
         """The parsed config specific to this op."""
 
 
-class OpExecutionContext(AbstractComputeExecutionContext):
+class OpExecutionContextMetaClass(AbstractComputeMetaclass):
+    def __instancecheck__(cls, instance) -> bool:
+        # This makes isinstance(context, OpExecutionContext) throw a deprecation warning when
+        # context is an AssetExecutionContext. This metaclass can be deleted once AssetExecutionContext
+        # has been split into it's own class in 1.7.0
+        if isinstance(instance, AssetExecutionContext):
+            deprecation_warning(
+                subject="AssetExecutionContext",
+                additional_warn_text=(
+                    "Starting in version 1.7.0 AssetExecutionContext will no longer be a subclass"
+                    " of OpExecutionContext."
+                ),
+                breaking_version="1.7.0",
+                stacklevel=1,
+            )
+        return super().__instancecheck__(instance)
+
+
+class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionContextMetaClass):
     """The ``context`` object that can be made available as the first argument to the function
     used for computing an op or asset.
 
@@ -1223,8 +1245,438 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         return asset_checks_def.spec
 
 
-# actually forking the object type for assets is tricky for users in the cases of:
-#  * manually constructing ops to make AssetsDefinitions
-#  * having ops in a graph that form a graph backed asset
-# so we have a single type that users can call by their preferred name where appropriate
-AssetExecutionContext: TypeAlias = OpExecutionContext
+############################
+##### AssetExecutionContext
+############################
+
+# To preserve backwards compatibility, AssetExecutionContext is being written as a subclass of
+# OpExecutionContext until we can split it into its own class. All methods on OpExecutionContext
+# that will not be included in the eventual AssetExecutionContext will be marked with deprecation
+# warnings according to how the user should access that functionality in the future
+#
+# The following sets/maps are used to determine which methods need deprecation warnings, and how to
+# direct users to the correct method to use
+
+
+OP_EXECUTION_CONTEXT_ONLY_METHODS = set(
+    [
+        "describe_op",
+        "file_manager",
+        "has_assets_def",
+        "get_mapping_key",
+        # "get_step_execution_context", # used by internals
+        "job_def",
+        "node_handle",
+        "op",
+        "op_config",
+        # "op_def", # used by internals
+        "op_handle",
+        "step_launcher",
+        # "has_events", # used by internals
+        "consume_events",
+    ]
+)
+
+
+PARTITION_KEY_RANGE_AS_ALT = "use partition_key_range or partition_key_range_for_asset instead"
+INPUT_OUTPUT_ALT = "not use input or output names and instead use asset keys directly"
+OUTPUT_METADATA_ALT = "return MaterializeResult from the asset instead"
+
+DEPRECATED_IO_MANAGER_CENTRIC_CONTEXT_METHODS = {
+    "add_output_metadata": OUTPUT_METADATA_ALT,
+    "asset_key_for_input": INPUT_OUTPUT_ALT,
+    "asset_key_for_output": INPUT_OUTPUT_ALT,
+    "asset_partition_key_for_input": PARTITION_KEY_RANGE_AS_ALT,
+    "asset_partition_key_for_output": PARTITION_KEY_RANGE_AS_ALT,
+    "asset_partition_key_range_for_input": PARTITION_KEY_RANGE_AS_ALT,
+    "asset_partition_key_range_for_output": PARTITION_KEY_RANGE_AS_ALT,
+    "asset_partition_keys_for_input": PARTITION_KEY_RANGE_AS_ALT,
+    "asset_partition_keys_for_output": PARTITION_KEY_RANGE_AS_ALT,
+    "asset_partitions_time_window_for_input": PARTITION_KEY_RANGE_AS_ALT,
+    "asset_partitions_time_window_for_output": PARTITION_KEY_RANGE_AS_ALT,
+    "asset_partitions_def_for_input": PARTITION_KEY_RANGE_AS_ALT,
+    "asset_partitions_def_for_output": PARTITION_KEY_RANGE_AS_ALT,
+    "get_output_metadata": "use op_execution_context.op_def.get_output(...).metadata",
+    # "merge_output_metadata": OUTPUT_METADATA_ALT, # TODO - this method doesn't exist, check if it has a different name
+    "output_for_asset_key": INPUT_OUTPUT_ALT,
+    "selected_output_names": INPUT_OUTPUT_ALT,
+}
+
+ALTERNATE_AVAILABLE_METHODS = {
+    "has_tag": (
+        "use dagster_run.has_tag instead"
+    ),  # TODO - was dagster_run intended to be a method/attr on AssetExecutionContext?
+    "get_tag": "use dagster_run.get_tag instead",
+    "run_tags": "use dagster_run.tags instead",
+    "set_data_version": "use MaterializeResult instead",
+}
+
+# TODO - add AssetCheck related methods to this list
+
+
+def _get_deprecation_kwargs(attr: str):
+    deprecation_kwargs = {"breaking_version": "1.7.0"}
+    deprecation_kwargs["subject"] = f"AssetExecutionContext.{attr}"
+
+    if attr in OP_EXECUTION_CONTEXT_ONLY_METHODS:
+        deprecation_kwargs["additional_warn_text"] = (
+            f"You have called the deprecated method {attr} on AssetExecutionContext. Use"
+            " the underlying OpExecutionContext instead by calling"
+            f" context.op_execution_context.{attr}."
+        )
+
+    if attr in DEPRECATED_IO_MANAGER_CENTRIC_CONTEXT_METHODS:
+        alt = DEPRECATED_IO_MANAGER_CENTRIC_CONTEXT_METHODS[attr]
+        deprecation_kwargs["additional_warn_text"] = (
+            f"You have called method {attr} on AssetExecutionContext that is oriented"
+            f" around I/O managers. If you not using I/O managers we suggest you {alt}. If"
+            " you are using I/O managers the method still exists at"
+            f" context.op_execution_context.{attr}."
+        )
+
+    if attr in ALTERNATE_AVAILABLE_METHODS:
+        deprecation_kwargs["additional_warn_text"] = f"Instead {ALTERNATE_AVAILABLE_METHODS[attr]}."
+
+    return deprecation_kwargs
+
+
+class AssetExecutionContext(OpExecutionContext):
+    def __init__(self, op_execution_context: OpExecutionContext) -> None:
+        self._op_execution_context = check.inst_param(
+            op_execution_context, "op_execution_context", OpExecutionContext
+        )
+        self._step_execution_context = (
+            self._op_execution_context._step_execution_context  # noqa: SLF001
+        )
+
+    @public
+    @property
+    def op_execution_context(self) -> OpExecutionContext:
+        return self._op_execution_context
+
+    # IContext interface methods
+
+    @property
+    def is_asset_step(self) -> bool:
+        return self.op_execution_context.has_assets_def
+
+    @public
+    @property
+    def asset_key(self) -> AssetKey:
+        return self._op_execution_context.asset_key
+
+    @property
+    def asset_keys(self) -> Sequence[AssetKey]:
+        return list(self.op_execution_context.assets_def.keys_by_output_name.values())
+
+    @property
+    def provenance(self) -> Optional[DataProvenance]:
+        return self.get_asset_provenance(self.asset_key)
+
+    @property
+    def provenance_by_asset_key(self) -> Mapping[AssetKey, Optional[DataProvenance]]:
+        provenance_map = {}
+        for key in self.asset_keys:
+            provenance_map[key] = self.get_asset_provenance(key)
+
+        return provenance_map
+
+    @property
+    def code_version(self) -> Optional[str]:
+        return self.get_assets_code_version([self.asset_key])[self.asset_key]
+
+    @property
+    def code_version_by_asset_key(self) -> Mapping[AssetKey, Optional[str]]:
+        return self.get_assets_code_version(self.asset_keys)
+
+    @public
+    @property
+    def is_partition_step(self) -> bool:
+        return self._op_execution_context.has_partition_key
+
+    @property
+    def partition_key(self) -> str:
+        return self.op_execution_context.partition_key
+
+    @public
+    @property
+    def partition_key_range(self) -> PartitionKeyRange:
+        return self._op_execution_context.asset_partition_key_range
+
+    @property
+    def partition_time_window(self) -> TimeWindow:
+        return self.op_execution_context.partition_time_window
+
+    @public
+    @property
+    def run_id(self) -> str:
+        return self._op_execution_context.run_id
+
+    @property
+    def job_name(self) -> Optional[str]:
+        return self.op_execution_context.job_name
+
+    @property
+    def retry_number(self) -> int:
+        return self.op_execution_context.retry_number
+
+    # Additional methods
+
+    @public
+    @property
+    def dagster_run(self) -> DagsterRun:
+        """PipelineRun: The current pipeline run."""
+        return self._step_execution_context.dagster_run
+
+    @public
+    @property
+    def pdb(self) -> ForkedPdb:
+        return self._op_execution_context.pdb
+
+    @public
+    @property
+    def log(self) -> DagsterLogManager:
+        """DagsterLogManager: The log manager available in the execution context."""
+        return self._op_execution_context.log
+
+    @public
+    def log_event(self, event: UserEvent) -> None:
+        return self._op_execution_context.log_event(event)
+
+    @public
+    @property
+    def assets_def(self) -> AssetsDefinition:
+        return self._op_execution_context.assets_def
+
+    @public
+    @property
+    def selected_asset_keys(self) -> AbstractSet[AssetKey]:
+        return self._op_execution_context.selected_asset_keys
+
+    @public
+    @experimental
+    def get_asset_provenance(self, asset_key: AssetKey) -> Optional[DataProvenance]:
+        return self._op_execution_context.get_asset_provenance(asset_key)
+
+    @public
+    # TODO - method naming. this needs work
+    def get_assets_code_version(
+        self, asset_keys: Sequence[AssetKey]
+    ) -> Mapping[AssetKey, Optional[str]]:
+        return self.op_execution_context.instance.get_latest_materialization_code_versions(
+            asset_keys
+        )
+
+    @property
+    def asset_check_spec(self) -> AssetCheckSpec:
+        return self._op_execution_context.asset_check_spec
+
+    @public
+    def partition_key_range_for_asset_key(self, asset_key: AssetKey) -> PartitionKeyRange:
+        """TODO - implement in stacked pr."""
+        pass
+
+    # deprecated methods. All remaining methods on OpExecutionContext should be here with the
+    # appropriate deprecation warning
+
+    @deprecated(
+        **_get_deprecation_kwargs("op_config"),
+    )
+    @public
+    @property
+    def op_config(self) -> Any:
+        return super().op_config
+
+    @deprecated(
+        **_get_deprecation_kwargs("file_manager"),
+    )
+    @property
+    def file_manager(self):
+        return super().file_manager
+
+    @deprecated(
+        **_get_deprecation_kwargs("has_assets_def"),
+    )
+    @public
+    @property
+    def has_assets_def(self) -> bool:
+        return super().has_assets_def
+
+    @deprecated(
+        **_get_deprecation_kwargs("get_mapping_key"),
+    )
+    @public
+    def get_mapping_key(self) -> Optional[str]:
+        return super().get_mapping_key()
+
+    @deprecated(
+        **_get_deprecation_kwargs("job_def"),
+    )
+    @public
+    @property
+    def job_def(self) -> JobDefinition:
+        return super().job_def
+
+    @deprecated(
+        **_get_deprecation_kwargs("node_handle"),
+    )
+    @property
+    def node_handle(self) -> NodeHandle:
+        return super().node_handle
+
+    @deprecated(
+        **_get_deprecation_kwargs("op"),
+    )
+    @property
+    def op(self) -> Node:
+        return super().op
+
+    @deprecated(
+        **_get_deprecation_kwargs("describe_op"),
+    )
+    def describe_op(self):
+        return super().describe_op()
+
+    @deprecated(
+        **_get_deprecation_kwargs("op_handle"),
+    )
+    @property
+    def op_handle(self) -> NodeHandle:
+        return super().op_handle
+
+    @deprecated(
+        **_get_deprecation_kwargs("step_launcher"),
+    )
+    @property
+    def step_launcher(self) -> Optional[StepLauncher]:
+        return super().step_launcher
+
+    @deprecated(
+        **_get_deprecation_kwargs("consume_events"),
+    )
+    def consume_events(self) -> Iterator[DagsterEvent]:
+        return super().consume_events()
+
+    @deprecated(
+        **_get_deprecation_kwargs("add_output_metadata"),
+    )
+    @public
+    def add_output_metadata(
+        self,
+        metadata: Mapping[str, Any],
+        output_name: Optional[str] = None,
+        mapping_key: Optional[str] = None,
+    ) -> None:
+        return super().add_output_metadata(
+            metadata=metadata, output_name=output_name, mapping_key=mapping_key
+        )
+
+    @deprecated(
+        **_get_deprecation_kwargs("asset_key_for_input"),
+    )
+    @public
+    def asset_key_for_input(self, input_name: str) -> AssetKey:
+        return super().asset_key_for_input(input_name=input_name)
+
+    @deprecated(
+        **_get_deprecation_kwargs("asset_key_for_output"),
+    )
+    @public
+    def asset_key_for_output(self, output_name: str = "result") -> AssetKey:
+        return super().asset_key_for_output(output_name=output_name)
+
+    @deprecated(
+        **_get_deprecation_kwargs("asset_partition_key_for_input"),
+    )
+    @public
+    def asset_partition_key_for_input(self, input_name: str) -> str:
+        return super().asset_partition_key_for_input(input_name=input_name)
+
+    @deprecated(
+        **_get_deprecation_kwargs("asset_partition_key_for_output"),
+    )
+    @public
+    def asset_partition_key_for_output(self, output_name: str = "result") -> str:
+        return super().asset_partition_key_for_output(output_name=output_name)
+
+    @deprecated(
+        **_get_deprecation_kwargs("asset_partition_key_range_for_input"),
+    )
+    @public
+    def asset_partition_key_range_for_input(self, input_name: str) -> PartitionKeyRange:
+        return super().asset_partition_key_range_for_input(input_name=input_name)
+
+    @deprecated(
+        **_get_deprecation_kwargs("asset_partition_key_range_for_output"),
+    )
+    @public
+    def asset_partition_key_range_for_output(
+        self, output_name: str = "result"
+    ) -> PartitionKeyRange:
+        return super().asset_partition_key_range_for_output(output_name=output_name)
+
+    @deprecated(**_get_deprecation_kwargs("asset_partition_keys_for_input"))
+    @public
+    def asset_partition_keys_for_input(self, input_name: str) -> Sequence[str]:
+        return super().asset_partition_keys_for_input(input_name=input_name)
+
+    @deprecated(**_get_deprecation_kwargs("asset_partition_keys_for_output"))
+    @public
+    def asset_partition_keys_for_output(self, output_name: str = "result") -> Sequence[str]:
+        return super().asset_partition_keys_for_output(output_name=output_name)
+
+    @deprecated(**_get_deprecation_kwargs("asset_partitions_time_window_for_input"))
+    @public
+    def asset_partitions_time_window_for_input(self, input_name: str = "result") -> TimeWindow:
+        return super().asset_partitions_time_window_for_input(input_name=input_name)
+
+    @deprecated(**_get_deprecation_kwargs("asset_partitions_time_window_for_output"))
+    @public
+    def asset_partitions_time_window_for_output(self, output_name: str = "result") -> TimeWindow:
+        return super().asset_partitions_time_window_for_output(output_name=output_name)
+
+    @deprecated(**_get_deprecation_kwargs("asset_partitions_def_for_input"))
+    @public
+    def asset_partitions_def_for_input(self, input_name: str) -> PartitionsDefinition:
+        return super().asset_partitions_def_for_input(input_name=input_name)
+
+    @deprecated(**_get_deprecation_kwargs("asset_partitions_def_for_output"))
+    @public
+    def asset_partitions_def_for_output(self, output_name: str = "result") -> PartitionsDefinition:
+        return super().asset_partitions_def_for_output(output_name=output_name)
+
+    @deprecated(**_get_deprecation_kwargs("get_output_metadata"))
+    def get_output_metadata(
+        self, output_name: str, mapping_key: Optional[str] = None
+    ) -> Optional[Mapping[str, Any]]:
+        return super().get_output_metadata(output_name=output_name, mapping_key=mapping_key)
+
+    @deprecated(**_get_deprecation_kwargs("output_for_asset_key"))
+    @public
+    def output_for_asset_key(self, asset_key: AssetKey) -> str:
+        return super().output_for_asset_key(asset_key=asset_key)
+
+    @deprecated(**_get_deprecation_kwargs("selected_output_names"))
+    @public
+    @property
+    def selected_output_names(self) -> AbstractSet[str]:
+        return super().selected_output_names
+
+    @deprecated(**_get_deprecation_kwargs("has_tag"))
+    @public
+    def has_tag(self, key: str) -> bool:
+        return super().has_tag(key=key)
+
+    @deprecated(**_get_deprecation_kwargs("get_tag"))
+    @public
+    def get_tag(self, key: str) -> Optional[str]:
+        return super().get_tag(key=key)
+
+    @deprecated(**_get_deprecation_kwargs("run_tags"))
+    @property
+    def run_tags(self) -> Mapping[str, str]:
+        return super().run_tags
+
+    @deprecated(**_get_deprecation_kwargs("set_data_version"))
+    def set_data_version(self, asset_key: AssetKey, data_version: DataVersion) -> None:
+        return super().set_data_version(asset_key=asset_key, data_version=data_version)
