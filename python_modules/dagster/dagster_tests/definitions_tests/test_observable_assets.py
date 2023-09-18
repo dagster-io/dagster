@@ -3,6 +3,8 @@ from typing import Iterator, Optional
 import pytest
 from dagster import (
     AssetKey,
+    AssetMaterialization,
+    AssetObservation,
     AssetsDefinition,
     AutoMaterializePolicy,
     DagsterInstance,
@@ -12,15 +14,10 @@ from dagster import (
     materialize,
 )
 from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.events import AssetObservation
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.observable_asset import (
     create_unexecutable_observable_assets_def,
 )
-
-# report_runless_asset_materialization,
-# report_runless_asset_observation,
-# TODO
 from dagster._core.event_api import EventLogRecord, EventRecordsFilter
 from dagster._core.events import DagsterEventType
 
@@ -100,37 +97,35 @@ def test_observable_asset_creation_with_deps() -> None:
     }
 
 
-# def test_report_runless_materialization() -> None:
-#     instance = DagsterInstance.ephemeral()
+def test_report_runless_materialization() -> None:
+    instance = DagsterInstance.ephemeral()
 
-#     report_runless_asset_materialization(
-#         asset_materialization=AssetMaterialization(asset_key="observable_asset_one"),
-#         instance=instance,
-#     )
+    instance.report_runless_asset_event(
+        asset_event=AssetMaterialization(asset_key="observable_asset_one"),
+    )
 
-#     mat_event = instance.get_latest_materialization_event(
-#         asset_key=AssetKey("observable_asset_one")
-#     )
+    mat_event = instance.get_latest_materialization_event(
+        asset_key=AssetKey("observable_asset_one")
+    )
 
-#     assert mat_event
-#     assert mat_event.asset_materialization
-#     assert mat_event.asset_materialization.asset_key == AssetKey("observable_asset_one")
+    assert mat_event
+    assert mat_event.asset_materialization
+    assert mat_event.asset_materialization.asset_key == AssetKey("observable_asset_one")
 
 
-# def test_report_runless_observation() -> None:
-#     instance = DagsterInstance.ephemeral()
+def test_report_runless_observation() -> None:
+    instance = DagsterInstance.ephemeral()
 
-#     report_runless_asset_observation(
-#         asset_observation=AssetObservation(asset_key="observable_asset_one"),
-#         instance=instance,
-#     )
+    instance.report_runless_asset_event(
+        asset_event=AssetObservation(asset_key="observable_asset_one"),
+    )
 
-#     observation = get_latest_observation_for_asset_key(
-#         instance, asset_key=AssetKey("observable_asset_one")
-#     )
-#     assert observation
+    observation = get_latest_observation_for_asset_key(
+        instance, asset_key=AssetKey("observable_asset_one")
+    )
+    assert observation
 
-#     assert observation.asset_key == AssetKey("observable_asset_one")
+    assert observation.asset_key == AssetKey("observable_asset_one")
 
 
 def test_emit_asset_observation_in_user_space() -> None:
