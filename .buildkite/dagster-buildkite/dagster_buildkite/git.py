@@ -23,10 +23,6 @@ class GitInfo:
     directory: Path
     base_branch: Optional[str] = None
 
-    def __post_init__(self):
-        if not self.base_branch:
-            self.base_branch = os.getenv("BUILDKITE_DEFAULT_BASE_BRANCH", "master")
-
 
 class ChangedFiles:
     _repositories: Set[Path] = set()
@@ -42,17 +38,15 @@ class ChangedFiles:
         os.chdir(git_info.directory)
 
         subprocess.call(["git", "fetch", "origin", str(git_info.base_branch)])
-        origin = get_commit(f"origin/{git_info.base_branch}")
+        origin = get_commit(os.getenv("BUILDKITE_DIFF_COMMIT", f"origin/{git_info.base_branch}"))
         head = get_commit("HEAD")
-        logging.info(
-            f"Changed files between origin/{git_info.base_branch} ({origin}) and HEAD ({head}):"
-        )
+        logging.info(f"Changed files between ({origin}) and HEAD ({head}):")
         paths = (
             subprocess.check_output(
                 [
                     "git",
                     "diff",
-                    f"origin/{git_info.base_branch}...HEAD",
+                    f"{origin}...HEAD",
                     "--name-only",
                 ]
             )

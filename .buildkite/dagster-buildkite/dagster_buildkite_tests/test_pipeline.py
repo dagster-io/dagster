@@ -49,6 +49,9 @@ def dagster_repo(temporary_directory, python):
         dirs_exist_ok=True,
     )
 
+    repo.git.add("--all")
+    repo.index.commit("Begin tests")
+
     os.chdir(dst_path)
 
     subprocess.run(
@@ -82,7 +85,7 @@ def env(monkeypatch):
     monkeypatch.setenv("BUILDKITE_COMMIT", "fake")
     monkeypatch.setenv("BUILDKITE_MESSAGE", "fake")
     # Limit test comparisons to only commits changed in the test
-    monkeypatch.setenv("BUILDKITE_DEFAULT_BASE_BRANCH", "HEAD")
+    monkeypatch.setenv("BUILDKITE_DIFF_COMMIT", "HEAD")
 
 
 @pytest.fixture
