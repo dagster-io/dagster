@@ -718,22 +718,21 @@ class GraphDefinition(NodeDefinition):
 
         resource_defs = wrap_resources_for_execution(resources)
 
-        ephemeral_job = JobDefinition(
+        job_from_graph = JobDefinition(
             name=self._name,
             graph_def=self,
             executor_def=execute_in_process_executor,
             resource_defs=resource_defs,
             input_values=input_values,
-        ).get_subset(op_selection=op_selection)
+        )
 
         run_config = run_config if run_config is not None else {}
-        op_selection = check.opt_sequence_param(op_selection, "op_selection", str)
-
-        return ephemeral_job.execute_in_process(
+        return job_from_graph.execute_in_process(
             run_config=run_config,
             instance=instance,
             raise_on_error=raise_on_error,
             run_id=run_id,
+            op_selection=op_selection
         )
 
     @property

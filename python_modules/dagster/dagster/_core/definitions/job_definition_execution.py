@@ -4,6 +4,7 @@ from typing import (
     Optional,
 )
 
+from dagster import _check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckHandle
 from dagster._core.definitions.events import AssetKey
 from dagster._core.errors import DagsterInvariantViolationError
@@ -55,6 +56,12 @@ def create_untainted_job_for_execution(
     asset_selection: Optional[AbstractSet[AssetKey]],
     asset_check_selection: Optional[AbstractSet[AssetCheckHandle]],
 ):
+    check.invariant(
+        not job_has_execution_taint(job_def),
+        "Job definition already has an execution taint. This should only be called once during the"
+        " execution code paths",
+    )
+
     if asset_selection:
         for asset_key in asset_selection:
             if asset_key not in job_def.asset_layer.assets_defs_by_key:
