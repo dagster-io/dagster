@@ -1,11 +1,11 @@
 from dagster import AssetKey, AssetsDefinition
-from dagster._core.definitions.asset_spec import ObservableAssetSpec
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.observable_asset import create_unexecutable_observable_assets_def
 
 
 def test_observable_asset_basic_creation() -> None:
     assets_def = create_unexecutable_observable_assets_def(
-        observable_asset_spec=ObservableAssetSpec(
+        asset_spec=AssetSpec(
             "observable_asset_one",
             description="desc",
             metadata={"user_metadata": "value"},
@@ -23,9 +23,9 @@ def test_observable_asset_basic_creation() -> None:
 
 
 def test_observable_asset_creation_with_deps() -> None:
-    asset_two = ObservableAssetSpec("observable_asset_two")
+    asset_two = AssetSpec("observable_asset_two")
     assets_def = create_unexecutable_observable_assets_def(
-        observable_asset_spec=ObservableAssetSpec(
+        asset_spec=AssetSpec(
             "observable_asset_one",
             deps=[asset_two.key],  # todo remove key when asset deps accepts it
         )
