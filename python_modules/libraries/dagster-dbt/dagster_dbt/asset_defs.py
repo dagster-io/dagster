@@ -209,7 +209,7 @@ def _events_for_structured_json_line(
         if run_results is not None:
             try:
                 for result in run_results["results"]:
-                    if result["unique_id"] == unique_id:
+                    if result["unique_id"] == unique_id and "adapter_response" in result:
                         metadata.update(_adapter_response_to_metadata(result["adapter_response"]))
             except KeyError:
                 pass

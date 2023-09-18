@@ -123,7 +123,8 @@ def result_to_events(
     # all versions represent timing the same way
     metadata = {"Status": status, "Execution Time (seconds)": result["execution_time"]}
     metadata.update(_timing_to_metadata(result["timing"]))
-    metadata.update(_adapter_response_to_metadata(result["adapter_response"]))
+    if "adapter_response" in result:
+        metadata.update(_adapter_response_to_metadata(result["adapter_response"]))
 
     # working with a response that contains the node block (RPC and CLI 0.18.x)
     if "node" in result:
