@@ -500,8 +500,12 @@ def get_external_execution_plan_snapshot(
     args: ExecutionPlanSnapshotArgs,
 ):
     try:
-        job_def = repo_def.get_maybe_subset_job_def(
-            job_name,
+        from dagster._core.definitions.job_definition_execution import (
+            create_untainted_job_for_execution,
+        )
+
+        job_def = create_untainted_job_for_execution(
+            job_def=repo_def.get_job(job_name),
             op_selection=args.op_selection,
             asset_selection=args.asset_selection,
             asset_check_selection=args.asset_check_selection,

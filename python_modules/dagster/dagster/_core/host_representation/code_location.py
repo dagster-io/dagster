@@ -391,10 +391,15 @@ class InProcessCodeLocation(CodeLocation):
         check.opt_inst_param(known_state, "known_state", KnownExecutionState)
         check.opt_inst_param(instance, "instance", DagsterInstance)
 
+        from dagster._core.definitions.job_definition_execution import (
+            create_untainted_job_for_execution,
+        )
+
         execution_plan = create_execution_plan(
-            job=self.get_reconstructable_job(
-                external_job.repository_handle.repository_name, external_job.name
-            ).get_subset(
+            job=create_untainted_job_for_execution(
+                job_def=self.get_reconstructable_job(
+                    external_job.repository_handle.repository_name, external_job.name
+                ).get_definition(),
                 op_selection=external_job.resolved_op_selection,
                 asset_selection=external_job.asset_selection,
                 asset_check_selection=external_job.asset_check_selection,
