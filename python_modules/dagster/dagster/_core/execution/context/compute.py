@@ -1490,72 +1490,52 @@ class AssetExecutionContext(OpExecutionContext):
     def file_manager(self):
         return super().file_manager
 
-    @deprecated(
-        **_get_deprecation_kwargs("has_assets_def"),
-    )
+    @deprecated(**_get_deprecation_kwargs("has_assets_def"))
     @public
     @property
     def has_assets_def(self) -> bool:
         return super().has_assets_def
 
-    @deprecated(
-        **_get_deprecation_kwargs("get_mapping_key"),
-    )
+    @deprecated(**_get_deprecation_kwargs("get_mapping_key"))
     @public
     def get_mapping_key(self) -> Optional[str]:
         return super().get_mapping_key()
 
-    @deprecated(
-        **_get_deprecation_kwargs("job_def"),
-    )
+    @deprecated(**_get_deprecation_kwargs("job_def"))
     @public
     @property
     def job_def(self) -> JobDefinition:
         return super().job_def
 
-    @deprecated(
-        **_get_deprecation_kwargs("node_handle"),
-    )
+    @deprecated(**_get_deprecation_kwargs("node_handle"))
     @property
     def node_handle(self) -> NodeHandle:
         return super().node_handle
 
-    @deprecated(
-        **_get_deprecation_kwargs("op"),
-    )
+    @deprecated(**_get_deprecation_kwargs("op"))
     @property
     def op(self) -> Node:
         return super().op
 
-    @deprecated(
-        **_get_deprecation_kwargs("describe_op"),
-    )
+    @deprecated(**_get_deprecation_kwargs("describe_op"))
     def describe_op(self):
         return super().describe_op()
 
-    @deprecated(
-        **_get_deprecation_kwargs("op_handle"),
-    )
+    @deprecated(**_get_deprecation_kwargs("op_handle"))
     @property
     def op_handle(self) -> NodeHandle:
         return super().op_handle
 
-    @deprecated(
-        **_get_deprecation_kwargs("step_launcher"),
-    )
+    @deprecated(**_get_deprecation_kwargs("step_launcher"))
     @property
     def step_launcher(self) -> Optional[StepLauncher]:
         return super().step_launcher
 
-    @deprecated(
-        **_get_deprecation_kwargs("consume_events"),
-    )
+    @deprecated(**_get_deprecation_kwargs("consume_events"))
     def consume_events(self) -> Iterator[DagsterEvent]:
         return super().consume_events()
 
-    @deprecated(
-        **_get_deprecation_kwargs("add_output_metadata"),
-    )
+    @deprecated(**_get_deprecation_kwargs("add_output_metadata"))
     @public
     def add_output_metadata(
         self,
@@ -1567,44 +1547,32 @@ class AssetExecutionContext(OpExecutionContext):
             metadata=metadata, output_name=output_name, mapping_key=mapping_key
         )
 
-    @deprecated(
-        **_get_deprecation_kwargs("asset_key_for_input"),
-    )
+    @deprecated(**_get_deprecation_kwargs("asset_key_for_input"))
     @public
     def asset_key_for_input(self, input_name: str) -> AssetKey:
         return super().asset_key_for_input(input_name=input_name)
 
-    @deprecated(
-        **_get_deprecation_kwargs("asset_key_for_output"),
-    )
+    @deprecated(**_get_deprecation_kwargs("asset_key_for_output"))
     @public
     def asset_key_for_output(self, output_name: str = "result") -> AssetKey:
         return super().asset_key_for_output(output_name=output_name)
 
-    @deprecated(
-        **_get_deprecation_kwargs("asset_partition_key_for_input"),
-    )
+    @deprecated(**_get_deprecation_kwargs("asset_partition_key_for_input"))
     @public
     def asset_partition_key_for_input(self, input_name: str) -> str:
         return super().asset_partition_key_for_input(input_name=input_name)
 
-    @deprecated(
-        **_get_deprecation_kwargs("asset_partition_key_for_output"),
-    )
+    @deprecated(**_get_deprecation_kwargs("asset_partition_key_for_output"))
     @public
     def asset_partition_key_for_output(self, output_name: str = "result") -> str:
         return super().asset_partition_key_for_output(output_name=output_name)
 
-    @deprecated(
-        **_get_deprecation_kwargs("asset_partition_key_range_for_input"),
-    )
+    @deprecated(**_get_deprecation_kwargs("asset_partition_key_range_for_input"))
     @public
     def asset_partition_key_range_for_input(self, input_name: str) -> PartitionKeyRange:
         return super().asset_partition_key_range_for_input(input_name=input_name)
 
-    @deprecated(
-        **_get_deprecation_kwargs("asset_partition_key_range_for_output"),
-    )
+    @deprecated(**_get_deprecation_kwargs("asset_partition_key_range_for_output"))
     @public
     def asset_partition_key_range_for_output(
         self, output_name: str = "result"
