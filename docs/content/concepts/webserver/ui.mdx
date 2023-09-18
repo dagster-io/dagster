@@ -223,43 +223,48 @@ height={1626}
 
 ---
 
+## Sensors
+
 <TabGroup>
-<TabItem name="All runs">
+<TabItem name="All sensors">
 
-#### All runs
+### All sensors
 
-The Runs page lists all job runs, which can be filtered by job name, run ID, execution status, or tag. Click a run ID to open the [**Run details** page](#run-details) and view details for that run:
+- **Description**: The **Sensors** page lists all [sensors](/concepts/partitions-schedules-sensors/sensors) defined in your Dagster deployment, as well as information about the sensor's frequency and its last tick. Click a sensor to view details about the sensor, including its recent tick history and recent runs.
 
-<!-- ![UI Runs page](/images/concepts/webserver/all-runs.png) -->
+- **Accessed by**: Clicking **Overview (top nav) > Sensors tab**
+
+<!-- ![UI Sensors page](/images/concepts/webserver/sensors-tab.png) -->
 
 <Image
-alt="UI Runs page"
-src="/images/concepts/webserver/all-runs.png"
-width={1861}
-height={1300}
+alt="UI Sensors page"
+src="/images/concepts/webserver/sensors-tab.png"
+width={3576}
+height={1938}
 />
 
 </TabItem>
-<TabItem name="Run details">
+<TabItem name="Sensor details">
 
-#### Run details
+### Sensor details
 
-The **Run details** page contains details about a single run, including timing information, errors, and logs.
+- **Description**: The **Sensor details** page contains details about a single sensor, including its next tick, tick history, and run history. Clicking the **Test sensor** button near the top right corner of the page allows you to test the sensor.
 
-The upper left pane contains a Gantt chart, indicating how long each op took to execute. The bottom pane displays filterable events and logs emitted during the course of execution:
+- **Accessed by**: Clicking a sensor in the [**Sensors** page](#all-sensors)
 
-<!-- ![UI Job run](/images/concepts/webserver/single-run.png) -->
+<!-- ![UI Sensor details page](/images/concepts/webserver/sensor-details.png) -->
 
 <Image
-alt="UI Job run"
-src="/images/concepts/webserver/single-run.png"
-width={2318}
-height={1298}
+alt="UI Sensor details page"
+src="/images/concepts/webserver/sensor-details.png"
+width={3058}
+height={1628}
 />
 
-From the **Run details** page, you can also re-execute a run using the same configuration by clicking the **Re-execute** button:
+</TabItem>
+</TabGroup>
 
-<!-- ![UI job re-execution button](/images/concepts/webserver/re-execution.png) -->
+---
 
 <Image
 alt="UI job re-execution button"
