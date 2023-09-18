@@ -10,7 +10,6 @@ from dagster import (
 )
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.source_asset import SourceAsset
-from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.events import StepMaterializationData
 from dagster._legacy import build_assets_job
 from dagster_airbyte import AirbyteCloudResource, airbyte_resource, build_airbyte_assets
@@ -258,7 +257,7 @@ def test_assets_cloud() -> None:
         }
 
 
-def test_built_airbyte_asset_with_downstream_asset_errors():
+def test_built_airbyte_asset_with_downstream_asset_via_definition():
     destination_tables = ["foo", "bar"]
     ab_assets = build_airbyte_assets(
         "12345",
@@ -266,14 +265,13 @@ def test_built_airbyte_asset_with_downstream_asset_errors():
         asset_key_prefix=["some", "prefix"],
     )
 
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match="Cannot pass a multi_asset AssetsDefinition as an argument to deps.",
-    ):
+    @asset(deps=ab_assets)
+    def downstream_of_ab():
+        return None
 
-        @asset(deps=ab_assets)
-        def downstream_of_ab():
-            return None
+    assert len(downstream_of_ab.input_names) == 2
+    assert downstream_of_ab.op.ins["some_prefix_foo"].dagster_type.is_nothing
+    assert downstream_of_ab.op.ins["some_prefix_bar"].dagster_type.is_nothing
 
 
 def test_built_airbyte_asset_with_downstream_asset():
