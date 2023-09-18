@@ -12,7 +12,6 @@ from .events import (
 )
 from .freshness_policy import FreshnessPolicy
 from .metadata import MetadataUserInput
-from enum import Enum
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
