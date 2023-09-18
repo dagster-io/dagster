@@ -472,9 +472,6 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     ) -> Mapping["AssetKey", Optional["EventLogEntry"]]:
         return self._storage.event_log_storage.get_latest_materialization_events(asset_keys)
 
-    def get_asset_run_ids(self, asset_key: "AssetKey") -> Iterable[str]:
-        return self._storage.event_log_storage.get_asset_run_ids(asset_key)
-
     def wipe_asset(self, asset_key: "AssetKey") -> None:
         return self._storage.event_log_storage.wipe_asset(asset_key)
 
