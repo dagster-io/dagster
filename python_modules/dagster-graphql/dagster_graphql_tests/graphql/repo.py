@@ -79,7 +79,7 @@ from dagster import (
     usable_as_dagster_type,
     with_resources,
 )
-from dagster._core.definitions.asset_spec import ObservableAssetSpec
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.decorators.sensor_decorator import sensor
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import Failure
@@ -1382,9 +1382,7 @@ def executable_asset() -> None:
     pass
 
 
-unexecutable_asset = create_unexecutable_observable_assets_def(
-    [ObservableAssetSpec("unexecutable_asset")]
-)
+unexecutable_asset = create_unexecutable_observable_assets_def([AssetSpec("unexecutable_asset")])
 
 executable_test_job = build_assets_job(
     name="executable_test_job", assets=[executable_asset, unexecutable_asset]
