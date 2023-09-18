@@ -244,7 +244,7 @@ def test_demonstrate_op_job_over_observable_assets() -> None:
 
     instance = DagsterInstance.ephemeral()
 
-    asset_one = create_observable_assets_def([ObservableAssetSpec("asset_one")])
+    asset_one = create_unexecutable_observable_assets_def([ObservableAssetSpec("asset_one")])
 
     defs = Definitions(assets=[asset_one], jobs=[a_job_that_emits])
 
