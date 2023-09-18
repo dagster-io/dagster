@@ -180,44 +180,48 @@ height={1950}
 
 ---
 
+## Schedules
 
-#### Launchpad tab
+<TabGroup>
+<TabItem name="All schedules">
 
-The **Launchpad tab** provides a configuration editor to let you experiment with configuration and launch runs:
+### All schedules
 
-<!-- ![UI Launchpad](/images/tutorial/single-op-launchpad.png) -->
+- **Description**: The **Schedules** page lists all [schedules](/concepts/partitions-schedules-sensors/schedules) defined in your Dagster deployment, as well as information about upcoming ticks for anticipated scheduled runs. Click a schedule to open the [**Schedule details**](#schedule-details) page.
+
+- **Accessed by**: Clicking **Overview (top nav) > Schedules tab**
+
+<!-- ![UI Schedules page](/images/concepts/webserver/schedules-tab.png) -->
 
 <Image
-alt="UI Launchpad"
-src="/images/tutorial/single-op-launchpad.png"
-width={1523}
-height={1049}
+alt="UI Schedules page"
+src="/images/concepts/webserver/schedules-tab.png"
+width={3572}
+height={1942}
 />
-
----
 
 </TabItem>
-<TabItem name="Runs tab">
+<TabItem name="Schedule details">
 
-#### Runs tab
+### Schedule details
 
-The Runs tab displays a list of recent runs for the job:
+- **Description**: The **Schedule details** page contains details about a single schedule, including its next tick, tick history, and run history. Clicking the **Test schedule** button near the top right corner of the page allows you to test the schedule.
 
-<!-- ![UI Job runs tab](/images/concepts/webserver/runs-tab.png) -->
+- **Accessed by**: Clicking a sensor in the [**Schedules** page](#all-schedules)
+
+<!-- ![UI Schedule details page](/images/concepts/webserver/schedule-details.png) -->
 
 <Image
-alt="UI Job runs tab"
-src="/images/concepts/webserver/runs-tab.png"
-width={1446}
-height={754}
+alt="UI Schedule details page"
+src="/images/concepts/webserver/schedule-details.png"
+width={3060}
+height={1626}
 />
-
----
 
 </TabItem>
 </TabGroup>
 
-### Runs
+---
 
 <TabGroup>
 <TabItem name="All runs">
