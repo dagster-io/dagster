@@ -104,7 +104,10 @@ def create_unexecutable_observable_assets_def_from_source_asset(source_asset: So
 
     kwargs = {
         "key": source_asset.key,
-        "metadata": {**source_asset.metadata, **{SYSTEM_METADATA_KEY_ASSET_VARIETAL: AssetVarietal.UNEXECUTABLE.value}},
+        "metadata": {
+            **source_asset.metadata,
+            **{SYSTEM_METADATA_KEY_ASSET_VARIETAL: AssetVarietal.UNEXECUTABLE.value},
+        },
         "group_name": source_asset.group_name,
         "description": source_asset.description,
     }
