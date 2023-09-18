@@ -661,6 +661,7 @@ type AssetNode {
   graphName: String
   groupName: String
   id: ID!
+  isExecutable: Boolean!
   isObservable: Boolean!
   isPartitioned: Boolean!
   isSource: Boolean!

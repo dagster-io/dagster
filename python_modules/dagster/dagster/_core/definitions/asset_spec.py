@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import TYPE_CHECKING, Any, Iterable, Mapping, NamedTuple, Optional
 
 import dagster._check as check
@@ -14,6 +15,29 @@ from .metadata import MetadataUserInput
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
+
+# SYSTEM_METADATA_KEY_ASSET_VARIETAL lives on the metadata of an asset
+# (which currently ends up on the Output associated with the asset key)
+# whih encodes the "varietal" of asset. "Unexecutable" assets are assets
+# that cannot be materialized in Dagster, but can have events in the event
+# log keyed off of them, making Dagster usable as a observability and lineage tool
+# for externally materialized assets.
+SYSTEM_METADATA_KEY_ASSET_VARIETAL = "dagster/asset_varietal"
+
+
+class AssetVarietal(Enum):
+    UNEXECUTABLE = "UNEXECUTABLE"
+    MATERIALIZEABLE = "MATERIALIZEABLE"
+
+    @staticmethod
+    def is_executable(varietal_str: Optional[str]) -> bool:
+        return AssetVarietal.str_to_enum(varietal_str) in {AssetVarietal.MATERIALIZEABLE}
+
+    @staticmethod
+    def str_to_enum(varietal_str: Optional[str]) -> "AssetVarietal":
+        return (
+            AssetVarietal.MATERIALIZEABLE if varietal_str is None else AssetVarietal(varietal_str)
+        )
 
 
 @experimental
