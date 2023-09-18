@@ -29,6 +29,16 @@ class AssetVarietal(Enum):
     UNEXECUTABLE = "UNEXECUTABLE"
     MATERIALIZEABLE = "MATERIALIZEABLE"
 
+    @staticmethod
+    def is_executable(varietal_str: Optional[str]) -> bool:
+        return AssetVarietal.str_to_enum(varietal_str) in {AssetVarietal.MATERIALIZEABLE}
+
+    @staticmethod
+    def str_to_enum(varietal_str: Optional[str]) -> "AssetVarietal":
+        return (
+            AssetVarietal.MATERIALIZEABLE if varietal_str is None else AssetVarietal(varietal_str)
+        )
+
 
 @experimental
 class AssetSpec(

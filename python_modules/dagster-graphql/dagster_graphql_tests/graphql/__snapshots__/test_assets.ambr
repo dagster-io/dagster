@@ -146,6 +146,13 @@
         dict({
           'key': dict({
             'path': list([
+              'executable_asset',
+            ]),
+          }),
+        }),
+        dict({
+          'key': dict({
+            'path': list([
               'fail_partition_materialization',
             ]),
           }),
@@ -315,6 +322,13 @@
           'key': dict({
             'path': list([
               'unconnected',
+            ]),
+          }),
+        }),
+        dict({
+          'key': dict({
+            'path': list([
+              'unexecutable_asset',
             ]),
           }),
         }),
@@ -550,6 +564,16 @@
         'freshnessInfo': None,
         'freshnessPolicy': None,
         'id': 'test.test_repo.["upstream_dynamic_partitioned_asset"]',
+      }),
+      dict({
+        'freshnessInfo': None,
+        'freshnessPolicy': None,
+        'id': 'test.test_repo.["executable_asset"]',
+      }),
+      dict({
+        'freshnessInfo': None,
+        'freshnessPolicy': None,
+        'id': 'test.test_repo.["unexecutable_asset"]',
       }),
       dict({
         'freshnessInfo': None,
