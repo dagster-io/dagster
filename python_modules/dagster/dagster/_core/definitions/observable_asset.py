@@ -1,6 +1,6 @@
-from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.decorators import asset
+from dagster._core.errors import DagsterInvariantViolationError
 
 
 def create_unexecutable_observable_assets_def(asset_spec: AssetSpec):
