@@ -304,7 +304,9 @@ def _create_repository_using_definitions_args(
     asset_esque_things_to_pass = []
     for asset_ish in assets or []:
         if isinstance(asset_ish, ObservableAssetSpec):
-            asset_esque_things_to_pass.append(create_unexecutable_observable_assets_def([asset_ish]))
+            asset_esque_things_to_pass.append(
+                create_unexecutable_observable_assets_def([asset_ish])
+            )
         else:
             asset_esque_things_to_pass.append(asset_ish)
 
