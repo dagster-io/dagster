@@ -1,5 +1,6 @@
 from typing import Sequence
 
+from dagster import _check as check
 from dagster._core.definitions.asset_spec import (
     SYSTEM_METADATA_KEY_ASSET_VARIETAL,
     AssetSpec,
@@ -10,8 +11,22 @@ from dagster._core.errors import DagsterInvariantViolationError
 
 
 def create_unexecutable_observable_assets_def(specs: Sequence[AssetSpec]):
-    @multi_asset(
-        specs=[
+    new_specs = []
+    for spec in specs:
+        check.invariant(
+            spec.auto_materialize_policy is None,
+            "auto_materialize_policy must be None since it is ignored",
+        )
+        check.invariant(spec.code_version is None, "code_version must be None since it is ignored")
+        check.invariant(
+            spec.freshness_policy is None, "freshness_policy must be None since it is ignored"
+        )
+        check.invariant(
+            spec.skippable is False,
+            "skippable must be False since it is ignored and False is the default",
+        )
+
+        new_specs.append(
             AssetSpec(
                 key=spec.key,
                 description=spec.description,
@@ -20,11 +35,11 @@ def create_unexecutable_observable_assets_def(specs: Sequence[AssetSpec]):
                     **(spec.metadata or {}),
                     **{SYSTEM_METADATA_KEY_ASSET_VARIETAL: AssetVarietal.UNEXECUTABLE.value},
                 },
-                deps=[dep.asset_key for dep in spec.deps],
+                deps=spec.deps,
             )
-            for spec in specs
-        ]
-    )
+        )
+
+    @multi_asset(specs=new_specs)
     def an_asset() -> None:
         raise DagsterInvariantViolationError(
             f"You have attempted to execute an unexecutable asset {[spec.key for spec in specs]}"
