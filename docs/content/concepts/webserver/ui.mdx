@@ -155,24 +155,62 @@ height={1940}
 
 - **Description**: The **Run details** page contains details about a single run, including timing information, errors, and logs. The upper left pane contains a Gantt chart, indicating how long each asset or op took to execute. The bottom pane displays filterable events and logs emitted during execution.
 
-  You can also re-execute a run using the same configuration by clicking the **Re-execute** button. Related runs (e.g., runs created by re-executing the same previous run) are grouped in the right pane for easy reference.
+  In this page, you can:
 
-  There are several re-execution options:
-
-  - **All steps**: Re-execute the run from scratch.
-  - **Selected steps**: Re-execute the selected steps.
-  - **From selected**: Re-execute the steps downstream from the selected steps
-  - **From failure**: Retry the run, skipping steps completed successfully. This is only enabled when the run has failed.
+  - **View structured event and raw compute logs.** Refer to the [run logs tab](#run-logs) for more info.
+  - **Re-execute a run** using the same configuration by clicking the **Re-execute** button. Related runs (e.g., runs created by re-executing the same previous run) are grouped in the right pane for easy reference
 
 - **Accessed by**: Clicking a run in the [**Run details**](#run-details) page
 
-<!-- ![UI Job run](/images/concepts/webserver/run-details.png) -->
+<!-- ![UI Run details page](/images/concepts/webserver/run-details.png) -->
 
 <Image
-alt="UI Job run"
+alt="UI Run details page"
 src="/images/concepts/webserver/run-details.png"
 width={3576}
 height={1950}
+/>
+
+</TabItem>
+<TabItem name="Run logs">
+
+### Run logs
+
+- **Description**: Located at the bottom of the [**Run details** page](#run-details), the run logs list every event that occurred in a run, the type of event, and detailed information about the event itself. There are two types of logs, which we'll discuss in the next section:
+
+  - [Structured event logs](#structured-event-logs)
+  - [Raw compute logs](#raw-compute-logs)
+
+- **Accessed by**: Scrolling to the bottom of the [**Run details**](#run-details) page
+
+#### Structured event logs
+
+- **Description**: Structured logs are enriched and categorized with metadata. For example, a label of which asset a log is about, links to an asset’s metadata, and what type of event it is available. This structuring also enables easier filtering and searching in the logs.
+
+- **Accessed by**: Clicking the **left side** of the toggle next to the log filter field
+
+<!-- ![Structured event logs in the Run details page](/images/concepts/webserver/run-details-event-logs.png) -->
+
+<Image
+alt="Structured event logs in the Run details page"
+src="/images/concepts/webserver/run-details-event-logs.png"
+width={3576}
+height={880}
+/>
+
+#### Raw compute logs
+
+- **Description**: The raw compute logs contain logs for both [`stdout` and `stderr`](https://stackoverflow.com/questions/3385201/confused-about-stdin-stdout-and-stderr), which you can toggle between. To download the logs, click the **arrow icon** near the top right corner of the logs.
+
+- **Accessed by**: Clicking the **right side** of the toggle next to the log filter field
+
+<!-- ![Raw compute logs in the Run details page](/images/concepts/webserver/run-details-compute-logs.png) -->
+
+<Image
+alt="Raw compute logs in the Run details page"
+src="/images/concepts/webserver/run-details-compute-logs.png"
+width={3576}
+height={826}
 />
 
 </TabItem>
