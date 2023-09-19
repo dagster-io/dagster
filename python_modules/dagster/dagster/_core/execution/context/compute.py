@@ -1299,15 +1299,12 @@ DEPRECATED_IO_MANAGER_CENTRIC_CONTEXT_METHODS = {
     "asset_partitions_def_for_input": PARTITION_KEY_RANGE_AS_ALT,
     "asset_partitions_def_for_output": PARTITION_KEY_RANGE_AS_ALT,
     "get_output_metadata": "use op_execution_context.op_def.get_output(...).metadata",
-    # "merge_output_metadata": OUTPUT_METADATA_ALT, # TODO - this method doesn't exist, check if it has a different name
     "output_for_asset_key": INPUT_OUTPUT_ALT,
     "selected_output_names": INPUT_OUTPUT_ALT,
 }
 
 ALTERNATE_AVAILABLE_METHODS = {
-    "has_tag": (
-        "use dagster_run.has_tag instead"
-    ),  # TODO - was dagster_run intended to be a method/attr on AssetExecutionContext?
+    "has_tag": "use dagster_run.has_tag instead",
     "get_tag": "use dagster_run.get_tag instead",
     "run_tags": "use dagster_run.tags instead",
     "set_data_version": "use MaterializeResult instead",
