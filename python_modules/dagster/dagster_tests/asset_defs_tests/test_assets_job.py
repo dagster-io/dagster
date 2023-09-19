@@ -1959,7 +1959,7 @@ def test_get_base_asset_jobs_multiple_partitions_defs():
     def unpartitioned_asset(): ...
 
     jobs = get_base_asset_jobs(
-        assets=[
+        assets_defs=[
             daily_asset,
             daily_asset2,
             daily_asset_different_start_date,
@@ -2004,7 +2004,7 @@ def test_get_base_asset_jobs_multiple_partitions_defs_and_observable_assets():
     def asset_x(asset_b: B): ...
 
     jobs = get_base_asset_jobs(
-        assets=[
+        assets_defs=[
             asset_x,
         ],
         source_assets=[

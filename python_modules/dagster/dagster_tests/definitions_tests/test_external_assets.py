@@ -23,7 +23,13 @@ from dagster._core.definitions.external_asset import (
     external_assets_from_specs,
 )
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.repository_definition.repository_definition import (
+    RepositoryDefinition,
+)
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
+from dagster._core.host_representation.external_data import (
+    external_repository_data_from_def,
+)
 
 
 def test_external_asset_basic_creation() -> None:
@@ -118,6 +124,18 @@ def test_external_asset_creation_with_deps() -> None:
     }
 
 
+def _get_external_node_from_defs(defs: Definitions, asset_key: AssetKey):
+    repo = defs.get_inner_repository_for_loading_process()
+    assert isinstance(repo, RepositoryDefinition)
+    external_repo = external_repository_data_from_def(repo)
+    matches = []
+    for node in external_repo.external_asset_graph_data:
+        if node.asset_key == asset_key:
+            matches.append(node)
+    assert len(matches) == 1, f"Expected 1 match for {asset_key} in defs, got {len(matches)}"
+    return matches[0]
+
+
 def test_how_source_assets_are_backwards_compatible() -> None:
     class DummyIOManager(IOManager):
         def handle_output(self, context, obj) -> None:
@@ -151,12 +169,30 @@ def test_how_source_assets_are_backwards_compatible() -> None:
 
     result_two = defs_with_shim.get_implicit_global_asset_job_def().execute_in_process(
         instance=instance,
-        # currently we have to explicitly select the asset to exclude the source from execution
-        asset_selection=[AssetKey("an_asset")],
     )
 
     assert result_two.success
     assert result_two.output_for_node("an_asset") == "hardcoded-computed"
+
+    # ensure bizarre behavior for selecting source asset works the same
+    source_seleciton_result = (
+        defs_with_source.get_implicit_global_asset_job_def().execute_in_process(
+            instance=instance,
+            asset_selection=[AssetKey("source_asset")],
+        )
+    )
+    assert source_seleciton_result.success
+
+    shim_selection_result = defs_with_shim.get_implicit_global_asset_job_def().execute_in_process(
+        instance=instance,
+        asset_selection=[AssetKey("source_asset")],
+    )
+    assert shim_selection_result.success
+
+    source_node = _get_external_node_from_defs(defs_with_source, AssetKey("source_asset"))
+    assert source_node.is_source
+    shim_node = _get_external_node_from_defs(defs_with_shim, AssetKey("source_asset"))
+    assert not shim_node.is_executable
 
 
 def get_job_for_assets(defs: Definitions, *coercibles_or_defs) -> JobDefinition:
@@ -206,20 +242,16 @@ def test_how_partitioned_source_assets_are_backwards_compatible() -> None:
 
     assert result_one.success
     assert result_one.output_for_node("an_asset") == "hardcoded-computed-2021-01-02"
-
-    shimmed_source_asset = create_external_asset_from_source_asset(source_asset)
     defs_with_shim = Definitions(
         assets=[create_external_asset_from_source_asset(source_asset), an_asset]
     )
 
     assert isinstance(defs_with_shim.get_assets_def("source_asset"), AssetsDefinition)
 
-    job_def_with_shim = get_job_for_assets(defs_with_shim, an_asset, shimmed_source_asset)
+    job_def_with_shim = get_job_for_assets(defs_with_shim, an_asset)
 
     result_two = job_def_with_shim.execute_in_process(
         instance=instance,
-        # currently we have to explicitly select the asset to exclude the source from execution
-        asset_selection=[AssetKey("an_asset")],
         partition_key="2021-01-03",
     )
 
@@ -294,6 +326,40 @@ def test_external_assets_with_dependencies() -> None:
     defs = Definitions(assets=external_assets_from_specs([upstream_asset, downstream_asset]))
     assert defs
 
-    assert defs.get_implicit_global_asset_job_def().asset_layer.asset_deps[
-        AssetKey("downstream_asset")
-    ] == {AssetKey("upstream_asset")}
+    repo = defs.get_inner_repository_for_loading_process()
+    assert isinstance(repo, RepositoryDefinition)
+    external_repo = external_repository_data_from_def(repo)
+    nodes_by_key = {node.asset_key: node for node in external_repo.external_asset_graph_data}
+    assert (
+        upstream_asset.key == nodes_by_key[downstream_asset.key].dependencies[0].upstream_asset_key
+    )
+
+
+def test_external_rep():
+    table_a = AssetSpec("table_A")
+    table_b = AssetSpec("table_B", deps=[table_a])
+    table_c = AssetSpec("table_C", deps=[table_a])
+    table_d = AssetSpec("table_D", deps=[table_b, table_c])
+
+    those_assets = external_assets_from_specs(specs=[table_a, table_b, table_c, table_d])
+
+    defs = Definitions(assets=those_assets)
+    repo = defs.get_inner_repository_for_loading_process()
+    assert isinstance(repo, RepositoryDefinition)
+    external_repo = external_repository_data_from_def(repo)
+
+    assert len(external_repo.external_asset_graph_data) == 4
+
+    nodes_by_key = {node.asset_key: node for node in external_repo.external_asset_graph_data}
+
+    assert len(nodes_by_key[table_a.key].depended_by) == 2
+    assert len(nodes_by_key[table_a.key].dependencies) == 0
+
+    assert len(nodes_by_key[table_b.key].depended_by) == 1
+    assert len(nodes_by_key[table_b.key].dependencies) == 1
+
+    assert len(nodes_by_key[table_c.key].depended_by) == 1
+    assert len(nodes_by_key[table_c.key].dependencies) == 1
+
+    assert len(nodes_by_key[table_d.key].depended_by) == 0
+    assert len(nodes_by_key[table_d.key].dependencies) == 2

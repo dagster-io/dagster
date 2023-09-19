@@ -916,6 +916,15 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             self._metadata_by_key.get(asset_key, {}).get(SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE)
         )
 
+    def is_executable(self):
+        """Returns True if this definition represents unexecutable assets.
+        Assumption: either all or none contained assets are unexecutable.
+        """
+        for key in self.keys:
+            if not self.is_asset_executable(key):
+                return False
+        return True
+
     def get_partition_mapping_for_input(self, input_name: str) -> Optional[PartitionMapping]:
         return self._partition_mappings.get(self._keys_by_input_name[input_name])
 

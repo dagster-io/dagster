@@ -193,7 +193,7 @@ def build_caching_repository_data_from_list(
 
     if assets_defs or source_assets or asset_checks_defs:
         for job_def in get_base_asset_jobs(
-            assets=assets_defs,
+            assets_defs=assets_defs,
             source_assets=source_assets,
             executor_def=default_executor_def,
             resource_defs=top_level_resources,

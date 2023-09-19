@@ -58,39 +58,51 @@ def is_base_asset_job_name(name: str) -> bool:
 
 
 def get_base_asset_jobs(
-    assets: Sequence[AssetsDefinition],
+    assets_defs: Sequence[AssetsDefinition],
     source_assets: Sequence[SourceAsset],
     asset_checks: Sequence[AssetChecksDefinition],
     resource_defs: Optional[Mapping[str, ResourceDefinition]],
     executor_def: Optional[ExecutorDefinition],
 ) -> Sequence[JobDefinition]:
-    assets_by_partitions_def: Dict[Optional[PartitionsDefinition], List[AssetsDefinition]] = (
+    # bucket the passed in AssetsDefinitions that are executable by partition.
+    # un-executable assets are intentionally omitted.
+    exe_assets_by_partitions_def: Dict[Optional[PartitionsDefinition], List[AssetsDefinition]] = (
         defaultdict(list)
     )
-    for assets_def in assets:
-        assets_by_partitions_def[assets_def.partitions_def].append(assets_def)
+    all_exe_assets = []
+    all_source_assets = [*source_assets]
+    for assets_def in assets_defs:
+        if assets_def.is_executable():
+            exe_assets_by_partitions_def[assets_def.partitions_def].append(assets_def)
+            all_exe_assets.append(assets_def)
+        else:
+            # treat all unexecutable assets as potential source assets
+            all_source_assets.extend(assets_def.to_source_assets())
 
     # We need to create "empty" jobs for each partitions def that is used by an observable but no
     # materializable asset. They are empty because we don't assign the source asset to the `assets`,
     # but rather the `source_assets` argument of `build_assets_job`.
     for observable in [sa for sa in source_assets if sa.is_observable]:
-        if observable.partitions_def not in assets_by_partitions_def:
-            assets_by_partitions_def[observable.partitions_def] = []
-    if len(assets_by_partitions_def.keys()) == 0 or assets_by_partitions_def.keys() == {None}:
+        if observable.partitions_def not in exe_assets_by_partitions_def:
+            exe_assets_by_partitions_def[observable.partitions_def] = []
+
+    if len(exe_assets_by_partitions_def.keys()) == 0 or exe_assets_by_partitions_def.keys() == {
+        None
+    }:
         return [
             build_assets_job(
                 name=ASSET_BASE_JOB_PREFIX,
-                assets=assets,
+                assets=all_exe_assets,
                 asset_checks=asset_checks,
-                source_assets=source_assets,
+                source_assets=all_source_assets,
                 executor_def=executor_def,
                 resource_defs=resource_defs,
             )
         ]
     else:
-        unpartitioned_assets = assets_by_partitions_def.get(None, [])
+        unpartitioned_assets_defs = exe_assets_by_partitions_def.get(None, [])
         partitioned_assets_by_partitions_def = {
-            k: v for k, v in assets_by_partitions_def.items() if k is not None
+            k: v for k, v in exe_assets_by_partitions_def.items() if k is not None
         }
         jobs = []
 
@@ -101,8 +113,11 @@ def get_base_asset_jobs(
             jobs.append(
                 build_assets_job(
                     f"{ASSET_BASE_JOB_PREFIX}_{i}",
-                    assets=[*assets_with_partitions, *unpartitioned_assets],
-                    source_assets=[*source_assets, *assets],
+                    assets=[*assets_with_partitions, *unpartitioned_assets_defs],
+                    source_assets=[
+                        *all_source_assets,
+                        *all_exe_assets,
+                    ],
                     asset_checks=asset_checks,
                     resource_defs=resource_defs,
                     executor_def=executor_def,
