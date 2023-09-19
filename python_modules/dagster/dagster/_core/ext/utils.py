@@ -10,6 +10,7 @@ from threading import Event, Thread
 from typing import Iterator, Optional
 
 from dagster_ext import (
+    EXT_PROTOCOL_VERSION_FIELD,
     ExtContextData,
     ExtDefaultContextLoader,
     ExtDefaultMessageWriter,
@@ -177,8 +178,7 @@ def extract_message_or_forward_to_stdout(handler: "ExtMessageHandler", log_line:
     # exceptions as control flow, you love to see it
     try:
         message = json.loads(log_line)
-        # need better message check
-        if message.keys() == {"method", "params"}:
+        if EXT_PROTOCOL_VERSION_FIELD in message.keys():
             handler.handle_message(message)
     except Exception:
         # move non-message logs in to stdout for compute log capture

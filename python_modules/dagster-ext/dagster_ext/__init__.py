@@ -39,6 +39,9 @@ if TYPE_CHECKING:
 # ##### PROTOCOL
 # ########################
 
+# This represents the version of the protocol, rather than the version of the package. It must be
+# manually updated whenever there are changes to the protocol.
+EXT_PROTOCOL_VERSION = "0.1"
 
 ExtExtras = Mapping[str, Any]
 ExtParams = Mapping[str, Any]
@@ -62,8 +65,12 @@ DAGSTER_EXT_ENV_KEYS = {
 
 # ##### MESSAGE
 
+# Can't use a constant for TypedDict key so this value is repeated in `ExtMessage` defn.
+EXT_PROTOCOL_VERSION_FIELD = "__dagster_ext_version"
+
 
 class ExtMessage(TypedDict):
+    __dagster_ext_version: str
     method: str
     params: Optional[Mapping[str, Any]]
 
@@ -677,7 +684,9 @@ class ExtContext:
         self._materialized_assets: set[str] = set()
 
     def _write_message(self, method: str, params: Optional[Mapping[str, Any]] = None) -> None:
-        message = ExtMessage(method=method, params=params)
+        message = ExtMessage(
+            {EXT_PROTOCOL_VERSION_FIELD: EXT_PROTOCOL_VERSION, "method": method, "params": params}
+        )
         self._message_channel.write_message(message)
 
     # ########################
