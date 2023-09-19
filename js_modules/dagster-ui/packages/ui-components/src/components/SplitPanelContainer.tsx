@@ -2,7 +2,6 @@ import * as React from 'react';
 import styled from 'styled-components';
 
 import {Button} from './Button';
-import {ButtonGroup} from './ButtonGroup';
 import {Colors} from './Colors';
 import {Icon} from './Icon';
 
