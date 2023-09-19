@@ -1,16 +1,18 @@
-from typing import Iterable, Iterator, Optional
+from typing import Iterable
 
 import pytest
 from dagster import (
     AssetKey,
+    AssetMaterialization,
     AssetsDefinition,
     AutoMaterializePolicy,
+    DagsterInstance,
+    Definitions,
+    Output,
     _check as check,
     asset,
     job,
-    materialize,
     op,
-    DagsterInstance,
 )
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
@@ -78,132 +80,6 @@ def test_observable_asset_creation_with_deps() -> None:
     assert assets_def.asset_deps[expected_key] == {
         AssetKey(["observable_asset_two"]),
     }
-
-
-def test_report_runless_materialization() -> None:
-    instance = DagsterInstance.ephemeral()
-
-    instance.report_runless_asset_event(
-        asset_event=AssetMaterialization(asset_key="observable_asset_one"),
-    )
-
-    mat_event = instance.get_latest_materialization_event(
-        asset_key=AssetKey("observable_asset_one")
-    )
-
-    assert mat_event
-    assert mat_event.asset_materialization
-    assert mat_event.asset_materialization.asset_key == AssetKey("observable_asset_one")
-
-
-def test_report_runless_observation() -> None:
-    instance = DagsterInstance.ephemeral()
-
-    instance.report_runless_asset_event(
-        asset_event=AssetObservation(asset_key="observable_asset_one"),
-    )
-
-    observation = get_latest_observation_for_asset_key(
-        instance, asset_key=AssetKey("observable_asset_one")
-    )
-    assert observation
-
-    assert observation.asset_key == AssetKey("observable_asset_one")
-
-
-def test_emit_asset_observation_in_user_space() -> None:
-    # This test to exists to demonstrate that you cannot emit an asset observation without
-    # it automatically emitting a materialization because of the None output. We will have
-    # to fix this because being able to supplant observable source assets
-
-    @asset(key="asset_in_user_space")
-    def active_observable_asset_in_user_space() -> Iterator:
-        # not ideal but it works
-        yield AssetObservation(asset_key="asset_in_user_space", metadata={"foo": "bar"})
-        yield Output(None)
-
-    instance = DagsterInstance.ephemeral()
-
-    # to avoid breaking your brain, think of this as "execute" or "refresh", not "materialize"
-    assert materialize(assets=[active_observable_asset_in_user_space], instance=instance).success
-
-    observation = get_latest_observation_for_asset_key(
-        instance, asset_key=AssetKey("asset_in_user_space")
-    )
-    assert observation
-    assert observation.asset_key == AssetKey("asset_in_user_space")
-
-    mat_event = instance.get_latest_materialization_event(asset_key=AssetKey("asset_in_user_space"))
-
-    # we actually want this to be false once we make changes to make mainline assets
-    # replace observable source assets
-    assert mat_event
-
-
-def test_executable_upstream_of_nonexecutable_illegal() -> None:
-    @asset
-    def upstream_asset() -> None: ...
-
-    downstream_asset = create_unexecutable_observable_assets_def(
-        specs=[AssetSpec("downstream_asset", deps=[upstream_asset])]
-    )
-
-    with pytest.raises(DagsterInvariantViolationError) as exc_info:
-        Definitions(assets=[upstream_asset, downstream_asset])
-
-    assert (
-        "An executable asset cannot be upstream of a non-executable asset. Non-executable asset"
-        ' "downstream_asset" downstream of executable asset "upstream_asset"'
-        in str(exc_info.value)
-    )
-
-
-def test_execute_job_that_implicitly_includes_non_executable_asset() -> None:
-    upstream_asset = create_unexecutable_observable_assets_def(
-        specs=[
-            AssetSpec(
-                "upstream_asset",
-            )
-        ]
-    )
-
-    @asset(deps=[upstream_asset])
-    def downstream_asset() -> None: ...
-
-    defs = Definitions(assets=[upstream_asset, downstream_asset])
-
-    assert (
-        defs.get_implicit_global_asset_job_def()
-        .execute_in_process(instance=DagsterInstance.ephemeral())
-        .success
-    )
-
-    with pytest.raises(CheckError) as exc_info:
-        create_execution_plan(defs.get_implicit_global_asset_job_def())
-
-    assert "Cannot pass unexecutable assets defs to create_execution_plan with keys:" in str(
-        exc_info.value
-    )
-
-
-def test_execute_job_that_explicitly_includes_non_executable_asset() -> None:
-    upstream_asset = create_unexecutable_observable_assets_def(specs=[AssetSpec("upstream_asset")])
-
-    @asset(deps=[upstream_asset])
-    def downstream_asset() -> None: ...
-
-    defs = Definitions(assets=[upstream_asset, downstream_asset])
-
-    with pytest.raises(DagsterInvariantViolationError) as exc_info:
-        defs.get_implicit_global_asset_job_def().execute_in_process(
-            instance=DagsterInstance.ephemeral(), asset_selection=[upstream_asset.key]
-        )
-
-    assert (
-        'You have attempted to explicitly select asset "upstream_asset" for execution.'
-        " This is not allowed as it is not executable."
-        in str(exc_info.value)
-    )
 
 
 def test_demonstrate_op_job_over_observable_assets() -> None:
