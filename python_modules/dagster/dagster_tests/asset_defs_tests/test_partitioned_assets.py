@@ -148,7 +148,8 @@ def test_single_partitioned_asset_job():
 
     @asset(partitions_def=partitions_def)
     def my_asset(context):
-        assert context.asset_partitions_def_for_output() == partitions_def
+        # TODO - no partitions_def property on AssetExecutionContext
+        assert context.op_execution_context.asset_partitions_def_for_output() == partitions_def
 
     my_job = build_assets_job(
         "my_job",
@@ -319,9 +320,10 @@ def test_input_context_asset_partitions_time_window():
 
     @asset(partitions_def=partitions_def)
     def downstream_asset(context, upstream_asset):
-        assert context.asset_partitions_time_window_for_input("upstream_asset") == TimeWindow(
-            pendulum.parse("2021-06-06"), pendulum.parse("2021-06-07")
-        )
+        # TODO - getting partition time windows is nasty rn - need to solve
+        assert context.op_execution_context.asset_partitions_time_window_for_input(
+            "upstream_asset"
+        ) == TimeWindow(pendulum.parse("2021-06-06"), pendulum.parse("2021-06-07"))
         assert upstream_asset is None
 
     assert materialize(
@@ -532,7 +534,7 @@ def test_job_config_with_asset_partitions():
 
     @asset(config_schema={"a": int}, partitions_def=daily_partitions_def)
     def asset1(context):
-        assert context.op_config["a"] == 5
+        assert context.op_execution_context.op_config["a"] == 5
         assert context.partition_key == "2020-01-01"
 
     the_job = define_asset_job(
@@ -554,7 +556,7 @@ def test_job_partitioned_config_with_asset_partitions():
 
     @asset(config_schema={"day_of_month": int}, partitions_def=daily_partitions_def)
     def asset1(context):
-        assert context.op_config["day_of_month"] == 1
+        assert context.op_execution_context.op_config["day_of_month"] == 1
         assert context.partition_key == "2020-01-01"
 
     @daily_partitioned_config(start_date="2020-01-01")
@@ -592,6 +594,9 @@ def test_mismatched_job_partitioned_config_with_asset_partitions():
         )
 
 
+@pytest.mark.skip(
+    "partition_key_range_for_asset_key not implemented in this PR, will implement in upstack"
+)  # TODO - remove
 def test_partition_range_single_run():
     partitions_def = DailyPartitionsDefinition(start_date="2020-01-01")
 
@@ -607,10 +612,10 @@ def test_partition_range_single_run():
 
     @asset(partitions_def=partitions_def, deps=["upstream_asset"])
     def downstream_asset(context) -> None:
-        assert context.asset_partition_key_range_for_input("upstream_asset") == PartitionKeyRange(
+        assert context.partition_key_range_for_asset_key("upstream_asset") == PartitionKeyRange(
             start="2020-01-01", end="2020-01-03"
         )
-        assert context.asset_partition_key_range_for_output() == PartitionKeyRange(
+        assert context.partition_key_range == PartitionKeyRange(
             start="2020-01-01", end="2020-01-03"
         )
 

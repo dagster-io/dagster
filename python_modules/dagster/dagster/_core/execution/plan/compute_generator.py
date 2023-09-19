@@ -36,7 +36,7 @@ from dagster._core.types.dagster_type import DagsterTypeKind, is_generic_output_
 from dagster._utils import is_named_tuple_instance
 from dagster._utils.warnings import disable_dagster_warnings
 
-from ..context.compute import OpExecutionContext
+from ..context.compute import AssetExecutionContext, OpExecutionContext
 
 
 class NoAnnotationSentinel:
@@ -244,6 +244,8 @@ def _check_output_object_name(
 def validate_and_coerce_op_result_to_iterator(
     result: Any, context: OpExecutionContext, output_defs: Sequence[OutputDefinition]
 ) -> Iterator[Any]:
+    if isinstance(context, AssetExecutionContext):
+        context = context.op_execution_context
     if inspect.isgenerator(result):
         # this happens when a user explicitly returns a generator in the op
         for event in result:

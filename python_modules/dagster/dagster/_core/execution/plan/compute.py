@@ -33,7 +33,7 @@ from dagster._core.definitions.op_definition import OpComputeFunction
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.errors import DagsterExecutionStepExecutionError, DagsterInvariantViolationError
 from dagster._core.events import DagsterEvent
-from dagster._core.execution.context.compute import build_execution_context
+from dagster._core.execution.context.compute import AssetExecutionContext, build_execution_context
 from dagster._core.execution.context.system import StepExecutionContext
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._utils import iterate_with_context
@@ -169,6 +169,9 @@ def _yield_compute_results(
         user_event_generator = gen_from_async_gen(user_event_generator)
 
     op_label = step_context.describe_op()
+    op_execution_context = (
+        context.op_execution_context if isinstance(context, AssetExecutionContext) else context
+    )
 
     for event in iterate_with_context(
         lambda: op_execution_error_boundary(
@@ -181,12 +184,12 @@ def _yield_compute_results(
         ),
         user_event_generator,
     ):
-        if context.has_events():
+        if op_execution_context.has_events():
             yield from context.consume_events()
         yield _validate_event(event, step_context)
 
-    if context.has_events():
-        yield from context.consume_events()
+    if op_execution_context.has_events():
+        yield from op_execution_context.consume_events()
 
 
 def execute_core_compute(
