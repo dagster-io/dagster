@@ -47,6 +47,10 @@ from dagster._core.definitions import (
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_sensor_definition import AssetSensorDefinition
+from dagster._core.definitions.asset_spec import (
+    SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
+    AssetExecutionType,
+)
 from dagster._core.definitions.assets_job import is_base_asset_job_name
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy
@@ -65,6 +69,7 @@ from dagster._core.definitions.metadata import (
     MetadataMapping,
     MetadataUserInput,
     MetadataValue,
+    TextMetadataValue,
     normalize_metadata,
 )
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
@@ -1254,6 +1259,18 @@ class ExternalAssetNode(
                 auto_observe_interval_minutes, "auto_observe_interval_minutes"
             ),
         )
+
+    @property
+    def is_executable(self) -> bool:
+        metadata_value = self.metadata.get(SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE)
+        if not metadata_value:
+            varietal_text = None
+        else:
+            check.inst(metadata_value, TextMetadataValue)  # for guaranteed runtime error
+            assert isinstance(metadata_value, TextMetadataValue)  # for type checker
+            varietal_text = metadata_value.value
+
+        return AssetExecutionType.is_executable(varietal_text)
 
 
 ResourceJobUsageMap = Dict[str, List[ResourceJobUsageEntry]]

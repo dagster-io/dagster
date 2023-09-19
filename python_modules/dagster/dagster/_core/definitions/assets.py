@@ -869,12 +869,12 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             bool: True if the asset key is materializable by this AssetsDefinition.
         """
         from dagster._core.definitions.asset_spec import (
-            SYSTEM_METADATA_KEY_ASSET_VARIETAL,
-            AssetVarietal,
+            SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
+            AssetExecutionType,
         )
 
-        return AssetVarietal.is_executable(
-            self._metadata_by_key.get(asset_key, {}).get(SYSTEM_METADATA_KEY_ASSET_VARIETAL)
+        return AssetExecutionType.is_executable(
+            self._metadata_by_key.get(asset_key, {}).get(SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE)
         )
 
     def get_partition_mapping_for_input(self, input_name: str) -> Optional[PartitionMapping]:
