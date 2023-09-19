@@ -18,7 +18,7 @@ from dagster._core.selector.subset_selector import (
 )
 
 from .asset_check_spec import AssetCheckHandle
-from .asset_graph import AssetGraph
+from .asset_graph import AssetGraph, InternalAssetGraph
 from .assets import AssetsDefinition
 from .events import (
     AssetKey,
@@ -256,7 +256,7 @@ class AssetSelection(ABC):
 
     @public
     @staticmethod
-    def asset_checks_for_assets(*assets_defs: AssetsDefinition) -> "KeysAssetSelection":
+    def asset_checks_for_assets(*assets_defs: AssetsDefinition) -> "AssetChecksForAssetKeys":
         """Returns a selection with the asset checks that target the provided assets."""
         return AssetChecksForAssetKeys(
             [key for assets_def in assets_defs for key in assets_def.keys]
@@ -264,7 +264,7 @@ class AssetSelection(ABC):
 
     @public
     @staticmethod
-    def asset_checks(*asset_checks: AssetChecksDefinition) -> "KeysAssetSelection":
+    def asset_checks(*asset_checks: AssetChecksDefinition) -> "AssetChecksForHandles":
         """Returns a selection that includes all of the provided asset checks."""
         return AssetChecksForHandles(
             [
@@ -309,11 +309,15 @@ class AssetSelection(ABC):
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         raise NotImplementedError()
 
-    def resolve_checks(self, asset_graph: AssetGraph) -> AbstractSet[AssetCheckHandle]:
-        """We don't need this method currently, but it makes things consistent with resolve_inner."""
+    def resolve_checks(self, asset_graph: InternalAssetGraph) -> AbstractSet[AssetCheckHandle]:
+        """We don't need this method currently, but it makes things consistent with resolve_inner. Currently
+        we don't store checks in the ExternalAssetGraph, so we only support InternalAssetGraph.
+        """
         return self.resolve_checks_inner(asset_graph)
 
-    def resolve_checks_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetCheckHandle]:
+    def resolve_checks_inner(
+        self, asset_graph: InternalAssetGraph
+    ) -> AbstractSet[AssetCheckHandle]:
         """By default, resolve to checks that target the selected assets. This is overriden for particular selections."""
         asset_keys = self.resolve(asset_graph)
         return {
@@ -380,12 +384,13 @@ class AllSelection(AssetSelection):
         return asset_graph.materializable_asset_keys
 
 
-
 class AllAssetCheckSelection(AssetSelection):
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         return set()
 
-    def resolve_checks_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetCheckHandle]:
+    def resolve_checks_inner(
+        self, asset_graph: InternalAssetGraph
+    ) -> AbstractSet[AssetCheckHandle]:
         return asset_graph.asset_check_handles
 
 
@@ -396,7 +401,9 @@ class AssetChecksForAssetKeys(AssetSelection):
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         return set()
 
-    def resolve_checks_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetCheckHandle]:
+    def resolve_checks_inner(
+        self, asset_graph: InternalAssetGraph
+    ) -> AbstractSet[AssetCheckHandle]:
         return {
             handle for handle in asset_graph.asset_check_handles if handle.asset_key in self._keys
         }
@@ -409,7 +416,9 @@ class AssetChecksForHandles(AssetSelection):
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         return set()
 
-    def resolve_checks_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetCheckHandle]:
+    def resolve_checks_inner(
+        self, asset_graph: InternalAssetGraph
+    ) -> AbstractSet[AssetCheckHandle]:
         return {
             handle
             for handle in asset_graph.asset_check_handles
@@ -425,7 +434,9 @@ class AndAssetSelection(AssetSelection):
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         return self._left.resolve_inner(asset_graph) & self._right.resolve_inner(asset_graph)
 
-    def resolve_checks_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetCheckHandle]:
+    def resolve_checks_inner(
+        self, asset_graph: InternalAssetGraph
+    ) -> AbstractSet[AssetCheckHandle]:
         return self._left.resolve_checks_inner(asset_graph) & self._right.resolve_checks_inner(
             asset_graph
         )
@@ -439,7 +450,9 @@ class SubAssetSelection(AssetSelection):
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         return self._left.resolve_inner(asset_graph) - self._right.resolve_inner(asset_graph)
 
-    def resolve_checks_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetCheckHandle]:
+    def resolve_checks_inner(
+        self, asset_graph: InternalAssetGraph
+    ) -> AbstractSet[AssetCheckHandle]:
         return self._left.resolve_checks_inner(asset_graph) - self._right.resolve_checks_inner(
             asset_graph
         )
@@ -565,7 +578,9 @@ class OrAssetSelection(AssetSelection):
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         return self._left.resolve_inner(asset_graph) | self._right.resolve_inner(asset_graph)
 
-    def resolve_checks_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetCheckHandle]:
+    def resolve_checks_inner(
+        self, asset_graph: InternalAssetGraph
+    ) -> AbstractSet[AssetCheckHandle]:
         return self._left.resolve_checks_inner(asset_graph) | self._right.resolve_checks_inner(
             asset_graph
         )
