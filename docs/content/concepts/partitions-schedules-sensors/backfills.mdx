@@ -5,11 +5,11 @@ description: Dagster supports data backfills for each partition or subsets of pa
 
 # Backfills
 
-## Overview
+Backfilling is the process of running partitions for assets that either don’t exist or updating existing records. Dagster supports backfills for each partition or a subset of partitions.
 
-Dagster supports data backfills for each partition or subsets of partitions. After defining a [partitioned asset or job](/concepts/partitions-schedules-sensors/partitions), you can launch a _backfill_ which submits runs to fill in multiple partitions at the same time.
+After defining a [partitioned asset or job](/concepts/partitions-schedules-sensors/partitions), you can launch a backfill that will submit runs to fill in multiple partitions at the same time.
 
----
+Backfills are common when setting up a pipeline for the first time. The assets you want to materialize might have historical data that needs to be materialized to get the assets up to date. Another common reason to run a backfill is when you’ve changed the logic for an asset and need to update historical data with the new logic.
 
 ## Launching Backfills
 
