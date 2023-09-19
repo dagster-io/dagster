@@ -55,7 +55,7 @@ from dagster._core.types.dagster_type import DagsterType
 from dagster._utils.forked_pdb import ForkedPdb
 from dagster._utils.merger import merge_dicts
 
-from .compute import OpExecutionContext
+from .compute import AssetExecutionContext, OpExecutionContext
 from .system import StepExecutionContext, TypeCheckContext
 
 
@@ -795,6 +795,150 @@ def build_op_context(
     )
 
 
+############################################
+### Direct invocation AssetExecutionContext
+############################################
+
+
+class UnboundAssetExecutionContext(AssetExecutionContext):
+    """The ``context`` object available as the first argument to a asset's compute function when
+    being invoked directly. Can also be used as a context manager.
+    """
+
+    def __init__(
+        self,
+        config: Any,
+        resources_dict: Mapping[str, Any],
+        resources_config: Mapping[str, Any],
+        instance: Optional[DagsterInstance],
+        partition_key: Optional[str],
+        partition_key_range: Optional[PartitionKeyRange],
+        mapping_key: Optional[str],
+        assets_def: Optional[AssetsDefinition],
+    ):
+        self._op_execution_context = build_op_context(
+            resources=resources_dict,
+            op_config=config,
+            resources_config=resources_config,
+            instance=instance,
+            partition_key_range=partition_key_range,
+            partition_key=partition_key,
+            mapping_key=mapping_key,
+            _assets_def=assets_def,
+        )
+
+        self._step_execution_context = (
+            self._op_execution_context._step_execution_context  # noqa: SLF001
+        )
+
+        self._cm_scope_entered = False
+
+    def __enter__(self):
+        self._cm_scope_entered = True
+        return self
+
+    def __exit__(self, *exc):
+        self._exit_stack.close()
+
+    def __del__(self):
+        self._exit_stack.close()
+
+    # all AssetExecutionContext methods call methods on the internal op_execution_context, so rely
+    # on the implementation of UnboundOpExecutionContext for implementation details for direct invocation
+
+    def bind(
+        self,
+        op_def: OpDefinition,
+        pending_invocation: Optional[PendingNodeInvocation[OpDefinition]],
+        assets_def: Optional[AssetsDefinition],
+        config_from_args: Optional[Mapping[str, Any]],
+        resources_from_args: Optional[Mapping[str, Any]],
+    ) -> "BoundAssetExecutionContext":
+        bound_op_execution_context = self._op_execution_context.bind(
+            op_def=op_def,
+            pending_invocation=pending_invocation,
+            assets_def=assets_def,
+            config_from_args=config_from_args,
+            resources_from_args=resources_from_args,
+        )
+
+        return BoundAssetExecutionContext(bound_op_execution_context=bound_op_execution_context)
+
+    def get_events(self) -> Sequence[UserEvent]:
+        """Retrieve the list of user-generated events that were logged via the context.
+
+        **Examples:**
+
+        .. code-block:: python
+
+            from dagster import op, build_op_context, AssetMaterialization, ExpectationResult
+
+            @op
+            def my_op(context):
+                ...
+
+            def test_my_op():
+                context = build_op_context()
+                my_op(context)
+                all_user_events = context.get_events()
+                materializations = [event for event in all_user_events if isinstance(event, AssetMaterialization)]
+                expectation_results = [event for event in all_user_events if isinstance(event, ExpectationResult)]
+                ...
+        """
+        return self._op_execution_context._user_events
+
+    def get_output_metadata(
+        self, output_name: str, mapping_key: Optional[str] = None
+    ) -> Optional[Mapping[str, Any]]:
+        """Retrieve metadata that was logged for an output and mapping_key, if it exists.
+
+        If metadata cannot be found for the particular output_name/mapping_key combination, None will be returned.
+
+        Args:
+            output_name (str): The name of the output to retrieve logged metadata for.
+            mapping_key (Optional[str]): The mapping key to retrieve metadata for (only applies when using dynamic outputs).
+
+        Returns:
+            Optional[Mapping[str, Any]]: The metadata values present for the output_name/mapping_key combination, if present.
+        """
+        metadata = self._op_execution_context._output_metadata.get(output_name)
+        if mapping_key and metadata:
+            return metadata.get(mapping_key)
+        return metadata
+
+    def get_mapping_key(self) -> Optional[str]:
+        return self._op_execution_context._mapping_key
+
+
+class BoundAssetExecutionContext(AssetExecutionContext):
+    """The op execution context that is passed to the compute function during invocation.
+
+    This context is bound to a specific op definition, for which the resources and config have
+    been validated.
+    """
+
+    def __init__(self, bound_op_execution_context: BoundOpExecutionContext):
+        self._op_execution_context = bound_op_execution_context
+
+    @property
+    def alias(self) -> str:
+        return self._op_execution_context._alias
+
+    def for_type(self, dagster_type: DagsterType) -> TypeCheckContext:
+        return self._op_execution_context.for_type(dagster_type=dagster_type)
+
+    def get_mapping_key(self) -> Optional[str]:
+        return self._op_execution_context._mapping_key
+
+    def observe_output(self, output_name: str, mapping_key: Optional[str] = None) -> None:
+        self._op_execution_context.observe_output(output_name=output_name, mapping_key=mapping_key)
+
+    def has_seen_output(self, output_name: str, mapping_key: Optional[str] = None) -> bool:
+        return self._op_execution_context.has_seen_output(
+            output_name=output_name, mapping_key=mapping_key
+        )
+
+
 def build_asset_context(
     resources: Optional[Mapping[str, Any]] = None,
     resources_config: Optional[Mapping[str, Any]] = None,
@@ -802,6 +946,10 @@ def build_asset_context(
     instance: Optional[DagsterInstance] = None,
     partition_key: Optional[str] = None,
     partition_key_range: Optional[PartitionKeyRange] = None,
+    # TODO - the below params were not originally params for this function, but are used by `build_op_context`
+    # figure out what they are for anf if we need them
+    mapping_key: Optional[str] = None,
+    _assets_def: Optional[AssetsDefinition] = None,
 ):
     """Builds asset execution context from provided parameters.
 
@@ -829,11 +977,17 @@ def build_asset_context(
             with build_asset_context(resources={"foo": context_manager_resource}) as context:
                 asset_to_invoke(context)
     """
-    return build_op_context(
-        op_config=asset_config,
-        resources=resources,
-        resources_config=resources_config,
+    return UnboundAssetExecutionContext(
+        config=asset_config,
+        resources_dict=check.opt_mapping_param(resources, "resources", key_type=str),
+        resources_config=check.opt_mapping_param(
+            resources_config, "resources_config", key_type=str
+        ),
         partition_key=partition_key,
-        partition_key_range=partition_key_range,
-        instance=instance,
+        partition_key_range=check.opt_inst_param(
+            partition_key_range, "partition_key_range", PartitionKeyRange
+        ),
+        instance=check.opt_inst_param(instance, "instance", DagsterInstance),
+        mapping_key=check.opt_str_param(mapping_key, "mapping_key"),
+        assets_def=check.opt_inst_param(_assets_def, "_assets_def", AssetsDefinition),
     )
