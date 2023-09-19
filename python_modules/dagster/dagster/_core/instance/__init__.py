@@ -2131,6 +2131,41 @@ class DagsterInstance(DynamicPartitionsStore):
         for sub in self._subscribers[run_id]:
             sub(event)
 
+    def report_dagster_event_for_runs(
+        self,
+        runs: Sequence[DagsterRun],
+        event_type: "DagsterEventType",
+        message: Optional[str] = None,
+        log_level: Union[str, int] = logging.INFO,
+    ) -> None:
+        """Takes a DagsterEvent and stores it in persistent storage for the corresponding DagsterRun."""
+        from dagster._core.events import DagsterEventType
+
+        if event_type == DagsterEventType.PIPELINE_CANCELING:
+            events_by_run_id = {
+                run.run_id: self._get_canceling_event_for_run(run, message) for run in runs
+            }
+        elif event_type == DagsterEventType.PIPELINE_CANCELED:
+            events_by_run_id = {
+                run.run_id: self._get_canceled_event_for_run(run, message) for run in runs
+            }
+        else:
+            check.failed(f"Unexpected event_type {event_type}")
+
+        event_log_entry_by_run_id = {
+            run_id: self._get_dagster_event_event_log_entry(event, run_id, log_level)
+            for run_id, event in events_by_run_id.items()
+        }
+
+        for run_id, event_log_entry in event_log_entry_by_run_id.items():
+            self._event_storage.store_event(event_log_entry)
+
+        self._run_storage.handle_run_events_batch(events_by_run_id)
+
+        for run_id, event in event_log_entry_by_run_id.items():
+            for sub in self._subscribers[run_id]:
+                sub(event)
+
     def add_event_listener(self, run_id: str, cb) -> None:
         self._subscribers[run_id].append(cb)
 
@@ -2185,16 +2220,12 @@ class DagsterInstance(DynamicPartitionsStore):
         self.report_dagster_event(dagster_event, run_id=run_id, log_level=log_level)
         return dagster_event
 
-    def report_dagster_event(
-        self,
-        dagster_event: "DagsterEvent",
-        run_id: str,
-        log_level: Union[str, int] = logging.INFO,
-    ) -> None:
-        """Takes a DagsterEvent and stores it in persistent storage for the corresponding DagsterRun."""
+    def _get_dagster_event_event_log_entry(
+        self, dagster_event: "DagsterEvent", run_id: str, log_level: Union[str, int] = logging.INFO
+    ) -> "EventLogEntry":
         from dagster._core.events.log import EventLogEntry
 
-        event_record = EventLogEntry(
+        return EventLogEntry(
             user_message="",
             level=log_level,
             job_name=dagster_event.job_name,
@@ -2204,9 +2235,21 @@ class DagsterInstance(DynamicPartitionsStore):
             step_key=dagster_event.step_key,
             dagster_event=dagster_event,
         )
-        self.handle_new_event(event_record)
 
-    def report_run_canceling(self, run: DagsterRun, message: Optional[str] = None):
+    def report_dagster_event(
+        self,
+        dagster_event: "DagsterEvent",
+        run_id: str,
+        log_level: Union[str, int] = logging.INFO,
+    ) -> None:
+        """Takes a DagsterEvent and stores it in persistent storage for the corresponding DagsterRun."""
+        self.handle_new_event(
+            self._get_dagster_event_event_log_entry(dagster_event, run_id, log_level)
+        )
+
+    def _get_canceling_event_for_run(
+        self, run: DagsterRun, message: Optional[str] = None
+    ) -> "DagsterEvent":
         from dagster._core.events import DagsterEvent, DagsterEventType
 
         check.inst_param(run, "run", DagsterRun)
@@ -2215,35 +2258,67 @@ class DagsterInstance(DynamicPartitionsStore):
             "message",
             "Sending run termination request.",
         )
-        canceling_event = DagsterEvent(
+        return DagsterEvent(
             event_type_value=DagsterEventType.PIPELINE_CANCELING.value,
             job_name=run.job_name,
             message=message,
         )
+
+    def report_run_canceling(self, run: DagsterRun, message: Optional[str] = None):
+        canceling_event = self._get_canceling_event_for_run(run, message)
         self.report_dagster_event(canceling_event, run_id=run.run_id)
+
+    def report_runs_canceling(self, runs: Sequence[DagsterRun], message: Optional[str] = None):
+        from dagster._core.events import DagsterEventType
+
+        self.report_dagster_event_for_runs(runs, DagsterEventType.PIPELINE_CANCELING, message)
+
+    def _get_canceled_event_for_run(
+        self, run: DagsterRun, message: Optional[str] = None
+    ) -> "DagsterEvent":
+        from dagster._core.events import DagsterEvent, DagsterEventType
+
+        check.inst_param(run, "run", DagsterRun)
+        message = check.opt_str_param(
+            message,
+            "mesage",
+            "This run has been marked as canceled from outside the execution context.",
+        )
+        return DagsterEvent(
+            event_type_value=DagsterEventType.PIPELINE_CANCELED.value,
+            job_name=run.job_name,
+            message=message,
+        )
 
     def report_run_canceled(
         self,
         dagster_run: DagsterRun,
         message: Optional[str] = None,
     ) -> "DagsterEvent":
-        from dagster._core.events import DagsterEvent, DagsterEventType
-
-        check.inst_param(dagster_run, "dagster_run", DagsterRun)
-
-        message = check.opt_str_param(
-            message,
-            "mesage",
-            "This run has been marked as canceled from outside the execution context.",
-        )
-
-        dagster_event = DagsterEvent(
-            event_type_value=DagsterEventType.PIPELINE_CANCELED.value,
-            job_name=dagster_run.job_name,
-            message=message,
-        )
+        dagster_event = self._get_canceled_event_for_run(dagster_run, message)
         self.report_dagster_event(dagster_event, run_id=dagster_run.run_id, log_level=logging.ERROR)
         return dagster_event
+
+    def report_runs_canceled(
+        self, runs: Sequence[DagsterRun], message: Optional[str] = None
+    ) -> None:
+        from dagster._core.events import DagsterEventType
+
+        self.report_dagster_event_for_runs(
+            runs, DagsterEventType.PIPELINE_CANCELED, message, log_level=logging.ERROR
+        )
+
+    def cancel_queued_runs(self) -> int:
+        """Cancels all queued runs. Returns the number of runs canceled."""
+        runs = self.run_storage.get_runs(RunsFilter(statuses=[DagsterRunStatus.QUEUED]))
+
+        if not runs:
+            return 0
+
+        self.report_runs_canceling(runs, message="Canceling run from the queue.")
+        self.report_runs_canceled(runs)
+
+        return len(runs)
 
     def report_run_failed(
         self, dagster_run: DagsterRun, message: Optional[str] = None

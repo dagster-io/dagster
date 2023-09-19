@@ -160,6 +160,25 @@ class SqlRunStorage(RunStorage):
 
         return dagster_run
 
+    def _get_start_end_time_kwargs(
+        self, utc_current_time: datetime, event_type: DagsterEventType
+    ) -> Dict[str, Any]:
+        run_stats_cols_in_index = self.has_run_stats_index_cols()
+
+        kwargs = {}
+
+        if run_stats_cols_in_index and event_type == DagsterEventType.PIPELINE_START:
+            kwargs["start_time"] = utc_current_time.timestamp()
+
+        if run_stats_cols_in_index and event_type in {
+            DagsterEventType.PIPELINE_CANCELED,
+            DagsterEventType.PIPELINE_FAILURE,
+            DagsterEventType.PIPELINE_SUCCESS,
+        }:
+            kwargs["end_time"] = utc_current_time.timestamp()
+
+        return kwargs
+
     def handle_run_event(self, run_id: str, event: DagsterEvent) -> None:
         check.str_param(run_id, "run_id")
         check.inst_param(event, "event", DagsterEvent)
@@ -174,23 +193,9 @@ class SqlRunStorage(RunStorage):
 
         new_job_status = EVENT_TYPE_TO_PIPELINE_RUN_STATUS[event.event_type]
 
-        run_stats_cols_in_index = self.has_run_stats_index_cols()
-
-        kwargs = {}
-
         # consider changing the `handle_run_event` signature to get timestamp off of the
         # EventLogEntry instead of the DagsterEvent, for consistency
         now = pendulum.now("UTC")
-
-        if run_stats_cols_in_index and event.event_type == DagsterEventType.PIPELINE_START:
-            kwargs["start_time"] = now.timestamp()
-
-        if run_stats_cols_in_index and event.event_type in {
-            DagsterEventType.PIPELINE_CANCELED,
-            DagsterEventType.PIPELINE_FAILURE,
-            DagsterEventType.PIPELINE_SUCCESS,
-        }:
-            kwargs["end_time"] = now.timestamp()
 
         with self.connect() as conn:
             conn.execute(
@@ -200,7 +205,48 @@ class SqlRunStorage(RunStorage):
                     run_body=serialize_value(run.with_status(new_job_status)),
                     status=new_job_status.value,
                     update_timestamp=now,
-                    **kwargs,
+                    **self._get_start_end_time_kwargs(now, event.event_type),
+                )
+            )
+
+    def handle_run_events_batch(self, event_by_run_id: Mapping[str, DagsterEvent]) -> None:
+        check.mapping_param(
+            event_by_run_id, "event_by_run_id", key_type=str, value_type=DagsterEvent
+        )
+
+        if len(event_by_run_id) == 0:
+            return
+
+        event_types = {event.event_type for event in event_by_run_id.values()}
+        if len(event_types) != 1:
+            raise DagsterInvariantViolationError(
+                "handle_runs_events can only be called with events of the same type"
+            )
+        event_type = next(iter(event_types))
+
+        if event_type not in EVENT_TYPE_TO_PIPELINE_RUN_STATUS:
+            return
+
+        new_job_status = EVENT_TYPE_TO_PIPELINE_RUN_STATUS[event_type]
+
+        runs_with_updated_status_by_run_id = {
+            run.run_id: serialize_value(run.with_status(new_job_status))
+            for run in self.get_runs(RunsFilter(run_ids=list(event_by_run_id.keys())))
+        }
+
+        # consider changing the `handle_run_event` signature to get timestamp off of the
+        # EventLogEntry instead of the DagsterEvent, for consistency
+        now = pendulum.now("UTC")
+
+        with self.connect() as conn:
+            conn.execute(
+                RunsTable.update()
+                .where(RunsTable.c.run_id.in_(event_by_run_id.keys()))
+                .values(
+                    run_body=db.case(runs_with_updated_status_by_run_id, value=RunsTable.c.run_id),
+                    status=new_job_status.value,
+                    update_timestamp=now,
+                    **self._get_start_end_time_kwargs(now, event_type),
                 )
             )
 

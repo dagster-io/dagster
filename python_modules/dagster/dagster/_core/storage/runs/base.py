@@ -63,6 +63,15 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
         """
 
     @abstractmethod
+    def handle_run_events_batch(self, event_by_run_id: Mapping[str, DagsterEvent]) -> None:
+        """Accepts a batch of DagsterEvents that share the same pipeline run-related DagsterEventType.
+        Updates run storage in accordance to the events.
+
+        Args:
+            event_by_run_id (Mapping[str, DagsterEvent])
+        """
+
+    @abstractmethod
     def get_runs(
         self,
         filters: Optional[RunsFilter] = None,
