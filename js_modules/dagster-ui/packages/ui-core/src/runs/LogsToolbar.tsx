@@ -8,6 +8,7 @@ import {
   Tooltip,
   Suggest,
   ExternalAnchorButton,
+  Button,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
@@ -43,6 +44,9 @@ interface ILogsToolbarProps {
   computeLogUrl: string | null;
 
   children?: React.ReactNode;
+
+  isSectionExpanded: boolean;
+  toggleExpanded: () => void;
 }
 
 const logQueryToString = (logQuery: LogFilterValue[]) =>
@@ -60,6 +64,8 @@ export const LogsToolbar: React.FC<ILogsToolbarProps> = (props) => {
     computeLogFileKey,
     onSetComputeLogKey,
     computeLogUrl,
+    isSectionExpanded,
+    toggleExpanded,
     children,
   } = props;
 
@@ -95,6 +101,12 @@ export const LogsToolbar: React.FC<ILogsToolbarProps> = (props) => {
         />
       )}
       {children}
+      <Tooltip content={isSectionExpanded ? 'Collapse' : 'Expand'}>
+        <Button
+          icon={<Icon name={isSectionExpanded ? 'collapse_arrows' : 'expand_arrows'} />}
+          onClick={toggleExpanded}
+        />
+      </Tooltip>
     </OptionsContainer>
   );
 };
