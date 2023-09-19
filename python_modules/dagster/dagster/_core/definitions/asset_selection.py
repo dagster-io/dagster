@@ -69,19 +69,13 @@ class AssetSelection(ABC):
 
     @public
     @staticmethod
-    def all() -> "AllAssetSelection":
+    def all() -> "AllSelection":
         """Returns a selection that includes all assets and asset checks."""
         return AllSelection()
 
     @public
     @staticmethod
-    def all_assets() -> "AllAssetSelection":
-        """Returns a selection that includes all assets."""
-        return AllAssetSelection()
-
-    @public
-    @staticmethod
-    def all_asset_checks() -> "AllAssetSelection":
+    def all_asset_checks() -> "AllAssetCheckSelection":
         """Returns a selection that includes all asset checks."""
         return AllAssetCheckSelection()
 
@@ -264,7 +258,8 @@ class AssetSelection(ABC):
         return AssetChecksForHandles(
             [
                 AssetCheckHandle(asset_key=AssetKey.from_coercible(spec.asset_key), name=spec.name)
-                for checks_def in asset_checks for spec in checks_def.specs
+                for checks_def in asset_checks
+                for spec in checks_def.specs
             ]
         )
 

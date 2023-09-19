@@ -96,7 +96,7 @@ def test_job_with_single_check():
 
 def test_job_with_all_assets_but_no_checks():
     job_def = define_asset_job(
-        "job1", selection=AssetSelection.all_assets() - AssetSelection.asset_checks(asset1_check1)
+        "job1", selection=AssetSelection.all() - AssetSelection.all_asset_checks()
     )
     result = execute_asset_job_in_process(job_def)
     assert result.success
@@ -147,22 +147,6 @@ def test_include_asset_after_excluding_checks():
     job_def = define_asset_job(
         "job1",
         selection=(AssetSelection.all() - AssetSelection.all_asset_checks())
-        | AssetSelection.assets(asset1),
-    )
-    result = execute_asset_job_in_process(job_def)
-    assert result.success
-
-    assert len(result.get_asset_materialization_events()) == 2
-    check_evals = result.get_asset_check_evaluations()
-    assert {check_eval.asset_check_handle for check_eval in check_evals} == {
-        AssetCheckHandle(asset1.key, "asset1_check1"),
-        AssetCheckHandle(asset1.key, "asset1_check2"),
-    }
-
-    # AssetSelection.all_assets() is equivalent to AssetSelection.all() - AssetSelection.all_asset_checks()
-    job_def = define_asset_job(
-        "job1",
-        selection=(AssetSelection.all_assets())
         | AssetSelection.assets(asset1),
     )
     result = execute_asset_job_in_process(job_def)
