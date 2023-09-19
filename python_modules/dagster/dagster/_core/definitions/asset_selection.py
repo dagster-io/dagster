@@ -2,7 +2,7 @@ import collections.abc
 import operator
 from abc import ABC, abstractmethod
 from functools import reduce
-from typing import AbstractSet, Iterable, Optional, Sequence, Union, cast
+from typing import AbstractSet, Iterable, Optional, Sequence, Union, cast, Tuple
 
 from typing_extensions import TypeAlias
 
@@ -24,6 +24,7 @@ from .events import (
     CoercibleToAssetKeyPrefix,
     key_prefix_from_coercible,
 )
+from .asset_check_spec import AssetCheckHandle
 from .source_asset import SourceAsset
 
 CoercibleToAssetSelection: TypeAlias = Union[
@@ -235,6 +236,26 @@ class AssetSelection(ABC):
         """
         return SourceAssetSelection(self)
 
+    @public
+    @staticmethod
+    def all_asset_checks() -> "AllAssetSelection":
+        """Returns a selection that includes all asset checks."""
+        return AllAssetCheckSelection()
+
+    @public
+    @staticmethod
+    def asset_checks_for_assets(*assets_defs: AssetsDefinition) -> "KeysAssetSelection":
+        """Returns a selection that includes all of the provided assets."""
+        return AssetChecksForAssetKeys(*(key for assets_def in assets_defs for key in assets_def.keys))
+        
+
+    @public
+    @staticmethod
+    def asset_checks(*asset_checks: Tuple[CoercibleToAssetKey, str]) -> "KeysAssetSelection":
+        """Returns a selection that includes all of the provided assets."""
+        return AssetChecksForHandles(*(AssetCheckHandle(asset_key=AssetKey.from_coercible(key), check_name=check_name) for key, check_name in asset_checks))
+        
+
     def __or__(self, other: "AssetSelection") -> "OrAssetSelection":
         check.inst_param(other, "other", AssetSelection)
         return OrAssetSelection(self, other)
@@ -266,9 +287,21 @@ class AssetSelection(ABC):
         )
         return resolved
 
+    def resolve_checks(
+        self, asset_graph: AssetGraph
+    ) -> AbstractSet[AssetCheckHandle]:
+        return self.resolve_checks_inner(asset_graph)
+
+
+
     @abstractmethod
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         raise NotImplementedError()
+
+    
+    @abstractmethod
+    def resolve_checks_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
+        raise NotImplementedError
 
     @staticmethod
     def _selection_from_string(string: str) -> "AssetSelection":
@@ -328,8 +361,38 @@ class AssetSelection(ABC):
 class AllAssetSelection(AssetSelection):
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         return asset_graph.materializable_asset_keys
+        
+    def resolve_checks_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetCheckHandle]:
+        return set()
+
+class AllAssetCheckSelection(AssetSelection):
+    def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
+        return set()
+
+    def resolve_checks_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetCheckHandle]:
+        return asset_graph.asset_check_handles
 
 
+class AssetChecksForAssetKeys(AssetSelection):
+    def __init__(self, keys: AssetKey):
+        self._keys = keys
+
+    def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
+        return set()
+
+    def resolve_checks_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetCheckHandle]:
+        return {handle for handle in asset_graph.asset_check_handles if handle.asset_key in self._keys}
+
+class AssetChecksForHandles(AssetSelection):
+    def __init__(self, asset_check_handles: Sequence[AssetCheckHandle]):
+        self._asset_check_handles = asset_check_handles
+
+    def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
+        return set()
+
+    def resolve_checks_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetCheckHandle]:
+        return {handle for handle in asset_graph.asset_check_handles if handle in self._asset_check_handles}
+        
 class AndAssetSelection(AssetSelection):
     def __init__(self, left: AssetSelection, right: AssetSelection):
         self._left = left

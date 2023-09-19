@@ -785,6 +785,7 @@ def build_asset_selection_job(
     tags: Optional[Mapping[str, Any]] = None,
     metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     asset_selection: Optional[AbstractSet[AssetKey]] = None,
+    asset_check_selection: Optional[AbstractSet[AssetCheckHandle]] = None,
     asset_selection_data: Optional[AssetSelectionData] = None,
     hooks: Optional[AbstractSet[HookDefinition]] = None,
 ) -> "JobDefinition":
@@ -793,9 +794,7 @@ def build_asset_selection_job(
         build_source_asset_observation_job,
     )
 
-    asset_check_selection = (
-        asset_selection_data.asset_check_selection if asset_selection_data else None
-    )
+
 
     if asset_selection is None and asset_check_selection is None:
         # no selections, include everything
