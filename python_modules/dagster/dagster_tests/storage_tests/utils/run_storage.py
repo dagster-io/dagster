@@ -1283,6 +1283,40 @@ class TestRunStorage:
 
         assert _get_run_by_id(storage, run_id).status == DagsterRunStatus.SUCCESS
 
+    def test_handle_run_events_batch(self, storage):
+        def _get_canceled_event(job_name):
+            return DagsterEvent(
+                message="a message",
+                event_type_value=DagsterEventType.PIPELINE_CANCELED.value,
+                job_name=job_name,
+                step_key=None,
+                node_handle=None,
+                step_kind_value=None,
+                logging_tags=None,
+            )
+
+        run_id1 = make_new_run_id()
+        run_id2 = make_new_run_id()
+        run_id3 = make_new_run_id()
+        storage.add_run(TestRunStorage.build_run(job_name="job1", run_id=run_id1))
+        storage.add_run(TestRunStorage.build_run(job_name="job2", run_id=run_id2))
+        storage.add_run(TestRunStorage.build_run(job_name="job3", run_id=run_id3))
+
+        canceled_events_by_run_id = {
+            run_id1: _get_canceled_event("job1"),
+            run_id2: _get_canceled_event("job2"),
+        }
+
+        storage.handle_run_events_batch(canceled_events_by_run_id)
+
+        runs_by_id = {run.run_id: run for run in storage.get_runs()}
+        assert runs_by_id[run_id1].job_name == "job1"
+        assert runs_by_id[run_id1].status == DagsterRunStatus.CANCELED
+        assert runs_by_id[run_id2].job_name == "job2"
+        assert runs_by_id[run_id2].status == DagsterRunStatus.CANCELED
+        assert runs_by_id[run_id3].job_name == "job3"
+        assert runs_by_id[run_id3].status == DagsterRunStatus.NOT_STARTED
+
     def test_debug_snapshot_import(self, storage):
         from dagster._core.execution.api import create_execution_plan
         from dagster._core.snap import (

@@ -195,6 +195,9 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
     def handle_run_event(self, run_id: str, event: "DagsterEvent") -> None:
         return self._storage.run_storage.handle_run_event(run_id, event)
 
+    def handle_run_events_batch(self, event_by_run_id: Mapping[str, "DagsterEvent"]) -> None:
+        return self._storage.run_storage.handle_run_events_batch(event_by_run_id)
+
     def get_runs(
         self,
         filters: Optional["RunsFilter"] = None,
