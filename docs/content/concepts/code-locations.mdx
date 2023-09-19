@@ -59,7 +59,7 @@ defs = Definitions(
     assets=[dbt_customers_asset, dbt_orders_asset],
     schedules=[bi_weekly_schedule],
     sensors=[new_data_sensor],
-    resources=dbt_resource
+    resources=[dbt_resource],
 )
 ```
 
