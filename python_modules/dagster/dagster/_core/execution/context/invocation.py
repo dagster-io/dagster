@@ -827,10 +827,6 @@ class UnboundAssetExecutionContext(AssetExecutionContext):
             _assets_def=assets_def,
         )
 
-        self._step_execution_context = (
-            self._op_execution_context._step_execution_context  # noqa: SLF001
-        )
-
         self._cm_scope_entered = False
 
     def __enter__(self):

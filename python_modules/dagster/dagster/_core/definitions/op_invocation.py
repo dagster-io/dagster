@@ -18,6 +18,7 @@ from dagster._core.errors import (
     DagsterInvariantViolationError,
     DagsterTypeCheckDidNotPass,
 )
+from dagster._core.execution.context.invocation import UnboundAssetExecutionContext
 
 from .events import (
     AssetMaterialization,
@@ -147,7 +148,9 @@ def direct_invocation_result(
                 " no context was provided when invoking."
             )
         if len(args) > 0:
-            if args[0] is not None and not isinstance(args[0], UnboundOpExecutionContext):
+            if args[0] is not None and not isinstance(
+                args[0], (UnboundOpExecutionContext, UnboundAssetExecutionContext)
+            ):
                 raise DagsterInvalidInvocationError(
                     f"Decorated function '{compute_fn.name}' has context argument, "
                     "but no context was provided when invoking."
