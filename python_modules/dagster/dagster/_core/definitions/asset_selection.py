@@ -38,12 +38,13 @@ CoercibleToAssetSelection: TypeAlias = Union[
 
 
 class AssetSelection(ABC):
-    """An AssetSelection defines a query over a set of assets, normally all the assets in a code location.
+    """An AssetSelection defines a query over a set of assets and asset checks, normally all that are defined in a code location.
 
-    You can use the "|", "&", and "-" operators to create unions, intersections, and differences of
-    asset selections, respectively.
+    You can use the "|", "&", and "-" operators to create unions, intersections, and differences of selections, respectively.
 
     AssetSelections are typically used with :py:func:`define_asset_job`.
+
+    By default, selecting assets will also select all of the asset checks that target those assets.
 
     Examples:
         .. code-block:: python
@@ -57,7 +58,7 @@ class AssetSelection(ABC):
             # Select all assets in group "marketing" that are downstream of asset "leads":
             AssetSelection.groups("marketing") & AssetSelection.keys("leads").downstream()
 
-            # Select all assets in a list of assets:
+            # Select a list of assets:
             AssetSelection.assets(*my_assets_list)
 
             # Select all assets except for those in group "marketing"
@@ -65,6 +66,16 @@ class AssetSelection(ABC):
 
             # Select all assets which are materialized by the same op as "projections":
             AssetSelection.keys("projections").required_multi_asset_neighbors()
+
+            # Select all assets in group "marketing" and exclude their asset checks:
+            AssetSelection.groups("marketing") - AssetSelection.all_asset_checks()
+
+            # Select all asset checks that target a list of assets:
+            AssetSelection.asset_checks_for_assets(*my_assets_list)
+
+            # Select a specific asset check:
+            AssetSelection.asset_checks(my_asset_check)
+
     """
 
     @public
@@ -82,13 +93,13 @@ class AssetSelection(ABC):
     @public
     @staticmethod
     def assets(*assets_defs: AssetsDefinition) -> "KeysAssetSelection":
-        """Returns a selection that includes all of the provided assets."""
+        """Returns a selection that includes all of the provided assets and asset checks that target them."""
         return KeysAssetSelection(*(key for assets_def in assets_defs for key in assets_def.keys))
 
     @public
     @staticmethod
     def keys(*asset_keys: CoercibleToAssetKey) -> "KeysAssetSelection":
-        """Returns a selection that includes assets with any of the provided keys.
+        """Returns a selection that includes assets with any of the provided keys and all asset checks that target them.
 
         Examples:
             .. code-block:: python
@@ -115,7 +126,7 @@ class AssetSelection(ABC):
     def key_prefixes(
         *key_prefixes: CoercibleToAssetKeyPrefix, include_sources: bool = False
     ) -> "KeyPrefixesAssetSelection":
-        """Returns a selection that includes assets that match any of the provided key prefixes.
+        """Returns a selection that includes assets that match any of the provided key prefixes and all the asset checks that target them.
 
         Args:
             include_sources (bool): If True, then include source assets matching the key prefix(es)
@@ -138,7 +149,7 @@ class AssetSelection(ABC):
     @staticmethod
     def groups(*group_strs, include_sources: bool = False) -> "GroupsAssetSelection":
         """Returns a selection that includes materializable assets that belong to any of the
-        provided groups.
+        provided groups and all the asset checks that target them.
 
         Args:
             include_sources (bool): If True, then include source assets matching the group in the
@@ -152,7 +163,7 @@ class AssetSelection(ABC):
         self, depth: Optional[int] = None, include_self: bool = True
     ) -> "DownstreamAssetSelection":
         """Returns a selection that includes all assets that are downstream of any of the assets in
-        this selection, selecting the assets in this selection by default. Iterates through each
+        this selection, selecting the assets in this selection by default. Includes the asset checks targeting the returned assets. Iterates through each
         asset in this selection and returns the union of all downstream assets.
 
         depth (Optional[int]): If provided, then only include assets to the given depth. A depth
@@ -171,7 +182,7 @@ class AssetSelection(ABC):
         self, depth: Optional[int] = None, include_self: bool = True
     ) -> "UpstreamAssetSelection":
         """Returns a selection that includes all materializable assets that are upstream of any of
-        the assets in this selection, selecting the assets in this selection by default. Iterates
+        the assets in this selection, selecting the assets in this selection by default. Includes the asset checks targeting the returned assets. Iterates
         through each asset in this selection and returns the union of all upstream assets.
 
         Because mixed selections of source and materializable assets are currently not supported,
@@ -192,7 +203,7 @@ class AssetSelection(ABC):
     @public
     def sinks(self) -> "SinkAssetSelection":
         """Given an asset selection, returns a new asset selection that contains all of the sink
-        assets within the original asset selection.
+        assets within the original asset selection. Includes the asset checks targeting the returned assets.
 
         A sink asset is an asset that has no downstream dependencies within the asset selection.
         The sink asset can have downstream dependencies outside of the asset selection.
@@ -203,14 +214,14 @@ class AssetSelection(ABC):
     def required_multi_asset_neighbors(self) -> "RequiredNeighborsAssetSelection":
         """Given an asset selection in which some assets are output from a multi-asset compute op
         which cannot be subset, returns a new asset selection that contains all of the assets
-        required to execute the original asset selection.
+        required to execute the original asset selection. Includes the asset checks targeting the returned assets.
         """
         return RequiredNeighborsAssetSelection(self)
 
     @public
     def roots(self) -> "RootAssetSelection":
         """Given an asset selection, returns a new asset selection that contains all of the root
-        assets within the original asset selection.
+        assets within the original asset selection. Includes the asset checks targeting the returned assets.
 
         A root asset is an asset that has no upstream dependencies within the asset selection.
         The root asset can have downstream dependencies outside of the asset selection.
@@ -225,7 +236,7 @@ class AssetSelection(ABC):
     @deprecated(breaking_version="2.0", additional_warn_text="Use AssetSelection.roots instead.")
     def sources(self) -> "RootAssetSelection":
         """Given an asset selection, returns a new asset selection that contains all of the root
-        assets within the original asset selection.
+        assets within the original asset selection. Includes the asset checks targeting the returned assets.
 
         A root asset is a materializable asset that has no upstream dependencies within the asset
         selection. The root asset can have downstream dependencies outside of the asset selection.
@@ -239,14 +250,14 @@ class AssetSelection(ABC):
     @public
     def upstream_source_assets(self) -> "SourceAssetSelection":
         """Given an asset selection, returns a new asset selection that contains all of the source
-        assets upstream of assets in the original selection.
+        assets upstream of assets in the original selection. Includes the asset checks targeting the returned assets.
         """
         return SourceAssetSelection(self)
 
     @public
     @staticmethod
     def asset_checks_for_assets(*assets_defs: AssetsDefinition) -> "KeysAssetSelection":
-        """Returns a selection that includes all of the provided assets."""
+        """Returns a selection with the asset checks that target the provided assets."""
         return AssetChecksForAssetKeys(
             [key for assets_def in assets_defs for key in assets_def.keys]
         )
@@ -254,7 +265,7 @@ class AssetSelection(ABC):
     @public
     @staticmethod
     def asset_checks(*asset_checks: AssetChecksDefinition) -> "KeysAssetSelection":
-        """Returns a selection that includes all of the provided assets."""
+        """Returns a selection that includes all of the provided asset checks."""
         return AssetChecksForHandles(
             [
                 AssetCheckHandle(asset_key=AssetKey.from_coercible(spec.asset_key), name=spec.name)
@@ -368,13 +379,6 @@ class AllSelection(AssetSelection):
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         return asset_graph.materializable_asset_keys
 
-
-class AllAssetSelection(AssetSelection):
-    def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
-        return asset_graph.materializable_asset_keys
-
-    def resolve_checks_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetCheckHandle]:
-        return set()
 
 
 class AllAssetCheckSelection(AssetSelection):
