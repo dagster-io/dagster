@@ -9,6 +9,7 @@ export type RepoAssetTableFragment = {
   opNames: Array<string>;
   isSource: boolean;
   isObservable: boolean;
+  isExecutable: boolean;
   computeKind: string | null;
   hasMaterializePermission: boolean;
   description: string | null;
