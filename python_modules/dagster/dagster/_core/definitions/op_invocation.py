@@ -18,7 +18,6 @@ from dagster._core.errors import (
     DagsterInvariantViolationError,
     DagsterTypeCheckDidNotPass,
 )
-from dagster._core.execution.context.invocation import UnboundAssetExecutionContext
 
 from .events import (
     AssetMaterialization,
@@ -30,7 +29,7 @@ from .events import (
 from .output import DynamicOutputDefinition
 
 if TYPE_CHECKING:
-    from ..execution.context.invocation import BoundOpExecutionContext
+    from ..execution.context.invocation import BoundAssetExecutionContext, BoundOpExecutionContext
     from .assets import AssetsDefinition
     from .composition import PendingNodeInvocation
     from .decorators.op_decorator import DecoratedOpFunction
@@ -108,6 +107,7 @@ def direct_invocation_result(
 ) -> Any:
     from dagster._config.pythonic_config import Config
     from dagster._core.execution.context.invocation import (
+        UnboundAssetExecutionContext,
         UnboundOpExecutionContext,
         build_op_context,
     )
@@ -155,7 +155,10 @@ def direct_invocation_result(
                     f"Decorated function '{compute_fn.name}' has context argument, "
                     "but no context was provided when invoking."
                 )
-            context = cast(UnboundOpExecutionContext, args[0])
+            if isinstance(args[0], UnboundAssetExecutionContext):
+                context = cast(UnboundAssetExecutionContext, args[0])
+            else:
+                context = cast(UnboundOpExecutionContext, args[0])
             # update args to omit context
             args = args[1:]
         else:  # context argument is provided under kwargs
@@ -166,14 +169,22 @@ def direct_invocation_result(
                     f"'{context_param_name}', but no value for '{context_param_name}' was "
                     f"found when invoking. Provided kwargs: {kwargs}"
                 )
-            context = cast(UnboundOpExecutionContext, kwargs[context_param_name])
+            if isinstance(kwargs[context_param_name], UnboundAssetExecutionContext):
+                context = cast(UnboundAssetExecutionContext, kwargs[context_param_name])
+            else:
+                context = cast(UnboundOpExecutionContext, kwargs[context_param_name])
             # update kwargs to remove context
             kwargs = {
                 kwarg: val for kwarg, val in kwargs.items() if not kwarg == context_param_name
             }
     # allow passing context, even if the function doesn't have an arg for it
-    elif len(args) > 0 and isinstance(args[0], UnboundOpExecutionContext):
-        context = cast(UnboundOpExecutionContext, args[0])
+    elif len(args) > 0 and isinstance(
+        args[0], (UnboundOpExecutionContext, UnboundAssetExecutionContext)
+    ):
+        if isinstance(args[0], UnboundAssetExecutionContext):
+            context = cast(UnboundAssetExecutionContext, args[0])
+        else:
+            context = cast(UnboundOpExecutionContext, args[0])
         args = args[1:]
 
     resource_arg_mapping = {arg.name: arg.name for arg in compute_fn.get_resource_args()}
@@ -224,7 +235,10 @@ def direct_invocation_result(
 
 
 def _resolve_inputs(
-    op_def: "OpDefinition", args, kwargs, context: "BoundOpExecutionContext"
+    op_def: "OpDefinition",
+    args,
+    kwargs,
+    context: Union["BoundOpExecutionContext", "BoundAssetExecutionContext"],
 ) -> Mapping[str, Any]:
     from dagster._core.execution.plan.execute_step import do_type_check
 
@@ -307,7 +321,7 @@ def _resolve_inputs(
             input_dict[k] = v
 
     # Type check inputs
-    op_label = context.describe_op()
+    step_label = context.describe_step()
 
     for input_name, val in input_dict.items():
         input_def = input_defs_by_name[input_name]
@@ -316,7 +330,7 @@ def _resolve_inputs(
         if not type_check.success:
             raise DagsterTypeCheckDidNotPass(
                 description=(
-                    f'Type check failed for {op_label} input "{input_def.name}" - '
+                    f'Type check failed for {step_label} input "{input_def.name}" - '
                     f'expected type "{dagster_type.display_name}". '
                     f"Description: {type_check.description}"
                 ),
@@ -328,7 +342,9 @@ def _resolve_inputs(
 
 
 def _type_check_output_wrapper(
-    op_def: "OpDefinition", result: Any, context: "BoundOpExecutionContext"
+    op_def: "OpDefinition",
+    result: Any,
+    context: Union["BoundOpExecutionContext", "BoundAssetExecutionContext"],
 ) -> Any:
     """Type checks and returns the result of a op.
 
@@ -436,7 +452,9 @@ def _type_check_output_wrapper(
 
 
 def _type_check_function_output(
-    op_def: "OpDefinition", result: T, context: "BoundOpExecutionContext"
+    op_def: "OpDefinition",
+    result: T,
+    context: Union["BoundOpExecutionContext", "BoundAssetExecutionContext"],
 ) -> T:
     from ..execution.plan.compute_generator import validate_and_coerce_op_result_to_iterator
 
@@ -447,7 +465,9 @@ def _type_check_function_output(
 
 
 def _type_check_output(
-    output_def: "OutputDefinition", output: T, context: "BoundOpExecutionContext"
+    output_def: "OutputDefinition",
+    output: T,
+    context: Union["BoundOpExecutionContext", "BoundAssetExecutionContext"],
 ) -> T:
     """Validates and performs core type check on a provided output.
 
@@ -459,7 +479,7 @@ def _type_check_output(
     """
     from ..execution.plan.execute_step import do_type_check
 
-    op_label = context.describe_op()
+    op_label = context.describe_step()
 
     if isinstance(output, (Output, DynamicOutput)):
         dagster_type = output_def.dagster_type

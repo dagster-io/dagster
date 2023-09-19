@@ -567,6 +567,9 @@ class BoundOpExecutionContext(OpExecutionContext):
         return self._mapping_key
 
     def describe_op(self) -> str:
+        return self.describe_step()
+
+    def describe_step(self) -> str:
         if isinstance(self.op_def, OpDefinition):
             return f'op "{self.op_def.name}"'
 
@@ -813,7 +816,6 @@ class UnboundAssetExecutionContext(AssetExecutionContext):
         instance: Optional[DagsterInstance],
         partition_key: Optional[str],
         partition_key_range: Optional[PartitionKeyRange],
-        mapping_key: Optional[str],
         assets_def: Optional[AssetsDefinition],
     ):
         self._op_execution_context = build_op_context(
@@ -823,7 +825,7 @@ class UnboundAssetExecutionContext(AssetExecutionContext):
             instance=instance,
             partition_key_range=partition_key_range,
             partition_key=partition_key,
-            mapping_key=mapping_key,
+            mapping_key=None,
             _assets_def=assets_def,
         )
 
@@ -881,7 +883,7 @@ class UnboundAssetExecutionContext(AssetExecutionContext):
                 expectation_results = [event for event in all_user_events if isinstance(event, ExpectationResult)]
                 ...
         """
-        return self._op_execution_context._user_events
+        return self._op_execution_context._user_events  # noqa: SLF001
 
     def get_output_metadata(
         self, output_name: str, mapping_key: Optional[str] = None
@@ -897,13 +899,13 @@ class UnboundAssetExecutionContext(AssetExecutionContext):
         Returns:
             Optional[Mapping[str, Any]]: The metadata values present for the output_name/mapping_key combination, if present.
         """
-        metadata = self._op_execution_context._output_metadata.get(output_name)
+        metadata = self._op_execution_context._output_metadata.get(output_name)  # noqa: SLF001
         if mapping_key and metadata:
             return metadata.get(mapping_key)
         return metadata
 
     def get_mapping_key(self) -> Optional[str]:
-        return self._op_execution_context._mapping_key
+        return self._op_execution_context._mapping_key  # noqa: SLF001
 
 
 class BoundAssetExecutionContext(AssetExecutionContext):
@@ -918,13 +920,16 @@ class BoundAssetExecutionContext(AssetExecutionContext):
 
     @property
     def alias(self) -> str:
-        return self._op_execution_context._alias
+        return self._op_execution_context._alias  # noqa: SLF001
+
+    def describe_step(self) -> str:
+        return f" asset '{self._op_execution_context.op_def.name}'"
 
     def for_type(self, dagster_type: DagsterType) -> TypeCheckContext:
         return self._op_execution_context.for_type(dagster_type=dagster_type)
 
     def get_mapping_key(self) -> Optional[str]:
-        return self._op_execution_context._mapping_key
+        return self._op_execution_context._mapping_key  # noqa: SLF001
 
     def observe_output(self, output_name: str, mapping_key: Optional[str] = None) -> None:
         self._op_execution_context.observe_output(output_name=output_name, mapping_key=mapping_key)
@@ -944,7 +949,6 @@ def build_asset_context(
     partition_key_range: Optional[PartitionKeyRange] = None,
     # TODO - the below params were not originally params for this function, but are used by `build_op_context`
     # figure out what they are for anf if we need them
-    mapping_key: Optional[str] = None,
     _assets_def: Optional[AssetsDefinition] = None,
 ):
     """Builds asset execution context from provided parameters.
@@ -984,6 +988,5 @@ def build_asset_context(
             partition_key_range, "partition_key_range", PartitionKeyRange
         ),
         instance=check.opt_inst_param(instance, "instance", DagsterInstance),
-        mapping_key=check.opt_str_param(mapping_key, "mapping_key"),
         assets_def=check.opt_inst_param(_assets_def, "_assets_def", AssetsDefinition),
     )
