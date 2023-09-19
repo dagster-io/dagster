@@ -1345,9 +1345,6 @@ class AssetExecutionContext(OpExecutionContext):
         self._op_execution_context = check.inst_param(
             op_execution_context, "op_execution_context", OpExecutionContext
         )
-        self._step_execution_context = (
-            self._op_execution_context._step_execution_context  # noqa: SLF001
-        )
 
     @public
     @property
@@ -1426,13 +1423,13 @@ class AssetExecutionContext(OpExecutionContext):
     @property
     def instance(self) -> DagsterInstance:
         """DagsterInstance: The current Dagster instance."""
-        return self._step_execution_context.instance
+        return self._op_execution_context.instance
 
     @public
     @property
     def dagster_run(self) -> DagsterRun:
         """PipelineRun: The current pipeline run."""
-        return self._step_execution_context.dagster_run
+        return self._op_execution_context.dagster_run
 
     @public
     @property
@@ -1489,13 +1486,13 @@ class AssetExecutionContext(OpExecutionContext):
     @property
     def resources(self) -> Any:
         """Resources: The currently available resources."""
-        return self._step_execution_context.resources
+        return self._op_execution_context.resources
 
     @public
     @property
     def run_config(self) -> Mapping[str, object]:
         """dict: The run config for the current execution."""
-        return self._step_execution_context.run_config
+        return self._op_execution_context.run_config
 
     # deprecated methods. All remaining methods on OpExecutionContext should be here with the
     # appropriate deprecation warning
