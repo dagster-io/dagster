@@ -7,8 +7,12 @@ from dagster._core.definitions.asset_spec import (
     AssetSpec,
 )
 from dagster._core.definitions.decorators.asset_decorator import asset, multi_asset
-from dagster._core.definitions.source_asset import SourceAsset
+from dagster._core.definitions.source_asset import (
+    SourceAsset,
+    wrap_source_asset_observe_fn_in_op_compute_fn,
+)
 from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.execution.context.compute import OpExecutionContext
 
 
 def create_unexecutable_observable_assets_def(specs: Sequence[AssetSpec]):
@@ -53,25 +57,24 @@ def create_unexecutable_observable_assets_def(specs: Sequence[AssetSpec]):
     return an_asset
 
 
-def create_unexecutable_observable_assets_def_from_source_asset(source_asset: SourceAsset):
-    check.invariant(
-        source_asset.observe_fn is None,
-        "Observable source assets not supported yet: observe_fn should be None",
-    )
-    check.invariant(
-        source_asset.partitions_def is None,
-        "Observable source assets not supported yet: partitions_def should be None",
-    )
+def create_assets_def_from_source_asset(source_asset: SourceAsset):
     check.invariant(
         source_asset.auto_observe_interval_minutes is None,
-        "Observable source assets not supported yet: auto_observe_interval_minutes should be None",
+        "Schedulable observable source assets not supported yet: auto_observe_interval_minutes"
+        " should be None",
+    )
+
+    injected_metadata = (
+        {SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.UNEXECUTABLE.value}
+        if source_asset.observe_fn is None
+        else {}
     )
 
     kwargs = {
         "key": source_asset.key,
         "metadata": {
             **source_asset.metadata,
-            **{SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.UNEXECUTABLE.value},
+            **injected_metadata,
         },
         "group_name": source_asset.group_name,
         "description": source_asset.description,
@@ -82,8 +85,17 @@ def create_unexecutable_observable_assets_def_from_source_asset(source_asset: So
     elif source_asset.io_manager_key:
         kwargs["io_manager_key"] = source_asset.io_manager_key
 
+    kwargs["partitions_def"] = source_asset.partitions_def
+
+    if source_asset.observe_fn:
+        kwargs["resource_defs"] = source_asset.resource_defs
+
     @asset(**kwargs)
-    def shim_asset() -> None:
-        raise NotImplementedError(f"Asset {source_asset.key} is not executable")
+    def shim_asset(context: OpExecutionContext) -> None:
+        if not source_asset.observe_fn:
+            raise NotImplementedError(f"Asset {source_asset.key} is not executable")
+
+        op_function = wrap_source_asset_observe_fn_in_op_compute_fn(source_asset)
+        return op_function.decorated_fn(context)
 
     return shim_asset

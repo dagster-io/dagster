@@ -4,17 +4,19 @@ from dagster import (
     AssetsDefinition,
     AutoMaterializePolicy,
     DagsterInstance,
+    DataVersion,
     Definitions,
     IOManager,
     SourceAsset,
     _check as check,
     asset,
+    observable_source_asset,
 )
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.observable_asset import (
+    create_assets_def_from_source_asset,
     create_unexecutable_observable_assets_def,
-    create_unexecutable_observable_assets_def_from_source_asset,
 )
 
 
@@ -107,7 +109,7 @@ def test_how_source_assets_are_backwards_compatible() -> None:
     assert result_one.output_for_node("an_asset") == "hardcoded-computed"
 
     defs_with_shim = Definitions(
-        assets=[create_unexecutable_observable_assets_def_from_source_asset(source_asset), an_asset]
+        assets=[create_assets_def_from_source_asset(source_asset), an_asset]
     )
 
     assert isinstance(defs_with_shim.get_assets_def("source_asset"), AssetsDefinition)
@@ -120,3 +122,25 @@ def test_how_source_assets_are_backwards_compatible() -> None:
 
     assert result_two.success
     assert result_two.output_for_node("an_asset") == "hardcoded-computed"
+
+
+def test_observable_source_asset_decorator() -> None:
+    @observable_source_asset
+    def an_observable_source_asset() -> DataVersion:
+        return DataVersion("foo")
+
+    defs = Definitions(assets=[create_assets_def_from_source_asset(an_observable_source_asset)])
+
+    result = defs.get_implicit_global_asset_job_def().execute_in_process()
+
+    assert result.success
+
+    all_observations = result.get_asset_observation_events()
+    assert len(all_observations) == 1
+    observation_event = all_observations[0]
+    assert observation_event.asset_observation_data.asset_observation.data_version == "foo"
+
+    all_materializations = result.get_asset_materialization_events()
+    # Note this does not make sense. We need to make framework changes to allow for the omission of
+    # a materialzation event
+    assert len(all_materializations) == 1
