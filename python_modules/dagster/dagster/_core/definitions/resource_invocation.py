@@ -67,7 +67,7 @@ def _check_invocation_requirements(
 
     if context_provided and init_context is not None and resource_def.required_resource_keys:
         ensure_requirements_satisfied(
-            init_context._resource_defs,  # noqa: SLF001
+            init_context._resources_container.resource_defs,  # noqa: SLF001
             list(resource_def.get_resource_requirements()),
         )
 
