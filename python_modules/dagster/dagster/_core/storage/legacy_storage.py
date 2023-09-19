@@ -475,6 +475,11 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     def wipe_asset(self, asset_key: "AssetKey") -> None:
         return self._storage.event_log_storage.wipe_asset(asset_key)
 
+    def get_materialized_partitions(
+        self, asset_key: AssetKey, after_cursor: Optional[int] = None
+    ) -> Set[str]:
+        return self._storage.event_log_storage.get_materialized_partitions(asset_key, after_cursor)
+
     def get_materialization_count_by_partition(
         self, asset_keys: Sequence["AssetKey"], after_cursor: Optional[int] = None
     ) -> Mapping["AssetKey", Mapping[str, int]]:
