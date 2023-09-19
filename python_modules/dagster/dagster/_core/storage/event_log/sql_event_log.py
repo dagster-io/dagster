@@ -1642,6 +1642,38 @@ class SqlEventLogStorage(EventLogStorage):
                 )
             )
 
+    def get_materialized_partitions(
+        self, asset_key: AssetKey, after_cursor: Optional[int] = None
+    ) -> Set[str]:
+        query = (
+            db_select(
+                [
+                    SqlEventLogStorageTable.c.partition,
+                    db.func.max(SqlEventLogStorageTable.c.id),
+                ]
+            )
+            .where(
+                db.and_(
+                    SqlEventLogStorageTable.c.asset_key == asset_key.to_string(),
+                    SqlEventLogStorageTable.c.partition != None,  # noqa: E711
+                    SqlEventLogStorageTable.c.dagster_event_type
+                    == DagsterEventType.ASSET_MATERIALIZATION.value,
+                )
+            )
+            .group_by(SqlEventLogStorageTable.c.partition)
+        )
+
+        assets_details = self._get_assets_details([asset_key])
+        query = self._add_assets_wipe_filter_to_query(query, assets_details, [asset_key])
+
+        if after_cursor:
+            query = query.where(SqlEventLogStorageTable.c.id > after_cursor)
+
+        with self.index_connection() as conn:
+            results = conn.execute(query).fetchall()
+
+        return set([cast(str, row[0]) for row in results])
+
     def get_materialization_count_by_partition(
         self, asset_keys: Sequence[AssetKey], after_cursor: Optional[int] = None
     ) -> Mapping[AssetKey, Mapping[str, int]]:

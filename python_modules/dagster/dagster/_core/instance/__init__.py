@@ -2007,6 +2007,12 @@ class DagsterInstance(DynamicPartitionsStore):
         return self._event_storage.get_materialization_count_by_partition(asset_keys, after_cursor)
 
     @traced
+    def get_materialized_partitions(
+        self, asset_key: AssetKey, after_cursor: Optional[int] = None
+    ) -> Set[str]:
+        return self._event_storage.get_materialized_partitions(asset_key, after_cursor)
+
+    @traced
     def get_latest_storage_id_by_partition(
         self, asset_key: AssetKey, event_type: "DagsterEventType"
     ) -> Mapping[str, int]:
