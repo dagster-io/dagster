@@ -134,7 +134,7 @@ class UnboundOpExecutionContext(OpExecutionContext):
 
     @property
     def resources(self) -> Resources:
-        return self._resources_container.get_resources("build_op_context")
+        return self._resources_container.make_resources("build_op_context")
 
     @property
     def dagster_run(self) -> DagsterRun:

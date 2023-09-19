@@ -232,7 +232,7 @@ class InputContext:
                 "but it was not provided when constructing the InputContext"
             )
 
-        return self._resources_container.get_resources("build_input_context")
+        return self._resources_container.make_resources("build_input_context")
 
     @public
     @property

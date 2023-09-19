@@ -172,7 +172,7 @@ class UnboundInitResourceContext(InitResourceContext):
     @property
     def resources(self) -> Resources:
         """The resources that are available to the resource that we are initalizing."""
-        return self._resources_container.get_resources("build_init_resource_context")
+        return self._resources_container.make_resources("build_init_resource_context")
 
     @property
     def instance(self) -> Optional[DagsterInstance]:
