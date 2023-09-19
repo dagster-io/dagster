@@ -230,6 +230,7 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
     onSaveSession({
       solidSelection,
       solidSelectionQuery,
+      tags: tagsApplyingSolidSelection(tagsFromSession, solidSelectionQuery),
     });
   };
 
@@ -329,16 +330,6 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
         executionMetadata: {
           tags: uniqBy(
             [
-              // pass solid selection query via tags
-              // clean up https://github.com/dagster-io/dagster/issues/2495
-              ...(currentSession.solidSelectionQuery
-                ? [
-                    {
-                      key: DagsterTag.SolidSelection,
-                      value: currentSession.solidSelectionQuery,
-                    },
-                  ]
-                : []),
               ...(currentSession?.base && (currentSession?.base as any)['presetName']
                 ? [
                     {
@@ -410,6 +401,26 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
     [client, currentSession.mode, pipelineSelector, state.previewLoading],
   );
 
+  const tagsApplyingSolidSelection = (
+    tags: PipelineRunTag[],
+    solidSelectionQuery: string | null,
+  ) => {
+    if (!solidSelectionQuery) {
+      return tags;
+    }
+
+    return uniqBy(
+      [
+        {
+          key: DagsterTag.SolidSelection,
+          value: solidSelectionQuery,
+        },
+        ...tags,
+      ],
+      (tag) => tag.key,
+    );
+  };
+
   const tagsApplyingNewBaseTags = (newBaseTags: PipelineRunTag[]) => {
     // If you choose a new base (preset or partition), we want to make a best-effort to preserve
     // the tags you've manually typed in, but remove:
@@ -429,15 +440,19 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
 
   const onSelectPreset = async (preset: Preset) => {
     const newBaseTags = preset.tags.map(onlyKeyAndValue);
+    const newPresetTags = tagsApplyingNewBaseTags(newBaseTags);
+    const solidSelectionQuery =
+      preset.solidSelection === null ? '*' : preset.solidSelection.join(',');
+    const newTags = tagsApplyingSolidSelection(newPresetTags, solidSelectionQuery);
 
     onSaveSession({
       base: {presetName: preset.name, tags: newBaseTags},
       name: preset.name,
       runConfigYaml: preset.runConfigYaml || '',
       solidSelection: preset.solidSelection,
-      solidSelectionQuery: preset.solidSelection === null ? '*' : preset.solidSelection.join(','),
+      solidSelectionQuery,
       mode: preset.mode,
-      tags: tagsApplyingNewBaseTags(newBaseTags),
+      tags: newTags,
       needsRefresh: false,
     });
   };
@@ -492,14 +507,20 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
 
       const solidSelection = sessionSolidSelection || partition.solidSelection;
 
+      const solidSelectionQuery = solidSelection === null ? '*' : solidSelection.join(',');
+      const newTags = tagsApplyingSolidSelection(
+        tagsApplyingNewBaseTags(newBaseTags),
+        solidSelectionQuery,
+      );
+
       onSaveSession({
         name: partition.name,
         base: Object.assign({}, base, {partitionName: partition.name, tags: newBaseTags}),
         runConfigYaml,
         solidSelection,
-        solidSelectionQuery: solidSelection === null ? '*' : solidSelection.join(','),
+        solidSelectionQuery,
         mode: partition.mode,
-        tags: tagsApplyingNewBaseTags(newBaseTags),
+        tags: newTags,
         needsRefresh: false,
       });
     } catch {}
