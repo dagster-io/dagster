@@ -340,7 +340,7 @@ height={1942}
 
 - **Description**: The **Configuration** tab contains detailed information about a resource's configuration, including the name of each key, type, and value of each config value. If a key's value is an [environment variable](/guides/dagster/using-environment-variables-and-secrets), an `Env var` badge will display next to the value.
 
-- **Accessed by**: Clicking the **Configuration tab** in the [**Resource details**](#resource-details) page
+- **Accessed by**: On the [**Resource details**](#resource-details) page, clicking the **Configuration tab**
 
 <!-- ![UI Resource details - Configuration tab](/images/concepts/webserver/resource-details-configuration-tab.png) -->
 
@@ -358,7 +358,7 @@ height={1618}
 
 - **Description**: The **Uses** tab contains information about the other Dagster definitions that use the resource, including [assets](/concepts/assets/software-defined-assets), [jobs](/concepts/ops-jobs-graphs/jobs), and [ops](/concepts/ops-jobs-graphs/ops). Clicking on any of these definitions will open the details page for that definition type.
 
-- **Accessed by**: Clicking the **Uses tab** in the [**Resource details**](#resource-details) page
+- **Accessed by**: On the [**Resource details**](#resource-details) page, clicking the **Uses tab**
 
 <!-- ![UI Resource details - Uses tab](/images/concepts/webserver/resource-details-uses-tab.png) -->
 
@@ -429,15 +429,15 @@ height={1618}
 
 - **Description**: The **Overview** tab in the **Job details** page shows the graph of assets and/or ops that make up a job.
 
-- **Accessed by:** Clicking the **Overview** tab in the [**Job details**](#job-details) page
+- **Accessed by:** On the [**Job details**](#job-details) page, clicking the **Overview** tab
 
-<!-- ![UI Job Definition](/images/concepts/webserver/jobs-overview-tab.png) -->
+<!-- ![UI Job Definition](/images/concepts/webserver/jobs-definition-with-ops.png) -->
 
 <Image
 alt="UI Job Definition"
-src="/images/concepts/webserver/jobs-overview-tab.png"
-width={3066}
-height={1628}
+src="/images/concepts/webserver/job-definition-with-ops.png"
+width={1920}
+height={1020}
 />
 
 </TabItem>
@@ -445,17 +445,17 @@ height={1628}
 
 #### Launchpad tab
 
-- **Description**: The **Launchpad tab** provides a configuration editor to let you experiment with configuration and launch runs. **Note**: This tab will display only if the job requires config.
+- **Description**: The **Launchpad tab** provides a configuration editor to let you experiment with configuration and launch runs. **Note**: For assets, this tab will only display if a job requires config. It displays by default for all op jobs.
 
-- **Accessed by:** Clicking the **Launchpad** tab in the [**Job details**](#job-details) page
+- **Accessed by:** On the [**Job details**](#job-details) page, clicking the **Launchpad** tab
 
-<!-- ![UI Launchpad](/images/concepts/webserver/job-launchpad-tab.png) -->
+<!-- ![UI Launchpad](/images/concepts/webserver/job-config-with-ops.png) -->
 
 <Image
 alt="UI Launchpad"
-src="/images/concepts/webserver/job-launchpad-tab.png"
+src="/images/concepts/webserver/job-config-with-ops.png"
 width={1920}
-height={1025}
+height={1020}
 />
 
 </TabItem>
@@ -465,7 +465,7 @@ height={1025}
 
 - **Description**: The **Runs** tab displays a list of recent runs for a job. Clicking a run will open the [**Run details**](#run-details) page.
 
-- **Accessed by:** Clicking the **Runs** tab in the [**Job details**](#job-details) page
+- **Accessed by:** On the [**Job details**](#job-details) page, clicking the **Runs** tab
 
 <!-- ![UI Job runs tab](/images/concepts/webserver/jobs-runs-tab.png) -->
 
@@ -483,7 +483,7 @@ height={1624}
 
 - **Description**: The **Partitions** tab displays information about the [partitions](/concepts/partitions-schedules-sensors/partitions) associated with the job, including the total number of partitions, the number of missing partitions, and the job's backfill history. **Note**: This tab will display only if the job contains partitions.
 
-- **Accessed by:** Clicking the **Partitions** tab in the [**Job details**](#job-details) page
+- **Accessed by:** On the [**Job details**](#job-details) page, clicking the **Partitions** tab
 
 <!-- ![UI Job Partitions tab](/images/concepts/webserver/jobs-partitions-tab.png) -->
 
@@ -518,7 +518,7 @@ The **Deployment** page includes information about the status of the code locati
 
 - **Accessed by**:
   - Clicking **Deployment** in the top navigation bar
-  - Clicking the **Code locations** tab in the **Deployment overview** page
+  - On the **Deployment overview** page, clicking the **Code locations** tab
 
 <!-- ![UI Deployment overview page](/images/concepts/webserver/deployment-code-locations.png) -->
 
@@ -542,7 +542,7 @@ In addition to the [**Code locations** tab](#code-locations-tab), Dagster OSS de
 #### Daemons tab
 
 - **Description**: The **Daemons** tab contains information about the [daemons](/deployment/dagster-daemon) in an Open Source Dagster deployment, including their current status and when their last heartbeat was detected.
-- **Accessed by**: Clicking the **Daemons** tab in the [**Deployment overview**](#code-locations-tab) page
+- **Accessed by**: On the [**Deployment overview**](#code-locations-tab) page, clicking the **Daemons** tab
 
 <!-- ![UI Deployment - Daemons tab](/images/concepts/webserver/deployment-daemons-tab.png) -->
 
@@ -559,7 +559,7 @@ height={1626}
 #### Configuration tab
 
 - **Description**: The **Configuration** tab displays information about the configuration for a Dagster deployment, which is managed through the [`dagster.yaml`](/deployment/dagster-instance) file
-- **Accessed by**: Clicking the **Configuration** tab in the [**Deployment overview**](#code-locations-tab) page
+- **Accessed by**: On the [**Deployment overview**](#code-locations-tab) page, clicking the **Configuration** tab
 
 <!-- ![UI Deployment - Configuration tab](/images/concepts/webserver/deployment-configuration-tab.png) -->
 
@@ -586,7 +586,7 @@ In addition to the [**Code locations** tab](#code-locations-tab), Dagster Cloud 
 #### Agents tab
 
 - **Description**: The **Agents** tab contains information about the agents in a Dagster Cloud deployment. Refer to the [Dagster Cloud agent documentation](/dagster-cloud/deployment/agents) for more info.
-- **Accessed by**: Clicking the **Agents** tab in the [**Deployment overview**](#code-locations-tab) page
+- **Accessed by**: On the [**Deployment overview**](#code-locations-tab) page, clicking the **Agents** tab
 
 <!-- ![UI Cloud Deployment - Agents tab](/images/concepts/webserver/deployment-cloud-agents-tab.png) -->
 
@@ -603,7 +603,7 @@ height={1016}
 #### Environment variables tab
 
 - **Description**: The **Agents** tab contains information about the environment variables configured in a Dagster Cloud deployment. Refer to the [Dagster Cloud environment variables and secrets documentation](/dagster-cloud/managing-deployments/environment-variables-and-secrets) for more info.
-- **Accessed by**: Clicking the **Environment variables** tab in the [**Deployment overview**](#code-locations-tab) page
+- **Accessed by**: On the [**Deployment overview**](#code-locations-tab) page, clicking the **Environment variables** tab
 
 <!-- ![UI Cloud Deployment - Environment variables tab](/images/concepts/webserver/deployment-cloud-environment-variables-tab.png) -->
 
@@ -620,7 +620,7 @@ height={1016}
 #### Alerts tab
 
 - **Description**: The **Alerts** tab contains information about the alert policies configured for a Dagster Cloud deployment. Refer to the [Setting up alerts guide](/dagster-cloud/managing-deployments/setting-up-alerts) for more info.
-- **Accessed by**: Clicking the **Alerts** tab in the [**Deployment overview**](#code-locations-tab) page
+- **Accessed by**: On the [**Deployment overview**](#code-locations-tab) page, clicking the **Alerts** tab
 
 <!-- ![UI Cloud Deployment - Alerts tab](/images/concepts/webserver/deployment-cloud-alerts-tab.png) -->
 
