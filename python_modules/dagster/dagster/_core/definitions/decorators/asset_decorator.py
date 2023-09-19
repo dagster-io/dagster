@@ -962,6 +962,7 @@ def graph_asset(
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = ...,
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
     key: Optional[CoercibleToAssetKey] = None,
+    _graph_name: Optional[str] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]: ...
 
 
@@ -982,6 +983,7 @@ def graph_asset(
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
     key: Optional[CoercibleToAssetKey] = None,
+    _graph_name: Optional[str] = None,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Creates a software-defined asset that's computed using a graph of ops.
 
@@ -1059,6 +1061,7 @@ def graph_asset(
             resource_defs=resource_defs,
             check_specs=check_specs,
             key=key,
+            _graph_name=_graph_name,
         )
     else:
         ins = ins or {}
@@ -1093,7 +1096,7 @@ def graph_asset(
         }
 
         op_graph = graph(
-            name=out_asset_key.to_python_identifier(),
+            name=_graph_name or out_asset_key.to_python_identifier(),
             description=description,
             config=config,
             ins={input_name: GraphIn() for _, (input_name, _) in asset_ins.items()},

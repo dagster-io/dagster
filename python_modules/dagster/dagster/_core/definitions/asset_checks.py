@@ -1,4 +1,15 @@
-from typing import Any, Dict, Iterable, Iterator, Mapping, NamedTuple, Optional, Sequence, Set
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterable,
+    Iterator,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Set,
+)
 
 from dagster import _check as check
 from dagster._annotations import experimental, public
@@ -12,6 +23,10 @@ from dagster._core.definitions.resource_requirement import (
     ResourceRequirement,
     merge_resource_defs,
 )
+from dagster._core.errors import DagsterAssetCheckFailedError
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.assets import AssetsDefinition
 
 
 @experimental
@@ -127,3 +142,47 @@ class AssetChecksDefinition(ResourceAddable, RequiresResources):
             specs=self._specs,
             input_output_props=self._input_output_props,
         )
+
+
+@experimental
+def build_blocking_asset_check(
+    asset_def: "AssetsDefinition",
+    checks: Sequence[AssetChecksDefinition],
+) -> "AssetsDefinition":
+    from dagster import In, Output, graph_asset, op
+
+
+    check_specs = []
+    for c in checks:
+        check_specs.extend(c.specs)
+
+    check_output_names = [c.get_python_identifier() for c in check_specs]
+
+    @op(ins={"materialization": In(Any), "check_evaluations": In(Any)})
+    def fan_in_checks_and_materialization(context, materialization, check_evaluations):
+        yield Output(materialization)
+
+        for result in check_evaluations:
+            if not result.success:
+                raise DagsterAssetCheckFailedError()
+
+    @graph_asset(
+        name=asset_def.key.path[-1],
+        key_prefix=asset_def.key.path[:-1] if len(asset_def.key.path) > 1 else None,
+        check_specs=check_specs,
+        # if we don't rename the graph, it will conflict with asset_def's Op
+        _graph_name=asset_def.key.to_python_identifier() + "_blocking_asset_check",
+    )
+    def blocking_asset():
+        asset_result = asset_def.op()
+        check_evaluations = [check.node_def(asset_result) for check in checks]
+
+        return {
+            "result": fan_in_checks_and_materialization(asset_result, check_evaluations),
+            **{
+                check_output_name: check_result
+                for check_output_name, check_result in zip(check_output_names, check_evaluations)
+            },
+        }
+
+    return blocking_asset

@@ -131,7 +131,7 @@ def _process_user_event(
         output_name = step_context.job_def.asset_layer.get_output_name_for_asset_check(
             asset_check_evaluation.asset_check_key
         )
-        output = Output(value=None, output_name=output_name)
+        output = Output(value=asset_check_evaluation, output_name=output_name)
 
         yield asset_check_evaluation
 
