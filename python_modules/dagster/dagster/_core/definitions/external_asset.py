@@ -1,4 +1,4 @@
-from typing import List, Sequence
+from typing import List, Optional, Sequence
 
 from dagster import _check as check
 from dagster._core.definitions.asset_spec import (
@@ -7,7 +7,14 @@ from dagster._core.definitions.asset_spec import (
     AssetSpec,
 )
 from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.data_version import DATA_VERSION_TAG, DataVersion
 from dagster._core.definitions.decorators.asset_decorator import asset, multi_asset
+from dagster._core.definitions.decorators.sensor_decorator import sensor
+from dagster._core.definitions.events import AssetKey, AssetObservation
+from dagster._core.definitions.run_request import SensorResult
+from dagster._core.definitions.sensor_definition import (
+    SensorDefinition,
+)
 from dagster._core.definitions.source_asset import (
     SourceAsset,
     wrap_source_asset_observe_fn_in_op_compute_fn,
@@ -177,3 +184,68 @@ def create_external_asset_from_source_asset(source_asset: SourceAsset) -> Assets
     assert isinstance(_shim_assets_def, AssetsDefinition)  # appease pyright
 
     return _shim_assets_def
+
+
+def create_observation_with_version(
+    asset_key: AssetKey, data_version: DataVersion
+) -> AssetObservation:
+    return AssetObservation(
+        asset_key=asset_key,
+        tags={DATA_VERSION_TAG: data_version.value},
+    )
+
+
+def get_auto_sensor_name(asset_key: AssetKey) -> str:
+    return f"__auto_observe_sensor{asset_key.to_python_identifier()}"
+
+
+def sensor_def_from_observable_source_assets(
+    observable_source_assets: Sequence[SourceAsset],
+    sensor_name: Optional[str] = None,
+    interval_minutes: Optional[float] = None,
+) -> SensorDefinition:
+    """Given an existing observable source asset, generate a sensor that observes it on a regular
+    interval as specified by `SourceAsset.auto_observe_internal_minutes`.
+    """
+    for source_asset in observable_source_assets:
+        check.param_invariant(
+            source_asset.observe_fn,
+            "observable_source_assets",
+            "All source assets must have observe_fn in this code path",
+        )
+
+    def _get_sensor_name() -> str:
+        if sensor_name:
+            return sensor_name
+        if len(observable_source_assets) == 1:
+            return get_auto_sensor_name(observable_source_assets[0].key)
+        raise DagsterInvariantViolationError(
+            "Must specific sensor name explicitly if there is more than one source asset"
+        )
+
+    def _get_interval_seconds() -> Optional[int]:
+        if interval_minutes:
+            return int(interval_minutes * 60)
+
+        seen_interval_minutes = None
+        for source_asset in observable_source_assets:
+            if seen_interval_minutes is None:
+                seen_interval_minutes = source_asset.auto_observe_interval_minutes
+            else:
+                check.invariant(
+                    seen_interval_minutes == source_asset.auto_observe_interval_minutes,
+                    "All interval minutes in source assets must be the same",
+                )
+        return int(seen_interval_minutes * 60) if seen_interval_minutes else None
+
+    @sensor(name=_get_sensor_name(), minimum_interval_seconds=_get_interval_seconds())
+    def _sensor(context, **kwargs) -> SensorResult:
+        asset_events = []
+        for source_asset in observable_source_assets:
+            assert source_asset.observe_fn  # appease pyright
+            asset_events.append(
+                create_observation_with_version(source_asset.key, source_asset.observe_fn(**kwargs))
+            )
+        return SensorResult(asset_events=asset_events)
+
+    return _sensor

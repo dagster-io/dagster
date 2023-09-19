@@ -63,6 +63,20 @@ SourceAssetObserveFunction: TypeAlias = Callable[..., Any]
 def wrap_source_asset_observe_fn_in_op_compute_fn(
     source_asset: "SourceAsset",
 ) -> "DecoratedOpFunction":
+    check.not_none(source_asset.observe_fn)  # for runtime check
+    assert source_asset.observe_fn is not None  # for type checker
+    return observe_fn_to_op_compute_fn(
+        observe_fn=source_asset.observe_fn,
+        partitions_def=source_asset.partitions_def,
+        asset_key=source_asset.key,
+    )
+
+
+def observe_fn_to_op_compute_fn(
+    observe_fn: SourceAssetObserveFunction,
+    partitions_def: Optional[PartitionsDefinition],
+    asset_key: AssetKey,
+) -> "DecoratedOpFunction":
     from dagster._core.definitions.decorators.op_decorator import (
         DecoratedOpFunction,
         is_context_provided,
@@ -70,11 +84,6 @@ def wrap_source_asset_observe_fn_in_op_compute_fn(
     from dagster._core.execution.context.compute import (
         OpExecutionContext,
     )
-
-    check.not_none(source_asset.observe_fn, "Must be an observable source asset")
-    assert source_asset.observe_fn  # for type checker
-
-    observe_fn = source_asset.observe_fn
 
     observe_fn_has_context = is_context_provided(get_function_params(observe_fn))
 
@@ -88,22 +97,22 @@ def wrap_source_asset_observe_fn_in_op_compute_fn(
         )
 
         if isinstance(observe_fn_return_value, DataVersion):
-            if source_asset.partitions_def is not None:
+            if partitions_def is not None:
                 raise DagsterInvalidObservationError(
-                    f"{source_asset.key} is partitioned, so its observe function should return a"
+                    f"{asset_key} is partitioned, so its observe function should return a"
                     " DataVersionsByPartition, not a DataVersion"
                 )
 
             context.log_event(
                 AssetObservation(
-                    asset_key=source_asset.key,
+                    asset_key=asset_key,
                     tags={DATA_VERSION_TAG: observe_fn_return_value.value},
                 )
             )
         elif isinstance(observe_fn_return_value, DataVersionsByPartition):
-            if source_asset.partitions_def is None:
+            if partitions_def is None:
                 raise DagsterInvalidObservationError(
-                    f"{source_asset.key} is not partitioned, so its observe function should return"
+                    f"{asset_key} is not partitioned, so its observe function should return"
                     " a DataVersion, not a DataVersionsByPartition"
                 )
 
@@ -113,14 +122,14 @@ def wrap_source_asset_observe_fn_in_op_compute_fn(
             ) in observe_fn_return_value.data_versions_by_partition.items():
                 context.log_event(
                     AssetObservation(
-                        asset_key=source_asset.key,
+                        asset_key=asset_key,
                         tags={DATA_VERSION_TAG: data_version.value},
                         partition=partition_key,
                     )
                 )
         else:
             raise DagsterInvalidObservationError(
-                f"Observe function for {source_asset.key} must return a DataVersion or"
+                f"Observe function for {asset_key} must return a DataVersion or"
                 " DataVersionsByPartition, but returned a value of type"
                 f" {type(observe_fn_return_value)}"
             )
