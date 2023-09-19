@@ -1133,9 +1133,10 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
                 # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
                 #   ["2023-08-20", "2023-08-21", "2023-08-22", "2023-08-23", "2023-08-24"]
         """
+        asset_key = self.asset_key_for_input(input_name)
         return list(
-            self._step_execution_context.asset_partitions_subset_for_input(
-                input_name
+            self._step_execution_context.partitions_subset_for_upstream_asset(
+                asset_key
             ).get_partition_keys()
         )
 

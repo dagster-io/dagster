@@ -1076,7 +1076,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         self, asset: Optional[CoercibleToAssetKey], is_dependency: bool = False
     ) -> PartitionKeyRange:
         if asset is None:
-            check.failed(f"Tried to access partition key range with invalid asset key: {asset}")
+            check.failed(f"Tried to access partition key range for invalid asset key: {asset}")
         if self._load_partition_info_as_upstream_asset(
             current_asset=asset, is_dependency=is_dependency
         ):
@@ -1095,23 +1095,11 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         else:
             return self.asset_partition_key_range
 
-    # def asset_partition_key_range_for_input(self, input_name: str) -> PartitionKeyRange:
-    #     subset = self.asset_partitions_subset_for_input(input_name)
-    #     partition_key_ranges = subset.get_partition_key_ranges(
-    #         dynamic_partitions_store=self.instance
-    #     )
-
-    #     if len(partition_key_ranges) != 1:
-    #         check.failed(
-    #             "Tried to access asset partition key range, but there are "
-    #             f"({len(partition_key_ranges)}) key ranges associated with this input.",
-    #         )
-
-    #     return partition_key_ranges[0]
-
     def partitions_subset_for_upstream_asset(
-        self, asset: CoercibleToAssetKey, *, require_valid_partitions: bool = True
+        self, asset: Optional[CoercibleToAssetKey], *, require_valid_partitions: bool = True
     ) -> PartitionsSubset:
+        if asset is None:
+            check.failed(f"Tried to access partition for invalid asset key: {asset}")
         asset_layer = self.job_def.asset_layer
         assets_def = asset_layer.assets_def_for_node(self.node_handle)
         upstream_asset_key = AssetKey.from_coercible(asset)
@@ -1156,7 +1144,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
                 return mapped_partitions_result.partitions_subset
 
-        check.failed("The input has no asset partitions")
+        check.failed(f"The asset {asset} has no partitions")
 
     def asset_partition_key_for_input(self, input_name: str) -> str:
         asset_key = self.job_def.asset_layer.asset_key_for_input(self.node_handle, input_name)

@@ -5,6 +5,7 @@ import dagster._check as check
 import pendulum
 import pytest
 from dagster import (
+    AssetExecutionContext,
     AssetMaterialization,
     AssetOut,
     AssetsDefinition,
@@ -140,7 +141,7 @@ def test_single_partitioned_asset_job():
 
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
-            assert context.asset_partition_key == "b"
+            assert context.partition_key == "b"
             assert context.asset_partitions_def == partitions_def
 
         def load_input(self, context):
@@ -204,24 +205,24 @@ def test_access_partition_keys_from_context_direct_invocation():
     partitions_def = StaticPartitionsDefinition(["a"])
 
     @asset(partitions_def=partitions_def)
-    def partitioned_asset(context):
-        assert context.asset_partition_key_for_output() == "a"
+    def partitioned_asset(context: AssetExecutionContext):
+        assert context.partition_key == "a"
 
     context = build_asset_context(partition_key="a")
 
     # check unbound context
-    assert context.asset_partition_key_for_output() == "a"
+    assert context.partition_key == "a"
 
     # check bound context
     partitioned_asset(context)
 
     # check failure for non-partitioned asset
     @asset
-    def non_partitioned_asset(context):
+    def non_partitioned_asset(context: AssetExecutionContext):
         with pytest.raises(
             CheckError, match="Tried to access partition_key for a non-partitioned asset"
         ):
-            context.asset_partition_key_for_output()
+            context.partition_key  # noqa: B018
 
     context = build_asset_context()
     non_partitioned_asset(context)
@@ -249,8 +250,8 @@ def test_access_partition_keys_from_context_only_one_asset_partitioned():
                 assert context.asset_partition_key_range == PartitionKeyRange("a", "c")
 
     @asset(partitions_def=upstream_partitions_def)
-    def upstream_asset(context):
-        assert context.asset_partition_key_for_output() == "b"
+    def upstream_asset(context: AssetExecutionContext):
+        assert context.partition_key == "b"
 
     @asset
     def downstream_asset(upstream_asset):
@@ -572,8 +573,8 @@ def test_mismatched_job_partitioned_config_with_asset_partitions():
     daily_partitions_def = DailyPartitionsDefinition(start_date="2020-01-01")
 
     @asset(config_schema={"day_of_month": int}, partitions_def=daily_partitions_def)
-    def asset1(context):
-        assert context.op_config["day_of_month"] == 1
+    def asset1(context: AssetExecutionContext):
+        assert context.op_execution_context.op_config["day_of_month"] == 1
         assert context.partition_key == "2020-01-01"
 
     @hourly_partitioned_config(start_date="2020-01-01-00:00")
@@ -596,8 +597,8 @@ def test_partition_range_single_run():
     partitions_def = DailyPartitionsDefinition(start_date="2020-01-01")
 
     @asset(partitions_def=partitions_def)
-    def upstream_asset(context) -> None:
-        assert context.asset_partition_key_range_for_output() == PartitionKeyRange(
+    def upstream_asset(context: AssetExecutionContext) -> None:
+        assert context.partition_key_range == PartitionKeyRange(
             start="2020-01-01", end="2020-01-03"
         )
 
@@ -640,8 +641,8 @@ def test_multipartition_range_single_run():
     )
 
     @asset(partitions_def=partitions_def)
-    def multipartitioned_asset(context) -> None:
-        key_range = context.asset_partition_key_range_for_output()
+    def multipartitioned_asset(context: AssetExecutionContext) -> None:
+        key_range = context.partition_key_range
 
         assert isinstance(key_range.start, MultiPartitionKey)
         assert isinstance(key_range.end, MultiPartitionKey)
@@ -649,7 +650,8 @@ def test_multipartition_range_single_run():
         assert key_range.end == MultiPartitionKey({"date": "2020-01-03", "abc": "a"})
 
         assert all(
-            isinstance(key, MultiPartitionKey) for key in context.asset_partition_keys_for_output()
+            isinstance(key, MultiPartitionKey)
+            for key in partitions_def.get_partitions_keys_in_range(context.partition_key_range)
         )
 
     the_job = define_asset_job("job").resolve(
