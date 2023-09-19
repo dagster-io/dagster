@@ -794,8 +794,6 @@ def build_asset_selection_job(
         build_source_asset_observation_job,
     )
 
-
-
     if asset_selection is None and asset_check_selection is None:
         # no selections, include everything
         included_assets = list(assets)
