@@ -44,7 +44,9 @@ interface ILogsToolbarProps {
   computeLogUrl: string | null;
 
   children?: React.ReactNode;
+}
 
+interface WithExpandCollapseProps extends ILogsToolbarProps {
   isSectionExpanded: boolean;
   toggleExpanded: () => void;
 }
@@ -52,7 +54,7 @@ interface ILogsToolbarProps {
 const logQueryToString = (logQuery: LogFilterValue[]) =>
   logQuery.map(({token, value}) => (token ? `${token}:${value}` : value)).join(' ');
 
-export const LogsToolbar: React.FC<ILogsToolbarProps> = (props) => {
+export const LogsToolbar: React.FC<ILogsToolbarProps | WithExpandCollapseProps> = (props) => {
   const {
     steps,
     metadata,
@@ -64,10 +66,15 @@ export const LogsToolbar: React.FC<ILogsToolbarProps> = (props) => {
     computeLogFileKey,
     onSetComputeLogKey,
     computeLogUrl,
-    isSectionExpanded,
-    toggleExpanded,
     children,
   } = props;
+  let isSectionExpanded;
+  let toggleExpanded;
+
+  if ('isSectionExpanded' in props) {
+    isSectionExpanded = props.isSectionExpanded;
+    toggleExpanded = props.toggleExpanded;
+  }
 
   const activeItems = React.useMemo(() => new Set([logType]), [logType]);
 
@@ -101,12 +108,14 @@ export const LogsToolbar: React.FC<ILogsToolbarProps> = (props) => {
         />
       )}
       {children}
-      <Tooltip content={isSectionExpanded ? 'Collapse' : 'Expand'}>
-        <Button
-          icon={<Icon name={isSectionExpanded ? 'collapse_arrows' : 'expand_arrows'} />}
-          onClick={toggleExpanded}
-        />
-      </Tooltip>
+      {toggleExpanded ? (
+        <Tooltip content={isSectionExpanded ? 'Collapse' : 'Expand'}>
+          <Button
+            icon={<Icon name={isSectionExpanded ? 'collapse_arrows' : 'expand_arrows'} />}
+            onClick={toggleExpanded}
+          />
+        </Tooltip>
+      ) : null}
     </OptionsContainer>
   );
 };
