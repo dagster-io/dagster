@@ -216,6 +216,4 @@ def test_observable_source_asset_decorator() -> None:
     assert observation_event.asset_observation_data.asset_observation.data_version == "foo"
 
     all_materializations = result.get_asset_materialization_events()
-    # Note this does not make sense. We need to make framework changes to allow for the omission of
-    # a materialzation event
-    assert len(all_materializations) == 1
+    assert len(all_materializations) == 0
