@@ -24,6 +24,8 @@ from dagster._core.definitions.time_window_partitions import TimeWindow, TimeWin
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 
+from .dual_state_context import DualStateContextResourcesContainer
+
 if TYPE_CHECKING:
     from dagster._core.definitions import PartitionsDefinition
     from dagster._core.definitions.op_definition import OpDefinition
@@ -73,9 +75,6 @@ class InputContext:
         asset_partitions_def: Optional["PartitionsDefinition"] = None,
         instance: Optional[DagsterInstance] = None,
     ):
-        from dagster._core.definitions.resource_definition import IContainsGenerator, Resources
-        from dagster._core.execution.build_resources import build_resources
-
         self._name = name
         self._job_name = job_name
         self._op_def = op_def
@@ -95,33 +94,22 @@ class InputContext:
         self._asset_partitions_subset = asset_partitions_subset
         self._asset_partitions_def = asset_partitions_def
 
-        if isinstance(resources, Resources):
-            self._resources_cm = None
-            self._resources = resources
-        else:
-            self._resources_cm = build_resources(
-                check.opt_mapping_param(resources, "resources", key_type=str)
-            )
-            self._resources = self._resources_cm.__enter__()
-            self._resources_contain_cm = isinstance(self._resources, IContainsGenerator)
-            self._cm_scope_entered = False
+        self._explicit_resources_provided = bool(resources)
+        self._resources_container = DualStateContextResourcesContainer(resources)
 
         self._events: List["DagsterEvent"] = []
         self._observations: List[AssetObservation] = []
         self._instance = instance
 
-    def __enter__(self):
-        if self._resources_cm:
-            self._cm_scope_entered = True
+    def __enter__(self) -> "InputContext":
+        self._resources_container.call_on_enter()
         return self
 
-    def __exit__(self, *exc):
-        if self._resources_cm:
-            self._resources_cm.__exit__(*exc)
+    def __exit__(self, *exc) -> None:
+        self._resources_container.call_on_exit()
 
-    def __del__(self):
-        if self._resources_cm and self._resources_contain_cm and not self._cm_scope_entered:
-            self._resources_cm.__exit__(None, None, None)
+    def __del__(self) -> None:
+        self._resources_container.call_on_del()
 
     @property
     def instance(self) -> DagsterInstance:
@@ -238,19 +226,13 @@ class InputContext:
         input manager. If using the :py:func:`@input_manager` decorator, these resources
         correspond to those requested with the `required_resource_keys` parameter.
         """
-        if self._resources is None:
+        if not self._explicit_resources_provided:
             raise DagsterInvariantViolationError(
                 "Attempting to access resources, "
                 "but it was not provided when constructing the InputContext"
             )
 
-        if self._resources_cm and self._resources_contain_cm and not self._cm_scope_entered:
-            raise DagsterInvariantViolationError(
-                "At least one provided resource is a generator, but attempting to access "
-                "resources outside of context manager scope. You can use the following syntax to "
-                "open a context manager: `with build_input_context(...) as context:`"
-            )
-        return self._resources
+        return self._resources_container.get_resources("build_input_context")
 
     @public
     @property
