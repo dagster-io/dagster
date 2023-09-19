@@ -135,7 +135,7 @@ def create_external_asset_from_source_asset(source_asset: SourceAsset) -> Assets
     injected_metadata = (
         {SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.UNEXECUTABLE.value}
         if source_asset.observe_fn is None
-        else {}
+        else {SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.OBSERVATION.value}
     )
 
     kwargs = {
