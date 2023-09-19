@@ -30,7 +30,7 @@ from dagster._core.definitions.data_version import (
     extract_data_version_from_entry,
 )
 from dagster._core.definitions.dependency import OpNode
-from dagster._core.definitions.events import AssetKey, AssetLineageInfo
+from dagster._core.definitions.events import AssetKey, AssetLineageInfo, CoercibleToAssetKey
 from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.job_base import IJob
 from dagster._core.definitions.job_definition import JobDefinition
@@ -662,7 +662,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             node_handle=self.node_handle, input_name=name
         )
         asset_partitions_subset = (
-            self.asset_partitions_subset_for_input(name)
+            self.partitions_subset_for_upstream_asset(asset_key)
             if self.has_asset_partitions_for_input(name)
             else None
         )
@@ -932,8 +932,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             input_name = self.job_def.asset_layer.input_for_asset_key(self.node_handle, key)
             # Exclude AllPartitionMapping for now to avoid huge queries
             if input_name and self.has_asset_partitions_for_input(input_name):
-                subset = self.asset_partitions_subset_for_input(
-                    input_name, require_valid_partitions=False
+                subset = self.partitions_subset_for_upstream_asset(
+                    key, require_valid_partitions=False
                 )
                 input_keys = list(subset.get_partition_keys())
 
@@ -1043,26 +1043,78 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             and asset_layer.partitions_def_for_asset(upstream_asset_key) is not None
         )
 
-    def asset_partition_key_range_for_input(self, input_name: str) -> PartitionKeyRange:
-        subset = self.asset_partitions_subset_for_input(input_name)
-        partition_key_ranges = subset.get_partition_key_ranges(
-            dynamic_partitions_store=self.instance
+    def _load_partition_info_as_upstream_asset(
+        self, current_asset: CoercibleToAssetKey, is_dependency: bool
+    ) -> bool:
+        # In some cases, if the asset we are getting the partition info for is a parent of the asset that is currently
+        # materializing, we need to load the info in a different way. So we must first figure out
+        # if asset is the parent of the currently materializing asset
+
+        asset_layer = self.job_def.asset_layer
+        currently_materializing_assets_def = asset_layer.assets_def_for_node(self.node_handle)
+        asset_key = AssetKey.from_coercible(current_asset)
+
+        is_resulting_asset = (
+            currently_materializing_assets_def is not None
+            and asset_key in currently_materializing_assets_def.keys_by_output_name.values()
+        )
+        is_upstream_asset = (
+            currently_materializing_assets_def is not None
+            and asset_key in currently_materializing_assets_def.keys_by_input_name.values()
         )
 
-        if len(partition_key_ranges) != 1:
-            check.failed(
-                "Tried to access asset partition key range, but there are "
-                f"({len(partition_key_ranges)}) key ranges associated with this input.",
+        # when `asset` is a self-dependent partitioned asset, then is_resulting_asset and is_upstream_asset
+        # are both True. In this case, we defer to the user-provided is_dependency parameter. If
+        # is_dependency is True, then we return the partition info of asset as an upstream asset
+        get_partition_key_range_as_upstream_asset = (
+            is_upstream_asset and not is_resulting_asset
+        ) or (is_upstream_asset and is_resulting_asset and is_dependency)
+
+        return get_partition_key_range_as_upstream_asset
+
+    def partition_key_range_for_asset(
+        self, asset: Optional[CoercibleToAssetKey], is_dependency: bool = False
+    ) -> PartitionKeyRange:
+        if asset is None:
+            check.failed(f"Tried to access partition key range with invalid asset key: {asset}")
+        if self._load_partition_info_as_upstream_asset(
+            current_asset=asset, is_dependency=is_dependency
+        ):
+            subset = self.partitions_subset_for_upstream_asset(asset)
+            partition_key_ranges = subset.get_partition_key_ranges(
+                dynamic_partitions_store=self.instance
             )
 
-        return partition_key_ranges[0]
+            if len(partition_key_ranges) != 1:
+                check.failed(
+                    "Tried to access asset partition key range, but there are "
+                    f"({len(partition_key_ranges)}) key ranges associated with this input.",
+                )
 
-    def asset_partitions_subset_for_input(
-        self, input_name: str, *, require_valid_partitions: bool = True
+            return partition_key_ranges[0]
+        else:
+            return self.asset_partition_key_range
+
+    # def asset_partition_key_range_for_input(self, input_name: str) -> PartitionKeyRange:
+    #     subset = self.asset_partitions_subset_for_input(input_name)
+    #     partition_key_ranges = subset.get_partition_key_ranges(
+    #         dynamic_partitions_store=self.instance
+    #     )
+
+    #     if len(partition_key_ranges) != 1:
+    #         check.failed(
+    #             "Tried to access asset partition key range, but there are "
+    #             f"({len(partition_key_ranges)}) key ranges associated with this input.",
+    #         )
+
+    #     return partition_key_ranges[0]
+
+    def partitions_subset_for_upstream_asset(
+        self, asset: CoercibleToAssetKey, *, require_valid_partitions: bool = True
     ) -> PartitionsSubset:
         asset_layer = self.job_def.asset_layer
         assets_def = asset_layer.assets_def_for_node(self.node_handle)
-        upstream_asset_key = asset_layer.asset_key_for_input(self.node_handle, input_name)
+        upstream_asset_key = AssetKey.from_coercible(asset)
 
         if upstream_asset_key is not None:
             upstream_asset_partitions_def = asset_layer.partitions_def_for_asset(upstream_asset_key)
@@ -1107,7 +1159,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         check.failed("The input has no asset partitions")
 
     def asset_partition_key_for_input(self, input_name: str) -> str:
-        start, end = self.asset_partition_key_range_for_input(input_name)
+        asset_key = self.job_def.asset_layer.asset_key_for_input(self.node_handle, input_name)
+        start, end = self.partition_key_range_for_asset(asset_key, is_dependency=True)
         if start == end:
             return start
         else:
@@ -1204,7 +1257,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         if not has_one_dimension_time_window_partitioning(upstream_asset_partitions_def):
             raise ValueError(
-                "Tried to get asset partitions for an input that correponds to a partitioned "
+                "Tried to get asset partitions for an input that corresponds to a partitioned "
                 "asset that is not time-partitioned."
             )
 
@@ -1212,7 +1265,9 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             Union[TimeWindowPartitionsDefinition, MultiPartitionsDefinition],
             upstream_asset_partitions_def,
         )
-        partition_key_range = self.asset_partition_key_range_for_input(input_name)
+        partition_key_range = self.partition_key_range_for_asset(
+            upstream_asset_key, is_dependency=True
+        )
 
         return TimeWindow(
             upstream_asset_partitions_def.time_window_for_partition_key(

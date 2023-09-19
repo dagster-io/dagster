@@ -28,6 +28,7 @@ from dagster._core.definitions.events import (
     AssetKey,
     AssetMaterialization,
     AssetObservation,
+    CoercibleToAssetKey,
     ExpectationResult,
     UserEvent,
 )
@@ -870,7 +871,10 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
 
 
         """
-        return self._step_execution_context.asset_partition_key_range_for_input(input_name)
+        asset_key = self.asset_key_for_input(input_name)
+        return self._step_execution_context.partition_key_range_for_asset(
+            asset_key, is_dependency=True
+        )
 
     @public
     def asset_partition_key_for_input(self, input_name: str) -> str:
@@ -1452,6 +1456,61 @@ class AssetExecutionContext(OpExecutionContext, IContext):
         return self._check_specs_by_asset_key
 
     @public
+    def partition_key_range_for_asset_key(
+        self, asset_key: CoercibleToAssetKey, is_dependency: bool = False
+    ) -> PartitionKeyRange:
+        """Return the PartitionKeyRange for the provided asset. Errors if there is more or less than one.
+
+        If you want to write your asset to support running a backfill of several partitions in a single run,
+        you can use partition_key_range_for_asset to get the range of partitions being materialized
+        by the backfill.
+
+        Args:
+            asset_key (Union[AssetKey, str]): The asset to get the partition key range for
+            is_dependency (bool): If the asset is a self-dependent asset, you can set is_dependency=True to
+                fetch the partition key range of the asset as an upstream dependency
+
+        Examples:
+            .. code-block:: python
+
+                partitions_def = DailyPartitionsDefinition("2023-08-20")
+                @asset(
+                    partitions_def=partitions_def
+                )
+                def upstream_asset(context: AssetExecutionContext):
+                    context.log.info(context.partition_key_range_for_asset("upstream_asset"))
+                # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+                #   PartitionKeyRange(start="2023-08-21", end="2023-08-25")
+                @asset(
+                    partitions_def=partitions_def,
+                )
+                def downstream_asset(context: AssetExecutionContext, upstream_asset):
+                    context.log.info(context.partition_key_range_for_asset("upstream_asset"))
+                    context.log.info(context.partition_key_range_for_asset("downstream_asset"))
+                # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+                #   PartitionKeyRange(start="2023-08-21", end="2023-08-25")
+                #   PartitionKeyRange(start="2023-08-21", end="2023-08-25")
+                @asset(
+                    partitions_def=partitions_def,
+                    ins={
+                        "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                    }
+                )
+                def self_dependent_asset(context: AssetExecutionContext, self_dependent_asset):
+                    context.log.info(context.partition_key_range_for_asset("self_dependent_asset", is_dependency=True))
+                    context.log.info(context.partition_key_range_for_asset("self_dependent_asset"))
+                # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+                #   PartitionKeyRange(start="2023-08-20", end="2023-08-24")
+                #   PartitionKeyRange(start="2023-08-21", end="2023-08-25")
+        """
+        return self._step_execution_context.partition_key_range_for_asset(
+            asset_key, is_dependency=is_dependency
+        )
+
+    # TODO the below methods weren't originally part of the deprecated list, but are also not part
+    # of the context interface. What should we do with them?
+
+    @public
     @property
     def resources(self) -> Any:
         """Resources: The currently available resources."""
@@ -1477,18 +1536,25 @@ class AssetExecutionContext(OpExecutionContext, IContext):
     def partition_time_window(self) -> TimeWindow:
         return self.op_execution_context.partition_time_window
 
+    # deprecated methods. All remaining methods on OpExecutionContext should be here with the
+    # appropriate deprecation warning
+
+    @deprecated(**_get_deprecation_kwargs("asset_partition_key_for_input"))
     @public
     def asset_partition_key_for_input(self, input_name: str) -> str:
         return self.op_execution_context.asset_partition_key_for_input(input_name=input_name)
 
+    @deprecated(**_get_deprecation_kwargs("asset_partition_key_for_output"))
     @public
     def asset_partition_key_for_output(self, output_name: str = "result") -> str:
         return self.op_execution_context.asset_partition_key_for_output(output_name=output_name)
 
+    @deprecated(**_get_deprecation_kwargs("asset_partition_key_range_for_input"))
     @public
     def asset_partition_key_range_for_input(self, input_name: str) -> PartitionKeyRange:
         return self.op_execution_context.asset_partition_key_range_for_input(input_name=input_name)
 
+    @deprecated(**_get_deprecation_kwargs("asset_partition_key_range_for_output"))
     @public
     def asset_partition_key_range_for_output(
         self, output_name: str = "result"
@@ -1497,40 +1563,48 @@ class AssetExecutionContext(OpExecutionContext, IContext):
             output_name=output_name
         )
 
+    @deprecated(**_get_deprecation_kwargs("has_partition_key"))
     @public
     @property
     def has_partition_key(self) -> bool:
         return self.op_execution_context.has_partition_key
 
+    @deprecated(**_get_deprecation_kwargs("asset_partition_key_range"))
     @public
     @property
     def asset_partition_key_range(self) -> PartitionKeyRange:
         return self.op_execution_context.asset_partition_key_range
 
+    @deprecated(**_get_deprecation_kwargs("asset_partition_keys_for_input"))
     @public
     def asset_partition_keys_for_input(self, input_name: str) -> Sequence[str]:
         return self.op_execution_context.asset_partition_keys_for_input(input_name=input_name)
 
+    @deprecated(**_get_deprecation_kwargs("asset_partition_keys_for_output"))
     @public
     def asset_partition_keys_for_output(self, output_name: str = "result") -> Sequence[str]:
         return self.op_execution_context.asset_partition_keys_for_output(output_name=output_name)
 
+    @deprecated(**_get_deprecation_kwargs("asset_partitions_time_window_for_input"))
     @public
     def asset_partitions_time_window_for_input(self, input_name: str = "result") -> TimeWindow:
         return self.op_execution_context.asset_partitions_time_window_for_input(
             input_name=input_name
         )
 
+    @deprecated(**_get_deprecation_kwargs("asset_partitions_time_window_for_output"))
     @public
     def asset_partitions_time_window_for_output(self, output_name: str = "result") -> TimeWindow:
         return self.op_execution_context.asset_partitions_time_window_for_output(
             output_name=output_name
         )
 
+    @deprecated(**_get_deprecation_kwargs("asset_partitions_def_for_input"))
     @public
     def asset_partitions_def_for_input(self, input_name: str) -> PartitionsDefinition:
         return self.op_execution_context.asset_partitions_def_for_input(input_name=input_name)
 
+    @deprecated(**_get_deprecation_kwargs("asset_partitions_def_for_output"))
     @public
     def asset_partitions_def_for_output(self, output_name: str = "result") -> PartitionsDefinition:
         return self.op_execution_context.asset_partitions_def_for_output(output_name=output_name)
