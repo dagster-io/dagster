@@ -7,7 +7,7 @@ from dagster import (
     IOManager,
     IOManagerDefinition,
     ResourceDefinition,
-    build_op_context,
+    build_asset_context,
     execute_job,
     io_manager,
     mem_io_manager,
@@ -402,7 +402,7 @@ def test_config():
         resource_config_by_key={"foo": {"config": "blah"}, "bar": {"config": "baz"}},
     )[0]
 
-    transformed_asset(build_op_context())
+    transformed_asset(build_asset_context())
 
 
 def test_config_not_satisfied():
@@ -435,7 +435,7 @@ def test_bad_key_provided():
         },
     )[0]
 
-    transformed_asset(build_op_context())
+    transformed_asset(build_asset_context())
 
 
 def test_bad_config_provided():
