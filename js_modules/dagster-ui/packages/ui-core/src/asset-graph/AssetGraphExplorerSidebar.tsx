@@ -256,6 +256,8 @@ export const AssetGraphExplorerSidebar = React.memo(
           }
           return nextOpenNodes;
         });
+      } else {
+        setSelectedNode(null);
       }
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [
@@ -435,8 +437,7 @@ const Node = ({
   const downstream = Object.keys(assetGraphData.downstream[node.id] ?? {});
   const elementRef = React.useRef<HTMLDivElement | null>(null);
 
-  const [showDownstreamDialog, setShowDownstreamDialog] = React.useState(false);
-  const [showUpstreamDialog, setShowUpstreamDialog] = React.useState(false);
+  const [showParents, setShowParents] = React.useState(false);
 
   function showDownstreamGraph() {
     const path = JSON.parse(node.id);
@@ -474,22 +475,11 @@ const Node = ({
     <>
       {launchpadElement}
       <UpstreamDownstreamDialog
-        title="Downstream assets"
-        assets={downstream}
-        isOpen={showDownstreamDialog}
-        close={() => {
-          setShowDownstreamDialog(false);
-        }}
-        selectNode={(e, id) => {
-          selectNode(e, id);
-        }}
-      />
-      <UpstreamDownstreamDialog
-        title="Upstream assets"
+        title="Parent assets"
         assets={upstream}
-        isOpen={showUpstreamDialog}
+        isOpen={showParents}
         close={() => {
-          setShowUpstreamDialog(false);
+          setShowParents(false);
         }}
         selectNode={selectNode}
       />
@@ -567,6 +557,15 @@ const Node = ({
                           }}
                         />
                         {upstream.length || downstream.length ? <MenuDivider /> : null}
+                        {upstream.length > 1 ? (
+                          <MenuItem
+                            text={`View parents (${upstream.length})`}
+                            icon="list"
+                            onClick={() => {
+                              setShowParents(true);
+                            }}
+                          />
+                        ) : null}
                         {upstream.length ? (
                           <MenuItem
                             text="Show upstream graph"
