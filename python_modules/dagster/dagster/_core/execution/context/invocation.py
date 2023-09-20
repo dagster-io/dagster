@@ -869,14 +869,14 @@ class UnboundAssetExecutionContext(AssetExecutionContext):
 
         .. code-block:: python
 
-            from dagster import op, build_op_context, AssetMaterialization, ExpectationResult
+            from dagster import op, build_asset_context, AssetMaterialization, ExpectationResult
 
             @op
             def my_op(context):
                 ...
 
             def test_my_op():
-                context = build_op_context()
+                context = build_asset_context()
                 my_op(context)
                 all_user_events = context.get_events()
                 materializations = [event for event in all_user_events if isinstance(event, AssetMaterialization)]
