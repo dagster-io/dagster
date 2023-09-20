@@ -133,12 +133,8 @@ const OverdueLineagePopoverContent: React.FC<{
 
   const hasUpstreams = data.assetMaterializationUsedData.length > 0;
   const {currentLagMinutes, currentMinutesLate} = data.freshnessInfo;
-  const {
-    lastEvaluationTimestamp,
-    cronSchedule,
-    cronScheduleTimezone,
-    maximumLagMinutes,
-  } = data.freshnessPolicy;
+  const {lastEvaluationTimestamp, cronSchedule, cronScheduleTimezone, maximumLagMinutes} =
+    data.freshnessPolicy;
   const maxLagMinutesStr = humanizedMinutesLateString(maximumLagMinutes);
   const lagMinutesStr = humanizedMinutesLateString(currentLagMinutes || 0);
   const derivedStr = hasUpstreams ? ` is derived from source data that` : '';

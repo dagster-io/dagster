@@ -19,13 +19,8 @@ export const AssetPlots: React.FC<Props> = ({
   params,
   setParams,
 }) => {
-  const {
-    materializations,
-    observations,
-    loadedPartitionKeys,
-    loading,
-    xAxis,
-  } = useRecentAssetEvents(assetKey, params, {assetHasDefinedPartitions});
+  const {materializations, observations, loadedPartitionKeys, loading, xAxis} =
+    useRecentAssetEvents(assetKey, params, {assetHasDefinedPartitions});
 
   const grouped = useGroupedEvents(xAxis, materializations, observations, loadedPartitionKeys);
   const activeItems = React.useMemo(() => new Set([xAxis]), [xAxis]);

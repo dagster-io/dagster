@@ -40,18 +40,12 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
   liveData,
   stepKey,
 }) => {
-  const {
-    materializations,
-    observations,
-    loadedPartitionKeys,
-    loading,
-    refetch,
-    xAxis,
-  } = useRecentAssetEvents(
-    asset.assetKey,
-    {},
-    {assetHasDefinedPartitions: !!asset.partitionDefinition},
-  );
+  const {materializations, observations, loadedPartitionKeys, loading, refetch, xAxis} =
+    useRecentAssetEvents(
+      asset.assetKey,
+      {},
+      {assetHasDefinedPartitions: !!asset.partitionDefinition},
+    );
 
   const grouped = useGroupedEvents(xAxis, materializations, observations, loadedPartitionKeys);
   const displayedEvent = isSourceAsset ? observations[0] : materializations[0];
@@ -98,7 +92,7 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
             <Icon name="open_in_new" color={Colors.Link} />
           </Box>
           <Box margin={{horizontal: 24}} flex={{gap: 12, alignItems: 'flex-start'}}>
-            <Body style={{flex: 1}}>
+            <Body style={{flex: 1, marginBottom: 12}}>
               {automaterializePolicyDescription(asset.autoMaterializePolicy)}
             </Body>
             <AutomaterializePolicyTag policy={asset.autoMaterializePolicy} />

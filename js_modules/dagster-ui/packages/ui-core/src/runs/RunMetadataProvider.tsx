@@ -144,7 +144,7 @@ function extractMetadataFromRun(run?: RunFragment): IRunMetadataDict {
               idx === stepStat.attempts.length - 1
                 ? stepStatusToStepState(stepStat.status)
                 : IStepState.RETRY_REQUESTED,
-          } as IStepAttempt),
+          }) as IStepAttempt,
       ),
 
       // accumulated metadata

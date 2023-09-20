@@ -1,6 +1,6 @@
 {
   "name": "@dagster-io/eslint-config",
-  "version": "1.0.12",
+  "version": "1.0.13",
   "description": "Shared eslint configuration for @dagster-io",
   "license": "Apache-2.0",
   "main": "index.js",
@@ -10,27 +10,27 @@
     "format": "prettier -w --config ./.prettierrc.js ."
   },
   "peerDependencies": {
-    "eslint": "^8.30.0",
-    "prettier": "2.8.1"
+    "eslint": "^8.49.0",
+    "prettier": "^3.0.3"
   },
   "dependencies": {
-    "@typescript-eslint/eslint-plugin": "6.7.2",
-    "@typescript-eslint/parser": "6.7.2",
-    "eslint-config-prettier": "8.5.0",
+    "@typescript-eslint/eslint-plugin": "^6.7.2",
+    "@typescript-eslint/parser": "^6.7.2",
+    "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-dagster-rules": "link:./rules",
-    "eslint-plugin-import": "2.26.0",
-    "eslint-plugin-jest": "^27.1.7",
-    "eslint-plugin-jsx-a11y": "6.6.1",
-    "eslint-plugin-prettier": "^4.2.1",
-    "eslint-plugin-react": "7.31.11",
-    "eslint-plugin-react-hooks": "4.6.0"
+    "eslint-plugin-import": "^2.28.1",
+    "eslint-plugin-jest": "^27.4.0",
+    "eslint-plugin-jsx-a11y": "^6.7.1",
+    "eslint-plugin-prettier": "^5.0.0",
+    "eslint-plugin-react": "^7.33.2",
+    "eslint-plugin-react-hooks": "^4.6.0"
   },
   "devDependencies": {
-    "@types/jest": "^27.5.1",
-    "eslint": "^8.6.0",
-    "jest": "^29.4",
-    "prettier": "2.2.1",
-    "ts-jest": "^28.0.3",
+    "@types/jest": "^29.5.5",
+    "eslint": "^8.49.0",
+    "jest": "^29.7.0",
+    "prettier": "^3.0.3",
+    "ts-jest": "^29.1.1",
     "typescript": "5.2.2"
   }
 }

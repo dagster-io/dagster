@@ -52,14 +52,8 @@ export const AssetEvents: React.FC<Props> = ({
   liveData,
   dataRefreshHint,
 }) => {
-  const {
-    xAxis,
-    materializations,
-    observations,
-    loadedPartitionKeys,
-    refetch,
-    loading,
-  } = useRecentAssetEvents(assetKey, params, {assetHasDefinedPartitions: false});
+  const {xAxis, materializations, observations, loadedPartitionKeys, refetch, loading} =
+    useRecentAssetEvents(assetKey, params, {assetHasDefinedPartitions: false});
 
   React.useEffect(() => {
     if (params.asOf) {

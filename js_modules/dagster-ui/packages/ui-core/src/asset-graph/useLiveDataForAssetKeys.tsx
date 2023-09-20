@@ -24,9 +24,8 @@ const SUBSCRIPTION_MAX_POLL_RATE = 2 * 1000;
  * node that has changed is not in scope.
  */
 export function useLiveDataForAssetKeys(assetKeys: AssetKeyInput[], batched?: boolean) {
-  const {currentBatch, nextBatch, setBatchData, isLastBatch} = useLiveDataForAssetKeysBatcher(
-    assetKeys,
-  );
+  const {currentBatch, nextBatch, setBatchData, isLastBatch} =
+    useLiveDataForAssetKeysBatcher(assetKeys);
 
   const liveResult = useQuery<AssetGraphLiveQuery, AssetGraphLiveQueryVariables>(
     ASSETS_GRAPH_LIVE_QUERY,

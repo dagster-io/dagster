@@ -8,10 +8,12 @@ import {AssetEventsQuery} from '../../assets/types/useRecentAssetEvents.types';
 import {ASSET_EVENTS_QUERY} from '../../assets/useRecentAssetEvents';
 import {
   AssetNode,
+  AutoMaterializeDecisionType,
   AutoMaterializePolicyType,
   RunStatus,
   buildAssetNode,
   buildAutoMaterializePolicy,
+  buildAutoMaterializeRule,
   buildFreshnessPolicy,
 } from '../../graphql/types';
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
@@ -264,6 +266,16 @@ export const AssetWithPolicies = () => {
         buildSidebarQueryMock({
           autoMaterializePolicy: buildAutoMaterializePolicy({
             policyType: AutoMaterializePolicyType.EAGER,
+            rules: [
+              buildAutoMaterializeRule({
+                decisionType: AutoMaterializeDecisionType.MATERIALIZE,
+                description: 'Rule 1',
+              }),
+              buildAutoMaterializeRule({
+                decisionType: AutoMaterializeDecisionType.SKIP,
+                description: 'Skip Rule 1',
+              }),
+            ],
           }),
           freshnessPolicy: buildFreshnessPolicy({
             maximumLagMinutes: 60,

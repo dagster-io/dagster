@@ -59,14 +59,12 @@ export const AssetView = ({assetKey}: Props) => {
   const {tabBuilder, renderFeatureView} = React.useContext(AssetFeatureContext);
 
   // Load the asset definition
-  const {definition, definitionQueryResult, lastMaterialization} = useAssetViewAssetDefinition(
-    assetKey,
+  const {definition, definitionQueryResult, lastMaterialization} =
+    useAssetViewAssetDefinition(assetKey);
+  const tabList = React.useMemo(
+    () => tabBuilder({definition, params}),
+    [definition, params, tabBuilder],
   );
-  const tabList = React.useMemo(() => tabBuilder({definition, params}), [
-    definition,
-    params,
-    tabBuilder,
-  ]);
 
   const defaultTab = tabList.some((t) => t.id === 'partitions') ? 'partitions' : 'events';
   const selectedTab = params.view || defaultTab;

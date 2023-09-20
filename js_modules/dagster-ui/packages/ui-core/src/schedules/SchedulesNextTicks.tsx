@@ -317,14 +317,12 @@ const NextTickDialog: React.FC<{
   schedule: ScheduleNextFiveTicksFragment;
   tickTimestamp: number;
 }> = ({repoAddress, evaluationResult, schedule, tickTimestamp, setOpen, isOpen}) => {
-  const [
-    selectedRunRequest,
-    setSelectedRunRequest,
-  ] = React.useState<ScheduleFutureTickRunRequestFragment | null>(
-    evaluationResult && evaluationResult.runRequests && evaluationResult.runRequests.length === 1
-      ? evaluationResult.runRequests[0]!
-      : null,
-  );
+  const [selectedRunRequest, setSelectedRunRequest] =
+    React.useState<ScheduleFutureTickRunRequestFragment | null>(
+      evaluationResult && evaluationResult.runRequests && evaluationResult.runRequests.length === 1
+        ? evaluationResult.runRequests[0]!
+        : null,
+    );
 
   const copy = useCopyToClipboard();
 
