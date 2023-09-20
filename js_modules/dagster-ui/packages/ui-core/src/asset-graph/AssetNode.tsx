@@ -330,7 +330,7 @@ const NameTooltipCSS: CSSObject = {
   fontSize: 16.8,
 };
 
-const NameTooltipStyle = JSON.stringify({
+export const NameTooltipStyle = JSON.stringify({
   ...NameTooltipCSS,
   background: Colors.Blue50,
   border: `1px solid ${Colors.Blue100}`,

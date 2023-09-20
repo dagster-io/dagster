@@ -50,6 +50,7 @@ export const DETAIL_ZOOM = 0.75;
 const DEFAULT_ZOOM = 0.75;
 const DEFAULT_MAX_AUTOCENTER_ZOOM = 1;
 const DEFAULT_MIN_ZOOM = 0.17;
+export const DEFAULT_MAX_ZOOM = 1.2;
 
 const BUTTON_INCREMENT = 0.05;
 
@@ -433,7 +434,12 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
   }
 
   public zoomToSVGBox(box: IBounds, animate: boolean, newScale = this.state.scale) {
-    this.zoomToSVGCoords(box.x + box.width / 2, box.y + box.height / 2, animate, newScale);
+    this.zoomToSVGCoords(
+      box.x + box.width / 2,
+      box.y + box.height / 2,
+      animate,
+      newScale === this.getMinZoom() ? this.getMaxZoom() : newScale,
+    );
   }
 
   public zoomToSVGCoords(x: number, y: number, animate: boolean, scale = this.state.scale) {
