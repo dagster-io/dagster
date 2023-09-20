@@ -1475,13 +1475,6 @@ class AssetExecutionContext(OpExecutionContext):
         return self._op_execution_context.asset_check_spec
 
     @public
-    def partition_key_range_for_asset_key(self, asset_key: AssetKey) -> PartitionKeyRange:
-        """TODO - implement in stacked pr."""
-        raise NotImplementedError(
-            "partition_key_range_for_asset_key not implemented in this branch"
-        )
-
-    @public
     @property
     def resources(self) -> Any:
         """Resources: The currently available resources."""
@@ -1492,6 +1485,66 @@ class AssetExecutionContext(OpExecutionContext):
     def run_config(self) -> Mapping[str, object]:
         """dict: The run config for the current execution."""
         return self._op_execution_context.run_config
+
+    # partition methods that will be marked deprecated once we have aligned on future partition methods
+
+    @public
+    def asset_partition_key_for_input(self, input_name: str) -> str:
+        return self.op_execution_context.asset_partition_key_for_input(input_name=input_name)
+
+    @public
+    def asset_partition_key_for_output(self, output_name: str = "result") -> str:
+        return self.op_execution_context.asset_partition_key_for_output(output_name=output_name)
+
+    @public
+    def asset_partition_key_range_for_input(self, input_name: str) -> PartitionKeyRange:
+        return self.op_execution_context.asset_partition_key_range_for_input(input_name=input_name)
+
+    @public
+    def asset_partition_key_range_for_output(
+        self, output_name: str = "result"
+    ) -> PartitionKeyRange:
+        return self.op_execution_context.asset_partition_key_range_for_output(
+            output_name=output_name
+        )
+
+    @public
+    @property
+    def has_partition_key(self) -> bool:
+        return self.op_execution_context.has_partition_key
+
+    @public
+    @property
+    def asset_partition_key_range(self) -> PartitionKeyRange:
+        return self.op_execution_context.asset_partition_key_range
+
+    @public
+    def asset_partition_keys_for_input(self, input_name: str) -> Sequence[str]:
+        return self.op_execution_context.asset_partition_keys_for_input(input_name=input_name)
+
+    @public
+    def asset_partition_keys_for_output(self, output_name: str = "result") -> Sequence[str]:
+        return self.op_execution_context.asset_partition_keys_for_output(output_name=output_name)
+
+    @public
+    def asset_partitions_time_window_for_input(self, input_name: str = "result") -> TimeWindow:
+        return self.op_execution_context.asset_partitions_time_window_for_input(
+            input_name=input_name
+        )
+
+    @public
+    def asset_partitions_time_window_for_output(self, output_name: str = "result") -> TimeWindow:
+        return self.op_execution_context.asset_partitions_time_window_for_output(
+            output_name=output_name
+        )
+
+    @public
+    def asset_partitions_def_for_input(self, input_name: str) -> PartitionsDefinition:
+        return self.op_execution_context.asset_partitions_def_for_input(input_name=input_name)
+
+    @public
+    def asset_partitions_def_for_output(self, output_name: str = "result") -> PartitionsDefinition:
+        return self.op_execution_context.asset_partitions_def_for_output(output_name=output_name)
 
     # deprecated methods. All remaining methods on OpExecutionContext should be here with the
     # appropriate deprecation warning
@@ -1579,76 +1632,6 @@ class AssetExecutionContext(OpExecutionContext):
     @public
     def asset_key_for_output(self, output_name: str = "result") -> AssetKey:
         return self.op_execution_context.asset_key_for_output(output_name=output_name)
-
-    @deprecated(**_get_deprecation_kwargs("asset_partition_key_for_input"))
-    @public
-    def asset_partition_key_for_input(self, input_name: str) -> str:
-        return self.op_execution_context.asset_partition_key_for_input(input_name=input_name)
-
-    @deprecated(**_get_deprecation_kwargs("asset_partition_key_for_output"))
-    @public
-    def asset_partition_key_for_output(self, output_name: str = "result") -> str:
-        return self.op_execution_context.asset_partition_key_for_output(output_name=output_name)
-
-    @deprecated(**_get_deprecation_kwargs("asset_partition_key_range_for_input"))
-    @public
-    def asset_partition_key_range_for_input(self, input_name: str) -> PartitionKeyRange:
-        return self.op_execution_context.asset_partition_key_range_for_input(input_name=input_name)
-
-    @deprecated(**_get_deprecation_kwargs("asset_partition_key_range_for_output"))
-    @public
-    def asset_partition_key_range_for_output(
-        self, output_name: str = "result"
-    ) -> PartitionKeyRange:
-        return self.op_execution_context.asset_partition_key_range_for_output(
-            output_name=output_name
-        )
-
-    @deprecated(**_get_deprecation_kwargs("has_partition_key"))
-    @public
-    @property
-    def has_partition_key(self) -> bool:
-        return self.op_execution_context.has_partition_key
-
-    @deprecated(**_get_deprecation_kwargs("asset_partition_key_range"))
-    @public
-    @property
-    def asset_partition_key_range(self) -> PartitionKeyRange:
-        return self.op_execution_context.asset_partition_key_range
-
-    @deprecated(**_get_deprecation_kwargs("asset_partition_keys_for_input"))
-    @public
-    def asset_partition_keys_for_input(self, input_name: str) -> Sequence[str]:
-        return self.op_execution_context.asset_partition_keys_for_input(input_name=input_name)
-
-    @deprecated(**_get_deprecation_kwargs("asset_partition_keys_for_output"))
-    @public
-    def asset_partition_keys_for_output(self, output_name: str = "result") -> Sequence[str]:
-        return self.op_execution_context.asset_partition_keys_for_output(output_name=output_name)
-
-    @deprecated(**_get_deprecation_kwargs("asset_partitions_time_window_for_input"))
-    @public
-    def asset_partitions_time_window_for_input(self, input_name: str = "result") -> TimeWindow:
-        return self.op_execution_context.asset_partitions_time_window_for_input(
-            input_name=input_name
-        )
-
-    @deprecated(**_get_deprecation_kwargs("asset_partitions_time_window_for_output"))
-    @public
-    def asset_partitions_time_window_for_output(self, output_name: str = "result") -> TimeWindow:
-        return self.op_execution_context.asset_partitions_time_window_for_output(
-            output_name=output_name
-        )
-
-    @deprecated(**_get_deprecation_kwargs("asset_partitions_def_for_input"))
-    @public
-    def asset_partitions_def_for_input(self, input_name: str) -> PartitionsDefinition:
-        return self.op_execution_context.asset_partitions_def_for_input(input_name=input_name)
-
-    @deprecated(**_get_deprecation_kwargs("asset_partitions_def_for_output"))
-    @public
-    def asset_partitions_def_for_output(self, output_name: str = "result") -> PartitionsDefinition:
-        return self.op_execution_context.asset_partitions_def_for_output(output_name=output_name)
 
     @deprecated(**_get_deprecation_kwargs("get_output_metadata"))
     def get_output_metadata(
