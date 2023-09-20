@@ -26,7 +26,7 @@ def test_ext_k8s_pod(namespace, cluster_provider):
         context: AssetExecutionContext,
         ext_k8s_pod: ExtK8sPod,
     ):
-        return ext_k8s_pod.run(
+        yield from ext_k8s_pod.run(
             context=context,
             namespace=namespace,
             image=docker_image,
@@ -138,7 +138,7 @@ def test_ext_k8s_pod_file_inject(namespace, cluster_provider):
             ],
         )
 
-        return ext_k8s_pod.run(
+        yield from ext_k8s_pod.run(
             context=context,
             namespace=namespace,
             extras={
@@ -197,7 +197,7 @@ def test_use_excute_k8s_job(namespace, cluster_provider):
                 k8s_job_name=job_name,
             )
             reader.consume_pod_logs(core_api, job_name, namespace)
-        return ext_context.get_materialize_results()
+        yield from ext_context.get_results()
 
     result = materialize(
         [number_y_job],

@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from typing import Any, Iterator, Mapping, Optional, Sequence, Tuple, Union
+from typing import Any, Iterator, Mapping, Optional, Sequence, Union
 
 import docker
 from dagster import (
@@ -7,7 +7,6 @@ from dagster import (
     ResourceParam,
     _check as check,
 )
-from dagster._core.definitions.result import MaterializeResult
 from dagster._core.ext.client import (
     ExtClient,
     ExtContextInjector,
@@ -15,6 +14,7 @@ from dagster._core.ext.client import (
 )
 from dagster._core.ext.context import (
     ExtMessageHandler,
+    ExtResult,
 )
 from dagster._core.ext.utils import (
     ExtEnvContextInjector,
@@ -95,7 +95,7 @@ class _ExtDocker(ExtClient):
         registry: Optional[Mapping[str, str]] = None,
         container_kwargs: Optional[Mapping[str, Any]] = None,
         extras: Optional[ExtExtras] = None,
-    ) -> Union[MaterializeResult, Tuple[MaterializeResult, ...]]:
+    ) -> Iterator[ExtResult]:
         """Create a docker container and run it to completion, enriched with the ext protocol.
 
         Args:
@@ -163,7 +163,7 @@ class _ExtDocker(ExtClient):
                     raise DagsterExtError(f"Container exited with non-zero status code: {result}")
             finally:
                 container.stop()
-        return ext_context.get_materialize_results()
+        return ext_context.get_results()
 
     def _create_container(
         self,

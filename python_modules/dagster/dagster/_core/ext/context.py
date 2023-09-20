@@ -1,8 +1,7 @@
+from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Any, Mapping, Optional
-from typing import Any, Mapping, Optional, get_args
+from queue import Queue
 from typing import Any, Dict, Iterator, Mapping, Optional, Set
-from typing import Any, Dict, Mapping, Optional, Tuple, get_args
 
 from dagster_ext import (
     DAGSTER_EXT_ENV_KEYS,
@@ -13,10 +12,12 @@ from dagster_ext import (
     ExtExtras,
     ExtMessage,
     ExtMetadataType,
+    ExtMetadataValue,
     ExtParams,
     ExtTimeWindow,
     encode_env_var,
 )
+from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._core.definitions.data_version import DataProvenance, DataVersion
@@ -25,14 +26,40 @@ from dagster._core.definitions.metadata import MetadataValue, normalize_metadata
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.definitions.time_window_partitions import TimeWindow
-from dagster._core.errors import DagsterExternalExecutionError
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.execution.context.invocation import BoundOpExecutionContext
+from dagster._core.ext.client import ExtMessageReader
+
+ExtResult: TypeAlias = MaterializeResult
 
 
 class ExtMessageHandler:
     def __init__(self, context: OpExecutionContext) -> None:
         self._context = context
+        # Queue is thread-safe
+        self._result_queue: Queue[ExtResult] = Queue()
+        # Only read by the main thread after all messages are handled, so no need for a lock
+        self._unmaterialized_assets: Set[AssetKey] = set(context.selected_asset_keys)
+        self._metadata: Dict[AssetKey, Dict[str, MetadataValue]] = {}
+        self._data_versions: Dict[AssetKey, DataVersion] = {}
+
+    @contextmanager
+    def handle_messages(self, message_reader: ExtMessageReader) -> Iterator[ExtParams]:
+        with message_reader.read_messages(self) as params:
+            yield params
+        for key in self._unmaterialized_assets:
+            self._result_queue.put(MaterializeResult(asset_key=key))
+
+    def clear_result_queue(self) -> Iterator[ExtResult]:
+        while not self._result_queue.empty():
+            yield self._result_queue.get()
+
+    def _resolve_metadata(
+        self, metadata: Mapping[str, ExtMetadataValue]
+    ) -> Mapping[str, MetadataValue]:
+        return {
+            k: self._resolve_metadata_value(v["raw_value"], v["type"]) for k, v in metadata.items()
+        }
 
     def _resolve_metadata_value(self, value: Any, metadata_type: ExtMetadataType) -> MetadataValue:
         if metadata_type == EXT_METADATA_TYPE_INFER:
@@ -74,20 +101,24 @@ class ExtMessageHandler:
             self._handle_log(**message["params"])  # type: ignore
 
     def _handle_report_asset_materialization(
-        self, asset_key: str, metadata: Optional[Mapping[str, Any]], data_version: Optional[str]
+        self,
+        asset_key: str,
+        metadata: Optional[Mapping[str, ExtMetadataValue]],
+        data_version: Optional[str],
     ) -> None:
         check.str_param(asset_key, "asset_key")
         check.opt_str_param(data_version, "data_version")
         metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
         resolved_asset_key = AssetKey.from_user_string(asset_key)
-        resolved_metadata = {
-            k: self._resolve_metadata_value(v["raw_value"], v["type"]) for k, v in metadata.items()
-        }
-        if data_version is not None:
-            self._context.set_data_version(resolved_asset_key, DataVersion(data_version))
-        if resolved_metadata:
-            output_name = self._context.output_for_asset_key(resolved_asset_key)
-            self._context.add_output_metadata(resolved_metadata, output_name)
+        resolved_metadata = self._resolve_metadata(metadata)
+        resolved_data_version = None if data_version is None else DataVersion(data_version)
+        result = MaterializeResult(
+            asset_key=resolved_asset_key,
+            metadata=resolved_metadata,
+            data_version=resolved_data_version,
+        )
+        self._result_queue.put(result)
+        self._unmaterialized_assets.remove(resolved_asset_key)
 
     def _handle_log(self, message: str, level: str = "info") -> None:
         check.str_param(message, "message")
@@ -109,7 +140,6 @@ class ExtOrchestrationContext:
     message_handler: ExtMessageHandler
     context_injector_params: ExtParams
     message_reader_params: ExtParams
-    is_task_finished: bool = False
 
     def get_external_process_env_vars(self):
         return {
@@ -120,23 +150,8 @@ class ExtOrchestrationContext:
             ),
         }
 
-    def get_materialize_results(self) -> Tuple[MaterializeResult, ...]:
-        if not self.is_task_finished:
-            raise DagsterExternalExecutionError(
-                "`get_materialize_results` must be called after the `ext_protocol` context manager"
-                " has exited."
-            )
-        return tuple(
-            self._materialize_result_for_asset(AssetKey.from_user_string(key))
-            for key in self.context_data["asset_keys"] or []
-        )
-
-    def _materialize_result_for_asset(self, asset_key: AssetKey):
-        return MaterializeResult(
-            asset_key=asset_key,
-            metadata=self.message_handler.metadata.get(asset_key),
-            data_version=self.message_handler.data_versions.get(asset_key),
-        )
+    def get_results(self) -> Iterator[ExtResult]:
+        yield from self.message_handler.clear_result_queue()
 
 
 def build_external_execution_context_data(

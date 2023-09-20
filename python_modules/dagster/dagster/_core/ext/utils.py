@@ -185,6 +185,12 @@ def extract_message_or_forward_to_stdout(handler: "ExtMessageHandler", log_line:
         sys.stdout.writelines((log_line, "\n"))
 
 
+_FAIL_TO_YIELD_ERROR_MESSAGE = (
+    "Did you forget to `yield from ext_context.get_results()`? `get_results` should be called once"
+    " after the `ext_protocol` block has exited to yield any remaining buffered results."
+)
+
+
 @contextmanager
 def ext_protocol(
     context: OpExecutionContext,
@@ -195,18 +201,16 @@ def ext_protocol(
     """Enter the context managed context injector and message reader that power the EXT protocol and receive the environment variables
     that need to be provided to the external process.
     """
+    # This will trigger an error if expected outputs are not yielded
+    context.set_requires_typed_event_stream(error_message=_FAIL_TO_YIELD_ERROR_MESSAGE)
     context_data = build_external_execution_context_data(context, extras)
     message_handler = ExtMessageHandler(context)
     with context_injector.inject_context(
-        context_data,
-    ) as ci_params, message_reader.read_messages(
-        message_handler,
-    ) as mr_params:
-        ext_context = ExtOrchestrationContext(
+        context_data
+    ) as ci_params, message_handler.handle_messages(message_reader) as mr_params:
+        yield ExtOrchestrationContext(
             context_data=context_data,
             message_handler=message_handler,
             context_injector_params=ci_params,
             message_reader_params=mr_params,
         )
-        yield ext_context
-        ext_context.is_task_finished = True

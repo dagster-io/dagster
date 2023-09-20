@@ -23,7 +23,6 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
-    Set,
     TextIO,
     Type,
     TypedDict,
@@ -165,7 +164,6 @@ def _resolve_optionally_passed_asset_key(
     data: ExtContextData,
     asset_key: Optional[str],
     method: str,
-    already_materialized_assets: Set[str],
 ) -> str:
     asset_keys = _assert_defined_asset_property(data["asset_keys"], method)
     asset_key = _assert_opt_param_type(asset_key, str, method, "asset_key")
@@ -180,11 +178,6 @@ def _resolve_optionally_passed_asset_key(
                 " targets multiple assets."
             )
         asset_key = asset_keys[0]
-    if asset_key in already_materialized_assets:
-        raise DagsterExtError(
-            f"Calling `{method}` with asset key `{asset_key}` is undefined. Asset has already been"
-            " materialized, so no additional data can be reported for it."
-        )
     return asset_key
 
 
@@ -784,8 +777,14 @@ class ExtContext:
         asset_key: Optional[str] = None,
     ):
         asset_key = _resolve_optionally_passed_asset_key(
-            self._data, asset_key, "report_asset_materialization", self._materialized_assets
+            self._data, asset_key, "report_asset_materialization"
         )
+        if asset_key in self._materialized_assets:
+            raise DagsterExtError(
+                f"Calling `report_asset_materialization` with asset key `{asset_key}` is undefined."
+                " Asset has already been materialized, so no additional data can be reported"
+                " for it."
+            )
         metadata = (
             _normalize_param_metadata(metadata, "report_asset_materialization", "metadata")
             if metadata

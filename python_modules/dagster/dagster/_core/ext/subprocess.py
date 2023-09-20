@@ -1,11 +1,10 @@
 from subprocess import Popen
-from typing import Mapping, Optional, Sequence, Tuple, Union
+from typing import Iterator, Mapping, Optional, Sequence, Union
 
 from dagster_ext import ExtExtras
 
 from dagster import _check as check
 from dagster._core.definitions.resource_annotation import ResourceParam
-from dagster._core.definitions.result import MaterializeResult
 from dagster._core.errors import DagsterExternalExecutionError
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.ext.client import (
@@ -13,6 +12,7 @@ from dagster._core.ext.client import (
     ExtContextInjector,
     ExtMessageReader,
 )
+from dagster._core.ext.context import ExtResult
 from dagster._core.ext.utils import (
     ExtTempFileContextInjector,
     ExtTempFileMessageReader,
@@ -67,7 +67,7 @@ class _ExtSubprocess(ExtClient):
         extras: Optional[ExtExtras] = None,
         env: Optional[Mapping[str, str]] = None,
         cwd: Optional[str] = None,
-    ) -> Union[MaterializeResult, Tuple[MaterializeResult, ...]]:
+    ) -> Iterator[ExtResult]:
         with ext_protocol(
             context=context,
             context_injector=self.context_injector,
@@ -83,14 +83,14 @@ class _ExtSubprocess(ExtClient):
                     **(env or {}),
                 },
             )
-            process.wait()
+            while process.poll() is None:
+                yield from ext_context.get_results()
 
             if process.returncode != 0:
                 raise DagsterExternalExecutionError(
                     f"External execution process failed with code {process.returncode}"
                 )
-        mat_results = ext_context.get_materialize_results()
-        return mat_results[0] if len(mat_results) == 1 else mat_results
+        yield from ext_context.get_results()
 
 
 ExtSubprocess = ResourceParam[_ExtSubprocess]
