@@ -22,10 +22,10 @@ Resources typically model external components that assets and ops interact with.
 
 So, why use resources?
 
-- **Plug in different implementations in different environments** - If you have a heavy external dependency that you want to use in production, but avoid using in testing, you can accomplish this by providing different resources in each environment. Check out [Separating Business Logic from Environments](/concepts/testing#separating-business-logic-from-environments) for more info about this capability.
-- **Surface configuration in the UI** - Resources and their configuration are surfaced in the Dagster UI, making it easy to see where your resources are used and how they are configured.
-- **Share configuration across multiple ops or assets** - Resources are configurable and shared, so you can supply configuration in one place instead of configuring the ops and assets individually.
-- **Share implementations across multiple ops or assets** - When multiple ops access the same external services, resources provide a standard way to structure your code to share the implementations.
+- **Plug in different implementations in different environments** - If you have a heavy external dependency that you want to use in production, but avoid using in testing, you can accomplish this by providing different resources in each environment. Refer to the [Separating business logic from environments](/concepts/testing#separating-business-logic-from-environments) section of the Testing documentation for more info about this capability.
+- **Surface configuration in the Dagster UI** - Resources and their configuration are surfaced in the UI, making it easy to see where resources are used and how they're' configured.
+- **Share configuration across multiple assets or ops** - Resources are configurable and shared, so configuration can be supplied in one place instead of individually.
+- **Share implementations across multiple assets or ops** - When multiple assets access the same external services, resources provide a standard way to structure your code to share the implementations.
 
 ---
 
@@ -34,12 +34,12 @@ So, why use resources?
 | Name                                             | Description                                                                                                                                                                                                                             |
 | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | <PyObject object="ConfigurableResource"/>        | The base class extended to define resources. Under the hood, implements <PyObject object="ResourceDefinition" />.                                                                                                                       |
-| <PyObject object="ResourceParam"/>               | An annotation used to specify that a plain Python object parameter for an op or asset is a resource.                                                                                                                                    |
+| <PyObject object="ResourceParam"/>               | An annotation used to specify that a plain Python object parameter for an asset or op is a resource.                                                                                                                                    |
 | <PyObject object="ResourceDefinition" />         | Class for resource definitions. You almost never want to use initialize this class directly. Instead, you should extend the <PyObject object="ConfigurableResource" /> class which implements <PyObject object="ResourceDefinition" />. |
 | <PyObject object="InitResourceContext"/>         | The context object provided to a resource during initialization. This object contains required resource, config, and other run information.                                                                                             |
 | <PyObject object="build_init_resource_context"/> | Function for building an <PyObject object="InitResourceContext"/> outside of execution, intended to be used when testing a resource.                                                                                                    |
 | <PyObject object="build_resources"/>             | Function for initializing a set of resources outside of the context of a job's execution.                                                                                                                                               |
-| <PyObject object="with_resources"/>              | Advanced API for providing resources to a specific set of software-defined assets and source assets, overriding those provided to <PyObject object="Definitions"/>.                                                                     |
+| <PyObject object="with_resources"/>              | Advanced API for providing resources to a specific set of Software-defined Assets and source assets, overriding those provided to <PyObject object="Definitions"/>.                                                                     |
 
 ---
 
@@ -56,9 +56,9 @@ To provide resource values to your assets and ops, attach them to your <PyObject
 
 ### Using Software-defined Assets
 
-Here, we define a subclass of <PyObject object="ConfigurableResource"/> that represents a connection to an external service. We can configure the resource by constructing it in the <PyObject object="Definitions" /> call.
+The following example demonstrates defining a subclass of <PyObject object="ConfigurableResource"/> that represents a connection to an external service. The resource can be configured by constructing it in the <PyObject object="Definitions" /> call.
 
-We can define methods on the resource class which depend on config values. These methods can be used by assets and ops.
+You can define methods on the resource class which depend on config values.
 
 ```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resources_configurable_defs endbefore=end_new_resources_configurable_defs dedent=4
 from dagster import asset, Definitions, ConfigurableResource
@@ -93,7 +93,7 @@ defs = Definitions(
 
 The following example defines a subclass of <PyObject object="ConfigurableResource"/> that represents a connection to an external service. The resource can be configured by constructing it in the <PyObject object="Definitions" /> call.
 
-You can define methods on the resource class which depend on config values. These methods can be used by assets and ops.
+You can define methods on the resource class which depend on config values.
 
 ```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resources_configurable_defs_ops endbefore=end_new_resources_configurable_defs_ops dedent=4
 from dagster import Definitions, job, op, ConfigurableResource
