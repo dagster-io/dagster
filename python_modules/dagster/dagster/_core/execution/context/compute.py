@@ -1345,6 +1345,17 @@ class AssetExecutionContext(OpExecutionContext):
         self._op_execution_context = check.inst_param(
             op_execution_context, "op_execution_context", OpExecutionContext
         )
+        self._asset_keys = list(self.op_execution_context.assets_def.keys_by_output_name.values())
+        self._selected_asset_keys = self._op_execution_context.selected_asset_keys
+        self._assets_def = self._op_execution_context.assets_def
+
+        self._provenance_by_asset_key = {
+            key: self._op_execution_context.get_asset_provenance(key)
+            for key in self._selected_asset_keys
+        }
+        self._code_version_by_asset_key = {
+            key: self._assets_def.code_versions_by_key[key] for key in self._selected_asset_keys
+        }
 
     @public
     @property
@@ -1364,27 +1375,23 @@ class AssetExecutionContext(OpExecutionContext):
 
     @property
     def asset_keys(self) -> Sequence[AssetKey]:
-        return list(self.op_execution_context.assets_def.keys_by_output_name.values())
+        return self._asset_keys
 
     @property
     def provenance(self) -> Optional[DataProvenance]:
-        return self.get_asset_provenance(self.asset_key)
+        return self._provenance_by_asset_key[self.asset_key]
 
     @property
     def provenance_by_asset_key(self) -> Mapping[AssetKey, Optional[DataProvenance]]:
-        provenance_map = {}
-        for key in self.asset_keys:
-            provenance_map[key] = self.get_asset_provenance(key)
-
-        return provenance_map
+        return self._provenance_by_asset_key
 
     @property
     def code_version(self) -> Optional[str]:
-        return self.get_assets_code_version([self.asset_key])[self.asset_key]
+        return self.code_version_by_asset_key[self.asset_key]
 
     @property
     def code_version_by_asset_key(self) -> Mapping[AssetKey, Optional[str]]:
-        return self.get_assets_code_version(self.asset_keys)
+        return self._code_version_by_asset_key
 
     @public
     @property
@@ -1449,13 +1456,15 @@ class AssetExecutionContext(OpExecutionContext):
     @public
     @property
     def assets_def(self) -> AssetsDefinition:
-        return self._op_execution_context.assets_def
+        return self._assets_def
 
     @public
     @property
     def selected_asset_keys(self) -> AbstractSet[AssetKey]:
-        return self._op_execution_context.selected_asset_keys
+        return self._selected_asset_keys
 
+    # TODO - both get_asset_provenance and get_assets_code_version query the instance - do we want to
+    # disallow this, or make the function name more indicative that they are querying the db?
     @public
     @experimental
     def get_asset_provenance(self, asset_key: AssetKey) -> Optional[DataProvenance]:
