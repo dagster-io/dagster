@@ -1278,7 +1278,7 @@ OP_EXECUTION_CONTEXT_ONLY_METHODS = set(
 )
 
 
-PARTITION_KEY_RANGE_AS_ALT = "use partition_key_range or partition_key_range_for_asset instead"
+PARTITION_KEY_RANGE_AS_ALT = "use partition_key_range or partition_key_range_for_asset_key instead"
 INPUT_OUTPUT_ALT = "not use input or output names and instead use asset keys directly"
 OUTPUT_METADATA_ALT = "return MaterializeResult from the asset instead"
 
@@ -1305,7 +1305,7 @@ DEPRECATED_IO_MANAGER_CENTRIC_CONTEXT_METHODS = {
 
 ALTERNATE_AVAILABLE_METHODS = {
     "has_tag": "use dagster_run.has_tag instead",
-    "get_tag": "use dagster_run.get_tag instead",
+    "get_tag": "use dagster_run.tags.get instead",
     "run_tags": "use dagster_run.tags instead",
     "set_data_version": "use MaterializeResult instead",
     "run": "use dagster_run instead.",
@@ -1398,7 +1398,7 @@ class AssetExecutionContext(OpExecutionContext):
     @public
     @property
     def partition_key_range(self) -> PartitionKeyRange:
-        return self._op_execution_context.asset_partition_key_range
+        return self._op_execution_context.partition_key_range
 
     @property
     def partition_time_window(self) -> TimeWindow:
