@@ -145,7 +145,7 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
   const findAssetLocation = useFindAssetLocation();
   const {layout, loading, async} = useAssetLayout(assetGraphData);
   const viewportEl = React.useRef<SVGViewport>();
-  const {flagHorizontalDAGs} = useFeatureFlags();
+  const {flagHorizontalDAGs, flagDAGSidebar} = useFeatureFlags();
 
   const [highlighted, setHighlighted] = React.useState<string | null>(null);
 
@@ -449,7 +449,7 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
             </Box>
           </Box>
           <QueryOverlay>
-            {showSidebar ? null : (
+            {showSidebar || !flagDAGSidebar ? null : (
               <Tooltip content="Show sidebar">
                 <Button
                   icon={<Icon name="panel_show_left" />}
@@ -497,7 +497,7 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
     />
   );
 
-  if (showSidebar) {
+  if (showSidebar && flagDAGSidebar) {
     return (
       <SplitPanelContainer
         key="explorer-wrapper"
