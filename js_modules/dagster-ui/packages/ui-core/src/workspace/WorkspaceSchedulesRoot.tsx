@@ -89,9 +89,8 @@ export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}
     return permissionedSchedules.map(({name}) => makeScheduleKey(repoAddress, name));
   }, [permissionedSchedules, repoAddress]);
 
-  const [{checkedIds: checkedKeys}, {onToggleFactory, onToggleAll}] = useSelectionReducer(
-    permissionedKeys,
-  );
+  const [{checkedIds: checkedKeys}, {onToggleFactory, onToggleAll}] =
+    useSelectionReducer(permissionedKeys);
 
   const checkedSchedules = React.useMemo(() => {
     return permissionedSchedules

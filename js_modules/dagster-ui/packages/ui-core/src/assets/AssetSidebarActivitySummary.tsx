@@ -40,18 +40,12 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
   liveData,
   stepKey,
 }) => {
-  const {
-    materializations,
-    observations,
-    loadedPartitionKeys,
-    loading,
-    refetch,
-    xAxis,
-  } = useRecentAssetEvents(
-    asset.assetKey,
-    {},
-    {assetHasDefinedPartitions: !!asset.partitionDefinition},
-  );
+  const {materializations, observations, loadedPartitionKeys, loading, refetch, xAxis} =
+    useRecentAssetEvents(
+      asset.assetKey,
+      {},
+      {assetHasDefinedPartitions: !!asset.partitionDefinition},
+    );
 
   const grouped = useGroupedEvents(xAxis, materializations, observations, loadedPartitionKeys);
   const displayedEvent = isSourceAsset ? observations[0] : materializations[0];

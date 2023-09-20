@@ -156,7 +156,9 @@ const EvaluationListItem = styled.button<EvaluationListItemProps>`
   cursor: pointer;
   margin: 2px 0;
   text-align: left;
-  transition: 100ms background-color linear, 100ms color linear;
+  transition:
+    100ms background-color linear,
+    100ms color linear;
   user-select: none;
 
   &:hover {

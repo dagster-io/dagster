@@ -14,7 +14,9 @@ export const Item = styled(Link)<{$active: boolean}>`
   align-items: center;
   color: ${({$active}) => ($active ? Colors.Blue700 : Colors.Dark)} !important;
   user-select: none;
-  transition: background 50ms linear, color 50ms linear;
+  transition:
+    background 50ms linear,
+    color 50ms linear;
 
   &:hover {
     text-decoration: none;

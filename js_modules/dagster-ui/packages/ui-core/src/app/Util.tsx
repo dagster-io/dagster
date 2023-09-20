@@ -200,10 +200,10 @@ export function colorHash(str: string) {
 // const textMetadata = metadataEntries.filter(gqlTypePredicate('TextMetadataEntry'));
 //
 // `textMetadata` will be of type `TextMetadataEntry[]`.
-export const gqlTypePredicate = <T extends string>(typename: T) => <N extends {__typename: string}>(
-  node: N,
-): node is Extract<N, {__typename: T}> => {
-  return node.__typename === typename;
-};
+export const gqlTypePredicate =
+  <T extends string>(typename: T) =>
+  <N extends {__typename: string}>(node: N): node is Extract<N, {__typename: T}> => {
+    return node.__typename === typename;
+  };
 
 export const COMMON_COLLATOR = new Intl.Collator(navigator.language, {sensitivity: 'base'});

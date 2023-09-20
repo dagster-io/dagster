@@ -66,10 +66,10 @@ export const OverviewSchedulesRoot = () => {
   const codeLocationFilter = useCodeLocationFilter();
   const runningStateFilter = useInstigationStatusFilter();
 
-  const filters = React.useMemo(() => [codeLocationFilter, runningStateFilter], [
-    codeLocationFilter,
-    runningStateFilter,
-  ]);
+  const filters = React.useMemo(
+    () => [codeLocationFilter, runningStateFilter],
+    [codeLocationFilter, runningStateFilter],
+  );
   const {button: filterButton, activeFiltersJsx} = useFilters({filters});
 
   const queryResultOverview = useQuery<OverviewSchedulesQuery, OverviewSchedulesQueryVariables>(

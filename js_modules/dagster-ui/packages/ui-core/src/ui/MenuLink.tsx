@@ -42,7 +42,9 @@ const StyledMenuLink = styled(Link)`
   display: block;
   line-height: 20px;
   padding: 6px 8px 6px 12px;
-  transition: background-color 50ms, box-shadow 150ms;
+  transition:
+    background-color 50ms,
+    box-shadow 150ms;
   align-items: flex-start;
   user-select: none;
 

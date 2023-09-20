@@ -594,42 +594,43 @@ export const LaunchAssetLoaderResourceJob8Mock: MockedResponse<LaunchAssetLoader
   },
 };
 
-export const LaunchAssetLoaderResourceMyAssetJobMock: MockedResponse<LaunchAssetLoaderResourceQuery> = {
-  request: {
-    query: LAUNCH_ASSET_LOADER_RESOURCE_QUERY,
-    variables: {
-      pipelineName: 'my_asset_job',
-      repositoryLocationName: 'test.py',
-      repositoryName: 'repo',
-    },
-  },
-  result: {
-    data: {
-      __typename: 'Query',
-      partitionSetsOrError: {
-        results: [
-          {
-            id: '129179973a9144278c2429d3ba680bf0f809a59b',
-            name: 'my_asset_job_partition_set',
-            __typename: 'PartitionSet',
-          },
-        ],
-        __typename: 'PartitionSets',
-      },
-      pipelineOrError: {
-        id: '8689a9dcd052f769b73d73dfe57e89065dac369d',
-        modes: [
-          {
-            __typename: 'Mode',
-            id: '719d9b2c592b98ae0f4a7ec570cae0a06667db31-default',
-            resources: [],
-          },
-        ],
-        __typename: 'Pipeline',
+export const LaunchAssetLoaderResourceMyAssetJobMock: MockedResponse<LaunchAssetLoaderResourceQuery> =
+  {
+    request: {
+      query: LAUNCH_ASSET_LOADER_RESOURCE_QUERY,
+      variables: {
+        pipelineName: 'my_asset_job',
+        repositoryLocationName: 'test.py',
+        repositoryName: 'repo',
       },
     },
-  },
-};
+    result: {
+      data: {
+        __typename: 'Query',
+        partitionSetsOrError: {
+          results: [
+            {
+              id: '129179973a9144278c2429d3ba680bf0f809a59b',
+              name: 'my_asset_job_partition_set',
+              __typename: 'PartitionSet',
+            },
+          ],
+          __typename: 'PartitionSets',
+        },
+        pipelineOrError: {
+          id: '8689a9dcd052f769b73d73dfe57e89065dac369d',
+          modes: [
+            {
+              __typename: 'Mode',
+              id: '719d9b2c592b98ae0f4a7ec570cae0a06667db31-default',
+              resources: [],
+            },
+          ],
+          __typename: 'Pipeline',
+        },
+      },
+    },
+  };
 
 export const LaunchAssetLoaderAssetDailyWeeklyMock: MockedResponse<LaunchAssetLoaderQuery> = {
   request: {
@@ -700,38 +701,39 @@ export const LaunchAssetLoaderAssetDailyWeeklyMock: MockedResponse<LaunchAssetLo
   },
 };
 
-export const LaunchAssetCheckUpstreamWeeklyRootMock: MockedResponse<LaunchAssetCheckUpstreamQuery> = {
-  request: {
-    query: LAUNCH_ASSET_CHECK_UPSTREAM_QUERY,
-    variables: {
-      assetKeys: [{path: ['asset_weekly_root']}],
+export const LaunchAssetCheckUpstreamWeeklyRootMock: MockedResponse<LaunchAssetCheckUpstreamQuery> =
+  {
+    request: {
+      query: LAUNCH_ASSET_CHECK_UPSTREAM_QUERY,
+      variables: {
+        assetKeys: [{path: ['asset_weekly_root']}],
+      },
     },
-  },
-  result: {
-    data: {
-      __typename: 'Query',
-      assetNodes: [
-        {
-          id: 'test.py.repo.["asset_weekly_root"]',
-          assetKey: {
-            path: ['asset_weekly_root'],
-            __typename: 'AssetKey',
-          },
-          isSource: false,
-          opNames: ['asset_weekly_root'],
-          graphName: null,
-          assetMaterializations: [
-            {
-              runId: '8fec6fcd-7a05-4f1c-8cf8-4bfd6965eeba',
-              __typename: 'MaterializationEvent',
+    result: {
+      data: {
+        __typename: 'Query',
+        assetNodes: [
+          {
+            id: 'test.py.repo.["asset_weekly_root"]',
+            assetKey: {
+              path: ['asset_weekly_root'],
+              __typename: 'AssetKey',
             },
-          ],
-          __typename: 'AssetNode',
-        },
-      ],
+            isSource: false,
+            opNames: ['asset_weekly_root'],
+            graphName: null,
+            assetMaterializations: [
+              {
+                runId: '8fec6fcd-7a05-4f1c-8cf8-4bfd6965eeba',
+                __typename: 'MaterializationEvent',
+              },
+            ],
+            __typename: 'AssetNode',
+          },
+        ],
+      },
     },
-  },
-};
+  };
 
 export function buildConfigPartitionSelectionLatestPartitionMock(
   partitionName: string,

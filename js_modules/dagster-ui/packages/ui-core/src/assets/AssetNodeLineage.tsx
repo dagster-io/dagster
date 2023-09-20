@@ -35,10 +35,10 @@ export const AssetNodeLineage: React.FC<{
   graphQueryItems,
   requestedDepth,
 }) => {
-  const maxDistances = React.useMemo(() => calculateGraphDistances(graphQueryItems, assetKey), [
-    graphQueryItems,
-    assetKey,
-  ]);
+  const maxDistances = React.useMemo(
+    () => calculateGraphDistances(graphQueryItems, assetKey),
+    [graphQueryItems, assetKey],
+  );
   const maxDepth =
     params.lineageScope === 'upstream'
       ? maxDistances.upstream
