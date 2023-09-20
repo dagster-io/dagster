@@ -1,3 +1,6 @@
+import {Box} from '@dagster-io/ui-components';
+import React from 'react';
+
 import {FeatureFlag} from './Flags';
 
 /**
@@ -33,7 +36,21 @@ export const getVisibleFeatureFlagRows = () => [
     flagType: FeatureFlag.flagHorizontalDAGs,
   },
   {
-    key: 'Experimental DAG sidebar',
+    key: 'New asset lineage sidebar',
+    label: (
+      <Box flex={{direction: 'column'}}>
+        New asset lineage sidebar,
+        <div>
+          <a
+            href="https://github.com/dagster-io/dagster/discussions/16657"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Learn more
+          </a>
+        </div>
+      </Box>
+    ),
     flagType: FeatureFlag.flagDAGSidebar,
   },
 ];
