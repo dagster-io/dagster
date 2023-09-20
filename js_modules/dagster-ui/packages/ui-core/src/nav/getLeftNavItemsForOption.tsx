@@ -119,7 +119,7 @@ const Label = styled.div<{$hasIcon: boolean}>`
   white-space: nowrap;
 `;
 
-const LabelTooltipStyles = JSON.stringify({
+export const LabelTooltipStyles = JSON.stringify({
   background: Colors.Gray100,
   filter: `brightness(97%)`,
   color: Colors.Gray900,
@@ -140,11 +140,18 @@ const TruncatingName = styled.div`
 
 export const TruncatedTextWithFullTextOnHover = React.forwardRef(
   (
-    {text, tooltipStyle, ...rest}: {text: string; tooltipStyle?: string},
+    {
+      text,
+      tooltipStyle,
+      tooltipText,
+      ...rest
+    }:
+      | {text: string; tooltipStyle?: string; tooltipText?: null}
+      | {text: React.ReactNode; tooltipStyle?: string; tooltipText: string},
     ref: React.ForwardedRef<HTMLDivElement>,
   ) => (
     <TruncatingName
-      data-tooltip={text}
+      data-tooltip={tooltipText ?? text}
       data-tooltip-style={tooltipStyle ?? LabelTooltipStyles}
       ref={ref}
       {...rest}

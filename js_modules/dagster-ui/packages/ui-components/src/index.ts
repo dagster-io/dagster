@@ -50,6 +50,7 @@ export * from './components/styles';
 export * from './components/useSuggestionsForString';
 export * from './components/ErrorBoundary';
 export * from './components/useViewport';
+export * from './components/UnstyledButton';
 export * from './components/StyledRawCodeMirror';
 export * from './components/useDelayedState';
 
