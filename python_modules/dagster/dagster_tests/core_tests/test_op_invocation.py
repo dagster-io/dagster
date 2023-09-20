@@ -1240,7 +1240,7 @@ def test_assets_def_invocation():
     def non_asset_op(context):
         context.assets_def  # noqa: B018
 
-    with build_op_context(
+    with build_asset_context(
         partition_key="2023-02-02",
     ) as context:
         my_asset(context)
@@ -1260,7 +1260,7 @@ def test_partitions_time_window_asset_invocation():
         assert start == pendulum.instance(datetime(2023, 2, 2), tz=partitions_def.timezone)
         assert end == pendulum.instance(datetime(2023, 2, 3), tz=partitions_def.timezone)
 
-    context = build_op_context(
+    context = build_asset_context(
         partition_key="2023-02-02",
     )
     partitioned_asset(context)
@@ -1289,7 +1289,7 @@ def test_multipartitioned_time_window_asset_invocation():
         assert context.asset_partitions_time_window_for_output() == time_window
         return 1
 
-    context = build_op_context(
+    context = build_asset_context(
         partition_key="2020-01-01|a",
     )
     my_asset(context)
@@ -1309,7 +1309,7 @@ def test_multipartitioned_time_window_asset_invocation():
         ):
             context.asset_partitions_time_window_for_output()
 
-    context = build_op_context(
+    context = build_asset_context(
         partition_key="a|a",
     )
     static_multipartitioned_asset(context)
@@ -1323,7 +1323,7 @@ def test_partition_range_asset_invocation():
         keys = partitions_def.get_partition_keys_in_range(context.partition_key_range)
         return {k: True for k in keys}
 
-    context = build_op_context(
+    context = build_asset_context(
         partition_key_range=PartitionKeyRange("2023-01-01", "2023-01-02"),
     )
     assert foo(context) == {"2023-01-01": True, "2023-01-02": True}

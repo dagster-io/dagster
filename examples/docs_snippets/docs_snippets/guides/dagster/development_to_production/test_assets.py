@@ -1,6 +1,6 @@
 import pandas as pd
 
-from dagster import build_op_context
+from dagster import build_asset_context
 
 from .assets_v2 import items
 from .resources.resources_v2 import StubHNClient
@@ -10,7 +10,7 @@ from .resources.resources_v2 import StubHNClient
 
 
 def test_items():
-    context = build_op_context(
+    context = build_asset_context(
         resources={"hn_client": StubHNClient()},
         op_config={"N": StubHNClient().fetch_max_item_id()},
     )
