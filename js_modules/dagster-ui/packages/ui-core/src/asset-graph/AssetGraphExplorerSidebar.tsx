@@ -251,10 +251,13 @@ export const AssetGraphExplorerSidebar = React.memo(
             currentPath = `${currentPath}:${nodesInPath[i]}`;
             nextOpenNodes.add(currentPath);
           }
-          setSelectedNode({id: lastSelectedNode.id, path: currentPath});
+          if (selectedNode?.id !== lastSelectedNode.id) {
+            setSelectedNode({id: lastSelectedNode.id, path: currentPath});
+          }
           return nextOpenNodes;
         });
       }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [
       lastSelectedNode,
       assetGraphData,
