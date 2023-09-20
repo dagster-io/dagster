@@ -1264,15 +1264,15 @@ OP_EXECUTION_CONTEXT_ONLY_METHODS = set(
         "file_manager",
         "has_assets_def",
         "get_mapping_key",
-        "get_step_execution_context",  # TODO - used by internals
+        "get_step_execution_context",
         "job_def",
         "node_handle",
         "op",
         "op_config",
-        "op_def",  # TODO - used by internals
+        "op_def",
         "op_handle",
         "step_launcher",
-        "has_events",  # TODO - used by internals
+        "has_events",
         "consume_events",
     ]
 )
@@ -1477,10 +1477,9 @@ class AssetExecutionContext(OpExecutionContext):
     @public
     def partition_key_range_for_asset_key(self, asset_key: AssetKey) -> PartitionKeyRange:
         """TODO - implement in stacked pr."""
-        pass
-
-    # TODO the below methods weren't originally part of the deprecated list, but are also not part
-    # of the context interface. What should we do with them?
+        raise NotImplementedError(
+            "partition_key_range_for_asset_key not implemented in this branch"
+        )
 
     @public
     @property
