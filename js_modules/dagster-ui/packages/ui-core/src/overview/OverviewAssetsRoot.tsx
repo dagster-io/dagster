@@ -218,14 +218,15 @@ type RowProps = {
   group: ReturnType<typeof groupAssets>[0];
 };
 function VirtualRow({height, start, group}: RowProps) {
-  const assetKeys = React.useMemo(() => group.assets.map((asset) => ({path: asset.key.path})), [
-    group.assets,
-  ]);
+  const assetKeys = React.useMemo(
+    () => group.assets.map((asset) => ({path: asset.key.path})),
+    [group.assets],
+  );
 
   const {liveDataByNode} = useLiveDataForAssetKeys(assetKeys, true);
 
   const statuses = React.useMemo(() => {
-    type assetType = typeof group['assets'][0];
+    type assetType = (typeof group)['assets'][0];
     type StatusesType = {asset: assetType; status: ReturnType<typeof buildAssetNodeStatusContent>};
     const statuses = {
       successful: [] as StatusesType[],

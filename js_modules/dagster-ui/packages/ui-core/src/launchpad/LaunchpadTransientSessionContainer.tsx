@@ -26,14 +26,8 @@ interface Props {
 }
 
 export const LaunchpadTransientSessionContainer = (props: Props) => {
-  const {
-    launchpadType,
-    pipeline,
-    partitionSets,
-    repoAddress,
-    sessionPresets,
-    rootDefaultYaml,
-  } = props;
+  const {launchpadType, pipeline, partitionSets, repoAddress, sessionPresets, rootDefaultYaml} =
+    props;
 
   const {flagDisableAutoLoadDefaults} = useFeatureFlags();
   const initialData = useInitialDataForMode(

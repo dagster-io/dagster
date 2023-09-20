@@ -528,12 +528,14 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
       return;
     }
 
-    const dir = ({
-      ArrowLeft: 'left',
-      ArrowUp: 'up',
-      ArrowRight: 'right',
-      ArrowDown: 'down',
-    } as const)[e.code];
+    const dir = (
+      {
+        ArrowLeft: 'left',
+        ArrowUp: 'up',
+        ArrowRight: 'right',
+        ArrowDown: 'down',
+      } as const
+    )[e.code];
     if (!dir) {
       return;
     }
@@ -561,6 +563,9 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
 
     const div = document.createElement('div');
     document.getElementById('root')!.appendChild(div);
+
+    // TODO fix this!
+    // eslint-disable-next-line
     ReactDOM.render(
       <MemoryRouter>{this.props.children(this.state, unclippedViewport)}</MemoryRouter>,
       div,
