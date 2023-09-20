@@ -2,7 +2,7 @@ import {Box, Tag} from '@dagster-io/ui-components';
 import groupBy from 'lodash/groupBy';
 import React from 'react';
 
-import {AutoMaterializePolicyType, AutoMaterializeRule} from '../graphql/types';
+import {AutoMaterializeDecisionType, AutoMaterializePolicyType} from '../graphql/types';
 
 export const AutomaterializePolicyTag: React.FC<{
   policy: {
@@ -14,7 +14,7 @@ export const AutomaterializePolicyTag: React.FC<{
 
 export const automaterializePolicyDescription = (policy: {
   policyType: AutoMaterializePolicyType;
-  rules: AutoMaterializeRule[];
+  rules: {description: string; decisionType: AutoMaterializeDecisionType}[];
 }) => {
   const {MATERIALIZE, SKIP, DISCARD} = groupBy(policy.rules, (rule) => rule.decisionType);
   return (
