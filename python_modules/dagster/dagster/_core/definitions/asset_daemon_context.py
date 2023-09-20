@@ -257,7 +257,6 @@ class AssetDaemonContext:
             latest_storage_id=self.latest_storage_id,
             target_asset_keys=frozenset(self.target_asset_keys),
             target_asset_keys_and_parents=frozenset(self.target_asset_keys_and_parents),
-            map_old_time_partitions=False,
         )
         ret = defaultdict(set)
         for asset_partition in asset_partitions:

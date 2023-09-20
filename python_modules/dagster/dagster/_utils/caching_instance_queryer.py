@@ -557,7 +557,6 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         target_asset_keys: FrozenSet[AssetKey],
         target_asset_keys_and_parents: FrozenSet[AssetKey],
         can_reconcile_fn: Callable[[AssetKeyPartitionKey], bool] = lambda _: True,
-        map_old_time_partitions: bool = True,
     ) -> Tuple[AbstractSet[AssetKeyPartitionKey], Optional[int]]:
         """Finds asset partitions in the given selection whose parents have been materialized since
         latest_storage_id.
@@ -600,20 +599,8 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                     current_time=self.evaluation_time,
                     asset_key=asset_key,
                 ):
-                    child_partitions_def = self.asset_graph.get_partitions_def(child.asset_key)
-                    child_time_partitions_def = get_time_partitions_def(child_partitions_def)
                     if (
                         child.asset_key in target_asset_keys
-                        and not (
-                            # when mapping from unpartitioned assets to time partitioned assets, we ignore
-                            # historical time partitions
-                            not map_old_time_partitions
-                            and child_time_partitions_def is not None
-                            and get_time_partition_key(child_partitions_def, child.partition_key)
-                            != child_time_partitions_def.get_last_partition_key(
-                                current_time=self.evaluation_time
-                            )
-                        )
                         and not self.is_asset_planned_for_run(latest_record.run_id, child.asset_key)
                     ):
                         result_asset_partitions.add(child)
