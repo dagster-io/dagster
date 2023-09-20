@@ -20,6 +20,9 @@ from dagster import (
     multi_asset,
     op,
 )
+from dagster._core.definitions.asset_check_spec import AssetCheckHandle
+from dagster._core.definitions.asset_selection import AssetChecksForHandles, AssetSelection
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
@@ -546,3 +549,141 @@ def test_graph_multi_asset():
     assert check_eval.asset_key == AssetKey("asset_one")
     assert check_eval.check_name == "check1"
     assert check_eval.metadata == {"foo": MetadataValue.text("bar")}
+
+
+def test_can_subset_no_selection() -> None:
+    @multi_asset(
+        can_subset=True,
+        specs=[AssetSpec("asset1"), AssetSpec("asset2")],
+        check_specs=[
+            AssetCheckSpec("check1", asset="asset1"),
+            AssetCheckSpec("check2", asset="asset2"),
+        ],
+    )
+    def foo(context: AssetExecutionContext):
+        assert context.selected_asset_keys == {AssetKey("asset1"), AssetKey("asset2")}
+        assert context.selected_asset_check_handles == {
+            (AssetKey("asset1"), "check1"),
+            (AssetKey("asset2"), "check2"),
+        }
+
+        yield Output(value=None, output_name="asset1")
+        yield AssetCheckResult(asset_key="asset1", check_name="check1", success=True)
+
+    result = materialize([foo])
+
+    assert len(result.get_asset_materialization_events()) == 1
+
+    [check_eval] = result.get_asset_check_evaluations()
+
+    assert check_eval.asset_key == AssetKey("asset1")
+    assert check_eval.check_name == "check1"
+
+
+def test_can_subset() -> None:
+    @multi_asset(
+        can_subset=True,
+        specs=[AssetSpec("asset1"), AssetSpec("asset2")],
+        check_specs=[
+            AssetCheckSpec("check1", asset="asset1"),
+            AssetCheckSpec("check2", asset="asset2"),
+        ],
+    )
+    def foo(context: AssetExecutionContext):
+        assert context.selected_asset_keys == {AssetKey("asset1")}
+        assert context.selected_asset_check_handles == {(AssetKey("asset1"), "check1")}
+
+        yield Output(value=None, output_name="asset1")
+        yield AssetCheckResult(asset_key="asset1", check_name="check1", success=True)
+
+    result = materialize([foo], selection=["asset1"])
+
+    assert len(result.get_asset_materialization_events()) == 1
+
+    [check_eval] = result.get_asset_check_evaluations()
+
+    assert check_eval.asset_key == AssetKey("asset1")
+    assert check_eval.check_name == "check1"
+
+
+def test_can_subset_result_for_unselected_check() -> None:
+    @multi_asset(
+        can_subset=True,
+        specs=[AssetSpec("asset1"), AssetSpec("asset2")],
+        check_specs=[
+            AssetCheckSpec("check1", asset="asset1"),
+            AssetCheckSpec("check2", asset="asset2"),
+        ],
+    )
+    def foo(context: AssetExecutionContext):
+        assert context.selected_asset_keys == {AssetKey("asset1")}
+        assert context.selected_asset_check_handles == {(AssetKey("asset1"), "check1")}
+
+        yield Output(value=None, output_name="asset1")
+        yield AssetCheckResult(asset_key="asset1", check_name="check1", success=True)
+        yield AssetCheckResult(asset_key="asset2", check_name="check2", success=True)
+
+    with pytest.raises(DagsterInvariantViolationError):
+        materialize([foo], selection=["asset1"])
+
+
+def test_can_subset_select_only_asset() -> None:
+    @multi_asset(
+        can_subset=True,
+        specs=[AssetSpec("asset1"), AssetSpec("asset2")],
+        check_specs=[
+            AssetCheckSpec("check1", asset="asset1"),
+            AssetCheckSpec("check2", asset="asset2"),
+        ],
+    )
+    def foo(context: AssetExecutionContext):
+        assert context.selected_asset_keys == {AssetKey("asset1")}
+        assert context.selected_asset_check_handles == set()
+
+        yield Output(value=None, output_name="asset1")
+
+    result = materialize(
+        [foo],
+        selection=AssetSelection.keys(AssetKey("asset1"))
+        - AssetSelection.asset_checks_for_assets(foo),
+    )
+
+    assert len(result.get_asset_materialization_events()) == 1
+
+    check_evals = result.get_asset_check_evaluations()
+
+    assert len(check_evals) == 0
+
+
+def test_can_subset_select_only_check() -> None:
+    @multi_asset(
+        can_subset=True,
+        specs=[AssetSpec("asset1"), AssetSpec("asset2")],
+        check_specs=[
+            AssetCheckSpec("check1", asset="asset1"),
+            AssetCheckSpec("check2", asset="asset2"),
+        ],
+    )
+    def foo(context: AssetExecutionContext):
+        assert context.selected_asset_keys == set()
+        assert context.selected_asset_check_handles == {(AssetKey("asset1"), "check1")}
+
+        if context.selected_asset_keys:
+            yield Output(value=None, output_name="asset1")
+
+        if context.selected_asset_check_handles:
+            yield AssetCheckResult(asset_key="asset1", check_name="check1", success=True)
+
+    result = materialize(
+        [foo],
+        selection=AssetChecksForHandles(
+            [AssetCheckHandle(asset_key=AssetKey("asset1"), name="check1")]
+        ),
+    )
+
+    assert len(result.get_asset_materialization_events()) == 0
+
+    [check_eval] = result.get_asset_check_evaluations()
+
+    assert check_eval.asset_key == AssetKey("asset1")
+    assert check_eval.check_name == "check1"

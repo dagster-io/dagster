@@ -507,6 +507,12 @@ class AssetLayer(NamedTuple):
                     )
                     check_handle_by_output[node_output_handle] = check_spec.handle
 
+            for check_handle in assets_def.asset_check_handles:
+                check_names_by_asset_key = check_names_by_asset_key_by_node_handle.setdefault(
+                    node_handle, defaultdict(set)
+                )
+                check_names_by_asset_key[check_handle.asset_key].add(check_handle.name)
+
         dep_asset_keys_by_node_output_handle = defaultdict(set)
         for asset_key, node_output_handles in dep_node_output_handles_by_asset_key.items():
             for node_output_handle in node_output_handles:
@@ -544,9 +550,16 @@ class AssetLayer(NamedTuple):
         source_assets_by_key = {source_asset.key: source_asset for source_asset in source_assets}
 
         assets_defs_by_node_handle: Dict[NodeHandle, "AssetsDefinition"] = {
-            node_handle: assets_defs_by_key[asset_key]
-            for asset_key, node_handles in dep_node_handles_by_asset_key.items()
-            for node_handle in node_handles
+            **{
+                node_handle: assets_defs_by_key[asset_key]
+                for asset_key, node_handles in dep_node_handles_by_asset_key.items()
+                for node_handle in node_handles
+            },
+            **{
+                node_handle: assets_def
+                for node_handle, assets_def in assets_defs_by_outer_node_handle.items()
+                if assets_def.asset_check_handles
+            },
         }
 
         return AssetLayer(
@@ -794,6 +807,10 @@ def build_asset_selection_job(
         build_source_asset_observation_job,
     )
 
+    included_assets = []
+    excluded_assets = list(assets)
+    included_source_assets = []
+
     if asset_selection is None and asset_check_selection is None:
         # no selections, include everything
         included_assets = list(assets)
@@ -801,14 +818,14 @@ def build_asset_selection_job(
         included_source_assets = []
         included_checks = list(asset_checks)
     else:
-        if asset_selection is not None:
-            (included_assets, excluded_assets) = _subset_assets_defs(assets, asset_selection)
-            included_source_assets = _subset_source_assets(source_assets, asset_selection)
-        else:
-            # if checks were specified, then exclude all assets
-            included_assets = []
-            excluded_assets = list(assets)
-            included_source_assets = []
+        if asset_selection is not None or asset_check_selection is not None:
+            selected_asset_keys = asset_selection or set()
+            selected_asset_check_handles = asset_check_selection or set()
+
+            (included_assets, excluded_assets) = _subset_assets_defs(
+                assets, selected_asset_keys, selected_asset_check_handles
+            )
+            included_source_assets = _subset_source_assets(source_assets, selected_asset_keys)
 
         if asset_check_selection is not None:
             # NOTE: This filters to a checks def if any of the included specs are in the selection.
@@ -872,6 +889,7 @@ def build_asset_selection_job(
 def _subset_assets_defs(
     assets: Iterable["AssetsDefinition"],
     selected_asset_keys: AbstractSet[AssetKey],
+    selected_asset_check_handles: AbstractSet[AssetCheckHandle],
 ) -> Tuple[Sequence["AssetsDefinition"], Sequence["AssetsDefinition"],]:
     """Given a list of asset key selection queries, generate a set of AssetsDefinition objects
     representing the included/excluded definitions.
@@ -882,18 +900,26 @@ def _subset_assets_defs(
     for asset in set(assets):
         # intersection
         selected_subset = selected_asset_keys & asset.keys
+        selected_check_subset = selected_asset_check_handles & asset.asset_check_handles
         # all assets in this def are selected
-        if selected_subset == asset.keys:
+        if selected_subset == asset.keys and selected_check_subset == asset.asset_check_handles:
             included_assets.add(asset)
         # no assets in this def are selected
-        elif len(selected_subset) == 0:
+        elif len(selected_subset) == 0 and len(selected_check_subset) == 0:
             excluded_assets.add(asset)
         elif asset.can_subset:
             # subset of the asset that we want
-            subset_asset = asset.subset_for(selected_asset_keys)
+            subset_asset = asset.subset_for(selected_asset_keys, selected_asset_check_handles)
             included_assets.add(subset_asset)
             # subset of the asset that we don't want
-            excluded_assets.add(asset.subset_for(asset.keys - subset_asset.keys))
+            excluded_assets.add(
+                asset.subset_for(
+                    selected_asset_keys=asset.keys - subset_asset.keys,
+                    selected_asset_check_handles=(
+                        asset.asset_check_handles - subset_asset.asset_check_handles
+                    ),
+                )
+            )
         else:
             raise DagsterInvalidSubsetError(
                 f"When building job, the AssetsDefinition '{asset.node_def.name}' "

@@ -413,7 +413,8 @@ def downstream_asset():
 
 
 just_checks_job = define_asset_job(
-    name="just_checks_job", selection=AssetSelection.all_asset_checks()
+    name="just_checks_job",
+    selection=AssetSelection.asset_checks_for_assets(checked_asset),
 )
 
 
