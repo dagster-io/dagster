@@ -1281,7 +1281,7 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
 
 OP_EXECUTION_CONTEXT_ONLY_METHODS = set(
     [
-        "describe_op",  # TODO - used by internals
+        "describe_op",
         "file_manager",
         "has_assets_def",
         "get_mapping_key",
