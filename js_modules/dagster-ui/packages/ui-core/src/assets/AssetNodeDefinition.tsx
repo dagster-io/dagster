@@ -12,6 +12,7 @@ import {
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {COMMON_COLLATOR} from '../app/Util';
 import {ASSET_NODE_FRAGMENT} from '../asset-graph/AssetNode';
 import {isHiddenAssetGroupJob, LiveData, toGraphId} from '../asset-graph/Utils';
 import {AssetNodeForGraphQueryFragment} from '../asset-graph/types/useAssetGraphData.types';
@@ -67,14 +68,10 @@ export const AssetNodeDefinition: React.FC<{
         padded={true}
       />
       <Box flex={{direction: 'row'}} style={{flex: 1}}>
-        <Box
-          style={{flex: 1, minWidth: 0}}
-          flex={{direction: 'column'}}
-          border={{side: 'right', width: 1, color: Colors.KeylineGray}}
-        >
+        <Box style={{flex: 1, minWidth: 0}} flex={{direction: 'column'}} border="right">
           <Box
             padding={{vertical: 16, horizontal: 24}}
-            border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+            border="bottom"
             flex={{justifyContent: 'space-between', gap: 8}}
           >
             <Subheading>Description</Subheading>
@@ -92,10 +89,7 @@ export const AssetNodeDefinition: React.FC<{
           </Box>
           {assetNode.opVersion && (
             <>
-              <Box
-                padding={{vertical: 16, horizontal: 24}}
-                border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
-              >
+              <Box padding={{vertical: 16, horizontal: 24}} border="top-and-bottom">
                 <Subheading>Code version</Subheading>
               </Box>
               <Box padding={{vertical: 16, horizontal: 24}} flex={{gap: 12, alignItems: 'center'}}>
@@ -105,10 +99,7 @@ export const AssetNodeDefinition: React.FC<{
           )}
           {assetNode.freshnessPolicy && (
             <>
-              <Box
-                padding={{vertical: 16, horizontal: 24}}
-                border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
-              >
+              <Box padding={{vertical: 16, horizontal: 24}} border="top-and-bottom">
                 <Subheading>Freshness policy</Subheading>
               </Box>
               <Box
@@ -128,10 +119,7 @@ export const AssetNodeDefinition: React.FC<{
           )}
           {assetNode.autoMaterializePolicy && (
             <>
-              <Box
-                padding={{vertical: 16, horizontal: 24}}
-                border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
-              >
+              <Box padding={{vertical: 16, horizontal: 24}} border="top-and-bottom">
                 <Subheading>Auto-materialize policy</Subheading>
               </Box>
               <Box
@@ -147,7 +135,7 @@ export const AssetNodeDefinition: React.FC<{
           )}
           <Box
             padding={{vertical: 16, horizontal: 24}}
-            border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+            border="top-and-bottom"
             flex={{justifyContent: 'space-between', gap: 8}}
           >
             <Subheading>
@@ -164,7 +152,7 @@ export const AssetNodeDefinition: React.FC<{
           <AssetNodeList items={upstream} liveDataByNode={liveDataByNode} />
           <Box
             padding={{vertical: 16, horizontal: 24}}
-            border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+            border="top-and-bottom"
             flex={{justifyContent: 'space-between', gap: 8}}
           >
             <Subheading>
@@ -182,39 +170,31 @@ export const AssetNodeDefinition: React.FC<{
           <div style={{flex: 1}} />
         </Box>
 
-        <Box
-          border={{side: 'vertical', width: 1, color: Colors.KeylineGray}}
-          style={{flex: 0.5, minWidth: 0}}
-          flex={{direction: 'column'}}
-        >
+        <Box border="left-and-right" style={{flex: 0.5, minWidth: 0}} flex={{direction: 'column'}}>
           <>
-            <Box
-              padding={{vertical: 16, horizontal: 24}}
-              border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-            >
-              <Subheading>Required Resources</Subheading>
+            <Box padding={{vertical: 16, horizontal: 24}} border="bottom">
+              <Subheading>Required resources</Subheading>
             </Box>
-            <Box
-              padding={{vertical: 16, horizontal: 24}}
-              border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-            >
-              {assetNode.requiredResources.map((resource) => (
-                <ResourceContainer key={resource.resourceKey}>
-                  <Icon name="resource" color={Colors.Gray700} />
-                  {repoAddress ? (
-                    <Link
-                      to={workspacePathFromAddress(
-                        repoAddress,
-                        `/resources/${resource.resourceKey}`,
-                      )}
-                    >
+            <Box padding={{vertical: 16, horizontal: 24}} border="bottom">
+              {[...assetNode.requiredResources]
+                .sort((a, b) => COMMON_COLLATOR.compare(a.resourceKey, b.resourceKey))
+                .map((resource) => (
+                  <ResourceContainer key={resource.resourceKey}>
+                    <Icon name="resource" color={Colors.Gray700} />
+                    {repoAddress ? (
+                      <Link
+                        to={workspacePathFromAddress(
+                          repoAddress,
+                          `/resources/${resource.resourceKey}`,
+                        )}
+                      >
+                        <ResourceHeader>{resource.resourceKey}</ResourceHeader>
+                      </Link>
+                    ) : (
                       <ResourceHeader>{resource.resourceKey}</ResourceHeader>
-                    </Link>
-                  ) : (
-                    <ResourceHeader>{resource.resourceKey}</ResourceHeader>
-                  )}
-                </ResourceContainer>
-              ))}
+                    )}
+                  </ResourceContainer>
+                ))}
               {assetNode.requiredResources.length === 0 && (
                 <Body>
                   No required resources to display
@@ -229,16 +209,10 @@ export const AssetNodeDefinition: React.FC<{
           </>
 
           <>
-            <Box
-              padding={{vertical: 16, horizontal: 24}}
-              border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-            >
+            <Box padding={{vertical: 16, horizontal: 24}} border="bottom">
               <Subheading>Config</Subheading>
             </Box>
-            <Box
-              padding={{vertical: 16, horizontal: 24}}
-              border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-            >
+            <Box padding={{vertical: 16, horizontal: 24}} border="bottom">
               {assetConfigSchema ? (
                 <ConfigTypeSchema
                   type={assetConfigSchema}
@@ -258,10 +232,7 @@ export const AssetNodeDefinition: React.FC<{
           </>
 
           <>
-            <Box
-              padding={{vertical: 16, horizontal: 24}}
-              border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-            >
+            <Box padding={{vertical: 16, horizontal: 24}} border="bottom">
               <Subheading>Type</Subheading>
             </Box>
             {assetType && assetType.displayName !== 'Any' ? (
@@ -281,7 +252,7 @@ export const AssetNodeDefinition: React.FC<{
           <>
             <Box
               padding={{vertical: 16, horizontal: 24}}
-              border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+              border="top-and-bottom"
               flex={{justifyContent: 'space-between', gap: 8}}
             >
               <Subheading>Metadata</Subheading>
@@ -316,7 +287,7 @@ const DescriptionAnnotations: React.FC<{
   assetNode: AssetNodeDefinitionFragment;
   repoAddress: RepoAddress;
 }> = ({assetNode, repoAddress}) => (
-  <Box flex={{alignItems: 'baseline', gap: 16, wrap: 'wrap'}} style={{lineHeight: 0}}>
+  <Box flex={{alignItems: 'center', gap: 16, wrap: 'wrap'}} style={{lineHeight: 0}}>
     {assetNode.jobNames
       .filter((jobName) => !isHiddenAssetGroupJob(jobName))
       .map((jobName) => (
@@ -330,9 +301,11 @@ const DescriptionAnnotations: React.FC<{
         </Mono>
       ))}
     <UnderlyingOpsOrGraph assetNode={assetNode} repoAddress={repoAddress} />
-    {assetNode.isSource && (
-      <Caption style={{lineHeight: '16px', marginTop: 2}}>Source Asset</Caption>
-    )}
+    {assetNode.isSource ? (
+      <Caption style={{lineHeight: '16px'}}>Source Asset</Caption>
+    ) : !assetNode.isExecutable ? (
+      <Caption style={{lineHeight: '16px'}}>Non-executable Asset</Caption>
+    ) : undefined}
   </Box>
 );
 
@@ -344,8 +317,14 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
     opNames
     opVersion
     jobNames
+    isSource
+    isExecutable
     autoMaterializePolicy {
       policyType
+      rules {
+        description
+        decisionType
+      }
     }
     freshnessPolicy {
       maximumLagMinutes

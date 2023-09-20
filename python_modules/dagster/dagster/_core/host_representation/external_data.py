@@ -47,6 +47,10 @@ from dagster._core.definitions import (
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_sensor_definition import AssetSensorDefinition
+from dagster._core.definitions.asset_spec import (
+    SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
+    AssetExecutionType,
+)
 from dagster._core.definitions.assets_job import is_base_asset_job_name
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy
@@ -65,6 +69,7 @@ from dagster._core.definitions.metadata import (
     MetadataMapping,
     MetadataUserInput,
     MetadataValue,
+    TextMetadataValue,
     normalize_metadata,
 )
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
@@ -620,8 +625,7 @@ class ExternalExecutionParamsErrorData(
 
 class ExternalPartitionsDefinitionData(ABC):
     @abstractmethod
-    def get_partitions_definition(self) -> PartitionsDefinition:
-        ...
+    def get_partitions_definition(self) -> PartitionsDefinition: ...
 
 
 @whitelist_for_serdes
@@ -1006,6 +1010,8 @@ class ExternalResourceData(
             ("asset_keys_using", List[AssetKey]),
             ("job_ops_using", List[ResourceJobUsageEntry]),
             ("dagster_maintained", bool),
+            ("schedules_using", List[str]),
+            ("sensors_using", List[str]),
         ],
     )
 ):
@@ -1028,6 +1034,8 @@ class ExternalResourceData(
         asset_keys_using: Optional[Sequence[AssetKey]] = None,
         job_ops_using: Optional[Sequence[ResourceJobUsageEntry]] = None,
         dagster_maintained: bool = False,
+        schedules_using: Optional[Sequence[str]] = None,
+        sensors_using: Optional[Sequence[str]] = None,
     ):
         return super(ExternalResourceData, cls).__new__(
             cls,
@@ -1074,6 +1082,12 @@ class ExternalResourceData(
             )
             or [],
             dagster_maintained=dagster_maintained,
+            schedules_using=list(
+                check.opt_sequence_param(schedules_using, "schedules_using", of_type=str)
+            ),
+            sensors_using=list(
+                check.opt_sequence_param(sensors_using, "sensors_using", of_type=str)
+            ),
         )
 
 
@@ -1246,6 +1260,18 @@ class ExternalAssetNode(
             ),
         )
 
+    @property
+    def is_executable(self) -> bool:
+        metadata_value = self.metadata.get(SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE)
+        if not metadata_value:
+            varietal_text = None
+        else:
+            check.inst(metadata_value, TextMetadataValue)  # for guaranteed runtime error
+            assert isinstance(metadata_value, TextMetadataValue)  # for type checker
+            varietal_text = metadata_value.value
+
+        return AssetExecutionType.is_executable(varietal_text)
+
 
 ResourceJobUsageMap = Dict[str, List[ResourceJobUsageEntry]]
 
@@ -1327,10 +1353,29 @@ def external_repository_data_from_def(
                 inverted_nested_resources_map[nested_resource.name][resource_key] = attribute
 
     resource_asset_usage_map: Dict[str, List[AssetKey]] = defaultdict(list)
+    # collect resource usage from normal non-source assets
     for asset in asset_graph:
         if asset.required_top_level_resources:
             for resource_key in asset.required_top_level_resources:
                 resource_asset_usage_map[resource_key].append(asset.asset_key)
+
+    # collect resource usage from source assets
+    for source_asset_key, source_asset in repository_def.source_assets_by_key.items():
+        if source_asset.required_resource_keys:
+            for resource_key in source_asset.required_resource_keys:
+                resource_asset_usage_map[resource_key].append(source_asset_key)
+
+    resource_schedule_usage_map: Dict[str, List[str]] = defaultdict(list)
+    for schedule in repository_def.schedule_defs:
+        if schedule.required_resource_keys:
+            for resource_key in schedule.required_resource_keys:
+                resource_schedule_usage_map[resource_key].append(schedule.name)
+
+    resource_sensor_usage_map: Dict[str, List[str]] = defaultdict(list)
+    for sensor in repository_def.sensor_defs:
+        if sensor.required_resource_keys:
+            for resource_key in sensor.required_resource_keys:
+                resource_sensor_usage_map[resource_key].append(sensor.name)
 
     resource_job_usage_map: ResourceJobUsageMap = _get_resource_job_usage(jobs)
 
@@ -1372,6 +1417,8 @@ def external_repository_data_from_def(
                     inverted_nested_resources_map[res_name],
                     resource_asset_usage_map,
                     resource_job_usage_map,
+                    resource_schedule_usage_map,
+                    resource_sensor_usage_map,
                 )
                 for res_name, res_data in resource_datas.items()
             ],
@@ -1697,6 +1744,8 @@ def external_resource_data_from_def(
     parent_resources: Mapping[str, str],
     resource_asset_usage_map: Mapping[str, List[AssetKey]],
     resource_job_usage_map: ResourceJobUsageMap,
+    resource_schedule_usage_map: Mapping[str, List[str]],
+    resource_sensor_usage_map: Mapping[str, List[str]],
 ) -> ExternalResourceData:
     check.inst_param(resource_def, "resource_def", ResourceDefinition)
 
@@ -1773,6 +1822,8 @@ def external_resource_data_from_def(
         is_top_level=True,
         asset_keys_using=resource_asset_usage_map.get(name, []),
         job_ops_using=resource_job_usage_map.get(name, []),
+        schedules_using=resource_schedule_usage_map.get(name, []),
+        sensors_using=resource_sensor_usage_map.get(name, []),
         resource_type=resource_type,
         dagster_maintained=dagster_maintained,
     )

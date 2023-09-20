@@ -16,6 +16,7 @@ from typing import (
 
 import dagster._check as check
 from dagster._config.snap import ConfigFieldSnap, ConfigSchemaSnapshot
+from dagster._core.definitions.asset_check_spec import AssetCheckHandle
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import (
     MetadataValue,
@@ -386,6 +387,14 @@ class ExternalJob(RepresentedJob):
         )
 
     @property
+    def asset_check_selection(self) -> Optional[AbstractSet[AssetCheckHandle]]:
+        return (
+            self._job_index.job_snapshot.lineage_snapshot.asset_check_selection
+            if self._job_index.job_snapshot.lineage_snapshot
+            else None
+        )
+
+    @property
     def active_presets(self) -> Sequence[ExternalPresetData]:
         return list(self._active_preset_dict.values())
 
@@ -583,6 +592,14 @@ class ExternalResource:
         return self._external_resource_data.job_ops_using
 
     @property
+    def schedules_using(self) -> List[str]:
+        return self._external_resource_data.schedules_using
+
+    @property
+    def sensors_using(self) -> List[str]:
+        return self._external_resource_data.sensors_using
+
+    @property
     def is_dagster_maintained(self) -> bool:
         return self._external_resource_data.dagster_maintained
 
@@ -746,7 +763,7 @@ class ExternalSensor:
 
     def _get_single_target(self) -> Optional[ExternalTargetData]:
         if self._external_sensor_data.target_dict:
-            return list(self._external_sensor_data.target_dict.values())[0]
+            return next(iter(self._external_sensor_data.target_dict.values()))
         else:
             return None
 

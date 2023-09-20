@@ -68,8 +68,7 @@ def bool_param(obj: object, param_name: str, additional_message: Optional[str] =
 @overload
 def opt_bool_param(
     obj: object, param_name: str, default: bool, additional_message: Optional[str] = None
-) -> bool:
-    ...
+) -> bool: ...
 
 
 @overload
@@ -78,8 +77,7 @@ def opt_bool_param(
     param_name: str,
     default: Optional[bool] = ...,
     additional_message: Optional[str] = None,
-) -> Optional[bool]:
-    ...
+) -> Optional[bool]: ...
 
 
 def opt_bool_param(
@@ -122,15 +120,13 @@ def callable_param(
 @overload
 def opt_callable_param(
     obj: None, param_name: str, default: None = ..., additional_message: Optional[str] = None
-) -> None:
-    ...
+) -> None: ...
 
 
 @overload
 def opt_callable_param(
     obj: None, param_name: str, default: T_Callable, additional_message: Optional[str] = None
-) -> T_Callable:
-    ...
+) -> T_Callable: ...
 
 
 @overload
@@ -139,8 +135,7 @@ def opt_callable_param(
     param_name: str,
     default: Optional[U_Callable] = ...,
     additional_message: Optional[str] = None,
-) -> T_Callable:
-    ...
+) -> T_Callable: ...
 
 
 def opt_callable_param(
@@ -196,8 +191,7 @@ def opt_class_param(
     default: type,
     superclass: Optional[type] = None,
     additional_message: Optional[str] = None,
-) -> type:
-    ...
+) -> type: ...
 
 
 @overload
@@ -207,8 +201,7 @@ def opt_class_param(
     default: None = ...,
     superclass: Optional[type] = None,
     additional_message: Optional[str] = None,
-) -> Optional[type]:
-    ...
+) -> Optional[type]: ...
 
 
 def opt_class_param(
@@ -282,8 +275,7 @@ def opt_nullable_dict_param(
     key_type: Optional[TypeOrTupleOfTypes] = ...,
     value_type: Optional[TypeOrTupleOfTypes] = ...,
     additional_message: Optional[str] = None,
-) -> None:
-    ...
+) -> None: ...
 
 
 @overload
@@ -293,8 +285,7 @@ def opt_nullable_dict_param(
     key_type: Optional[TypeOrTupleOfTypes] = ...,
     value_type: Optional[TypeOrTupleOfTypes] = ...,
     additional_message: Optional[str] = None,
-) -> Dict:
-    ...
+) -> Dict: ...
 
 
 def opt_nullable_dict_param(
@@ -409,8 +400,7 @@ def is_dict(
     key_type: Optional[TypeOrTupleOfTypes] = ...,
     value_type: Optional[TypeOrTupleOfTypes] = ...,
     additional_message: Optional[str] = ...,
-) -> Dict[U, V]:
-    ...
+) -> Dict[U, V]: ...
 
 
 @overload
@@ -419,8 +409,7 @@ def is_dict(
     key_type: Optional[TypeOrTupleOfTypes] = ...,
     value_type: Optional[TypeOrTupleOfTypes] = ...,
     additional_message: Optional[str] = ...,
-) -> Dict[Any, Any]:
-    ...
+) -> Dict[Any, Any]: ...
 
 
 def is_dict(
@@ -452,8 +441,7 @@ def float_param(obj: object, param_name: str, additional_message: Optional[str] 
 @overload
 def opt_float_param(
     obj: object, param_name: str, default: float, additional_message: Optional[str] = None
-) -> float:
-    ...
+) -> float: ...
 
 
 @overload
@@ -462,8 +450,7 @@ def opt_float_param(
     param_name: str,
     default: Optional[float] = ...,
     additional_message: Optional[str] = None,
-) -> Optional[float]:
-    ...
+) -> Optional[float]: ...
 
 
 def opt_float_param(
@@ -564,8 +551,7 @@ def int_param(obj: object, param_name: str, additional_message: Optional[str] = 
 @overload
 def opt_int_param(
     obj: object, param_name: str, default: int, additional_message: Optional[str] = ...
-) -> int:
-    ...
+) -> int: ...
 
 
 @overload
@@ -574,8 +560,7 @@ def opt_int_param(
     param_name: str,
     default: Optional[int] = None,
     additional_message: Optional[str] = None,
-) -> Optional[int]:
-    ...
+) -> Optional[int]: ...
 
 
 def opt_int_param(
@@ -650,8 +635,7 @@ def opt_inst_param(
     ttype: TypeOrTupleOfTypes,
     default: None = ...,
     additional_message: Optional[str] = None,
-) -> Optional[T]:
-    ...
+) -> Optional[T]: ...
 
 
 @overload
@@ -661,8 +645,7 @@ def opt_inst_param(
     ttype: TypeOrTupleOfTypes,
     default: T,
     additional_message: Optional[str] = None,
-) -> T:
-    ...
+) -> T: ...
 
 
 @overload
@@ -672,8 +655,7 @@ def opt_inst_param(
     ttype: TypeOrTupleOfTypes,
     default: Optional[T] = ...,
     additional_message: Optional[str] = None,
-) -> T:
-    ...
+) -> T: ...
 
 
 def opt_inst_param(
@@ -769,8 +751,7 @@ def opt_nullable_list_param(
     param_name: str,
     of_type: Optional[TypeOrTupleOfTypes] = ...,
     additional_message: Optional[str] = None,
-) -> None:
-    ...
+) -> None: ...
 
 
 @overload
@@ -779,8 +760,7 @@ def opt_nullable_list_param(
     param_name: str,
     of_type: Optional[TypeOrTupleOfTypes] = ...,
     additional_message: Optional[str] = None,
-) -> List[T]:
-    ...
+) -> List[T]: ...
 
 
 def opt_nullable_list_param(
@@ -883,6 +863,29 @@ def is_list(
 
 
 # ########################
+# ##### LITERAL
+# ########################
+
+
+def literal_param(
+    obj: T, param_name: str, values: Sequence[object], additional_message: Optional[str] = None
+) -> T:
+    if obj not in values:
+        raise _param_value_mismatch_exception(obj, values, param_name, additional_message)
+    return obj
+
+
+def opt_literal_param(
+    obj: T, param_name: str, values: Sequence[object], additional_message: Optional[str] = None
+) -> T:
+    if obj is not None and obj not in values:
+        raise _param_value_mismatch_exception(
+            obj, values, param_name, additional_message, optional=True
+        )
+    return obj
+
+
+# ########################
 # ##### MAPPING
 # ########################
 
@@ -925,8 +928,7 @@ def opt_nullable_mapping_param(
     key_type: Optional[TypeOrTupleOfTypes] = ...,
     value_type: Optional[TypeOrTupleOfTypes] = ...,
     additional_message: Optional[str] = ...,
-) -> None:
-    ...
+) -> None: ...
 
 
 @overload
@@ -936,8 +938,7 @@ def opt_nullable_mapping_param(
     key_type: Optional[TypeOrTupleOfTypes] = ...,
     value_type: Optional[TypeOrTupleOfTypes] = ...,
     additional_message: Optional[str] = ...,
-) -> Mapping[T, U]:
-    ...
+) -> Mapping[T, U]: ...
 
 
 def opt_nullable_mapping_param(
@@ -1003,8 +1004,7 @@ def numeric_param(
 @overload
 def opt_numeric_param(
     obj: object, param_name: str, default: Numeric, additional_message: Optional[str] = ...
-) -> Numeric:
-    ...
+) -> Numeric: ...
 
 
 @overload
@@ -1013,8 +1013,7 @@ def opt_numeric_param(
     param_name: str,
     default: Optional[Numeric] = ...,
     additional_message: Optional[str] = ...,
-) -> Optional[Numeric]:
-    ...
+) -> Optional[Numeric]: ...
 
 
 def opt_numeric_param(
@@ -1044,8 +1043,7 @@ def path_param(
 @overload
 def opt_path_param(
     obj: None, param_name: str, default: None = ..., additional_message: Optional[str] = ...
-) -> None:
-    ...
+) -> None: ...
 
 
 @overload
@@ -1054,8 +1052,7 @@ def opt_path_param(
     param_name: str,
     default: Union[str, PathLike],
     additional_message: Optional[str] = ...,
-) -> str:
-    ...
+) -> str: ...
 
 
 @overload
@@ -1064,8 +1061,7 @@ def opt_path_param(
     param_name: str,
     default: Optional[Union[str, PathLike]] = ...,
     additional_message: Optional[str] = ...,
-) -> str:
-    ...
+) -> str: ...
 
 
 def opt_path_param(
@@ -1126,8 +1122,7 @@ def opt_nullable_sequence_param(
     param_name: str,
     of_type: Optional[TypeOrTupleOfTypes] = ...,
     additional_message: Optional[str] = ...,
-) -> None:
-    ...
+) -> None: ...
 
 
 @overload
@@ -1136,8 +1131,7 @@ def opt_nullable_sequence_param(
     param_name: str,
     of_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = ...,
-) -> Sequence[T]:
-    ...
+) -> Sequence[T]: ...
 
 
 def opt_nullable_sequence_param(
@@ -1236,8 +1230,7 @@ def opt_nullable_set_param(
     param_name: str,
     of_type: Optional[TypeOrTupleOfTypes] = ...,
     additional_message: Optional[str] = ...,
-) -> None:
-    ...
+) -> None: ...
 
 
 @overload
@@ -1246,8 +1239,7 @@ def opt_nullable_set_param(
     param_name: str,
     of_type: Optional[TypeOrTupleOfTypes] = ...,
     additional_message: Optional[str] = ...,
-) -> T_Set:
-    ...
+) -> T_Set: ...
 
 
 def opt_nullable_set_param(
@@ -1286,8 +1278,7 @@ def str_param(obj: object, param_name: str, additional_message: Optional[str] = 
 @overload
 def opt_str_param(
     obj: object, param_name: str, default: str, additional_message: Optional[str] = ...
-) -> str:
-    ...
+) -> str: ...
 
 
 @overload
@@ -1296,8 +1287,7 @@ def opt_str_param(
     param_name: str,
     default: Optional[str] = ...,
     additional_message: Optional[str] = ...,
-) -> Optional[str]:
-    ...
+) -> Optional[str]: ...
 
 
 def opt_str_param(
@@ -1382,8 +1372,7 @@ def opt_tuple_param(
     of_type: Optional[TypeOrTupleOfTypes] = ...,
     of_shape: Optional[Tuple[TypeOrTupleOfTypes, ...]] = ...,
     additional_message: Optional[str] = ...,
-) -> Tuple[T, ...]:
-    ...
+) -> Tuple[T, ...]: ...
 
 
 @overload
@@ -1393,8 +1382,7 @@ def opt_tuple_param(
     of_type: Optional[TypeOrTupleOfTypes] = ...,
     of_shape: Optional[Tuple[TypeOrTupleOfTypes, ...]] = ...,
     additional_message: Optional[str] = ...,
-) -> Tuple[object, ...]:
-    ...
+) -> Tuple[object, ...]: ...
 
 
 def opt_tuple_param(
@@ -1429,8 +1417,7 @@ def opt_nullable_tuple_param(
     of_type: Optional[TypeOrTupleOfTypes] = ...,
     of_shape: Optional[Tuple[TypeOrTupleOfTypes, ...]] = ...,
     additional_message: Optional[str] = ...,
-) -> None:
-    ...
+) -> None: ...
 
 
 @overload
@@ -1440,8 +1427,7 @@ def opt_nullable_tuple_param(
     of_type: TypeOrTupleOfTypes = ...,
     of_shape: Optional[Tuple[TypeOrTupleOfTypes, ...]] = ...,
     additional_message: Optional[str] = None,
-) -> Tuple[T, ...]:
-    ...
+) -> Tuple[T, ...]: ...
 
 
 def opt_nullable_tuple_param(
@@ -1642,6 +1628,21 @@ def _element_check_error(
     additional_message = " " + additional_message if additional_message else ""
     return ElementCheckError(
         f"Value {value!r} from key {key} is not a {ttype!r}. Dict: {ddict!r}.{additional_message}"
+    )
+
+
+def _param_value_mismatch_exception(
+    obj: object,
+    values: Sequence[object],
+    param_name: str,
+    additional_message: Optional[str] = None,
+    optional: bool = False,
+) -> ParameterCheckError:
+    allow_none_clause = " or None" if optional else ""
+    additional_message = " " + additional_message if additional_message else ""
+    return ParameterCheckError(
+        f'Param "{param_name}" is not equal to one of {values}{allow_none_clause}. Got'
+        f" {obj!r}.{additional_message}"
     )
 
 

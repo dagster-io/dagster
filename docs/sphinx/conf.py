@@ -17,6 +17,7 @@ paths = [
     ### dagster packages
     "../../python_modules/automation",
     "../../python_modules/dagster",
+    "../../python_modules/dagster-ext",
     "../../python_modules/dagster-graphql",
     "../../python_modules/dagit",
     "../../python_modules/dagster-webserver",
@@ -76,13 +77,8 @@ for path in paths:
 # -- Project information -----------------------------------------------------
 
 project = "Dagster"
-copyright = "2019, Elementl, Inc"  # noqa: A001
-author = "The Dagster Team"
-
-# The short X.Y version
-version = ""
-# The full version, including alpha/beta/rc tags
-release = ""
+copyright = "2019, Dagster Labs, Inc"  # noqa: A001
+author = "Dagster Labs"
 
 # -- General configuration ---------------------------------------------------
 
@@ -101,8 +97,8 @@ extensions = [
     "sphinx.ext.viewcode",
     # Directives for automatically documenting CLIs built with the `click` package.
     "sphinx_click.ext",
-    # Elementl-authored extension with custom directives and sphinx processing.
-    "autodoc_dagster",
+    # Dagster-labs-authored extension with custom directives and sphinx processing.
+    "dagster_sphinx",
     # Renders a collapsible HTML component. Used by autodoc_dagster.
     "sphinx_toolbox.collapse",
 ]

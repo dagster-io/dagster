@@ -1,3 +1,7 @@
+## 1.0.13 (September 20, 2023)
+
+- Dependency upgrades
+
 ## 1.0.12 (August 2, 2023)
 
 - Removed styled-components from restricted imports due to babel-plugins-macro providing the required behavior.

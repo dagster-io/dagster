@@ -8,10 +8,13 @@ import * as Mocks from '../__fixtures__/AssetNode.fixtures';
 import {getAssetNodeDimensions} from '../layout';
 
 // eslint-disable-next-line import/no-default-export
-export default {component: AssetNode};
+export default {
+  title: 'Asset Graph/AssetNode',
+  component: AssetNode,
+};
 
 export const LiveStates = () => {
-  const caseWithLiveData = (scenario: typeof Mocks.AssetNodeScenariosBase[0]) => {
+  const caseWithLiveData = (scenario: (typeof Mocks.AssetNodeScenariosBase)[0]) => {
     const dimensions = getAssetNodeDimensions(scenario.definition);
     return (
       <Box flex={{direction: 'column', gap: 8, alignItems: 'flex-start'}}>

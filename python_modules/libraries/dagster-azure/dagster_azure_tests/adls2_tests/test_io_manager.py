@@ -337,12 +337,10 @@ def test_with_fake_adls2_resource():
 
 def test_nothing():
     @asset
-    def asset1() -> None:
-        ...
+    def asset1() -> None: ...
 
     @asset(deps=[asset1])
-    def asset2() -> None:
-        ...
+    def asset2() -> None: ...
 
     result = materialize(
         with_resources(
@@ -365,12 +363,10 @@ def test_nothing():
 
 def test_nothing_pythonic() -> None:
     @asset
-    def asset1() -> None:
-        ...
+    def asset1() -> None: ...
 
     @asset(deps=[asset1])
-    def asset2() -> None:
-        ...
+    def asset2() -> None: ...
 
     result = materialize(
         with_resources(

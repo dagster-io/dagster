@@ -4,6 +4,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {COMMON_COLLATOR} from '../app/Util';
 import {ASSET_NODE_CONFIG_FRAGMENT} from '../assets/AssetConfig';
 import {AssetDefinedInMultipleReposNotice} from '../assets/AssetDefinedInMultipleReposNotice';
 import {
@@ -16,6 +17,7 @@ import {DependsOnSelfBanner} from '../assets/DependsOnSelfBanner';
 import {PartitionHealthSummary} from '../assets/PartitionHealthSummary';
 import {UnderlyingOpsOrGraph} from '../assets/UnderlyingOpsOrGraph';
 import {Version} from '../assets/Version';
+import {EXECUTE_CHECKS_BUTTON_ASSET_NODE_FRAGMENT} from '../assets/asset-checks/ExecuteChecksButton';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {
   healthRefreshHintFromLiveData,
@@ -132,22 +134,27 @@ export const SidebarAssetInfo: React.FC<{
       )}
 
       {asset.requiredResources.length > 0 && (
-        <SidebarSection title="Required Resources">
+        <SidebarSection title="Required resources">
           <Box padding={{vertical: 16, horizontal: 24}}>
-            {asset.requiredResources.map((resource) => (
-              <ResourceContainer key={resource.resourceKey}>
-                <Icon name="resource" color={Colors.Gray700} />
-                {repoAddress ? (
-                  <Link
-                    to={workspacePathFromAddress(repoAddress, `/resources/${resource.resourceKey}`)}
-                  >
+            {[...asset.requiredResources]
+              .sort((a, b) => COMMON_COLLATOR.compare(a.resourceKey, b.resourceKey))
+              .map((resource) => (
+                <ResourceContainer key={resource.resourceKey}>
+                  <Icon name="resource" color={Colors.Gray700} />
+                  {repoAddress ? (
+                    <Link
+                      to={workspacePathFromAddress(
+                        repoAddress,
+                        `/resources/${resource.resourceKey}`,
+                      )}
+                    >
+                      <ResourceHeader>{resource.resourceKey}</ResourceHeader>
+                    </Link>
+                  ) : (
                     <ResourceHeader>{resource.resourceKey}</ResourceHeader>
-                  </Link>
-                ) : (
-                  <ResourceHeader>{resource.resourceKey}</ResourceHeader>
-                )}
-              </ResourceContainer>
-            ))}
+                  )}
+                </ResourceContainer>
+              ))}
           </Box>
         </SidebarSection>
       )}
@@ -227,7 +234,6 @@ const SIDEBAR_ASSET_FRAGMENT = gql`
   fragment SidebarAssetFragment on AssetNode {
     id
     description
-    ...AssetNodeConfigFragment
     metadataEntries {
       ...MetadataEntryFragment
     }
@@ -239,6 +245,7 @@ const SIDEBAR_ASSET_FRAGMENT = gql`
     autoMaterializePolicy {
       policyType
       rules {
+        decisionType
         description
       }
     }
@@ -257,6 +264,7 @@ const SIDEBAR_ASSET_FRAGMENT = gql`
       }
     }
     opVersion
+    jobNames
     repository {
       id
       name
@@ -269,12 +277,15 @@ const SIDEBAR_ASSET_FRAGMENT = gql`
       resourceKey
     }
 
+    ...AssetNodeConfigFragment
     ...AssetNodeOpMetadataFragment
+    ...ExecuteChecksButtonAssetNodeFragment
   }
 
   ${ASSET_NODE_CONFIG_FRAGMENT}
   ${METADATA_ENTRY_FRAGMENT}
   ${ASSET_NODE_OP_METADATA_FRAGMENT}
+  ${EXECUTE_CHECKS_BUTTON_ASSET_NODE_FRAGMENT}
 `;
 
 export const SIDEBAR_ASSET_QUERY = gql`

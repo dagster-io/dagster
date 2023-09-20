@@ -1,6 +1,5 @@
 import json
 from contextlib import contextmanager
-from typing import TYPE_CHECKING
 
 import kubernetes
 import pytest
@@ -8,23 +7,18 @@ from dagster import AssetExecutionContext, asset, materialize
 from dagster._core.ext.client import (
     ExtContextInjector,
 )
-from dagster_ext import ExtDefaultContextLoader
+from dagster._core.ext.utils import ExtEnvContextInjector, ext_protocol
+from dagster_ext import ExtContextData, ExtDefaultContextLoader
+from dagster_k8s import execute_k8s_job
 from dagster_k8s.client import DagsterKubernetesClient
-from dagster_k8s.external_resource import ExtK8sPod
+from dagster_k8s.ext import ExtK8sPod, K8sPodLogsMessageReader
 from dagster_test.test_project import (
     get_test_project_docker_image,
 )
 
-if TYPE_CHECKING:
-    from dagster._core.ext.context import (
-        ExtOrchestrationContext,
-    )
 
-
-@pytest.mark.skip("passes locally, BK debug in progress")
 @pytest.mark.default
 def test_ext_k8s_pod(namespace, cluster_provider):
-    kubernetes.config.load_kube_config(cluster_provider.kubeconfig_file)
     docker_image = get_test_project_docker_image()
 
     @asset
@@ -74,14 +68,14 @@ class ExtConfigMapContextInjector(ExtContextInjector):
     @contextmanager
     def inject_context(
         self,
-        context: "ExtOrchestrationContext",
+        context_data: "ExtContextData",
     ):
         context_config_map_body = kubernetes.client.V1ConfigMap(
             metadata=kubernetes.client.V1ObjectMeta(
                 name=self._cm_name,
             ),
             data={
-                "context.json": json.dumps(context.get_data()),
+                "context.json": json.dumps(context_data),
             },
         )
         self._client.core_api.create_namespaced_config_map(self._namespace, context_config_map_body)
@@ -119,7 +113,6 @@ class ExtConfigMapContextInjector(ExtContextInjector):
         }
 
 
-@pytest.mark.skip("passes locally, BK debug in progress")
 @pytest.mark.default
 def test_ext_k8s_pod_file_inject(namespace, cluster_provider):
     # a convoluted test to
@@ -128,14 +121,14 @@ def test_ext_k8s_pod_file_inject(namespace, cluster_provider):
 
     docker_image = get_test_project_docker_image()
     kubernetes.config.load_kube_config(cluster_provider.kubeconfig_file)
+    client = DagsterKubernetesClient.production_client()
+    injector = ExtConfigMapContextInjector(client, namespace)
 
     @asset
     def number_y(
         context: AssetExecutionContext,
         ext_k8s_pod: ExtK8sPod,
     ):
-        client = DagsterKubernetesClient.production_client()
-        injector = ExtConfigMapContextInjector(client, namespace)
         pod_spec = injector.build_pod_spec(
             image=docker_image,
             command=[
@@ -156,15 +149,61 @@ def test_ext_k8s_pod_file_inject(namespace, cluster_provider):
                 "NUMBER_Y": "2",
             },
             base_pod_spec=pod_spec,
-            context_injector=injector,
         )
 
     result = materialize(
         [number_y],
-        resources={"ext_k8s_pod": ExtK8sPod()},
+        resources={"ext_k8s_pod": ExtK8sPod(context_injector=injector)},
         raise_on_error=False,
     )
     assert result.success
     mats = result.asset_materializations_for_node(number_y.op.name)
+    assert "is_even" in mats[0].metadata
+    assert mats[0].metadata["is_even"].value is True
+
+
+def test_use_excute_k8s_job(namespace, cluster_provider):
+    docker_image = get_test_project_docker_image()
+
+    @asset
+    def number_y_job(context: AssetExecutionContext):
+        core_api = kubernetes.client.CoreV1Api()
+        reader = K8sPodLogsMessageReader()
+        with ext_protocol(
+            context,
+            ExtEnvContextInjector(),
+            reader,
+            extras={"storage_root": "/tmp/"},
+        ) as ext_context:
+            job_name = "number_y_asset_job"
+
+            # stand-in for any means of creating kubernetes work
+            execute_k8s_job(
+                context=context,
+                image=docker_image,
+                command=[
+                    "python",
+                    "-m",
+                    "numbers_example.number_y",
+                ],
+                env_vars=[
+                    f"{k}={v}"
+                    for k, v in {
+                        "PYTHONPATH": "/dagster_test/toys/external_execution/",
+                        "NUMBER_Y": "2",
+                        **ext_context.get_external_process_env_vars(),
+                    }.items()
+                ],
+                k8s_job_name=job_name,
+            )
+            reader.consume_pod_logs(core_api, job_name, namespace)
+
+    result = materialize(
+        [number_y_job],
+        resources={"ext_k8s_pod": ExtK8sPod()},
+        raise_on_error=False,
+    )
+    assert result.success
+    mats = result.asset_materializations_for_node(number_y_job.op.name)
     assert "is_even" in mats[0].metadata
     assert mats[0].metadata["is_even"].value is True

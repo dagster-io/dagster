@@ -10,11 +10,11 @@ import {
   Tooltip,
   DialogFooter,
   Dialog,
-  StyledReadOnlyCodeMirror,
   JoinedButtons,
   DialogBody,
   Box,
   Colors,
+  StyledRawCodeMirror,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link, useHistory} from 'react-router-dom';
@@ -308,9 +308,9 @@ export const RunActionsMenu: React.FC<{
         canEscapeKeyClose
         onClose={closeDialogs}
       >
-        <StyledReadOnlyCodeMirror
+        <StyledRawCodeMirror
           value={runConfigYaml || ''}
-          options={{lineNumbers: true, mode: 'yaml'}}
+          options={{readOnly: true, lineNumbers: true, mode: 'yaml'}}
         />
         <DialogFooter topBorder>
           <Button

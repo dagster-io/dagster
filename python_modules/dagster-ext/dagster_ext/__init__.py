@@ -18,6 +18,7 @@ from typing import (
     ClassVar,
     Generic,
     Iterator,
+    Literal,
     Mapping,
     Optional,
     Sequence,
@@ -26,6 +27,7 @@ from typing import (
     TypedDict,
     TypeVar,
     cast,
+    get_args,
 )
 
 if TYPE_CHECKING:
@@ -49,8 +51,10 @@ def _param_name_to_env_key(key: str) -> str:
 
 # ##### PARAMETERS
 
+IS_DAGSTER_EXT_PROCESS_ENV_VAR = "IS_DAGSTER_EXT_PROCESS"
+
 DAGSTER_EXT_ENV_KEYS = {
-    k: _param_name_to_env_key(k) for k in ("is_orchestration_active", "context", "messages")
+    k: _param_name_to_env_key(k) for k in (IS_DAGSTER_EXT_PROCESS_ENV_VAR, "context", "messages")
 }
 
 
@@ -92,6 +96,22 @@ class ExtDataProvenance(TypedDict):
     code_version: str
     input_data_versions: Mapping[str, str]
     is_user_provided: bool
+
+
+ExtMetadataType = Literal[
+    "text",
+    "url",
+    "path",
+    "notebook",
+    "json",
+    "md",
+    "float",
+    "int",
+    "bool",
+    "dagster_run",
+    "asset",
+    "null",
+]
 
 
 # ########################
@@ -217,6 +237,17 @@ def _assert_param_value(value: _T, expected_values: Sequence[_T], method: str, p
     return value
 
 
+def _assert_opt_param_value(
+    value: _T, expected_values: Sequence[_T], method: str, param: str
+) -> _T:
+    if value is not None and value not in expected_values:
+        raise DagsterExtError(
+            f"Invalid value for parameter `{param}` of `{method}`. Expected one of"
+            f" `{expected_values}`, got `{value}`."
+        )
+    return value
+
+
 def _assert_param_json_serializable(value: _T, method: str, param: str) -> _T:
     try:
         json.dumps(value)
@@ -254,8 +285,8 @@ def _env_var_to_param_name(env_var: str) -> str:
     return env_var[len(_ENV_KEY_PREFIX) :].lower()
 
 
-def is_dagster_orchestration_active() -> bool:
-    return _param_from_env_var("is_orchestration_active")
+def is_dagster_ext_process() -> bool:
+    return _param_from_env_var(IS_DAGSTER_EXT_PROCESS_ENV_VAR)
 
 
 def _emit_orchestration_inactive_warning() -> None:
@@ -281,8 +312,7 @@ def _get_mock() -> "MagicMock":
 class ExtContextLoader(ABC):
     @abstractmethod
     @contextmanager
-    def load_context(self, params: ExtParams) -> Iterator[ExtContextData]:
-        ...
+    def load_context(self, params: ExtParams) -> Iterator[ExtContextData]: ...
 
 
 T_MessageChannel = TypeVar("T_MessageChannel", bound="ExtMessageWriterChannel")
@@ -291,24 +321,20 @@ T_MessageChannel = TypeVar("T_MessageChannel", bound="ExtMessageWriterChannel")
 class ExtMessageWriter(ABC, Generic[T_MessageChannel]):
     @abstractmethod
     @contextmanager
-    def open(self, params: ExtParams) -> Iterator[T_MessageChannel]:
-        ...
+    def open(self, params: ExtParams) -> Iterator[T_MessageChannel]: ...
 
 
 class ExtMessageWriterChannel(ABC, Generic[T_MessageChannel]):
     @abstractmethod
-    def write_message(self, message: ExtMessage) -> None:
-        ...
+    def write_message(self, message: ExtMessage) -> None: ...
 
 
 class ExtParamLoader(ABC):
     @abstractmethod
-    def load_context_params(self) -> ExtParams:
-        ...
+    def load_context_params(self) -> ExtParams: ...
 
     @abstractmethod
-    def load_messages_params(self) -> ExtParams:
-        ...
+    def load_messages_params(self) -> ExtParams: ...
 
 
 T_BlobStoreMessageWriterChannel = TypeVar(
@@ -327,8 +353,7 @@ class ExtBlobStoreMessageWriter(ExtMessageWriter[T_BlobStoreMessageWriterChannel
             yield channel
 
     @abstractmethod
-    def make_channel(self, params: ExtParams) -> T_BlobStoreMessageWriterChannel:
-        ...
+    def make_channel(self, params: ExtParams) -> T_BlobStoreMessageWriterChannel: ...
 
 
 class ExtBlobStoreMessageWriterChannel(ExtMessageWriterChannel):
@@ -349,8 +374,7 @@ class ExtBlobStoreMessageWriterChannel(ExtMessageWriterChannel):
             return messages
 
     @abstractmethod
-    def upload_messages_chunk(self, payload: StringIO, index: int) -> None:
-        ...
+    def upload_messages_chunk(self, payload: StringIO, index: int) -> None: ...
 
     @contextmanager
     def buffered_upload_loop(self) -> Iterator[None]:
@@ -378,6 +402,17 @@ class ExtBlobStoreMessageWriterChannel(ExtMessageWriterChannel):
                 start_or_last_upload = now
                 self._counter += 1
             time.sleep(1)
+
+
+class ExtBufferedFilesystemMessageWriterChannel(ExtBlobStoreMessageWriterChannel):
+    def __init__(self, path: str, *, interval: float = 10):
+        super().__init__(interval=interval)
+        self._path = path
+
+    def upload_messages_chunk(self, payload: IO, index: int) -> None:
+        message_path = os.path.join(self._path, f"{index}.json")
+        with open(message_path, "w") as f:
+            f.write(payload.read())
 
 
 # ########################
@@ -469,7 +504,6 @@ class ExtS3MessageWriter(ExtBlobStoreMessageWriter):
     # client is a boto3.client("s3") object
     def __init__(self, client: Any, *, interval: float = 10):
         super().__init__(interval=interval)
-        self._interval = _assert_param_type(interval, float, self.__class__.__name__, "interval")
         # Not checking client type for now because it's a boto3.client object and we don't want to
         # depend on boto3.
         self._client = client
@@ -484,7 +518,7 @@ class ExtS3MessageWriter(ExtBlobStoreMessageWriter):
             client=self._client,
             bucket=bucket,
             key_prefix=key_prefix,
-            interval=self._interval,
+            interval=self.interval,
         )
 
 
@@ -508,6 +542,32 @@ class ExtS3MessageChannel(ExtBlobStoreMessageWriterChannel):
 
 
 # ########################
+# ##### IO - DBFS
+# ########################
+
+
+class ExtDbfsContextLoader(ExtContextLoader):
+    @contextmanager
+    def load_context(self, params: ExtParams) -> Iterator[ExtContextData]:
+        unmounted_path = _assert_env_param_type(params, "path", str, self.__class__)
+        path = os.path.join("/dbfs", unmounted_path.lstrip("/"))
+        with open(path, "r") as f:
+            yield json.load(f)
+
+
+class ExtDbfsMessageWriter(ExtBlobStoreMessageWriter):
+    def make_channel(
+        self,
+        params: ExtParams,
+    ) -> "ExtBufferedFilesystemMessageWriterChannel":
+        unmounted_path = _assert_env_param_type(params, "path", str, self.__class__)
+        return ExtBufferedFilesystemMessageWriterChannel(
+            path=os.path.join("/dbfs", unmounted_path.lstrip("/")),
+            interval=self.interval,
+        )
+
+
+# ########################
 # ##### CONTEXT
 # ########################
 
@@ -521,7 +581,7 @@ def init_dagster_ext(
     if ExtContext.is_initialized():
         return ExtContext.get()
 
-    if is_dagster_orchestration_active():
+    if is_dagster_ext_process():
         param_loader = param_loader or ExtEnvVarParamLoader()
         context_params = param_loader.load_context_params()
         messages_params = param_loader.load_messages_params()
@@ -595,7 +655,7 @@ class ExtContext:
             self._data["provenance_by_asset_key"], "provenance"
         )
         _assert_single_asset(self._data, "provenance")
-        return list(provenance_by_asset_key.values())[0]
+        return next(iter(provenance_by_asset_key.values()))
 
     @property
     def provenance_by_asset_key(self) -> Mapping[str, Optional[ExtDataProvenance]]:
@@ -610,7 +670,7 @@ class ExtContext:
             self._data["code_version_by_asset_key"], "code_version"
         )
         _assert_single_asset(self._data, "code_version")
-        return list(code_version_by_asset_key.values())[0]
+        return next(iter(code_version_by_asset_key.values()))
 
     @property
     def code_version_by_asset_key(self) -> Mapping[str, Optional[str]]:
@@ -668,15 +728,23 @@ class ExtContext:
     # ##### WRITE
 
     def report_asset_metadata(
-        self, label: str, value: Any, asset_key: Optional[str] = None
+        self,
+        label: str,
+        value: Any,
+        metadata_type: Optional[ExtMetadataType] = None,
+        asset_key: Optional[str] = None,
     ) -> None:
         asset_key = _resolve_optionally_passed_asset_key(
             self._data, asset_key, "report_asset_metadata"
         )
         label = _assert_param_type(label, str, "report_asset_metadata", "label")
         value = _assert_param_json_serializable(value, "report_asset_metadata", "value")
+        metadata_type = _assert_opt_param_value(
+            metadata_type, get_args(ExtMetadataType), "report_asset_metadata", "type"
+        )
         self._write_message(
-            "report_asset_metadata", {"asset_key": asset_key, "label": label, "value": value}
+            "report_asset_metadata",
+            {"asset_key": asset_key, "label": label, "value": value, "type": metadata_type},
         )
 
     def report_asset_data_version(self, data_version: str, asset_key: Optional[str] = None) -> None:

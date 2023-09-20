@@ -1,6 +1,25 @@
-import {AutoMaterializePolicyType} from '../../graphql/types';
+import {
+  AutoMaterializeDecisionType,
+  AutoMaterializePolicyType,
+  buildAutoMaterializePolicy,
+  buildAutoMaterializeRule,
+} from '../../graphql/types';
 import {buildAssetTabs} from '../AssetTabs';
 import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
+
+const autoMaterializePolicy = buildAutoMaterializePolicy({
+  policyType: AutoMaterializePolicyType.EAGER,
+  rules: [
+    buildAutoMaterializeRule({
+      decisionType: AutoMaterializeDecisionType.MATERIALIZE,
+      description: 'Rule 1',
+    }),
+    buildAutoMaterializeRule({
+      decisionType: AutoMaterializeDecisionType.SKIP,
+      description: 'Skip Rule 1',
+    }),
+  ],
+});
 
 describe('buildAssetTabs', () => {
   const definitionWithPartition: AssetViewDefinitionNodeFragment = {
@@ -42,10 +61,7 @@ describe('buildAssetTabs', () => {
     opNames: ['eager_downstream_3_partitioned'],
     opVersion: null,
     jobNames: ['__ASSET_JOB_0'],
-    autoMaterializePolicy: {
-      policyType: AutoMaterializePolicyType.EAGER,
-      __typename: 'AutoMaterializePolicy',
-    },
+    autoMaterializePolicy,
     freshnessPolicy: null,
     requiredResources: [],
     configField: {
@@ -66,6 +82,7 @@ describe('buildAssetTabs', () => {
     computeKind: null,
     isPartitioned: true,
     isObservable: false,
+    isExecutable: true,
     isSource: false,
     assetKey: {
       path: ['eager_downstream_3_partitioned'],
@@ -188,10 +205,7 @@ describe('buildAssetTabs', () => {
     opNames: ['lazy_downstream_1'],
     opVersion: null,
     jobNames: ['__ASSET_JOB_0'],
-    autoMaterializePolicy: {
-      policyType: AutoMaterializePolicyType.LAZY,
-      __typename: 'AutoMaterializePolicy',
-    },
+    autoMaterializePolicy,
     freshnessPolicy: null,
     requiredResources: [],
     configField: {
@@ -212,6 +226,7 @@ describe('buildAssetTabs', () => {
     computeKind: null,
     isPartitioned: false,
     isObservable: false,
+    isExecutable: true,
     isSource: false,
     assetKey: {
       path: ['lazy_downstream_1'],

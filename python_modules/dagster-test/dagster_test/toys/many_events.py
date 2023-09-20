@@ -35,9 +35,7 @@ def create_raw_file_op(name):
 
     @op(
         name=name,
-        description="Inject raw file for input to table {} and do expectation on output".format(
-            name
-        ),
+        description=f"Inject raw file for input to table {name} and do expectation on output",
     )
     def raw_file_op(_context):
         yield AssetMaterialization(

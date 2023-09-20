@@ -96,7 +96,7 @@ class AssetDaemonContext:
     ):
         from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
-        self._instance_queryer = CachingInstanceQueryer(instance, asset_graph)
+        self._instance_queryer = CachingInstanceQueryer(instance, asset_graph, logger=logger)
         self._data_time_resolver = CachingDataTimeResolver(self.instance_queryer)
         self._cursor = cursor
         self._target_asset_keys = target_asset_keys or {
@@ -500,7 +500,17 @@ class AssetDaemonContext:
             # over evaluation to any required neighbor key
             if to_materialize_for_asset:
                 for neighbor_key in self.asset_graph.get_required_multi_asset_keys(asset_key):
-                    evaluations_by_key[neighbor_key] = evaluation._replace(asset_key=neighbor_key)
+                    auto_materialize_policy = self.asset_graph.auto_materialize_policies_by_key.get(
+                        neighbor_key
+                    )
+
+                    if auto_materialize_policy is None:
+                        check.failed(f"Expected auto materialize policy on asset {asset_key}")
+
+                    evaluations_by_key[neighbor_key] = evaluation._replace(
+                        asset_key=neighbor_key,
+                        rule_snapshots=auto_materialize_policy.rule_snapshots,  # Neighbors can have different rule snapshots
+                    )
                     will_materialize_mapping[neighbor_key] = {
                         ap._replace(asset_key=neighbor_key) for ap in to_materialize_for_asset
                     }
@@ -788,8 +798,17 @@ def get_auto_observe_run_requests(
         ):
             assets_to_auto_observe.add(asset_key)
 
+    # create groups of asset keys that share the same repository AND the same partitions definition
+    partitions_def_and_asset_key_groups: List[Sequence[AssetKey]] = []
+    for repository_asset_keys in asset_graph.split_asset_keys_by_repository(assets_to_auto_observe):
+        asset_keys_by_partitions_def = defaultdict(list)
+        for asset_key in repository_asset_keys:
+            partitions_def = asset_graph.get_partitions_def(asset_key)
+            asset_keys_by_partitions_def[partitions_def].append(asset_key)
+        partitions_def_and_asset_key_groups.extend(asset_keys_by_partitions_def.values())
+
     return [
         RunRequest(asset_selection=list(asset_keys), tags=run_tags)
-        for asset_keys in asset_graph.split_asset_keys_by_repository(assets_to_auto_observe)
+        for asset_keys in partitions_def_and_asset_key_groups
         if len(asset_keys) > 0
     ]

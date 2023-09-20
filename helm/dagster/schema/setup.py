@@ -3,8 +3,8 @@ from setuptools import find_packages, setup
 setup(
     name="dagster-helm",
     version="0.0.1",
-    author="Elementl",
-    author_email="hello@elementl.com",
+    author="Dagster Labs",
+    author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
     description="Tools for Dagster Helm schema",
     url="https://github.com/dagster-io/dagster/tree/master/helm/dagster/schema",

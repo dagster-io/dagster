@@ -221,7 +221,7 @@ def _launch_executor_run(
         job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
     )
 
-    assert "PIPELINE_SUCCESS" in result, f"no match, result: {result}"
+    assert "RUN_SUCCESS" in result, f"no match, result: {result}"
 
     updated_run = dagster_instance_for_k8s_run_launcher.get_run_by_id(run_id)
     assert updated_run.tags[DOCKER_IMAGE_TAG] == get_test_project_docker_image()  # type: ignore  # (possible none)
@@ -269,7 +269,7 @@ def test_k8s_run_launcher_image_from_origin(
         job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
     )
 
-    assert "PIPELINE_SUCCESS" in result, f"no match, result: {result}"
+    assert "RUN_SUCCESS" in result, f"no match, result: {result}"
 
     updated_run = dagster_instance_for_k8s_run_launcher.get_run_by_id(run_id)
     assert updated_run.tags[DOCKER_IMAGE_TAG] == get_test_project_docker_image()
@@ -373,7 +373,7 @@ def test_k8s_executor_resource_requirements(
         job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
     )
 
-    assert "PIPELINE_SUCCESS" in result, f"no match, result: {result}"
+    assert "RUN_SUCCESS" in result, f"no match, result: {result}"
 
     updated_run = dagster_instance_for_k8s_run_launcher.get_run_by_id(run_id)
     assert updated_run.tags[DOCKER_IMAGE_TAG] == get_test_project_docker_image()
@@ -411,7 +411,7 @@ def test_execute_on_k8s_retry_job(
         job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
     )
 
-    assert "PIPELINE_SUCCESS" in result, f"no match, result: {result}"
+    assert "RUN_SUCCESS" in result, f"no match, result: {result}"
 
     stats = dagster_instance_for_k8s_run_launcher.get_run_stats(run_id)
     assert stats.steps_succeeded == 1
@@ -478,7 +478,7 @@ def test_memoization_k8s_executor(
                 namespace=user_code_namespace_for_k8s_run_launcher,
             )
 
-            assert "PIPELINE_SUCCESS" in result, f"no match, result: {result}"
+            assert "RUN_SUCCESS" in result, f"no match, result: {result}"
 
             run_ids.append(run_id)
 

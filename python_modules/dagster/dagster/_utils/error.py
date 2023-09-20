@@ -54,9 +54,7 @@ class SerializableErrorInfo(
             else ""
         )
 
-        return "{err.message}{stack}{cause}{context}".format(
-            err=self, stack=stack_str, cause=cause_str, context=context_str
-        )
+        return f"{self.message}{stack_str}{cause_str}{context_str}"
 
     def to_exception_message_only(self) -> "SerializableErrorInfo":
         """Return a new SerializableErrorInfo with only the message and cause set.

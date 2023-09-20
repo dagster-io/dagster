@@ -112,7 +112,7 @@ const AssetCheckDetailModalImpl = ({
     return (
       <Box
         flex={{direction: 'column'}}
-        border={{side: 'top', color: Colors.KeylineGray, width: 1}}
+        border="top"
         // CollapsibleSection uses a white background which covers the border, so add 1px of padding on top for the border
         padding={{top: 1, horizontal: 12}}
       >
@@ -185,10 +185,7 @@ const AssetCheckDetailModalImpl = ({
                     )}
                   </td>
                   <td>
-                    <AssetCheckStatusTag
-                      status={execution.status}
-                      severity={execution.evaluation?.severity}
-                    />
+                    <AssetCheckStatusTag check={check} execution={execution} />
                   </td>
                   <td>
                     <MetadataCell metadataEntries={execution.evaluation?.metadataEntries} />

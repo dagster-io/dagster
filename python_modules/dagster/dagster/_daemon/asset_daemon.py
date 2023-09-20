@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Dict, List, Optional, Tuple
 
 import pendulum
 
@@ -8,8 +8,9 @@ from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import JobSubsetSelector
+from dagster._core.host_representation.external import ExternalExecutionPlan, ExternalJob
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import (
     ASSET_EVALUATION_ID_TAG,
     AUTO_MATERIALIZE_TAG,
@@ -18,6 +19,7 @@ from dagster._core.storage.tags import (
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._core.workspace.workspace import IWorkspace
 from dagster._daemon.daemon import DaemonIterator, IntervalDaemon
+from dagster._utils import hash_collection
 
 CURSOR_KEY = "ASSET_DAEMON_CURSOR"
 ASSET_DAEMON_PAUSED_KEY = "ASSET_DAEMON_PAUSED"
@@ -137,21 +139,39 @@ class AssetDaemon(IntervalDaemon):
 
         evaluations_by_asset_key = {evaluation.asset_key: evaluation for evaluation in evaluations}
 
+        pipeline_and_execution_plan_cache: Dict[int, Tuple[ExternalJob, ExternalExecutionPlan]] = {}
+
+        submit_job_inputs: List[Tuple[RunRequest, ExternalJob, ExternalExecutionPlan]] = []
+
+        # First do work that is most likely to fail before doing any writes (to make
+        # double-creation of runs less likely)
         for run_request in run_requests:
             yield
+            submit_job_inputs.append(
+                get_asset_run_submit_input(
+                    run_request._replace(
+                        tags={
+                            **run_request.tags,
+                            ASSET_EVALUATION_ID_TAG: str(new_cursor.evaluation_id),
+                        }
+                    ),
+                    instance,
+                    workspace,
+                    asset_graph,
+                    pipeline_and_execution_plan_cache,
+                )
+            )
+
+        # Now submit all runs to the queue
+        for submit_job_input in submit_job_inputs:
+            yield
+
+            run_request, external_job, external_execution_plan = submit_job_input
 
             asset_keys = check.not_none(run_request.asset_selection)
 
             run = submit_asset_run(
-                run_request._replace(
-                    tags={
-                        **run_request.tags,
-                        ASSET_EVALUATION_ID_TAG: str(new_cursor.evaluation_id),
-                    }
-                ),
-                instance,
-                workspace,
-                asset_graph,
+                run_request, instance, workspace, external_job, external_execution_plan
             )
 
             asset_key_str = ", ".join([asset_key.to_user_string() for asset_key in asset_keys])
@@ -184,12 +204,17 @@ class AssetDaemon(IntervalDaemon):
         self._logger.info("Finished auto-materialization tick")
 
 
-def submit_asset_run(
+def get_asset_run_submit_input(
     run_request: RunRequest,
     instance: DagsterInstance,
     workspace: IWorkspace,
     asset_graph: ExternalAssetGraph,
-) -> DagsterRun:
+    pipeline_and_execution_plan_cache: Dict[int, Tuple[ExternalJob, ExternalExecutionPlan]] = {},
+) -> Tuple[RunRequest, ExternalJob, ExternalExecutionPlan]:
+    check.invariant(
+        not run_request.run_config, "Asset materialization run requests have no custom run config"
+    )
+
     asset_keys = check.not_none(run_request.asset_selection)
     check.invariant(len(asset_keys) > 0)
 
@@ -201,26 +226,52 @@ def submit_asset_run(
 
     location_name = repo_handle.code_location_origin.location_name
     repository_name = repo_handle.repository_name
-    job_name = check.not_none(asset_graph.get_implicit_job_name_for_assets(asset_keys))
-
     code_location = workspace.get_code_location(location_name)
-    external_job = code_location.get_external_job(
-        JobSubsetSelector(
-            location_name=location_name,
-            repository_name=repository_name,
-            job_name=job_name,
-            op_selection=None,
-            asset_selection=asset_keys,
+    job_name = check.not_none(
+        asset_graph.get_implicit_job_name_for_assets(
+            asset_keys, code_location.get_repository(repository_name)
         )
     )
 
-    external_execution_plan = code_location.get_external_execution_plan(
-        external_job,
-        run_request.run_config,
-        step_keys_to_execute=None,
-        known_state=None,
-        instance=instance,
+    job_selector = JobSubsetSelector(
+        location_name=location_name,
+        repository_name=repository_name,
+        job_name=job_name,
+        op_selection=None,
+        asset_selection=asset_keys,
     )
+
+    selector_id = hash_collection(job_selector)
+
+    if selector_id not in pipeline_and_execution_plan_cache:
+        external_job = code_location.get_external_job(job_selector)
+
+        external_execution_plan = code_location.get_external_execution_plan(
+            external_job,
+            run_config={},
+            step_keys_to_execute=None,
+            known_state=None,
+            instance=instance,
+        )
+        pipeline_and_execution_plan_cache[selector_id] = (
+            external_job,
+            external_execution_plan,
+        )
+
+    external_job, external_execution_plan = pipeline_and_execution_plan_cache[selector_id]
+
+    return (run_request, external_job, external_execution_plan)
+
+
+def submit_asset_run(
+    run_request: RunRequest,
+    instance: DagsterInstance,
+    workspace: IWorkspace,
+    external_job: ExternalJob,
+    external_execution_plan: ExternalExecutionPlan,
+):
+    asset_keys = check.not_none(run_request.asset_selection)
+
     execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
 
     run = instance.create_run(
@@ -240,6 +291,7 @@ def submit_asset_run(
         external_job_origin=external_job.get_external_origin(),
         job_code_origin=external_job.get_python_origin(),
         asset_selection=frozenset(asset_keys),
+        asset_check_selection=None,
     )
     instance.submit_run(run.run_id, workspace)
     return run

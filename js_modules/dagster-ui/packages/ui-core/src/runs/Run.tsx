@@ -1,9 +1,11 @@
 import {
   Box,
   NonIdealState,
-  FirstOrSecondPanelToggle,
   SplitPanelContainer,
   ErrorBoundary,
+  Button,
+  Icon,
+  Tooltip,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
@@ -166,11 +168,10 @@ const RunWithData: React.FC<RunWithDataProps> = ({
   onSetSelectionQuery,
 }) => {
   const onLaunch = useJobReExecution(run);
-  const splitPanelContainer = React.createRef<SplitPanelContainer>();
 
   const [queryLogType, setQueryLogType] = useQueryPersistedState<string>({
     queryKey: 'logType',
-    defaults: {logType: 'structured'},
+    defaults: {logType: LogType.structured},
   });
 
   const logType = logTypeFromQuery(queryLogType);
@@ -189,15 +190,13 @@ const RunWithData: React.FC<RunWithDataProps> = ({
   }, [runtimeGraph, selectionQuery]);
 
   const supportsCapturedLogs = useSupportsCapturedLogs();
-  const {
-    logCaptureInfo,
-    computeLogFileKey,
-    setComputeLogFileKey,
-  } = useComputeLogFileKeyForSelection({
-    stepKeys,
-    selectionStepKeys,
-    metadata,
-  });
+  const {logCaptureInfo, computeLogFileKey, setComputeLogFileKey} =
+    useComputeLogFileKeyForSelection({
+      stepKeys,
+      selectionStepKeys,
+      metadata,
+      defaultToFirstStep: false,
+    });
 
   const logsFilterStepKeys = runtimeGraph
     ? logsFilter.logQuery
@@ -241,6 +240,38 @@ const RunWithData: React.FC<RunWithDataProps> = ({
     onSetSelectionQuery(newSelected.join(', ') || '*');
   };
 
+  const [splitPanelContainer, setSplitPanelContainer] = React.useState<null | SplitPanelContainer>(
+    null,
+  );
+  React.useEffect(() => {
+    const initialSize = splitPanelContainer?.getSize();
+    switch (initialSize) {
+      case 100:
+        setExpandedPanel('top');
+        return;
+      case 0:
+        setExpandedPanel('bottom');
+        return;
+    }
+  }, [splitPanelContainer]);
+
+  const [expandedPanel, setExpandedPanel] = React.useState<null | 'top' | 'bottom'>(null);
+  const isTopExpanded = expandedPanel === 'top';
+  const isBottomExpanded = expandedPanel === 'bottom';
+
+  const expandBottomPanel = () => {
+    splitPanelContainer?.onChangeSize(0);
+    setExpandedPanel('bottom');
+  };
+  const expandTopPanel = () => {
+    splitPanelContainer?.onChangeSize(100);
+    setExpandedPanel('top');
+  };
+  const resetPanels = () => {
+    splitPanelContainer?.onChangeSize(50);
+    setExpandedPanel(null);
+  };
+
   const gantt = (metadata: IRunMetadataDict) => {
     if (!run) {
       return <GanttChartLoadingState runId={runId} />;
@@ -259,7 +290,12 @@ const RunWithData: React.FC<RunWithDataProps> = ({
             }}
             toolbarActions={
               <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
-                <FirstOrSecondPanelToggle axis="vertical" container={splitPanelContainer} />
+                <Tooltip content={isTopExpanded ? 'Collapse' : 'Expand'}>
+                  <Button
+                    icon={<Icon name={isTopExpanded ? 'collapse_arrows' : 'expand_arrows'} />}
+                    onClick={isTopExpanded ? resetPanels : expandTopPanel}
+                  />
+                </Tooltip>
                 <RunActionButtons
                   run={run}
                   onLaunch={onLaunch}
@@ -287,7 +323,9 @@ const RunWithData: React.FC<RunWithDataProps> = ({
   return (
     <>
       <SplitPanelContainer
-        ref={splitPanelContainer}
+        ref={(container) => {
+          setSplitPanelContainer(container);
+        }}
         axis="vertical"
         identifier="run-gantt"
         firstInitialPercent={35}
@@ -307,9 +345,13 @@ const RunWithData: React.FC<RunWithDataProps> = ({
                 onSetComputeLogKey={setComputeLogFileKey}
                 computeLogUrl={computeLogUrl}
                 counts={logs.counts}
+                isSectionExpanded={isBottomExpanded}
+                toggleExpanded={isBottomExpanded ? resetPanels : expandBottomPanel}
               />
               {logType !== LogType.structured ? (
-                supportsCapturedLogs ? (
+                !computeLogFileKey ? (
+                  <NoStepSelectionState type={logType} />
+                ) : supportsCapturedLogs ? (
                   <CapturedOrExternalLogPanel
                     logKey={computeLogFileKey ? [runId, 'compute_logs', computeLogFileKey] : []}
                     logCaptureInfo={logCaptureInfo}
@@ -346,3 +388,23 @@ const LogsContainer = styled.div`
   flex-direction: column;
   height: 100%;
 `;
+
+const NoStepSelectionState = ({type}: {type: LogType}) => {
+  return (
+    <Box
+      flex={{
+        direction: 'row',
+        grow: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+      style={{background: '#221F1B'}}
+    >
+      <NonIdealState
+        title={`Select a step to view ${type}`}
+        icon="warning"
+        description="Select a step on the Gantt chart or from the dropdown above to view logs."
+      />
+    </Box>
+  );
+};

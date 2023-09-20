@@ -13,7 +13,7 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
-import {useHistory} from 'react-router';
+import {useHistory} from 'react-router-dom';
 
 import {PipelineRunTag} from '../app/ExecutionSessionStorage';
 import {filterByQuery} from '../app/GraphQueryImpl';
@@ -21,11 +21,11 @@ import {isTimeseriesPartition} from '../assets/MultipartitioningSupport';
 import {GanttChartMode} from '../gantt/GanttChart';
 import {buildLayout} from '../gantt/GanttChartLayout';
 import {PartitionDefinitionType, RunStatus} from '../graphql/types';
-import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/BackfillUtils';
+import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/backfill/BackfillUtils';
 import {
   LaunchPartitionBackfillMutation,
   LaunchPartitionBackfillMutationVariables,
-} from '../instance/types/BackfillUtils.types';
+} from '../instance/backfill/types/BackfillUtils.types';
 import {LaunchButton} from '../launchpad/LaunchButton';
 import {TagContainer, TagEditor} from '../launchpad/TagEditor';
 import {explodeCompositesInHandleGraph} from '../pipelines/CompositeSupport';
@@ -478,11 +478,7 @@ const Section = ({
 }) => (
   <Box flex={{direction: 'column', gap: 4}}>
     <Subheading>{title}</Subheading>
-    <Box
-      flex={{direction: 'column', gap: 8}}
-      padding={{top: 16}}
-      border={{width: 1, color: Colors.KeylineGray, side: 'top'}}
-    >
+    <Box flex={{direction: 'column', gap: 8}} padding={{top: 16}} border="top">
       {children}
     </Box>
   </Box>

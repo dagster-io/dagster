@@ -308,7 +308,7 @@ class UnresolvedMappedExecutionStep(
         # this function will be removed in moving to supporting being downstream of multiple dynamic outputs
         keys = self.resolved_by_step_keys
         check.invariant(len(keys) == 1, "Unresolved step expects one and only one dynamic step key")
-        return list(keys)[0]
+        return next(iter(keys))
 
     @property
     def resolved_by_output_name(self) -> str:
@@ -322,7 +322,7 @@ class UnresolvedMappedExecutionStep(
             len(keys) == 1, "Unresolved step expects one and only one dynamic output name"
         )
 
-        return list(keys)[0]
+        return next(iter(keys))
 
     @property
     def resolved_by_step_keys(self) -> FrozenSet[str]:

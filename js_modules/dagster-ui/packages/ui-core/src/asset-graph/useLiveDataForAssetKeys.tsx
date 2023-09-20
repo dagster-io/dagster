@@ -12,6 +12,7 @@ import {
   AssetGraphLiveQuery,
   AssetGraphLiveQueryVariables,
 } from './types/useLiveDataForAssetKeys.types';
+import {useLiveDataForAssetKeysBatcher} from './useLiveDataForAssetKeysBatcher';
 
 const SUBSCRIPTION_IDLE_POLL_RATE = 30 * 1000;
 const SUBSCRIPTION_MAX_POLL_RATE = 2 * 1000;
@@ -22,19 +23,32 @@ const SUBSCRIPTION_MAX_POLL_RATE = 2 * 1000;
  * Note: The "upstream changed" flag cascades, so it may not appear if the upstream
  * node that has changed is not in scope.
  */
-export function useLiveDataForAssetKeys(assetKeys: AssetKeyInput[]) {
+export function useLiveDataForAssetKeys(assetKeys: AssetKeyInput[], batched?: boolean) {
+  const {currentBatch, nextBatch, setBatchData, isLastBatch} =
+    useLiveDataForAssetKeysBatcher(assetKeys);
+
   const liveResult = useQuery<AssetGraphLiveQuery, AssetGraphLiveQueryVariables>(
     ASSETS_GRAPH_LIVE_QUERY,
     {
       skip: assetKeys.length === 0,
-      variables: {assetKeys},
+      variables: {assetKeys: batched ? currentBatch : assetKeys},
       notifyOnNetworkStatusChange: true,
     },
   );
 
   const liveDataByNode = React.useMemo(() => {
-    return liveResult.data ? buildLiveData(liveResult.data) : {};
-  }, [liveResult.data]);
+    const data = liveResult.data ? buildLiveData(liveResult.data) : {};
+    if (batched) {
+      return setBatchData(data);
+    }
+    return data;
+  }, [liveResult.data, setBatchData, batched]);
+
+  React.useEffect(() => {
+    if (batched && !isLastBatch && !liveResult.loading && liveResult.data) {
+      nextBatch();
+    }
+  }, [batched, liveResult.loading, liveResult.data, isLastBatch, nextBatch]);
 
   // Track whether the data is being refetched so incoming asset events don't trigger
   // duplicate requests for live data.
@@ -45,10 +59,20 @@ export function useLiveDataForAssetKeys(assetKeys: AssetKeyInput[]) {
 
   const timerRef = React.useRef<NodeJS.Timeout | null>(null);
 
+  const refetch = React.useCallback(() => {
+    if (batched) {
+      if (isLastBatch) {
+        // If we're not on the last batch we're still fetching so don't immediately refetch
+        nextBatch();
+      }
+    } else {
+      liveResult.refetch();
+    }
+  }, [batched, isLastBatch, liveResult, nextBatch]);
+
   const onRefreshDebounced = React.useCallback(() => {
     // This is a basic `throttle`, except that if it fires and finds the live
     // query is already refreshing it debounces again.
-    const refetch = liveResult.refetch;
     const fire = () => {
       if (fetching.current) {
         timerRef.current = setTimeout(fire, SUBSCRIPTION_MAX_POLL_RATE);
@@ -60,7 +84,7 @@ export function useLiveDataForAssetKeys(assetKeys: AssetKeyInput[]) {
     if (!timerRef.current) {
       timerRef.current = setTimeout(fire, SUBSCRIPTION_MAX_POLL_RATE);
     }
-  }, [timerRef, liveResult.refetch]);
+  }, [timerRef, refetch]);
 
   React.useEffect(() => {
     return () => {
@@ -70,9 +94,14 @@ export function useLiveDataForAssetKeys(assetKeys: AssetKeyInput[]) {
 
   // If the event log storage does not support streaming us asset events, fall back to
   // a polling approach and trigger a single refresh when a run is launched for immediate feedback
-  const liveDataRefreshState = useQueryRefreshAtInterval(liveResult, SUBSCRIPTION_IDLE_POLL_RATE);
+  const liveDataRefreshState = useQueryRefreshAtInterval(
+    liveResult,
+    SUBSCRIPTION_IDLE_POLL_RATE,
+    true,
+    refetch,
+  );
 
-  useDidLaunchEvent(liveResult.refetch, SUBSCRIPTION_MAX_POLL_RATE);
+  useDidLaunchEvent(refetch, SUBSCRIPTION_MAX_POLL_RATE);
 
   React.useEffect(() => {
     const assetKeyTokens = new Set(assetKeys.map(tokenForAssetKey));
@@ -106,6 +135,7 @@ export function useLiveDataForAssetKeys(assetKeys: AssetKeyInput[]) {
     liveDataByNode,
     liveDataRefreshState,
     assetKeys,
+    isBatching: !isLastBatch,
   };
 }
 
@@ -147,6 +177,7 @@ const ASSET_NODE_LIVE_FRAGMENT = gql`
     }
     assetChecks {
       name
+      canExecuteIndividually
       executionForLatestMaterialization {
         id
         runId

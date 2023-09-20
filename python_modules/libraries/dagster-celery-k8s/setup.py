@@ -18,7 +18,7 @@ pin = "" if ver == "1!0+dev" else f"=={ver}"
 setup(
     name="dagster-celery-k8s",
     version=ver,
-    author="Elementl",
+    author="Dagster Labs",
     license="Apache-2.0",
     description="A Dagster integration for celery-k8s-executor",
     url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-celery-k8s",

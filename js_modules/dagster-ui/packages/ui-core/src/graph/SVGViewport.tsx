@@ -50,6 +50,7 @@ export const DETAIL_ZOOM = 0.75;
 const DEFAULT_ZOOM = 0.75;
 const DEFAULT_MAX_AUTOCENTER_ZOOM = 1;
 const DEFAULT_MIN_ZOOM = 0.17;
+export const DEFAULT_MAX_ZOOM = 1.2;
 
 const BUTTON_INCREMENT = 0.05;
 
@@ -193,7 +194,7 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
             background={Colors.White}
             data-zoom-control={true}
             flex={{alignItems: 'center', direction: 'column'}}
-            border={{side: 'vertical', color: Colors.Gray300, width: 1}}
+            border={{side: 'left-and-right', color: Colors.Gray300}}
           >
             <Slider
               vertical
@@ -433,7 +434,12 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
   }
 
   public zoomToSVGBox(box: IBounds, animate: boolean, newScale = this.state.scale) {
-    this.zoomToSVGCoords(box.x + box.width / 2, box.y + box.height / 2, animate, newScale);
+    this.zoomToSVGCoords(
+      box.x + box.width / 2,
+      box.y + box.height / 2,
+      animate,
+      newScale === this.getMinZoom() ? this.getMaxZoom() : newScale,
+    );
   }
 
   public zoomToSVGCoords(x: number, y: number, animate: boolean, scale = this.state.scale) {
@@ -522,12 +528,14 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
       return;
     }
 
-    const dir = ({
-      ArrowLeft: 'left',
-      ArrowUp: 'up',
-      ArrowRight: 'right',
-      ArrowDown: 'down',
-    } as const)[e.code];
+    const dir = (
+      {
+        ArrowLeft: 'left',
+        ArrowUp: 'up',
+        ArrowRight: 'right',
+        ArrowDown: 'down',
+      } as const
+    )[e.code];
     if (!dir) {
       return;
     }
@@ -555,6 +563,9 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
 
     const div = document.createElement('div');
     document.getElementById('root')!.appendChild(div);
+
+    // TODO fix this!
+    // eslint-disable-next-line
     ReactDOM.render(
       <MemoryRouter>{this.props.children(this.state, unclippedViewport)}</MemoryRouter>,
       div,

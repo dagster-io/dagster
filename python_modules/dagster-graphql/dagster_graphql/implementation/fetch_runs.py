@@ -129,6 +129,21 @@ def get_runs(
     ]
 
 
+def get_run_ids(
+    graphene_info: "ResolveInfo",
+    filters: Optional[RunsFilter],
+    cursor: Optional[str] = None,
+    limit: Optional[int] = None,
+) -> Sequence[str]:
+    check.opt_inst_param(filters, "filters", RunsFilter)
+    check.opt_str_param(cursor, "cursor")
+    check.opt_int_param(limit, "limit")
+
+    instance = graphene_info.context.instance
+
+    return instance.get_run_ids(filters=filters, cursor=cursor, limit=limit)
+
+
 PENDING_STATUSES = [
     DagsterRunStatus.STARTING,
     DagsterRunStatus.MANAGED,

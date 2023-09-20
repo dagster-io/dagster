@@ -17,6 +17,8 @@ CENSUS_VERSION = "v1"
 
 DEFAULT_POLL_INTERVAL = 10
 
+SYNC_RUN_STATUSES = {"completed", "failed", "queued", "skipped", "working"}
+
 
 class CensusResource:
     """This class exposes methods on top of the Census REST API."""
@@ -158,9 +160,18 @@ class CensusResource:
                     " more."
                 )
 
+            sync_status = response_dict["data"]["status"]
             sync_id = response_dict["data"]["sync_id"]
 
-            if response_dict["data"]["status"] in {"preparing", "working"}:
+            if sync_status not in SYNC_RUN_STATUSES:
+                raise ValueError(
+                    f"Unexpected response status '{sync_status}'; "
+                    f"must be one of {','.join(sorted(SYNC_RUN_STATUSES))}. "
+                    "See Management API docs for more information: "
+                    "https://docs.getcensus.com/basics/developers/api/sync-runs"
+                )
+
+            if sync_status in {"queued", "working"}:
                 self._log.debug(
                     f"Sync {sync_id} still running after {datetime.datetime.now() - poll_start}."
                 )

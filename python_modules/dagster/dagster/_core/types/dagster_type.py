@@ -172,11 +172,9 @@ class DagsterType(RequiresResources):
 
         if not isinstance(retval, (bool, TypeCheck)):
             raise DagsterInvariantViolationError(
-                (
-                    "You have returned {retval} of type {retval_type} from the type "
-                    'check function of type "{type_key}". Return value must be instance '
-                    "of TypeCheck or a bool."
-                ).format(retval=repr(retval), retval_type=type(retval), type_key=self.key)
+                f"You have returned {retval!r} of type {type(retval)} from the type "
+                f'check function of type "{self.key}". Return value must be instance '
+                "of TypeCheck or a bool."
             )
 
         return TypeCheck(success=retval) if isinstance(retval, bool) else retval
@@ -299,17 +297,13 @@ def _validate_type_check_fn(fn: t.Callable, name: t.Optional[str]) -> bool:
         }
         if args[0] not in possible_names:
             DagsterInvalidDefinitionError(
-                'type_check function on type "{name}" must have first '
-                'argument named "context" (or _, _context, context_).'.format(
-                    name=name,
-                )
+                f'type_check function on type "{name}" must have first '
+                'argument named "context" (or _, _context, context_).'
             )
         return True
 
     raise DagsterInvalidDefinitionError(
-        'type_check_fn argument on type "{name}" must take 2 arguments, received {count}.'.format(
-            name=name, count=len(args)
-        )
+        f'type_check_fn argument on type "{name}" must take 2 arguments, received {len(args)}.'
     )
 
 

@@ -189,9 +189,10 @@ const unpackPermissions = (
  */
 export const useUnscopedPermissions = (): PermissionsState => {
   const {unscopedPermissions, loading} = React.useContext(PermissionsContext);
-  const unpacked = React.useMemo(() => unpackPermissions(unscopedPermissions), [
-    unscopedPermissions,
-  ]);
+  const unpacked = React.useMemo(
+    () => unpackPermissions(unscopedPermissions),
+    [unscopedPermissions],
+  );
 
   return React.useMemo(() => {
     return {

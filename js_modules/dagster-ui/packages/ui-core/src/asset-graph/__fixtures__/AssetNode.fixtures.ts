@@ -5,6 +5,9 @@ import {
   StaleCauseCategory,
   AssetCheckSeverity,
   AssetCheckExecutionResolvedStatus,
+  buildAssetCheckExecution,
+  buildAssetCheckEvaluation,
+  buildAssetCheck,
 } from '../../graphql/types';
 import {LiveDataForNode} from '../Utils';
 import {AssetNodeFragment} from '../types/AssetNode.types';
@@ -177,56 +180,56 @@ export const LiveDataForNodeMaterializedWithChecks: LiveDataForNode = {
   staleStatus: StaleStatus.FRESH,
   staleCauses: [],
   assetChecks: [
-    {
+    buildAssetCheck({
       name: 'check_1',
-      executionForLatestMaterialization: {
+      executionForLatestMaterialization: buildAssetCheckExecution({
         runId: '1234',
         status: AssetCheckExecutionResolvedStatus.FAILED,
-        evaluation: {
+        evaluation: buildAssetCheckEvaluation({
           severity: AssetCheckSeverity.WARN,
-        },
-      },
-    },
-    {
+        }),
+      }),
+    }),
+    buildAssetCheck({
       name: 'check_2',
-      executionForLatestMaterialization: {
+      executionForLatestMaterialization: buildAssetCheckExecution({
         runId: '1234',
         status: AssetCheckExecutionResolvedStatus.FAILED,
-        evaluation: {
+        evaluation: buildAssetCheckEvaluation({
           severity: AssetCheckSeverity.ERROR,
-        },
-      },
-    },
-    {
+        }),
+      }),
+    }),
+    buildAssetCheck({
       name: 'check_3',
-      executionForLatestMaterialization: {
+      executionForLatestMaterialization: buildAssetCheckExecution({
         runId: '1234',
         status: AssetCheckExecutionResolvedStatus.IN_PROGRESS,
-        evaluation: {
+        evaluation: buildAssetCheckEvaluation({
           severity: AssetCheckSeverity.WARN,
-        },
-      },
-    },
-    {
+        }),
+      }),
+    }),
+    buildAssetCheck({
       name: 'check_4',
-      executionForLatestMaterialization: {
+      executionForLatestMaterialization: buildAssetCheckExecution({
         runId: '1234',
         status: AssetCheckExecutionResolvedStatus.SKIPPED,
-        evaluation: {
+        evaluation: buildAssetCheckEvaluation({
           severity: AssetCheckSeverity.WARN,
-        },
-      },
-    },
-    {
+        }),
+      }),
+    }),
+    buildAssetCheck({
       name: 'check_5',
-      executionForLatestMaterialization: {
+      executionForLatestMaterialization: buildAssetCheckExecution({
         runId: '1234',
         status: AssetCheckExecutionResolvedStatus.SUCCEEDED,
-        evaluation: {
+        evaluation: buildAssetCheckEvaluation({
           severity: AssetCheckSeverity.WARN,
-        },
-      },
-    },
+        }),
+      }),
+    }),
   ],
   freshnessInfo: null,
   partitionStats: null,

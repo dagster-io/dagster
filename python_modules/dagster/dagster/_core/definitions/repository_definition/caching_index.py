@@ -38,13 +38,8 @@ class CacheingDefinitionIndex(Generic[T_RepositoryLevelDefinition]):
         for key, definition in definitions.items():
             check.invariant(
                 isinstance(definition, definition_class) or callable(definition),
-                "Bad definition for {definition_kind} {key}: must be {definition_class_name} or "
-                "callable, got {type_}".format(
-                    definition_kind=definition_kind,
-                    key=key,
-                    definition_class_name=definition_class_name,
-                    type_=type(definition),
-                ),
+                f"Bad definition for {definition_kind} {key}: must be {definition_class_name} or "
+                f"callable, got {type(definition)}",
             )
 
         self._definition_class: Type[T_RepositoryLevelDefinition] = definition_class
@@ -143,22 +138,12 @@ class CacheingDefinitionIndex(Generic[T_RepositoryLevelDefinition]):
     ):
         check.invariant(
             isinstance(definition, self._definition_class),
-            "Bad constructor for {definition_kind} {definition_name}: must return "
-            "{definition_class_name}, got value of type {type_}".format(
-                definition_kind=self._definition_kind,
-                definition_name=definition_dict_key,
-                definition_class_name=self._definition_class_name,
-                type_=type(definition),
-            ),
+            f"Bad constructor for {self._definition_kind} {definition_dict_key}: must return "
+            f"{self._definition_class_name}, got value of type {type(definition)}",
         )
         check.invariant(
             definition.name == definition_dict_key,
-            "Bad constructor for {definition_kind} '{definition_name}': name in "
-            "{definition_class_name} does not match: got '{definition_def_name}'".format(
-                definition_kind=self._definition_kind,
-                definition_name=definition_dict_key,
-                definition_class_name=self._definition_class_name,
-                definition_def_name=definition.name,
-            ),
+            f"Bad constructor for {self._definition_kind} '{definition_dict_key}': name in "
+            f"{self._definition_class_name} does not match: got '{definition.name}'",
         )
         self._definition_cache[definition_dict_key] = self._validation_fn(definition)

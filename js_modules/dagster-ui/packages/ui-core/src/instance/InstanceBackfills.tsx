@@ -19,8 +19,8 @@ import {DaemonNotRunningAlertBody} from '../partitions/BackfillMessaging';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {Loading} from '../ui/Loading';
 
-import {BackfillTable, BACKFILL_TABLE_FRAGMENT} from './BackfillTable';
 import {INSTANCE_HEALTH_FRAGMENT} from './InstanceHealthFragment';
+import {BackfillTable, BACKFILL_TABLE_FRAGMENT} from './backfill/BackfillTable';
 import {
   InstanceBackfillsQuery,
   InstanceBackfillsQueryVariables,

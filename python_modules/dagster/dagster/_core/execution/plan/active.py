@@ -161,14 +161,14 @@ class ActiveExecution:
         if len(self._unknown_state) > 0:
             if self._interrupted:
                 raise DagsterExecutionInterruptedError(
-                    "Execution exited with steps {step_list} in an unknown state after "
-                    "being interrupted.".format(step_list=self._unknown_state)
+                    f"Execution exited with steps {self._unknown_state} in an unknown state after "
+                    "being interrupted."
                 )
             else:
                 raise DagsterUnknownStepStateError(
-                    "Execution exited with steps {step_list} in an unknown state to this"
+                    f"Execution exited with steps {self._unknown_state} in an unknown state to this"
                     " process.\nThis was likely caused by losing communication with the process"
-                    " performing step execution.".format(step_list=self._unknown_state)
+                    " performing step execution."
                 )
 
     def _pending_state_str(self) -> str:
@@ -495,9 +495,7 @@ class ActiveExecution:
     def _mark_complete(self, step_key: str) -> None:
         check.invariant(
             step_key in self._in_flight,
-            "Attempted to mark step {} as complete that was not known to be in flight".format(
-                step_key
-            ),
+            f"Attempted to mark step {step_key} as complete that was not known to be in flight",
         )
         self._in_flight.remove(step_key)
 

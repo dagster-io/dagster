@@ -1,7 +1,7 @@
 ---
-title: "Lesson 1: Project preview"
-module: "dagster_essentials"
-lesson: "1"
+title: 'Lesson 1: Project preview'
+module: 'dagster_essentials'
+lesson: '1'
 ---
 
 In this course, we will focus on asset-aware orchestrators and how they make data pipelines easier to manage. You’ll use Dagster, an open-source orchestrator, to build a sample data pipeline.

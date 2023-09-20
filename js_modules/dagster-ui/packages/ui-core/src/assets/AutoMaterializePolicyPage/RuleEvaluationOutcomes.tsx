@@ -95,13 +95,13 @@ export const RuleEvaluationOutcomes = ({
           details={section.details}
         >
           <Box flex={{direction: 'column', gap: 8}}>
-            {(groupedRules[section.decisionType] || []).map(({description}) => {
+            {(groupedRules[section.decisionType] || []).map(({description}, idx) => {
               const evaluations =
                 ruleEvaluations.find((e) => e.rule?.description === description)?.ruleEvaluations ||
                 [];
               return (
                 <RuleEvaluationOutcome
-                  key={description}
+                  key={idx}
                   text={description}
                   met={evaluations.length > 0}
                   rightElement={

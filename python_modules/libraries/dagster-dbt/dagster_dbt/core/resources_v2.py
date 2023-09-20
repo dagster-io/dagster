@@ -1,4 +1,5 @@
 import atexit
+import contextlib
 import os
 import shutil
 import subprocess
@@ -22,10 +23,10 @@ import orjson
 from dagster import (
     AssetCheckResult,
     AssetCheckSeverity,
+    AssetExecutionContext,
     AssetObservation,
     AssetsDefinition,
     ConfigurableResource,
-    OpExecutionContext,
     Output,
     get_dagster_logger,
 )
@@ -49,6 +50,8 @@ from ..utils import ASSET_RESOURCE_TYPES, get_dbt_resource_props_by_dbt_unique_i
 logger = get_dagster_logger()
 
 
+DBT_PROJECT_YML_NAME = "dbt_project.yml"
+DBT_PROFILES_YML_NAME = "profiles.yml"
 PARTIAL_PARSE_FILE_NAME = "partial_parse.msgpack"
 
 
@@ -311,20 +314,21 @@ class DbtCliInvocation:
         Returns:
             Iterator[DbtCliEventMessage]: An iterator of events from the dbt CLI process.
         """
-        for raw_line in self.process.stdout or []:
-            log: str = raw_line.decode().strip()
-            try:
-                event = DbtCliEventMessage.from_log(log=log)
+        with self.process.stdout or contextlib.nullcontext():
+            for raw_line in self.process.stdout or []:
+                log: str = raw_line.decode().strip()
+                try:
+                    event = DbtCliEventMessage.from_log(log=log)
 
-                # Re-emit the logs from dbt CLI process into stdout.
-                sys.stdout.write(str(event) + "\n")
-                sys.stdout.flush()
+                    # Re-emit the logs from dbt CLI process into stdout.
+                    sys.stdout.write(str(event) + "\n")
+                    sys.stdout.flush()
 
-                yield event
-            except:
-                # If we can't parse the log, then just emit it as a raw log.
-                sys.stdout.write(log + "\n")
-                sys.stdout.flush()
+                    yield event
+                except:
+                    # If we can't parse the log, then just emit it as a raw log.
+                    sys.stdout.write(log + "\n")
+                    sys.stdout.flush()
 
         # Ensure that the dbt CLI process has completed.
         self._raise_on_error()
@@ -486,18 +490,71 @@ class DbtCliResource(ConfigurableResource):
         ),
     )
 
+    @classmethod
+    def _validate_absolute_path_exists(cls, path: Union[str, Path]) -> Path:
+        absolute_path = Path(path).absolute()
+        try:
+            resolved_path = absolute_path.resolve(strict=True)
+        except FileNotFoundError:
+            raise ValueError(f"The absolute path of '{path}' ('{absolute_path}') does not exist")
+
+        return resolved_path
+
+    @classmethod
+    def _validate_path_contains_file(cls, path: Path, file_name: str, error_message: str):
+        if not path.joinpath(file_name).exists():
+            raise ValueError(error_message)
+
     @validator("project_dir", "profiles_dir", pre=True)
     def convert_path_to_str(cls, v: Any) -> Any:
-        if v and isinstance(v, Path):
-            return os.fspath(v)
+        """Validate that the path is converted to a string."""
+        if isinstance(v, Path):
+            resolved_path = cls._validate_absolute_path_exists(v)
+
+            absolute_path = Path(v).absolute()
+            try:
+                resolved_path = absolute_path.resolve(strict=True)
+            except FileNotFoundError:
+                raise ValueError(f"The absolute path of '{v}' ('{absolute_path}') does not exist")
+            return os.fspath(resolved_path)
 
         return v
 
-    def _get_unique_target_path(self, *, context: Optional[OpExecutionContext]) -> str:
+    @validator("project_dir")
+    def validate_project_dir(cls, project_dir: str) -> str:
+        resolved_project_dir = cls._validate_absolute_path_exists(project_dir)
+
+        cls._validate_path_contains_file(
+            path=resolved_project_dir,
+            file_name=DBT_PROJECT_YML_NAME,
+            error_message=(
+                f"{resolved_project_dir} does not contain a {DBT_PROJECT_YML_NAME} file. Please"
+                " specify a valid path to a dbt project."
+            ),
+        )
+
+        return os.fspath(resolved_project_dir)
+
+    @validator("profiles_dir")
+    def validate_profiles_dir(cls, profiles_dir: str) -> str:
+        resolved_project_dir = cls._validate_absolute_path_exists(profiles_dir)
+
+        cls._validate_path_contains_file(
+            path=resolved_project_dir,
+            file_name=DBT_PROFILES_YML_NAME,
+            error_message=(
+                f"{resolved_project_dir} does not contain a {DBT_PROFILES_YML_NAME} file. Please"
+                " specify a valid path to a dbt profile directory."
+            ),
+        )
+
+        return os.fspath(resolved_project_dir)
+
+    def _get_unique_target_path(self, *, context: Optional[AssetExecutionContext]) -> str:
         """Get a unique target path for the dbt CLI invocation.
 
         Args:
-            context (Optional[OpExecutionContext]): The execution context.
+            context (Optional[AssetExecutionContext]): The execution context.
 
         Returns:
             str: A unique target path for the dbt CLI invocation.
@@ -517,7 +574,7 @@ class DbtCliResource(ConfigurableResource):
         raise_on_error: bool = True,
         manifest: Optional[DbtManifestParam] = None,
         dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
-        context: Optional[OpExecutionContext] = None,
+        context: Optional[AssetExecutionContext] = None,
     ) -> DbtCliInvocation:
         """Create a subprocess to execute a dbt CLI command.
 
@@ -531,7 +588,7 @@ class DbtCliResource(ConfigurableResource):
                 nodes to Dagster assets. If an execution context from within `@dbt_assets` is
                 provided to the context argument, then the dagster_dbt_translator provided to
                 `@dbt_assets` will be used.
-            context (Optional[OpExecutionContext]): The execution context from within `@dbt_assets`.
+            context (Optional[AssetExecutionContext]): The execution context from within `@dbt_assets`.
 
         Returns:
             DbtCliInvocation: A invocation instance that can be used to retrieve the output of the
@@ -544,12 +601,12 @@ class DbtCliResource(ConfigurableResource):
 
                 from pathlib import Path
 
-                from dagster import OpExecutionContext
+                from dagster import AssetExecutionContext
                 from dagster_dbt import DbtCliResource, dbt_assets
 
 
                 @dbt_assets(manifest=Path("target", "manifest.json"))
-                def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+                def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
                     yield from dbt.cli(["run"], context=context).stream()
 
             Retrieving a dbt artifact after streaming the Dagster events:
@@ -558,12 +615,12 @@ class DbtCliResource(ConfigurableResource):
 
                 from pathlib import Path
 
-                from dagster import OpExecutionContext
+                from dagster import AssetExecutionContext
                 from dagster_dbt import DbtCliResource, dbt_assets
 
 
                 @dbt_assets(manifest=Path("target", "manifest.json"))
-                def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+                def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
                     dbt_run_invocation = dbt.cli(["run"], context=context)
 
                     yield from dbt_run_invocation.stream()
@@ -580,12 +637,12 @@ class DbtCliResource(ConfigurableResource):
 
                 from pathlib import Path
 
-                from dagster import OpExecutionContext
+                from dagster import AssetExecutionContext
                 from dagster_dbt import DbtCliResource, dbt_assets
 
 
                 @dbt_assets(manifest=Path("target", "manifest.json"))
-                def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+                def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
                     dbt_cli_invocation = dbt.cli(["run"], context=context)
 
                     for dbt_event in dbt_cli_invocation.stream_raw_events():
@@ -606,12 +663,12 @@ class DbtCliResource(ConfigurableResource):
 
                 from pathlib import Path
 
-                from dagster import OpExecutionContext
+                from dagster import AssetExecutionContext
                 from dagster_dbt import DbtCliResource, dbt_assets
 
 
                 @dbt_assets(manifest=Path("target", "manifest.json"))
-                def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+                def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
                     dbt_run_invocation = dbt.cli(["run"], context=context, raise_on_error=False)
 
                     if dbt_run_invocation.is_successful():
@@ -694,7 +751,7 @@ class DbtCliResource(ConfigurableResource):
             profile_args += ["--target", self.target]
 
         args = ["dbt"] + self.global_config_flags + args + profile_args + selection_args
-        project_dir = Path(self.project_dir).resolve(strict=True)
+        project_dir = Path(self.project_dir)
 
         return DbtCliInvocation.run(
             args=args,
@@ -708,7 +765,7 @@ class DbtCliResource(ConfigurableResource):
 
 
 def get_subset_selection_for_context(
-    context: OpExecutionContext,
+    context: AssetExecutionContext,
     manifest: Mapping[str, Any],
     select: Optional[str],
     exclude: Optional[str],
@@ -718,7 +775,7 @@ def get_subset_selection_for_context(
     See https://docs.getdbt.com/reference/node-selection/syntax#how-does-selection-work.
 
     Args:
-        context (OpExecutionContext): The execution context for the current execution step.
+        context (AssetExecutionContext): The execution context for the current execution step.
         select (Optional[str]): A dbt selection string to select resources to materialize.
         exclude (Optional[str]): A dbt selection string to exclude resources from materializing.
 

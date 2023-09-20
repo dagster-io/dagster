@@ -140,6 +140,8 @@ export const RESOURCE_ENTRY_FRAGMENT = gql`
         id
       }
     }
+    schedulesUsing
+    sensorsUsing
   }
 `;
 

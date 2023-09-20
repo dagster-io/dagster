@@ -110,8 +110,7 @@ def test_dbt_asset_selection(
     expected_asset_keys = {AssetKey(key.split("/")) for key in expected_asset_names}
 
     @dbt_assets(manifest=manifest)
-    def my_dbt_assets():
-        ...
+    def my_dbt_assets(): ...
 
     asset_graph = AssetGraph.from_assets([my_dbt_assets])
     asset_selection = build_dbt_asset_selection(
@@ -139,8 +138,7 @@ def test_dbt_asset_selection_manifest_argument(manifest: DbtManifestParam) -> No
     }
 
     @dbt_assets(manifest=manifest)
-    def my_dbt_assets():
-        ...
+    def my_dbt_assets(): ...
 
     asset_graph = AssetGraph.from_assets([my_dbt_assets])
     asset_selection = build_dbt_asset_selection([my_dbt_assets], dbt_select="fqn:*")

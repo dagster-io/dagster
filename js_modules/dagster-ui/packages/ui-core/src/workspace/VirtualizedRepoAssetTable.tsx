@@ -144,7 +144,7 @@ const GroupNameRow: React.FC<{
         background={Colors.Gray50}
         flex={{direction: 'row', alignItems: 'center', gap: 8, justifyContent: 'space-between'}}
         padding={{horizontal: 24}}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+        border="bottom"
         style={{height: '100%'}}
       >
         <Box flex={{alignItems: 'center', gap: 8}}>

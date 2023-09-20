@@ -2,12 +2,26 @@ import os
 
 from dagster import Definitions
 
-from .assets import activity_analytics_assets, core_assets, dbt_assets, recommender_assets
-from .jobs import activity_analytics_assets_sensor, core_assets_schedule, recommender_assets_sensor
+from .assets import (
+    activity_analytics_assets,
+    core_assets,
+    hacker_news_dbt_assets,
+    recommender_assets,
+)
+from .jobs import (
+    activity_analytics_assets_sensor,
+    core_assets_schedule,
+    recommender_assets_sensor,
+)
 from .resources import RESOURCES_LOCAL, RESOURCES_PROD, RESOURCES_STAGING
 from .sensors import make_slack_on_failure_sensor
 
-all_assets = [*core_assets, *recommender_assets, *dbt_assets, *activity_analytics_assets]
+all_assets = [
+    *core_assets,
+    *recommender_assets,
+    hacker_news_dbt_assets,
+    *activity_analytics_assets,
+]
 
 resources_by_deployment_name = {
     "prod": RESOURCES_PROD,

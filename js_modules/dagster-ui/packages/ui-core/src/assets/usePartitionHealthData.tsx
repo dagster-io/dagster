@@ -431,7 +431,7 @@ function addKeyIndexesToMaterializedRanges(
           start: {key: dim.partitionKeys[s.startIdx], idx: s.startIdx},
           end: {key: dim.partitionKeys[s.endIdx], idx: s.endIdx},
           value: [s.status as AssetPartitionStatus],
-        } as Range),
+        }) as Range,
     );
   }
 
@@ -610,9 +610,8 @@ export function usePartitionHealthData(
 //
 export const healthRefreshHintFromLiveData = (liveData: LiveDataForNode | undefined) =>
   liveData
-    ? `${liveData.lastMaterialization?.timestamp},${
-        liveData.runWhichFailedToMaterialize?.id
-      },${JSON.stringify(liveData.partitionStats)}`
+    ? `${liveData.lastMaterialization?.timestamp},${liveData.runWhichFailedToMaterialize
+        ?.id},${JSON.stringify(liveData.partitionStats)}`
     : `-`;
 
 const rangeStatusToState = (rangeStatus: PartitionRangeStatus) =>

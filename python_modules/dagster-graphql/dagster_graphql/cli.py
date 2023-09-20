@@ -127,17 +127,15 @@ PREDEFINED_QUERIES = {
     name="ui",
     help=(
         "Run a GraphQL query against the dagster interface to a specified repository or"
-        " pipeline/job.\n\n{warning}".format(warning=WORKSPACE_TARGET_WARNING)
+        f" pipeline/job.\n\n{WORKSPACE_TARGET_WARNING}"
     )
-    + (
-        "\n\nExamples:"
-        "\n\n1. dagster-graphql"
-        "\n\n2. dagster-graphql -y path/to/{default_filename}"
-        "\n\n3. dagster-graphql -f path/to/file.py -a define_repo"
-        "\n\n4. dagster-graphql -m some_module -a define_repo"
-        "\n\n5. dagster-graphql -f path/to/file.py -a define_pipeline"
-        "\n\n6. dagster-graphql -m some_module -a define_pipeline"
-    ).format(default_filename=DEFAULT_WORKSPACE_YAML_FILENAME),
+    + "\n\nExamples:"
+    "\n\n1. dagster-graphql"
+    f"\n\n2. dagster-graphql -y path/to/{DEFAULT_WORKSPACE_YAML_FILENAME}"
+    "\n\n3. dagster-graphql -f path/to/file.py -a define_repo"
+    "\n\n4. dagster-graphql -m some_module -a define_repo"
+    "\n\n5. dagster-graphql -f path/to/file.py -a define_pipeline"
+    "\n\n6. dagster-graphql -m some_module -a define_pipeline",
 )
 @click.version_option(version=__version__)
 @click.option(

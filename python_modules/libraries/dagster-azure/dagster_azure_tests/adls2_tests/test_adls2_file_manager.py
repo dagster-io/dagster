@@ -85,9 +85,7 @@ def test_adls2_file_manager_read(storage_account, file_system):
 
 
 def create_adls2_key(run_id, step_key, output_name):
-    return "dagster/storage/{run_id}/intermediates/{step_key}/{output_name}".format(
-        run_id=run_id, step_key=step_key, output_name=output_name
-    )
+    return f"dagster/storage/{run_id}/intermediates/{step_key}/{output_name}"
 
 
 def test_depends_on_adls2_resource_file_manager(storage_account, file_system):
@@ -135,7 +133,7 @@ def test_depends_on_adls2_resource_file_manager(storage_account, file_system):
 
     assert len(keys_in_bucket) == 1
 
-    file_key = list(keys_in_bucket)[0]
+    file_key = next(iter(keys_in_bucket))
     comps = file_key.split("/")
 
     assert "/".join(comps[:-1]) == "some-prefix"

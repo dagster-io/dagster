@@ -26,6 +26,7 @@ from dagster_dbt.core.resources_v2 import (
 )
 from dagster_dbt.dbt_manifest import DbtManifestParam
 from dagster_dbt.errors import DagsterDbtCliRuntimeError
+from pydantic import ValidationError
 
 from ..conftest import TEST_PROJECT_DIR
 
@@ -58,7 +59,16 @@ def test_dbt_cli_manifest_argument(manifest: DbtManifestParam) -> None:
 def test_dbt_cli_project_dir_path() -> None:
     dbt = DbtCliResource(project_dir=Path(TEST_PROJECT_DIR))  # type: ignore
 
+    assert Path(dbt.project_dir).is_absolute()
     assert dbt.cli(["run"]).is_successful()
+
+    # project directory must exist
+    with pytest.raises(ValidationError, match="does not exist"):
+        DbtCliResource(project_dir="nonexistent")
+
+    # project directory must be a valid dbt project
+    with pytest.raises(ValidationError, match="specify a valid path to a dbt project"):
+        DbtCliResource(project_dir=f"{TEST_PROJECT_DIR}/models")
 
 
 def test_dbt_cli_failure() -> None:
@@ -73,14 +83,13 @@ def test_dbt_cli_failure() -> None:
     assert dbt_cli_invocation.target_path.joinpath("dbt.log").exists()
 
 
-# as
 def test_dbt_cli_subprocess_cleanup(caplog: pytest.LogCaptureFixture) -> None:
     dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR)
     dbt_cli_invocation_1 = dbt.cli(["run"])
 
     assert dbt_cli_invocation_1.process.returncode is None
 
-    atexit._run_exitfuncs()  # ruff: noqa: SLF001
+    atexit._run_exitfuncs()  # noqa: SLF001
 
     assert "Terminating the execution of dbt command." in caplog.text
     assert not dbt_cli_invocation_1.is_successful()
@@ -90,7 +99,7 @@ def test_dbt_cli_subprocess_cleanup(caplog: pytest.LogCaptureFixture) -> None:
 
     dbt_cli_invocation_2 = dbt.cli(["run"]).wait()
 
-    atexit._run_exitfuncs()  # ruff: noqa: SLF001
+    atexit._run_exitfuncs()  # noqa: SLF001
 
     assert "Terminating the execution of dbt command." not in caplog.text
     assert dbt_cli_invocation_2.is_successful()
@@ -148,12 +157,13 @@ def test_dbt_profile_dir_configuration(profiles_dir: Union[str, Path]) -> None:
 
     assert dbt.cli(["parse"]).is_successful()
 
-    dbt = DbtCliResource(
-        project_dir=TEST_PROJECT_DIR, profiles_dir=f"{TEST_PROJECT_DIR}/nonexistent"
-    )
+    # profiles directory must exist
+    with pytest.raises(ValidationError, match="does not exist"):
+        DbtCliResource(project_dir=TEST_PROJECT_DIR, profiles_dir="nonexistent")
 
-    with pytest.raises(DagsterDbtCliRuntimeError):
-        dbt.cli(["parse"]).wait()
+    # profiles directory must contain profile configuration
+    with pytest.raises(ValidationError, match="specify a valid path to a dbt profile directory"):
+        DbtCliResource(project_dir=TEST_PROJECT_DIR, profiles_dir=f"{TEST_PROJECT_DIR}/models")
 
 
 def test_dbt_without_partial_parse() -> None:
@@ -188,7 +198,7 @@ def test_dbt_with_partial_parse() -> None:
     shutil.copy(partial_parse_file_path, Path(TEST_PROJECT_DIR, "target", PARTIAL_PARSE_FILE_NAME))
 
     # Assert that partial parsing was used.
-    dbt_cli_compile_with_partial_parse_invocation = dbt.cli(["compile"]).wait()
+    dbt_cli_compile_with_partial_parse_invocation = dbt.cli(["compile"])
 
     assert dbt_cli_compile_with_partial_parse_invocation.is_successful()
     assert not any(
@@ -221,7 +231,7 @@ def test_dbt_cli_subsetted_execution() -> None:
 
     @dbt_assets(manifest=manifest, select=dbt_select)
     def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
-        dbt_cli_invocation = dbt.cli(["run"], context=context).wait()
+        dbt_cli_invocation = dbt.cli(["run"], context=context)
 
         assert dbt_cli_invocation.process.args == ["dbt", "run", "--select", dbt_select]
 
@@ -244,7 +254,7 @@ def test_dbt_cli_asset_selection() -> None:
 
     @dbt_assets(manifest=manifest)
     def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
-        dbt_cli_invocation = dbt.cli(["run"], context=context).wait()
+        dbt_cli_invocation = dbt.cli(["run"], context=context)
 
         dbt_cli_args: List[str] = list(dbt_cli_invocation.process.args)  # type: ignore
         *dbt_args, dbt_select_args = dbt_cli_args
@@ -273,22 +283,24 @@ def test_dbt_cli_asset_selection() -> None:
 @pytest.mark.parametrize("exclude", [None, "fqn:dagster_dbt_test_project.subdir.least_caloric"])
 def test_dbt_cli_default_selection(exclude: Optional[str]) -> None:
     @dbt_assets(manifest=manifest, exclude=exclude)
-    def my_dbt_assets(context: OpExecutionContext):
-        dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR)
+    def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
         dbt_cli_invocation = dbt.cli(["run"], context=context)
-
-        dbt_cli_invocation.wait()
 
         expected_args = ["dbt", "run", "--select", "fqn:*"]
         if exclude:
             expected_args += ["--exclude", exclude]
 
         assert dbt_cli_invocation.process.args == expected_args
-        assert dbt_cli_invocation.process.returncode is not None
 
         yield from dbt_cli_invocation.stream()
 
-    assert materialize([my_dbt_assets]).success
+    result = materialize(
+        [my_dbt_assets],
+        resources={
+            "dbt": DbtCliResource(project_dir=TEST_PROJECT_DIR),
+        },
+    )
+    assert result.success
 
 
 def test_dbt_cli_op_execution() -> None:

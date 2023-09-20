@@ -32,9 +32,7 @@ import {AssetViewType, useAssetView} from './useAssetView';
 
 type Asset = AssetTableFragment;
 
-function useAllAssets(
-  groupSelector?: AssetGroupSelector,
-): {
+function useAllAssets(groupSelector?: AssetGroupSelector): {
   query: QueryResult<AssetCatalogTableQuery, any> | QueryResult<AssetCatalogGroupTableQuery, any>;
   assets: Asset[] | undefined;
   error: PythonErrorFragment | undefined;

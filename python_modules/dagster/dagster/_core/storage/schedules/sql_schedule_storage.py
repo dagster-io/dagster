@@ -196,9 +196,7 @@ class SqlScheduleStorage(ScheduleStorage):
         check.inst_param(state, "state", InstigatorState)
         if not self.get_instigator_state(state.instigator_origin_id, state.selector_id):
             raise DagsterInvariantViolationError(
-                "InstigatorState {id} is not present in storage".format(
-                    id=state.instigator_origin_id
-                )
+                f"InstigatorState {state.instigator_origin_id} is not present in storage"
             )
 
         values = {

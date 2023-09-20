@@ -32,8 +32,8 @@ GRPC_VERSION_FLOOR = "1.44.0"
 setup(
     name="dagster",
     version=get_version(),
-    author="Elementl",
-    author_email="hello@elementl.com",
+    author="Dagster Labs",
+    author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
     description=(
         "Dagster is an orchestration platform for the development, production, and observation of"
@@ -127,13 +127,13 @@ setup(
             "morefs[asynclocal]; python_version>='3.8'",
         ],
         "black": [
-            "black[jupyter]==23.7.0",
+            "black[jupyter]==23.9.1",
         ],
         "mypy": [
             "mypy==0.991",
         ],
         "pyright": [
-            "pyright==1.1.316",
+            "pyright==1.1.327",
             ### Stub packages
             "pandas-stubs",  # version will be resolved against pandas
             "types-backports",  # version will be resolved against backports
@@ -157,7 +157,7 @@ setup(
             "types-toml",  # version will be resolved against toml
         ],
         "ruff": [
-            "ruff==0.0.277",
+            "ruff==0.0.289",
         ],
     },
     entry_points={

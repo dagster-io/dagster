@@ -1,21 +1,15 @@
-import {pathVerticalDiagonal, pathHorizontalDiagonal} from '@vx/shape';
+import {pathHorizontalDiagonal, pathVerticalDiagonal} from '@vx/shape';
 
 import {featureEnabled, FeatureFlag} from '../app/Flags';
-import {
-  AssetCheckExecutionResolvedStatus,
-  AssetCheckSeverity,
-  Maybe,
-  RunStatus,
-  StaleCauseCategory,
-  StaleStatus,
-} from '../graphql/types';
+import {COMMON_COLLATOR} from '../app/Util';
+import {RunStatus, StaleStatus} from '../graphql/types';
 
 import {AssetNodeKeyFragment} from './types/AssetNode.types';
 import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
 import {
+  AssetGraphLiveQuery,
   AssetLatestInfoFragment,
   AssetLatestInfoRunFragment,
-  AssetGraphLiveQuery,
   AssetNodeLiveFragment,
   AssetNodeLiveFreshnessInfoFragment,
   AssetNodeLiveMaterializationFragment,
@@ -146,28 +140,14 @@ export interface LiveDataForNode {
   freshnessInfo: AssetNodeLiveFreshnessInfoFragment | null;
   lastObservation: AssetNodeLiveObservationFragment | null;
   staleStatus: StaleStatus | null;
-  staleCauses: {
-    dependency: Maybe<AssetKey>;
-    category: StaleCauseCategory;
-    key: AssetKey;
-    reason: string;
-  }[];
+  staleCauses: AssetGraphLiveQuery['assetNodes'][0]['staleCauses'];
+  assetChecks: AssetGraphLiveQuery['assetNodes'][0]['assetChecks'];
   partitionStats: {
     numMaterialized: number;
     numMaterializing: number;
     numPartitions: number;
     numFailed: number;
   } | null;
-  assetChecks: {
-    name: string;
-    executionForLatestMaterialization: {
-      runId: string;
-      status: AssetCheckExecutionResolvedStatus;
-      evaluation: {
-        severity: AssetCheckSeverity;
-      } | null;
-    } | null;
-  }[];
 }
 
 export const MISSING_LIVE_DATA: LiveDataForNode = {
@@ -245,6 +225,10 @@ export function displayNameForAssetKey(key: {path: string[]}) {
   return key.path.join(' / ');
 }
 
+export function sortAssetKeys(a: {path: string[]}, b: {path: string[]}) {
+  return COMMON_COLLATOR.compare(displayNameForAssetKey(a), displayNameForAssetKey(b));
+}
+
 export function stepKeyForAsset(definition: {opNames: string[]}) {
   // Used for linking to the run with this step highlighted. We only support highlighting
   // a single step, so just use the first one.
@@ -256,3 +240,21 @@ export const itemWithAssetKey = (key: {path: string[]}) => {
   const token = tokenForAssetKey(key);
   return (asset: {assetKey: {path: string[]}}) => tokenForAssetKey(asset.assetKey) === token;
 };
+
+export function walkTreeUpwards(
+  nodeId: string,
+  graphData: GraphData,
+  callback: (nodeId: string) => void,
+) {
+  // TODO
+  console.log({nodeId, graphData, callback});
+}
+
+export function walkTreeDownwards(
+  nodeId: string,
+  graphData: GraphData,
+  callback: (nodeId: string) => void,
+) {
+  // TODO
+  console.log({nodeId, graphData, callback});
+}
