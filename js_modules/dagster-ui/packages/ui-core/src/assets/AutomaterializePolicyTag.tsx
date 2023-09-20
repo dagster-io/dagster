@@ -14,7 +14,7 @@ export const AutomaterializePolicyTag: React.FC<{
 
 export const automaterializePolicyDescription = (policy: {
   policyType: AutoMaterializePolicyType;
-  rules: AutoMaterializeRule[];
+  rules: Pick<AutoMaterializeRule, 'description' | 'decisionType'>[];
 }) => {
   const {MATERIALIZE, SKIP, DISCARD} = groupBy(policy.rules, (rule) => rule.decisionType);
   return (
