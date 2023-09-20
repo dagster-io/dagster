@@ -618,6 +618,13 @@ class AssetMaterialization(
         )
 
 
+from dagster._annotations import deprecated
+
+
+@deprecated(
+    breaking_version="1.7",
+    additional_warn_text="Please use AssetCheckResult and @asset_check instead.",
+)
 @whitelist_for_serdes(
     storage_field_names={"metadata": "metadata_entries"},
     field_serializers={"metadata": MetadataFieldSerializer},
