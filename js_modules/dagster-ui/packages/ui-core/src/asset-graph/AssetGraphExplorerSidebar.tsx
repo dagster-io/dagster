@@ -211,7 +211,7 @@ export const AssetGraphExplorerSidebar = React.memo(
     const items = rowVirtualizer.getVirtualItems();
 
     React.useLayoutEffect(() => {
-      if (lastSelectedNode && selectedNode?.id !== lastSelectedNode.id) {
+      if (lastSelectedNode) {
         setOpenNodes((prevOpenNodes) => {
           if (viewType === 'folder') {
             const nextOpenNodes = new Set(prevOpenNodes);
@@ -225,7 +225,9 @@ export const AssetGraphExplorerSidebar = React.memo(
               nextOpenNodes.add(locationName);
               nextOpenNodes.add(locationName + ':' + groupName);
             }
-            setSelectedNode({id: lastSelectedNode.id});
+            if (selectedNode?.id !== lastSelectedNode.id) {
+              setSelectedNode({id: lastSelectedNode.id});
+            }
             return nextOpenNodes;
           }
           let path = lastSelectedNode.id;
@@ -249,7 +251,9 @@ export const AssetGraphExplorerSidebar = React.memo(
             currentPath = `${currentPath}:${nodesInPath[i]}`;
             nextOpenNodes.add(currentPath);
           }
-          setSelectedNode({id: lastSelectedNode.id, path: currentPath});
+          if (selectedNode?.id !== lastSelectedNode.id) {
+            setSelectedNode({id: lastSelectedNode.id, path: currentPath});
+          }
           return nextOpenNodes;
         });
       }
