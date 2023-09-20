@@ -57,7 +57,7 @@ Before continuing, you should be familiar with:
 
 ## Defining partitioned assets
 
-The following code snippet contains a Software-defined Asset with a partition for each day since the first day of 2022. Materializing partition `2022-07-23` of this asset would result in fetching data from the URL `coolweatherwebsite.com/weather_obs\&date=2022-07-23` and storing it at the path `weather_observations/2022-07-23.csv`:
+The following code snippet contains a Software-defined Asset with a partition for each day since the first day of 2022. Materializing partition `2022-07-23` of this asset would result in fetching data from the URL `coolweatherwebsite.com/weather_obs\&`=2022-07-23`and storing it at the path`weather_observations/2022-07-23.csv\`:
 
 ```python file=/concepts/partitions_schedules_sensors/partitioned_asset.py
 import urllib.request
