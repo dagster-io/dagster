@@ -44,7 +44,10 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._utils.forked_pdb import ForkedPdb
-from dagster._utils.warnings import deprecation_warning
+from dagster._utils.warnings import (
+    deprecation_warning,
+    disable_dagster_warnings,
+)
 
 from .system import StepExecutionContext
 
@@ -1348,16 +1351,16 @@ class AssetExecutionContext(OpExecutionContext):
         self._selected_asset_keys = self._op_execution_context.selected_asset_keys
         self._assets_def = self._op_execution_context.assets_def
 
-        self._provenance_by_asset_key = {
-            key: self._op_execution_context.get_asset_provenance(key)
-            for key in self._selected_asset_keys
-        }
+        with disable_dagster_warnings():
+            self._provenance_by_asset_key = {
+                key: self._op_execution_context.get_asset_provenance(key)
+                for key in self._selected_asset_keys
+            }
         self._code_version_by_asset_key = {
             key: self._assets_def.code_versions_by_key[key] for key in self._selected_asset_keys
         }
         self._check_specs_by_asset_key = {
-            self._op_execution_context.asset_key_for_output(output_name): check
-            for output_name, check in self._assets_def.check_specs_by_output_name.items()
+            check.asset_key: check for check in self._assets_def.check_specs_by_output_name.values()
         }
 
     @public
