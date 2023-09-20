@@ -172,7 +172,7 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
             </Link>
           </Box>
 
-          {liveData.assetChecks.map((check) => (
+          {liveData.assetChecks.slice(0, 10).map((check) => (
             <Box
               key={check.name}
               border={{side: 'top', width: 1, color: Colors.KeylineGray}}
@@ -191,6 +191,16 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
               />
             </Box>
           ))}
+          {liveData.assetChecks.length > 10 && (
+            <Box
+              padding={{vertical: 12, right: 12, left: 24}}
+              border={{side: 'top', width: 1, color: Colors.KeylineGray}}
+            >
+              <Link to={assetDetailsPathForKey(asset.assetKey, {view: 'checks'})}>
+                View {liveData.assetChecks.length - 10} more…
+              </Link>
+            </Box>
+          )}
         </SidebarSection>
       )}
     </>
