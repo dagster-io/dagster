@@ -1096,7 +1096,7 @@ def graph_asset(
         }
 
         op_graph = graph(
-            name=_graph_name or out_asset_key.to_python_identifier(),
+            name=out_asset_key.to_python_identifier(),
             description=description,
             config=config,
             ins={input_name: GraphIn() for _, (input_name, _) in asset_ins.items()},

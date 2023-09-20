@@ -1262,7 +1262,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         )
         return self.__class__(**attributes_dict)
 
-
     def get_attributes_dict(self) -> Dict[str, Any]:
         return dict(
             keys_by_input_name=self._keys_by_input_name,

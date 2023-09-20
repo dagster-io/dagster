@@ -24,6 +24,7 @@ from dagster._core.definitions.resource_requirement import (
     merge_resource_defs,
 )
 from dagster._core.errors import DagsterAssetCheckFailedError
+from dagster._core.types.dagster_type import Nothing
 
 if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition
@@ -149,8 +150,8 @@ def build_blocking_asset_check(
     asset_def: "AssetsDefinition",
     checks: Sequence[AssetChecksDefinition],
 ) -> "AssetsDefinition":
-    from dagster import In, Output, graph_asset, op
-
+    from dagster import AssetIn, In, OpExecutionContext, Output, graph_asset, op
+    from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 
     check_specs = []
     for c in checks:
@@ -158,23 +159,34 @@ def build_blocking_asset_check(
 
     check_output_names = [c.get_python_identifier() for c in check_specs]
 
-    @op(ins={"materialization": In(Any), "check_evaluations": In(Any)})
-    def fan_in_checks_and_materialization(context, materialization, check_evaluations):
+    @op(ins={"materialization": In(Any), "check_evaluations": In(Nothing)})
+    def fan_in_checks_and_materialization(context: OpExecutionContext, materialization):
         yield Output(materialization)
 
-        for result in check_evaluations:
-            if not result.success:
+        for check_spec in check_specs:
+            executions = context.instance.event_log_storage.get_asset_check_executions(
+                asset_key=asset_def.key, check_name=check_spec.name, limit=1
+            )
+            check.invariant(
+                len(executions) == 1, "Expected asset check {check_spec.name} to execute"
+            )
+            execution = executions[0]
+            check.invariant(
+                execution.run_id == context.run_id,
+                "Expected asset check {check_spec.name} to execute in the current run",
+            )
+            if execution.status != AssetCheckExecutionRecordStatus.SUCCEEDED:
                 raise DagsterAssetCheckFailedError()
 
     @graph_asset(
         name=asset_def.key.path[-1],
         key_prefix=asset_def.key.path[:-1] if len(asset_def.key.path) > 1 else None,
         check_specs=check_specs,
-        # if we don't rename the graph, it will conflict with asset_def's Op
-        _graph_name=asset_def.key.to_python_identifier() + "_blocking_asset_check",
+        description=asset_def.descriptions_by_key.get(asset_def.key),
+        ins={name: AssetIn(key) for name, key in asset_def.keys_by_input_name.items()}
     )
-    def blocking_asset():
-        asset_result = asset_def.op()
+    def blocking_asset(**kwargs):
+        asset_result = asset_def.op.with_replaced_properties(name="asset_op")(**kwargs)
         check_evaluations = [check.node_def(asset_result) for check in checks]
 
         return {
