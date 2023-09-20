@@ -259,6 +259,7 @@ export const AssetGraphExplorerSidebar = React.memo(
       assetGraphData,
       viewType,
       // eslint-disable-next-line react-hooks/exhaustive-deps
+      
       lastSelectedNode &&
         renderedNodes.findIndex((node) => nodeId(lastSelectedNode) === nodeId(node)),
     ]);
