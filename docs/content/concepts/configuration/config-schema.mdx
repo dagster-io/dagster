@@ -146,7 +146,7 @@ height={2414}
 
 ### Command line
 
-When executing a job from Dagster's CLI with [dagster job execute](/\_apidocs/cli#dagster-job-execute), we can put config in a YAML file and pass the file path with the `--config` option:
+When executing a job from Dagster's CLI with [dagster job execute](/\_apidocs/cli#dagster-job-execute), we can put config in a YAML file:
 
 ```YAML file=/concepts/configuration/good.yaml
 ops:
@@ -154,6 +154,8 @@ ops:
     config:
       person_name: Alice
 ```
+
+And then pass the file path with the `--config` option:
 
 ```bash
 dagster job execute --config my_config.yaml
