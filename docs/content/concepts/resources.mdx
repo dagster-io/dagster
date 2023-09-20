@@ -41,7 +41,7 @@ So, why use resources?
 | <PyObject object="ConfigurableResource"/>        | The base class extended to define resources. Under the hood, implements <PyObject object="ResourceDefinition" />.                                                                                                                       |
 | <PyObject object="ResourceParam"/>               | An annotation used to specify that a plain Python object parameter for an asset or op is a resource.                                                                                                                                    |
 | <PyObject object="ResourceDefinition" />         | Class for resource definitions. You almost never want to use initialize this class directly. Instead, you should extend the <PyObject object="ConfigurableResource" /> class which implements <PyObject object="ResourceDefinition" />. |
-| <PyObject object="InitResourceContext"/>         | The context object provided to a resource during initialization. This object contains required resources, config, and other run information.                                                                                             |
+| <PyObject object="InitResourceContext"/>         | The context object provided to a resource during initialization. This object contains required resources, config, and other run information.                                                                                            |
 | <PyObject object="build_init_resource_context"/> | Function for building an <PyObject object="InitResourceContext"/> outside of execution, intended to be used when testing a resource.                                                                                                    |
 | <PyObject object="build_resources"/>             | Function for initializing a set of resources outside of the context of a job's execution.                                                                                                                                               |
 | <PyObject object="with_resources"/>              | Advanced API for providing resources to a specific set of Software-defined Assets and source assets, overriding those provided to <PyObject object="Definitions"/>.                                                                     |
@@ -205,7 +205,7 @@ defs = Definitions(
 
 #### Providing resource launch time configuration in Python code
 
-Then, configuration for the resource can be provided at launch time in the launchpad or in Python code using the `config` parameter of the <PyObject object="RunRequest" />:
+Then, configuration for the resource can be provided at launch time in the Launchpad or in Python code using the `config` parameter of the <PyObject object="RunRequest" />:
 
 ```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_runtime_launch endbefore=end_new_resource_runtime_launch dedent=4
 from dagster import sensor, define_asset_job, RunRequest, RunConfig
@@ -365,39 +365,6 @@ class MyClientResource(ConfigurableResource):
 @asset
 def my_asset(client: MyClientResource):
     client.query("SELECT * FROM my_table")
-```
-
----
-
-## Defining Pythonic I/O managers
-
-Pythonic [I/O managers](/concepts/io-management/io-managers) are defined as subclasses of <PyObject object="ConfigurableIOManager"/>, and similarly to Pythonic resources specify any configuration fields as attributes. Each subclass must implement a `handle_output` and `load_input` method, which are called by Dagster at runtime to handle the storing and loading of data.
-
-```python file=/concepts/resources/pythonic_resources.py startafter=start_new_io_manager endbefore=end_new_io_manager dedent=4
-from dagster import (
-    Definitions,
-    AssetKey,
-    OutputContext,
-    InputContext,
-    ConfigurableIOManager,
-)
-
-class MyIOManager(ConfigurableIOManager):
-    root_path: str
-
-    def _get_path(self, asset_key: AssetKey) -> str:
-        return self.root_path + "/".join(asset_key.path)
-
-    def handle_output(self, context: OutputContext, obj):
-        write_csv(self._get_path(context.asset_key), obj)
-
-    def load_input(self, context: InputContext):
-        return read_csv(self._get_path(context.asset_key))
-
-defs = Definitions(
-    assets=...,
-    resources={"io_manager": MyIOManager(root_path="/tmp/")},
-)
 ```
 
 ---
