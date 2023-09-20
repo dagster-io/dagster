@@ -619,17 +619,19 @@ def _requested_asset_partitions_in_run_request(
     partition_range_end = run_request.tags.get(ASSET_PARTITION_RANGE_END_TAG)
     if partition_range_start and partition_range_end and run_request.partition_key is None:
         # backfill was a chunked backfill
-        assert len(asset_keys) == 1
-        asset_key = next(iter(asset_keys))
         partition_range = PartitionKeyRange(
             start=partition_range_start,
             end=partition_range_end,
         )
-        asset_partitions = asset_graph.get_asset_partitions_in_range(
-            asset_key=asset_key,
-            partition_key_range=partition_range,
-            dynamic_partitions_store=MagicMock(),
-        )
+        asset_partitions = []
+        for asset_key in asset_keys:
+            asset_partitions.extend(
+                asset_graph.get_asset_partitions_in_range(
+                    asset_key=asset_key,
+                    partition_key_range=partition_range,
+                    dynamic_partitions_store=MagicMock(),
+                )
+            )
         duplicate_asset_partitions = set(asset_partitions) & requested_asset_partitions
         assert len(duplicate_asset_partitions) == 0, (
             f" {duplicate_asset_partitions} requested twice. Requested:"
@@ -637,7 +639,7 @@ def _requested_asset_partitions_in_run_request(
         )
         requested_asset_partitions.update(asset_partitions)
     else:
-        # backfill was a partiton by partition backfill
+        # backfill was a partition by partition backfill
         for asset_key in asset_keys:
             asset_partition = AssetKeyPartitionKey(asset_key, run_request.partition_key)
             assert (

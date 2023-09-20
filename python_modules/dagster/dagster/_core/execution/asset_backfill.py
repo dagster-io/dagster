@@ -1201,25 +1201,22 @@ def _get_failed_asset_partitions(
             planned_asset_keys = instance_queryer.get_planned_materializations_for_run(
                 run_id=run.run_id
             )
-            check.invariant(
-                len(planned_asset_keys) == 1, "chunked backfill run should only have one asset key"
-            )
             completed_asset_keys = instance_queryer.get_current_materializations_for_run(
                 run_id=run.run_id
             )
             failed_asset_keys = planned_asset_keys - completed_asset_keys
 
             if failed_asset_keys:
-                asset_key = next(iter(failed_asset_keys))
                 partition_range = PartitionKeyRange(
                     start=check.not_none(run.tags.get(ASSET_PARTITION_RANGE_START_TAG)),
                     end=check.not_none(run.tags.get(ASSET_PARTITION_RANGE_END_TAG)),
                 )
-                result.extend(
-                    asset_graph.get_asset_partitions_in_range(
-                        asset_key, partition_range, instance_queryer
+                for asset_key in failed_asset_keys:
+                    result.extend(
+                        asset_graph.get_asset_partitions_in_range(
+                            asset_key, partition_range, instance_queryer
+                        )
                     )
-                )
         else:
             # a regular backfill run that run on a single partition
             partition_key = run.tags.get(PARTITION_NAME_TAG)
