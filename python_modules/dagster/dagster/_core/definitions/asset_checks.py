@@ -159,7 +159,10 @@ def build_blocking_asset_check(
 
     check_output_names = [c.get_python_identifier() for c in check_specs]
 
-    @op(ins={"materialization": In(Any), "check_evaluations": In(Nothing)})
+    check.invariant(len(asset_def.op.output_defs) == 1)
+    asset_out_type = asset_def.op.output_defs[0].dagster_type
+
+    @op(ins={"materialization": In(asset_out_type), "check_evaluations": In(Nothing)})
     def fan_in_checks_and_materialization(context: OpExecutionContext, materialization):
         yield Output(materialization)
 
@@ -181,9 +184,16 @@ def build_blocking_asset_check(
     @graph_asset(
         name=asset_def.key.path[-1],
         key_prefix=asset_def.key.path[:-1] if len(asset_def.key.path) > 1 else None,
+        group_name=asset_def.group_names_by_key.get(asset_def.key),
+        partitions_def=asset_def.partitions_def,
         check_specs=check_specs,
         description=asset_def.descriptions_by_key.get(asset_def.key),
-        ins={name: AssetIn(key) for name, key in asset_def.keys_by_input_name.items()}
+        ins={name: AssetIn(key) for name, key in asset_def.keys_by_input_name.items()},
+        resource_defs=asset_def.resource_defs,
+        metadata=asset_def.metadata_by_key.get(asset_def.key),
+        freshness_policy=asset_def.freshness_policies_by_key.get(asset_def.key),
+        auto_materialize_policy=asset_def.auto_materialize_policies_by_key.get(asset_def.key),
+        backfill_policy=asset_def.backfill_policy,
     )
     def blocking_asset(**kwargs):
         asset_result = asset_def.op.with_replaced_properties(name="asset_op")(**kwargs)
