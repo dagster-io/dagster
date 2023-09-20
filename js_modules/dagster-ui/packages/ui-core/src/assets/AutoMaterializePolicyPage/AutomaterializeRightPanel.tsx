@@ -73,8 +73,8 @@ export const AutomaterializeRightPanel = ({assetKey}: Props) => {
                 }
               >
                 <Body style={{flex: 1}}>
-                  This asset is automatically re-materialized when at least one of the conditions to
-                  the left is met and no skip conditions are met.
+                  This asset will be automatically materialized when at least one of the conditions
+                  to the left is met and no skip conditions are met.
                 </Body>
               </RightPanelSection>
             ) : (

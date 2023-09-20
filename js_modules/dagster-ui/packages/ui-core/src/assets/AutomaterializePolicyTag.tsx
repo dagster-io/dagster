@@ -19,13 +19,13 @@ export const automaterializePolicyDescription = (policy: {
   const {MATERIALIZE, SKIP, DISCARD} = groupBy(policy.rules, (rule) => rule.decisionType);
   return (
     <Box flex={{direction: 'column', gap: 12}}>
-      This asset is automatically re-materialized when at least one of the following are true:
+      This asset will be automatically materialized if it is:
       <ul style={{paddingLeft: 20, margin: 0}}>
         {MATERIALIZE?.map((rule) => (
           <li key={rule.description}>{rule.description}</li>
         ))}
       </ul>
-      and none of the following are true:
+      and it is not:
       <ul style={{paddingLeft: 20, margin: 0}}>
         {SKIP?.map((rule) => (
           <li key={rule.description}>{rule.description}</li>
@@ -33,8 +33,7 @@ export const automaterializePolicyDescription = (policy: {
       </ul>
       {DISCARD && DISCARD.length > 0 && (
         <>
-          Partitions may be discarded and require a backfill to materialize if any of the following
-          are true:
+          Partitions may be discarded and require a backfill to materialize if it:
           <ul style={{paddingLeft: 20, margin: 0}}>
             {DISCARD.map((rule) => (
               <li key={rule.description}>{rule.description}</li>
