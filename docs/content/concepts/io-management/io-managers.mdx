@@ -152,7 +152,7 @@ defs = Definitions(
 )
 ```
 
-This example also constructs an <PyObject module="dagster_aws.s3" object="S3Resource" /> because the <PyObject module="dagster_aws.s3" object="S3PickleIOManager" /> depends on the S3 resource. For more information on how these resource-resource dependencies are modeled, refer to the [resources](/concepts/resources#resources-which-depend-on-other-resources) documentation.
+This example also constructs an <PyObject module="dagster_aws.s3" object="S3Resource" /> because the <PyObject module="dagster_aws.s3" object="S3PickleIOManager" /> depends on the S3 resource. For more information on how these resource-resource dependencies are modeled, refer to the [resources](/concepts/resources#resources-that-depend-on-other-resources) documentation.
 
 When `upstream_asset` is materialized, the value `[1, 2, 3]` will be pickled and stored in an object on S3. When `downstream_asset` is materialized, the value of `upstream_asset` will be read from S3 and depickled, and `[1, 2, 3, 4]` will be pickled and stored in a different object on S3.
 
