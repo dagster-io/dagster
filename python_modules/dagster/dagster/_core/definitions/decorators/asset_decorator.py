@@ -476,6 +476,7 @@ class _Asset:
             metadata_by_key={out_asset_key: self.metadata} if self.metadata else None,
             descriptions_by_key=None,  # not supported for now
             check_specs_by_output_name=check_specs_by_output_name,
+            selected_asset_check_handles=None,  # no subselection in decorator
         )
 
 
@@ -848,6 +849,7 @@ def multi_asset(
             descriptions_by_key=None,  # not supported for now
             metadata_by_key=metadata_by_key,
             check_specs_by_output_name=check_specs_by_output_name,
+            selected_asset_check_handles=None,  # no subselection in decorator
         )
 
     return inner
