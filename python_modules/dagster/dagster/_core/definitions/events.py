@@ -18,7 +18,7 @@ from typing import (
 
 import dagster._check as check
 import dagster._seven as seven
-from dagster._annotations import PublicAttr, experimental_param, public
+from dagster._annotations import PublicAttr, deprecated, experimental_param, public
 from dagster._core.definitions.data_version import DataVersion
 from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX, SYSTEM_TAG_PREFIX
 from dagster._serdes import whitelist_for_serdes
@@ -616,9 +616,6 @@ class AssetMaterialization(
             description=description,
             metadata={"path": MetadataValue.path(path)},
         )
-
-
-from dagster._annotations import deprecated
 
 
 @deprecated(
