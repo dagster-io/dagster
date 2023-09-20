@@ -438,7 +438,7 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
       box.x + box.width / 2,
       box.y + box.height / 2,
       animate,
-      newScale === DEFAULT_MIN_ZOOM ? DEFAULT_MAX_ZOOM : newScale,
+      newScale === this.getMinZoom() ? this.getMaxZoom() : newScale,
     );
   }
 
