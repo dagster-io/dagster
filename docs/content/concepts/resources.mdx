@@ -8,10 +8,10 @@ description: Resources enable you to separate graph logic from environment, and 
 <Note>
   This guide covers using the new Pythonic resources system introduced in
   Dagster 1.3. If your code is still using the legacy resources system, see the{" "}
-  <a href="/concepts/resources-legacy">legacy resources guide</a>. To migrate
+  <a href="/concepts/resources-legacy">Legacy resources guide</a>. To migrate
   your code, refer to the{" "}
   <a href="/guides/dagster/migrating-to-pythonic-resources-and-config">
-    migrating to Pythonic resources and config
+    Migrating to Pythonic resources and config
   </a>{" "}
   guide.
 </Note>
@@ -50,16 +50,9 @@ So, why use resources?
 
 ## Defining a resource
 
-Typically, resources are defined by subclassing <PyObject object="ConfigurableResource"/>. Attributes on the class are used to define the resource's [configuration schema](/concepts/configuration/config-schema). The configuration system has a few advantages over plain Python parameter passing; configured values are displayed in the Dagster UI and can be set dynamically using environment variables. Binding resource config values can also be delayed so that they can be specified at run launch time.
+Typically, resources are defined by subclassing <PyObject object="ConfigurableResource"/>. Attributes on the class are used to define the resource's [configuration schema](/concepts/configuration/config-schema). The configuration system has a few advantages over plain Python parameter passing; configured values are displayed in the UI and can be set dynamically using environment variables. Binding resource config values can also be delayed so that they can be specified at run launch time.
 
-Assets and ops specify resource dependencies by annotating the resource as a parameter to the asset or op function.
-
-To provide resource values to your assets and ops, attach them to your <PyObject object="Definitions" /> call. These resources are automatically passed to the function at runtime.
-
-<TabGroup persistentKey="assetsorops">
-<TabItem name="Using Software-defined-Assets">
-
-### Using Software-defined Assets
+### With Software-defined Assets
 
 The following example demonstrates defining a subclass of <PyObject object="ConfigurableResource"/> that represents a connection to an external service. The resource can be configured by constructing it in the <PyObject object="Definitions" /> call.
 
@@ -91,10 +84,29 @@ defs = Definitions(
 )
 ```
 
-</TabItem>
-<TabItem name="Using ops and jobs">
+Assets specify resource dependencies by annotating the resource as a parameter to the asset function.
 
-### Using ops and jobs
+To provide resource values to assets, attach them to the <PyObject object="Definitions" /> objects. These resources are automatically passed to the function at runtime.
+
+### With sensors
+
+[Sensors](/concepts/partitions-schedules-sensors/sensors) can use resources in the same way as ops and assets, which can be useful for querying external services for data.
+
+To specify resource dependencies on a sensor, annotate the resource type as a parameter to the sensor's function. For more information and examples, refer to the [Sensors documentation](/concepts/partitions-schedules-sensors/sensors#using-resources-in-sensors).
+
+### With schedules
+
+[Schedules](/concepts/partitions-schedules-sensors/schedules) can also use resources in case your schedule logic needs to interface with an external tool or to make your schedule logic more testable.
+
+To specify resource dependencies on a schedule, annotate the resource type as a parameter to the schedule's function. For more information and examples, refer to the [Schedules documentation](/concepts/partitions-schedules-sensors/schedules#using-resources-in-schedules).
+
+### With ops and jobs
+
+<Note>
+  <strong>Heads up!</strong> <a href="/concepts/ops-jobs-graphs/ops">Ops</a> and{" "}
+  <a href="/concepts/ops-jobs-graphs/jobs">jobs</a> are considered{" "}
+  <strong>Advanced</strong> concepts.
+</Note>
 
 The following example defines a subclass of <PyObject object="ConfigurableResource"/> that represents a connection to an external service. The resource can be configured by constructing it in the <PyObject object="Definitions" /> call.
 
@@ -130,22 +142,11 @@ defs = Definitions(
 )
 ```
 
-</TabItem>
-</TabGroup>
+Ops specify resource dependencies by annotating the resource as a parameter to the op function.
+
+To provide resource values to ops, attach them to the <PyObject object="Definitions" /> objects. These resources are automatically passed to the function at runtime.
 
 There are many supported config types that can be used when defining resources. Refer to the [advanced config types documentation](/concepts/configuration/advanced-config-types) for a more comprehensive overview of the available config types.
-
-### Using resources with sensors
-
-[Sensors](/concepts/partitions-schedules-sensors/sensors) can use resources in the same way as ops and assets, which can be useful for querying external services for data.
-
-To specify resource dependencies on a sensor, annotate the resource type as a parameter to the sensor's function. For more information and examples, refer to the [Sensors documentation](/concepts/partitions-schedules-sensors/sensors#using-resources-in-sensors).
-
-### Using resources with schedules
-
-[Schedules](/concepts/partitions-schedules-sensors/schedules) can also use resources in case your schedule logic needs to interface with an external tool or to make your schedule logic more testable.
-
-To specify resource dependencies on a schedule, annotate the resource type as a parameter to the schedule's function. For more information and examples, refer to the [Schedules documentation](/concepts/partitions-schedules-sensors/schedules#using-resources-in-schedules).
 
 ---
 
