@@ -225,7 +225,9 @@ export const AssetGraphExplorerSidebar = React.memo(
               nextOpenNodes.add(locationName);
               nextOpenNodes.add(locationName + ':' + groupName);
             }
-            setSelectedNode({id: lastSelectedNode.id});
+            if (selectedNode?.id !== lastSelectedNode.id) {
+              setSelectedNode({id: lastSelectedNode.id});
+            }
             return nextOpenNodes;
           }
           let path = lastSelectedNode.id;
