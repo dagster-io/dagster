@@ -102,12 +102,6 @@ To specify resource dependencies on a schedule, annotate the resource type as a 
 
 ### With ops and jobs
 
-<Note>
-  <strong>Heads up!</strong> <a href="/concepts/ops-jobs-graphs/ops">Ops</a> and{" "}
-  <a href="/concepts/ops-jobs-graphs/jobs">jobs</a> are considered{" "}
-  <strong>Advanced</strong> concepts.
-</Note>
-
 The following example defines a subclass of <PyObject object="ConfigurableResource"/> that represents a connection to an external service. The resource can be configured by constructing it in the <PyObject object="Definitions" /> call.
 
 You can define methods on the resource class which depend on config values.
