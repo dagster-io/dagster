@@ -1,17 +1,26 @@
 ---
 title: Testing partitioned config and jobs | Dagster
-description: TODO
+description: Test your partition configuration and jobs.
 ---
 
-## Testing
+# Testing partitioned config and jobs
 
-<TODO></TODO>
+In this guide, we'll cover a few ways to test your partitioned config and jobs.
+
+---
+
+## Prerequisites
+
+Before continuing, you should be familiar with:
+
+- [Partitioned assets](/concepts/partitions-schedules-sensors/partitioned-assets)
+- [Partitioned ops and jobs](/concepts/partitions-schedules-sensors/partitioned-op-jobs) (Optional; Advanced)
 
 ---
 
 ## Testing partitioned config
 
-Invoking a <PyObject object="PartitionedConfig" /> object will directly invoke the decorated function.
+Invoking a <PyObject object="PartitionedConfig" /> object directly invokes the decorated function.
 
 If you want to check whether the generated run config is valid for the config of a job, you can use the <PyObject object="validate_run_config" /> function.
 
@@ -41,7 +50,7 @@ def test_my_partitioned_config():
     assert validate_run_config(do_stuff_partitioned, run_config)
 ```
 
-If you want to test that your <PyObject object="PartitionedConfig" /> creates the partitions you expect, you can use the `get_partition_keys` or `get_run_config_for_partition_key` functions.
+If you want to test that a <PyObject object="PartitionedConfig" /> creates the partitions you expect, use the `get_partition_keys` or `get_run_config_for_partition_key` functions:
 
 ```python file=/concepts/partitions_schedules_sensors/partitioned_config_test.py startafter=start_partition_keys endbefore=end_partition_keys
 from dagster import Config
@@ -102,9 +111,32 @@ def test_my_offset_partitioned_config():
 
 ## Testing partitioned jobs
 
-To run a partitioned job in-process on a particular partition, you can supply a value for the `partition_key` argument of <PyObject object="JobDefinition" method="execute_in_process" />
+To run a partitioned job in-process on a particular partition, supply a value for the `partition_key` argument of <PyObject object="JobDefinition" method="execute_in_process" />. For example:
 
 ```python file=/concepts/partitions_schedules_sensors/partitioned_job_test.py startafter=start endbefore=end
 def test_do_stuff_partitioned():
     assert do_stuff_partitioned.execute_in_process(partition_key="2020-01-01").success
 ```
+
+---
+
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    href="/concepts/partitions-schedules-sensors/partitions"
+    title="Partitions"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/concepts/partitions-schedules-sensors/partitioned-assets"
+    title="Partitioned assets"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/concepts/partitions-schedules-sensors/partitioned-op-jobs"
+    title="Partitioned op jobs"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/concepts/assets/software-defined-assets"
+    title="Software-defined Assets"
+  ></ArticleListItem>
+</ArticleList>
