@@ -34,7 +34,9 @@ class JobSubsetSelector(
         asset_check_selection: Optional[Iterable[AssetCheckHandle]] = None,
     ):
         asset_selection = set(asset_selection) if asset_selection else None
-        asset_check_selection = set(asset_check_selection) if asset_check_selection else None
+        asset_check_selection = (
+            set(asset_check_selection) if asset_check_selection is not None else None
+        )
         return super(JobSubsetSelector, cls).__new__(
             cls,
             location_name=check.str_param(location_name, "location_name"),

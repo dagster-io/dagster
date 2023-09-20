@@ -504,7 +504,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
             )
         # pass in the output name to handle the case when a multi_asset has a single AssetOut
         return self.asset_key_for_output(
-            output_name=list(self.assets_def.keys_by_output_name.keys())[0]
+            output_name=next(iter(self.assets_def.keys_by_output_name.keys()))
         )
 
     @public

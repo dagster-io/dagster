@@ -348,7 +348,7 @@ def run_pyright(
         shell_cmd = " \\\n".join([base_pyright_cmd, *[f"    {p}" for p in paths or []]])
         print(f"Running pyright for environment `{env}`...")
         print(f"  {shell_cmd}")
-        result = subprocess.run(shell_cmd, capture_output=True, shell=True, text=True)
+        result = subprocess.run(shell_cmd, capture_output=True, shell=True, text=True, check=False)
         try:
             json_result = json.loads(result.stdout)
         except json.JSONDecodeError:

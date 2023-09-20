@@ -59,7 +59,7 @@ defs = Definitions(
     assets=[dbt_customers_asset, dbt_orders_asset],
     schedules=[bi_weekly_schedule],
     sensors=[new_data_sensor],
-    resources=dbt_resource
+    resources=[dbt_resource],
 )
 ```
 
@@ -75,11 +75,11 @@ Definitions can be included in a Python file like `my_file.py` or a Python modul
 
 ### Local development
 
-Refer to the [Running Dagster locally guide](/guides/running-dagster-locally) for more info about local development, including how to configure your local instance.
-
 <!-- Lives in /next/components/mdx/includes/dagster/DagsterDevTabs.mdx -->
 
 <DagsterDevTabs />
+
+Refer to the [Running Dagster locally guide](/guides/running-dagster-locally) for more info about local development, including how to configure your local instance.
 
 ### Cloud deployment
 

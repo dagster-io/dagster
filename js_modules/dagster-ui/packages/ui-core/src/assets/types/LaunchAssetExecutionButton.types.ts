@@ -22,6 +22,7 @@ export type LaunchAssetExecutionAssetNodeFragment = {
   graphName: string | null;
   hasMaterializePermission: boolean;
   isObservable: boolean;
+  isExecutable: boolean;
   isSource: boolean;
   partitionDefinition: {
     __typename: 'PartitionDefinition';
@@ -611,6 +612,7 @@ export type LaunchAssetLoaderQuery = {
     graphName: string | null;
     hasMaterializePermission: boolean;
     isObservable: boolean;
+    isExecutable: boolean;
     isSource: boolean;
     partitionDefinition: {
       __typename: 'PartitionDefinition';

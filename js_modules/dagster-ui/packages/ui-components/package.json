@@ -96,7 +96,7 @@
     "rollup-plugin-polyfill-node": "^0.8.0",
     "rollup-plugin-styles": "^4.0.0",
     "storybook": "^7.2.0",
-    "typescript": "5.0.2",
+    "typescript": "5.2.2",
     "webpack": "^5.88.1"
   },
   "resolutions": {

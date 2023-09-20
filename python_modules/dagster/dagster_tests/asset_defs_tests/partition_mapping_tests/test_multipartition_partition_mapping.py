@@ -15,6 +15,7 @@ from dagster import (
     StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
     WeeklyPartitionsDefinition,
+    asset,
     materialize,
     multi_asset,
 )
@@ -730,8 +731,62 @@ def test_error_multipartitions_mapping():
 
 
 def test_multi_partition_mapping_with_asset_deps():
-    asset_1 = AssetSpec(asset_key="asset_1")
-    asset_2 = AssetSpec(asset_key="asset_2")
+    partitions_def = MultiPartitionsDefinition(
+        {
+            "123": StaticPartitionsDefinition(["1", "2", "3"]),
+            "time": DailyPartitionsDefinition("2023-01-01"),
+        }
+    )
+
+    ### With @asset and deps
+    @asset(partitions_def=partitions_def)
+    def upstream():
+        return
+
+    mapping = MultiPartitionMapping(
+        {
+            "123": DimensionPartitionMapping(
+                dimension_name="123",
+                partition_mapping=IdentityPartitionMapping(),
+            ),
+            "time": DimensionPartitionMapping(
+                dimension_name="time",
+                partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
+            ),
+        }
+    )
+
+    @asset(partitions_def=partitions_def, deps=[AssetDep(upstream, partition_mapping=mapping)])
+    def downstream(context: AssetExecutionContext):
+        upstream_mp_key = context.asset_partition_key_for_input("upstream")
+        current_mp_key = context.partition_key
+
+        if isinstance(upstream_mp_key, MultiPartitionKey) and isinstance(
+            current_mp_key, MultiPartitionKey
+        ):
+            upstream_key = datetime.strptime(upstream_mp_key.keys_by_dimension["time"], "%Y-%m-%d")
+
+            current_partition_key = datetime.strptime(
+                current_mp_key.keys_by_dimension["time"], "%Y-%m-%d"
+            )
+
+            assert current_partition_key - upstream_key == timedelta(days=1)
+        else:
+            assert False, "partition keys for upstream and downstream should be MultiPartitionKeys"
+
+        return
+
+    materialize(
+        [upstream, downstream], partition_key=MultiPartitionKey({"123": "1", "time": "2023-08-05"})
+    )
+
+    assert downstream.partition_mappings == {
+        AssetKey("upstream"): mapping,
+    }
+
+    ### With @multi_asset and AssetSpec
+    asset_1 = AssetSpec(key="asset_1")
+    asset_2 = AssetSpec(key="asset_2")
 
     asset_1_partition_mapping = MultiPartitionMapping(
         {
@@ -759,7 +814,7 @@ def test_multi_partition_mapping_with_asset_deps():
     )
 
     asset_3 = AssetSpec(
-        asset_key="asset_3",
+        key="asset_3",
         deps=[
             AssetDep(
                 asset=asset_1,
@@ -772,7 +827,7 @@ def test_multi_partition_mapping_with_asset_deps():
         ],
     )
     asset_4 = AssetSpec(
-        asset_key="asset_4",
+        key="asset_4",
         deps=[
             AssetDep(
                 asset=asset_1,
@@ -783,13 +838,6 @@ def test_multi_partition_mapping_with_asset_deps():
                 partition_mapping=asset_2_partition_mapping,
             ),
         ],
-    )
-
-    partitions_def = MultiPartitionsDefinition(
-        {
-            "123": StaticPartitionsDefinition(["1", "2", "3"]),
-            "time": DailyPartitionsDefinition("2023-01-01"),
-        }
     )
 
     @multi_asset(specs=[asset_1, asset_2], partitions_def=partitions_def)

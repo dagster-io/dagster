@@ -42,15 +42,8 @@ export const AssetMaterializationGraphs: React.FC<{
         }}
       >
         {graphLabels.map((label) => (
-          <Box
-            key={label}
-            style={{width: '100%'}}
-            border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-          >
-            <Box
-              style={{width: '100%'}}
-              border={{side: 'right', width: 1, color: Colors.KeylineGray}}
-            >
+          <Box key={label} style={{width: '100%'}} border="bottom">
+            <Box style={{width: '100%'}} border="right">
               {props.asSidebarSection ? (
                 <Box padding={{horizontal: 24, top: 8}} flex={{justifyContent: 'space-between'}}>
                   <Caption style={{fontWeight: 700}}>{label}</Caption>
@@ -58,7 +51,7 @@ export const AssetMaterializationGraphs: React.FC<{
               ) : (
                 <Box
                   padding={{horizontal: 24, vertical: 16}}
-                  border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+                  border="bottom"
                   flex={{justifyContent: 'space-between'}}
                 >
                   <Subheading>{label}</Subheading>

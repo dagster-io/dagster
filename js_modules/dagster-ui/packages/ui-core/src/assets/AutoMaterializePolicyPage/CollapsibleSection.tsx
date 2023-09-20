@@ -46,14 +46,11 @@ export const Collapsible = ({
 }) => {
   const [isCollapsed, setIsCollapsed] = React.useState(false);
   return (
-    <Box
-      flex={{direction: 'column'}}
-      border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-    >
+    <Box flex={{direction: 'column'}} border="bottom">
       <Box
         flex={{direction: 'row', alignItems: 'center'}}
         padding={{vertical: 8, horizontal: 16}}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+        border="bottom"
       >
         <Icon
           name="arrow_drop_down"

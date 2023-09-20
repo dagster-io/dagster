@@ -33,6 +33,7 @@ import {CheckAllBox} from '../ui/CheckAllBox';
 import {useFilters} from '../ui/Filters';
 import {useCodeLocationFilter} from '../ui/Filters/useCodeLocationFilter';
 import {useInstigationStatusFilter} from '../ui/Filters/useInstigationStatusFilter';
+import {SearchInputSpinner} from '../ui/SearchInputSpinner';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
@@ -55,7 +56,7 @@ export const OverviewSensorsRoot = () => {
   useTrackPageView();
   useDocumentTitle('Overview | Sensors');
 
-  const {allRepos, visibleRepos} = React.useContext(WorkspaceContext);
+  const {allRepos, visibleRepos, loading: workspaceLoading} = React.useContext(WorkspaceContext);
   const repoCount = allRepos.length;
   const [searchValue, setSearchValue] = useQueryPersistedState<string>({
     queryKey: 'search',
@@ -245,6 +246,8 @@ export const OverviewSensorsRoot = () => {
     );
   };
 
+  const showSearchSpinner = (workspaceLoading && !repoCount) || (loading && !data);
+
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
       <PageHeader
@@ -266,6 +269,11 @@ export const OverviewSensorsRoot = () => {
           <TextInput
             icon="search"
             value={searchValue}
+            rightElement={
+              showSearchSpinner ? (
+                <SearchInputSpinner tooltipContent="Loading sensors…" />
+              ) : undefined
+            }
             onChange={(e) => setSearchValue(e.target.value)}
             placeholder="Filter by sensor name…"
             style={{width: '340px'}}
@@ -283,7 +291,7 @@ export const OverviewSensorsRoot = () => {
       {activeFiltersJsx.length ? (
         <Box
           padding={{vertical: 8, horizontal: 24}}
-          border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+          border="top-and-bottom"
           flex={{direction: 'row', gap: 8}}
         >
           {activeFiltersJsx}
@@ -303,7 +311,7 @@ export const OverviewSensorsRoot = () => {
           <SensorInfo
             daemonHealth={data?.instance.daemonHealth}
             padding={{vertical: 16, horizontal: 24}}
-            border={{side: 'top', width: 1, color: Colors.KeylineGray}}
+            border="top"
           />
           {content()}
         </>
@@ -325,10 +333,7 @@ const UnloadableSensorsAlert: React.FC<{
 
   return (
     <>
-      <Box
-        padding={{vertical: 16, horizontal: 24}}
-        border={{side: 'top', width: 1, color: Colors.KeylineGray}}
-      >
+      <Box padding={{vertical: 16, horizontal: 24}} border="top">
         <Alert
           intent="warning"
           title={title}

@@ -193,7 +193,7 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
             background={Colors.White}
             data-zoom-control={true}
             flex={{alignItems: 'center', direction: 'column'}}
-            border={{side: 'vertical', color: Colors.Gray300, width: 1}}
+            border={{side: 'left-and-right', color: Colors.Gray300}}
           >
             <Slider
               vertical

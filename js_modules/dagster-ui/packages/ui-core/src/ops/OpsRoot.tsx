@@ -212,10 +212,7 @@ const OpsRootWithData: React.FC<Props & {name?: string; usedSolids: Solid[]}> = 
         firstMinSize={420}
         first={
           <OpListColumnContainer>
-            <Box
-              padding={{vertical: 12, horizontal: 24}}
-              border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-            >
+            <Box padding={{vertical: 12, horizontal: 24}} border="bottom">
               <TokenizingField
                 values={search}
                 onChange={(search) => onSearch(search)}

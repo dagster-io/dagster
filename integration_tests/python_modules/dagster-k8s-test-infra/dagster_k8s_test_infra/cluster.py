@@ -171,9 +171,7 @@ def helm_postgres_url_for_k8s_run_launcher(system_namespace_for_k8s_run_launcher
     with local_port_forward_postgres(
         namespace=system_namespace_for_k8s_run_launcher
     ) as local_forward_port:
-        postgres_url = "postgresql://test:test@localhost:{local_forward_port}/test".format(
-            local_forward_port=local_forward_port
-        )
+        postgres_url = f"postgresql://test:test@localhost:{local_forward_port}/test"
         print("Local Postgres forwarding URL: ", postgres_url)
         yield postgres_url
 
@@ -185,9 +183,7 @@ def helm_postgres_url_for_user_deployments_subchart_disabled(
     with local_port_forward_postgres(
         namespace=helm_namespace_for_user_deployments_subchart_disabled
     ) as local_forward_port:
-        postgres_url = "postgresql://test:test@localhost:{local_forward_port}/test".format(
-            local_forward_port=local_forward_port
-        )
+        postgres_url = f"postgresql://test:test@localhost:{local_forward_port}/test"
         print("Local Postgres forwarding URL: ", postgres_url)
         yield postgres_url
 
@@ -215,9 +211,7 @@ def dagster_instance_for_user_deployments_subchart_disabled(
 @pytest.fixture(scope="session")
 def helm_postgres_url_for_daemon(helm_namespace_for_daemon):
     with local_port_forward_postgres(namespace=helm_namespace_for_daemon) as local_forward_port:
-        postgres_url = "postgresql://test:test@localhost:{local_forward_port}/test".format(
-            local_forward_port=local_forward_port
-        )
+        postgres_url = f"postgresql://test:test@localhost:{local_forward_port}/test"
         print("Local Postgres forwarding URL: ", postgres_url)
         yield postgres_url
 
@@ -268,9 +262,7 @@ def dagster_instance_for_k8s_run_launcher(
 @pytest.fixture(scope="session")
 def helm_postgres_url(helm_namespace):
     with local_port_forward_postgres(namespace=helm_namespace) as local_forward_port:
-        postgres_url = "postgresql://test:test@localhost:{local_forward_port}/test".format(
-            local_forward_port=local_forward_port
-        )
+        postgres_url = f"postgresql://test:test@localhost:{local_forward_port}/test"
         print("Local Postgres forwarding URL: ", postgres_url)
         yield postgres_url
 

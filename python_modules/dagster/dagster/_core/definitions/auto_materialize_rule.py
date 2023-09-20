@@ -226,7 +226,11 @@ class AutoMaterializeRule(ABC):
     @public
     @staticmethod
     def materialize_on_required_for_freshness() -> "MaterializeOnRequiredForFreshnessRule":
-        """Materialize an asset partition if it is required to satisfy a freshness policy."""
+        """Materialize an asset partition if it is required to satisfy a freshness policy of this
+        asset or one of its downstream assets.
+
+        Note: This rule has no effect on partitioned assets.
+        """
         return MaterializeOnRequiredForFreshnessRule()
 
     @public
@@ -234,22 +238,19 @@ class AutoMaterializeRule(ABC):
     def materialize_on_parent_updated() -> "MaterializeOnParentUpdatedRule":
         """Materialize an asset partition if one of its parents has been updated more recently
         than it has.
+
+        Note: For time-partitioned or dynamic-partitioned assets downstream of an unpartitioned
+        asset, this rule will only fire for the most recent partition of the downstream.
         """
         return MaterializeOnParentUpdatedRule()
 
     @public
     @staticmethod
     def materialize_on_missing() -> "MaterializeOnMissingRule":
-        """Materialize an asset partition if it has never been materialized before."""
-        return MaterializeOnMissingRule()
-
-    @public
-    @staticmethod
-    def skip_on_parent_outdated() -> "SkipOnParentOutdatedRule":
-        """Skip materializing an asset partition if any of its parents has not incorporated the
-        latest data from its ancestors.
+        """Materialize an asset partition if it has never been materialized before. This rule will
+        not fire for non-root assets unless that asset's parents have been updated.
         """
-        return SkipOnParentOutdatedRule()
+        return MaterializeOnMissingRule()
 
     @public
     @staticmethod
@@ -261,11 +262,19 @@ class AutoMaterializeRule(ABC):
 
     @public
     @staticmethod
+    def skip_on_parent_outdated() -> "SkipOnParentOutdatedRule":
+        """Skip materializing an asset partition if any of its parents has not incorporated the
+        latest data from its ancestors.
+        """
+        return SkipOnParentOutdatedRule()
+
+    @public
+    @staticmethod
     def skip_on_not_all_parents_updated(
         require_update_for_all_parent_partitions: bool = False,
     ) -> "SkipOnNotAllParentsUpdatedRule":
-        """An auto-materialize rule that enforces that an asset can only be materialized if all parents
-        have been materialized since the asset's last materialization.
+        """Skip materializing an asset partition if any of its parents have not been updated since
+        the asset's last materialization.
 
         Attributes:
             require_update_for_all_parent_partitions (Optional[bool]): Applies only to an unpartitioned
@@ -369,6 +378,9 @@ class MaterializeOnParentUpdatedRule(
                 # we're within reasonable limits on the number of partitions to check
                 respect_materialization_data_versions=context.daemon_context.respect_materialization_data_versions
                 and len(parent_asset_partitions | has_or_will_update) < 100,
+                # ignore self-dependencies when checking for updated parents, to avoid historical
+                # rematerializations from causing a chain of materializations to be kicked off
+                ignored_parent_keys={context.asset_key},
             )
             updated_parents = {parent.asset_key for parent in updated_parent_asset_partitions}
             will_update_parents = will_update_parents_by_asset_partition[asset_partition]
@@ -545,6 +557,7 @@ class SkipOnNotAllParentsUpdatedRule(
                     candidate,
                     parent_partitions,
                     context.daemon_context.respect_materialization_data_versions,
+                    ignored_parent_keys=set(),
                 )
                 | set().union(
                     *[
@@ -571,6 +584,9 @@ class SkipOnNotAllParentsUpdatedRule(
                     for parent in parent_asset_keys
                     if not updated_parent_partitions_by_asset_key.get(parent)
                 }
+
+            # do not require past partitions of this asset to be updated
+            non_updated_parent_keys -= {context.asset_key}
 
             if non_updated_parent_keys:
                 asset_partitions_by_waiting_on_asset_keys[frozenset(non_updated_parent_keys)].add(
@@ -759,30 +775,24 @@ class BackcompatAutoMaterializeConditionSerializer(NamedTupleSerializer):
 
 
 @whitelist_for_serdes(serializer=BackcompatAutoMaterializeConditionSerializer)
-class FreshnessAutoMaterializeCondition(NamedTuple):
-    ...
+class FreshnessAutoMaterializeCondition(NamedTuple): ...
 
 
 @whitelist_for_serdes(serializer=BackcompatAutoMaterializeConditionSerializer)
-class DownstreamFreshnessAutoMaterializeCondition(NamedTuple):
-    ...
+class DownstreamFreshnessAutoMaterializeCondition(NamedTuple): ...
 
 
 @whitelist_for_serdes(serializer=BackcompatAutoMaterializeConditionSerializer)
-class ParentMaterializedAutoMaterializeCondition(NamedTuple):
-    ...
+class ParentMaterializedAutoMaterializeCondition(NamedTuple): ...
 
 
 @whitelist_for_serdes(serializer=BackcompatAutoMaterializeConditionSerializer)
-class MissingAutoMaterializeCondition(NamedTuple):
-    ...
+class MissingAutoMaterializeCondition(NamedTuple): ...
 
 
 @whitelist_for_serdes(serializer=BackcompatAutoMaterializeConditionSerializer)
-class ParentOutdatedAutoMaterializeCondition(NamedTuple):
-    ...
+class ParentOutdatedAutoMaterializeCondition(NamedTuple): ...
 
 
 @whitelist_for_serdes(serializer=BackcompatAutoMaterializeConditionSerializer)
-class MaxMaterializationsExceededAutoMaterializeCondition(NamedTuple):
-    ...
+class MaxMaterializationsExceededAutoMaterializeCondition(NamedTuple): ...

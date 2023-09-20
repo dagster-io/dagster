@@ -117,6 +117,7 @@ export type AssetBackfillStatus = AssetPartitionsStatusCounts | UnpartitionedAss
 export type AssetCheck = {
   __typename: 'AssetCheck';
   assetKey: AssetKey;
+  canExecuteIndividually: AssetCheckCanExecuteIndividually;
   description: Maybe<Scalars['String']>;
   executionForLatestMaterialization: Maybe<AssetCheckExecution>;
   executions: Array<AssetCheckExecution>;
@@ -127,6 +128,11 @@ export type AssetCheckExecutionsArgs = {
   cursor?: InputMaybe<Scalars['String']>;
   limit: Scalars['Int'];
 };
+
+export enum AssetCheckCanExecuteIndividually {
+  CAN_EXECUTE = 'CAN_EXECUTE',
+  NEEDS_USER_CODE_UPGRADE = 'NEEDS_USER_CODE_UPGRADE',
+}
 
 export type AssetCheckEvaluation = {
   __typename: 'AssetCheckEvaluation';
@@ -204,6 +210,12 @@ export enum AssetCheckSeverity {
   ERROR = 'ERROR',
   WARN = 'WARN',
 }
+
+export type AssetCheckhandle = {
+  __typename: 'AssetCheckhandle';
+  assetKey: AssetKey;
+  name: Scalars['String'];
+};
 
 export type AssetChecks = {
   __typename: 'AssetChecks';
@@ -313,6 +325,7 @@ export type AssetNode = {
   hasAssetChecks: Scalars['Boolean'];
   hasMaterializePermission: Scalars['Boolean'];
   id: Scalars['ID'];
+  isExecutable: Scalars['Boolean'];
   isObservable: Scalars['Boolean'];
   isPartitioned: Scalars['Boolean'];
   isSource: Scalars['Boolean'];
@@ -3190,6 +3203,8 @@ export type ResourceDetails = {
   nestedResources: Array<NestedResourceEntry>;
   parentResources: Array<NestedResourceEntry>;
   resourceType: Scalars['String'];
+  schedulesUsing: Array<Scalars['String']>;
+  sensorsUsing: Array<Scalars['String']>;
 };
 
 export type ResourceDetailsList = {
@@ -3286,6 +3301,7 @@ export type ResumeBackfillSuccess = {
 
 export type Run = PipelineRun & {
   __typename: 'Run';
+  assetCheckSelection: Maybe<Array<AssetCheckhandle>>;
   assetMaterializations: Array<MaterializationEvent>;
   assetSelection: Maybe<Array<AssetKey>>;
   assets: Array<Asset>;
@@ -4440,6 +4456,10 @@ export const buildAssetCheck = (
         : relationshipsToOmit.has('AssetKey')
         ? ({} as AssetKey)
         : buildAssetKey({}, relationshipsToOmit),
+    canExecuteIndividually:
+      overrides && overrides.hasOwnProperty('canExecuteIndividually')
+        ? overrides.canExecuteIndividually!
+        : AssetCheckCanExecuteIndividually.CAN_EXECUTE,
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'omnis',
     executionForLatestMaterialization:
@@ -4609,6 +4629,24 @@ export const buildAssetCheckNeedsMigrationError = (
   return {
     __typename: 'AssetCheckNeedsMigrationError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'enim',
+  };
+};
+
+export const buildAssetCheckhandle = (
+  overrides?: Partial<AssetCheckhandle>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetCheckhandle'} & AssetCheckhandle => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetCheckhandle');
+  return {
+    __typename: 'AssetCheckhandle',
+    assetKey:
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKey')
+        ? ({} as AssetKey)
+        : buildAssetKey({}, relationshipsToOmit),
+    name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'est',
   };
 };
 
@@ -4926,6 +4964,8 @@ export const buildAssetNode = (
       overrides && overrides.hasOwnProperty('id')
         ? overrides.id!
         : '006fc1b6-3c6e-432d-ac6a-c1c16c0c05b9',
+    isExecutable:
+      overrides && overrides.hasOwnProperty('isExecutable') ? overrides.isExecutable! : false,
     isObservable:
       overrides && overrides.hasOwnProperty('isObservable') ? overrides.isObservable! : false,
     isPartitioned:
@@ -10244,6 +10284,10 @@ export const buildResourceDetails = (
       overrides && overrides.hasOwnProperty('parentResources') ? overrides.parentResources! : [],
     resourceType:
       overrides && overrides.hasOwnProperty('resourceType') ? overrides.resourceType! : 'sed',
+    schedulesUsing:
+      overrides && overrides.hasOwnProperty('schedulesUsing') ? overrides.schedulesUsing! : [],
+    sensorsUsing:
+      overrides && overrides.hasOwnProperty('sensorsUsing') ? overrides.sensorsUsing! : [],
   };
 };
 
@@ -10426,6 +10470,10 @@ export const buildRun = (
   relationshipsToOmit.add('Run');
   return {
     __typename: 'Run',
+    assetCheckSelection:
+      overrides && overrides.hasOwnProperty('assetCheckSelection')
+        ? overrides.assetCheckSelection!
+        : [],
     assetMaterializations:
       overrides && overrides.hasOwnProperty('assetMaterializations')
         ? overrides.assetMaterializations!

@@ -21,7 +21,10 @@ import {LiveDataForNodeMaterializedWithChecks} from '../__fixtures__/AssetNode.f
 import {SidebarAssetQuery} from '../types/SidebarAssetInfo.types';
 
 // eslint-disable-next-line import/no-default-export
-export default {component: SidebarAssetInfo};
+export default {
+  title: 'Asset Graph/SidebarAssetInfo',
+  component: SidebarAssetInfo,
+};
 
 const MockRepo = {
   __typename: 'Repository',
@@ -69,6 +72,7 @@ const buildSidebarQueryMock = (
         description: null,
         configField: null,
         metadataEntries: [],
+        jobNames: ['test_job'],
         autoMaterializePolicy: null,
         freshnessPolicy: null,
         partitionDefinition: null,

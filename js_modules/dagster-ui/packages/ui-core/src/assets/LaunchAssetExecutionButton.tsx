@@ -83,12 +83,14 @@ type Asset =
       assetKey: AssetKey;
       hasMaterializePermission: boolean;
       partitionDefinition: {__typename: string} | null;
+      isExecutable: boolean;
       isSource: boolean;
     }
   | {
       assetKey: AssetKey;
       hasMaterializePermission: boolean;
       isPartitioned: boolean;
+      isExecutable: boolean;
       isSource: boolean;
     };
 
@@ -97,7 +99,6 @@ export type AssetsInScope = {all: Asset[]; skipAllTerm?: boolean} | {selected: A
 type LaunchOption = {
   assetKeys: AssetKey[];
   label: string;
-  hasMaterializePermission: boolean;
   icon?: JSX.Element;
 };
 
@@ -117,35 +118,31 @@ function optionsForButton(scope: AssetsInScope, liveDataForStale?: LiveData): La
   // If you pass a set of selected assets, we always show just one option
   // to materialize that selection.
   if ('selected' in scope) {
-    const assets = scope.selected.filter((a) => !a.isSource);
-    const hasMaterializePermission = scope.selected.every(
-      (assetNode) => assetNode.hasMaterializePermission,
-    );
+    const executable = scope.selected.filter((a) => !a.isSource && a.isExecutable);
 
     return [
       {
-        assetKeys: assets.map((a) => a.assetKey),
-        label: `Materialize selected${countOrBlank(assets)}${isAnyPartitioned(assets) ? '…' : ''}`,
-        hasMaterializePermission,
+        assetKeys: executable.map((a) => a.assetKey),
+        label: `Materialize selected${countOrBlank(executable)}${
+          isAnyPartitioned(executable) ? '…' : ''
+        }`,
       },
     ];
   }
 
   const options: LaunchOption[] = [];
-  const assets = scope.all.filter((a) => !a.isSource);
-  const hasMaterializePermission = assets.every((assetNode) => assetNode.hasMaterializePermission);
+  const executable = scope.all.filter((a) => !a.isSource && a.isExecutable);
 
   options.push({
-    assetKeys: assets.map((a) => a.assetKey),
+    assetKeys: executable.map((a) => a.assetKey),
     label:
-      assets.length > 1 && !scope.skipAllTerm
-        ? `Materialize all${isAnyPartitioned(assets) ? '…' : ''}`
-        : `Materialize${isAnyPartitioned(assets) ? '…' : ''}`,
-    hasMaterializePermission,
+      executable.length > 1 && !scope.skipAllTerm
+        ? `Materialize all${isAnyPartitioned(executable) ? '…' : ''}`
+        : `Materialize${isAnyPartitioned(executable) ? '…' : ''}`,
   });
 
   if (liveDataForStale) {
-    const missingOrStale = assets.filter(
+    const missingOrStale = executable.filter(
       (a) =>
         isAssetMissing(liveDataForStale[toGraphId(a.assetKey)]) ||
         isAssetStale(liveDataForStale[toGraphId(a.assetKey)]),
@@ -154,12 +151,23 @@ function optionsForButton(scope: AssetsInScope, liveDataForStale?: LiveData): La
     options.push({
       assetKeys: missingOrStale.map((a) => a.assetKey),
       label: `Materialize changed and missing${countOrBlank(missingOrStale)}`,
-      hasMaterializePermission,
       icon: <Icon name="changes_present" />,
     });
   }
 
   return options;
+}
+
+export function executionDisabledMessageForAssets(
+  assets: {isSource: boolean; isExecutable: boolean; hasMaterializePermission: boolean}[],
+) {
+  return assets.some((a) => !a.hasMaterializePermission)
+    ? 'You do not have permission to materialize assets'
+    : assets.every((a) => a.isSource)
+    ? 'Source assets cannot be materialized'
+    : assets.every((a) => !a.isExecutable)
+    ? 'Non-executable assets cannot be materialized'
+    : null;
 }
 
 export const LaunchAssetExecutionButton: React.FC<{
@@ -171,20 +179,26 @@ export const LaunchAssetExecutionButton: React.FC<{
   const {onClick, loading, launchpadElement} = useMaterializationAction(preferredJobName);
   const [isOpen, setIsOpen] = React.useState(false);
 
-  const options = optionsForButton(scope, liveDataForStale);
-  const firstOption = options[0]!;
-  const hasMaterializePermission = firstOption.hasMaterializePermission;
-
   const {MaterializeButton} = useLaunchPadHooks();
 
+  const options = optionsForButton(scope, liveDataForStale);
+  const firstOption = options[0]!;
   if (!firstOption) {
     return <span />;
   }
 
-  if (!hasMaterializePermission) {
+  const inScope = 'selected' in scope ? scope.selected : scope.all;
+  const disabledMessage = executionDisabledMessageForAssets(inScope);
+
+  if (disabledMessage) {
     return (
-      <Tooltip content="You do not have permission to materialize assets" position="bottom-right">
-        <Button intent={intent} icon={<Icon name="materialization" />} disabled>
+      <Tooltip content={disabledMessage} position="bottom-right">
+        <Button
+          intent={intent}
+          icon={<Icon name="materialization" />}
+          data-testid={testId('materialize-button')}
+          disabled
+        >
           {firstOption.label}
         </Button>
       </Tooltip>
@@ -288,7 +302,6 @@ export const useMaterializationAction = (preferredJobName?: string) => {
     const forceLaunchpad = e.shiftKey || _forceLaunchpad;
 
     const next = await stateForLaunchingAssets(client, assets, forceLaunchpad, preferredJobName);
-
     if (next.type === 'error') {
       showCustomAlert({
         title: 'Unable to Materialize',
@@ -394,6 +407,12 @@ async function stateForLaunchingAssets(
     return {
       type: 'error',
       error: 'One or more source assets are selected and cannot be materialized.',
+    };
+  }
+  if (assets.some((x) => !x.isExecutable)) {
+    return {
+      type: 'error',
+      error: 'One or more non-executable assets are selected.',
     };
   }
 
@@ -650,6 +669,7 @@ const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = gql`
       ...PartitionDefinitionForLaunchAssetFragment
     }
     isObservable
+    isExecutable
     isSource
     assetKey {
       path

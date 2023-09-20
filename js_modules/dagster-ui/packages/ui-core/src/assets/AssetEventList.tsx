@@ -66,7 +66,7 @@ export const AssetEventList: React.FC<{
                 style={{height: size}}
                 padding={{left: 24, right: 12}}
                 flex={{direction: 'column', justifyContent: 'center', gap: 8}}
-                border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+                border="bottom"
               >
                 {xAxis === 'partition' ? (
                   <AssetEventListPartitionRow group={group} />

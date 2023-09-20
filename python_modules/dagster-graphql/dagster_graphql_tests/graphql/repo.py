@@ -79,6 +79,7 @@ from dagster import (
     usable_as_dagster_type,
     with_resources,
 )
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.decorators.sensor_decorator import sensor
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import Failure
@@ -86,6 +87,7 @@ from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
+from dagster._core.definitions.observable_asset import create_unexecutable_observable_assets_def
 from dagster._core.definitions.partition import PartitionedConfig
 from dagster._core.definitions.reconstruct import ReconstructableRepository
 from dagster._core.definitions.sensor_definition import RunRequest, SkipReason
@@ -1375,6 +1377,17 @@ def asset_two(asset_one):
 two_assets_job = build_assets_job(name="two_assets_job", assets=[asset_one, asset_two])
 
 
+@asset
+def executable_asset() -> None:
+    pass
+
+
+unexecutable_asset = create_unexecutable_observable_assets_def([AssetSpec("unexecutable_asset")])
+
+executable_test_job = build_assets_job(
+    name="executable_test_job", assets=[executable_asset, unexecutable_asset]
+)
+
 static_partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d", "e", "f"])
 
 
@@ -1837,6 +1850,7 @@ def define_jobs():
         named_groups_job,
         memoization_job,
         req_config_job,
+        executable_test_job,
     ]
 
 

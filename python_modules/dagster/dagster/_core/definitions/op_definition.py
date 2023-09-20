@@ -471,7 +471,7 @@ def _resolve_output_defs_from_outs(
     # If only a single entry has been provided to the out dict, then slurp the
     # annotation into the entry.
     if len(outs) == 1:
-        name = list(outs.keys())[0]
+        name = next(iter(outs.keys()))
         only_out = outs[name]
         return [only_out.to_definition(annotation, name, description, default_code_version)]
 

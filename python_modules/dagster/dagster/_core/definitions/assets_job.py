@@ -437,12 +437,6 @@ def build_node_deps(
         for output_name, key in assets_def.keys_by_output_name.items():
             node_alias_and_output_by_asset_key[key] = (node_alias, output_name)
 
-    asset_checks_defs_by_node_handle: Dict[NodeHandle, AssetChecksDefinition] = {}
-    for asset_checks_def in asset_checks_defs:
-        node_def_name = asset_checks_def.node_def.name
-        node_key = NodeInvocation(node_def_name)
-        asset_checks_defs_by_node_handle[NodeHandle(node_def_name, parent=None)] = asset_checks_def
-
     deps: Dict[NodeInvocation, Dict[str, IDependencyDefinition]] = {}
     for node_handle, assets_def in assets_defs_by_node_handle.items():
         # the key that we'll use to reference the node inside this AssetsDefinition

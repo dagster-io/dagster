@@ -661,6 +661,7 @@ type AssetNode {
   graphName: String
   groupName: String
   id: ID!
+  isExecutable: Boolean!
   isObservable: Boolean!
   isPartitioned: Boolean!
   isSource: Boolean!
@@ -844,6 +845,7 @@ type AssetCheck {
   description: String
   executions(limit: Int!, cursor: String): [AssetCheckExecution!]!
   executionForLatestMaterialization: AssetCheckExecution
+  canExecuteIndividually: AssetCheckCanExecuteIndividually!
 }
 
 type AssetCheckExecution {
@@ -881,6 +883,11 @@ type AssetCheckEvaluationTargetMaterializationData {
 enum AssetCheckSeverity {
   WARN
   ERROR
+}
+
+enum AssetCheckCanExecuteIndividually {
+  CAN_EXECUTE
+  NEEDS_USER_CODE_UPGRADE
 }
 
 enum EvaluationErrorReason {
@@ -1330,6 +1337,7 @@ type Run implements PipelineRun {
   eventConnection(afterCursor: String): EventConnection!
   parentPipelineSnapshotId: String
   assetSelection: [AssetKey!]
+  assetCheckSelection: [AssetCheckhandle!]
   resolvedOpSelection: [String!]
   assetMaterializations: [MaterializationEvent!]!
   startTime: Float
@@ -1339,6 +1347,11 @@ type Run implements PipelineRun {
   hasTerminatePermission: Boolean!
   hasDeletePermission: Boolean!
   hasConcurrencyKeySlots: Boolean!
+}
+
+type AssetCheckhandle {
+  name: String!
+  assetKey: AssetKey!
 }
 
 type SelectorTypeConfigError implements PipelineConfigValidationError {
@@ -2024,6 +2037,8 @@ type ResourceDetails {
   resourceType: String!
   assetKeysUsing: [AssetKey!]!
   jobsOpsUsing: [JobWithOps!]!
+  schedulesUsing: [String!]!
+  sensorsUsing: [String!]!
 }
 
 type ConfiguredValue {

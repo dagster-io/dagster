@@ -99,7 +99,11 @@ export const createSingleSession = (initial: IExecutionSessionChanges = {}, key?
     flattenGraphs: false,
     tags: null,
     runId: undefined,
+
+    // This isn't really safe, since it could spread in `undefined` values that
+    // override the default values above.
     ...initial,
+
     configChangedSinceRun: false,
     key: key || `s${Date.now()}`,
   };

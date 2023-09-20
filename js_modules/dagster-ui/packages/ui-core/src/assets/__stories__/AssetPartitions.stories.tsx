@@ -13,7 +13,10 @@ import {
 import {AssetViewParams} from '../types';
 
 // eslint-disable-next-line import/no-default-export
-export default {component: AssetPartitions};
+export default {
+  title: 'Asset Details/Partitions',
+  component: AssetPartitions,
+};
 
 export const SingleDimensionStaticAsset = () => {
   const [params, setParams] = React.useState<AssetViewParams>({});

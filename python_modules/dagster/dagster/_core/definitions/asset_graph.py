@@ -33,6 +33,7 @@ from dagster._core.selector.subset_selector import (
 )
 from dagster._utils.cached_method import cached_method
 
+from .asset_check_spec import AssetCheckHandle
 from .asset_checks import AssetChecksDefinition
 from .assets import AssetsDefinition
 from .backfill_policy import BackfillPolicy
@@ -705,6 +706,17 @@ class InternalAssetGraph(AssetGraph):
         self._assets = assets
         self._source_assets = source_assets
         self._asset_checks = asset_checks
+
+        asset_check_handles = set()
+        for asset_check in asset_checks:
+            asset_check_handles.update([spec.handle for spec in asset_check.specs])
+        for asset in assets:
+            asset_check_handles.update([spec.handle for spec in asset.check_specs])
+        self._asset_check_handles = asset_check_handles
+
+    @property
+    def asset_check_handles(self) -> AbstractSet[AssetCheckHandle]:
+        return self._asset_check_handles
 
     @property
     def assets(self) -> Sequence[AssetsDefinition]:

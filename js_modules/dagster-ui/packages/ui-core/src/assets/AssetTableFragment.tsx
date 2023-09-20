@@ -7,6 +7,7 @@ export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
     opNames
     isSource
     isObservable
+    isExecutable
     computeKind
     hasMaterializePermission
     partitionDefinition {

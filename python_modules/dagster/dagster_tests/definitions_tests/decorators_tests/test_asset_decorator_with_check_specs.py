@@ -15,6 +15,7 @@ from dagster import (
     Output,
     asset,
     graph_asset,
+    graph_multi_asset,
     materialize,
     multi_asset,
     op,
@@ -201,8 +202,7 @@ def test_asset_check_fails_downstream_still_executes():
         yield AssetCheckResult(success=False)
 
     @asset(deps=[asset1])
-    def asset2():
-        ...
+    def asset2(): ...
 
     result = materialize(assets=[asset1, asset2])
     assert result.success
@@ -264,8 +264,7 @@ def test_duplicate_checks_same_asset():
                 AssetCheckSpec("check1", asset="asset1", description="desc2"),
             ]
         )
-        def asset1():
-            ...
+        def asset1(): ...
 
 
 def test_check_wrong_asset():
@@ -279,8 +278,7 @@ def test_check_wrong_asset():
                 AssetCheckSpec("check1", asset="other_asset", description="desc1"),
             ]
         )
-        def asset1():
-            ...
+        def asset1(): ...
 
 
 def test_multi_asset_with_check():
@@ -496,6 +494,7 @@ def test_graph_asset():
     assert len(result.get_asset_materialization_events()) == 1
 
     check_evals = result.get_asset_check_evaluations()
+    assert len(check_evals) == 2
     evals_by_name = {check_eval.check_name: check_eval for check_eval in check_evals}
     assert evals_by_name.keys() == {"check1", "check2"}
     assert evals_by_name["check1"].asset_key == AssetKey("foo")
@@ -503,3 +502,47 @@ def test_graph_asset():
 
     assert evals_by_name["check2"].asset_key == AssetKey("foo")
     assert evals_by_name["check2"].metadata == {"biz": MetadataValue.text("buz")}
+
+
+def test_graph_multi_asset():
+    @op
+    def create_asset():
+        return None
+
+    @op
+    def validate_asset(word):
+        return AssetCheckResult(check_name="check1", success=True, metadata={"foo": "bar"})
+
+    @op(ins={"staging_asset": In(Nothing), "check_result": In(Nothing)})
+    def promote_asset():
+        return None
+
+    @op
+    def create_asset_2():
+        return None
+
+    @graph_multi_asset(
+        outs={"asset_one": AssetOut(), "asset_two": AssetOut()},
+        check_specs=[AssetCheckSpec("check1", asset="asset_one", description="desc")],
+    )
+    def asset1():
+        staging_asset = create_asset()
+        check_result = validate_asset(staging_asset)
+        promoted_asset = promote_asset(staging_asset=staging_asset, check_result=check_result)
+        return {
+            "asset_one": promoted_asset,
+            "asset_one_check1": check_result,
+            "asset_two": create_asset_2(),
+        }
+
+    result = materialize(assets=[asset1])
+    assert result.success
+
+    assert len(result.get_asset_materialization_events()) == 2
+
+    check_evals = result.get_asset_check_evaluations()
+    assert len(check_evals) == 1
+    check_eval = check_evals[0]
+    assert check_eval.asset_key == AssetKey("asset_one")
+    assert check_eval.check_name == "check1"
+    assert check_eval.metadata == {"foo": MetadataValue.text("bar")}

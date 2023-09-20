@@ -26,6 +26,7 @@ from dagster_dbt.core.resources_v2 import (
 )
 from dagster_dbt.dbt_manifest import DbtManifestParam
 from dagster_dbt.errors import DagsterDbtCliRuntimeError
+from pydantic import ValidationError
 
 from ..conftest import TEST_PROJECT_DIR
 
@@ -52,13 +53,22 @@ def test_dbt_cli(global_config_flags: List[str], command: str) -> None:
 def test_dbt_cli_manifest_argument(manifest: DbtManifestParam) -> None:
     dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR)
 
-    assert dbt.cli(["run"]).is_successful()
+    assert dbt.cli(["run"], manifest=manifest).is_successful()
 
 
 def test_dbt_cli_project_dir_path() -> None:
     dbt = DbtCliResource(project_dir=Path(TEST_PROJECT_DIR))  # type: ignore
 
+    assert Path(dbt.project_dir).is_absolute()
     assert dbt.cli(["run"]).is_successful()
+
+    # project directory must exist
+    with pytest.raises(ValidationError, match="does not exist"):
+        DbtCliResource(project_dir="nonexistent")
+
+    # project directory must be a valid dbt project
+    with pytest.raises(ValidationError, match="specify a valid path to a dbt project"):
+        DbtCliResource(project_dir=f"{TEST_PROJECT_DIR}/models")
 
 
 def test_dbt_cli_failure() -> None:
@@ -73,14 +83,13 @@ def test_dbt_cli_failure() -> None:
     assert dbt_cli_invocation.target_path.joinpath("dbt.log").exists()
 
 
-# as
 def test_dbt_cli_subprocess_cleanup(caplog: pytest.LogCaptureFixture) -> None:
     dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR)
     dbt_cli_invocation_1 = dbt.cli(["run"])
 
     assert dbt_cli_invocation_1.process.returncode is None
 
-    atexit._run_exitfuncs()  # ruff: noqa: SLF001
+    atexit._run_exitfuncs()  # noqa: SLF001
 
     assert "Terminating the execution of dbt command." in caplog.text
     assert not dbt_cli_invocation_1.is_successful()
@@ -90,7 +99,7 @@ def test_dbt_cli_subprocess_cleanup(caplog: pytest.LogCaptureFixture) -> None:
 
     dbt_cli_invocation_2 = dbt.cli(["run"]).wait()
 
-    atexit._run_exitfuncs()  # ruff: noqa: SLF001
+    atexit._run_exitfuncs()  # noqa: SLF001
 
     assert "Terminating the execution of dbt command." not in caplog.text
     assert dbt_cli_invocation_2.is_successful()
@@ -148,12 +157,13 @@ def test_dbt_profile_dir_configuration(profiles_dir: Union[str, Path]) -> None:
 
     assert dbt.cli(["parse"]).is_successful()
 
-    dbt = DbtCliResource(
-        project_dir=TEST_PROJECT_DIR, profiles_dir=f"{TEST_PROJECT_DIR}/nonexistent"
-    )
+    # profiles directory must exist
+    with pytest.raises(ValidationError, match="does not exist"):
+        DbtCliResource(project_dir=TEST_PROJECT_DIR, profiles_dir="nonexistent")
 
-    with pytest.raises(DagsterDbtCliRuntimeError):
-        dbt.cli(["parse"]).wait()
+    # profiles directory must contain profile configuration
+    with pytest.raises(ValidationError, match="specify a valid path to a dbt profile directory"):
+        DbtCliResource(project_dir=TEST_PROJECT_DIR, profiles_dir=f"{TEST_PROJECT_DIR}/models")
 
 
 def test_dbt_without_partial_parse() -> None:

@@ -320,11 +320,7 @@ class Enum(ConfigType):
             if ev.config_value == value:
                 return ev.python_value
 
-        check.failed(
-            (
-                "Should never reach this. config_value should be pre-validated. Got {config_value}"
-            ).format(config_value=value)
-        )
+        check.failed(f"Should never reach this. config_value should be pre-validated. Got {value}")
 
     @classmethod
     def from_python_enum(cls, enum, name=None):

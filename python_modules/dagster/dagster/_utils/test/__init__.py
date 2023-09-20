@@ -113,18 +113,14 @@ def build_job_with_input_stubs(
     for node_name, input_dict in inputs.items():
         if not job_def.has_node_named(node_name):
             raise DagsterInvariantViolationError(
-                (
-                    "You are injecting an input value for node {node_name} "
-                    "into pipeline {job_name} but that node was not found"
-                ).format(node_name=node_name, job_name=job_def.name)
+                f"You are injecting an input value for node {node_name} "
+                f"into pipeline {job_def.name} but that node was not found"
             )
 
         node = job_def.get_node_named(node_name)
         for input_name, input_value in input_dict.items():
             stub_node_def = create_stub_op(
-                "__stub_{node_name}_{input_name}".format(
-                    node_name=node_name, input_name=input_name
-                ),
+                f"__stub_{node_name}_{input_name}",
                 input_value,
             )
             stub_node_defs.append(stub_node_def)

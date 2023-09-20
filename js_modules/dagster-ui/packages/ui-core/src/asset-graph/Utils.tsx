@@ -1,22 +1,15 @@
-import {pathVerticalDiagonal, pathHorizontalDiagonal} from '@vx/shape';
+import {pathHorizontalDiagonal, pathVerticalDiagonal} from '@vx/shape';
 
 import {featureEnabled, FeatureFlag} from '../app/Flags';
 import {COMMON_COLLATOR} from '../app/Util';
-import {
-  AssetCheckExecutionResolvedStatus,
-  AssetCheckSeverity,
-  Maybe,
-  RunStatus,
-  StaleCauseCategory,
-  StaleStatus,
-} from '../graphql/types';
+import {RunStatus, StaleStatus} from '../graphql/types';
 
 import {AssetNodeKeyFragment} from './types/AssetNode.types';
 import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
 import {
+  AssetGraphLiveQuery,
   AssetLatestInfoFragment,
   AssetLatestInfoRunFragment,
-  AssetGraphLiveQuery,
   AssetNodeLiveFragment,
   AssetNodeLiveFreshnessInfoFragment,
   AssetNodeLiveMaterializationFragment,
@@ -147,28 +140,14 @@ export interface LiveDataForNode {
   freshnessInfo: AssetNodeLiveFreshnessInfoFragment | null;
   lastObservation: AssetNodeLiveObservationFragment | null;
   staleStatus: StaleStatus | null;
-  staleCauses: {
-    dependency: Maybe<AssetKey>;
-    category: StaleCauseCategory;
-    key: AssetKey;
-    reason: string;
-  }[];
+  staleCauses: AssetGraphLiveQuery['assetNodes'][0]['staleCauses'];
+  assetChecks: AssetGraphLiveQuery['assetNodes'][0]['assetChecks'];
   partitionStats: {
     numMaterialized: number;
     numMaterializing: number;
     numPartitions: number;
     numFailed: number;
   } | null;
-  assetChecks: {
-    name: string;
-    executionForLatestMaterialization: {
-      runId: string;
-      status: AssetCheckExecutionResolvedStatus;
-      evaluation: {
-        severity: AssetCheckSeverity;
-      } | null;
-    } | null;
-  }[];
 }
 
 export const MISSING_LIVE_DATA: LiveDataForNode = {

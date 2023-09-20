@@ -64,10 +64,31 @@ export const UNPARTITIONED_ASSET: AssetNodeForGraphQueryFragment = {
   computeKind: null,
   isPartitioned: false,
   isObservable: false,
+  isExecutable: true,
   isSource: false,
   assetKey: {
     __typename: 'AssetKey',
     path: ['unpartitioned_asset'],
+  },
+};
+
+export const UNPARTITIONED_SOURCE_ASSET: AssetNodeForGraphQueryFragment = {
+  ...UNPARTITIONED_ASSET,
+  id: 'test.py.repo.["unpartitioned_source_asset"]',
+  isSource: true,
+  assetKey: {
+    __typename: 'AssetKey',
+    path: ['unpartitioned_source_asset'],
+  },
+};
+
+export const UNPARTITIONED_NON_EXECUTABLE_ASSET: AssetNodeForGraphQueryFragment = {
+  ...UNPARTITIONED_ASSET,
+  id: 'test.py.repo.["unpartitioned_non_executable_asset"]',
+  isExecutable: false,
+  assetKey: {
+    __typename: 'AssetKey',
+    path: ['unpartitioned_non_executable_asset'],
   },
 };
 
@@ -136,6 +157,7 @@ export const ASSET_DAILY: AssetNodeForGraphQueryFragment = {
   computeKind: null,
   isPartitioned: true,
   isObservable: false,
+  isExecutable: true,
   isSource: false,
   assetKey: {
     __typename: 'AssetKey',
@@ -173,6 +195,7 @@ export const ASSET_WEEKLY: AssetNodeForGraphQueryFragment = {
   computeKind: null,
   isPartitioned: true,
   isObservable: false,
+  isExecutable: true,
   isSource: false,
   assetKey: {
     __typename: 'AssetKey',
