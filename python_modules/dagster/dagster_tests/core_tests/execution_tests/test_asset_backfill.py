@@ -11,15 +11,16 @@ from typing import (
     Union,
     cast,
 )
-import mock
 from unittest.mock import MagicMock, patch
 
+import mock
 import pendulum
 import pytest
 from dagster import (
     AssetKey,
     AssetsDefinition,
     DagsterInstance,
+    DagsterRunStatus,
     DailyPartitionsDefinition,
     Definitions,
     HourlyPartitionsDefinition,
@@ -29,14 +30,6 @@ from dagster import (
     StaticPartitionsDefinition,
     WeeklyPartitionsDefinition,
     asset,
-    AssetIn,
-    TimeWindowPartitionMapping,
-    IOManager,
-    with_resources,
-    IOManagerDefinition,
-    define_asset_job,
-    repository,
-    DagsterRunStatus,
 )
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
@@ -51,13 +44,13 @@ from dagster._core.execution.asset_backfill import (
     get_canceling_asset_backfill_iteration_data,
 )
 from dagster._core.host_representation.external_data import external_asset_graph_from_defs
+from dagster._core.storage.dagster_run import RunsFilter
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
     BACKFILL_ID_TAG,
     PARTITION_NAME_TAG,
 )
-from dagster._core.storage.dagster_run import RunsFilter
 from dagster._core.test_utils import instance_for_test
 from dagster._seven.compat.pendulum import create_pendulum_time
 from dagster._utils import Counter, traced_counter
@@ -338,43 +331,17 @@ def test_materializations_outside_of_backfill():
 def test_do_not_rerequest_while_existing_run_in_progress():
     @asset(
         partitions_def=DailyPartitionsDefinition("2023-01-01"),
-        ins={
-            "self_dep_asset": AssetIn(
-                partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
-            )
-        },
     )
-    def self_dep_asset(self_dep_asset):
+    def upstream():
         pass
 
-    def _materialize_self_dep_asset_partition(partition_key: str) -> None:
-        # Unfortunately have to execute via `execute_in_process` and override IO manager to
-        # load self-dependency input
+    @asset(
+        partitions_def=DailyPartitionsDefinition("2023-01-01"),
+    )
+    def downstream(upstream):
+        pass
 
-        class MyIOManager(IOManager):
-            def handle_output(self, context, obj):
-                pass
-
-            def load_input(self, context):
-                return 1
-
-        @repository
-        def my_repo():
-            return [
-                with_resources(
-                    [self_dep_asset],
-                    {"input_io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
-                ),
-                define_asset_job(
-                    "self_dep_job", partitions_def=DailyPartitionsDefinition("2023-01-01")
-                ),
-            ]
-
-        my_repo.get_job("self_dep_job").execute_in_process(
-            partition_key=partition_key, instance=instance
-        )
-
-    assets_by_repo_name = {"repo": [self_dep_asset]}
+    assets_by_repo_name = {"repo": [upstream, downstream]}
     asset_graph = get_asset_graph(assets_by_repo_name)
 
     instance = DagsterInstance.ephemeral()
@@ -382,31 +349,41 @@ def test_do_not_rerequest_while_existing_run_in_progress():
     backfill_id = "dummy_backfill_id"
     asset_backfill_data = AssetBackfillData.from_asset_partitions(
         asset_graph=asset_graph,
-        partition_names=["2023-01-02", "2023-01-03"],
-        asset_selection=[self_dep_asset.key],
+        partition_names=["2023-01-01"],
+        asset_selection=[downstream.key],
         dynamic_partitions_store=MagicMock(),
         all_partitions=False,
         backfill_start_time=pendulum.datetime(2023, 1, 9, 0, 0, 0),
     )
 
-    _materialize_self_dep_asset_partition("2023-01-01")
+    do_run(
+        all_assets=[upstream],
+        asset_keys=[upstream.key],
+        partition_key="2023-01-01",
+        instance=instance,
+    )
 
     asset_backfill_data = _single_backfill_iteration_create_but_do_not_submit_runs(
         backfill_id, asset_backfill_data, asset_graph, instance, assets_by_repo_name
     )
 
     assert (
-        AssetKeyPartitionKey(self_dep_asset.key, partition_key="2023-01-02")
+        AssetKeyPartitionKey(downstream.key, partition_key="2023-01-01")
         in asset_backfill_data.requested_subset
     )
 
-    # Run for 2023-01-02 exists and is in progress, but has not materialized
+    # Run for 2023-01-01 exists and is in progress, but has not materialized
     backfill_runs = instance.get_runs(RunsFilter(tags={BACKFILL_ID_TAG: backfill_id}))
     assert len(backfill_runs) == 1
-    assert backfill_runs[0].tags.get(PARTITION_NAME_TAG) == "2023-01-02"
+    assert backfill_runs[0].tags.get(PARTITION_NAME_TAG) == "2023-01-01"
     assert backfill_runs[0].status == DagsterRunStatus.NOT_STARTED
 
-    _materialize_self_dep_asset_partition("2023-01-01")
+    do_run(
+        all_assets=[upstream],
+        asset_keys=[upstream.key],
+        partition_key="2023-01-01",
+        instance=instance,
+    )
 
     _single_backfill_iteration_create_but_do_not_submit_runs(
         backfill_id, asset_backfill_data, asset_graph, instance, assets_by_repo_name
