@@ -90,6 +90,9 @@ def create_and_launch_partition_backfill(
     )
 
     tags = {t["key"]: t["value"] for t in backfill_params.get("tags", [])}
+
+    tags = {**tags, **graphene_info.context.get_viewer_tags()}
+
     backfill_timestamp = pendulum.now("UTC").timestamp()
 
     if backfill_params.get("selector") is not None:  # job backfill
