@@ -14,15 +14,11 @@ description: Partitioned assets and jobs enable launching backfills, where each 
   documentation.
 </Note>
 
-<!-- TODO: Re-write this -->
-
-A Software-defined Asset (SDA) can represent a collection of _partitions_ that can be tracked and materialized independently. In many ways, each partition functions like its own mini-asset, but they all share a common materialization function and dependencies. Typically, each partition will correspond to a separate file or a slice of a table in a database.
+A [Software-defined Asset](/concepts/assets/software-defined-assets) (SDA) can represent a collection of _partitions_ that can be tracked and materialized independently. In many ways, each partition functions like its own mini-asset, but they all share a common materialization function and dependencies. Typically, each partition will correspond to a separate file or a slice of a table in a database.
 
 A common use is for each partition to represent all the records in a data set that fall within a particular time window, e.g. hourly, daily or monthly. Alternatively, each partition can represent a region, a customer, an experiment - any dimension along which you want to be able to materialize and monitor independently. An asset can also be partitioned along multiple dimensions, e.g. by region and by hour.
 
 A graph of assets with the same partitions implicitly forms a partitioned data pipeline, and you can launch a run that selects multiple assets and materializes the same partition in each asset.
-
-A Software-defined Asset can be assigned a <PyObject object="PartitionsDefinition" />, which determines the set of partitions that compose it. If the asset is stored in a filesystem or an object store, then each partition will typically correspond to a file or object. If the asset is stored in a database, then each partition will typically correspond to a range of values in a table that fall within a particular window.
 
 Once an asset has a set of partitions, you can launch materializations of individual partitions and view the materialization history by partition in the UI.
 
@@ -40,24 +36,26 @@ Before continuing, you should be familiar with:
 
 ## Relevant APIs
 
-| Name                                                            | Description                                                                       |
-| --------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| <PyObject object="PartitionsDefinition" />                      | Superclass - defines the set of partitions that can be materialized for an asset. |
-| <PyObject object="HourlyPartitionsDefinition" />                | A partitions definition with a partition for each hour.                           |
-| <PyObject object="DailyPartitionsDefinition" />                 | A partitions definition with a partition for each day.                            |
-| <PyObject object="WeeklyPartitionsDefinition" />                | A partitions definition with a partition for each week.                           |
-| <PyObject object="MonthlyPartitionsDefinition" />               | A partitions definition with a partition for each month.                          |
-| <PyObject object="StaticPartitionsDefinition" />                | A partitions definition with a fixed set of partitions.                           |
-| <PyObject object="MultiPartitionsDefinition" />                 | A partitions definition with multiple dimensions.                                 |
-| <PyObject object="MultiPartitionKey" />                         | A multi-dimensional partition key.                                                |
-| <PyObject object="DynamicPartitionsDefinition" />               | A partitions definition whose partitions can be dynamically added and removed.    |
-| <PyObject object="OpExecutionContext" method="partition_key" /> | The partition key for the current run, which can be accessed in the computation.  |
+| Name                                                               | Description                                                                       |
+| ------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
+| <PyObject object="PartitionsDefinition" />                         | Superclass - defines the set of partitions that can be materialized for an asset. |
+| <PyObject object="HourlyPartitionsDefinition" />                   | A partitions definition with a partition for each hour.                           |
+| <PyObject object="DailyPartitionsDefinition" />                    | A partitions definition with a partition for each day.                            |
+| <PyObject object="WeeklyPartitionsDefinition" />                   | A partitions definition with a partition for each week.                           |
+| <PyObject object="MonthlyPartitionsDefinition" />                  | A partitions definition with a partition for each month.                          |
+| <PyObject object="StaticPartitionsDefinition" />                   | A partitions definition with a fixed set of partitions.                           |
+| <PyObject object="MultiPartitionsDefinition" />                    | A partitions definition with multiple dimensions.                                 |
+| <PyObject object="MultiPartitionKey" />                            | A multi-dimensional partition key.                                                |
+| <PyObject object="DynamicPartitionsDefinition" />                  | A partitions definition whose partitions can be dynamically added and removed.    |
+| <PyObject object="AssetExecutionContext" method="partition_key" /> | The partition key for the current run, which can be accessed in the computation.  |
 
 ---
 
 ## Defining partitioned assets
 
-The following code snippet contains a Software-defined Asset with a partition for each day since the first day of 2022. Materializing partition `2022-07-23` of this asset would result in fetching data from the URL `coolweatherwebsite.com/weather_obs\&`=2022-07-23`and storing it at the path`weather_observations/2022-07-23.csv\`:
+A Software-defined Asset can be assigned a <PyObject object="PartitionsDefinition" />, which determines the set of partitions that compose it. If the asset is stored in a filesystem or an object store, then each partition will typically correspond to a file or object. If the asset is stored in a database, then each partition will typically correspond to a range of values in a table that fall within a particular window.
+
+The following example demonstrates creating an asset that has a partition for each day since the first day of 2022. Materializing partition `2022-07-23` of this asset would result in fetching data from the URL `coolweatherwebsite.com/weather_obs\&=2022-07-23`and storing it at the path `weather_observations/2022-07-23.csv`:
 
 ```python file=/concepts/partitions_schedules_sensors/partitioned_asset.py
 import urllib.request
@@ -77,7 +75,6 @@ def my_daily_partitioned_asset(context) -> None:
 
 In the following sections, we'll demonstrate a few additional ways to partition assets:
 
-- [**Defining partitioned assets to use partitioned I/O managers**](#partitioned-assets-with-partitioned-io-managers), for when you want an I/O manager to handle partitioned asset output
 - [**Multi-dimensionally partitioning assets**](#multi-dimensionally-partitioned-assets), for when you want assets to be partitioned by multiple dimensions
 - [**Dynamically partitioning assets**](#dynamically-partitioned-assets), for when you don't know the partition set before defining assets
 - [**Defining partitioned assets to use partitioned I/O managers**](#partitioned-assets-with-partitioned-io-managers), for when you want an I/O manager to handle partitioned asset output
