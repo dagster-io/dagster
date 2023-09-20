@@ -1565,13 +1565,11 @@ class AssetExecutionContext(OpExecutionContext):
     # appropriate deprecation warning
 
     @deprecated(**_get_deprecation_kwargs("op_def"))
-    @public
     @property
     def op_def(self) -> OpDefinition:
         return self.op_execution_context.op_def
 
     @deprecated(**_get_deprecation_kwargs("op_config"))
-    @public
     @property
     def op_config(self) -> Any:
         return self.op_execution_context.op_config
@@ -1582,18 +1580,15 @@ class AssetExecutionContext(OpExecutionContext):
         return self.op_execution_context.file_manager
 
     @deprecated(**_get_deprecation_kwargs("has_assets_def"))
-    @public
     @property
     def has_assets_def(self) -> bool:
         return self.op_execution_context.has_assets_def
 
     @deprecated(**_get_deprecation_kwargs("get_mapping_key"))
-    @public
     def get_mapping_key(self) -> Optional[str]:
         return self.op_execution_context.get_mapping_key()
 
     @deprecated(**_get_deprecation_kwargs("job_def"))
-    @public
     @property
     def job_def(self) -> JobDefinition:
         return self.op_execution_context.job_def
@@ -1627,7 +1622,6 @@ class AssetExecutionContext(OpExecutionContext):
         return self.op_execution_context.consume_events()
 
     @deprecated(**_get_deprecation_kwargs("add_output_metadata"))
-    @public
     def add_output_metadata(
         self,
         metadata: Mapping[str, Any],
@@ -1639,12 +1633,10 @@ class AssetExecutionContext(OpExecutionContext):
         )
 
     @deprecated(**_get_deprecation_kwargs("asset_key_for_input"))
-    @public
     def asset_key_for_input(self, input_name: str) -> AssetKey:
         return self.op_execution_context.asset_key_for_input(input_name=input_name)
 
     @deprecated(**_get_deprecation_kwargs("asset_key_for_output"))
-    @public
     def asset_key_for_output(self, output_name: str = "result") -> AssetKey:
         return self.op_execution_context.asset_key_for_output(output_name=output_name)
 
@@ -1657,23 +1649,19 @@ class AssetExecutionContext(OpExecutionContext):
         )
 
     @deprecated(**_get_deprecation_kwargs("output_for_asset_key"))
-    @public
     def output_for_asset_key(self, asset_key: AssetKey) -> str:
         return self.op_execution_context.output_for_asset_key(asset_key=asset_key)
 
     @deprecated(**_get_deprecation_kwargs("selected_output_names"))
-    @public
     @property
     def selected_output_names(self) -> AbstractSet[str]:
         return self.op_execution_context.selected_output_names
 
     @deprecated(**_get_deprecation_kwargs("has_tag"))
-    @public
     def has_tag(self, key: str) -> bool:
         return self.op_execution_context.has_tag(key=key)
 
     @deprecated(**_get_deprecation_kwargs("get_tag"))
-    @public
     def get_tag(self, key: str) -> Optional[str]:
         return self.op_execution_context.get_tag(key=key)
 
