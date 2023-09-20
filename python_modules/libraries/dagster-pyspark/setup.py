@@ -34,8 +34,8 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_pyspark_tests*"]),
     install_requires=[
-        f"dagster{pin}",
-        f"dagster_spark{pin}",
+        "dagster==1.4.15",
+        "dagster_spark==0.20.15",
         "pyspark>=3",
     ],
     zip_safe=False,
