@@ -14,22 +14,18 @@ export const AutomaterializePolicyTag: React.FC<{
 
 export const automaterializePolicyDescription = (policy: {
   policyType: AutoMaterializePolicyType;
-  rules: AutoMaterializeRule[];
+  rules: Pick<AutoMaterializeRule, 'description' | 'decisionType'>[];
 }) => {
   const {MATERIALIZE, SKIP, DISCARD} = groupBy(policy.rules, (rule) => rule.decisionType);
   return (
     <Box flex={{direction: 'column', gap: 12}}>
       This asset will be automatically materialized if it is:
       <ul style={{paddingLeft: 20, margin: 0}}>
-        {MATERIALIZE?.map((rule) => (
-          <li key={rule.description}>{rule.description}</li>
-        ))}
+        {MATERIALIZE?.map((rule) => <li key={rule.description}>{rule.description}</li>)}
       </ul>
       and it is not:
       <ul style={{paddingLeft: 20, margin: 0}}>
-        {SKIP?.map((rule) => (
-          <li key={rule.description}>{rule.description}</li>
-        ))}
+        {SKIP?.map((rule) => <li key={rule.description}>{rule.description}</li>)}
       </ul>
       {DISCARD && DISCARD.length > 0 && (
         <>
