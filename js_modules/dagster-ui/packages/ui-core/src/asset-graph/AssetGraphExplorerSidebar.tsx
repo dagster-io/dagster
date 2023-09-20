@@ -21,6 +21,7 @@ import {useVirtualizer} from '@tanstack/react-virtual';
 import React from 'react';
 import styled from 'styled-components';
 
+
 import {showSharedToaster} from '../app/DomUtils';
 import {useMaterializationAction} from '../assets/LaunchAssetExecutionButton';
 import {AssetKey} from '../assets/types';
@@ -261,12 +262,6 @@ export const AssetGraphExplorerSidebar = React.memo(
       lastSelectedNode &&
         renderedNodes.findIndex((node) => nodeId(lastSelectedNode) === nodeId(node)),
     ]);
-
-    console.log(
-      lastSelectedNode,
-      lastSelectedNode &&
-        renderedNodes.findIndex((node) => nodeId(lastSelectedNode) === nodeId(node)),
-    );
 
     const indexOfLastSelectedNode = React.useMemo(
       () => {
