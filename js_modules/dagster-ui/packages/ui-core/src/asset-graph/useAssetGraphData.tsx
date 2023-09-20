@@ -47,49 +47,44 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
 
   const nodes = fetchResult.data?.assetNodes;
 
-  const {
-    assetGraphData,
-    graphQueryItems,
-    graphAssetKeys,
-    allAssetKeys,
-    applyingEmptyDefault,
-  } = React.useMemo(() => {
-    if (nodes === undefined) {
+  const {assetGraphData, graphQueryItems, graphAssetKeys, allAssetKeys, applyingEmptyDefault} =
+    React.useMemo(() => {
+      if (nodes === undefined) {
+        return {
+          graphAssetKeys: [],
+          graphQueryItems: [],
+          assetGraphData: null,
+          applyingEmptyDefault: false,
+        };
+      }
+
+      // Apply any filters provided by the caller. This is where we do repo filtering
+      let matching = nodes;
+      if (options.hideNodesMatching) {
+        matching = reject(matching, options.hideNodesMatching);
+      }
+
+      // Filter the set of all AssetNodes down to those matching the `opsQuery`.
+      // In the future it might be ideal to move this server-side, but we currently
+      // get to leverage the useQuery cache almost 100% of the time above, making this
+      // super fast after the first load vs a network fetch on every page view.
+      const graphQueryItems = buildGraphQueryItems(matching);
+      const {all, applyingEmptyDefault} = filterByQuery(graphQueryItems, opsQuery);
+
+      // Assemble the response into the data structure used for layout, traversal, etc.
+      const assetGraphData = buildGraphData(all.map((n) => n.node));
+      if (options.hideEdgesToNodesOutsideQuery) {
+        removeEdgesToHiddenAssets(assetGraphData, nodes);
+      }
+
       return {
-        graphAssetKeys: [],
-        graphQueryItems: [],
-        assetGraphData: null,
-        applyingEmptyDefault: false,
+        allAssetKeys: matching.map((n) => n.assetKey),
+        graphAssetKeys: all.map((n) => ({path: n.node.assetKey.path})),
+        assetGraphData,
+        graphQueryItems,
+        applyingEmptyDefault,
       };
-    }
-
-    // Apply any filters provided by the caller. This is where we do repo filtering
-    let matching = nodes;
-    if (options.hideNodesMatching) {
-      matching = reject(matching, options.hideNodesMatching);
-    }
-
-    // Filter the set of all AssetNodes down to those matching the `opsQuery`.
-    // In the future it might be ideal to move this server-side, but we currently
-    // get to leverage the useQuery cache almost 100% of the time above, making this
-    // super fast after the first load vs a network fetch on every page view.
-    const graphQueryItems = buildGraphQueryItems(matching);
-    const {all, applyingEmptyDefault} = filterByQuery(graphQueryItems, opsQuery);
-
-    // Assemble the response into the data structure used for layout, traversal, etc.
-    const assetGraphData = buildGraphData(all.map((n) => n.node));
-    if (options.hideEdgesToNodesOutsideQuery) {
-      removeEdgesToHiddenAssets(assetGraphData, nodes);
-    }
-
-    return {
-      allAssetKeys: matching.map((n) => n.assetKey),
-      graphAssetKeys: all.map((n) => ({path: n.node.assetKey.path})),
-      assetGraphData,
-      graphQueryItems,
-      applyingEmptyDefault,
-    };
-  }, [nodes, opsQuery, options.hideEdgesToNodesOutsideQuery, options.hideNodesMatching]);
+    }, [nodes, opsQuery, options.hideEdgesToNodesOutsideQuery, options.hideNodesMatching]);
 
   return {
     fetchResult,

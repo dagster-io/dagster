@@ -319,7 +319,7 @@ const RunRow: React.FC<{
   });
 
   const allTagsWithPinned = React.useMemo(() => {
-    const allTags: Omit<typeof run.tags[0], '__typename'>[] = [...run.tags];
+    const allTags: Omit<(typeof run.tags)[0], '__typename'>[] = [...run.tags];
     if ((isJob && run.mode !== 'default') || !isJob) {
       allTags.push({
         key: 'mode',

@@ -31,7 +31,7 @@ import {PAGE_SIZE} from '../useEvaluationsQueryResult';
 
 export function buildQueryMock<
   TQuery extends {__typename: 'Query'},
-  TVariables extends Record<string, any>
+  TVariables extends Record<string, any>,
 >({
   query,
   variables,
@@ -304,11 +304,10 @@ export const Evaluations = {
             rules: BASE_AUTOMATERIALIZE_RULES,
           }),
         }),
-        autoMaterializeAssetEvaluationsOrError: buildAutoMaterializeAssetEvaluationNeedsMigrationError(
-          {
+        autoMaterializeAssetEvaluationsOrError:
+          buildAutoMaterializeAssetEvaluationNeedsMigrationError({
             message: 'Test message',
-          },
-        ),
+          }),
       },
     });
   },

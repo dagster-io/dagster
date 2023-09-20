@@ -20,10 +20,8 @@ export const BackfillTable = ({
   refetch: () => void;
   showBackfillTarget?: boolean;
 }) => {
-  const [
-    partitionsRequestedBackfill,
-    setPartitionsRequestedBackfill,
-  ] = React.useState<BackfillTableFragment>();
+  const [partitionsRequestedBackfill, setPartitionsRequestedBackfill] =
+    React.useState<BackfillTableFragment>();
 
   return (
     <>

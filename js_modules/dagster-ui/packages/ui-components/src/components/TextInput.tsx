@@ -56,7 +56,7 @@ export const TextInputContainerStyles = css`
   position: relative;
 `;
 
-export const TextInputContainer = styled.div<{$disabled: boolean}>`
+export const TextInputContainer = styled.div<{$disabled?: boolean}>`
   ${TextInputContainerStyles}
 
   > ${IconWrapper}:first-child {

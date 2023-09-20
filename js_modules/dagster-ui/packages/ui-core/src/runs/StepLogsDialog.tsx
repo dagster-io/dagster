@@ -124,15 +124,12 @@ export const StepLogsModalContent: React.FC<{
     setFilter((filter) => ({...filter, focusedTime: firstLogForStepTime}));
   }, [firstLogForStepTime]);
 
-  const {
-    computeLogFileKey,
-    setComputeLogFileKey,
-    logCaptureInfo,
-  } = useComputeLogFileKeyForSelection({
-    metadata,
-    stepKeys,
-    selectionStepKeys: stepKeys,
-  });
+  const {computeLogFileKey, setComputeLogFileKey, logCaptureInfo} =
+    useComputeLogFileKeyForSelection({
+      metadata,
+      stepKeys,
+      selectionStepKeys: stepKeys,
+    });
 
   return (
     <LogsContainer>

@@ -190,16 +190,13 @@ const RunWithData: React.FC<RunWithDataProps> = ({
   }, [runtimeGraph, selectionQuery]);
 
   const supportsCapturedLogs = useSupportsCapturedLogs();
-  const {
-    logCaptureInfo,
-    computeLogFileKey,
-    setComputeLogFileKey,
-  } = useComputeLogFileKeyForSelection({
-    stepKeys,
-    selectionStepKeys,
-    metadata,
-    defaultToFirstStep: false,
-  });
+  const {logCaptureInfo, computeLogFileKey, setComputeLogFileKey} =
+    useComputeLogFileKeyForSelection({
+      stepKeys,
+      selectionStepKeys,
+      metadata,
+      defaultToFirstStep: false,
+    });
 
   const logsFilterStepKeys = runtimeGraph
     ? logsFilter.logQuery
