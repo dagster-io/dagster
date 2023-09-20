@@ -5,6 +5,9 @@ import {
   NonIdealState,
   SplitPanelContainer,
   ErrorBoundary,
+  Button,
+  Icon,
+  Tooltip,
 } from '@dagster-io/ui-components';
 import pickBy from 'lodash/pickBy';
 import uniq from 'lodash/uniq';
@@ -17,7 +20,7 @@ import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {LaunchAssetObservationButton} from '../assets/LaunchAssetObservationButton';
 import {AssetKey} from '../assets/types';
-import {SVGViewport} from '../graph/SVGViewport';
+import {DEFAULT_MAX_ZOOM, SVGViewport} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
 import {closestNodeInDirection} from '../graph/common';
 import {
@@ -137,11 +140,12 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
   applyingEmptyDefault,
   fetchOptions,
   fetchOptionFilters,
+  allAssetKeys,
 }) => {
   const findAssetLocation = useFindAssetLocation();
   const {layout, loading, async} = useAssetLayout(assetGraphData);
   const viewportEl = React.useRef<SVGViewport>();
-  const {flagHorizontalDAGs} = useFeatureFlags();
+  const {flagHorizontalDAGs, flagDAGSidebar} = useFeatureFlags();
 
   const [highlighted, setHighlighted] = React.useState<string | null>(null);
 
@@ -287,221 +291,239 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
 
   const allowGroupsOnlyZoomLevel = !!(layout && Object.keys(layout.groups).length);
 
-  return (
+  const [showSidebar, setShowSidebar] = React.useState(true);
+
+  const explorer = (
     <SplitPanelContainer
-      identifier="explorer-wrapper"
-      firstMinSize={300}
-      firstInitialPercent={0}
+      key="explorer"
+      identifier="explorer"
+      firstInitialPercent={70}
+      firstMinSize={400}
       first={
-        <AssetGraphExplorerSidebar
-          assetGraphData={assetGraphData}
-          lastSelectedNode={lastSelectedNode}
-          selectNode={selectNodeById}
-        />
+        <ErrorBoundary region="graph">
+          {graphQueryItems.length === 0 ? (
+            <EmptyDAGNotice nodeType="asset" isGraph />
+          ) : applyingEmptyDefault ? (
+            <LargeDAGNotice nodeType="asset" anchorLeft="40px" />
+          ) : Object.keys(assetGraphData.nodes).length === 0 ? (
+            <EntirelyFilteredDAGNotice nodeType="asset" />
+          ) : undefined}
+          {loading || !layout ? (
+            <LoadingNotice async={async} nodeType="asset" />
+          ) : (
+            <SVGViewport
+              ref={(r) => (viewportEl.current = r || undefined)}
+              defaultZoom={flagHorizontalDAGs ? 'zoom-to-fit-width' : 'zoom-to-fit'}
+              interactor={SVGViewport.Interactors.PanAndZoom}
+              graphWidth={layout.width}
+              graphHeight={layout.height}
+              graphHasNoMinimumZoom={allowGroupsOnlyZoomLevel}
+              onClick={onClickBackground}
+              onArrowKeyDown={onArrowKeyDown}
+              onDoubleClick={(e) => {
+                viewportEl.current?.autocenter(true);
+                e.stopPropagation();
+              }}
+              maxZoom={DEFAULT_MAX_ZOOM}
+              maxAutocenterZoom={1.0}
+            >
+              {({scale}) => (
+                <SVGContainer width={layout.width} height={layout.height}>
+                  <AssetEdges
+                    highlighted={highlighted}
+                    edges={layout.edges}
+                    strokeWidth={allowGroupsOnlyZoomLevel ? Math.max(4, 3 / scale) : 4}
+                    baseColor={
+                      allowGroupsOnlyZoomLevel && scale < GROUPS_ONLY_SCALE
+                        ? Colors.Gray400
+                        : Colors.KeylineGray
+                    }
+                  />
+
+                  {Object.values(layout.groups)
+                    .sort((a, b) => a.id.length - b.id.length)
+                    .map((group) => (
+                      <foreignObject
+                        key={group.id}
+                        {...group.bounds}
+                        onDoubleClick={(e) => {
+                          if (!viewportEl.current) {
+                            return;
+                          }
+                          const targetScale = viewportEl.current.scaleForSVGBounds(
+                            group.bounds.width,
+                            group.bounds.height,
+                          );
+                          viewportEl.current.zoomToSVGBox(group.bounds, true, targetScale * 0.9);
+                          e.stopPropagation();
+                        }}
+                      >
+                        <AssetGroupNode group={group} scale={scale} />
+                      </foreignObject>
+                    ))}
+
+                  {Object.values(layout.nodes).map(({id, bounds}) => {
+                    const graphNode = assetGraphData.nodes[id]!;
+                    const path = JSON.parse(id);
+                    if (allowGroupsOnlyZoomLevel && scale < GROUPS_ONLY_SCALE) {
+                      return;
+                    }
+                    return (
+                      <foreignObject
+                        {...bounds}
+                        key={id}
+                        onMouseEnter={() => setHighlighted(id)}
+                        onMouseLeave={() => setHighlighted(null)}
+                        onClick={(e) => onSelectNode(e, {path}, graphNode)}
+                        onDoubleClick={(e) => {
+                          viewportEl.current?.zoomToSVGBox(bounds, true, 1.2);
+                          e.stopPropagation();
+                        }}
+                        style={{overflow: 'visible'}}
+                      >
+                        {!graphNode ? (
+                          <AssetNodeLink assetKey={{path}} />
+                        ) : scale < MINIMAL_SCALE ? (
+                          <AssetNodeMinimal
+                            definition={graphNode.definition}
+                            liveData={liveDataByNode[graphNode.id]}
+                            selected={selectedGraphNodes.includes(graphNode)}
+                          />
+                        ) : (
+                          <AssetNode
+                            definition={graphNode.definition}
+                            liveData={liveDataByNode[graphNode.id]}
+                            selected={selectedGraphNodes.includes(graphNode)}
+                          />
+                        )}
+                      </foreignObject>
+                    );
+                  })}
+                </SVGContainer>
+              )}
+            </SVGViewport>
+          )}
+          {setOptions && (
+            <OptionsOverlay>
+              <Checkbox
+                format="switch"
+                label="View as Asset Graph"
+                checked={options.preferAssetRendering}
+                onChange={() => {
+                  onChangeExplorerPath(
+                    {...explorerPath, opNames: selectedDefinitions[0]?.opNames || []},
+                    'replace',
+                  );
+                  setOptions({
+                    ...options,
+                    preferAssetRendering: !options.preferAssetRendering,
+                  });
+                }}
+              />
+            </OptionsOverlay>
+          )}
+
+          <Box style={{position: 'absolute', right: 12, top: 8}}>
+            <Box flex={{alignItems: 'center', gap: 12}}>
+              <QueryRefreshCountdown
+                refreshState={liveDataRefreshState}
+                dataDescription="materializations"
+              />
+              <LaunchAssetObservationButton
+                preferredJobName={explorerPath.pipelineName}
+                scope={
+                  selectedDefinitions.length
+                    ? {selected: selectedDefinitions.filter((a) => a.isObservable)}
+                    : {all: allDefinitionsForMaterialize.filter((a) => a.isObservable)}
+                }
+              />
+              <LaunchAssetExecutionButton
+                preferredJobName={explorerPath.pipelineName}
+                liveDataForStale={liveDataByNode}
+                scope={
+                  selectedDefinitions.length
+                    ? {selected: selectedDefinitions}
+                    : {all: allDefinitionsForMaterialize}
+                }
+              />
+            </Box>
+          </Box>
+          <QueryOverlay>
+            {showSidebar || !flagDAGSidebar ? null : (
+              <Tooltip content="Show sidebar">
+                <Button
+                  icon={<Icon name="panel_show_left" />}
+                  onClick={() => {
+                    setShowSidebar(true);
+                  }}
+                />
+              </Tooltip>
+            )}
+            {fetchOptionFilters}
+
+            <GraphQueryInput
+              width={fetchOptionFilters ? '16vw' : undefined}
+              items={graphQueryItems}
+              value={explorerPath.opsQuery}
+              placeholder="Type an asset subset…"
+              onChange={(opsQuery) => onChangeExplorerPath({...explorerPath, opsQuery}, 'replace')}
+              popoverPosition="bottom-left"
+            />
+          </QueryOverlay>
+        </ErrorBoundary>
       }
       second={
-        <SplitPanelContainer
-          identifier="explorer"
-          firstInitialPercent={70}
-          firstMinSize={400}
-          first={
-            <ErrorBoundary region="graph">
-              {graphQueryItems.length === 0 ? (
-                <EmptyDAGNotice nodeType="asset" isGraph />
-              ) : applyingEmptyDefault ? (
-                <LargeDAGNotice nodeType="asset" anchorLeft="40px" />
-              ) : Object.keys(assetGraphData.nodes).length === 0 ? (
-                <EntirelyFilteredDAGNotice nodeType="asset" />
-              ) : undefined}
-              {loading || !layout ? (
-                <LoadingNotice async={async} nodeType="asset" />
-              ) : (
-                <SVGViewport
-                  ref={(r) => (viewportEl.current = r || undefined)}
-                  defaultZoom={flagHorizontalDAGs ? 'zoom-to-fit-width' : 'zoom-to-fit'}
-                  interactor={SVGViewport.Interactors.PanAndZoom}
-                  graphWidth={layout.width}
-                  graphHeight={layout.height}
-                  graphHasNoMinimumZoom={allowGroupsOnlyZoomLevel}
-                  onClick={onClickBackground}
-                  onArrowKeyDown={onArrowKeyDown}
-                  onDoubleClick={(e) => {
-                    viewportEl.current?.autocenter(true);
-                    e.stopPropagation();
-                  }}
-                  maxZoom={1.2}
-                  maxAutocenterZoom={1.0}
-                >
-                  {({scale}) => (
-                    <SVGContainer width={layout.width} height={layout.height}>
-                      <AssetEdges
-                        highlighted={highlighted}
-                        edges={layout.edges}
-                        strokeWidth={allowGroupsOnlyZoomLevel ? Math.max(4, 3 / scale) : 4}
-                        baseColor={
-                          allowGroupsOnlyZoomLevel && scale < GROUPS_ONLY_SCALE
-                            ? Colors.Gray400
-                            : Colors.KeylineGray
-                        }
-                      />
-
-                      {Object.values(layout.groups)
-                        .sort((a, b) => a.id.length - b.id.length)
-                        .map((group) => (
-                          <foreignObject
-                            key={group.id}
-                            {...group.bounds}
-                            onDoubleClick={(e) => {
-                              if (!viewportEl.current) {
-                                return;
-                              }
-                              const targetScale = viewportEl.current.scaleForSVGBounds(
-                                group.bounds.width,
-                                group.bounds.height,
-                              );
-                              viewportEl.current.zoomToSVGBox(
-                                group.bounds,
-                                true,
-                                targetScale * 0.9,
-                              );
-                              e.stopPropagation();
-                            }}
-                          >
-                            <AssetGroupNode group={group} scale={scale} />
-                          </foreignObject>
-                        ))}
-
-                      {Object.values(layout.nodes).map(({id, bounds}) => {
-                        const graphNode = assetGraphData.nodes[id]!;
-                        const path = JSON.parse(id);
-                        if (allowGroupsOnlyZoomLevel && scale < GROUPS_ONLY_SCALE) {
-                          return;
-                        }
-                        return (
-                          <foreignObject
-                            {...bounds}
-                            key={id}
-                            onMouseEnter={() => setHighlighted(id)}
-                            onMouseLeave={() => setHighlighted(null)}
-                            onClick={(e) => onSelectNode(e, {path}, graphNode)}
-                            onDoubleClick={(e) => {
-                              viewportEl.current?.zoomToSVGBox(bounds, true, 1.2);
-                              e.stopPropagation();
-                            }}
-                            style={{overflow: 'visible'}}
-                          >
-                            {!graphNode ? (
-                              <AssetNodeLink assetKey={{path}} />
-                            ) : scale < MINIMAL_SCALE ? (
-                              <AssetNodeMinimal
-                                definition={graphNode.definition}
-                                liveData={liveDataByNode[graphNode.id]}
-                                selected={selectedGraphNodes.includes(graphNode)}
-                              />
-                            ) : (
-                              <AssetNode
-                                definition={graphNode.definition}
-                                liveData={liveDataByNode[graphNode.id]}
-                                selected={selectedGraphNodes.includes(graphNode)}
-                              />
-                            )}
-                          </foreignObject>
-                        );
-                      })}
-                    </SVGContainer>
-                  )}
-                </SVGViewport>
-              )}
-              {setOptions && (
-                <OptionsOverlay>
-                  <Checkbox
-                    format="switch"
-                    label="View as Asset Graph"
-                    checked={options.preferAssetRendering}
-                    onChange={() => {
-                      onChangeExplorerPath(
-                        {...explorerPath, opNames: selectedDefinitions[0]?.opNames || []},
-                        'replace',
-                      );
-                      setOptions({
-                        ...options,
-                        preferAssetRendering: !options.preferAssetRendering,
-                      });
-                    }}
-                  />
-                </OptionsOverlay>
-              )}
-
-              <Box style={{position: 'absolute', right: 12, top: 8}}>
-                <Box flex={{alignItems: 'center', gap: 12}}>
-                  <QueryRefreshCountdown
-                    refreshState={liveDataRefreshState}
-                    dataDescription="materializations"
-                  />
-                  <LaunchAssetObservationButton
-                    preferredJobName={explorerPath.pipelineName}
-                    scope={
-                      selectedDefinitions.length
-                        ? {selected: selectedDefinitions.filter((a) => a.isObservable)}
-                        : {all: allDefinitionsForMaterialize.filter((a) => a.isObservable)}
-                    }
-                  />
-                  <LaunchAssetExecutionButton
-                    preferredJobName={explorerPath.pipelineName}
-                    liveDataForStale={liveDataByNode}
-                    scope={
-                      selectedDefinitions.length
-                        ? {selected: selectedDefinitions}
-                        : {all: allDefinitionsForMaterialize}
-                    }
-                  />
-                </Box>
-              </Box>
-              <QueryOverlay>
-                {fetchOptionFilters}
-
-                <GraphQueryInput
-                  width={fetchOptionFilters ? '16vw' : undefined}
-                  items={graphQueryItems}
-                  value={explorerPath.opsQuery}
-                  placeholder="Type an asset subset…"
-                  onChange={(opsQuery) =>
-                    onChangeExplorerPath({...explorerPath, opsQuery}, 'replace')
-                  }
-                  popoverPosition="bottom-left"
+        selectedGraphNodes.length === 1 && selectedGraphNodes[0] ? (
+          <RightInfoPanel>
+            <RightInfoPanelContent>
+              <ErrorBoundary region="asset sidebar" resetErrorOnChange={[selectedGraphNodes[0].id]}>
+                <SidebarAssetInfo
+                  graphNode={selectedGraphNodes[0]}
+                  liveData={liveDataByNode[selectedGraphNodes[0].id]}
                 />
-              </QueryOverlay>
-            </ErrorBoundary>
-          }
-          second={
-            selectedGraphNodes.length === 1 && selectedGraphNodes[0] ? (
-              <RightInfoPanel>
-                <RightInfoPanelContent>
-                  <ErrorBoundary
-                    region="asset sidebar"
-                    resetErrorOnChange={[selectedGraphNodes[0].id]}
-                  >
-                    <SidebarAssetInfo
-                      graphNode={selectedGraphNodes[0]}
-                      liveData={liveDataByNode[selectedGraphNodes[0].id]}
-                    />
-                  </ErrorBoundary>
-                </RightInfoPanelContent>
-              </RightInfoPanel>
-            ) : fetchOptions.pipelineSelector ? (
-              <RightInfoPanel>
-                <RightInfoPanelContent>
-                  <ErrorBoundary region="asset job sidebar">
-                    <AssetGraphJobSidebar pipelineSelector={fetchOptions.pipelineSelector} />
-                  </ErrorBoundary>
-                </RightInfoPanelContent>
-              </RightInfoPanel>
-            ) : null
-          }
-        />
+              </ErrorBoundary>
+            </RightInfoPanelContent>
+          </RightInfoPanel>
+        ) : fetchOptions.pipelineSelector ? (
+          <RightInfoPanel>
+            <RightInfoPanelContent>
+              <ErrorBoundary region="asset job sidebar">
+                <AssetGraphJobSidebar pipelineSelector={fetchOptions.pipelineSelector} />
+              </ErrorBoundary>
+            </RightInfoPanelContent>
+          </RightInfoPanel>
+        ) : null
       }
     />
   );
+
+  if (showSidebar && flagDAGSidebar) {
+    return (
+      <SplitPanelContainer
+        key="explorer-wrapper"
+        identifier="explorer-wrapper"
+        firstMinSize={300}
+        firstInitialPercent={0}
+        first={
+          showSidebar ? (
+            <AssetGraphExplorerSidebar
+              allAssetKeys={allAssetKeys}
+              assetGraphData={assetGraphData}
+              lastSelectedNode={lastSelectedNode}
+              selectNode={selectNodeById}
+              explorerPath={explorerPath}
+              onChangeExplorerPath={onChangeExplorerPath}
+              hideSidebar={() => {
+                setShowSidebar(false);
+              }}
+            />
+          ) : null
+        }
+        second={explorer}
+      />
+    );
+  }
+  return explorer;
 };
 
 const SVGContainer = styled.svg`

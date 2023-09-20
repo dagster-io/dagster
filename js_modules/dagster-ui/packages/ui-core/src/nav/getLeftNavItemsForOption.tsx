@@ -119,7 +119,7 @@ const Label = styled.div<{$hasIcon: boolean}>`
   white-space: nowrap;
 `;
 
-const LabelTooltipStyles = JSON.stringify({
+export const LabelTooltipStyles = JSON.stringify({
   background: Colors.Gray100,
   filter: `brightness(97%)`,
   color: Colors.Gray900,
