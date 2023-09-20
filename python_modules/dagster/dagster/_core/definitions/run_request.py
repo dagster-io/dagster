@@ -1,10 +1,22 @@
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, Set, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Set,
+    Union,
+    cast,
+)
 
 import dagster._check as check
-from dagster._annotations import PublicAttr
-from dagster._core.definitions.events import AssetKey
+from dagster._annotations import PublicAttr, experimental_param
+from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
+from dagster._core.definitions.events import AssetKey, AssetMaterialization, AssetObservation
 from dagster._core.definitions.utils import validate_tags
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
@@ -339,6 +351,9 @@ class DagsterRunReaction(
         )
 
 
+@experimental_param(
+    param="asset_events", additional_warn_text="Runless asset events are experimental"
+)
 class SensorResult(
     NamedTuple(
         "_SensorResult",
@@ -351,6 +366,10 @@ class SensorResult(
                 Optional[
                     Sequence[Union[DeleteDynamicPartitionsRequest, AddDynamicPartitionsRequest]]
                 ],
+            ),
+            (
+                "asset_events",
+                List[Union[AssetObservation, AssetMaterialization, AssetCheckEvaluation]],
             ),
         ],
     )
@@ -378,6 +397,9 @@ class SensorResult(
         dynamic_partitions_requests: Optional[
             Sequence[Union[DeleteDynamicPartitionsRequest, AddDynamicPartitionsRequest]]
         ] = None,
+        asset_events: Optional[
+            Sequence[Union[AssetObservation, AssetMaterialization, AssetCheckEvaluation]]
+        ] = None,
     ):
         if skip_reason and len(run_requests if run_requests else []) > 0:
             check.failed(
@@ -398,5 +420,12 @@ class SensorResult(
                 dynamic_partitions_requests,
                 "dynamic_partitions_requests",
                 (AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest),
+            ),
+            asset_events=list(
+                check.opt_sequence_param(
+                    asset_events,
+                    "asset_check_evaluations",
+                    (AssetObservation, AssetMaterialization, AssetCheckEvaluation),
+                )
             ),
         )
