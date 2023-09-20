@@ -116,9 +116,7 @@ height={2414}
 
 You can also launch backfills using the [`backfill`](/\_apidocs/cli#dagster-pipeline-backfill) CLI.
 
-In the [Partitions](/concepts/partitions-schedules-sensors/partitions#date-partitioned-job) concept page, we defined a partitioned job called `do_stuff_partitioned` that had date partitions.
-
-Having done so, we can run the command `dagster job backfill` to execute the backfill.
+For example, let's say we created a partitioned job named `do_stuff_partitioned` that contains date partitions. Having defined the partitioned job, we can run the command `dagster job backfill` to execute the backfill.
 
 ```bash
 $ dagster job backfill -p do_stuff_partitioned
