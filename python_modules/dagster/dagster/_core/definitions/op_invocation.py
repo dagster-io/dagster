@@ -439,7 +439,8 @@ def _type_check_function_output(
 
     output_defs_by_name = {output_def.name: output_def for output_def in op_def.output_defs}
     for event in validate_and_coerce_op_result_to_iterator(result, context, op_def.output_defs):
-        _type_check_output(output_defs_by_name[event.output_name], event, context)
+        if isinstance(event, Output):
+            _type_check_output(output_defs_by_name[event.output_name], event, context)
     return result
 
 
