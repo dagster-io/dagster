@@ -1,0 +1,4 @@
+SPECIES_CODE,SCI_NAME,PRIMARY_COM_NAME,PRI_COM_NAME_INDXD,AUTHORITY_CODE,AUTHORITY_VER,TAXON_ORDER,SPARSE_REPORT_AS,REPORT_AS,CATEGORY,ORDER1,FAMILY,EXTINCT,EXTINCT_YEAR,TAXON_CODE
+scbtan2,Heterospingus xanthopygius,Scarlet-browed Tanager,"Tanager, Scarlet-browed",EBIRD,2017.02,28771,,scbtan2,species,Passeriformes,Thraupidae (Tanagers and Allies),0,,TC010744
+fabtan1,Pipraeidea melanonota,Fawn-breasted Tanager,"Tanager, Fawn-breasted",EBIRD,2017.02,28421.77,,fabtan1,species,Passeriformes,Thraupidae (Tanagers and Allies),0,,TC010809
+eurcoo,Fulica atra,Eurasian Coot,"Coot, Eurasian",EBIRD,2017.02,3609,,eurcoo,species,Gruiformes,"Rallidae (Rails, Gallinules, and Coots)",0,,TC001819
