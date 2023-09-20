@@ -280,13 +280,16 @@ def _synthesize_events(
     return events, result
 
 
-def _store_op_events(storage, ops_fn, instance, run_id):
+def _store_materialization_events(storage, ops_fn, instance, run_id):
     events, _ = _synthesize_events(lambda: ops_fn(), instance=instance, run_id=run_id)
     for event in events:
         storage.store_event(event)
-    result = storage.get_records_for_run(run_id, ascending=False, limit=1)
-    cursor = result.records[0].storage_id
-    return cursor
+    last_materialization = storage.get_event_records(
+        EventRecordsFilter(event_type=DagsterEventType.ASSET_MATERIALIZATION),
+        limit=1,
+        ascending=False,
+    )[0]
+    return last_materialization.storage_id + 1
 
 
 def _fetch_all_events(configured_storage, run_id=None):
@@ -1952,14 +1955,19 @@ class TestEventLogStorage:
             run_id_4 = make_new_run_id()
 
             with create_and_delete_test_runs(instance, [run_id_1, run_id_2, run_id_3]):
-                cursor_run1 = _store_op_events(storage, materialize, created_instance, run_id_1)
-
+                cursor_run1 = _store_materialization_events(
+                    storage, materialize, created_instance, run_id_1
+                )
                 assert storage.get_materialized_partitions(a) == set()
                 assert storage.get_materialized_partitions(b) == set()
                 assert storage.get_materialized_partitions(c) == {"a", "b"}
 
-                cursor_run2 = _store_op_events(storage, materialize_two, created_instance, run_id_2)
-                _store_op_events(storage, materialize_three, created_instance, run_id_3)
+                cursor_run2 = _store_materialization_events(
+                    storage, materialize_two, created_instance, run_id_2
+                )
+                _store_materialization_events(
+                    storage, materialize_three, created_instance, run_id_3
+                )
 
                 # test that the cursoring logic works
                 assert storage.get_materialized_partitions(a) == set()
@@ -2008,7 +2016,9 @@ class TestEventLogStorage:
                     storage.wipe_asset(c)
                     assert storage.get_materialized_partitions(c) == set()
 
-                    _store_op_events(storage, materialize_two, created_instance, run_id_4)
+                    _store_materialization_events(
+                        storage, materialize_two, created_instance, run_id_4
+                    )
 
                     assert storage.get_materialized_partitions(c) == {"a"}
                     assert storage.get_materialized_partitions(d) == {"x"}
