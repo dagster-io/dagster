@@ -32,4 +32,8 @@ export const getVisibleFeatureFlagRows = () => [
     key: 'Experimental horizontal asset DAGs',
     flagType: FeatureFlag.flagHorizontalDAGs,
   },
+  {
+    key: 'Experimental DAG sidebar',
+    flagType: FeatureFlag.flagDAGSidebar,
+  },
 ];

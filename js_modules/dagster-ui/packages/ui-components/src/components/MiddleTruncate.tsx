@@ -68,8 +68,6 @@ const MeasureWidth = styled.div`
   height: 0;
   overflow: hidden;
   white-space: nowrap;
-  user-select: none;
-  visibility: hidden;
 `;
 
 const Container = styled.div`
