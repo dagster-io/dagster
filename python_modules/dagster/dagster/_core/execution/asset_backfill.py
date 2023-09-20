@@ -1056,6 +1056,7 @@ def execute_asset_backfill_iteration_inner(
             asset_partitions_to_request=visited,
             asset_graph=asset_graph,
             materialized_subset=updated_materialized_subset,
+            requested_subset=asset_backfill_data.requested_subset,
             target_subset=asset_backfill_data.target_subset,
             failed_and_downstream_subset=failed_and_downstream_subset,
             dynamic_partitions_store=instance_queryer,
@@ -1121,6 +1122,7 @@ def should_backfill_atomic_asset_partitions_unit(
     candidates_unit: Iterable[AssetKeyPartitionKey],
     asset_partitions_to_request: AbstractSet[AssetKeyPartitionKey],
     target_subset: AssetGraphSubset,
+    requested_subset: AssetGraphSubset,
     materialized_subset: AssetGraphSubset,
     failed_and_downstream_subset: AssetGraphSubset,
     dynamic_partitions_store: DynamicPartitionsStore,
@@ -1135,6 +1137,7 @@ def should_backfill_atomic_asset_partitions_unit(
             candidate not in target_subset
             or candidate in failed_and_downstream_subset
             or candidate in materialized_subset
+            or candidate in requested_subset
         ):
             return False
 
