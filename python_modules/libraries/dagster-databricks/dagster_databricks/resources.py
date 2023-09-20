@@ -22,6 +22,14 @@ class OauthCredentials(Config):
     client_secret: str = Field(description="OAuth client secret")
 
 
+class AzureSpCredentials(Config):
+    """Azure service principal credentials for Databricks."""
+
+    azure_tenant_id: str = Field(description="Azure tenant ID")
+    azure_client_id: str = Field(description="Azure service principal client ID")
+    azure_client_secret: str = Field(description="Azure service principal client secret")
+
+
 class DatabricksClientResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
     """Resource which provides a Python client for interacting with Databricks within an
     op or asset.
@@ -36,6 +44,10 @@ class DatabricksClientResource(ConfigurableResource, IAttachDifferentObjectToOpC
             " https://docs.databricks.com/en/dev-tools/auth.html#oauth-2-0"
         ),
     )
+    azure_sp_credentials: Optional[AzureSpCredentials] = Field(
+        default=None,
+        description="Databricks azure service principal credentials for using a service principal.",
+    )
     workspace_id: Optional[str] = Field(
         default=None,
         description=(
@@ -46,13 +58,24 @@ class DatabricksClientResource(ConfigurableResource, IAttachDifferentObjectToOpC
     )
 
     @root_validator()
-    def has_token_or_oauth_credentials(cls, values):
+    def has_auth_credentials(cls, values):
         token = values.get("token")
         oauth_credentials = values.get("oauth_credentials")
-        if not token and not oauth_credentials:
-            raise ValueError("Must provide either token or oauth_credentials")
-        if token and oauth_credentials:
-            raise ValueError("Must provide either token or oauth_credentials, not both")
+        azure_sp_credentials = values.get("azure_sp_credentials")
+        if (
+            len(
+                [
+                    auth_type
+                    for auth_type in [token, oauth_credentials, azure_sp_credentials]
+                    if auth_type is not None
+                ]
+            )
+            != 1
+        ):
+            raise ValueError(
+                "Must provide either databricks_token, oauth_credentials or azure_sp_credentials,"
+                " but cannot provide multiple of them"
+            )
         return values
 
     @classmethod
@@ -66,12 +89,23 @@ class DatabricksClientResource(ConfigurableResource, IAttachDifferentObjectToOpC
         else:
             client_id = None
             client_secret = None
+        if self.azure_sp_credentials:
+            azure_tenant_id = self.azure_sp_credentials.azure_tenant_id
+            azure_client_id = self.azure_sp_credentials.azure_client_id
+            azure_client_secret = self.azure_sp_credentials.azure_client_secret
+        else:
+            azure_tenant_id = None
+            azure_client_id = None
+            azure_client_secret = None
 
         return DatabricksClient(
             host=self.host,
             token=self.token,
             oauth_client_id=client_id,
             oauth_client_secret=client_secret,
+            azure_tenant_id=azure_tenant_id,
+            azure_client_id=azure_client_id,
+            azure_client_secret=azure_client_secret,
             workspace_id=self.workspace_id,
         )
 

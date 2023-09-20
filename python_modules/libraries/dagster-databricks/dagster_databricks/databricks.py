@@ -38,6 +38,9 @@ class DatabricksClient:
         token: Optional[str] = None,
         oauth_client_id: Optional[str] = None,
         oauth_client_secret: Optional[str] = None,
+        azure_tenant_id: Optional[str] = None,
+        azure_client_id: Optional[str] = None,
+        azure_client_secret: Optional[str] = None,
         workspace_id: Optional[str] = None,
     ):
         self.host = host
@@ -48,6 +51,9 @@ class DatabricksClient:
             token=token,
             client_id=oauth_client_id,
             client_secret=oauth_client_secret,
+            azure_tenant_id=azure_tenant_id,
+            azure_client_id=azure_client_id,
+            azure_client_secret=azure_client_secret,
             product="dagster-databricks",
             product_version=__version__,
         )
@@ -310,17 +316,38 @@ class DatabricksJobRunner:
         token: Optional[str] = None,
         oauth_client_id: Optional[str] = None,
         oauth_client_secret: Optional[str] = None,
+        azure_tenant_id: Optional[str] = None,
+        azure_client_id: Optional[str] = None,
+        azure_client_secret: Optional[str] = None,
         poll_interval_sec: float = 5,
         max_wait_time_sec: int = DEFAULT_RUN_MAX_WAIT_TIME_SEC,
     ):
         self.host = check.str_param(host, "host")
+        token_given = token is not None
+        oauth_params_given = oauth_client_id is not None and oauth_client_secret is not None
+        azure_sp_params_given = (
+            azure_tenant_id is not None
+            and azure_client_id is not None
+            and azure_client_secret is not None
+        )
         check.invariant(
-            token is None or (oauth_client_id is None and oauth_client_secret is None),
-            "Must provide either databricks_token or oauth_credentials, but cannot provide both",
+            len(
+                [
+                    auth_type
+                    for auth_type in [token_given, oauth_params_given, azure_sp_params_given]
+                    if auth_type
+                ]
+            )
+            == 1,
+            "Must provide either databricks_token, oauth_credentials or azure_sp_credentials, but"
+            " cannot provide multiple of them",
         )
         self.token = check.opt_str_param(token, "token")
         self.oauth_client_id = check.opt_str_param(oauth_client_id, "oauth_client_id")
         self.oauth_client_secret = check.opt_str_param(oauth_client_secret, "oauth_client_secret")
+        self.azure_tenant_id = check.opt_str_param(azure_tenant_id, "azure_tenant_id")
+        self.azure_client_id = check.opt_str_param(azure_client_id, "azure_client_id")
+        self.azure_client_secret = check.opt_str_param(azure_client_secret, "azure_client_secret")
         self.poll_interval_sec = check.numeric_param(poll_interval_sec, "poll_interval_sec")
         self.max_wait_time_sec = check.int_param(max_wait_time_sec, "max_wait_time_sec")
 
@@ -329,6 +356,9 @@ class DatabricksJobRunner:
             token=self.token,
             oauth_client_id=oauth_client_id,
             oauth_client_secret=oauth_client_secret,
+            azure_tenant_id=azure_tenant_id,
+            azure_client_id=azure_client_id,
+            azure_client_secret=azure_client_secret,
         )
 
     @property
