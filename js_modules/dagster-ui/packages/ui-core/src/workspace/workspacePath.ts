@@ -27,9 +27,9 @@ export const workspacePipelinePath = ({
   }/${pipelineName}${finalPath}`;
 };
 
-export const workspacePipelinePathGuessRepo = (pipelineName: string, isJob = false, path = '') => {
+export const workspacePipelinePathGuessRepo = (pipelineName: string, path = '') => {
   const finalPath = path === '' ? '' : path.startsWith('/') ? path : `/${path}`;
-  return `/guess/${isJob ? 'jobs' : 'pipelines'}/${pipelineName}${finalPath}`;
+  return `/guess/${pipelineName}${finalPath}`;
 };
 
 export const workspacePathFromAddress = (repoAddress: RepoAddress, path = '') => {
@@ -64,5 +64,5 @@ export const workspacePathFromRunDetails = ({
     });
   }
 
-  return workspacePipelinePathGuessRepo(pipelineName, isJob, path);
+  return workspacePipelinePathGuessRepo(pipelineName, path);
 };
