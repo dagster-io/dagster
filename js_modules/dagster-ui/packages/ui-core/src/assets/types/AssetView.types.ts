@@ -28,11 +28,12 @@ export type AssetViewDefinitionQuery = {
           opNames: Array<string>;
           opVersion: string | null;
           jobNames: Array<string>;
+          isSource: boolean;
+          isExecutable: boolean;
           hasMaterializePermission: boolean;
           computeKind: string | null;
           isPartitioned: boolean;
           isObservable: boolean;
-          isSource: boolean;
           partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
           partitionKeysByDimension: Array<{__typename: 'DimensionPartitionKeys'; name: string}>;
           repository: {
@@ -15740,11 +15741,12 @@ export type AssetViewDefinitionNodeFragment = {
   opNames: Array<string>;
   opVersion: string | null;
   jobNames: Array<string>;
+  isSource: boolean;
+  isExecutable: boolean;
   hasMaterializePermission: boolean;
   computeKind: string | null;
   isPartitioned: boolean;
   isObservable: boolean;
-  isSource: boolean;
   partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
   partitionKeysByDimension: Array<{__typename: 'DimensionPartitionKeys'; name: string}>;
   repository: {

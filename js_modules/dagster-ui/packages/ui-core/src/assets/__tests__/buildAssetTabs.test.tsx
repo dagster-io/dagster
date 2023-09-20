@@ -66,6 +66,7 @@ describe('buildAssetTabs', () => {
     computeKind: null,
     isPartitioned: true,
     isObservable: false,
+    isExecutable: true,
     isSource: false,
     assetKey: {
       path: ['eager_downstream_3_partitioned'],
@@ -212,6 +213,7 @@ describe('buildAssetTabs', () => {
     computeKind: null,
     isPartitioned: false,
     isObservable: false,
+    isExecutable: true,
     isSource: false,
     assetKey: {
       path: ['lazy_downstream_1'],
