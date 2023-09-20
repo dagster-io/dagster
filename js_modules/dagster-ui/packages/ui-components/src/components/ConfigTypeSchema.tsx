@@ -276,9 +276,8 @@ const DictEntry = React.forwardRef(
     props: React.ComponentProps<typeof DictEntryDiv>,
     ref: React.ForwardedRef<HTMLButtonElement>,
   ) => {
-    const {hovered, onMouseEnter, onMouseLeave} = React.useContext(
-      HoveredDictEntryContext,
-    ).useDictEntryHover();
+    const {hovered, onMouseEnter, onMouseLeave} =
+      React.useContext(HoveredDictEntryContext).useDictEntryHover();
 
     return (
       <DictEntryDiv2>

@@ -450,13 +450,17 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
 export const StyledTagInput = styled(TagInput)<{$maxWidth?: any}>`
   border: none;
   border-radius: 8px;
-  box-shadow: ${Colors.Gray300} inset 0px 0px 0px 1px, ${Colors.KeylineGray} inset 2px 2px 1.5px;
+  box-shadow:
+    ${Colors.Gray300} inset 0px 0px 0px 1px,
+    ${Colors.KeylineGray} inset 2px 2px 1.5px;
   min-width: 400px;
   max-width: ${(p) => (p.$maxWidth ? p.$maxWidth : '600px')};
   transition: box-shadow 150ms;
 
   &.bp4-active {
-    box-shadow: ${Colors.Gray300} inset 0px 0px 0px 1px, ${Colors.KeylineGray} inset 2px 2px 1.5px,
+    box-shadow:
+      ${Colors.Gray300} inset 0px 0px 0px 1px,
+      ${Colors.KeylineGray} inset 2px 2px 1.5px,
       rgba(58, 151, 212, 0.6) 0 0 0 3px;
   }
 

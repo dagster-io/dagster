@@ -21,6 +21,7 @@ export type AssetNodeDefinitionFragment = {
     policyType: Types.AutoMaterializePolicyType;
     rules: Array<{
       __typename: 'AutoMaterializeRule';
+      className: string;
       description: string;
       decisionType: Types.AutoMaterializeDecisionType;
     }>;
