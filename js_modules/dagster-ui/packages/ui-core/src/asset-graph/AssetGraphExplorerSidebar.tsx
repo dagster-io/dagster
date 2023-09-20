@@ -21,7 +21,6 @@ import {useVirtualizer} from '@tanstack/react-virtual';
 import React from 'react';
 import styled from 'styled-components';
 
-
 import {showSharedToaster} from '../app/DomUtils';
 import {useMaterializationAction} from '../assets/LaunchAssetExecutionButton';
 import {AssetKey} from '../assets/types';
@@ -259,7 +258,7 @@ export const AssetGraphExplorerSidebar = React.memo(
       assetGraphData,
       viewType,
       // eslint-disable-next-line react-hooks/exhaustive-deps
-      
+
       lastSelectedNode &&
         renderedNodes.findIndex((node) => nodeId(lastSelectedNode) === nodeId(node)),
     ]);
@@ -563,27 +562,6 @@ const Node = ({
                             onClick([node.assetKey], e, false);
                           }}
                         />
-                        {upstream.length || downstream.length ? <MenuDivider /> : null}
-                        {upstream.length ? (
-                          <MenuItem
-                            text="Select upstream"
-                            icon="panel_show_left"
-                            onClick={() => {
-                              // TODO: Hook up selecting the nodes
-                              showUpstreamGraph();
-                            }}
-                          />
-                        ) : null}
-                        {downstream.length ? (
-                          <MenuItem
-                            text="Select downstream"
-                            icon="panel_show_right"
-                            onClick={() => {
-                              // TODO: Hook up selecting the nodes
-                              showDownstreamGraph();
-                            }}
-                          />
-                        ) : null}
                         {upstream.length || downstream.length ? <MenuDivider /> : null}
                         {upstream.length ? (
                           <MenuItem
