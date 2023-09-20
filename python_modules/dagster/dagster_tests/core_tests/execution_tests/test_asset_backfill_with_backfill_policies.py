@@ -404,13 +404,21 @@ def test_backfill_run_contains_more_than_one_asset():
     def upstream_b():
         return 2
 
-    @asset(partitions_def=downstream_partitions_def, backfill_policy=BackfillPolicy.single_run())
-    def downstream_a(upstream_a):
-        return upstream_a + 1
+    @asset(
+        partitions_def=downstream_partitions_def,
+        backfill_policy=BackfillPolicy.single_run(),
+        deps={"upstream_a"},
+    )
+    def downstream_a():
+        return 1
 
-    @asset(partitions_def=downstream_partitions_def, backfill_policy=BackfillPolicy.single_run())
-    def downstream_b(upstream_b):
-        return upstream_b + 2
+    @asset(
+        partitions_def=downstream_partitions_def,
+        backfill_policy=BackfillPolicy.single_run(),
+        deps={"upstream_b"},
+    )
+    def downstream_b():
+        return 2
 
     assets_by_repo_name = {"repo": [upstream_a, upstream_b, downstream_a, downstream_b]}
     asset_graph = get_asset_graph(assets_by_repo_name)
@@ -463,19 +471,19 @@ def test_backfill_run_contains_more_than_one_asset():
     assert counts[1].num_targeted_partitions == upstream_num_of_partitions
 
     assert counts[2].asset_key == downstream_a.key
-    assert counts[2].partitions_counts_by_status[AssetBackfillStatus.MATERIALIZED] == 0
     assert (
-        counts[2].partitions_counts_by_status[AssetBackfillStatus.FAILED]
+        counts[2].partitions_counts_by_status[AssetBackfillStatus.MATERIALIZED]
         == downstream_num_of_partitions
     )
+    assert counts[2].partitions_counts_by_status[AssetBackfillStatus.FAILED] == 0
     assert counts[2].partitions_counts_by_status[AssetBackfillStatus.IN_PROGRESS] == 0
     assert counts[2].num_targeted_partitions == downstream_num_of_partitions
 
     assert counts[3].asset_key == downstream_b.key
-    assert counts[3].partitions_counts_by_status[AssetBackfillStatus.MATERIALIZED] == 0
     assert (
-        counts[3].partitions_counts_by_status[AssetBackfillStatus.FAILED]
+        counts[3].partitions_counts_by_status[AssetBackfillStatus.MATERIALIZED]
         == downstream_num_of_partitions
     )
+    assert counts[3].partitions_counts_by_status[AssetBackfillStatus.FAILED] == 0
     assert counts[3].partitions_counts_by_status[AssetBackfillStatus.IN_PROGRESS] == 0
     assert counts[3].num_targeted_partitions == downstream_num_of_partitions
