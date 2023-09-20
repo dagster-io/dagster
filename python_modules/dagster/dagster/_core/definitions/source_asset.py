@@ -1,4 +1,5 @@
 from typing import (
+    TYPE_CHECKING,
     AbstractSet,
     Any,
     Callable,
@@ -46,16 +47,14 @@ from dagster._core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvalidObservationError,
 )
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.decorators.op_decorator import (
+        DecoratedOpFunction,
+    )
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._utils.merger import merge_dicts
 from dagster._utils.warnings import disable_dagster_warnings
-
-# getting the following error
-# python_modules/dagster/dagster/_core/definitions/source_asset.py:55:9: TCH001 Move application import `dagster._core.definitions.decorators.op_decorator.DecoratedOpFunction` into a type-checking block
-# if TYPE_CHECKING:
-#     from dagster._core.definitions.decorators.op_decorator import (
-#         DecoratedOpFunction,
-#     )
 
 # Going with this catch-all for the time-being to permit pythonic resources
 SourceAssetObserveFunction: TypeAlias = Callable[..., Any]
@@ -64,8 +63,7 @@ SourceAssetObserveFunction: TypeAlias = Callable[..., Any]
 @staticmethod
 def wrap_source_asset_observe_fn_in_op_compute_fn(
     source_asset: "SourceAsset",
-):
-    # ) -> "DecoratedOpFunction":
+) -> "DecoratedOpFunction":
     from dagster._core.definitions.decorators.op_decorator import (
         DecoratedOpFunction,
         is_context_provided,
