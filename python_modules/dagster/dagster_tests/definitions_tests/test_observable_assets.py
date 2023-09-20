@@ -98,7 +98,7 @@ def test_how_source_assets_are_backwards_compatible() -> None:
 
     @asset
     def an_asset(source_asset: str) -> str:
-        return "hardcoded" + "-computed"
+        return source_asset + "-computed"
 
     defs_with_source = Definitions(assets=[source_asset, an_asset])
 
