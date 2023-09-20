@@ -3,17 +3,14 @@ import inspect
 from typing import (
     Any,
     AsyncIterator,
-    Callable,
     Iterator,
     List,
     Mapping,
     Sequence,
     Set,
     TypeVar,
-    Union,
+    cast,
 )
-
-from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._core.definitions import (
@@ -28,12 +25,15 @@ from dagster._core.definitions import (
     Output,
 )
 from dagster._core.definitions.asset_layer import AssetLayer
-from dagster._core.definitions.op_definition import OpComputeFunction
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.errors import DagsterExecutionStepExecutionError, DagsterInvariantViolationError
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.execution.context.system import StepExecutionContext
+from dagster._core.execution.plan.compute_generator import (
+    DirectlyCallableContextfulComputeFn,
+    OpOutputUnion,
+)
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._utils import iterate_with_context
 
@@ -41,18 +41,6 @@ from .outputs import StepOutput, StepOutputProperties
 from .utils import op_execution_error_boundary
 
 T = TypeVar("T")
-
-OpOutputUnion: TypeAlias = Union[
-    DynamicOutput[Any],
-    Output[Any],
-    AssetMaterialization,
-    ExpectationResult,
-    AssetObservation,
-    DagsterEvent,
-    AssetCheckEvaluation,
-    AssetCheckResult,
-    MaterializeResult,
-]
 
 
 def create_step_outputs(
@@ -142,7 +130,9 @@ def gen_from_async_gen(async_gen: AsyncIterator[T]) -> Iterator[T]:
 
 
 def _yield_compute_results(
-    step_context: StepExecutionContext, inputs: Mapping[str, Any], compute_fn: Callable
+    step_context: StepExecutionContext,
+    inputs: Mapping[str, Any],
+    compute_fn: DirectlyCallableContextfulComputeFn,
 ) -> Iterator[OpOutputUnion]:
     check.inst_param(step_context, "step_context", StepExecutionContext)
 
@@ -167,6 +157,9 @@ def _yield_compute_results(
     if inspect.isasyncgen(user_event_generator):
         user_event_generator = gen_from_async_gen(user_event_generator)
 
+    # after inspect above we can cast
+    user_event_generator = cast(Iterator[OpOutputUnion], user_event_generator)
+
     op_label = step_context.describe_op()
 
     for event in iterate_with_context(
@@ -189,7 +182,9 @@ def _yield_compute_results(
 
 
 def execute_core_compute(
-    step_context: StepExecutionContext, inputs: Mapping[str, Any], compute_fn: OpComputeFunction
+    step_context: StepExecutionContext,
+    inputs: Mapping[str, Any],
+    compute_fn: DirectlyCallableContextfulComputeFn,
 ) -> Iterator[OpOutputUnion]:
     """Execute the user-specified compute for the op. Wrap in an error boundary and do
     all relevant logging and metrics tracking.

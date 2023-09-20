@@ -1,6 +1,7 @@
 import inspect
 from functools import wraps
 from typing import (
+    TYPE_CHECKING,
     Any,
     AsyncIterator,
     Awaitable,
@@ -16,19 +17,20 @@ from typing import (
     cast,
 )
 
-from typing_extensions import get_args
+from typing_extensions import TypeAlias, get_args
 
 from dagster._config.pythonic_config import Config
 from dagster._core.definitions import (
+    AssetCheckEvaluation,
     AssetCheckResult,
     AssetMaterialization,
+    AssetObservation,
     DynamicOutput,
     ExpectationResult,
     Output,
     OutputDefinition,
 )
 from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
-from dagster._core.definitions.input import InputDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.errors import DagsterInvariantViolationError
@@ -38,14 +40,35 @@ from dagster._utils.warnings import disable_dagster_warnings
 
 from ..context.compute import OpExecutionContext
 
+if TYPE_CHECKING:
+    from dagster._core.events import DagsterEvent
+
 
 class NoAnnotationSentinel:
     pass
 
 
+OpOutputUnion: TypeAlias = Union[
+    DynamicOutput[Any],
+    Output[Any],
+    AssetMaterialization,
+    ExpectationResult,
+    AssetObservation,
+    "DagsterEvent",
+    AssetCheckEvaluation,
+    AssetCheckResult,
+    MaterializeResult,
+]
+
+DirectlyCallableContextfulComputeFn: TypeAlias = Callable[
+    [OpExecutionContext, Mapping[str, Any]],
+    Union[Iterator[OpOutputUnion], AsyncIterator[OpOutputUnion]],
+]
+
+
 def create_op_compute_wrapper(
     op_def: OpDefinition,
-) -> Callable[[OpExecutionContext, Mapping[str, InputDefinition]], Any]:
+) -> DirectlyCallableContextfulComputeFn:
     compute_fn = cast(DecoratedOpFunction, op_def.compute_fn)
     fn = compute_fn.decorated_fn
     input_defs = op_def.input_defs
@@ -54,7 +77,7 @@ def create_op_compute_wrapper(
     config_arg_cls = compute_fn.get_config_arg().annotation if compute_fn.has_config_arg() else None
     resource_arg_mapping = {arg.name: arg.name for arg in compute_fn.get_resource_args()}
 
-    input_names = [
+    non_nothing_input_names = [
         input_def.name
         for input_def in input_defs
         if not input_def.dagster_type.kind == DagsterTypeKind.NOTHING
@@ -63,11 +86,13 @@ def create_op_compute_wrapper(
     @wraps(fn)
     def compute(
         context: OpExecutionContext,
-        input_defs: Mapping[str, InputDefinition],
-    ) -> Union[Iterator[Output], AsyncIterator[Output]]:
-        kwargs = {}
-        for input_name in input_names:
-            kwargs[input_name] = input_defs[input_name]
+        inputs: Mapping[str, Any],
+    ) -> Union[Iterator[OpOutputUnion], AsyncIterator[OpOutputUnion]]:
+        # filter out nothings
+        non_nothing_inputs = {
+            non_nothing_input_name: inputs[non_nothing_input_name]
+            for non_nothing_input_name in non_nothing_input_names
+        }
 
         if (
             inspect.isgeneratorfunction(fn)
@@ -76,7 +101,12 @@ def create_op_compute_wrapper(
         ):
             # safe to execute the function, as doing so will not immediately execute user code
             result = invoke_compute_fn(
-                fn, context, kwargs, context_arg_provided, config_arg_cls, resource_arg_mapping
+                fn,
+                context,
+                non_nothing_inputs,
+                context_arg_provided,
+                config_arg_cls,
+                resource_arg_mapping,
             )
             if inspect.iscoroutine(result):
                 return _coerce_async_op_to_async_gen(result, context, output_defs)
@@ -90,7 +120,7 @@ def create_op_compute_wrapper(
                 output_defs,
                 context,
                 context_arg_provided,
-                kwargs,
+                non_nothing_inputs,
                 config_arg_cls,
                 resource_arg_mapping,
             )
@@ -132,7 +162,7 @@ def invoke_compute_fn(
 
 def _coerce_op_compute_fn_to_iterator(
     fn, output_defs, context, context_arg_provided, kwargs, config_arg_class, resource_arg_mapping
-):
+) -> Iterator[OpOutputUnion]:
     result = invoke_compute_fn(
         fn, context, kwargs, context_arg_provided, config_arg_class, resource_arg_mapping
     )
@@ -243,7 +273,7 @@ def _check_output_object_name(
 
 def validate_and_coerce_op_result_to_iterator(
     result: Any, context: OpExecutionContext, output_defs: Sequence[OutputDefinition]
-) -> Iterator[Any]:
+) -> Iterator[OpOutputUnion]:
     if inspect.isgenerator(result):
         # this happens when a user explicitly returns a generator in the op
         for event in result:
