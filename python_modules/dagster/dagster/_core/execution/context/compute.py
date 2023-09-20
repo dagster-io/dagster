@@ -1331,8 +1331,6 @@ ALTERNATE_AVAILABLE_METHODS = {
     "asset_check_spec": "use check_specs_by_asset_key instead",
 }
 
-# TODO - add AssetCheck related methods to this list
-
 
 def _get_deprecation_kwargs(attr: str):
     deprecation_kwargs = {"breaking_version": "1.7.0"}
@@ -1495,7 +1493,7 @@ class AssetExecutionContext(OpExecutionContext):
         return self._op_execution_context.get_asset_provenance(asset_key)
 
     @public
-    # TODO - method naming. this needs work
+    # TODO - method naming
     def get_assets_code_version(
         self, asset_keys: Sequence[AssetKey]
     ) -> Mapping[AssetKey, Optional[str]]:
