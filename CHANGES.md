@@ -1,5 +1,40 @@
 # Changelog
 
+# 1.4.15 / 0.20.15 (libraries)
+
+### New
+
+- The `deps` parameter for `@asset` and `@multi_asset` now supports directly passing `@multi_asset` definitions. If an `@multi_asset` is passed to `deps`, dependencies will be created on every asset produced by the `@multi_asset`.
+- Added an optional data migration to convert storage ids to use 64-bit integers instead of 32-bit integers.  This will incur some downtime, but may be required for instances that are handling a large number of events.  This migration can be invoked using `dagster instance migrate --bigint-migration`.
+- [ui] Dagster now allows you to run asset checks individually.
+- [ui] The run list and run details page now show the asset checks targeted by each run.
+- [ui] In the runs list, runs launched by schedules or sensors will now have tags that link directly to those schedules or sensors.
+- [ui] Clicking the "N assets" tag on a run allows you to navigate to the filtered asset graph as well as view the full list of asset keys.
+- [ui] Schedules, sensors, and observable source assets now appear on the resource “Uses” page.
+- [dagster-dbt] The `DbtCliResource` now validates at definition time that its `project_dir` and `profiles_dir` arguments are directories that respectively contain a `dbt_project.yml` and `profiles.yml`.
+- [dagster-databricks] You can now configure a `policy_id` for new clusters when using the `databricks_pyspark_step_launcher` (thanks @zyd14!)
+
+### Bugfixes
+
+- Fixed an issue where the `dagster-webserver` command was not indicating which port it was using in the command-line output.
+- Fixed an issue with the quickstart_gcp example wasn’t setting GCP credentials properly when setting up its IOManager.
+- Fixed an issue where the process output for Dagster run and step containers would repeat each log message twice in JSON format when the process finished.
+- [ui] Fixed an issue where the config editor failed to load when materializing certain assets.
+- [auto-materialize] Previously, rematerializing an old partition of an asset which depended on a prior partition of itself would result in a chain of materializations to propagate that change all the way through to the most recent partition of this asset. To prevent these “slow-motion backfills”, this behavior has been updated such that these updates are no longer propagated.
+
+### Experimental
+
+- `MaterializeResult` has been added as a new return type to be used in `@asset` / `@multi_asset` materialization functions
+- [ui] The auto-materialize page now properly indicates that the feature is experimental and links to our documentation.
+
+### Documentation
+
+- The Concepts category page got a small facelift, to bring it line with how the side navigation is organized.
+
+### Dagster Cloud
+
+- Previously, when importing a dbt project in Cloud, naming the code location “dagster” would cause build failures. This is now disabled and an error is now surfaced.
+
 # 1.4.14 / 0.20.14 (libraries)
 
 ### New
