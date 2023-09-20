@@ -41,6 +41,7 @@ from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.step_launcher import StepLauncher
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.errors import (
+    DagsterInvalidDefinitionError,
     DagsterInvalidPropertyError,
     DagsterInvariantViolationError,
 )
@@ -1722,6 +1723,7 @@ class AssetExecutionContext(OpExecutionContext, IContext):
     def get_asset_provenance(self, asset_key: AssetKey) -> Optional[DataProvenance]:
         return self._op_execution_context.get_asset_provenance(asset_key)
 
+
 def build_execution_context(
     step_context: StepExecutionContext,
 ) -> Union[OpExecutionContext, AssetExecutionContext]:
@@ -1735,6 +1737,7 @@ def build_execution_context(
     op            AssetExecutionContext     Error - we cannot init an AssetExecutionContext w/o an AssetsDefinition
     op            OpExecutionContext        OpExecutionContext
     op            None                      OpExecutionContext
+    
     For ops in graph-backed assets
     step type     annotation                result
     op            AssetExecutionContext     AssetExecutionContext
