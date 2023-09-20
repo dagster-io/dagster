@@ -1308,7 +1308,8 @@ ALTERNATE_AVAILABLE_METHODS = {
     "get_tag": "use dagster_run.tags.get instead",
     "run_tags": "use dagster_run.tags instead",
     "set_data_version": "use MaterializeResult instead",
-    "run": "use dagster_run instead.",
+    "run": "use dagster_run instead",
+    "asset_check_spec": "use check_specs_by_asset_key instead",
 }
 
 # TODO - add AssetCheck related methods to this list
@@ -1355,6 +1356,10 @@ class AssetExecutionContext(OpExecutionContext):
         }
         self._code_version_by_asset_key = {
             key: self._assets_def.code_versions_by_key[key] for key in self._selected_asset_keys
+        }
+        self._check_specs_by_asset_key = {
+            self._op_execution_context.asset_key_for_output(output_name): check
+            for output_name, check in self._assets_def.check_specs_by_output_name.items()
         }
 
     @public
@@ -1479,9 +1484,10 @@ class AssetExecutionContext(OpExecutionContext):
             asset_keys
         )
 
+    @public
     @property
-    def asset_check_spec(self) -> AssetCheckSpec:
-        return self._op_execution_context.asset_check_spec
+    def check_specs_by_asset_key(self) -> Mapping[AssetKey, AssetCheckSpec]:
+        return self._check_specs_by_asset_key
 
     @public
     @property
@@ -1694,3 +1700,8 @@ class AssetExecutionContext(OpExecutionContext):
     @deprecated(**_get_deprecation_kwargs("has_events"))
     def has_events(self) -> bool:
         return self.op_execution_context.has_events()
+
+    @deprecated(**_get_deprecation_kwargs("asset_check_spec"))
+    @property
+    def asset_check_spec(self) -> AssetCheckSpec:
+        return self._op_execution_context.asset_check_spec
