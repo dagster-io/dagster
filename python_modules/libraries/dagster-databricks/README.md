@@ -95,13 +95,14 @@ context.log(f"Using sample rate: {sample_rate}")
 
 # ... your code that computes and persists the asset
 
-# Stream arbitrary metadata back to Dagster. This will be attached to the
-# associated `AssetMaterialization`
-context.report_asset_metadata("some_metric", get_metric(), metadata_type="text")
-
-# Stream data version back to Dagster. This will also be attached to the
-# associated `AssetMaterialization`.
-context.report_asset_data_version(get_data_version())
+# Stream asset materialization metadata and data version back to Dagster.
+# This should be called after you've computed and stored the asset value. We
+# omit the asset key here because there is only one asset in scope, but for
+# multi-assets you can pass an `asset_key` parameter.
+context.report_asset_materialization(
+    metadata={"some_metric", {"raw_value": get_metric(), "type": "text"}},
+    data_version = get_data_version()
+)
 ```
 
 ### (2) `ext_protocol` context manager
