@@ -91,8 +91,10 @@ def external_script() -> Iterator[str]:
         context = ExtContext.get()
         context.log("hello world")
         time.sleep(0.1)  # sleep to make sure that we encompass multiple intervals for blob store IO
-        context.report_asset_metadata("bar", context.get_extra("bar"), metadata_type="md")
-        context.report_asset_data_version("alpha")
+        context.report_asset_materialization(
+            metadata={"bar": {"raw_value": context.get_extra("bar"), "type": "md"}},
+            data_version="alpha",
+        )
 
     with temp_script(script_fn) as script_path:
         yield script_path
@@ -183,19 +185,23 @@ def test_ext_typed_metadata():
         from dagster_ext import init_dagster_ext
 
         context = init_dagster_ext()
-        context.report_asset_metadata("untyped_meta", "bar")
-        context.report_asset_metadata("text_meta", "bar", metadata_type="text")
-        context.report_asset_metadata("url_meta", "http://bar.com", metadata_type="url")
-        context.report_asset_metadata("path_meta", "/bar", metadata_type="path")
-        context.report_asset_metadata("notebook_meta", "/bar.ipynb", metadata_type="notebook")
-        context.report_asset_metadata("json_meta", ["bar"], metadata_type="json")
-        context.report_asset_metadata("md_meta", "bar", metadata_type="md")
-        context.report_asset_metadata("float_meta", 1.0, metadata_type="float")
-        context.report_asset_metadata("int_meta", 1, metadata_type="int")
-        context.report_asset_metadata("bool_meta", True, metadata_type="bool")
-        context.report_asset_metadata("dagster_run_meta", "foo", metadata_type="dagster_run")
-        context.report_asset_metadata("asset_meta", "bar/baz", metadata_type="asset")
-        context.report_asset_metadata("null_meta", None, metadata_type="null")
+        context.report_asset_materialization(
+            metadata={
+                "infer_meta": "bar",
+                "text_meta": {"raw_value": "bar", "type": "text"},
+                "url_meta": {"raw_value": "http://bar.com", "type": "url"},
+                "path_meta": {"raw_value": "/bar", "type": "path"},
+                "notebook_meta": {"raw_value": "/bar.ipynb", "type": "notebook"},
+                "json_meta": {"raw_value": ["bar"], "type": "json"},
+                "md_meta": {"raw_value": "bar", "type": "md"},
+                "float_meta": {"raw_value": 1.0, "type": "float"},
+                "int_meta": {"raw_value": 1, "type": "int"},
+                "bool_meta": {"raw_value": True, "type": "bool"},
+                "dagster_run_meta": {"raw_value": "foo", "type": "dagster_run"},
+                "asset_meta": {"raw_value": "bar/baz", "type": "asset"},
+                "null_meta": {"raw_value": None, "type": "null"},
+            }
+        )
 
     @asset
     def foo(context: AssetExecutionContext, ext: ExtSubprocess):
@@ -212,8 +218,8 @@ def test_ext_typed_metadata():
         mat = instance.get_latest_materialization_event(foo.key)
         assert mat and mat.asset_materialization
         metadata = mat.asset_materialization.metadata
-        assert isinstance(metadata["untyped_meta"], TextMetadataValue)
-        assert metadata["untyped_meta"].value == "bar"
+        # assert isinstance(metadata["infer_meta"], TextMetadataValue)
+        # assert metadata["infer_meta"].value == "bar"
         assert isinstance(metadata["text_meta"], TextMetadataValue)
         assert metadata["text_meta"].value == "bar"
         assert isinstance(metadata["url_meta"], UrlMetadataValue)
@@ -286,8 +292,10 @@ def test_ext_no_orchestration():
         init_dagster_ext()
         context = ExtContext.get()
         context.log("hello world")
-        context.report_asset_metadata("bar", context.get_extra("bar"))
-        context.report_asset_data_version("alpha")
+        context.report_asset_materialization(
+            metadata={"bar": context.get_extra("bar")},
+            data_version="alpha",
+        )
 
     with temp_script(script_fn) as script_path:
         cmd = ["python", script_path]

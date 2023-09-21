@@ -10,4 +10,4 @@ value = 2 * multiplier
 store_asset_value("number_x", storage_root, value)
 
 context.log(f"{context.asset_key}: {2} * {multiplier} = {value}")
-context.report_asset_data_version(compute_data_version(value))
+context.report_asset_materialization(data_version=compute_data_version(value))

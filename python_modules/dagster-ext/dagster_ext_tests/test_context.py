@@ -79,12 +79,15 @@ def test_single_asset_context():
     assert context.code_version_by_asset_key == {"foo": "beta"}
     assert context.provenance == foo_provenance
     assert context.provenance_by_asset_key == {"foo": foo_provenance}
-    context.report_asset_metadata("bar", "boo")
-    context.report_asset_metadata("baz", 2, "int")
-    context.report_asset_data_version("bar")
+    context.report_asset_materialization(
+        metadata={
+            "bar": "boo",
+            "baz": {"raw_value": 2, "type": "int"},
+        },
+        data_version="bar",
+    )
 
-    _assert_unknown_asset_key(context, "report_asset_metadata", "bar", "baz", asset_key="fake")
-    _assert_unknown_asset_key(context, "report_asset_data_version", "bar", asset_key="fake")
+    _assert_unknown_asset_key(context, "report_asset_materialization", asset_key="fake")
 
 
 def test_multi_asset_context():
@@ -110,10 +113,8 @@ def test_multi_asset_context():
     _assert_undefined(context, "provenance")
     assert context.provenance_by_asset_key == {"foo": foo_provenance, "bar": bar_provenance}
 
-    _assert_undefined_asset_key(context, "report_asset_metadata", "bar", "baz")
-    _assert_unknown_asset_key(context, "report_asset_metadata", "bar", "baz", asset_key="fake")
-    _assert_undefined_asset_key(context, "report_asset_data_version", "bar")
-    _assert_unknown_asset_key(context, "report_asset_data_version", "bar", asset_key="fake")
+    _assert_undefined_asset_key(context, "report_asset_materialization", "bar")
+    _assert_unknown_asset_key(context, "report_asset_materialization", "bar", asset_key="fake")
 
 
 def test_no_partition_context():
@@ -162,3 +163,10 @@ def test_extras_context():
     assert context.get_extra("foo") == "bar"
     with pytest.raises(DagsterExtError, match="Extra `bar` is undefined"):
         context.get_extra("bar")
+
+
+def test_report_twice_materialized():
+    context = _make_external_execution_context(asset_keys=["foo"])
+    with pytest.raises(DagsterExtError, match="already been materialized"):
+        context.report_asset_materialization(asset_key="foo")
+        context.report_asset_materialization(asset_key="foo")
