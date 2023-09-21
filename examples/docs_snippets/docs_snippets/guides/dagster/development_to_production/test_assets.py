@@ -12,7 +12,7 @@ from .resources.resources_v2 import StubHNClient
 def test_items():
     context = build_asset_context(
         resources={"hn_client": StubHNClient()},
-        op_config={"N": StubHNClient().fetch_max_item_id()},
+        asset_config={"N": StubHNClient().fetch_max_item_id()},
     )
     hn_dataset = items(context)
     assert isinstance(hn_dataset, pd.DataFrame)
