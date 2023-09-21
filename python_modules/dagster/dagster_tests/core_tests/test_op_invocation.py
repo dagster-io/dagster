@@ -1243,6 +1243,9 @@ def test_assets_def_invocation():
     ) as context:
         my_asset(context)
 
+    with build_op_context(
+        partition_key="2023-02-02",
+    ) as context:
         with pytest.raises(DagsterInvalidPropertyError, match="does not have an assets definition"):
             non_asset_op(context)
 
