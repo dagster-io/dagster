@@ -1793,54 +1793,6 @@ class SqlEventLogStorage(EventLogStorage):
 
         return set([cast(str, row[0]) for row in results])
 
-    def get_materialization_count_by_partition(
-        self,
-        asset_keys: Sequence[AssetKey],
-        after_cursor: Optional[int] = None,
-        before_cursor: Optional[int] = None,
-    ) -> Mapping[AssetKey, Mapping[str, int]]:
-        check.sequence_param(asset_keys, "asset_keys", AssetKey)
-
-        query = (
-            db_select(
-                [
-                    SqlEventLogStorageTable.c.asset_key,
-                    SqlEventLogStorageTable.c.partition,
-                    db.func.count(SqlEventLogStorageTable.c.id),
-                ]
-            )
-            .where(
-                db.and_(
-                    SqlEventLogStorageTable.c.asset_key.in_(
-                        [asset_key.to_string() for asset_key in asset_keys]
-                    ),
-                    SqlEventLogStorageTable.c.partition != None,  # noqa: E711
-                    SqlEventLogStorageTable.c.dagster_event_type
-                    == DagsterEventType.ASSET_MATERIALIZATION.value,
-                )
-            )
-            .group_by(SqlEventLogStorageTable.c.asset_key, SqlEventLogStorageTable.c.partition)
-        )
-
-        assets_details = self._get_assets_details(asset_keys)
-        query = self._add_assets_wipe_filter_to_query(query, assets_details, asset_keys)
-
-        if after_cursor:
-            query = query.where(SqlEventLogStorageTable.c.id > after_cursor)
-
-        with self.index_connection() as conn:
-            results = conn.execute(query).fetchall()
-
-        materialization_count_by_partition: Dict[AssetKey, Dict[str, int]] = {
-            asset_key: {} for asset_key in asset_keys
-        }
-        for row in results:
-            asset_key = AssetKey.from_db_string(cast(Optional[str], row[0]))
-            if asset_key:
-                materialization_count_by_partition[asset_key][cast(str, row[1])] = cast(int, row[2])
-
-        return materialization_count_by_partition
-
     def _latest_event_ids_by_partition_subquery(
         self,
         asset_key: AssetKey,
