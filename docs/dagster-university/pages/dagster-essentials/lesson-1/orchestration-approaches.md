@@ -8,7 +8,9 @@ Data engineers see orchestration as key to solidifying a data pipeline for busin
 
 But first, what’s a workflow?
 
-> _A workflow is a system for managing repetitive processes and tasks which occur in a particular order. They are the mechanism by which people and enterprises accomplish their work […]._ - [IBM](https://www.ibm.com/topics/workflow)
+{% callout %}
+> A workflow is a system for managing repetitive processes and tasks which occur in a particular order. They are the mechanism by which people and enterprises accomplish their work […]._ - [IBM](https://www.ibm.com/topics/workflow)
+{% /callout %}
 
 A workflow can be visualized using a **directed acyclic graph,** or **DAG**, which depicts the steps required to complete the workflow. For example, sending a CSV of a report by email every Friday might have a DAG that looks like this:
 

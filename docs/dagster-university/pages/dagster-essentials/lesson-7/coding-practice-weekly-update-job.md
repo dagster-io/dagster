@@ -12,9 +12,11 @@ To practice what you’ve learned, add a job to `jobs/__init__.py` that will mat
 
 ## Check your work
 
-The job you built should look similar to the code contained in the **View answer** toggle. Click to open it.
+The job you built should look similar to the following code. Click **View answer** to view it.
 
-```python
+**If there are differences**, compare what you wrote to the job below and change them, as this job will be used as-is in future lessons.
+
+```python {% obfuscated="true" %}
 from dagster import define_asset_job, AssetSelection
 
 trips_by_week = AssetSelection.keys(["trips_by_week"])
@@ -24,5 +26,3 @@ weekly_update_job = define_asset_job(
   selection=trips_by_week,
 )
 ```
-
-**If there are differences**, compare what you wrote to the job above and change them, as this job will be used as-is in future lessons.

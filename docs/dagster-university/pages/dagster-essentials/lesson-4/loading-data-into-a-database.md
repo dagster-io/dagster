@@ -72,7 +72,9 @@ Once reloaded, the `taxi_trips` asset will display in the asset graph:
 
 Notice the arrow from the `taxi_trips` file asset to the `taxi_trips` asset: this indicates the dependency that `taxi_trips` has on `taxi_trips_file`.
 
-> **When should definitions be reloaded**? If you installed dependencies with `pip install -e ".[dev]"`, you’ll only need to reload definitions when adding new assets or other Dagster objects, such as schedules, to your project. Because of the `-e` editable flag, Dagster can pick up the changes in your asset function’s code without needing to reload the code location again.
+{% callout %}
+> 💡 **When should definitions be reloaded**? If you installed dependencies with `pip install -e ".[dev]"`, you’ll only need to reload definitions when adding new assets or other Dagster objects, such as schedules, to your project. Because of the `-e` editable flag, Dagster can pick up the changes in your asset function’s code without needing to reload the code location again.
+{% /callout %} 
 
 ---
 
