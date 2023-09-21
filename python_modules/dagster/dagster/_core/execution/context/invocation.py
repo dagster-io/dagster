@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from contextlib import ExitStack
 from typing import (
     AbstractSet,
@@ -61,11 +62,29 @@ from .system import StepExecutionContext, TypeCheckContext
 
 def _property_msg(prop_name: str, method_name: str) -> str:
     return (
-        f"The {prop_name} {method_name} is not set on the context when a solid is directly invoked."
+        f"The {prop_name} {method_name} is not set on the context when an asset or op is directly"
+        " invoked."
     )
 
 
-class UnboundOpExecutionContext(OpExecutionContext):
+class BoundExecutionContext(ABC):
+    pass
+
+
+class UnboundExecutionContext(ABC):
+    @abstractmethod
+    def bind(
+        self,
+        op_def: OpDefinition,
+        pending_invocation: Optional[PendingNodeInvocation[OpDefinition]],
+        assets_def: Optional[AssetsDefinition],
+        config_from_args: Optional[Mapping[str, Any]],
+        resources_from_args: Optional[Mapping[str, Any]],
+    ) -> "BoundExecutionContext":
+        raise NotImplementedError(f"bind method is not implemented for class {type(self)}")
+
+
+class UnboundOpExecutionContext(OpExecutionContext, UnboundExecutionContext):
     """The ``context`` object available as the first argument to a solid's compute function when
     being invoked directly. Can also be used as a context manager.
     """
@@ -178,7 +197,7 @@ class UnboundOpExecutionContext(OpExecutionContext):
 
     @property
     def run_id(self) -> str:
-        """str: Hard-coded value to indicate that we are directly invoking solid."""
+        """str: Hard-coded value to indicate that we are directly invoking op."""
         return "EPHEMERAL"
 
     @property
@@ -386,7 +405,7 @@ def _validate_resource_requirements(
                 ensure_requirements_satisfied(resource_defs, [requirement])
 
 
-class BoundOpExecutionContext(OpExecutionContext):
+class BoundOpExecutionContext(OpExecutionContext, BoundExecutionContext):
     """The op execution context that is passed to the compute function during invocation.
 
     This context is bound to a specific op definition, for which the resources and config have
@@ -803,7 +822,7 @@ def build_op_context(
 ############################################
 
 
-class UnboundAssetExecutionContext(AssetExecutionContext):
+class UnboundAssetExecutionContext(AssetExecutionContext, UnboundExecutionContext):
     """The ``context`` object available as the first argument to a asset's compute function when
     being invoked directly. Can also be used as a context manager.
     """
@@ -840,14 +859,14 @@ class UnboundAssetExecutionContext(AssetExecutionContext):
         self._op_execution_context.__del__()
 
     # AssetExecutionContext methods that rely on the AssetsDefinition, which is not available to
-    # direct invocation
+    # the unbound context
 
     @property
-    def assets_def(self) -> AssetsDefinition:
+    def assets_def(self):
         raise DagsterInvalidPropertyError(_property_msg("assets_def", "property"))
 
     @property
-    def asset_keys(self) -> AssetsDefinition:
+    def asset_keys(self):
         raise DagsterInvalidPropertyError(_property_msg("asset_keys", "property"))
 
     @property
@@ -934,7 +953,7 @@ class UnboundAssetExecutionContext(AssetExecutionContext):
         return metadata
 
 
-class BoundAssetExecutionContext(AssetExecutionContext):
+class BoundAssetExecutionContext(AssetExecutionContext, BoundExecutionContext):
     """The op execution context that is passed to the compute function during invocation.
 
     This context is bound to a specific op definition, for which the resources and config have
@@ -942,6 +961,7 @@ class BoundAssetExecutionContext(AssetExecutionContext):
     """
 
     def __init__(self, bound_op_execution_context: BoundOpExecutionContext):
+        super().__init__(op_execution_context=bound_op_execution_context)
         self._op_execution_context = bound_op_execution_context
 
     @property
