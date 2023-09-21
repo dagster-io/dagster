@@ -10,7 +10,7 @@ def build_sling_asset(
     sling_resource_key: str,
     source_table: str,
     dest_table: str,
-    mode=SlingMode.FULL_REFRESH,
+    mode: object = SlingMode.FULL_REFRESH,
     primary_key: Optional[Union[str, List[str]]] = None,
     update_key: Optional[Union[str, List[str]]] = None,
     deps: Optional[Iterable[CoercibleToAssetKey]] = None,
