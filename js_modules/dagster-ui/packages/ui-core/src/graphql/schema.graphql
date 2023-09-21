@@ -3278,6 +3278,7 @@ type Mutation {
     terminatePolicy: TerminateRunPolicy
   ): TerminateRunResult!
   terminateRun(runId: String!, terminatePolicy: TerminateRunPolicy): TerminateRunResult!
+  terminateRuns(runIds: [String!]!): TerminateRunsResult!
   deletePipelineRun(runId: String!): DeletePipelineRunResult!
   deleteRun(runId: String!): DeletePipelineRunResult!
   reloadRepositoryLocation(repositoryLocationName: String!): ReloadRepositoryLocationMutationResult!
@@ -3319,6 +3320,12 @@ enum ReexecutionStrategy {
 union SensorDryRunResult = PythonError | SensorNotFoundError | DryRunInstigationTick
 
 union ScheduleDryRunResult = DryRunInstigationTick | PythonError | ScheduleNotFoundError
+
+union TerminateRunsResult = TerminateRunsSuccess | UnauthorizedError | PythonError
+
+type TerminateRunsSuccess {
+  numRuns: Int!
+}
 
 union AssetWipeMutationResult =
     AssetNotFoundError

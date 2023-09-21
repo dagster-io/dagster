@@ -2010,6 +2010,7 @@ export type Mutation = {
   stopSensor: StopSensorMutationResultOrError;
   terminatePipelineExecution: TerminateRunResult;
   terminateRun: TerminateRunResult;
+  terminateRuns: TerminateRunsResult;
   wipeAssets: AssetWipeMutationResult;
 };
 
@@ -2126,6 +2127,10 @@ export type MutationTerminatePipelineExecutionArgs = {
 export type MutationTerminateRunArgs = {
   runId: Scalars['String'];
   terminatePolicy?: InputMaybe<TerminateRunPolicy>;
+};
+
+export type MutationTerminateRunsArgs = {
+  runIds: Array<Scalars['String']>;
 };
 
 export type MutationWipeAssetsArgs = {
@@ -4143,6 +4148,13 @@ export type TerminateRunResult =
 export type TerminateRunSuccess = TerminatePipelineExecutionSuccess & {
   __typename: 'TerminateRunSuccess';
   run: Run;
+};
+
+export type TerminateRunsResult = PythonError | TerminateRunsSuccess | UnauthorizedError;
+
+export type TerminateRunsSuccess = {
+  __typename: 'TerminateRunsSuccess';
+  numRuns: Scalars['Int'];
 };
 
 export type TestFields = {
@@ -8262,6 +8274,12 @@ export const buildMutation = (
         : relationshipsToOmit.has('PythonError')
         ? ({} as PythonError)
         : buildPythonError({}, relationshipsToOmit),
+    terminateRuns:
+      overrides && overrides.hasOwnProperty('terminateRuns')
+        ? overrides.terminateRuns!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     wipeAssets:
       overrides && overrides.hasOwnProperty('wipeAssets')
         ? overrides.wipeAssets!
@@ -12199,6 +12217,18 @@ export const buildTerminateRunSuccess = (
         : relationshipsToOmit.has('Run')
         ? ({} as Run)
         : buildRun({}, relationshipsToOmit),
+  };
+};
+
+export const buildTerminateRunsSuccess = (
+  overrides?: Partial<TerminateRunsSuccess>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'TerminateRunsSuccess'} & TerminateRunsSuccess => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('TerminateRunsSuccess');
+  return {
+    __typename: 'TerminateRunsSuccess',
+    numRuns: overrides && overrides.hasOwnProperty('numRuns') ? overrides.numRuns! : 2406,
   };
 };
 

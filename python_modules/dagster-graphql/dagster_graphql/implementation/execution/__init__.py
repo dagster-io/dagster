@@ -3,6 +3,8 @@ import os
 import sys
 from typing import TYPE_CHECKING, Any, AsyncIterator, Optional, Sequence, Tuple, Union
 
+from dagster import RunsFilter, DagsterRunStatus
+
 # re-exports
 import dagster._check as check
 from dagster._annotations import deprecated
@@ -19,7 +21,10 @@ from starlette.concurrency import (
 )
 
 if TYPE_CHECKING:
-    from dagster_graphql.schema.roots.mutation import GrapheneTerminateRunPolicy
+    from dagster_graphql.schema.roots.mutation import (
+        GrapheneTerminateRunPolicy,
+        GrapheneTerminateRunsSuccess,
+    )
 
 from ..utils import (
     assert_permission,
@@ -71,7 +76,10 @@ def _force_mark_as_canceled(
 
 
 def terminate_pipeline_execution(
-    graphene_info: "ResolveInfo", run_id: str, terminate_policy: "GrapheneTerminateRunPolicy"
+    graphene_info: "ResolveInfo",
+    instance: DagsterInstance,
+    run_id: str,
+    terminate_policy: "GrapheneTerminateRunPolicy",
 ) -> Union["GrapheneTerminateRunSuccess", "GrapheneTerminateRunFailure"]:
     from ...schema.errors import GrapheneRunNotFoundError
     from ...schema.pipelines.pipeline import GrapheneRun
@@ -82,8 +90,6 @@ def terminate_pipeline_execution(
     )
 
     check.str_param(run_id, "run_id")
-
-    instance = graphene_info.context.instance
 
     record = instance.get_run_record_by_id(run_id)
 
@@ -141,6 +147,39 @@ def terminate_pipeline_execution(
     return GrapheneTerminateRunFailure(
         run=graphene_run, message=f"Unable to terminate run {run.run_id}"
     )
+
+
+def terminate_pipeline_execution_for_runs(
+    graphene_info: "ResolveInfo", run_ids: Sequence[str]
+) -> "GrapheneTerminateRunsSuccess":
+    from ...schema.errors import GrapheneRunNotFoundError
+    from ...schema.pipelines.pipeline import GrapheneRun
+    from ...schema.roots.mutation import (
+        GrapheneTerminateRunsSuccess,
+        GrapheneTerminateRunPolicy,
+        GrapheneTerminateRunSuccess,
+    )
+
+    from dagster_webserver.cli import DEFAULT_DB_STATEMENT_TIMEOUT, DEFAULT_POOL_RECYCLE
+
+    check.sequence_param(run_ids, "run_id", of_type=str)
+
+    run_ids = graphene_info.context.instance.get_run_ids(
+        RunsFilter(statuses=[DagsterRunStatus.QUEUED]), limit=1000
+    )
+
+    with DagsterInstance.from_ref(graphene_info.context.instance.get_ref()) as instance:
+        instance.optimize_for_webserver(DEFAULT_DB_STATEMENT_TIMEOUT, DEFAULT_POOL_RECYCLE)
+
+        num_runs_canceled = 0
+
+        for run_id in run_ids:
+            result = terminate_pipeline_execution(
+                graphene_info, instance, run_id, GrapheneTerminateRunPolicy.SAFE_TERMINATE
+            )
+            num_runs_canceled += 1 if isinstance(result, GrapheneTerminateRunSuccess) else 0
+
+    return GrapheneTerminateRunsSuccess(numRuns=num_runs_canceled)
 
 
 def delete_pipeline_run(

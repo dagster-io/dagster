@@ -23,6 +23,7 @@ from dagster_graphql.implementation.execution.launch_execution import (
 from ...implementation.execution import (
     delete_pipeline_run,
     terminate_pipeline_execution,
+    terminate_pipeline_execution_for_runs,
     wipe_assets,
 )
 from ...implementation.external import fetch_workspace, get_full_external_job_or_raise
@@ -249,6 +250,27 @@ class GrapheneTerminateRunResult(graphene.Union):
         name = "TerminateRunResult"
 
 
+class GrapheneTerminateRunsSuccess(graphene.ObjectType):
+    """Output indicating that a run was terminated."""
+
+    numRuns = graphene.NonNull(graphene.Int)
+
+    class Meta:
+        name = "TerminateRunsSuccess"
+
+
+class GrapheneTerminateRunsResult(graphene.Union):
+    """The output from a run termination."""
+
+    class Meta:
+        types = (
+            GrapheneTerminateRunsSuccess,
+            GrapheneUnauthorizedError,
+            GraphenePythonError,
+        )
+        name = "TerminateRunsResult"
+
+
 def create_execution_params_and_launch_pipeline_exec(graphene_info, execution_params_dict):
     execution_params = create_execution_params(graphene_info, execution_params_dict)
     assert_permission_for_location(
@@ -446,8 +468,33 @@ class GrapheneTerminateRunMutation(graphene.Mutation):
     ):
         return terminate_pipeline_execution(
             graphene_info,
+            graphene_info.context.instance,
             runId,
             terminatePolicy or GrapheneTerminateRunPolicy.SAFE_TERMINATE,
+        )
+
+
+class GrapheneTerminateRunsMutation(graphene.Mutation):
+    """Terminates a set of runs given their run IDs."""
+
+    Output = graphene.NonNull(GrapheneTerminateRunsResult)
+
+    class Arguments:
+        runIds = non_null_list(graphene.String)
+
+    class Meta:
+        name = "TerminateRunMutation"
+
+    @capture_error
+    @require_permission_check(Permissions.TERMINATE_PIPELINE_EXECUTION)
+    def mutate(
+        self,
+        graphene_info: ResolveInfo,
+        runIds: Sequence[str],
+    ):
+        return terminate_pipeline_execution_for_runs(
+            graphene_info,
+            runIds,
         )
 
 
@@ -767,6 +814,7 @@ class GrapheneMutation(graphene.ObjectType):
     scheduleDryRun = GrapheneScheduleDryRunMutation.Field()
     terminatePipelineExecution = GrapheneTerminateRunMutation.Field()
     terminateRun = GrapheneTerminateRunMutation.Field()
+    terminateRuns = GrapheneTerminateRunsMutation.Field()
     deletePipelineRun = GrapheneDeleteRunMutation.Field()
     deleteRun = GrapheneDeleteRunMutation.Field()
     reloadRepositoryLocation = GrapheneReloadRepositoryLocationMutation.Field()
