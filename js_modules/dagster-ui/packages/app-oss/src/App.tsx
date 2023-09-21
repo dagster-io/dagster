@@ -41,11 +41,13 @@ export default function AppPage() {
   const [portaledElements, setPortalElements] = React.useState<
     [React.ReactNode, HTMLElement, string | undefined][]
   >([]);
-  registerPortalProvider((node, container, key) => {
-    setPortalElements((elements) => {
-      return [...elements, [node, container, key]];
+  React.useLayoutEffect(() => {
+    registerPortalProvider((node, container, key) => {
+      setPortalElements((elements) => {
+        return [...elements, [node, container, key]];
+      });
     });
-  });
+  }, []);
   return (
     <AppProvider appCache={appCache} config={config}>
       {portaledElements.map(([node, container, key], index) =>
