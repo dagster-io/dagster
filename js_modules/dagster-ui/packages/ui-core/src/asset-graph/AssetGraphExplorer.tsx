@@ -75,6 +75,7 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
   const {
     fetchResult,
     assetGraphData,
+    fullAssetGraphData,
     graphQueryItems,
     graphAssetKeys,
     allAssetKeys,
@@ -86,7 +87,7 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
   return (
     <Loading allowStaleData queryResult={fetchResult}>
       {() => {
-        if (!assetGraphData || !allAssetKeys) {
+        if (!assetGraphData || !allAssetKeys || !fullAssetGraphData) {
           return <NonIdealState icon="error" title="Query Error" />;
         }
 
@@ -105,6 +106,7 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
           <AssetGraphExplorerWithData
             key={props.explorerPath.pipelineName}
             assetGraphData={assetGraphData}
+            fullAssetGraphData={fullAssetGraphData}
             allAssetKeys={allAssetKeys}
             graphQueryItems={graphQueryItems}
             applyingEmptyDefault={applyingEmptyDefault}
@@ -121,6 +123,7 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
 type WithDataProps = {
   allAssetKeys: AssetKey[];
   assetGraphData: GraphData;
+  fullAssetGraphData: GraphData;
   graphQueryItems: AssetGraphQueryItem[];
   liveDataByNode: LiveData;
   liveDataRefreshState: QueryRefreshState;
@@ -136,6 +139,7 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
   liveDataRefreshState,
   liveDataByNode,
   assetGraphData,
+  fullAssetGraphData,
   graphQueryItems,
   applyingEmptyDefault,
   fetchOptions,
@@ -508,6 +512,7 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
             <AssetGraphExplorerSidebar
               allAssetKeys={allAssetKeys}
               assetGraphData={assetGraphData}
+              fullAssetGraphData={fullAssetGraphData}
               lastSelectedNode={lastSelectedNode}
               selectNode={selectNodeById}
               explorerPath={explorerPath}
