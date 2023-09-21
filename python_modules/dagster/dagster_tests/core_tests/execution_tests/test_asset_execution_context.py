@@ -35,7 +35,6 @@ def test_deprecation_warnings():
         "dagster_run",
         "pdb",
         "log",
-        "log_event",
         "assets_def",
         "selected_asset_keys",
         "get_asset_provenance",
