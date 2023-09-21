@@ -66,7 +66,7 @@ class ExtMessage(TypedDict):
     params: Optional[Mapping[str, Any]]
 
 
-# ##### EXTERNAL EXECUTION CONTEXT
+# ##### EXT CONTEXT
 
 
 class ExtContextData(TypedDict):
@@ -624,11 +624,11 @@ class ExtContext:
         message_channel: ExtMessageWriterChannel,
     ) -> None:
         self._data = data
-        self.message_channel = message_channel
+        self._message_channel = message_channel
 
     def _write_message(self, method: str, params: Optional[Mapping[str, Any]] = None) -> None:
         message = ExtMessage(method=method, params=params)
-        self.message_channel.write_message(message)
+        self._message_channel.write_message(message)
 
     # ########################
     # ##### PUBLIC API

@@ -329,9 +329,9 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
         executionMetadata: {
           tags: uniqBy(
             [
-              // pass solid selection query via tags
-              // clean up https://github.com/dagster-io/dagster/issues/2495
-              ...(currentSession.solidSelectionQuery
+              // Include a dagster/solid_selection tag for non-asset jobs
+              // (asset jobs indicate elsewhere in the UI which assets were selected)
+              ...(currentSession.solidSelectionQuery && !pipeline.isAssetJob
                 ? [
                     {
                       key: DagsterTag.SolidSelection,
