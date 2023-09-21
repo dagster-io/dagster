@@ -121,7 +121,7 @@ export const useRepositoryLocationReload = ({
           return;
         }
 
-        type LocationEntryType = typeof workspace.locationEntries[number];
+        type LocationEntryType = (typeof workspace.locationEntries)[number];
         const locationMap = Object.fromEntries(workspace.locationEntries.map((e) => [e.id, e]));
         const matches = state.pollLocationIds
           .map((id) => locationMap[id])
@@ -214,13 +214,10 @@ export const useRepositoryLocationReload = ({
   const {mutating, pollStartTime, error, errorLocationId} = state;
   const reloading = mutating || pollStartTime !== null;
 
-  return React.useMemo(() => ({reloading, error, errorLocationId, tryReload, mutating}), [
-    reloading,
-    error,
-    errorLocationId,
-    tryReload,
-    mutating,
-  ]);
+  return React.useMemo(
+    () => ({reloading, error, errorLocationId, tryReload, mutating}),
+    [reloading, error, errorLocationId, tryReload, mutating],
+  );
 };
 
 const REPOSITORY_LOCATION_STATUS_QUERY = gql`

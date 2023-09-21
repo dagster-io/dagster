@@ -1,7 +1,7 @@
 ---
-title: "Lesson 8: Practice: Create a weekly partition"
-module: "dagster_essentials"
-lesson: "8"
+title: 'Lesson 8: Practice: Create a weekly partition'
+module: 'dagster_essentials'
+lesson: '8'
 ---
 
 # Practice: Create a weekly partition

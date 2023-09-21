@@ -445,9 +445,7 @@ def create_selector_type_error(context: ContextData, config_value: object) -> Ev
     return EvaluationError(
         stack=context.stack,
         reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
-        message="Value for selector type {path_msg} must be a dict".format(
-            path_msg=get_friendly_path_msg(context.stack)
-        ),
+        message=f"Value for selector type {get_friendly_path_msg(context.stack)} must be a dict",
         error_data=RuntimeMismatchErrorData(
             config_type_snap=context.config_type_snap, value_rep=repr(config_value)
         ),

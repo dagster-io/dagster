@@ -52,11 +52,7 @@ export const RepoNavItem: React.FC<Props> = (props) => {
   };
 
   return (
-    <Box
-      background={Colors.Gray50}
-      padding={{vertical: 12, left: 24, right: 20}}
-      border={{side: 'top', width: 1, color: Colors.KeylineGray}}
-    >
+    <Box background={Colors.Gray50} padding={{vertical: 12, left: 24, right: 20}} border="top">
       <Box flex={{justifyContent: 'space-between', alignItems: 'center'}}>
         <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
           <Icon name="folder" />

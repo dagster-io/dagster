@@ -42,7 +42,7 @@ CONSTRAINT_BLACKLIST = {ColumnDTypeFnConstraint, ColumnDTypeInSetConstraint}
     )
 )
 def dataframe_loader(_context, config):
-    file_type, file_options = list(config.items())[0]
+    file_type, file_options = next(iter(config.items()))
 
     if file_type == "csv":
         path = file_options["path"]
@@ -83,9 +83,7 @@ DataFrame = DagsterType(
 
 def _construct_constraint_list(constraints):
     def add_bullet(constraint_list, constraint_description):
-        return constraint_list + "+ {constraint_description}\n".format(
-            constraint_description=constraint_description
-        )
+        return constraint_list + f"+ {constraint_description}\n"
 
     constraint_list = ""
     for constraint in constraints:
@@ -99,13 +97,9 @@ def _build_column_header(column_name, constraints):
     for constraint in constraints:
         if isinstance(constraint, ColumnDTypeInSetConstraint):
             dtypes_tuple = tuple(constraint.expected_dtype_set)
-            return header + ": `{expected_dtypes}`".format(
-                expected_dtypes=dtypes_tuple if len(dtypes_tuple) > 1 else dtypes_tuple[0]
-            )
+            return header + f": `{dtypes_tuple if len(dtypes_tuple) > 1 else dtypes_tuple[0]}`"
         elif isinstance(constraint, ColumnDTypeFnConstraint):
-            return header + ": Validator `{expected_dtype_fn}`".format(
-                expected_dtype_fn=constraint.type_fn.__name__
-            )
+            return header + f": Validator `{constraint.type_fn.__name__}`"
     return header
 
 
@@ -180,8 +174,8 @@ def create_dagster_pandas_dataframe_type(
         if not isinstance(value, pd.DataFrame):
             return TypeCheck(
                 success=False,
-                description="Must be a pandas.DataFrame. Got value of type. {type_name}".format(
-                    type_name=type(value).__name__
+                description=(
+                    f"Must be a pandas.DataFrame. Got value of type. {type(value).__name__}"
                 ),
             )
 
@@ -243,8 +237,8 @@ def create_structured_dataframe_type(
         if not isinstance(value, pd.DataFrame):
             return TypeCheck(
                 success=False,
-                description="Must be a pandas.DataFrame. Got value of type. {type_name}".format(
-                    type_name=type(value).__name__
+                description=(
+                    f"Must be a pandas.DataFrame. Got value of type. {type(value).__name__}"
                 ),
             )
         individual_result_dict = {}

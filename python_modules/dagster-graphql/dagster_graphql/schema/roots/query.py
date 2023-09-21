@@ -136,6 +136,8 @@ from ..run_config import GrapheneRunConfigSchemaOrError
 from ..runs import (
     GrapheneRunConfigData,
     GrapheneRunGroupOrError,
+    GrapheneRunIds,
+    GrapheneRunIdsOrError,
     GrapheneRuns,
     GrapheneRunsOrError,
     GrapheneRunTagKeysOrError,
@@ -325,6 +327,13 @@ class GrapheneQuery(graphene.ObjectType):
         valuePrefix=graphene.String(),
         limit=graphene.Int(),
         description="Retrieve all the distinct key-value tags from all runs.",
+    )
+    runIdsOrError = graphene.Field(
+        graphene.NonNull(GrapheneRunIdsOrError),
+        filter=graphene.Argument(GrapheneRunsFilter),
+        cursor=graphene.String(),
+        limit=graphene.Int(),
+        description="Retrieve run IDs after applying a filter, cursor, and limit.",
     )
 
     runGroupOrError = graphene.Field(
@@ -668,6 +677,21 @@ class GrapheneQuery(graphene.ObjectType):
         selector = filter.to_selector() if filter is not None else None
 
         return GrapheneRuns(
+            filters=selector,
+            cursor=cursor,
+            limit=limit,
+        )
+
+    def resolve_runIdsOrError(
+        self,
+        _graphene_info: ResolveInfo,
+        filter: Optional[GrapheneRunsFilter] = None,  # noqa: A002
+        cursor: Optional[str] = None,
+        limit: Optional[int] = None,
+    ):
+        selector = filter.to_selector() if filter is not None else None
+
+        return GrapheneRunIds(
             filters=selector,
             cursor=cursor,
             limit=limit,

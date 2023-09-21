@@ -72,6 +72,47 @@
     }),
   })
 # ---
+# name: test_fetch_top_level_resource_uses[0]
+  dict({
+    'topLevelResourceDetailsOrError': dict({
+      '__typename': 'ResourceDetails',
+      'assetKeysUsing': list([
+        dict({
+          'path': list([
+            'my_asset',
+          ]),
+        }),
+        dict({
+          'path': list([
+            'my_observable_source_asset',
+          ]),
+        }),
+      ]),
+      'jobsOpsUsing': list([
+        dict({
+          'job': dict({
+            'name': 'my_asset_job',
+          }),
+          'opsUsing': list([
+            dict({
+              'solid': dict({
+                'name': 'my_asset',
+              }),
+            }),
+          ]),
+        }),
+      ]),
+      'name': 'my_resource',
+      'schedulesUsing': list([
+        'my_schedule',
+      ]),
+      'sensorsUsing': list([
+        'my_sensor',
+        'my_sensor_two',
+      ]),
+    }),
+  })
+# ---
 # name: test_fetch_top_level_resources[0]
   dict({
     'allTopLevelResourceDetailsOrError': dict({

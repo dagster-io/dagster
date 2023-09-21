@@ -8,10 +8,12 @@ import {AssetEventsQuery} from '../../assets/types/useRecentAssetEvents.types';
 import {ASSET_EVENTS_QUERY} from '../../assets/useRecentAssetEvents';
 import {
   AssetNode,
+  AutoMaterializeDecisionType,
   AutoMaterializePolicyType,
   RunStatus,
   buildAssetNode,
   buildAutoMaterializePolicy,
+  buildAutoMaterializeRule,
   buildFreshnessPolicy,
 } from '../../graphql/types';
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
@@ -21,7 +23,10 @@ import {LiveDataForNodeMaterializedWithChecks} from '../__fixtures__/AssetNode.f
 import {SidebarAssetQuery} from '../types/SidebarAssetInfo.types';
 
 // eslint-disable-next-line import/no-default-export
-export default {component: SidebarAssetInfo};
+export default {
+  title: 'Asset Graph/SidebarAssetInfo',
+  component: SidebarAssetInfo,
+};
 
 const MockRepo = {
   __typename: 'Repository',
@@ -69,6 +74,7 @@ const buildSidebarQueryMock = (
         description: null,
         configField: null,
         metadataEntries: [],
+        jobNames: ['test_job'],
         autoMaterializePolicy: null,
         freshnessPolicy: null,
         partitionDefinition: null,
@@ -260,6 +266,16 @@ export const AssetWithPolicies = () => {
         buildSidebarQueryMock({
           autoMaterializePolicy: buildAutoMaterializePolicy({
             policyType: AutoMaterializePolicyType.EAGER,
+            rules: [
+              buildAutoMaterializeRule({
+                decisionType: AutoMaterializeDecisionType.MATERIALIZE,
+                description: 'Rule 1',
+              }),
+              buildAutoMaterializeRule({
+                decisionType: AutoMaterializeDecisionType.SKIP,
+                description: 'Skip Rule 1',
+              }),
+            ],
           }),
           freshnessPolicy: buildFreshnessPolicy({
             maximumLagMinutes: 60,

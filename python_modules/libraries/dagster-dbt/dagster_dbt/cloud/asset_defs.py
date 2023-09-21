@@ -18,13 +18,13 @@ from typing import (
 
 import dagster._check as check
 from dagster import (
+    AssetExecutionContext,
     AssetKey,
     AssetOut,
     AssetsDefinition,
     AutoMaterializePolicy,
     FreshnessPolicy,
     MetadataValue,
-    OpExecutionContext,
     PartitionsDefinition,
     ResourceDefinition,
     multi_asset,
@@ -351,6 +351,14 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             def get_group_name(cls, dbt_resource_props):
                 return self._node_info_to_group_fn(dbt_resource_props)
 
+            @classmethod
+            def get_freshness_policy(cls, dbt_resource_props):
+                return self._node_info_to_freshness_policy_fn(dbt_resource_props)
+
+            @classmethod
+            def get_auto_materialize_policy(cls, dbt_resource_props):
+                return self._node_info_to_auto_materialize_policy_fn(dbt_resource_props)
+
         (
             asset_deps,
             asset_ins,
@@ -358,13 +366,12 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             group_names_by_key,
             freshness_policies_by_key,
             auto_materialize_policies_by_key,
+            _,
             fqns_by_output_name,
             metadata_by_output_name,
         ) = get_asset_deps(
             dbt_nodes=dbt_nodes,
             deps=dbt_dependencies,
-            node_info_to_freshness_policy_fn=self._node_info_to_freshness_policy_fn,
-            node_info_to_auto_materialize_policy_fn=self._node_info_to_auto_materialize_policy_fn,
             # TODO: In the future, allow the IO manager to be specified.
             io_manager_key=None,
             dagster_dbt_translator=CustomDagsterDbtTranslator(),
@@ -481,7 +488,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             required_resource_keys={"dbt_cloud"},
             compute_kind="dbt",
         )
-        def _assets(context: OpExecutionContext):
+        def _assets(context: AssetExecutionContext):
             dbt_cloud = cast(DbtCloudClient, context.resources.dbt_cloud)
 
             # Add the partition variable as a variable to the dbt Cloud job command.

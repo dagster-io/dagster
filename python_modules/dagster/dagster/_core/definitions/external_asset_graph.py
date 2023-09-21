@@ -12,6 +12,7 @@ from typing import (
     Tuple,
 )
 
+import dagster._check as check
 from dagster._core.definitions.assets_job import ASSET_BASE_JOB_PREFIX
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.host_representation.external import ExternalRepository
@@ -228,17 +229,65 @@ class ExternalAssetGraph(AssetGraph):
     def get_asset_keys_for_job(self, job_name: str) -> Sequence[AssetKey]:
         return self._asset_keys_by_job_name[job_name]
 
-    def get_implicit_job_name_for_assets(self, asset_keys: Iterable[AssetKey]) -> Optional[str]:
+    def get_implicit_job_name_for_assets(
+        self,
+        asset_keys: Iterable[AssetKey],
+        external_repo: Optional[ExternalRepository],
+    ) -> Optional[str]:
         """Returns the name of the asset base job that contains all the given assets, or None if there is no such
         job.
 
         Note: all asset_keys should be in the same repository.
         """
-        for job_name in sorted(self._asset_keys_by_job_name.keys()):
-            if not job_name.startswith(ASSET_BASE_JOB_PREFIX):
-                continue
-            if all(asset_key in self._asset_keys_by_job_name[job_name] for asset_key in asset_keys):
-                return job_name
+        if all(self.is_observable(asset_key) for asset_key in asset_keys):
+            if external_repo is None:
+                check.failed(
+                    "external_repo must be passed in when getting job names for observable assets"
+                )
+            # for observable source assets, we need to select the job based on the partitions def
+            target_partitions_defs = {
+                self.get_partitions_def(asset_key) for asset_key in asset_keys
+            }
+            check.invariant(len(target_partitions_defs) == 1, "Expected exactly one partitions def")
+            target_partitions_def = next(iter(target_partitions_defs))
+
+            # create a mapping from job name to the partitions def of that job
+            partitions_def_by_job_name = {}
+            for (
+                external_partition_set_data
+            ) in external_repo.external_repository_data.external_partition_set_datas:
+                if external_partition_set_data.external_partitions_data is None:
+                    partitions_def = None
+                else:
+                    partitions_def = (
+                        external_partition_set_data.external_partitions_data.get_partitions_definition()
+                    )
+                partitions_def_by_job_name[external_partition_set_data.job_name] = partitions_def
+            # add any jobs that don't have a partitions def
+            for external_job in external_repo.get_all_external_jobs():
+                job_name = external_job.external_job_data.name
+                if job_name not in partitions_def_by_job_name:
+                    partitions_def_by_job_name[job_name] = None
+            # find the job that matches the expected partitions definition
+            for job_name, external_partitions_def in partitions_def_by_job_name.items():
+                if not job_name.startswith(ASSET_BASE_JOB_PREFIX):
+                    continue
+                if (
+                    # unpartitioned observable source assets may be materialized in any job
+                    target_partitions_def is None
+                    or external_partitions_def == target_partitions_def
+                ) and all(
+                    asset_key in self._asset_keys_by_job_name[job_name] for asset_key in asset_keys
+                ):
+                    return job_name
+        else:
+            for job_name in sorted(self._asset_keys_by_job_name.keys()):
+                if not job_name.startswith(ASSET_BASE_JOB_PREFIX):
+                    continue
+                if all(
+                    asset_key in self._asset_keys_by_job_name[job_name] for asset_key in asset_keys
+                ):
+                    return job_name
         return None
 
     def split_asset_keys_by_repository(

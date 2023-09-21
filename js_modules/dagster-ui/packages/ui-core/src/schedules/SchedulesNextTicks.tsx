@@ -16,8 +16,8 @@ import {
   Spinner,
   Table,
   Subheading,
-  StyledReadOnlyCodeMirror,
   ExternalAnchorButton,
+  StyledRawCodeMirror,
 } from '@dagster-io/ui-components';
 import qs from 'qs';
 import * as React from 'react';
@@ -317,14 +317,12 @@ const NextTickDialog: React.FC<{
   schedule: ScheduleNextFiveTicksFragment;
   tickTimestamp: number;
 }> = ({repoAddress, evaluationResult, schedule, tickTimestamp, setOpen, isOpen}) => {
-  const [
-    selectedRunRequest,
-    setSelectedRunRequest,
-  ] = React.useState<ScheduleFutureTickRunRequestFragment | null>(
-    evaluationResult && evaluationResult.runRequests && evaluationResult.runRequests.length === 1
-      ? evaluationResult.runRequests[0]!
-      : null,
-  );
+  const [selectedRunRequest, setSelectedRunRequest] =
+    React.useState<ScheduleFutureTickRunRequestFragment | null>(
+      evaluationResult && evaluationResult.runRequests && evaluationResult.runRequests.length === 1
+        ? evaluationResult.runRequests[0]!
+        : null,
+    );
 
   const copy = useCopyToClipboard();
 
@@ -359,15 +357,12 @@ const NextTickDialog: React.FC<{
           ) : null}
         </Box>
         <div>
-          <Box
-            border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-            padding={{left: 24, bottom: 16}}
-          >
+          <Box border="bottom" padding={{left: 24, bottom: 16}}>
             <Subheading>Config</Subheading>
           </Box>
-          <StyledReadOnlyCodeMirror
+          <StyledRawCodeMirror
             value={selectedRunRequest.runConfigYaml}
-            options={{lineNumbers: true, mode: 'yaml'}}
+            options={{readOnly: true, lineNumbers: true, mode: 'yaml'}}
           />
         </div>
       </Box>

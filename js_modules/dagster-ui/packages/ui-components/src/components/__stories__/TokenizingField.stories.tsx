@@ -48,7 +48,7 @@ export const TokenProvider = () => {
       values={value}
       onChange={(values) => setValue(values)}
       suggestionProviders={[
-        {values: () => ['ben@elementl.com', 'dish@elementl.com', 'marco@elementl.com']},
+        {values: () => ['ben@dagsterlabs.com', 'dish@dagsterlabs.com', 'marco@dagsterlabs.com']},
       ]}
     />
   );
@@ -58,14 +58,14 @@ export const TokenAndSuggestionProviders = () => {
   const [value, setValue] = React.useState<TokenizingFieldValue[]>([]);
 
   const users = {
-    'ben@elementl.com': 'Ben Pankow',
-    'dish@elementl.com': 'Isaac Hellendag',
-    'marco@elementl.com': 'Marco Salazar',
+    'ben@dagsterlabs.com': 'Ben Pankow',
+    'dish@dagsterlabs.com': 'Isaac Hellendag',
+    'marco@dagsterlabs.com': 'Marco Salazar',
   };
   const suggestions: SuggestionProvider[] = [
     {
       token: 'group',
-      values: () => ['core@elementl.com', 'cloud@elementl.com'],
+      values: () => ['core@dagsterlabs.com', 'cloud@dagsterlabs.com'],
     },
     {
       values: () => Object.keys(users),

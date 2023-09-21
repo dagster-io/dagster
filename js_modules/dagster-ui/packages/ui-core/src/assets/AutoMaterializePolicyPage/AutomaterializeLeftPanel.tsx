@@ -123,11 +123,7 @@ export const AutomaterializeLeftList = (props: ListProps) => {
           </EvaluationListItem>
         );
       })}
-      <Box
-        border={{side: 'top', color: Colors.KeylineGray, width: 1}}
-        padding={{vertical: 20, horizontal: 12}}
-        margin={{top: 12}}
-      >
+      <Box border="top" padding={{vertical: 20, horizontal: 12}} margin={{top: 12}}>
         <Caption>Evaluations are retained for 30 days</Caption>
       </Box>
     </Box>
@@ -160,7 +156,9 @@ const EvaluationListItem = styled.button<EvaluationListItemProps>`
   cursor: pointer;
   margin: 2px 0;
   text-align: left;
-  transition: 100ms background-color linear, 100ms color linear;
+  transition:
+    100ms background-color linear,
+    100ms color linear;
   user-select: none;
 
   &:hover {

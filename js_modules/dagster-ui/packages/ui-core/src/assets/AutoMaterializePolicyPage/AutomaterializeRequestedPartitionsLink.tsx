@@ -3,7 +3,6 @@ import {
   Box,
   Button,
   ButtonLink,
-  Colors,
   Dialog,
   DialogFooter,
   NonIdealState,
@@ -89,7 +88,7 @@ export const AutomaterializeRequestedPartitionsLink = ({runIds, partitionKeys, i
         <Box
           padding={{horizontal: 24, vertical: 16}}
           flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
-          border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+          border="bottom"
         >
           <div style={{fontSize: '16px'}}>
             {count === 1 ? '1 partition' : `${count} partitions`}
@@ -251,11 +250,7 @@ const VirtualizedPartitionList = ({partitionKeys, runsByPartitionKey}: Virtualiz
               <Box
                 style={{height: '100%'}}
                 flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
-                border={
-                  index < partitionKeys.length - 1
-                    ? {side: 'bottom', width: 1, color: Colors.KeylineGray}
-                    : null
-                }
+                border={index < partitionKeys.length - 1 ? 'bottom' : null}
               >
                 <div>{partitionKeys[index]}</div>
                 {showRunTag ? (

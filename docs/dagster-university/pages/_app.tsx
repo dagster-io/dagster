@@ -1,18 +1,17 @@
 import React from 'react';
 import Head from 'next/head';
-import Link from 'next/link';
 
 import 'prismjs';
 // Import other Prism themes here
 import 'prismjs/components/prism-bash.min';
 import 'prismjs/themes/prism.css';
 
-import '../public/styles/globals.css'
-import '../public/styles/prism.css'
-import '../public/styles/fonts.css'
+import '../styles/fonts.css';
+import '../styles/globals.css';
+import '../styles/prism.css';
 
-import type { AppProps } from 'next/app'
-import type { MarkdocNextJsPageProps } from '@markdoc/next.js'
+import type {AppProps} from 'next/app';
+import type {MarkdocNextJsPageProps} from '@markdoc/next.js';
 
 const TITLE = 'Markdoc';
 const DESCRIPTION = 'A powerful, flexible, Markdown-based authoring framework';
@@ -25,7 +24,7 @@ function collectHeadings(node, sections = []) {
       if (typeof title === 'string') {
         sections.push({
           ...node.attributes,
-          title
+          title,
         });
       }
     }
@@ -40,10 +39,10 @@ function collectHeadings(node, sections = []) {
   return sections;
 }
 
-export type MyAppProps = MarkdocNextJsPageProps
+export type MyAppProps = MarkdocNextJsPageProps;
 
-export default function MyApp({ Component, pageProps }: AppProps<MyAppProps>) {
-  const { markdoc } = pageProps;
+export default function MyApp({Component, pageProps}: AppProps<MyAppProps>) {
+  const {markdoc} = pageProps;
 
   let title = TITLE;
   let description = DESCRIPTION;
@@ -56,9 +55,7 @@ export default function MyApp({ Component, pageProps }: AppProps<MyAppProps>) {
     }
   }
 
-  const toc = pageProps.markdoc?.content
-    ? collectHeadings(pageProps.markdoc.content)
-    : [];
+  const toc = pageProps.markdoc?.content ? collectHeadings(pageProps.markdoc.content) : [];
 
   return (
     <>
@@ -72,7 +69,7 @@ export default function MyApp({ Component, pageProps }: AppProps<MyAppProps>) {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <div className="page">
-        <main className="flex column">
+        <main className="prose max-w-5xl">
           <Component {...pageProps} />
         </main>
       </div>

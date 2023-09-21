@@ -121,10 +121,7 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
 
   return (
     <Row $height={height} $start={start}>
-      <RowGrid
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-        $showCheckboxColumn={showCheckboxColumn}
-      >
+      <RowGrid border="bottom" $showCheckboxColumn={showCheckboxColumn}>
         {showCheckboxColumn ? (
           <RowCell>
             <Tooltip
@@ -279,7 +276,7 @@ export const VirtualizedScheduleHeader = (props: {checkbox: React.ReactNode}) =>
   const {checkbox} = props;
   return (
     <Box
-      border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+      border="top-and-bottom"
       style={{
         display: 'grid',
         gridTemplateColumns: checkbox ? TEMPLATE_COLUMNS_WITH_CHECKBOX : TEMPLATE_COLUMNS,

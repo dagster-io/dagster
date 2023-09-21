@@ -47,53 +47,61 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
 
   const nodes = fetchResult.data?.assetNodes;
 
-  const {
-    assetGraphData,
-    graphQueryItems,
-    graphAssetKeys,
-    allAssetKeys,
-    applyingEmptyDefault,
-  } = React.useMemo(() => {
-    if (nodes === undefined) {
-      return {
-        graphAssetKeys: [],
-        graphQueryItems: [],
-        assetGraphData: null,
-        applyingEmptyDefault: false,
-      };
-    }
-
+  const repoFilteredNodes = React.useMemo(() => {
     // Apply any filters provided by the caller. This is where we do repo filtering
     let matching = nodes;
     if (options.hideNodesMatching) {
       matching = reject(matching, options.hideNodesMatching);
+    }
+    return matching;
+  }, [nodes, options.hideNodesMatching]);
+
+  const graphQueryItems = React.useMemo(
+    () => (repoFilteredNodes ? buildGraphQueryItems(repoFilteredNodes) : []),
+    [repoFilteredNodes],
+  );
+
+  const fullAssetGraphData = React.useMemo(
+    () => (graphQueryItems ? buildGraphData(graphQueryItems.map((n) => n.node)) : null),
+    [graphQueryItems],
+  );
+
+  const {assetGraphData, graphAssetKeys, allAssetKeys, applyingEmptyDefault} = React.useMemo(() => {
+    if (repoFilteredNodes === undefined || graphQueryItems === undefined) {
+      return {
+        graphAssetKeys: [],
+        graphQueryItems: [],
+        assetGraphData: null,
+        fullAssetGraphData: null,
+        applyingEmptyDefault: false,
+      };
     }
 
     // Filter the set of all AssetNodes down to those matching the `opsQuery`.
     // In the future it might be ideal to move this server-side, but we currently
     // get to leverage the useQuery cache almost 100% of the time above, making this
     // super fast after the first load vs a network fetch on every page view.
-    const graphQueryItems = buildGraphQueryItems(matching);
     const {all, applyingEmptyDefault} = filterByQuery(graphQueryItems, opsQuery);
 
     // Assemble the response into the data structure used for layout, traversal, etc.
     const assetGraphData = buildGraphData(all.map((n) => n.node));
     if (options.hideEdgesToNodesOutsideQuery) {
-      removeEdgesToHiddenAssets(assetGraphData, nodes);
+      removeEdgesToHiddenAssets(assetGraphData, repoFilteredNodes);
     }
 
     return {
-      allAssetKeys: matching.map((n) => n.assetKey),
+      allAssetKeys: repoFilteredNodes.map((n) => n.assetKey),
       graphAssetKeys: all.map((n) => ({path: n.node.assetKey.path})),
       assetGraphData,
       graphQueryItems,
       applyingEmptyDefault,
     };
-  }, [nodes, opsQuery, options.hideEdgesToNodesOutsideQuery, options.hideNodesMatching]);
+  }, [repoFilteredNodes, graphQueryItems, opsQuery, options.hideEdgesToNodesOutsideQuery]);
 
   return {
     fetchResult,
     assetGraphData,
+    fullAssetGraphData,
     graphQueryItems,
     graphAssetKeys,
     allAssetKeys,
@@ -184,6 +192,7 @@ export const ASSET_GRAPH_QUERY = gql`
   fragment AssetNodeForGraphQuery on AssetNode {
     id
     groupName
+    isExecutable
     hasMaterializePermission
     repository {
       id

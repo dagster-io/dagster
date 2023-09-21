@@ -37,6 +37,7 @@ export function useQueryRefreshAtInterval(
   queryResult: QueryResult<any, any>,
   intervalMs: number,
   enabled = true,
+  customRefetch?: () => void,
 ) {
   const timer = React.useRef<number>();
   const loadingStartMs = React.useRef<number>();
@@ -44,6 +45,9 @@ export function useQueryRefreshAtInterval(
 
   const queryResultRef = React.useRef(queryResult);
   queryResultRef.current = queryResult;
+
+  const customRefetchRef = React.useRef(customRefetch);
+  customRefetchRef.current = customRefetch;
 
   // Sanity check - don't use this hook alongside a useQuery pollInterval
   if (queryResult.networkStatus === NetworkStatus.poll) {
@@ -63,7 +67,7 @@ export function useQueryRefreshAtInterval(
       return;
     }
     if (documentVisible && documentVisiblityDidInterrupt.current) {
-      queryResultRef.current?.refetch();
+      customRefetchRef.current ? customRefetchRef.current() : queryResultRef.current?.refetch();
       documentVisiblityDidInterrupt.current = false;
     }
   }, [documentVisible, enabled]);
@@ -101,7 +105,7 @@ export function useQueryRefreshAtInterval(
         documentVisiblityDidInterrupt.current = true;
         return;
       }
-      queryResultRef.current?.refetch();
+      customRefetchRef.current ? customRefetchRef.current() : queryResultRef.current?.refetch();
     }, adjustedIntervalMs);
 
     return () => {
@@ -111,9 +115,10 @@ export function useQueryRefreshAtInterval(
 
   // Expose the next fire time both as a unix timstamp and as a "seconds" interval
   // so the <QueryRefreshCountdown> can display the number easily.
-  const nextFireDelay = React.useMemo(() => (nextFireMs ? nextFireMs - Date.now() : -1), [
-    nextFireMs,
-  ]);
+  const nextFireDelay = React.useMemo(
+    () => (nextFireMs ? nextFireMs - Date.now() : -1),
+    [nextFireMs],
+  );
 
   // Memoize the returned object so components passed the entire QueryRefreshState
   // can be memoized / pure components.
@@ -122,9 +127,13 @@ export function useQueryRefreshAtInterval(
       nextFireMs,
       nextFireDelay,
       networkStatus: queryResult.networkStatus,
-      refetch: queryResult.refetch,
+      refetch: (...props) => {
+        return customRefetchRef.current
+          ? (customRefetchRef.current() as any)
+          : queryResult.refetch(...props);
+      },
     }),
-    [nextFireMs, nextFireDelay, queryResult.networkStatus, queryResult.refetch],
+    [nextFireMs, nextFireDelay, queryResult],
   );
 }
 

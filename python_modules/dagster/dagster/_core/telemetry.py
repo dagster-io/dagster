@@ -106,15 +106,13 @@ T_Callable = TypeVar("T_Callable", bound=Callable[..., Any])
 
 
 @overload
-def telemetry_wrapper(target_fn: T_Callable) -> T_Callable:
-    ...
+def telemetry_wrapper(target_fn: T_Callable) -> T_Callable: ...
 
 
 @overload
 def telemetry_wrapper(
     *, metadata: Optional[Mapping[str, str]]
-) -> Callable[[Callable[P, T]], Callable[P, T]]:
-    ...
+) -> Callable[[Callable[P, T]], Callable[P, T]]: ...
 
 
 def telemetry_wrapper(
@@ -347,9 +345,7 @@ def _check_telemetry_instance_param(
             args[instance_index],  # type: ignore
             "instance",
             DagsterInstance,
-            "'instance' argument at position {position} must be a DagsterInstance".format(
-                position=instance_index
-            ),
+            f"'instance' argument at position {instance_index} must be a DagsterInstance",
         )
 
 

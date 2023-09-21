@@ -1,6 +1,10 @@
+from datetime import datetime, timedelta
+
 import pytest
 from dagster import (
     AllPartitionMapping,
+    AssetExecutionContext,
+    AssetKey,
     DailyPartitionsDefinition,
     DynamicPartitionsDefinition,
     IdentityPartitionMapping,
@@ -11,8 +15,13 @@ from dagster import (
     StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
     WeeklyPartitionsDefinition,
+    asset,
+    materialize,
+    multi_asset,
 )
 from dagster._check import CheckError
+from dagster._core.definitions.asset_dep import AssetDep
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.partition import DefaultPartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partition_mapping import (
@@ -719,3 +728,155 @@ def test_error_multipartitions_mapping():
                 )
             }
         ).get_upstream_mapped_partitions_result_for_partitions(weekly_abc.empty_subset(), daily_123)
+
+
+def test_multi_partition_mapping_with_asset_deps():
+    partitions_def = MultiPartitionsDefinition(
+        {
+            "123": StaticPartitionsDefinition(["1", "2", "3"]),
+            "time": DailyPartitionsDefinition("2023-01-01"),
+        }
+    )
+
+    ### With @asset and deps
+    @asset(partitions_def=partitions_def)
+    def upstream():
+        return
+
+    mapping = MultiPartitionMapping(
+        {
+            "123": DimensionPartitionMapping(
+                dimension_name="123",
+                partition_mapping=IdentityPartitionMapping(),
+            ),
+            "time": DimensionPartitionMapping(
+                dimension_name="time",
+                partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
+            ),
+        }
+    )
+
+    @asset(partitions_def=partitions_def, deps=[AssetDep(upstream, partition_mapping=mapping)])
+    def downstream(context: AssetExecutionContext):
+        upstream_mp_key = context.asset_partition_key_for_input("upstream")
+        current_mp_key = context.partition_key
+
+        if isinstance(upstream_mp_key, MultiPartitionKey) and isinstance(
+            current_mp_key, MultiPartitionKey
+        ):
+            upstream_key = datetime.strptime(upstream_mp_key.keys_by_dimension["time"], "%Y-%m-%d")
+
+            current_partition_key = datetime.strptime(
+                current_mp_key.keys_by_dimension["time"], "%Y-%m-%d"
+            )
+
+            assert current_partition_key - upstream_key == timedelta(days=1)
+        else:
+            assert False, "partition keys for upstream and downstream should be MultiPartitionKeys"
+
+        return
+
+    materialize(
+        [upstream, downstream], partition_key=MultiPartitionKey({"123": "1", "time": "2023-08-05"})
+    )
+
+    assert downstream.partition_mappings == {
+        AssetKey("upstream"): mapping,
+    }
+
+    ### With @multi_asset and AssetSpec
+    asset_1 = AssetSpec(key="asset_1")
+    asset_2 = AssetSpec(key="asset_2")
+
+    asset_1_partition_mapping = MultiPartitionMapping(
+        {
+            "123": DimensionPartitionMapping(
+                dimension_name="123",
+                partition_mapping=IdentityPartitionMapping(),
+            ),
+            "time": DimensionPartitionMapping(
+                dimension_name="time",
+                partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
+            ),
+        }
+    )
+    asset_2_partition_mapping = MultiPartitionMapping(
+        {
+            "123": DimensionPartitionMapping(
+                dimension_name="123",
+                partition_mapping=IdentityPartitionMapping(),
+            ),
+            "time": DimensionPartitionMapping(
+                dimension_name="time",
+                partition_mapping=TimeWindowPartitionMapping(start_offset=-2, end_offset=-2),
+            ),
+        }
+    )
+
+    asset_3 = AssetSpec(
+        key="asset_3",
+        deps=[
+            AssetDep(
+                asset=asset_1,
+                partition_mapping=asset_1_partition_mapping,
+            ),
+            AssetDep(
+                asset=asset_2,
+                partition_mapping=asset_2_partition_mapping,
+            ),
+        ],
+    )
+    asset_4 = AssetSpec(
+        key="asset_4",
+        deps=[
+            AssetDep(
+                asset=asset_1,
+                partition_mapping=asset_1_partition_mapping,
+            ),
+            AssetDep(
+                asset=asset_2,
+                partition_mapping=asset_2_partition_mapping,
+            ),
+        ],
+    )
+
+    @multi_asset(specs=[asset_1, asset_2], partitions_def=partitions_def)
+    def multi_asset_1():
+        return
+
+    @multi_asset(specs=[asset_3, asset_4], partitions_def=partitions_def)
+    def multi_asset_2(context: AssetExecutionContext):
+        asset_1_mp_key = context.asset_partition_key_for_input("asset_1")
+        asset_2_mp_key = context.asset_partition_key_for_input("asset_2")
+        current_mp_key = context.partition_key
+
+        if (
+            isinstance(asset_1_mp_key, MultiPartitionKey)
+            and isinstance(asset_2_mp_key, MultiPartitionKey)
+            and isinstance(current_mp_key, MultiPartitionKey)
+        ):
+            asset_1_key = datetime.strptime(asset_1_mp_key.keys_by_dimension["time"], "%Y-%m-%d")
+            asset_2_key = datetime.strptime(asset_2_mp_key.keys_by_dimension["time"], "%Y-%m-%d")
+
+            current_partition_key = datetime.strptime(
+                current_mp_key.keys_by_dimension["time"], "%Y-%m-%d"
+            )
+
+            assert current_partition_key - asset_1_key == timedelta(days=1)
+            assert current_partition_key - asset_2_key == timedelta(days=2)
+        else:
+            assert (
+                False
+            ), "partition keys for asset_1, asset_2, and multi_asset_2 should be MultiPartitionKeys"
+
+        return
+
+    materialize(
+        [multi_asset_1, multi_asset_2],
+        partition_key=MultiPartitionKey({"123": "1", "time": "2023-08-05"}),
+    )
+
+    assert multi_asset_2.partition_mappings == {
+        AssetKey("asset_1"): asset_1_partition_mapping,
+        AssetKey("asset_2"): asset_2_partition_mapping,
+    }

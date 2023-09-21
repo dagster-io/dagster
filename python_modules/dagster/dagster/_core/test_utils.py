@@ -149,6 +149,7 @@ def create_run_for_test(
     external_job_origin=None,
     job_code_origin=None,
     asset_selection=None,
+    asset_check_selection=None,
     op_selection=None,
 ):
     return instance.create_run(
@@ -167,6 +168,7 @@ def create_run_for_test(
         external_job_origin=external_job_origin,
         job_code_origin=job_code_origin,
         asset_selection=asset_selection,
+        asset_check_selection=asset_check_selection,
         op_selection=op_selection,
     )
 

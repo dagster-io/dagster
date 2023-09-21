@@ -163,5 +163,9 @@ export const ParentOpNode: React.FC<ParentOpNodeProps> = (props) => {
 };
 
 export const SVGLabeledParentRect = styled(SVGLabeledRect)`
-  transition: x 250ms ease-out, y 250ms ease-out, width 250ms ease-out, height 250ms ease-out;
+  transition:
+    x 250ms ease-out,
+    y 250ms ease-out,
+    width 250ms ease-out,
+    height 250ms ease-out;
 `;

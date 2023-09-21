@@ -13,13 +13,11 @@ customers_partitions_def = DynamicPartitionsDefinition(name="customers")
 
 
 @asset(partitions_def=customers_partitions_def, group_name="dynamic_asset_partitions")
-def customers_dynamic_partitions_asset1():
-    ...
+def customers_dynamic_partitions_asset1(): ...
 
 
 @asset(partitions_def=customers_partitions_def, group_name="dynamic_asset_partitions")
-def customers_dynamic_partitions_asset2(customers_dynamic_partitions_asset1):
-    ...
+def customers_dynamic_partitions_asset2(customers_dynamic_partitions_asset1): ...
 
 
 multipartition_w_dynamic_partitions_def = MultiPartitionsDefinition(

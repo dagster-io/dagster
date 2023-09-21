@@ -394,10 +394,6 @@ def _dbt_nodes_to_assets(
     use_build_command: bool,
     partitions_def: Optional[PartitionsDefinition],
     partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]],
-    node_info_to_freshness_policy_fn: Callable[[Mapping[str, Any]], Optional[FreshnessPolicy]],
-    node_info_to_auto_materialize_policy_fn: Callable[
-        [Mapping[str, Any]], Optional[AutoMaterializePolicy]
-    ],
     dagster_dbt_translator: DagsterDbtTranslator,
 ) -> AssetsDefinition:
     if use_build_command:
@@ -416,13 +412,12 @@ def _dbt_nodes_to_assets(
         group_names_by_key,
         freshness_policies_by_key,
         auto_materialize_policies_by_key,
+        check_specs_by_output_name,
         fqns_by_output_name,
         _,
     ) = get_asset_deps(
         dbt_nodes=dbt_nodes,
         deps=deps,
-        node_info_to_freshness_policy_fn=node_info_to_freshness_policy_fn,
-        node_info_to_auto_materialize_policy_fn=node_info_to_auto_materialize_policy_fn,
         io_manager_key=io_manager_key,
         manifest=manifest_json,
         dagster_dbt_translator=dagster_dbt_translator,
@@ -434,10 +429,20 @@ def _dbt_nodes_to_assets(
         if select != "fqn:*" or exclude:
             op_name += "_" + hashlib.md5(select.encode() + exclude.encode()).hexdigest()[-5:]
 
+    check_outs_by_output_name: Mapping[str, Out] = {}
+    if check_specs_by_output_name:
+        check_outs_by_output_name = {
+            output_name: Out(dagster_type=None, is_required=False)
+            for output_name in check_specs_by_output_name.keys()
+        }
+
     dbt_op = _get_dbt_op(
         op_name=op_name,
         ins=dict(asset_ins.values()),
-        outs=dict(asset_outs.values()),
+        outs={
+            **dict(asset_outs.values()),
+            **check_outs_by_output_name,
+        },
         select=select,
         exclude=exclude,
         use_build_command=use_build_command,
@@ -462,6 +467,7 @@ def _dbt_nodes_to_assets(
         group_names_by_key=group_names_by_key,
         freshness_policies_by_key=freshness_policies_by_key,
         auto_materialize_policies_by_key=auto_materialize_policies_by_key,
+        check_specs_by_output_name=check_specs_by_output_name,
         partitions_def=partitions_def,
     )
 
@@ -952,6 +958,18 @@ def _load_assets_from_dbt_manifest(
             def get_group_name(cls, dbt_resource_props):
                 return node_info_to_group_fn(dbt_resource_props)
 
+            @classmethod
+            def get_freshness_policy(
+                cls, dbt_resource_props: Mapping[str, Any]
+            ) -> Optional[FreshnessPolicy]:
+                return node_info_to_freshness_policy_fn(dbt_resource_props)
+
+            @classmethod
+            def get_auto_materialize_policy(
+                cls, dbt_resource_props: Mapping[str, Any]
+            ) -> Optional[AutoMaterializePolicy]:
+                return node_info_to_auto_materialize_policy_fn(dbt_resource_props)
+
         dagster_dbt_translator = CustomDagsterDbtTranslator()
 
     dbt_assets_def = _dbt_nodes_to_assets(
@@ -967,8 +985,6 @@ def _load_assets_from_dbt_manifest(
         use_build_command=use_build_command,
         partitions_def=partitions_def,
         partition_key_to_vars_fn=partition_key_to_vars_fn,
-        node_info_to_freshness_policy_fn=node_info_to_freshness_policy_fn,
-        node_info_to_auto_materialize_policy_fn=node_info_to_auto_materialize_policy_fn,
         dagster_dbt_translator=dagster_dbt_translator,
         manifest_json=manifest,
     )

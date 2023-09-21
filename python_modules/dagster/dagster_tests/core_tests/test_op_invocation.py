@@ -545,7 +545,7 @@ def test_optional_output_yielded():
     def op_multiple_outputs_not_sent():
         yield Output(2, output_name="2")
 
-    assert list(op_multiple_outputs_not_sent())[0].value == 2
+    assert next(iter(op_multiple_outputs_not_sent())).value == 2
 
 
 def test_optional_output_yielded_async():

@@ -9,7 +9,7 @@
 ARG BASE_IMAGE
 FROM "${BASE_IMAGE}" AS system_base
 
-LABEL maintainer="Elementl"
+LABEL maintainer="Dagster Labs"
 
 # Never prompts the user for choices on installation/configuration of packages (NOTE:
 # DEBIAN_FRONTEND does not affect the apt-get command)

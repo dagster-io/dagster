@@ -19,7 +19,7 @@ title: Dagster University Course Content
     - [Overview](/dagster-essentials/lesson-3/overview)
     - [What's an asset?](/dagster-essentials/lesson-3/whats-an-asset)
     - [Defining your first asset](/dagster-essentials/lesson-3/defining-your-first-asset)
-    - [Asseet materialization](/dagster-essentials/lesson-3/asset-materialization)
+    - [Asset materialization](/dagster-essentials/lesson-3/asset-materialization)
     - [Viewing run details](/dagster-essentials/lesson-3/viewing-run-details)
     - [Troubleshooting failed runs](/dagster-essentials/lesson-3/troubleshooting-failed-runs)
     - [Coding practice: Create a taxi_zones_file asset](/dagster-essentials/lesson-3/coding-practice-taxi-zones-file-asset)

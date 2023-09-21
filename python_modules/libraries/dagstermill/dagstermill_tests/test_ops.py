@@ -333,21 +333,19 @@ def test_hello_world_reexecution():
         assert result.success
 
         output_notebook_path = get_path(
-            [x for x in result.all_events if x.event_type_value == "ASSET_MATERIALIZATION"][0]
+            next(x for x in result.all_events if x.event_type_value == "ASSET_MATERIALIZATION")
         )
 
         with tempfile.NamedTemporaryFile("w+", suffix=".py") as reexecution_notebook_file:
             reexecution_notebook_file.write(
-                (
-                    "from dagster import job\n"
-                    "from dagstermill.factory import define_dagstermill_op\n\n\n"
-                    "reexecution_op = define_dagstermill_op(\n"
-                    "    'hello_world_reexecution', '{output_notebook_path}'\n"
-                    ")\n\n"
-                    "@job\n"
-                    "def reexecution_job():\n"
-                    "    reexecution_op()\n"
-                ).format(output_notebook_path=output_notebook_path)
+                "from dagster import job\n"
+                "from dagstermill.factory import define_dagstermill_op\n\n\n"
+                "reexecution_op = define_dagstermill_op(\n"
+                f"    'hello_world_reexecution', '{output_notebook_path}'\n"
+                ")\n\n"
+                "@job\n"
+                "def reexecution_job():\n"
+                "    reexecution_op()\n"
             )
             reexecution_notebook_file.flush()
 

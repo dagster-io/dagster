@@ -770,11 +770,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                         container_name=self._get_container_name(container_context),
                     )
                 except:
-                    logging.exception(
-                        "Error trying to get logs for failed task {task_arn}".format(
-                            task_arn=tags.arn,
-                        )
-                    )
+                    logging.exception(f"Error trying to get logs for failed task {tags.arn}")
 
                 if logs:
                     failure_text.append("Run worker logs:\n" + "\n".join(logs))

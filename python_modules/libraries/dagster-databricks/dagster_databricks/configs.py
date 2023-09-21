@@ -451,6 +451,11 @@ def _define_new_cluster() -> Field:
         ),
         is_required=False,
     )
+    policy_id = Field(
+        String,
+        description="The ID of the cluster policy used to create the cluster if applicable",
+        is_required=False,
+    )
 
     return Field(
         Shape(
@@ -466,6 +471,7 @@ def _define_new_cluster() -> Field:
                 "init_scripts": init_scripts,
                 "spark_env_vars": spark_env_vars,
                 "enable_elastic_disk": enable_elastic_disk,
+                "policy_id": policy_id,
             }
         )
     )

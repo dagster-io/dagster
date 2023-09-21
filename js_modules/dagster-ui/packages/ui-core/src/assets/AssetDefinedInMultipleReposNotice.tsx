@@ -38,10 +38,7 @@ export const AssetDefinedInMultipleReposNotice: React.FC<{
   );
 
   return (
-    <Box
-      padding={padded ? {vertical: 16, left: 24, right: 12} : {}}
-      border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-    >
+    <Box padding={padded ? {vertical: 16, left: 24, right: 12} : {}} border="bottom">
       <Alert
         intent="warning"
         title={MULTIPLE_DEFINITIONS_WARNING}

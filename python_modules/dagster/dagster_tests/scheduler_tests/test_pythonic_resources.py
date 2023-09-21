@@ -192,7 +192,7 @@ def test_resources(
         assert len(ticks) == 1
 
         assert instance.get_runs_count() == 1
-        run = list(instance.get_runs())[0]
+        run = next(iter(instance.get_runs()))
         assert ticks[0].run_keys == ["foo"]
 
         expected_datetime = create_pendulum_time(year=2019, month=2, day=28)

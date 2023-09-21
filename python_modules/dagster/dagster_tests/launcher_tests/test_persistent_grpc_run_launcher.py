@@ -148,6 +148,7 @@ def test_run_from_pending_repository():
                     job_code_origin=external_job.get_python_origin(),
                     asset_selection=None,
                     op_selection=None,
+                    asset_check_selection=None,
                 )
 
                 run_id = dagster_run.run_id

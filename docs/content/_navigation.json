@@ -79,16 +79,16 @@
             "path": "/concepts/assets/software-defined-assets"
           },
           {
-            "title": "Asset observations",
-            "path": "/concepts/assets/asset-observations"
+            "title": "Multi-assets",
+            "path": "/concepts/assets/multi-assets"
           },
           {
             "title": "Graph-backed Assets",
             "path": "/concepts/assets/graph-backed-assets"
           },
           {
-            "title": "Multi-assets",
-            "path": "/concepts/assets/multi-assets"
+            "title": "Asset observations",
+            "path": "/concepts/assets/asset-observations"
           },
           {
             "title": "Asset selection syntax",

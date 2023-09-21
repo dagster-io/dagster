@@ -26,14 +26,8 @@ interface Props {
 }
 
 export const LaunchpadTransientSessionContainer = (props: Props) => {
-  const {
-    launchpadType,
-    pipeline,
-    partitionSets,
-    repoAddress,
-    sessionPresets,
-    rootDefaultYaml,
-  } = props;
+  const {launchpadType, pipeline, partitionSets, repoAddress, sessionPresets, rootDefaultYaml} =
+    props;
 
   const {flagDisableAutoLoadDefaults} = useFeatureFlags();
   const initialData = useInitialDataForMode(
@@ -42,9 +36,11 @@ export const LaunchpadTransientSessionContainer = (props: Props) => {
     rootDefaultYaml,
     !flagDisableAutoLoadDefaults,
   );
+
+  // Avoid supplying an undefined `runConfigYaml` to the session.
   const initialSessionComplete = createSingleSession({
     ...sessionPresets,
-    runConfigYaml: initialData.runConfigYaml,
+    ...(initialData.runConfigYaml ? {runConfigYaml: initialData.runConfigYaml} : {}),
   });
 
   const [session, setSession] = React.useState<IExecutionSession>(initialSessionComplete);

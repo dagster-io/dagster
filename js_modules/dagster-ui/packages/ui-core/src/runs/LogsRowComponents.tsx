@@ -20,7 +20,7 @@ const bgcolorForLevel = (level: LogLevel) =>
     [LogLevel.WARNING]: Colors.Yellow50,
     [LogLevel.ERROR]: Colors.Red50,
     [LogLevel.CRITICAL]: Colors.Red50,
-  }[level]);
+  })[level];
 
 export const Row = styled.div<{level: LogLevel; highlighted: boolean}>`
   font-size: 0.9em;
@@ -47,7 +47,7 @@ export const Row = styled.div<{level: LogLevel; highlighted: boolean}>`
       [LogLevel.WARNING]: Colors.Yellow700,
       [LogLevel.ERROR]: Colors.Red500,
       [LogLevel.CRITICAL]: Colors.Red500,
-    }[props.level])};
+    })[props.level]};
 `;
 
 export const StructuredContent = styled.div`

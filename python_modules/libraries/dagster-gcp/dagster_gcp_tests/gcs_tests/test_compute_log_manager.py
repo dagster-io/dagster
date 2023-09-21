@@ -212,15 +212,15 @@ def test_compute_log_manager_with_envvar(gcs_bucket):
 def test_compute_log_manager_from_config(gcs_bucket):
     gcs_prefix = "foobar"
 
-    dagster_yaml = """
+    dagster_yaml = f"""
 compute_logs:
   module: dagster_gcp.gcs.compute_log_manager
   class: GCSComputeLogManager
   config:
-    bucket: "{bucket}"
+    bucket: "{gcs_bucket}"
     local_dir: "/tmp/cool"
-    prefix: "{prefix}"
-""".format(bucket=gcs_bucket, prefix=gcs_prefix)
+    prefix: "{gcs_prefix}"
+"""
 
     with tempfile.TemporaryDirectory() as tempdir:
         with open(os.path.join(tempdir, "dagster.yaml"), "wb") as f:

@@ -3,10 +3,7 @@ import React from 'react';
 
 export const DependsOnSelfBanner: React.FC = () => {
   return (
-    <Box
-      padding={{vertical: 16, left: 24, right: 12}}
-      border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-    >
+    <Box padding={{vertical: 16, left: 24, right: 12}} border="bottom">
       <Alert
         intent="info"
         icon={

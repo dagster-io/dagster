@@ -9,7 +9,10 @@ import {getEvaluationsWithEmptyAdded} from '../getEvaluationsWithEmptyAdded';
 import {EvaluationOrEmpty} from '../types';
 
 // eslint-disable-next-line import/no-default-export
-export default {component: AutomaterializeLeftList};
+export default {
+  title: 'Asset Details/Automaterialize/AutomaterializeLeftList',
+  component: AutomaterializeLeftList,
+};
 
 export const WithPartitions = () => {
   const [selectedEvaluation, setSelectedEvaluation] = React.useState<

@@ -261,8 +261,8 @@ class DagsterKubernetesClient:
                 if jobs.items:
                     check.invariant(
                         len(jobs.items) == 1,
-                        'There should only be one k8s job with name "{}", but got multiple'
-                        ' jobs:" {}'.format(job_name, jobs.items),
+                        f'There should only be one k8s job with name "{job_name}", but got multiple'
+                        f' jobs:" {jobs.items}',
                     )
                     return jobs.items[0]
                 else:
@@ -292,9 +292,7 @@ class DagsterKubernetesClient:
         while True:
             if wait_timeout and (self.timer() - start > wait_timeout):
                 raise DagsterK8sTimeoutError(
-                    "Timed out while waiting for job {job_name} to have pods".format(
-                        job_name=job_name
-                    )
+                    f"Timed out while waiting for job {job_name} to have pods"
                 )
 
             pod_list = k8s_api_retry(_get_pods, max_retries=3, timeout=wait_time_between_attempts)
@@ -377,9 +375,7 @@ class DagsterKubernetesClient:
         while True:
             if wait_timeout and (self.timer() - start_time > wait_timeout):
                 raise DagsterK8sTimeoutError(
-                    "Timed out while waiting for job {job_name} to complete".format(
-                        job_name=job_name
-                    )
+                    f"Timed out while waiting for job {job_name} to complete"
                 )
 
             # Reads the status of the specified job. Returns a V1Job object that
@@ -397,10 +393,8 @@ class DagsterKubernetesClient:
             # status.failed represents the number of pods which reached phase Failed.
             if status.failed and status.failed > 0:
                 raise DagsterK8sError(
-                    "Encountered failed job pods for job {job_name} with status: {status}, "
-                    "in namespace {namespace}".format(
-                        job_name=job_name, status=status, namespace=namespace
-                    )
+                    f"Encountered failed job pods for job {job_name} with status: {status}, "
+                    f"in namespace {namespace}"
                 )
 
             if instance and run_id:
@@ -616,10 +610,10 @@ class DagsterKubernetesClient:
                     KubernetesWaitingReasons.CrashLoopBackOff,
                     KubernetesWaitingReasons.RunContainerError,
                 ]:
+                    debug_info = self.get_pod_debug_info(pod_name, namespace, pod=pod)
                     raise DagsterK8sError(
-                        'Failed: Reason="{reason}" Message="{message}"'.format(
-                            reason=state.waiting.reason, message=state.waiting.message
-                        )
+                        f'Failed: Reason="{state.waiting.reason}"'
+                        f' Message="{state.waiting.message}"\n{debug_info}'
                     )
                 else:
                     raise DagsterK8sError("Unknown issue: %s" % state.waiting)
@@ -730,13 +724,24 @@ class DagsterKubernetesClient:
 
         return False
 
-    def get_pod_debug_info(self, pod_name, namespace, container_name: Optional[str] = None) -> str:
-        pods = self.core_api.list_namespaced_pod(
-            namespace=namespace, field_selector="metadata.name=%s" % pod_name
-        ).items
-        pod = pods[0] if pods else None
+    def get_pod_debug_info(
+        self,
+        pod_name,
+        namespace,
+        container_name: Optional[str] = None,
+        pod: Optional[kubernetes.client.V1Pod] = None,  # the already fetched pod
+    ) -> str:
+        if pod is None:
+            pods = self.core_api.list_namespaced_pod(
+                namespace=namespace, field_selector="metadata.name=%s" % pod_name
+            ).items
+            pod = pods[0] if pods else None
 
         pod_status_str = self._get_pod_status_str(pod) if pod else f"Could not find pod {pod_name}"
+
+        if container_name is None and pod is not None and pod.spec and pod.spec.containers:
+            # assume the first container is relevant if explicit container name not selected
+            container_name = pod.spec.containers[0].name
 
         specific_warning = ""
 

@@ -48,7 +48,7 @@ def noop_job():
 
 @op
 def crashy_op(_):
-    os._exit(1)  # noqa: SLF001
+    os._exit(1)
 
 
 @job
@@ -222,6 +222,7 @@ def test_successful_run_from_pending(
         job_code_origin=external_job.get_python_origin(),
         asset_selection=None,
         op_selection=None,
+        asset_check_selection=None,
     )
 
     run_id = created_run.run_id

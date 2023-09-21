@@ -203,7 +203,9 @@ const TimescaleContainer = styled.div`
     width: ${TICK_LABEL_WIDTH}px;
     height: ${TICKS_ROW_HEIGHT}px;
     box-sizing: border-box;
-    transition: left ${CSS_DURATION}ms linear, width ${CSS_DURATION}ms linear;
+    transition:
+      left ${CSS_DURATION}ms linear,
+      width ${CSS_DURATION}ms linear;
     text-align: center;
   }
   & .tick.duration {

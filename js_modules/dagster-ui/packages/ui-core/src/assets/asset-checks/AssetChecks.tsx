@@ -1,21 +1,23 @@
 import {gql, useQuery} from '@apollo/client';
-import {Body2, Box, Colors, Tag} from '@dagster-io/ui-components';
+import {Body2, Box, Tag} from '@dagster-io/ui-components';
 import React, {useContext} from 'react';
+import {Link} from 'react-router-dom';
 
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
+import {Timestamp} from '../../app/time/Timestamp';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {LoadingSpinner} from '../../ui/Loading';
-import {useFormatDateTime} from '../../ui/useFormatDateTime';
 import {AssetFeatureContext} from '../AssetFeatureContext';
+import {assetDetailsPathForKey} from '../assetDetailsPathForKey';
 import {AssetKey} from '../types';
 
+import {AssetCheckDetailModal, MigrationRequired, NoChecks} from './AssetCheckDetailModal';
 import {
-  ASSET_CHECK_EXECUTION_FRAGMENT,
-  AssetCheckDetailModal,
-  MigrationRequired,
-  NoChecks,
-} from './AssetCheckDetailModal';
-import {VirtualizedAssetCheckTable} from './VirtualizedAssetCheckTable';
+  EXECUTE_CHECKS_BUTTON_ASSET_NODE_FRAGMENT,
+  EXECUTE_CHECKS_BUTTON_CHECK_FRAGMENT,
+  ExecuteChecksButton,
+} from './ExecuteChecksButton';
+import {ASSET_CHECK_TABLE_FRAGMENT, VirtualizedAssetCheckTable} from './VirtualizedAssetCheckTable';
 import {AssetChecksQuery, AssetChecksQueryVariables} from './types/AssetChecks.types';
 
 export const AssetChecks = ({
@@ -25,20 +27,8 @@ export const AssetChecks = ({
   assetKey: AssetKey;
   lastMaterializationTimestamp: string | undefined;
 }) => {
-  const formatDatetime = useFormatDateTime();
-  const lastMaterializationDate = React.useMemo(
-    () => (lastMaterializationTimestamp ? new Date(parseInt(lastMaterializationTimestamp)) : null),
-    [lastMaterializationTimestamp],
-  );
-  const isCurrentYear = React.useMemo(
-    () => lastMaterializationDate?.getFullYear() === new Date().getFullYear(),
-    [lastMaterializationDate],
-  );
-
   const queryResult = useQuery<AssetChecksQuery, AssetChecksQueryVariables>(ASSET_CHECKS_QUERY, {
-    variables: {
-      assetKey,
-    },
+    variables: {assetKey},
   });
   const {data} = queryResult;
   useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
@@ -46,10 +36,12 @@ export const AssetChecks = ({
   const [openCheck, setOpenCheck] = useQueryPersistedState<string | undefined>({
     queryKey: 'checkDetail',
   });
+
   function content() {
     if (!data) {
       return <LoadingSpinner purpose="page" />;
     }
+    const assetNode = data.assetNodeOrError;
     const result = data.assetChecksOrError!;
     if (result.__typename === 'AssetCheckNeedsMigrationError') {
       return <MigrationRequired />;
@@ -58,7 +50,19 @@ export const AssetChecks = ({
     if (!checks.length) {
       return <NoChecks />;
     }
-    return <VirtualizedAssetCheckTable assetKey={assetKey} rows={checks} />;
+    if (assetNode?.__typename !== 'AssetNode') {
+      return <span />;
+    }
+    return <VirtualizedAssetCheckTable assetNode={assetNode} rows={checks} />;
+  }
+
+  function executeAllButton() {
+    const assetNode = data?.assetNodeOrError;
+    const checksOrError = data?.assetChecksOrError;
+    if (checksOrError?.__typename !== 'AssetChecks' || assetNode?.__typename !== 'AssetNode') {
+      return <span />;
+    }
+    return <ExecuteChecksButton assetNode={assetNode} checks={checksOrError.checks} />;
   }
 
   const {AssetChecksBanner} = useContext(AssetFeatureContext);
@@ -72,50 +76,33 @@ export const AssetChecks = ({
           setOpenCheck(undefined);
         }}
       />
-      <Box
-        padding={{horizontal: 24, vertical: 12}}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-      >
+      <Box padding={{horizontal: 24, vertical: 12}} border="bottom">
         <AssetChecksBanner />
       </Box>
       <Box
         flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 32}}
         padding={{horizontal: 24, vertical: 16}}
-        border={{side: 'bottom', color: Colors.KeylineGray, width: 1}}
+        border="bottom"
       >
         <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
           <Body2>Latest materialization:</Body2>
 
-          <Tag icon="materialization">
-            {lastMaterializationDate ? (
-              <>
-                {formatDatetime(lastMaterializationDate, {
-                  month: 'short',
-                  day: 'numeric',
-                  year: isCurrentYear ? undefined : 'numeric',
-                })}{' '}
-                at{' '}
-                {formatDatetime(lastMaterializationDate, {
-                  hour: 'numeric',
-                  minute: 'numeric',
-                })}
-              </>
-            ) : (
-              'None'
-            )}
-          </Tag>
+          {lastMaterializationTimestamp ? (
+            <Link
+              to={assetDetailsPathForKey(assetKey, {
+                time: lastMaterializationTimestamp,
+                view: 'events',
+              })}
+            >
+              <Tag icon="materialization">
+                <Timestamp timestamp={{ms: Number(lastMaterializationTimestamp)}} />
+              </Tag>
+            </Link>
+          ) : (
+            <Tag icon="materialization">None </Tag>
+          )}
         </Box>
-        {/* TODO: Enable once the mutations are ready */}
-        {/* {data && 'checks' in data.assetChecksOrError! && data.assetChecksOrError.checks.length ? (
-          <Button
-            icon={<Icon name="run" />}
-            onClick={() => {
-              //TODO
-            }}
-          >
-            Execute all checks
-          </Button>
-        ) : null} */}
+        {executeAllButton()}
       </Box>
       {content()}
     </div>
@@ -124,20 +111,25 @@ export const AssetChecks = ({
 
 export const ASSET_CHECKS_QUERY = gql`
   query AssetChecksQuery($assetKey: AssetKeyInput!) {
+    assetNodeOrError(assetKey: $assetKey) {
+      ... on AssetNode {
+        id
+        ...ExecuteChecksButtonAssetNodeFragment
+      }
+    }
     assetChecksOrError(assetKey: $assetKey) {
       ... on AssetCheckNeedsMigrationError {
         message
       }
       ... on AssetChecks {
         checks {
-          name
-          description
-          executionForLatestMaterialization {
-            ...AssetCheckExecutionFragment
-          }
+          ...AssetCheckTableFragment
+          ...ExecuteChecksButtonCheckFragment
         }
       }
     }
   }
-  ${ASSET_CHECK_EXECUTION_FRAGMENT}
+  ${EXECUTE_CHECKS_BUTTON_ASSET_NODE_FRAGMENT}
+  ${EXECUTE_CHECKS_BUTTON_CHECK_FRAGMENT}
+  ${ASSET_CHECK_TABLE_FRAGMENT}
 `;

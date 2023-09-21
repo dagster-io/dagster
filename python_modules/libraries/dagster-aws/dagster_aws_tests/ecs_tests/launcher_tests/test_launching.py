@@ -47,7 +47,7 @@ def test_default_launcher(
     # A new task definition is created
     task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
     assert len(task_definitions) == len(initial_task_definitions) + 1
-    task_definition_arn = list(set(task_definitions).difference(initial_task_definitions))[0]
+    task_definition_arn = next(iter(set(task_definitions).difference(initial_task_definitions)))
     task_definition = ecs.describe_task_definition(taskDefinition=task_definition_arn)
     task_definition = task_definition["taskDefinition"]
 
@@ -69,7 +69,7 @@ def test_default_launcher(
     tasks = ecs.list_tasks()["taskArns"]
 
     assert len(tasks) == len(initial_tasks) + 1
-    task_arn = list(set(tasks).difference(initial_tasks))[0]
+    task_arn = next(iter(set(tasks).difference(initial_tasks)))
     task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
     assert subnet.id in str(task)
     assert task["taskDefinitionArn"] == task_definition["taskDefinitionArn"]
@@ -134,7 +134,7 @@ def test_launcher_fargate_spot(
     # A new task definition is still created
     task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
     assert len(task_definitions) == len(initial_task_definitions) + 1
-    task_definition_arn = list(set(task_definitions).difference(initial_task_definitions))[0]
+    task_definition_arn = next(iter(set(task_definitions).difference(initial_task_definitions)))
     task_definition = ecs.describe_task_definition(taskDefinition=task_definition_arn)
     task_definition = task_definition["taskDefinition"]
 
@@ -142,7 +142,7 @@ def test_launcher_fargate_spot(
     tasks = ecs.list_tasks()["taskArns"]
 
     assert len(tasks) == len(initial_tasks) + 1
-    task_arn = list(set(tasks).difference(initial_tasks))[0]
+    task_arn = next(iter(set(tasks).difference(initial_tasks)))
     task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
 
     assert task["capacityProviderName"] == "FARGATE_SPOT"
@@ -172,7 +172,7 @@ def test_launcher_fargate_spot(
     # A new task definition is still created
     task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
     assert len(task_definitions) == len(initial_task_definitions) + 1
-    task_definition_arn = list(set(task_definitions).difference(initial_task_definitions))[0]
+    task_definition_arn = next(iter(set(task_definitions).difference(initial_task_definitions)))
     task_definition = ecs.describe_task_definition(taskDefinition=task_definition_arn)
     task_definition = task_definition["taskDefinition"]
 
@@ -180,7 +180,7 @@ def test_launcher_fargate_spot(
     second_tasks = ecs.list_tasks()["taskArns"]
 
     assert len(second_tasks) == len(tasks) + 1
-    task_arn = list(set(second_tasks).difference(tasks))[0]
+    task_arn = next(iter(set(second_tasks).difference(tasks)))
     task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
 
     assert task["capacityProviderName"] == "CUSTOM"
@@ -216,7 +216,7 @@ def test_launcher_dont_use_current_task(
     # A new task definition is still created
     task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
     assert len(task_definitions) == len(initial_task_definitions) + 1
-    task_definition_arn = list(set(task_definitions).difference(initial_task_definitions))[0]
+    task_definition_arn = next(iter(set(task_definitions).difference(initial_task_definitions)))
     task_definition = ecs.describe_task_definition(taskDefinition=task_definition_arn)
     task_definition = task_definition["taskDefinition"]
 
@@ -239,7 +239,7 @@ def test_launcher_dont_use_current_task(
     tasks = ecs.list_tasks(cluster=cluster)["taskArns"]
 
     assert len(tasks) == len(initial_tasks) + 1
-    task_arn = list(set(tasks).difference(initial_tasks))[0]
+    task_arn = next(iter(set(tasks).difference(initial_tasks)))
     task = ecs.describe_tasks(cluster=cluster, tasks=[task_arn])["tasks"][0]
     assert subnet.id in str(task)
     assert task["taskDefinitionArn"] == task_definition["taskDefinitionArn"]
@@ -571,7 +571,7 @@ def test_default_task_definition_resources(ecs, instance_cm, run, workspace, job
         instance.launch_run(run.run_id, workspace)
 
         tasks = ecs.list_tasks()["taskArns"]
-        task_arn = list(set(tasks).difference(initial_tasks))[0]
+        task_arn = next(iter(set(tasks).difference(initial_tasks)))
 
         task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
 
@@ -605,7 +605,7 @@ def test_default_task_definition_resources(ecs, instance_cm, run, workspace, job
         instance.launch_run(run.run_id, workspace)
 
         tasks = ecs.list_tasks()["taskArns"]
-        task_arn = list(set(tasks).difference(initial_tasks))[0]
+        task_arn = next(iter(set(tasks).difference(initial_tasks)))
 
         task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
 
@@ -639,7 +639,7 @@ def test_default_task_definition_resources(ecs, instance_cm, run, workspace, job
         instance.launch_run(run.run_id, workspace)
 
         tasks = ecs.list_tasks()["taskArns"]
-        task_arn = list(set(tasks).difference(initial_tasks))[0]
+        task_arn = next(iter(set(tasks).difference(initial_tasks)))
 
         task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
 
@@ -723,7 +723,7 @@ def test_launching_with_task_definition_dict(ecs, instance_cm, run, workspace, j
         # A new task is launched
         tasks = ecs.list_tasks()["taskArns"]
         assert len(tasks) == len(initial_tasks) + 1
-        task_arn = list(set(tasks).difference(initial_tasks))[0]
+        task_arn = next(iter(set(tasks).difference(initial_tasks)))
         task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
         task_definition_arn = task["taskDefinitionArn"]
 
@@ -819,7 +819,7 @@ def test_launching_custom_task_definition(ecs, instance_cm, run, workspace, job,
         # A new task is launched
         tasks = ecs.list_tasks()["taskArns"]
         assert len(tasks) == len(initial_tasks) + 1
-        task_arn = list(set(tasks).difference(initial_tasks))[0]
+        task_arn = next(iter(set(tasks).difference(initial_tasks)))
         task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
         assert task["taskDefinitionArn"] == task_definition["taskDefinitionArn"]
 
@@ -878,7 +878,7 @@ def test_public_ip_assignment(ecs, ec2, instance, workspace, run, assign_public_
     instance.launch_run(run.run_id, workspace)
 
     tasks = ecs.list_tasks()["taskArns"]
-    task_arn = list(set(tasks).difference(initial_tasks))[0]
+    task_arn = next(iter(set(tasks).difference(initial_tasks)))
     task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
     attachment = task.get("attachments")[0]
     details = dict([(detail.get("name"), detail.get("value")) for detail in attachment["details"]])
@@ -907,7 +907,7 @@ def test_launcher_run_resources(
     instance.launch_run(run.run_id, workspace)
 
     tasks = ecs.list_tasks()["taskArns"]
-    task_arn = list(set(tasks).difference(existing_tasks))[0]
+    task_arn = next(iter(set(tasks).difference(existing_tasks)))
     task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
 
     assert task.get("overrides").get("memory") == "2048"
@@ -940,7 +940,7 @@ def test_launch_run_with_container_context(
     launch_run_with_container_context(instance)
 
     tasks = ecs.list_tasks()["taskArns"]
-    task_arn = list(set(tasks).difference(existing_tasks))[0]
+    task_arn = next(iter(set(tasks).difference(existing_tasks)))
     task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
 
     assert any(tag == {"key": "HAS_VALUE", "value": "SEE"} for tag in task["tags"])
@@ -1001,7 +1001,7 @@ def test_memory_and_cpu(ecs, instance, workspace, run, task_definition):
     instance.launch_run(run.run_id, workspace)
 
     tasks = ecs.list_tasks()["taskArns"]
-    task_arn = list(set(tasks).difference(initial_tasks))[0]
+    task_arn = next(iter(set(tasks).difference(initial_tasks)))
     task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
 
     assert task.get("memory") == task_definition.get("memory")
@@ -1016,7 +1016,7 @@ def test_memory_and_cpu(ecs, instance, workspace, run, task_definition):
     instance.launch_run(run.run_id, workspace)
 
     tasks = ecs.list_tasks()["taskArns"]
-    task_arn = list(set(tasks).difference(existing_tasks))[0]
+    task_arn = next(iter(set(tasks).difference(existing_tasks)))
     task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
 
     assert task.get("memory") == task_definition.get("memory")
@@ -1035,7 +1035,7 @@ def test_memory_and_cpu(ecs, instance, workspace, run, task_definition):
     instance.launch_run(run.run_id, workspace)
 
     tasks = ecs.list_tasks()["taskArns"]
-    task_arn = list(set(tasks).difference(existing_tasks))[0]
+    task_arn = next(iter(set(tasks).difference(existing_tasks)))
     task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
 
     assert task.get("memory") == task_definition.get("memory")
@@ -1078,7 +1078,7 @@ def test_status(
     # our internal task data structure - maybe a dict of dicts
     # using cluster and arn as keys - instead of a dict of lists?
     task_arn = instance.get_run_by_id(run.run_id).tags["ecs/task_arn"]
-    task = [task for task in ecs.storage.tasks["default"] if task["taskArn"] == task_arn][0]
+    task = next(task for task in ecs.storage.tasks["default"] if task["taskArn"] == task_arn)
 
     task_id = task_arn.split("/")[-1]
 
@@ -1153,7 +1153,7 @@ def test_status(
     )
     instance.run_launcher.launch_run(LaunchRunContext(dagster_run=starting_run, workspace=None))
     task_arn = instance.get_run_by_id(starting_run.run_id).tags["ecs/task_arn"]
-    task = [task for task in ecs.storage.tasks["default"] if task["taskArn"] == task_arn][0]
+    task = next(task for task in ecs.storage.tasks["default"] if task["taskArn"] == task_arn)
     task["lastStatus"] = "STOPPED"
     task["stoppedReason"] = "Timeout waiting for network interface provisioning to complete."
 
@@ -1206,7 +1206,7 @@ def test_custom_launcher(
     custom_instance.launch_run(custom_run.run_id, custom_workspace)
 
     tasks = ecs.list_tasks()["taskArns"]
-    task_arn = list(set(tasks).difference(initial_tasks))[0]
+    task_arn = next(iter(set(tasks).difference(initial_tasks)))
 
     # And we log
     events = custom_instance.event_log_storage.get_logs_for_run(custom_run.run_id)

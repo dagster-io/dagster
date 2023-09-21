@@ -35,10 +35,10 @@ export const AssetNodeLineage: React.FC<{
   graphQueryItems,
   requestedDepth,
 }) => {
-  const maxDistances = React.useMemo(() => calculateGraphDistances(graphQueryItems, assetKey), [
-    graphQueryItems,
-    assetKey,
-  ]);
+  const maxDistances = React.useMemo(
+    () => calculateGraphDistances(graphQueryItems, assetKey),
+    [graphQueryItems, assetKey],
+  );
   const maxDepth =
     params.lineageScope === 'upstream'
       ? maxDistances.upstream
@@ -56,7 +56,7 @@ export const AssetNodeLineage: React.FC<{
       <Box
         flex={{justifyContent: 'space-between', alignItems: 'center', gap: 12}}
         padding={{left: 24, right: 12, vertical: 12}}
-        border={{side: 'bottom', color: Colors.KeylineGray, width: 1}}
+        border="bottom"
       >
         <ButtonGroup<AssetLineageScope>
           activeItems={new Set([params.lineageScope || 'neighbors'])}

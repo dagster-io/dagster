@@ -26,6 +26,7 @@ from dagster._annotations import deprecated, experimental_param, public
 from dagster._config import Field, Shape, StringSource
 from dagster._config.config_type import ConfigType
 from dagster._config.validate import validate_config
+from dagster._core.definitions.asset_check_spec import AssetCheckHandle
 from dagster._core.definitions.dependency import (
     Node,
     NodeHandle,
@@ -734,24 +735,29 @@ class JobDefinition(IHasInternalInit):
         *,
         op_selection: Optional[Iterable[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
+        asset_check_selection: Optional[AbstractSet[AssetCheckHandle]] = None,
     ) -> Self:
         check.invariant(
-            not (op_selection and asset_selection),
-            "op_selection and asset_selection cannot both be provided as args to"
+            not (op_selection and (asset_selection or asset_check_selection)),
+            "op_selection cannot be provided with asset_selection or asset_check_selection to"
             " execute_in_process",
         )
         if op_selection:
             return self._get_job_def_for_op_selection(op_selection)
-        if asset_selection:
-            return self._get_job_def_for_asset_selection(asset_selection)
+        if asset_selection or asset_check_selection:
+            return self._get_job_def_for_asset_selection(
+                asset_selection=asset_selection, asset_check_selection=asset_check_selection
+            )
         else:
             return self
 
     def _get_job_def_for_asset_selection(
         self,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
+        asset_check_selection: Optional[AbstractSet[AssetCheckHandle]] = None,
     ) -> Self:
         asset_selection = check.opt_set_param(asset_selection, "asset_selection", AssetKey)
+        check.opt_set_param(asset_check_selection, "asset_check_selection", AssetCheckHandle)
 
         nonexistent_assets = [
             asset
@@ -769,8 +775,50 @@ class JobDefinition(IHasInternalInit):
                 "Assets provided in asset_selection argument "
                 f"{', '.join(nonexistent_asset_strings)} do not exist in parent asset group or job."
             )
+
+        # Test that selected asset checks exist
+        all_check_handles = self.asset_layer.node_output_handles_by_asset_check_handle.keys()
+
+        nonexistent_asset_checks = [
+            asset_check
+            for asset_check in asset_check_selection or set()
+            if asset_check not in all_check_handles
+        ]
+        nonexistent_asset_check_strings = [
+            str(asset_check) for asset_check in nonexistent_asset_checks
+        ]
+        if nonexistent_asset_checks:
+            raise DagsterInvalidSubsetError(
+                "Asset checks provided in asset_check_selection argument"
+                f" {', '.join(nonexistent_asset_check_strings)} do not exist in parent asset group"
+                " or job."
+            )
+
+        # Test that selected asset checks can be run individually. Currently this is only supported
+        # on checks defined with @asset_check, which will have an AssetChecksDefinition.
+        all_check_handles_in_checks_defs = set()
+        for asset_checks_def in self.asset_layer.asset_checks_defs:
+            for spec in asset_checks_def.specs:
+                all_check_handles_in_checks_defs.add(spec.handle)
+
+        non_checks_defs_asset_checks = [
+            asset_check
+            for asset_check in asset_check_selection or set()
+            if asset_check not in all_check_handles_in_checks_defs
+        ]
+        non_checks_defs_asset_check_strings = [
+            asset_check.name for asset_check in non_checks_defs_asset_checks
+        ]
+        if non_checks_defs_asset_checks:
+            raise DagsterInvalidSubsetError(
+                f"Can't execute asset checks [{', '.join(non_checks_defs_asset_check_strings)}],"
+                " because they weren't defined with @asset_check or AssetChecksDefinition. To"
+                " execute these checks, materialize the asset."
+            )
+
         asset_selection_data = AssetSelectionData(
             asset_selection=asset_selection,
+            asset_check_selection=asset_check_selection,
             parent_job_def=self,
         )
 
@@ -788,6 +836,7 @@ class JobDefinition(IHasInternalInit):
             description=self.description,
             tags=self.tags,
             asset_selection=asset_selection,
+            asset_check_selection=asset_check_selection,
             asset_selection_data=asset_selection_data,
             config=self.config_mapping or self.partitioned_config,
             asset_checks=self.asset_layer.asset_checks_defs,
@@ -1224,6 +1273,7 @@ def _infer_asset_layer_from_source_asset_deps(job_graph_def: GraphDefinition) ->
         asset_checks_defs_by_node_handle={},
         node_output_handles_by_asset_check_handle={},
         check_names_by_asset_key_by_node_handle={},
+        check_handle_by_node_output_handle={},
     )
 
 

@@ -1,4 +1,4 @@
-import {Box, Colors} from '@dagster-io/ui-components';
+import {Box} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 
@@ -32,11 +32,7 @@ export function VirtualizedItemListForDialog<A>({items, renderItem}: Props<A>) {
               <Box
                 style={{height: '100%'}}
                 flex={{direction: 'row', alignItems: 'center'}}
-                border={
-                  index < items.length - 1
-                    ? {side: 'bottom', width: 1, color: Colors.KeylineGray}
-                    : null
-                }
+                border={index < items.length - 1 ? 'bottom' : null}
               >
                 {renderItem(assetKey)}
               </Box>

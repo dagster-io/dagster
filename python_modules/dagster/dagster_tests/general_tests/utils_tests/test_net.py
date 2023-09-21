@@ -14,10 +14,10 @@ def test_is_local_uri():
 
     assert is_local_uri("rpc://")
 
-    assert not is_local_uri("elementl.com")
+    assert not is_local_uri("dagster.io")
     assert not is_local_uri("192.0.0.1")
-    assert not is_local_uri("http://elementl.com:8080")
-    assert not is_local_uri("tcp://elementl.com")
+    assert not is_local_uri("http://dagster.io:8080")
+    assert not is_local_uri("tcp://dagster.io")
     assert not is_local_uri("hdfs://mycluster.internal")
 
     assert not is_local_uri("bad.bad")

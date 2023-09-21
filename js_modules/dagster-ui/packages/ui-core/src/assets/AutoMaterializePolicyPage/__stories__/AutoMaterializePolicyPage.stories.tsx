@@ -7,7 +7,10 @@ import {AssetAutomaterializePolicyPage} from '../AssetAutomaterializePolicyPage'
 import {Evaluations, Policies} from '../__fixtures__/AutoMaterializePolicyPage.fixtures';
 
 // eslint-disable-next-line import/no-default-export
-export default {component: AssetAutomaterializePolicyPage};
+export default {
+  title: 'Asset Details/Automaterialize',
+  component: AssetAutomaterializePolicyPage,
+};
 
 const path = ['test'];
 

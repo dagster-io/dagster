@@ -11,6 +11,8 @@ type CodeMirrorHandlers = {
   onKeyUp?: (instance: CodeMirror.Editor, event: Event) => void;
 };
 
+const REFRESH_DELAY_MSEC = 200;
+
 interface Props {
   value: string;
   options?: CodeMirror.EditorConfiguration;
@@ -41,6 +43,13 @@ export const RawCodeMirror = (props: Props) => {
         value,
         ...options,
       });
+
+      // Wait a moment for the DOM to settle, then call refresh to ensure that all
+      // CSS has finished loading. This allows CodeMirror to correctly align elements,
+      // including the cursor.
+      setTimeout(() => {
+        cm.current?.refresh();
+      }, REFRESH_DELAY_MSEC);
 
       if (!handlers) {
         return;
