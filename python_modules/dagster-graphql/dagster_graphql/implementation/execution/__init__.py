@@ -8,7 +8,11 @@ import dagster._check as check
 from dagster._annotations import deprecated
 from dagster._core.definitions.events import AssetKey
 from dagster._core.events import EngineEventData
-from dagster._core.instance import DagsterInstance
+from dagster._core.instance import (
+    DEFAULT_DB_STATEMENT_TIMEOUT,
+    DEFAULT_POOL_RECYCLE,
+    DagsterInstance,
+)
 from dagster._core.storage.captured_log_manager import CapturedLogManager
 from dagster._core.storage.compute_log_manager import ComputeIOType, ComputeLogFileData
 from dagster._core.storage.dagster_run import CANCELABLE_RUN_STATUSES
@@ -150,8 +154,6 @@ def terminate_pipeline_execution(
 def terminate_pipeline_execution_for_runs(
     graphene_info: "ResolveInfo", run_ids: Sequence[str]
 ) -> "GrapheneTerminateRunsResult":
-    from dagster_webserver.cli import DEFAULT_DB_STATEMENT_TIMEOUT, DEFAULT_POOL_RECYCLE
-
     from ...schema.roots.mutation import (
         GrapheneTerminateRunPolicy,
         GrapheneTerminateRunsResult,

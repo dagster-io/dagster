@@ -100,6 +100,9 @@ IS_AIRFLOW_INGEST_PIPELINE_STR = "is_airflow_ingest_pipeline"
 RUNLESS_RUN_ID = ""
 RUNLESS_JOB_NAME = ""
 
+DEFAULT_DB_STATEMENT_TIMEOUT = 15000  # 15 sec
+DEFAULT_POOL_RECYCLE = 3600  # 1 hr
+
 if TYPE_CHECKING:
     from dagster._core.debug import DebugRunPayload
     from dagster._core.definitions.asset_check_spec import AssetCheckKey
