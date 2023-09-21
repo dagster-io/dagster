@@ -117,7 +117,7 @@ class CachingDataTimeResolver:
         # get a per-partition count of the new materializations
         partitions = self._instance_queryer.get_materialized_partitions(asset_key)
         prev_partitions = self._instance_queryer.get_materialized_partitions(
-            asset_key, before_cursor=cursor
+            asset_key, before_cursor=cursor + 1
         )
         net_new_partitions = {
             partition_key
