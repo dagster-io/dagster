@@ -28,7 +28,7 @@ import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {Container, Inner, Row} from '../ui/VirtualizedTable';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 
-import {GraphData, GraphNode} from './Utils';
+import {GraphData, GraphNode, tokenForAssetKey} from './Utils';
 
 const COLLATOR = new Intl.Collator(navigator.language, {sensitivity: 'base', numeric: true});
 
@@ -84,7 +84,7 @@ export const AssetGraphExplorerSidebar = React.memo(
       if (!assetGraphData.nodes[id]) {
         try {
           const path = JSON.parse(id);
-          const nextOpsQuery = `${explorerPath.opsQuery} \"${path[path.length - 1]}\"`;
+          const nextOpsQuery = `${explorerPath.opsQuery} \"${tokenForAssetKey({path})}\"`;
           onChangeExplorerPath(
             {
               ...explorerPath,
@@ -444,7 +444,7 @@ const Node = ({
 
   function showDownstreamGraph() {
     const path = JSON.parse(node.id);
-    const newQuery = `\"${path[path.length - 1]}\"*`;
+    const newQuery = `\"${tokenForAssetKey({path})}\"*`;
     const nextOpsQuery = explorerPath.opsQuery.includes(newQuery)
       ? explorerPath.opsQuery
       : `${explorerPath.opsQuery} ${newQuery}`;
@@ -459,7 +459,7 @@ const Node = ({
 
   function showUpstreamGraph() {
     const path = JSON.parse(node.id);
-    const newQuery = `*\"${path[path.length - 1]}\"`;
+    const newQuery = `*\"${tokenForAssetKey({path})}\"`;
     const nextOpsQuery = explorerPath.opsQuery.includes(newQuery)
       ? explorerPath.opsQuery
       : `${explorerPath.opsQuery} ${newQuery}`;
