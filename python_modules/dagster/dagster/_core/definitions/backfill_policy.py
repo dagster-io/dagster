@@ -68,7 +68,7 @@ class BackfillPolicy(
 
         Args:
             max_partitions_per_run (Optional[int]): The maximum number of partitions in each run of
-            the multiple runs. Defaults to 1.
+                the multiple runs. Defaults to 1.
         """
         return BackfillPolicy(
             max_partitions_per_run=check.int_param(max_partitions_per_run, "max_partitions_per_run")
