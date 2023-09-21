@@ -387,6 +387,10 @@ class SensorResult(
             AddDynamicPartitionsRequest]]]): A list of dynamic partition requests to request dynamic
             partition addition and deletion. Run requests will be evaluated using the state of the
             partitions with these changes applied.
+        asset_events (Optional[Sequence[Union[AssetObservation, AssetMaterialization, AssetCheckEvaluation]]]): A
+            list of materializations, observations, and asset check evaluations that the system
+            will persist on your behalf at the end of sensor evaluation. These events will be not
+            be associated with any particular run, but will be queryable and viewable in the asset catalog.
     """
 
     def __new__(
