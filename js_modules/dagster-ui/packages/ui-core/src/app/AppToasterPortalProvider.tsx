@@ -9,7 +9,7 @@ export const AppToasterPortalProvider = () => {
   const [portaledElements, setPortalElements] = React.useState<
     [React.ReactNode, HTMLElement, string | undefined][]
   >([]);
-  const baseHref = useHref('/');
+  const baseHref = useHref('');
   React.useLayoutEffect(() => {
     registerPortalProvider((node, container, key) => {
       setPortalElements((elements) => {

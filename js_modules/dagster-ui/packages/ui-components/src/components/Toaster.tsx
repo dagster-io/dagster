@@ -72,7 +72,13 @@ const setup = (instance: ToasterInstance): DToaster => {
       );
     }
     if (rest?.action?.href) {
-      rest.action.href = getBaseHref() + rest.action.href;
+      const href = rest?.action?.href;
+      const baseHref = getBaseHref();
+      if (href.startsWith('/') && baseHref.endsWith('/')) {
+        rest.action.href = baseHref.slice(0, baseHref.length - 2) + href;
+      } else {
+        rest.action.href = baseHref + rest.action.href;
+      }
     }
     return show.apply(instance, [rest, key]);
   };
