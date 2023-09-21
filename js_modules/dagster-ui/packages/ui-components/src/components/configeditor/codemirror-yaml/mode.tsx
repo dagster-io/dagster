@@ -343,14 +343,8 @@ const registerYamlHint = () => {
         schema?: ConfigSchema;
       },
     ): {list: Array<CodemirrorHint>; from: CodemirrorLocation; to: CodemirrorLocation} => {
-      const {
-        cursor,
-        context,
-        token,
-        start,
-        searchString,
-        prevToken,
-      } = expandAutocompletionContextAtCursor(editor);
+      const {cursor, context, token, start, searchString, prevToken} =
+        expandAutocompletionContextAtCursor(editor);
 
       const from = {line: cursor.line, ch: start};
       const to = {line: cursor.line, ch: token.end};

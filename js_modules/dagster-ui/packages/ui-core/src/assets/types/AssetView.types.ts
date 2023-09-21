@@ -77,6 +77,7 @@ export type AssetViewDefinitionQuery = {
             policyType: Types.AutoMaterializePolicyType;
             rules: Array<{
               __typename: 'AutoMaterializeRule';
+              className: string;
               description: string;
               decisionType: Types.AutoMaterializeDecisionType;
             }>;
@@ -15795,6 +15796,7 @@ export type AssetViewDefinitionNodeFragment = {
     policyType: Types.AutoMaterializePolicyType;
     rules: Array<{
       __typename: 'AutoMaterializeRule';
+      className: string;
       description: string;
       decisionType: Types.AutoMaterializeDecisionType;
     }>;
