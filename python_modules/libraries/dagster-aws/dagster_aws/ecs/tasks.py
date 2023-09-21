@@ -375,20 +375,19 @@ def get_task_kwargs_from_current_task(
         for group in eni.groups:
             security_groups.append(group["GroupId"])
 
-    run_task_kwargs = {
-        "cluster": cluster,
-        "networkConfiguration": {
-            "awsvpcConfiguration": {
-                "subnets": subnets,
-                "assignPublicIp": "ENABLED" if public_ip else "DISABLED",
-                "securityGroups": security_groups,
-            },
-        },
-    }
+    run_task_kwargs = {"cluster": cluster}
 
     if not task.get("capacityProviderStrategy"):
         run_task_kwargs["launchType"] = task.get("launchType") or "FARGATE"
     else:
         run_task_kwargs["capacityProviderStrategy"] = task.get("capacityProviderStrategy")
+
+    if run_task_kwargs["launchType"] != "EXTERNAL":
+        aws_vpc_config = {
+            "subnets": subnets,
+            "assignPublicIp": "ENABLED" if public_ip else "DISABLED",
+            "securityGroups": security_groups,
+        }
+        run_task_kwargs["networkconfiguration"] = {"awsvpcConfiguration": aws_vpc_config}
 
     return run_task_kwargs
