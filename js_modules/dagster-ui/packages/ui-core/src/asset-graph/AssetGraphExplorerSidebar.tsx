@@ -81,7 +81,7 @@ export const AssetGraphExplorerSidebar = React.memo(
 
     const selectNode: typeof _selectNode = (e, id) => {
       setSelectWhenDataAvailable([e, id]);
-      if (!graphData.nodes[id]) {
+      if (!assetGraphData.nodes[id]) {
         try {
           const path = JSON.parse(id);
           const nextOpsQuery = `${explorerPath.opsQuery} \"${path[path.length - 1]}\"`;
