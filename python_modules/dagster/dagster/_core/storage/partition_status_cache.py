@@ -233,24 +233,20 @@ def _build_status_cache(
     if not partitions_def or not is_cacheable_partition_type(partitions_def):
         return AssetStatusCacheValue(latest_storage_id=latest_storage_id)
 
-    materialized_keys: Sequence[str]
+    materialized_keys: Set[str]
     if isinstance(partitions_def, MultiPartitionsDefinition):
-        materialized_keys = get_materialized_multipartitions(instance, asset_key, partitions_def)
+        materialized_keys = set(
+            get_materialized_multipartitions(instance, asset_key, partitions_def)
+        )
     else:
-        materialized_keys = [
-            key
-            for key, count in instance.get_materialization_count_by_partition([asset_key])
-            .get(asset_key, {})
-            .items()
-            if count > 0
-        ]
+        materialized_keys = instance.get_materialized_partitions(asset_key)
 
     serialized_materialized_partition_subset = partitions_def.empty_subset()
 
     serialized_materialized_partition_subset = (
         serialized_materialized_partition_subset.with_partition_keys(
             get_validated_partition_keys(
-                dynamic_partitions_store, partitions_def, set(materialized_keys)
+                dynamic_partitions_store, partitions_def, materialized_keys
             )
         )
     )

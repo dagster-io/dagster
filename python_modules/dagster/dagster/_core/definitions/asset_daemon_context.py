@@ -118,14 +118,6 @@ class AssetDaemonContext:
                 if not self.asset_graph.is_source(key)
             ]
         )
-        self.instance_queryer.prefetch_asset_partition_counts(
-            [
-                key
-                for key in self.target_asset_keys_and_parents
-                if self.asset_graph.is_partitioned(key) and not self.asset_graph.is_source(key)
-            ],
-            after_cursor=cursor.latest_storage_id,
-        )
 
     @property
     def instance_queryer(self) -> "CachingInstanceQueryer":

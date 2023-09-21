@@ -369,13 +369,7 @@ def get_partition_subsets(
                 instance, asset_key, partitions_def
             )
         else:
-            materialized_keys = [
-                partition_key
-                for partition_key, count in instance.get_materialization_count_by_partition(
-                    [asset_key]
-                )[asset_key].items()
-                if count > 0
-            ]
+            materialized_keys = instance.get_materialized_partitions(asset_key)
 
         validated_keys = get_validated_partition_keys(
             dynamic_partitions_loader, partitions_def, set(materialized_keys)
