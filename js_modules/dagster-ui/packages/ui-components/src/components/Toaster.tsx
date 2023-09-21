@@ -5,7 +5,7 @@ import {createGlobalStyle} from 'styled-components';
 
 import {Colors} from './Colors';
 import {IconName, Icon} from './Icon';
-import {createToaster} from './createToaster';
+import {createToaster, getBaseHref} from './createToaster';
 
 export const GlobalToasterStyle = createGlobalStyle`
   .dagster-toaster {
@@ -70,6 +70,9 @@ const setup = (instance: ToasterInstance): DToaster => {
           {rest.message}
         </>
       );
+    }
+    if (rest?.action?.href) {
+      rest.action.href = getBaseHref() + rest.action.href;
     }
     return show.apply(instance, [rest, key]);
   };

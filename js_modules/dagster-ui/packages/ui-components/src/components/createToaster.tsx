@@ -8,12 +8,17 @@ let _portalProvider: PortalProvider = (node, container, key) => {
   queue.push([node, container, key]);
 };
 
-export const registerPortalProvider = (portalProvider: PortalProvider) => {
+let _baseHref = '';
+
+export const registerPortalProvider = (portalProvider: PortalProvider, baseHref: string) => {
+  _baseHref = baseHref;
   while (queue.length) {
     portalProvider(...queue.pop()!);
   }
   _portalProvider = portalProvider;
 };
+
+export const getBaseHref = () => _baseHref;
 
 // https://github.com/palantir/blueprint/issues/5212#issuecomment-1318397270
 export const createToaster = (props?: IToasterProps, container = document.body) => {

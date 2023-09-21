@@ -33,6 +33,7 @@ import {JobFeatureProvider} from '../pipelines/JobFeatureContext';
 import {WorkspaceProvider} from '../workspace/WorkspaceContext';
 
 import {AppContext} from './AppContext';
+import {AppToasterPortalProvider} from './AppToasterPortalProvider';
 import {CustomAlertProvider} from './CustomAlertProvider';
 import {CustomConfirmationProvider} from './CustomConfirmationProvider';
 import {LayoutProvider} from './LayoutProvider';
@@ -207,6 +208,7 @@ export const AppProvider: React.FC<AppProviderProps> = (props) => {
                         <AnalyticsContext.Provider value={analytics}>
                           <InstancePageContext.Provider value={instancePageValue}>
                             <JobFeatureProvider>
+                              <AppToasterPortalProvider />
                               <LayoutProvider>{props.children}</LayoutProvider>
                             </JobFeatureProvider>
                           </InstancePageContext.Provider>
