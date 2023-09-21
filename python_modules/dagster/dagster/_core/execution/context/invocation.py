@@ -829,19 +829,48 @@ class UnboundAssetExecutionContext(AssetExecutionContext):
             _assets_def=assets_def,
         )
 
-        self._cm_scope_entered = False
-
     def __enter__(self):
-        self._cm_scope_entered = True
+        self._op_execution_context.__enter__()
         return self
 
     def __exit__(self, *exc):
-        self._exit_stack.close()
+        self._op_execution_context.__exit__()
 
     def __del__(self):
-        self._exit_stack.close()
+        self._op_execution_context.__del__()
 
-    # all AssetExecutionContext methods call methods on the internal op_execution_context, so rely
+    # AssetExecutionContext methods that rely on the AssetsDefinition, which is not available to
+    # direct invocation
+
+    @property
+    def assets_def(self) -> AssetsDefinition:
+        raise DagsterInvalidPropertyError(_property_msg("assets_def", "property"))
+
+    @property
+    def asset_keys(self) -> AssetsDefinition:
+        raise DagsterInvalidPropertyError(_property_msg("asset_keys", "property"))
+
+    @property
+    def provenance(self):
+        raise DagsterInvalidPropertyError(_property_msg("provenance", "property"))
+
+    @property
+    def provenance_by_asset_key(self):
+        raise DagsterInvalidPropertyError(_property_msg("provenance_by_asset_key", "property"))
+
+    @property
+    def code_version(self):
+        raise DagsterInvalidPropertyError(_property_msg("code_version", "property"))
+
+    @property
+    def code_version_by_asset_key(self):
+        raise DagsterInvalidPropertyError(_property_msg("code_version_by_asset_key", "property"))
+
+    @property
+    def selected_asset_keys(self):
+        raise DagsterInvalidPropertyError(_property_msg("selected_asset_keys", "property"))
+
+    # all other AssetExecutionContext methods call methods on the internal op_execution_context, so rely
     # on the implementation of UnboundOpExecutionContext for implementation details for direct invocation
 
     def bind(
@@ -903,9 +932,6 @@ class UnboundAssetExecutionContext(AssetExecutionContext):
         if mapping_key and metadata:
             return metadata.get(mapping_key)
         return metadata
-
-    def get_mapping_key(self) -> Optional[str]:
-        return self._op_execution_context._mapping_key  # noqa: SLF001
 
 
 class BoundAssetExecutionContext(AssetExecutionContext):
