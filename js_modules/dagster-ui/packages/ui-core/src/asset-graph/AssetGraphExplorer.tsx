@@ -204,9 +204,8 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
         }
 
         const existing = explorerPath.opNames[0]!.split(',');
-        nextOpsNameSelection = (existing.includes(token)
-          ? without(existing, token)
-          : uniq([...existing, ...tokensToAdd])
+        nextOpsNameSelection = (
+          existing.includes(token) ? without(existing, token) : uniq([...existing, ...tokensToAdd])
         ).join(',');
       }
 
