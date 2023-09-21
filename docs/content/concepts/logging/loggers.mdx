@@ -1,11 +1,13 @@
 ---
-title: Custom loggers | Dagster
+title: Loggers | Dagster
 description: Dagster includes a rich and extensible logging system.
 ---
 
-# Custom loggers
+# Loggers
 
-As part of its rich, extensible logging system, Dagster includes loggers. Loggers can be applied to all jobs within a [code location](/concepts/code-locations) or, in advanced cases, overriden at the job level. Logging handlers will be automatically invoked whenever [ops](/concepts/ops-jobs-graphs/ops) in a [job](/concepts/ops-jobs-graphs/jobs) log messages, meaning out-of-the-box loggers track all execution events. Loggers can also be customized to meet your specific needs.
+As part of its rich, extensible logging system, Dagster includes loggers. Loggers can be applied to all jobs within a [code location](/concepts/code-locations) or, in advanced cases, overriden at the job level.
+
+Logging handlers are automatically invoked whenever [ops](/concepts/ops-jobs-graphs/ops) in a [job](/concepts/ops-jobs-graphs/jobs) log messages, meaning out-of-the-box loggers track all execution events. Loggers can also be customized to meet your specific needs.
 
 ---
 
@@ -23,11 +25,9 @@ As part of its rich, extensible logging system, Dagster includes loggers. Logger
 
 ## Defining loggers
 
-By default, Dagster comes with a built-in logger that tracks all the execution events. You can find an example in the [Using built-in loggers](#using-built-in-loggers) section.
+By default, Dagster comes with a built-in logger that tracks all execution events. Built-in loggers are defined internally using the <PyObject object="LoggerDefinition" /> class. The <PyObject object="logger" decorator /> decorator exposes a simpler API for the common logging use case, which is typically what should be used to define your own loggers.
 
-The built-in loggers are defined internally using the <PyObject object="LoggerDefinition" /> class. The <PyObject object="logger" decorator /> decorator exposes a simpler API for the common logging use case, which is typically what you'll use to define your own loggers.
-
-The decorated function should take a single argument, the `init_context` available during logger initialization, and return a `logging.Logger`. You can find an example in the [Customizing loggers](#customizing-loggers) section.
+The decorated function should take a single argument, the `init_context` available during logger initialization, and return a `logging.Logger`. Refer to the [Customizing loggers](#customizing-loggers) section for an example.
 
 ---
 
@@ -38,7 +38,7 @@ The decorated function should take a single argument, the `init_context` availab
 
 ### Logging from an op
 
-Any op can emit log messages at any point in its computation:
+Any op can emit log messages at any point in its computation. For example:
 
 ```python file=/concepts/logging/builtin_logger.py startafter=start_builtin_logger_marker_0 endbefore=end_builtin_logger_marker_0
 # demo_logger.py
@@ -58,13 +58,13 @@ def demo_job():
 
 ### Using built-in loggers
 
-When you run the above job in the Terminal:
+When the above `demo_job` is run in the terminal:
 
 ```shell
 dagster job execute -f demo_logger.py -j demo_job
 ```
 
-You'll find the messages have been logged through a built-in logger:
+The messages will display in the terminal, having been logged through a built-in logger:
 
 ```shell
 2022-12-15 14:29:33 -0500 - dagster - DEBUG - demo_job - 26304743-8f52-4342-950c-4f2cd5ee436c - 12151 - RUN_START - Started execution of run for "demo_job".
@@ -86,9 +86,9 @@ You'll find the messages have been logged through a built-in logger:
 
 The `context` object passed to every op execution includes the built-in log manager, `context.log`. It exposes the usual `debug`, `info`, `warning`, `error`, and `critical` methods you would expect anywhere else in Python.
 
-When you run Dagster jobs in the Dagster UI, you'll notice that log messages are visible as colored messages in the console. For example:
+When you run Dagster jobs in the Dagster UI, you'll notice that log messages are visible as colored messages in the console. Logs are found on the **Run details** page
 
-- **Logs stream back to the the UI frontend in real time**:
+- **Logs stream back to the UI in real time**:
 
   <!-- ![Real time logs in the Dagster UI](/images/concepts/logging/job-log-ui.png) -->
 
@@ -114,7 +114,9 @@ When you run Dagster jobs in the Dagster UI, you'll notice that log messages are
 
 ## Debugging using logs
 
-What happens if we introduce an error into our op logic?
+Errors in user code are caught by Dagster machinery to ensure jobs gracefully halt or continue to execute, but messages including the original stack trace get logged both to the console and back to the UI.
+
+For example, if an error is introduced into an op's logic:
 
 ```python file=/concepts/logging/builtin_logger.py startafter=start_builtin_logger_error_marker_0 endbefore=end_builtin_logger_error_marker_0
 # demo_logger_error.py
@@ -132,8 +134,6 @@ def demo_job_error():
     hello_logs_error()
 ```
 
-Errors in user code are caught by the Dagster machinery to ensure jobs gracefully halt or continue to execute, but messages including the original stack trace get logged both to the console and back to the UI.
-
 Messages at level `ERROR` or above are highlighted both in the UI and in the console logs, so they can be easily identified even without filtering:
 
 <!-- ![ERROR level in logs in the Dagster UI](/images/concepts/logging/job-ui-error.png) -->
@@ -149,14 +149,7 @@ In many cases, especially for local development, this log viewer, coupled with o
 
 ---
 
-## Examples
-
-- [Configuring built-in loggers](#configuring-built-in-loggers)
-- [Customizing loggers](#customizing-loggers)
-- [Specifying default code location loggers](#specifying-default-code-location-loggers)
-- [Testing custom loggers](#testing-custom-loggers)
-
-### Configuring built-in loggers
+## Configuring loggers
 
 Suppose that we've gotten the kinks out of our jobs developing locally, and now we want to run in production—without all of the log spew from `DEBUG` messages that was helpful during development.
 
@@ -170,141 +163,6 @@ loggers:
 ```
 
 When a job with the above config is executed, you'll only see the `ERROR` level logs.
-
-### Customizing loggers
-
-You may find yourself wanting to add or supplement the built-in loggers so that Dagster logs are integrated with the rest of your log aggregation and monitoring infrastructure.
-
-For example, you may be operating in a containerized environment where container `stdout` is aggregated by a tool such as Logstash. In this kind of environment, where logs will be aggregated and parsed by machine, the multi-line output from the default colored console logger is unhelpful. Instead, we'd much prefer to see single-line, structured log messages like:
-
-```json
-{"orig_message": "Hello, world!", "log_message_id": "49854579-e4d1-4289-8453-b3e177b20056", ...}
-```
-
-Good news - Dagster already includes a logger that prints JSON-formatted single-line messages like this to the console (<PyObject object="json_console_logger"/>). But let's look at how we might implement a simplified version of this logger.
-
-Loggers are defined internally using the <PyObject module="dagster" object="LoggerDefinition" displayText="LoggerDefinition" /> class, but, following a common pattern in the Dagster codebase, the <PyObject module="dagster" object="logger" displayText="@logger" /> decorator exposes a simpler API for the common use case and is typically what you'll use to define your own loggers. The decorated function should take a single argument, the `init_context` available during logger initialization, and return a `logging.Logger`:
-
-```python file=/concepts/logging/custom_logger.py startafter=start_custom_logger_marker_0 endbefore=end_custom_logger_marker_0
-@logger(
-    {
-        "log_level": Field(str, is_required=False, default_value="INFO"),
-        "name": Field(str, is_required=False, default_value="dagster"),
-    },
-    description="A JSON-formatted console logger",
-)
-def json_console_logger(init_context):
-    level = init_context.logger_config["log_level"]
-    name = init_context.logger_config["name"]
-
-    klass = logging.getLoggerClass()
-    logger_ = klass(name, level=level)
-
-    handler = logging.StreamHandler()
-
-    class JsonFormatter(logging.Formatter):
-        def format(self, record):
-            return json.dumps(record.__dict__)
-
-    handler.setFormatter(JsonFormatter())
-    logger_.addHandler(handler)
-
-    return logger_
-
-
-@op
-def hello_logs(context):
-    context.log.info("Hello, world!")
-
-
-@job(logger_defs={"my_json_logger": json_console_logger})
-def demo_job():
-    hello_logs()
-```
-
-As you can see, you can specify the logger name in the run config. It also takes a `config` argument, representing the config that users can pass to the logger. For example:
-
-```yaml file=/concepts/logging/config_custom_logger.yaml
-loggers:
-  my_json_logger:
-    config:
-      log_level: INFO
-```
-
-When you execute the job:
-
-```shell
-dagster job execute -f custom_logger.py -c config_custom_logger.yaml
-```
-
-You'll see that the custom JSON logger is now being used:
-
-<!-- ![Custom logger Terminal output](/images/concepts/logging/job-custom-logger.png) -->
-
-<Image
-alt="Custom logger Terminal output"
-src="/images/concepts/logging/job-custom-logger.png"
-width={2408}
-height={428}
-/>
-
-### Specifying default code location loggers
-
-<Note>
-  This feature is <strong>experimental</strong>.
-</Note>
-
-Defalt loggers can be specified on a <PyObject object="Definitions" /> object by supplying an object containing a logger to the `loggers` argument.
-
-When specified, these loggers will be added to every job specified in the code location and asset materializations provided to the code location:
-
-```python file=/concepts/logging/custom_logger.py startafter=start_default_logger_repo endbefore=end_default_logger_repo
-from dagster import Definitions, define_asset_job, asset
-
-
-@asset
-def some_asset():
-    ...
-
-
-the_job = define_asset_job("the_job", selection="*")
-
-
-defs = Definitions(
-    jobs=[the_job], assets=[some_asset], loggers={"json_logger": json_console_logger}
-)
-```
-
-**Note**: If loggers are explicitly specified at the job level, they will override those provided to the <PyObject object="Definitions" /> object.
-
-### Testing custom loggers
-
-You can unit test the initialization method of a logger by invoking it:
-
-```python file=/concepts/logging/custom_logger.py startafter=start_custom_logger_testing endbefore=end_custom_logger_testing
-def test_init_json_console_logger():
-    logger_ = json_console_logger(None)
-    assert logger_.level == 20
-    assert logger_.name == "dagster"
-```
-
-If you need to provide config to the initialization of your logger, you can use the <PyObject object="build_init_logger_context" /> function:
-
-```python file=/concepts/logging/custom_logger.py startafter=start_custom_logger_testing_context endbefore=end_custom_logger_testing_context
-from dagster import build_init_logger_context
-
-
-def test_init_json_console_logger_with_context():
-    logger_ = json_console_logger(
-        build_init_logger_context(logger_config={"name": "my_logger"})
-    )
-    assert logger_.level == 20
-    assert logger_.name == "my_logger"
-```
-
----
-
-## Patterns
 
 ### Environment-specific logging using jobs
 
@@ -331,7 +189,7 @@ prod_logs = hello_logs.to_job(
 )
 ```
 
-From the UI, you can view and execute the `prod_logs` job and edit config in order to use the new Cloudwatch logger, for example:
+From the UI, you can view and execute the `prod_logs` job and edit config to use the new Cloudwatch logger, for example:
 
 ```yaml file=/concepts/logging/config_prod_job.yaml
 loggers:
@@ -341,3 +199,30 @@ loggers:
       log_group_name: /my/cool/cloudwatch/log/group
       log_stream_name: very_good_log_stream
 ```
+
+---
+
+## Specifying default code location loggers <Experimental />
+
+Defalt loggers can be specified on a <PyObject object="Definitions" /> object by supplying an object containing a logger to the `loggers` argument.
+
+When specified, these loggers will be added to every job specified in the code location and asset materializations provided to the code location:
+
+```python file=/concepts/logging/custom_logger.py startafter=start_default_logger_repo endbefore=end_default_logger_repo
+from dagster import Definitions, define_asset_job, asset
+
+
+@asset
+def some_asset():
+    ...
+
+
+the_job = define_asset_job("the_job", selection="*")
+
+
+defs = Definitions(
+    jobs=[the_job], assets=[some_asset], loggers={"json_logger": json_console_logger}
+)
+```
+
+**Note**: If loggers are explicitly specified at the job level, they will override those provided to the <PyObject object="Definitions" /> object.
