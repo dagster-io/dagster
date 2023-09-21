@@ -48,6 +48,7 @@ export default function AppPage() {
       });
     });
   }, []);
+  console.log({portaledElements});
   return (
     <AppProvider appCache={appCache} config={config}>
       {portaledElements.map(([node, container, key], index) =>

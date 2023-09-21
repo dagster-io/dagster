@@ -3,9 +3,15 @@ import {IToasterProps, Toaster} from '@blueprintjs/core';
 import * as React from 'react';
 
 type PortalProvider = (node: React.ReactNode, container: HTMLElement, key?: string) => void;
-let _portalProvider: PortalProvider;
+const queue: Parameters<PortalProvider>[] = [];
+let _portalProvider: PortalProvider = (node, container, key) => {
+  queue.push([node, container, key]);
+};
 
 export const registerPortalProvider = (portalProvider: PortalProvider) => {
+  while (queue.length) {
+    portalProvider(...queue.pop()!);
+  }
   _portalProvider = portalProvider;
 };
 
