@@ -51,7 +51,7 @@ Note that the solution below is one of many possible ways to solve this challeng
 
 We’ll assume your code looks like the following for the rest of the module. Despite not being the highest quality code, it’s flexible enough for us to extend in a later section.
 
-```python
+```python {% obfuscated="true" %}
 from datetime import datetime, timedelta
 from . import constants
 

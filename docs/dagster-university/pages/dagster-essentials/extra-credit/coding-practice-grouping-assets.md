@@ -23,7 +23,7 @@ The asset groups you built should look similar to the code contained in the **Vi
 
 For the assets in the `raw_files` and `ingested` groups, your assets should look like this:
 
-```python
+```python {% obfuscated="true" %}
 @asset(
   group_name="GROUP_NAME"
 )
@@ -34,7 +34,7 @@ def name_of_asset():
 
 For the `adhoc_request` asset, your code should look like this:
 
-```python
+```python {% obfuscated="true" %}
 request_assets = load_assets_from_modules(
   modules=[requests],
   group_name="requests",
