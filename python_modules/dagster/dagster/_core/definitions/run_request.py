@@ -391,6 +391,8 @@ class SensorResult(
             list of materializations, observations, and asset check evaluations that the system
             will persist on your behalf at the end of sensor evaluation. These events will be not
             be associated with any particular run, but will be queryable and viewable in the asset catalog.
+            Experimental.
+
 
     """
 
