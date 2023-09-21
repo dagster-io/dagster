@@ -14,8 +14,7 @@ from typing import (
     cast,
 )
 
-from dagster_ext import IContext
-
+# from dagster_ext import IContext
 import dagster._check as check
 from dagster._annotations import deprecated, experimental, public
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
@@ -1296,6 +1295,7 @@ OP_EXECUTION_CONTEXT_ONLY_METHODS = set(
         "step_launcher",
         "has_events",
         "consume_events",
+        "log_event",
     ]
 )
 
@@ -1361,7 +1361,7 @@ def _get_deprecation_kwargs(attr: str):
     return deprecation_kwargs
 
 
-class AssetExecutionContext(OpExecutionContext, IContext):
+class AssetExecutionContext(OpExecutionContext):
     def __init__(self, op_execution_context: OpExecutionContext) -> None:
         self._op_execution_context = check.inst_param(
             op_execution_context, "op_execution_context", OpExecutionContext
@@ -1473,10 +1473,6 @@ class AssetExecutionContext(OpExecutionContext, IContext):
     def log(self) -> DagsterLogManager:
         """DagsterLogManager: The log manager available in the execution context."""
         return self._op_execution_context.log
-
-    @public
-    def log_event(self, event: UserEvent) -> None:
-        return self._op_execution_context.log_event(event)
 
     @public
     @property
@@ -1713,6 +1709,10 @@ class AssetExecutionContext(OpExecutionContext, IContext):
     @property
     def asset_check_spec(self) -> AssetCheckSpec:
         return self._op_execution_context.asset_check_spec
+
+    @deprecated(**_get_deprecation_kwargs("log_event"))
+    def log_event(self, event: UserEvent) -> None:
+        return self._op_execution_context.log_event(event)
 
 def build_execution_context(
     step_context: StepExecutionContext,
