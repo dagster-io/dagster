@@ -158,7 +158,7 @@ class _ExtK8sPod(ExtClient):
             extras=extras,
             context_injector=self.context_injector,
             message_reader=self.message_reader,
-        ) as ext_process:
+        ) as ext_context:
             namespace = namespace or "default"
             pod_name = get_pod_name(context.run_id, context.op.name)
             pod_body = build_pod_body(
@@ -166,7 +166,7 @@ class _ExtK8sPod(ExtClient):
                 image=image,
                 command=command,
                 env_vars={
-                    **ext_process.get_external_process_env_vars(),
+                    **ext_context.get_external_process_env_vars(),
                     **(self.env or {}),
                     **(env or {}),
                 },
