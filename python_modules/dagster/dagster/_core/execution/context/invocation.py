@@ -68,7 +68,30 @@ def _property_msg(prop_name: str, method_name: str) -> str:
 
 
 class BoundExecutionContext(ABC):
-    pass
+    @property
+    @abstractmethod
+    def alias(self) -> str:
+        pass
+
+    @abstractmethod
+    def describe_step(self) -> str:
+        pass
+
+    @abstractmethod
+    def for_type(self, dagster_type: DagsterType) -> TypeCheckContext:
+        pass
+
+    @abstractmethod
+    def get_mapping_key(self) -> Optional[str]:
+        pass
+
+    @abstractmethod
+    def observe_output(self, output_name: str, mapping_key: Optional[str] = None) -> None:
+        pass
+
+    @abstractmethod
+    def has_seen_output(self, output_name: str, mapping_key: Optional[str] = None) -> bool:
+        pass
 
 
 class UnboundExecutionContext(ABC):

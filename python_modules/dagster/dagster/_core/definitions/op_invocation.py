@@ -29,7 +29,11 @@ from .events import (
 from .output import DynamicOutputDefinition
 
 if TYPE_CHECKING:
-    from ..execution.context.invocation import BoundAssetExecutionContext, BoundOpExecutionContext
+    from ..execution.context.invocation import (
+        BoundAssetExecutionContext,
+        BoundExecutionContext,
+        BoundOpExecutionContext,
+    )
     from .assets import AssetsDefinition
     from .composition import PendingNodeInvocation
     from .decorators.op_decorator import DecoratedOpFunction
@@ -107,8 +111,7 @@ def direct_invocation_result(
 ) -> Any:
     from dagster._config.pythonic_config import Config
     from dagster._core.execution.context.invocation import (
-        UnboundAssetExecutionContext,
-        UnboundOpExecutionContext,
+        UnboundExecutionContext,
         build_op_context,
     )
 
@@ -148,17 +151,13 @@ def direct_invocation_result(
                 " no context was provided when invoking."
             )
         if len(args) > 0:
-            if args[0] is not None and not isinstance(
-                args[0], (UnboundOpExecutionContext, UnboundAssetExecutionContext)
-            ):
+            if args[0] is not None and not isinstance(args[0], UnboundExecutionContext):
                 raise DagsterInvalidInvocationError(
                     f"Decorated function '{compute_fn.name}' has context argument, "
                     "but no context was provided when invoking."
                 )
-            if isinstance(args[0], UnboundAssetExecutionContext):
-                context = cast(UnboundAssetExecutionContext, args[0])
-            else:
-                context = cast(UnboundOpExecutionContext, args[0])
+            context = args[0]
+            # context = cast(UnboundExecutionContext, args[0])
             # update args to omit context
             args = args[1:]
         else:  # context argument is provided under kwargs
@@ -169,22 +168,16 @@ def direct_invocation_result(
                     f"'{context_param_name}', but no value for '{context_param_name}' was "
                     f"found when invoking. Provided kwargs: {kwargs}"
                 )
-            if isinstance(kwargs[context_param_name], UnboundAssetExecutionContext):
-                context = cast(UnboundAssetExecutionContext, kwargs[context_param_name])
-            else:
-                context = cast(UnboundOpExecutionContext, kwargs[context_param_name])
+            context = kwargs[context_param_name]
+            # context = cast(UnboundExecutionContext, kwargs[context_param_name])
             # update kwargs to remove context
             kwargs = {
                 kwarg: val for kwarg, val in kwargs.items() if not kwarg == context_param_name
             }
     # allow passing context, even if the function doesn't have an arg for it
-    elif len(args) > 0 and isinstance(
-        args[0], (UnboundOpExecutionContext, UnboundAssetExecutionContext)
-    ):
-        if isinstance(args[0], UnboundAssetExecutionContext):
-            context = cast(UnboundAssetExecutionContext, args[0])
-        else:
-            context = cast(UnboundOpExecutionContext, args[0])
+    elif len(args) > 0 and isinstance(args[0], UnboundExecutionContext):
+        context = args[0]
+        # context = cast(UnboundExecutionContext, args[0])
         args = args[1:]
 
     resource_arg_mapping = {arg.name: arg.name for arg in compute_fn.get_resource_args()}
@@ -238,7 +231,7 @@ def _resolve_inputs(
     op_def: "OpDefinition",
     args,
     kwargs,
-    context: Union["BoundOpExecutionContext", "BoundAssetExecutionContext"],
+    context: "BoundExecutionContext",
 ) -> Mapping[str, Any]:
     from dagster._core.execution.plan.execute_step import do_type_check
 
@@ -344,7 +337,7 @@ def _resolve_inputs(
 def _type_check_output_wrapper(
     op_def: "OpDefinition",
     result: Any,
-    context: Union["BoundOpExecutionContext", "BoundAssetExecutionContext"],
+    context: "BoundExecutionContext",
 ) -> Any:
     """Type checks and returns the result of a op.
 
