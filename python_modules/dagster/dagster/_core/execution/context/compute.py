@@ -12,6 +12,8 @@ from typing import (
     cast,
 )
 
+from dagster_ext import IContext
+
 import dagster._check as check
 from dagster._annotations import deprecated, experimental, public
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
@@ -1342,7 +1344,7 @@ def _get_deprecation_kwargs(attr: str):
     return deprecation_kwargs
 
 
-class AssetExecutionContext(OpExecutionContext):
+class AssetExecutionContext(OpExecutionContext, IContext):
     def __init__(self, op_execution_context: OpExecutionContext) -> None:
         self._op_execution_context = check.inst_param(
             op_execution_context, "op_execution_context", OpExecutionContext
