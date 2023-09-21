@@ -1222,6 +1222,19 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         )
         return asset_checks_def.spec
 
+    # In this mode no conversion is done on returned values and missing but expected outputs are not
+    # allowed.
+    @property
+    def requires_typed_event_stream(self) -> bool:
+        return self._step_execution_context.requires_typed_event_stream
+
+    @property
+    def typed_event_stream_error_message(self) -> Optional[str]:
+        return self._step_execution_context.typed_event_stream_error_message
+
+    def set_requires_typed_event_stream(self, *, error_message: Optional[str] = None) -> None:
+        self._step_execution_context.set_requires_typed_event_stream(error_message=error_message)
+
 
 # actually forking the object type for assets is tricky for users in the cases of:
 #  * manually constructing ops to make AssetsDefinitions

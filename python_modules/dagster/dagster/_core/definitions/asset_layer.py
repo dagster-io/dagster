@@ -27,7 +27,10 @@ from dagster._core.definitions.metadata import (
 )
 from dagster._core.selector.subset_selector import AssetSelectionData
 
-from ..errors import DagsterInvalidSubsetError
+from ..errors import (
+    DagsterInvalidSubsetError,
+    DagsterInvariantViolationError,
+)
 from .config import ConfigMapping
 from .dependency import NodeHandle, NodeInputHandle, NodeOutput, NodeOutputHandle
 from .events import AssetKey
@@ -605,6 +608,15 @@ class AssetLayer(NamedTuple):
 
     def assets_def_for_node(self, node_handle: NodeHandle) -> Optional["AssetsDefinition"]:
         return self.assets_defs_by_node_handle.get(node_handle)
+
+    def asset_key_for_node(self, node_handle: NodeHandle) -> AssetKey:
+        assets_def = self.assets_def_for_node(node_handle)
+        if not assets_def or len(assets_def.keys_by_output_name.keys()) > 1:
+            raise DagsterInvariantViolationError(
+                "Cannot call `asset_key_for_node` in a multi_asset with more than one asset."
+                " Multiple asset keys defined."
+            )
+        return next(iter(assets_def.keys_by_output_name.values()))
 
     def asset_check_specs_for_node(self, node_handle: NodeHandle) -> Sequence[AssetCheckSpec]:
         assets_def_for_node = self.assets_def_for_node(node_handle)
