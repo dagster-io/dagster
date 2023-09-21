@@ -2010,7 +2010,7 @@ export type Mutation = {
   stopSensor: StopSensorMutationResultOrError;
   terminatePipelineExecution: TerminateRunResult;
   terminateRun: TerminateRunResult;
-  terminateRuns: TerminateRunsResult;
+  terminateRuns: TerminateRunsResultOrError;
   wipeAssets: AssetWipeMutationResult;
 };
 
@@ -4150,12 +4150,13 @@ export type TerminateRunSuccess = TerminatePipelineExecutionSuccess & {
   run: Run;
 };
 
-export type TerminateRunsResult = PythonError | TerminateRunsSuccess | UnauthorizedError;
-
-export type TerminateRunsSuccess = {
-  __typename: 'TerminateRunsSuccess';
-  numRuns: Scalars['Int'];
+export type TerminateRunsResult = {
+  __typename: 'TerminateRunsResult';
+  runIdsFailedToTerminate: Array<Scalars['String']>;
+  runIdsTerminated: Array<Scalars['String']>;
 };
+
+export type TerminateRunsResultOrError = PythonError | TerminateRunsResult;
 
 export type TestFields = {
   __typename: 'TestFields';
@@ -12220,15 +12221,20 @@ export const buildTerminateRunSuccess = (
   };
 };
 
-export const buildTerminateRunsSuccess = (
-  overrides?: Partial<TerminateRunsSuccess>,
+export const buildTerminateRunsResult = (
+  overrides?: Partial<TerminateRunsResult>,
   _relationshipsToOmit: Set<string> = new Set(),
-): {__typename: 'TerminateRunsSuccess'} & TerminateRunsSuccess => {
+): {__typename: 'TerminateRunsResult'} & TerminateRunsResult => {
   const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
-  relationshipsToOmit.add('TerminateRunsSuccess');
+  relationshipsToOmit.add('TerminateRunsResult');
   return {
-    __typename: 'TerminateRunsSuccess',
-    numRuns: overrides && overrides.hasOwnProperty('numRuns') ? overrides.numRuns! : 2406,
+    __typename: 'TerminateRunsResult',
+    runIdsFailedToTerminate:
+      overrides && overrides.hasOwnProperty('runIdsFailedToTerminate')
+        ? overrides.runIdsFailedToTerminate!
+        : [],
+    runIdsTerminated:
+      overrides && overrides.hasOwnProperty('runIdsTerminated') ? overrides.runIdsTerminated! : [],
   };
 };
 

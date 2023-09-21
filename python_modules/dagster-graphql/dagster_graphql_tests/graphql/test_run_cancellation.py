@@ -45,6 +45,21 @@ mutation($runId: String!, $terminatePolicy: TerminateRunPolicy) {
 }
 """
 
+RUNS_CANCELLATION_QUERY = """
+mutation TerminateRuns($runIds: [String!]!) {
+  terminateRuns(runIds: $runIds) {
+    __typename
+    ... on PythonError{
+      message
+    }
+    ... on TerminateRunsResult {
+      runIdsTerminated
+      runIdsFailedToTerminate
+    }
+  }
+}
+"""
+
 # Legacy query (once published on docs site), that we should try to continue supporting
 BACKCOMPAT_LEGACY_TERMINATE_PIPELINE = """
 mutation TerminatePipeline($runId: String!) {
@@ -107,6 +122,40 @@ class TestQueuedRunTermination(QueuedRunCoordinatorTestSuite):
             assert (
                 result.data["terminatePipelineExecution"]["__typename"] == "TerminateRunSuccess"
             ), str(result.data)
+
+    def test_cancel_runs(self, graphql_context: WorkspaceRequestContext):
+        selector = infer_pipeline_selector(graphql_context, "infinite_loop_job")
+        with safe_tempfile_path() as path:
+            result = execute_dagster_graphql(
+                graphql_context,
+                LAUNCH_PIPELINE_EXECUTION_MUTATION,
+                variables={
+                    "executionParams": {
+                        "selector": selector,
+                        "mode": "default",
+                        "runConfigData": {"ops": {"loop": {"config": {"file": path}}}},
+                    }
+                },
+            )
+
+            assert not result.errors
+            assert result.data
+
+            # just test existence
+            assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
+            run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+
+            run = graphql_context.instance.get_run_by_id(run_id)
+            assert run and run.status == DagsterRunStatus.QUEUED
+
+            result = execute_dagster_graphql(
+                graphql_context,
+                RUNS_CANCELLATION_QUERY,
+                variables={"runIds": [run_id, "nonexistent_id"]},
+            )
+            assert result.data["terminateRuns"]["__typename"] == "TerminateRunsResult"
+            assert result.data["terminateRuns"]["runIdsTerminated"] == [run_id]
+            assert result.data["terminateRuns"]["runIdsFailedToTerminate"] == ["nonexistent_id"]
 
     def test_force_cancel_queued_run(self, graphql_context: WorkspaceRequestContext):
         selector = infer_pipeline_selector(graphql_context, "infinite_loop_job")

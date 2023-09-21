@@ -250,25 +250,25 @@ class GrapheneTerminateRunResult(graphene.Union):
         name = "TerminateRunResult"
 
 
-class GrapheneTerminateRunsSuccess(graphene.ObjectType):
-    """Output indicating that a run was terminated."""
+class GrapheneTerminateRunsResult(graphene.ObjectType):
+    """Indicates the runs that successfully terminated and those that failed to terminate."""
 
-    numRuns = graphene.NonNull(graphene.Int)
+    runIdsTerminated = non_null_list(graphene.String)
+    runIdsFailedToTerminate = non_null_list(graphene.String)
 
     class Meta:
-        name = "TerminateRunsSuccess"
+        name = "TerminateRunsResult"
 
 
-class GrapheneTerminateRunsResult(graphene.Union):
-    """The output from a run termination."""
+class GrapheneTerminateRunsResultOrError(graphene.Union):
+    """The output from runs termination."""
 
     class Meta:
         types = (
-            GrapheneTerminateRunsSuccess,
-            GrapheneUnauthorizedError,
+            GrapheneTerminateRunsResult,
             GraphenePythonError,
         )
-        name = "TerminateRunsResult"
+        name = "TerminateRunsResultOrError"
 
 
 def create_execution_params_and_launch_pipeline_exec(graphene_info, execution_params_dict):
@@ -477,13 +477,13 @@ class GrapheneTerminateRunMutation(graphene.Mutation):
 class GrapheneTerminateRunsMutation(graphene.Mutation):
     """Terminates a set of runs given their run IDs."""
 
-    Output = graphene.NonNull(GrapheneTerminateRunsResult)
+    Output = graphene.NonNull(GrapheneTerminateRunsResultOrError)
 
     class Arguments:
         runIds = non_null_list(graphene.String)
 
     class Meta:
-        name = "TerminateRunMutation"
+        name = "TerminateRunsMutation"
 
     @capture_error
     @require_permission_check(Permissions.TERMINATE_PIPELINE_EXECUTION)
