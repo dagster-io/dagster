@@ -20,6 +20,7 @@ import Link from '../Link';
 import 'react-medium-image-zoom/dist/styles.css';
 import {RenderedDAG} from './RenderedDAG';
 import EnvironmentVariablesIntro from './includes/EnvironmentVariablesIntro.mdx';
+import EnvVarsBenefits from './includes/EnvVarsBenefits.mdx';
 import AddGitlabVariable from './includes/dagster-cloud/AddGitlabVariable.mdx';
 import AddGitubRepositorySecret from './includes/dagster-cloud/AddGitubRepositorySecret.mdx';
 import BDCreateConfigureAgent from './includes/dagster-cloud/BDCreateConfigureAgent.mdx';
@@ -767,6 +768,7 @@ export default {
   BDCreateConfigureAgent,
   DbtModelAssetExplanation,
   EnvironmentVariablesIntro,
+  EnvVarsBenefits,
   K8sEnvVarsConfiguration,
   DockerEnvVarsConfiguration,
   AmazonEcsEnvVarsConfiguration,
