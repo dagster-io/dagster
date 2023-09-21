@@ -28,6 +28,9 @@ def get_version() -> str:
 # grpcio 1.44.0 is the min version compatible with both protobuf 3 and 4
 GRPC_VERSION_FLOOR = "1.44.0"
 
+ver = get_version()
+# dont pin dev installs to avoid pip dep resolver issues
+pin = "" if ver == "1!0+dev" else f"=={ver}"
 
 setup(
     name="dagster",
@@ -104,6 +107,7 @@ setup(
         "universal_pathlib",
         # https://github.com/pydantic/pydantic/issues/5821
         "pydantic != 1.10.7,<2.0.0",
+        f"dagster-ext-process{pin}",
     ],
     extras_require={
         "docker": ["docker"],
