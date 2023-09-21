@@ -597,8 +597,12 @@ def test_partition_range_single_run():
 
     @asset(partitions_def=partitions_def)
     def upstream_asset(context) -> None:
-        assert context.asset_partition_key_range_for_output() == PartitionKeyRange(
-            start="2020-01-01", end="2020-01-03"
+        key_range = PartitionKeyRange(start="2020-01-01", end="2020-01-03")
+        assert context.asset_partition_key_range_for_output() == key_range
+        assert context.partition_key_range == key_range
+        assert context.partition_time_window == TimeWindow(
+            partitions_def.time_window_for_partition_key(key_range.start).start,
+            partitions_def.time_window_for_partition_key(key_range.end).end,
         )
 
     @asset(partitions_def=partitions_def, deps=["upstream_asset"])

@@ -455,9 +455,25 @@ class PlanExecutionContext(IPlanContext):
                 f" single time dimension, but instead found {type(partitions_def)}"
             )
 
-        return cast(
-            Union[MultiPartitionsDefinition, TimeWindowPartitionsDefinition], partitions_def
-        ).time_window_for_partition_key(self.partition_key)
+        if self.has_partition_key:
+            return cast(
+                Union[MultiPartitionsDefinition, TimeWindowPartitionsDefinition], partitions_def
+            ).time_window_for_partition_key(self.partition_key)
+        elif self.has_partition_key_range:
+            partition_key_range = self.asset_partition_key_range
+            partitions_def = cast(
+                Union[TimeWindowPartitionsDefinition, MultiPartitionsDefinition], partitions_def
+            )
+            return TimeWindow(
+                partitions_def.time_window_for_partition_key(partition_key_range.start).start,
+                partitions_def.time_window_for_partition_key(partition_key_range.end).end,
+            )
+
+        else:
+            check.failed(
+                "Has a PartitionsDefinition, so should either have a partition key or a partition"
+                " key range"
+            )
 
     @property
     def has_partition_key(self) -> bool:
