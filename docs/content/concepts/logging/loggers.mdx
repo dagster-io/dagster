@@ -67,26 +67,37 @@ dagster job execute -f demo_logger.py -j demo_job
 The messages will display in the terminal, having been logged through a built-in logger:
 
 ```shell
-2022-12-15 14:29:33 -0500 - dagster - DEBUG - demo_job - 26304743-8f52-4342-950c-4f2cd5ee436c - 12151 - RUN_START - Started execution of run for "demo_job".
-2022-12-15 14:29:33 -0500 - dagster - DEBUG - demo_job - 26304743-8f52-4342-950c-4f2cd5ee436c - 12151 - ENGINE_EVENT - Executing steps using multiprocess executor: parent process (pid: 12151)
-2022-12-15 14:29:33 -0500 - dagster - DEBUG - demo_job - 26304743-8f52-4342-950c-4f2cd5ee436c - 12151 - hello_logs - STEP_WORKER_STARTING - Launching subprocess for "hello_logs".
-2022-12-15 14:29:34 -0500 - dagster - DEBUG - demo_job - 26304743-8f52-4342-950c-4f2cd5ee436c - 12167 - STEP_WORKER_STARTED - Executing step "hello_logs" in subprocess.
-2022-12-15 14:29:34 -0500 - dagster - DEBUG - demo_job - 26304743-8f52-4342-950c-4f2cd5ee436c - 12167 - hello_logs - RESOURCE_INIT_STARTED - Starting initialization of resources [io_manager].
-2022-12-15 14:29:34 -0500 - dagster - DEBUG - demo_job - 26304743-8f52-4342-950c-4f2cd5ee436c - 12167 - hello_logs - RESOURCE_INIT_SUCCESS - Finished initialization of resources [io_manager].
-2022-12-15 14:29:34 -0500 - dagster - DEBUG - demo_job - 26304743-8f52-4342-950c-4f2cd5ee436c - 12167 - LOGS_CAPTURED - Started capturing logs in process (pid: 12167).
-2022-12-15 14:29:34 -0500 - dagster - DEBUG - demo_job - 26304743-8f52-4342-950c-4f2cd5ee436c - 12167 - hello_logs - STEP_START - Started execution of step "hello_logs".
-2022-12-15 14:29:34 -0500 - dagster - INFO - demo_job - 26304743-8f52-4342-950c-4f2cd5ee436c - hello_logs - Hello, world!
-2022-12-15 14:29:34 -0500 - dagster - DEBUG - demo_job - 26304743-8f52-4342-950c-4f2cd5ee436c - 12167 - hello_logs - STEP_OUTPUT - Yielded output "result" of type "Any". (Type check passed).
-2022-12-15 14:29:34 -0500 - dagster - DEBUG - demo_job - 26304743-8f52-4342-950c-4f2cd5ee436c - hello_logs - Writing file at: /Users/erincochran/Desktop/asset_tutorial/my_dagster_project/tmppe9yyr4b/storage/26304743-8f52-4342-950c-4f2cd5ee436c/hello_logs/result
-2022-12-15 14:29:34 -0500 - dagster - DEBUG - demo_job - 26304743-8f52-4342-950c-4f2cd5ee436c - 12167 - hello_logs - HANDLED_OUTPUT - Handled output "result" using IO manager "io_manager"
-2022-12-15 14:29:34 -0500 - dagster - DEBUG - demo_job - 26304743-8f52-4342-950c-4f2cd5ee436c - 12167 - hello_logs - STEP_SUCCESS - Finished execution of step "hello_logs" in 25ms.
-2022-12-15 14:29:34 -0500 - dagster - DEBUG - demo_job - 26304743-8f52-4342-950c-4f2cd5ee436c - 12151 - ENGINE_EVENT - Multiprocess executor: parent process exiting after 1.34s (pid: 12151)
-2022-12-15 14:29:34 -0500 - dagster - DEBUG - demo_job - 26304743-8f52-4342-950c-4f2cd5ee436c - 12151 - RUN_SUCCESS - Finished execution of run for "demo_job".
+2023-09-21 12:07:26 -0400 - dagster - DEBUG - demo_job - 219c7b51-b62f-4e5b-8de8-0e7a616b961c - 25434 - RUN_START - Started execution of run for "demo_job".
+2023-09-21 12:07:26 -0400 - dagster - DEBUG - demo_job - 219c7b51-b62f-4e5b-8de8-0e7a616b961c - 25434 - ENGINE_EVENT - Executing steps using multiprocess executor: parent process (pid: 25434)
+2023-09-21 12:07:26 -0400 - dagster - DEBUG - demo_job - 219c7b51-b62f-4e5b-8de8-0e7a616b961c - 25434 - hello_logs - STEP_WORKER_STARTING - Launching subprocess for "hello_logs".
+2023-09-21 12:07:30 -0400 - dagster - DEBUG - demo_job - 219c7b51-b62f-4e5b-8de8-0e7a616b961c - 25438 - STEP_WORKER_STARTED - Executing step "hello_logs" in subprocess.
+2023-09-21 12:07:30 -0400 - dagster - DEBUG - demo_job - 219c7b51-b62f-4e5b-8de8-0e7a616b961c - 25438 - hello_logs - RESOURCE_INIT_STARTED - Starting initialization of resources [io_manager].
+2023-09-21 12:07:30 -0400 - dagster - DEBUG - demo_job - 219c7b51-b62f-4e5b-8de8-0e7a616b961c - 25438 - hello_logs - RESOURCE_INIT_SUCCESS - Finished initialization of resources [io_manager].
+2023-09-21 12:07:30 -0400 - dagster - DEBUG - demo_job - 219c7b51-b62f-4e5b-8de8-0e7a616b961c - 25438 - LOGS_CAPTURED - Started capturing logs in process (pid: 25438).
+2023-09-21 12:07:30 -0400 - dagster - DEBUG - demo_job - 219c7b51-b62f-4e5b-8de8-0e7a616b961c - 25438 - hello_logs - STEP_START - Started execution of step "hello_logs".
+2023-09-21 12:07:30 -0400 - dagster - INFO - demo_job - 219c7b51-b62f-4e5b-8de8-0e7a616b961c - hello_logs - Hello, world!
+2023-09-21 12:07:30 -0400 - dagster - DEBUG - demo_job - 219c7b51-b62f-4e5b-8de8-0e7a616b961c - 25438 - hello_logs - STEP_OUTPUT - Yielded output "result" of type "Any". (Type check passed).
+2023-09-21 12:07:30 -0400 - dagster - DEBUG - demo_job - 219c7b51-b62f-4e5b-8de8-0e7a616b961c - hello_logs - Writing file at: /Users/erincochran/Desktop/dagster-examples/project-dagster-university/tmpzis_rf84/storage/219c7b51-b62f-4e5b-8de8-0e7a616b961c/hello_logs/result using PickledObjectFilesystemIOManager...
+2023-09-21 12:07:30 -0400 - dagster - DEBUG - demo_job - 219c7b51-b62f-4e5b-8de8-0e7a616b961c - 25438 - hello_logs - HANDLED_OUTPUT - Handled output "result" using IO manager "io_manager"
+2023-09-21 12:07:30 -0400 - dagster - DEBUG - demo_job - 219c7b51-b62f-4e5b-8de8-0e7a616b961c - 25438 - hello_logs - STEP_SUCCESS - Finished execution of step "hello_logs" in 49ms.
+2023-09-21 12:07:31 -0400 - dagster - DEBUG - demo_job - 219c7b51-b62f-4e5b-8de8-0e7a616b961c - 25434 - ENGINE_EVENT - Multiprocess executor: parent process exiting after 4.52s (pid: 25434)
+2023-09-21 12:07:31 -0400 - dagster - DEBUG - demo_job - 219c7b51-b62f-4e5b-8de8-0e7a616b961c - 25434 - RUN_SUCCESS - Finished execution of run for "demo_job".
 ```
 
 The `context` object passed to every op execution includes the built-in log manager, `context.log`. It exposes the usual `debug`, `info`, `warning`, `error`, and `critical` methods you would expect anywhere else in Python.
 
-When you run Dagster jobs in the Dagster UI, you'll notice that log messages are visible as colored messages in the console. Logs are found on the **Run details** page
+---
+
+## Viewing logs in the Dagster UI
+
+When jobs are run, the logs stream back to the [**Run details** page](/concepts/webserver/ui#run-details) in real time. The UI contains two types of logs, which you can learn about using the tabs below.
+
+<TabGroup>
+<TabItem name="Structured event logs">
+
+### Structured event logs
+
+Structured logs are enriched and categorized with metadata. For example, a label of which asset a log is about, links to an asset’s metadata, and what type of event it is available. This structuring also enables easier filtering and searching in the logs.
 
 - **Logs stream back to the UI in real time**:
 
@@ -95,8 +106,8 @@ When you run Dagster jobs in the Dagster UI, you'll notice that log messages are
   <Image
   alt="Real time logs in the Dagster UI"
   src="/images/concepts/logging/job-log-ui.png"
-  width={3574}
-  height={1962}
+  width={3046}
+  height={1618}
   />
 
 - **Filtering log messages based on execution steps and log levels**:
@@ -106,9 +117,30 @@ When you run Dagster jobs in the Dagster UI, you'll notice that log messages are
   <Image
   alt="Log filtering in the Dagster UI"
   src="/images/concepts/logging/job-ui-filter.png"
-  width={3574}
-  height={1962}
+  width={3046}
+  height={1618}
   />
+
+</TabItem>
+<TabItem name="Raw compute logs">
+
+### Raw compute logs
+
+The raw compute logs contain logs for both [`stdout` and `stderr`](https://stackoverflow.com/questions/3385201/confused-about-stdin-stdout-and-stderr), which you can toggle between. To download the logs, click the **arrow icon** near the top right corner of the logs.
+
+Custom log messages are also included in these logs. Notice in the following image that the `Hello world!` message is included on line three:
+
+<!-- ![Raw compute logs in the Run details page](/images/concepts/logging/loggers-compute-logs.png) -->
+
+<Image
+alt="Raw compute logs in the Run details page"
+src="/images/concepts/logging/loggers-compute-logs.png"
+width={3046}
+height={1618}
+/>
+
+</TabItem>
+</TabGroup>
 
 ---
 
@@ -141,8 +173,8 @@ Messages at level `ERROR` or above are highlighted both in the UI and in the con
 <Image
 alt="ERROR level in logs in the Dagster UI"
 src="/images/concepts/logging/job-ui-error.png"
-width={4586}
-height={3054}
+width={3046}
+height={1618}
 />
 
 In many cases, especially for local development, this log viewer, coupled with op reexecution, is sufficient to enable a fast debug cycle for job implementation.
@@ -166,9 +198,9 @@ When a job with the above config is executed, you'll only see the `ERROR` level 
 
 ### Environment-specific logging using jobs
 
-Logging is environment-specific: you don't want messages generated by data scientists' local development loops to be aggregated with production messages. On the other hand, you may find that in production console logging is irrelevant or even counterproductive.
+Logging is environment-specific: for example, you don't want messages generated by data scientists' local development loops to be aggregated with production messages. On the other hand, you may find that console logging is irrelevant or even counterproductive in production.
 
-Dagster recognizes this by attaching loggers to jobs so that you can seamlessly switch from, e.g., Cloudwatch logging in production to console logging in development and test, without changing any of your code. For example:
+Dagster recognizes this by attaching loggers to jobs so that you can seamlessly switch from environment to environment without changing any code. For example, let's say you want to switch from Cloudwatch logging in production to console logging in development and test:
 
 ```python file=/concepts/logging/logging_jobs.py startafter=start_logging_mode_marker_0 endbefore=end_logging_mode_marker_0
 @op
@@ -189,7 +221,7 @@ prod_logs = hello_logs.to_job(
 )
 ```
 
-From the UI, you can view and execute the `prod_logs` job and edit config to use the new Cloudwatch logger, for example:
+In the UI, you can view and execute the `prod_logs` job and edit config to use the new Cloudwatch logger. For example:
 
 ```yaml file=/concepts/logging/config_prod_job.yaml
 loggers:
