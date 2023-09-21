@@ -29,7 +29,7 @@ from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.execution.context.compute import OpExecutionContext
-from dagster._core.execution.context.invocation import BoundOpExecutionContext
+from dagster._core.execution.context.invocation import BoundExecutionContext
 from dagster._core.pipes.client import ExtMessageReader
 
 ExtResult: TypeAlias = Union[MaterializeResult, AssetCheckResult]
@@ -221,8 +221,8 @@ def build_external_execution_context_data(
             _convert_time_window(partition_time_window) if partition_time_window else None
         ),
         run_id=context.run_id,
-        job_name=None if isinstance(context, BoundOpExecutionContext) else context.job_name,
-        retry_number=0 if isinstance(context, BoundOpExecutionContext) else context.retry_number,
+        job_name=None if isinstance(context, BoundExecutionContext) else context.job_name,
+        retry_number=0 if isinstance(context, BoundExecutionContext) else context.retry_number,
         extras=extras or {},
     )
 
