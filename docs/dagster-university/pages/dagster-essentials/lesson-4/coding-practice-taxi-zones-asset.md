@@ -21,9 +21,11 @@ Now, create a `taxi_zones` asset that uses the `taxi_zones_file` file to create 
 
 ## Check your work
 
-The asset you built should look similar to the code contained in the **View answer** toggle. Click to open it.
+The asset you built should look similar to the following code. Click **View answer** to view it.
 
-```python
+**If there are differences**, compare what you wrote to the asset below and change them, as this asset will be used as-is in future lessons.
+
+```python {% obfuscated="true" %}
 @asset(
 	deps=["taxi_zones_file"]
 )
@@ -42,5 +44,3 @@ def taxi_zones():
 		conn = duckdb.connect(os.getenv("DUCKDB_DATABASE"))
 		conn.execute(sql_query)
 ```
-
-**If there are differences**, compare what you wrote to the asset above and change them, as this asset will be used as-is in future lessons.

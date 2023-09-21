@@ -19,7 +19,7 @@ To practice what you’ve learned about asset groups, organize the assets in you
 
 The asset groups you built should look similar to the code contained in the **View answer** toggle. Click to open it.
 
-**For the asset decorator method**:
+### For the asset decorator method:
 
 For the assets in the `raw_files` and `ingested` groups, your assets should look like this:
 
@@ -30,7 +30,7 @@ For the assets in the `raw_files` and `ingested` groups, your assets should look
 def name_of_asset():
 ```
 
-**For the asset submodule method**:
+### For the asset submodule method:
 
 For the `adhoc_request` asset, your code should look like this:
 
@@ -41,8 +41,8 @@ request_assets = load_assets_from_modules(
 )
 ```
 
-**The Dagster UI**:
+### The Dagster UI:
 
 After adding the assets to the groups, the asset graph should look like this:
 
-![](/images/dagster-essentials/extra-credit/ui-asset-groups-practice-answer.png)
+![The updated asset graph in the Dagster UI](/images/dagster-essentials/extra-credit/ui-asset-groups-practice-answer.png)
