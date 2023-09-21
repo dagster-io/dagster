@@ -82,9 +82,9 @@ def test_op_that_logs_event_with_implicit_yield() -> None:
 def test_asset_that_logs_on_other_asset() -> None:
     ran = {}
 
-    asset_key = AssetKey("logs_other_asset")
+    logs_other_asset_key = AssetKey("logs_other_asset")
 
-    @asset(key=asset_key)
+    @asset(key=logs_other_asset_key)
     def asset_that_logs_mat_on_other_asset(context: AssetExecutionContext) -> None:
         context.log_event(
             AssetMaterialization(asset_key="other_asset", metadata={"when": "during_run"})
@@ -92,32 +92,32 @@ def test_asset_that_logs_on_other_asset() -> None:
         assert_latest_mat_metadata_entry(context.instance, "other_asset", "when", "during_run")
         context.add_output_metadata({"when": "after_run"})
         # test that it is not yet present
-        assert context.instance.get_latest_materialization_event(asset_key) is None
+        assert context.instance.get_latest_materialization_event(logs_other_asset_key) is None
         ran["yup"] = True
 
     instance = DagsterInstance.ephemeral()
     assert materialize([asset_that_logs_mat_on_other_asset], instance=instance).success
     assert ran["yup"]
-    assert_latest_mat_metadata_entry(instance, asset_key, "when", "after_run")
+    assert_latest_mat_metadata_entry(instance, logs_other_asset_key, "when", "after_run")
 
 
 def test_asset_that_logs_on_itself() -> None:
     ran = {}
 
-    asset_key = AssetKey("logs_other_asset")
+    logs_itself_key = AssetKey("logs_itself")
 
-    @asset(key=asset_key)
+    @asset(key=logs_itself_key)
     def asset_that_logs_mat_on_other_asset(context: AssetExecutionContext) -> None:
         context.log_event(
-            AssetMaterialization(asset_key=asset_key, metadata={"when": "during_run"})
+            AssetMaterialization(asset_key=logs_itself_key, metadata={"when": "during_run"})
         )
-        assert_latest_mat_metadata_entry(context.instance, asset_key, "when", "during_run")
+        assert_latest_mat_metadata_entry(context.instance, logs_itself_key, "when", "during_run")
         context.add_output_metadata({"when": "after_run"})
         # assert not overwritten
-        assert_latest_mat_metadata_entry(context.instance, asset_key, "when", "during_run")
+        assert_latest_mat_metadata_entry(context.instance, logs_itself_key, "when", "during_run")
         ran["yup"] = True
 
     instance = DagsterInstance.ephemeral()
     assert materialize([asset_that_logs_mat_on_other_asset], instance=instance).success
     assert ran["yup"]
-    assert_latest_mat_metadata_entry(instance, asset_key, "when", "after_run")
+    assert_latest_mat_metadata_entry(instance, logs_itself_key, "when", "after_run")
