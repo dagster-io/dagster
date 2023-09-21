@@ -43,24 +43,35 @@ def test_deprecation_warnings():
         "asset_check_spec",
         "partition_key_range_for_asset_key",
         "instance",
-        # TODO - potentially remove below if they get deprecated
         "resources",
         "run_config",
+        # Partition methods that will be marked deprecated once new APIs take their place
+        "asset_partition_key_range",
+        "has_partition_key",
+        "asset_partition_key_for_input",
+        "asset_partition_key_for_output",
+        "asset_partition_key_range_for_input",
+        "asset_partition_key_range_for_output",
+        "asset_partition_keys_for_input",
+        "asset_partition_keys_for_output",
+        "asset_partitions_def_for_input",
+        "asset_partitions_def_for_output",
+        "asset_partitions_time_window_for_input",
+        "asset_partitions_time_window_for_output",
     ]
 
     other_ignores = [
         "_abc_impl",
-        # TODO - what to do about instance vars for OpExecutionContext? listed below
         "_events",
         "_output_metadata",
         "_pdb",
         "_step_execution_context",
     ]
 
-    def assert_deprecation_messages_as_expected(recieved_info, expected_info):
-        assert recieved_info.breaking_version == expected_info["breaking_version"]
-        assert recieved_info.additional_warn_text == expected_info["additional_warn_text"]
-        assert recieved_info.subject == expected_info["subject"]
+    def assert_deprecation_messages_as_expected(received_info, expected_info):
+        assert received_info.breaking_version == expected_info["breaking_version"]
+        assert received_info.additional_warn_text == expected_info["additional_warn_text"]
+        assert received_info.subject == expected_info["subject"]
 
     @asset
     def test_context(context: AssetExecutionContext):
@@ -139,4 +150,4 @@ def test_instance_check():
     def test_asset_context_instance_check(context: AssetExecutionContext):
         isinstance(context, AssetExecutionContext)
 
-    materialize([test_asset_context_instance_check])
+    assert materialize([test_asset_context_instance_check]).success
