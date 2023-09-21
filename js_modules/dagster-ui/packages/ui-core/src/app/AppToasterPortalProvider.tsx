@@ -3,7 +3,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import {useHref} from 'react-router-dom-v5-compat';
 
-// A hook that makes toaster elements render inside of our React router dom hook and that fixes their hrefs
+// A hook that makes toaster elements render inside of our React router Provider and that fixes their hrefs
 // to take --path-prefix into account
 export const AppToasterPortalProvider = () => {
   const [portaledElements, setPortalElements] = React.useState<

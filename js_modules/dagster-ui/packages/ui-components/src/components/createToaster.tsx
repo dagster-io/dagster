@@ -3,6 +3,8 @@ import {IToasterProps, Toaster} from '@blueprintjs/core';
 import * as React from 'react';
 
 type PortalProvider = (node: React.ReactNode, container: HTMLElement, key?: string) => void;
+
+// This queue stores calls to _portalProvider that occur before AppProvider has a chance to call registerPortalProvider
 const queue: Parameters<PortalProvider>[] = [];
 let _portalProvider: PortalProvider = (node, container, key) => {
   queue.push([node, container, key]);
