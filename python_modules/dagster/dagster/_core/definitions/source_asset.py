@@ -64,7 +64,7 @@ def wrap_source_asset_observe_fn_in_op_compute_fn(
     source_asset: "SourceAsset",
 ) -> "DecoratedOpFunction":
     check.not_none(source_asset.observe_fn)  # for runtime check
-    assert source_asset.observe_fn is not None  # for type checer
+    assert source_asset.observe_fn is not None  # for type checker
     return observe_fn_to_op_compute_fn(
         observe_fn=source_asset.observe_fn,
         partitions_def=source_asset.partitions_def,
