@@ -35,9 +35,6 @@ from dagster._utils import tail_file
 _CONTEXT_INJECTOR_FILENAME = "context"
 _MESSAGE_READER_FILENAME = "messages"
 
-_CONTEXT_INJECTOR_FILENAME = "context"
-_MESSAGE_READER_FILENAME = "messages"
-
 
 class ExtFileContextInjector(ExtContextInjector):
     def __init__(self, path: str):
@@ -112,7 +109,7 @@ class ExtTempFileMessageReader(ExtMessageReader):
     ) -> Iterator[ExtParams]:
         with tempfile.TemporaryDirectory() as tempdir:
             with ExtFileMessageReader(
-                os.path.join(tempdir, _CONTEXT_INJECTOR_FILENAME)
+                os.path.join(tempdir, _MESSAGE_READER_FILENAME)
             ).read_messages(handler) as params:
                 yield params
 
@@ -199,15 +196,15 @@ def ext_protocol(
     that need to be provided to the external process.
     """
     context_data = build_external_execution_context_data(context, extras)
-    msg_handler = ExtMessageHandler(context)
+    message_handler = ExtMessageHandler(context)
     with context_injector.inject_context(
         context_data,
     ) as ci_params, message_reader.read_messages(
-        msg_handler,
+        message_handler,
     ) as mr_params:
         yield ExtOrchestrationContext(
             context_data=context_data,
-            message_handler=msg_handler,
+            message_handler=message_handler,
             context_injector_params=ci_params,
             message_reader_params=mr_params,
         )

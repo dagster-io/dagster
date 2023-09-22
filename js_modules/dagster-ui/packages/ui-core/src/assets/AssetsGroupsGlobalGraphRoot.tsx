@@ -106,10 +106,10 @@ export const AssetsGroupsGlobalGraphRoot: React.FC = () => {
           <AssetGraphExplorerFilters
             assetGroups={assetGroups}
             visibleAssetGroups={React.useMemo(() => filters.groups || [], [filters.groups])}
-            setGroupFilters={React.useCallback((groups) => setFilters({...filters, groups}), [
-              filters,
-              setFilters,
-            ])}
+            setGroupFilters={React.useCallback(
+              (groups) => setFilters({...filters, groups}),
+              [filters, setFilters],
+            )}
           />
         }
         options={{preferAssetRendering: true, explodeComposites: true}}

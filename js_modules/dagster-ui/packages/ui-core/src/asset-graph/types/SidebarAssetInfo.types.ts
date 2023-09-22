@@ -122,6 +122,7 @@ export type SidebarAssetFragment = {
     policyType: Types.AutoMaterializePolicyType;
     rules: Array<{
       __typename: 'AutoMaterializeRule';
+      className: string;
       decisionType: Types.AutoMaterializeDecisionType;
       description: string;
     }>;
@@ -15686,6 +15687,7 @@ export type SidebarAssetQuery = {
           policyType: Types.AutoMaterializePolicyType;
           rules: Array<{
             __typename: 'AutoMaterializeRule';
+            className: string;
             decisionType: Types.AutoMaterializeDecisionType;
             description: string;
           }>;

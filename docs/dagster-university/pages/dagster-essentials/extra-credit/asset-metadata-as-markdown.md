@@ -13,6 +13,7 @@ In Lesson 9, you created the `adhoc_request` asset. During materialization, the 
 ## Adding the metadata to the asset
 
 1. Navigate to and open `assets/requests.py`.
+
 2. At this point in the course, the `adhoc_request` asset should look like this:
 
    ```python
@@ -223,13 +224,14 @@ After all that work, let’s check out what this looks like in the UI!
 1. Navigate to the **Global Asset Lineage** page.
 2. Click **Reload definitions.**
 3. After the metadata code is updated, simulate a tick of the sensor.
+
 <!-- TODO: Add link to Thinkific sensors lesson here? -->
 
 On the right-hand side of the screen, you’ll see `preview`, which was the label given to the Markdown plot value:
 
 ![The Global Asset Lineage page with the adhoc_request asset selected](/images/dagster-essentials/extra-credit/ui-selected-adhoc-request-asset.png)
 
-To display the chart, click **[Show Markdown]** :
+To display the chart, click **\[Show Markdown]** :
 
 ![The chart rendered as a result of materializing the adhoc_request asset](/images/dagster-essentials/extra-credit/ui-markdown-chart.png)
 

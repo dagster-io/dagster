@@ -16,18 +16,20 @@ from typing import (
     TYPE_CHECKING,
     Any,
     ClassVar,
+    Dict,
     Generic,
     Iterator,
     Literal,
     Mapping,
     Optional,
     Sequence,
+    Set,
     TextIO,
     Type,
     TypedDict,
     TypeVar,
+    Union,
     cast,
-    get_args,
 )
 
 if TYPE_CHECKING:
@@ -66,7 +68,7 @@ class ExtMessage(TypedDict):
     params: Optional[Mapping[str, Any]]
 
 
-# ##### EXTERNAL EXECUTION CONTEXT
+# ##### EXT CONTEXT
 
 
 class ExtContextData(TypedDict):
@@ -98,7 +100,19 @@ class ExtDataProvenance(TypedDict):
     is_user_provided: bool
 
 
+ExtMetadataRawValue = Union[int, float, str, Mapping[str, Any], Sequence[Any], bool, None]
+
+
+class ExtMetadataValue(TypedDict):
+    type: "ExtMetadataType"
+    raw_value: ExtMetadataRawValue
+
+
+# Infer the type from the raw value on the orchestration end
+EXT_METADATA_TYPE_INFER = "__infer__"
+
 ExtMetadataType = Literal[
+    "__infer__",
     "text",
     "url",
     "path",
@@ -148,7 +162,10 @@ def _assert_single_asset(data: ExtContextData, key: str) -> None:
 
 
 def _resolve_optionally_passed_asset_key(
-    data: ExtContextData, asset_key: Optional[str], method: str
+    data: ExtContextData,
+    asset_key: Optional[str],
+    method: str,
+    already_materialized_assets: Set[str],
 ) -> str:
     asset_keys = _assert_defined_asset_property(data["asset_keys"], method)
     asset_key = _assert_opt_param_type(asset_key, str, method, "asset_key")
@@ -163,6 +180,11 @@ def _resolve_optionally_passed_asset_key(
                 " targets multiple assets."
             )
         asset_key = asset_keys[0]
+    if asset_key in already_materialized_assets:
+        raise DagsterExtError(
+            f"Calling `{method}` with asset key `{asset_key}` is undefined. Asset has already been"
+            " materialized, so no additional data can be reported for it."
+        )
     return asset_key
 
 
@@ -257,6 +279,33 @@ def _assert_param_json_serializable(value: _T, method: str, param: str) -> _T:
             f" type, got `{type(value)}`."
         )
     return value
+
+
+_METADATA_VALUE_KEYS = frozenset(ExtMetadataValue.__annotations__.keys())
+
+
+def _normalize_param_metadata(
+    metadata: Mapping[str, Union[ExtMetadataRawValue, ExtMetadataValue]], method: str, param: str
+) -> Mapping[str, Union[ExtMetadataRawValue, ExtMetadataValue]]:
+    _assert_param_type(metadata, dict, method, param)
+    new_metadata: Dict[str, ExtMetadataValue] = {}
+    for key, value in metadata.items():
+        if not isinstance(key, str):
+            raise DagsterExtError(
+                f"Invalid type for parameter `{param}` of `{method}`. Expected a dict with string"
+                f" keys, got a key `{key}` of type `{type(key)}`."
+            )
+        elif isinstance(value, dict):
+            if not {*value.keys()} == _METADATA_VALUE_KEYS:
+                raise DagsterExtError(
+                    f"Invalid type for parameter `{param}` of `{method}`. Expected a dict with"
+                    " string keys and values that are either raw metadata values or dictionaries"
+                    f" with schema `{{raw_value: ..., type: ...}}`. Got a value `{value}`."
+                )
+            new_metadata[key] = cast(ExtMetadataValue, value)
+        else:
+            new_metadata[key] = {"raw_value": value, "type": EXT_METADATA_TYPE_INFER}
+    return new_metadata
 
 
 def _param_from_env_var(key: str) -> Any:
@@ -624,11 +673,12 @@ class ExtContext:
         message_channel: ExtMessageWriterChannel,
     ) -> None:
         self._data = data
-        self.message_channel = message_channel
+        self._message_channel = message_channel
+        self._materialized_assets: set[str] = set()
 
     def _write_message(self, method: str, params: Optional[Mapping[str, Any]] = None) -> None:
         message = ExtMessage(method=method, params=params)
-        self.message_channel.write_message(message)
+        self._message_channel.write_message(message)
 
     # ########################
     # ##### PUBLIC API
@@ -727,36 +777,28 @@ class ExtContext:
 
     # ##### WRITE
 
-    def report_asset_metadata(
+    def report_asset_materialization(
         self,
-        label: str,
-        value: Any,
-        metadata_type: Optional[ExtMetadataType] = None,
+        metadata: Optional[Mapping[str, Union[ExtMetadataRawValue, ExtMetadataValue]]] = None,
+        data_version: Optional[str] = None,
         asset_key: Optional[str] = None,
-    ) -> None:
+    ):
         asset_key = _resolve_optionally_passed_asset_key(
-            self._data, asset_key, "report_asset_metadata"
+            self._data, asset_key, "report_asset_materialization", self._materialized_assets
         )
-        label = _assert_param_type(label, str, "report_asset_metadata", "label")
-        value = _assert_param_json_serializable(value, "report_asset_metadata", "value")
-        metadata_type = _assert_opt_param_value(
-            metadata_type, get_args(ExtMetadataType), "report_asset_metadata", "type"
+        metadata = (
+            _normalize_param_metadata(metadata, "report_asset_materialization", "metadata")
+            if metadata
+            else None
+        )
+        data_version = _assert_opt_param_type(
+            data_version, str, "report_asset_materialization", "data_version"
         )
         self._write_message(
-            "report_asset_metadata",
-            {"asset_key": asset_key, "label": label, "value": value, "type": metadata_type},
+            "report_asset_materialization",
+            {"asset_key": asset_key, "data_version": data_version, "metadata": metadata},
         )
-
-    def report_asset_data_version(self, data_version: str, asset_key: Optional[str] = None) -> None:
-        asset_key = _resolve_optionally_passed_asset_key(
-            self._data, asset_key, "report_asset_data_version"
-        )
-        data_version = _assert_param_type(
-            data_version, str, "report_asset_data_version", "data_version"
-        )
-        self._write_message(
-            "report_asset_data_version", {"asset_key": asset_key, "data_version": data_version}
-        )
+        self._materialized_assets.add(asset_key)
 
     def log(self, message: str, level: str = "info") -> None:
         message = _assert_param_type(message, str, "log", "asset_key")

@@ -28,7 +28,7 @@ import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {Container, Inner, Row} from '../ui/VirtualizedTable';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 
-import {GraphData, GraphNode} from './Utils';
+import {GraphData, GraphNode, tokenForAssetKey} from './Utils';
 
 const COLLATOR = new Intl.Collator(navigator.language, {sensitivity: 'base', numeric: true});
 
@@ -43,6 +43,7 @@ type TreeNodeType = {level: number; id: string; path: string};
 export const AssetGraphExplorerSidebar = React.memo(
   ({
     assetGraphData,
+    fullAssetGraphData,
     lastSelectedNode,
     selectNode: _selectNode,
     explorerPath,
@@ -51,6 +52,7 @@ export const AssetGraphExplorerSidebar = React.memo(
     hideSidebar,
   }: {
     assetGraphData: GraphData;
+    fullAssetGraphData: GraphData;
     lastSelectedNode: GraphNode;
     selectNode: (e: React.MouseEvent<any> | React.KeyboardEvent<any>, nodeId: string) => void;
     explorerPath: ExplorerPath;
@@ -58,11 +60,15 @@ export const AssetGraphExplorerSidebar = React.memo(
     allAssetKeys: AssetKey[];
     hideSidebar: () => void;
   }) => {
+    // In the empty stay when no query is typed use the full asset graph data to populate the sidebar
+    const graphData = Object.keys(assetGraphData.nodes).length
+      ? assetGraphData
+      : fullAssetGraphData;
     const [selectWhenDataAvailable, setSelectWhenDataAvailable] = React.useState<
       [React.MouseEvent<any> | React.KeyboardEvent<any>, string] | null
     >(null);
     const selectedNodeHasDataAvailable = selectWhenDataAvailable
-      ? !!assetGraphData.nodes[selectWhenDataAvailable[1]]
+      ? !!graphData.nodes[selectWhenDataAvailable[1]]
       : false;
 
     React.useEffect(() => {
@@ -78,7 +84,7 @@ export const AssetGraphExplorerSidebar = React.memo(
       if (!assetGraphData.nodes[id]) {
         try {
           const path = JSON.parse(id);
-          const nextOpsQuery = `${explorerPath.opsQuery} \"${path[path.length - 1]}\"`;
+          const nextOpsQuery = `${explorerPath.opsQuery} \"${tokenForAssetKey({path})}\"`;
           onChangeExplorerPath(
             {
               ...explorerPath,
@@ -101,23 +107,21 @@ export const AssetGraphExplorerSidebar = React.memo(
 
     const rootNodes = React.useMemo(
       () =>
-        Object.keys(assetGraphData.nodes)
+        Object.keys(graphData.nodes)
           .filter(
             (id) =>
               // When we filter to a subgraph, the nodes at the root aren't real roots, but since
               // their upstream graph is cutoff we want to show them as roots in the sidebar.
               // Find these nodes by filtering on whether there parent nodes are in assetGraphData
-              !Object.keys(assetGraphData.upstream[id] ?? {}).filter(
-                (id) => assetGraphData.nodes[id],
-              ).length,
+              !Object.keys(graphData.upstream[id] ?? {}).filter((id) => graphData.nodes[id]).length,
           )
           .sort((a, b) =>
             COLLATOR.compare(
-              getDisplayName(assetGraphData.nodes[a]!),
-              getDisplayName(assetGraphData.nodes[b]!),
+              getDisplayName(graphData.nodes[a]!),
+              getDisplayName(graphData.nodes[b]!),
             ),
           ),
-      [assetGraphData],
+      [graphData],
     );
 
     const treeNodes = React.useMemo(() => {
@@ -128,8 +132,8 @@ export const AssetGraphExplorerSidebar = React.memo(
         const node = queue.shift()!;
         treeNodes.push(node);
         if (openNodes.has(node.path)) {
-          const downstream = Object.keys(assetGraphData.downstream[node.id] || {}).filter(
-            (id) => assetGraphData.nodes[id],
+          const downstream = Object.keys(graphData.downstream[node.id] || {}).filter(
+            (id) => graphData.nodes[id],
           );
           queue.unshift(
             ...downstream.map((id) => ({level: node.level + 1, id, path: `${node.path}:${id}`})),
@@ -137,7 +141,7 @@ export const AssetGraphExplorerSidebar = React.memo(
         }
       }
       return treeNodes;
-    }, [assetGraphData.downstream, assetGraphData.nodes, openNodes, rootNodes]);
+    }, [graphData.downstream, graphData.nodes, openNodes, rootNodes]);
 
     const folderNodes = React.useMemo(() => {
       const folderNodes: FolderNodeType[] = [];
@@ -156,7 +160,7 @@ export const AssetGraphExplorerSidebar = React.memo(
           >;
         }
       > = {};
-      Object.entries(assetGraphData.nodes).forEach(([id, node]) => {
+      Object.entries(graphData.nodes).forEach(([id, node]) => {
         const locationName = node.definition.repository.location.name;
         const repositoryName = node.definition.repository.name;
         const groupName = node.definition.groupName || 'default';
@@ -194,7 +198,7 @@ export const AssetGraphExplorerSidebar = React.memo(
       });
 
       return folderNodes;
-    }, [assetGraphData.nodes, openNodes]);
+    }, [graphData.nodes, openNodes]);
 
     const renderedNodes = viewType === 'tree' ? treeNodes : folderNodes;
 
@@ -215,7 +219,7 @@ export const AssetGraphExplorerSidebar = React.memo(
         setOpenNodes((prevOpenNodes) => {
           if (viewType === 'folder') {
             const nextOpenNodes = new Set(prevOpenNodes);
-            const assetNode = assetGraphData.nodes[lastSelectedNode.id];
+            const assetNode = graphData.nodes[lastSelectedNode.id];
             if (assetNode) {
               const locationName = buildRepoPathForHuman(
                 assetNode.definition.repository.name,
@@ -225,14 +229,16 @@ export const AssetGraphExplorerSidebar = React.memo(
               nextOpenNodes.add(locationName);
               nextOpenNodes.add(locationName + ':' + groupName);
             }
-            setSelectedNode({id: lastSelectedNode.id});
+            if (selectedNode?.id !== lastSelectedNode.id) {
+              setSelectedNode({id: lastSelectedNode.id});
+            }
             return nextOpenNodes;
           }
           let path = lastSelectedNode.id;
           let currentId = lastSelectedNode.id;
           let next: string | undefined;
-          while ((next = Object.keys(assetGraphData.upstream[currentId] ?? {})[0])) {
-            if (!assetGraphData.nodes[next]) {
+          while ((next = Object.keys(graphData.upstream[currentId] ?? {})[0])) {
+            if (!graphData.nodes[next]) {
               break;
             }
             path = `${next}:${path}`;
@@ -249,13 +255,18 @@ export const AssetGraphExplorerSidebar = React.memo(
             currentPath = `${currentPath}:${nodesInPath[i]}`;
             nextOpenNodes.add(currentPath);
           }
-          setSelectedNode({id: lastSelectedNode.id, path: currentPath});
+          if (selectedNode?.id !== lastSelectedNode.id) {
+            setSelectedNode({id: lastSelectedNode.id, path: currentPath});
+          }
           return nextOpenNodes;
         });
+      } else {
+        setSelectedNode(null);
       }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [
       lastSelectedNode,
-      assetGraphData,
+      graphData,
       viewType,
       // eslint-disable-next-line react-hooks/exhaustive-deps
       lastSelectedNode &&
@@ -330,8 +341,7 @@ export const AssetGraphExplorerSidebar = React.memo(
                 const node = renderedNodes[index]!;
                 const isCodelocationNode = 'locationName' in node;
                 const isGroupNode = 'groupName' in node;
-                const row =
-                  !isCodelocationNode && !isGroupNode ? assetGraphData.nodes[node.id] : node;
+                const row = !isCodelocationNode && !isGroupNode ? graphData.nodes[node.id] : node;
                 return (
                   <Row
                     $height={size}
@@ -344,7 +354,7 @@ export const AssetGraphExplorerSidebar = React.memo(
                       <Node
                         viewType={viewType}
                         isOpen={openNodes.has(nodeId(node))}
-                        assetGraphData={assetGraphData}
+                        graphData={graphData}
                         node={row}
                         level={node.level}
                         isSelected={
@@ -388,7 +398,7 @@ export const AssetGraphExplorerSidebar = React.memo(
 );
 
 const Node = ({
-  assetGraphData,
+  graphData,
   node,
   level,
   toggleOpen,
@@ -400,7 +410,7 @@ const Node = ({
   onChangeExplorerPath,
   viewType,
 }: {
-  assetGraphData: GraphData;
+  graphData: GraphData;
   node: GraphNode | FolderNodeNonAssetType;
   level: number;
   toggleOpen: () => void;
@@ -426,16 +436,15 @@ const Node = ({
     }
   }, [isAssetNode, isGroupNode, node]);
 
-  const upstream = Object.keys(assetGraphData.upstream[node.id] ?? {});
-  const downstream = Object.keys(assetGraphData.downstream[node.id] ?? {});
+  const upstream = Object.keys(graphData.upstream[node.id] ?? {});
+  const downstream = Object.keys(graphData.downstream[node.id] ?? {});
   const elementRef = React.useRef<HTMLDivElement | null>(null);
 
-  const [showDownstreamDialog, setShowDownstreamDialog] = React.useState(false);
-  const [showUpstreamDialog, setShowUpstreamDialog] = React.useState(false);
+  const [showParents, setShowParents] = React.useState(false);
 
   function showDownstreamGraph() {
     const path = JSON.parse(node.id);
-    const newQuery = `\"${path[path.length - 1]}\"*`;
+    const newQuery = `\"${tokenForAssetKey({path})}\"*`;
     const nextOpsQuery = explorerPath.opsQuery.includes(newQuery)
       ? explorerPath.opsQuery
       : `${explorerPath.opsQuery} ${newQuery}`;
@@ -450,7 +459,7 @@ const Node = ({
 
   function showUpstreamGraph() {
     const path = JSON.parse(node.id);
-    const newQuery = `*\"${path[path.length - 1]}\"`;
+    const newQuery = `*\"${tokenForAssetKey({path})}\"`;
     const nextOpsQuery = explorerPath.opsQuery.includes(newQuery)
       ? explorerPath.opsQuery
       : `${explorerPath.opsQuery} ${newQuery}`;
@@ -469,22 +478,11 @@ const Node = ({
     <>
       {launchpadElement}
       <UpstreamDownstreamDialog
-        title="Downstream assets"
-        assets={downstream}
-        isOpen={showDownstreamDialog}
-        close={() => {
-          setShowDownstreamDialog(false);
-        }}
-        selectNode={(e, id) => {
-          selectNode(e, id);
-        }}
-      />
-      <UpstreamDownstreamDialog
-        title="Upstream assets"
+        title="Parent assets"
         assets={upstream}
-        isOpen={showUpstreamDialog}
+        isOpen={showParents}
         close={() => {
-          setShowUpstreamDialog(false);
+          setShowParents(false);
         }}
         selectNode={selectNode}
       />
@@ -492,7 +490,7 @@ const Node = ({
         <BoxWrapper level={level}>
           <Box padding={{right: 12}} flex={{direction: 'row', gap: 2, alignItems: 'center'}}>
             {!isAssetNode ||
-            (viewType === 'tree' && downstream.filter((id) => assetGraphData.nodes[id]).length) ? (
+            (viewType === 'tree' && downstream.filter((id) => graphData.nodes[id]).length) ? (
               <div
                 onClick={(e) => {
                   e.stopPropagation();
@@ -562,6 +560,15 @@ const Node = ({
                           }}
                         />
                         {upstream.length || downstream.length ? <MenuDivider /> : null}
+                        {upstream.length > 1 ? (
+                          <MenuItem
+                            text={`View parents (${upstream.length})`}
+                            icon="list"
+                            onClick={() => {
+                              setShowParents(true);
+                            }}
+                          />
+                        ) : null}
                         {upstream.length ? (
                           <MenuItem
                             text="Show upstream graph"

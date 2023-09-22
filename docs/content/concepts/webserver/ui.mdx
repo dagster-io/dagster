@@ -1,13 +1,13 @@
 ---
 title: Dagster UI | Dagster
-description: The Dagster UI is a web-based interface for Dagster. You can inspect op and job definitions, launch runs, view launched runs, and view assets.
+description: "The Dagster UI is a web-based interface for Dagster. You can inspect Dagster objects (ex: assets, jobs, schedules), launch runs, view launched runs, and view assets produced by those runs."
 ---
 
 # Dagster UI
 
 The Dagster UI is a web-based interface for viewing and interacting with Dagster objects.
 
-You can inspect op, job, and graph definitions, launch runs, view launched runs, and view assets produced by those runs.
+You can inspect Dagster objects (ex: assets, jobs, schedules), launch runs, view launched runs, and view assets produced by those runs.
 
 ---
 
@@ -35,253 +35,603 @@ Note that several Dagster features, like schedules and sensors, require the Dags
 
 ---
 
-## Navigating the UI
+## Overview
 
-These are the main pages inside the UI:
+- **Description**: This page, also known as the "factory floor", provides a high-level look at the activity in your Dagster deployment, across all code locations. This includes information about [runs](#runs), [jobs](#jobs), [schedules](#schedules), [sensors](#sensors), [resources](#resources), and [backfills](#backfills), all of which can be accessed using the tabs on this page.
 
-- [Jobs](#jobs)
-- [Runs](#runs)
-- [Assets](#assets)
-- [Schedules and sensors](#schedules-and-sensors)
-- [Deployment overview](#deployment-overview)
+- **Accessed by**: Clicking **Overview** in the top navigation bar
 
-### Jobs
+<!-- ![The Overview tab, also known as the Factory Floor, in the Dagster UI](/images/concepts/webserver/factory-floor.png) -->
 
-The Job page offers tools to explore a job definition and launch runs for that job.
+<Image
+alt="The Overview tab, also known as the Factory Floor, in the Dagster UI"
+src="/images/concepts/webserver/factory-floor.png"
+width={1920}
+height={1010}
+/>
+
+---
+
+## Assets
+
+<TabGroup>
+<TabItem name="Asset catalog">
+
+### Asset catalog
+
+- **Description**: The **Asset catalog** page lists all [assets](/concepts/assets/software-defined-assets) in your Dagster deployment, which can be filtered by asset key and/or [asset group](/concepts/assets/software-defined-assets#grouping-assets). Clicking an asset opens the [**Asset details** page](#asset-details) for that asset. You can also navigate to the [Global asset lineage](#global-asset-lineage) page, reload definitions, and materialize assets.
+
+- **Accessed by:** Clicking **Assets** in the top navigation bar
+
+<!-- ![The Asset Catalog page in the Dagster UI](/images/concepts/webserver/asset-catalog.png) -->
+
+<Image
+alt="The Asset Catalog page in the Dagster UI"
+src="/images/concepts/webserver/asset-catalog.png"
+width={3572}
+height={1944}
+/>
+
+</TabItem>
+<TabItem name="Global asset lineage">
+
+### Global asset lineage
+
+- **Description**: The **Global asset lineage** page displays dependencies between all of the assets in your Dagster deployment, across all code locations. On this page, you can:
+
+  - Filter assets by [group](/concepts/assets/software-defined-assets#grouping-assets)
+  - Filter a subset of assets by using [asset selection syntax](/concepts/assets/asset-selection-syntax)
+  - Reload definitions
+  - Materialize all or a selection of assets
+  - View [run details](#run-details) for the latest materialization of any asset
+
+- **Accessed by**:
+
+  - **From the [Asset catalog](#asset-catalog)**: Clicking **View global asset lineage**, located near the top right corner of the page
+  - **From the [Asset details](#asset-details) page**: Clicking the **Lineage tab**
+
+<!-- ![The Global asset lineage page in the Dagster UI](/images/concepts/webserver/global-asset-lineage.png) -->
+
+<Image
+alt="The Global asset lineage page in the Dagster UI"
+src="/images/concepts/webserver/global-asset-lineage.png"
+width={3574}
+height={1944}
+/>
+
+</TabItem>
+<TabItem name="Asset details">
+
+### Asset details
+
+- **Description**: The **Asset details** page contains details about a single asset. On this page, you can:
+
+  - View the asset's **Event** (materialization) history
+  - View any **Plots** associated with the asset
+  - View the asset's **Definition**
+  - View the asset's **Lineage** in the [**Global asset lineage** page](#global-asset-lineage)
+  - Materialize the asset
+
+- **Accessed by**: Clicking an asset in the [**Asset catalog**](#asset-catalog)
+
+<!-- ![The Asset Details page in the Dagster UI](/images/concepts/webserver/asset-details.png) -->
+
+<Image
+alt="The Asset Details page in the Dagster UI"
+src="/images/concepts/webserver/asset-details.png"
+width={3062}
+height={1628}
+/>
+
+</TabItem>
+</TabGroup>
+
+---
+
+## Runs
+
+<TabGroup>
+<TabItem name="All runs">
+
+### All runs
+
+- **Description**: The **Runs** page lists all job runs, which can be filtered by job name, run ID, execution status, or tag. Click a run ID to open the [**Run details** page](#run-details) and view details for that run.
+
+- **Accessed by**: Clicking **Runs** in the top navigation bar
+
+<!-- ![UI Runs page](/images/concepts/webserver/runs-page.png) -->
+
+<Image
+alt="UI Runs page"
+src="/images/concepts/webserver/runs-page.png"
+width={3578}
+height={1940}
+/>
+
+</TabItem>
+<TabItem name="Run details">
+
+### Run details
+
+- **Description**: The **Run details** page contains details about a single run, including timing information, errors, and logs. The upper left pane contains a Gantt chart, indicating how long each asset or op took to execute. The bottom pane displays filterable events and logs emitted during execution.
+
+  In this page, you can:
+
+  - **View structured event and raw compute logs.** Refer to the [run logs tab](#run-logs) for more info.
+  - **Re-execute a run** using the same configuration by clicking the **Re-execute** button. Related runs (e.g., runs created by re-executing the same previous run) are grouped in the right pane for easy reference
+
+- **Accessed by**: Clicking a run in the [**Run details**](#run-details) page
+
+<!-- ![UI Run details page](/images/concepts/webserver/run-details.png) -->
+
+<Image
+alt="UI Run details page"
+src="/images/concepts/webserver/run-details.png"
+width={3576}
+height={1950}
+/>
+
+</TabItem>
+<TabItem name="Run logs">
+
+### Run logs
+
+- **Description**: Located at the bottom of the [**Run details** page](#run-details), the run logs list every event that occurred in a run, the type of event, and detailed information about the event itself. There are two types of logs, which we'll discuss in the next section:
+
+  - [Structured event logs](#structured-event-logs)
+  - [Raw compute logs](#raw-compute-logs)
+
+- **Accessed by**: Scrolling to the bottom of the [**Run details**](#run-details) page
+
+#### Structured event logs
+
+- **Description**: Structured logs are enriched and categorized with metadata. For example, a label of which asset a log is about, links to an asset’s metadata, and what type of event it is available. This structuring also enables easier filtering and searching in the logs.
+
+- **Accessed by**: Clicking the **left side** of the toggle next to the log filter field
+
+<!-- ![Structured event logs in the Run details page](/images/concepts/webserver/run-details-event-logs.png) -->
+
+<Image
+alt="Structured event logs in the Run details page"
+src="/images/concepts/webserver/run-details-event-logs.png"
+width={3576}
+height={880}
+/>
+
+#### Raw compute logs
+
+- **Description**: The raw compute logs contain logs for both [`stdout` and `stderr`](https://stackoverflow.com/questions/3385201/confused-about-stdin-stdout-and-stderr), which you can toggle between. To download the logs, click the **arrow icon** near the top right corner of the logs.
+
+- **Accessed by**: Clicking the **right side** of the toggle next to the log filter field
+
+<!-- ![Raw compute logs in the Run details page](/images/concepts/webserver/run-details-compute-logs.png) -->
+
+<Image
+alt="Raw compute logs in the Run details page"
+src="/images/concepts/webserver/run-details-compute-logs.png"
+width={3576}
+height={826}
+/>
+
+</TabItem>
+</TabGroup>
+
+---
+
+## Schedules
+
+<TabGroup>
+<TabItem name="All schedules">
+
+### All schedules
+
+- **Description**: The **Schedules** page lists all [schedules](/concepts/partitions-schedules-sensors/schedules) defined in your Dagster deployment, as well as information about upcoming ticks for anticipated scheduled runs. Click a schedule to open the [**Schedule details**](#schedule-details) page.
+
+- **Accessed by**: Clicking **Overview (top nav) > Schedules tab**
+
+<!-- ![UI Schedules page](/images/concepts/webserver/schedules-tab.png) -->
+
+<Image
+alt="UI Schedules page"
+src="/images/concepts/webserver/schedules-tab.png"
+width={3572}
+height={1942}
+/>
+
+</TabItem>
+<TabItem name="Schedule details">
+
+### Schedule details
+
+- **Description**: The **Schedule details** page contains details about a single schedule, including its next tick, tick history, and run history. Clicking the **Test schedule** button near the top right corner of the page allows you to test the schedule.
+
+- **Accessed by**: Clicking a schedule in the [**Schedules** page](#all-schedules)
+
+<!-- ![UI Schedule details page](/images/concepts/webserver/schedule-details.png) -->
+
+<Image
+alt="UI Schedule details page"
+src="/images/concepts/webserver/schedule-details.png"
+width={3060}
+height={1626}
+/>
+
+</TabItem>
+</TabGroup>
+
+---
+
+## Sensors
+
+<TabGroup>
+<TabItem name="All sensors">
+
+### All sensors
+
+- **Description**: The **Sensors** page lists all [sensors](/concepts/partitions-schedules-sensors/sensors) defined in your Dagster deployment, as well as information about the sensor's frequency and its last tick. Click a sensor to view details about the sensor, including its recent tick history and recent runs.
+
+- **Accessed by**: Clicking **Overview (top nav) > Sensors tab**
+
+<!-- ![UI Sensors page](/images/concepts/webserver/sensors-tab.png) -->
+
+<Image
+alt="UI Sensors page"
+src="/images/concepts/webserver/sensors-tab.png"
+width={3576}
+height={1938}
+/>
+
+</TabItem>
+<TabItem name="Sensor details">
+
+### Sensor details
+
+- **Description**: The **Sensor details** page contains details about a single sensor, including its next tick, tick history, and run history. Clicking the **Test sensor** button near the top right corner of the page allows you to test the sensor.
+
+- **Accessed by**: Clicking a sensor in the [**Sensors** page](#all-sensors)
+
+<!-- ![UI Sensor details page](/images/concepts/webserver/sensor-details.png) -->
+
+<Image
+alt="UI Sensor details page"
+src="/images/concepts/webserver/sensor-details.png"
+width={3058}
+height={1628}
+/>
+
+</TabItem>
+</TabGroup>
+
+---
+
+## Resources
+
+<TabGroup>
+<TabItem name="All resources">
+
+### All resources
+
+- **Description**: The **Resources** page lists all [resources](/concepts/resources) defined in your Dagster deployment, across all code locations. Clicking a resource will open the [**Resource details**](#resource-details) page.
+
+- **Accessed by**: Clicking **Overview (top nav) > Resources tab**
+
+<!-- ![UI Resources page](/images/concepts/webserver/resources-tab.png) -->
+
+<Image
+alt="UI Resources page"
+src="/images/concepts/webserver/resources-tab.png"
+width={3576}
+height={1942}
+/>
+
+</TabItem>
+<TabItem name="Resource details">
+
+### Resource details
+
+- **Description**: The **Resource details** page contains detailed information about a resource, including its configuration, description, and uses. Click the tabs below for more information about the tabs on this page.
+
+- **Accessed by**: Clicking a resource in the [**Resources**](#all-resources) page
+
+<TabGroup>
+<TabItem name="Configuration tab">
+
+#### Configuration tab
+
+- **Description**: The **Configuration** tab contains detailed information about a resource's configuration, including the name of each key, type, and value of each config value. If a key's value is an [environment variable](/guides/dagster/using-environment-variables-and-secrets), an `Env var` badge will display next to the value.
+
+- **Accessed by**: On the [**Resource details**](#resource-details) page, clicking the **Configuration tab**
+
+<!-- ![UI Resource details - Configuration tab](/images/concepts/webserver/resource-details-configuration-tab.png) -->
+
+<Image
+alt="UI Resource details - Configuration tab"
+src="/images/concepts/webserver/resource-details-configuration-tab.png"
+width={3046}
+height={1618}
+/>
+
+</TabItem>
+<TabItem name="Uses tab">
+
+#### Uses tab
+
+- **Description**: The **Uses** tab contains information about the other Dagster definitions that use the resource, including [assets](/concepts/assets/software-defined-assets), [jobs](/concepts/ops-jobs-graphs/jobs), and [ops](/concepts/ops-jobs-graphs/ops). Clicking on any of these definitions will open the details page for that definition type.
+
+- **Accessed by**: On the [**Resource details**](#resource-details) page, clicking the **Uses tab**
+
+<!-- ![UI Resource details - Uses tab](/images/concepts/webserver/resource-details-uses-tab.png) -->
+
+<Image
+alt="UI Resource details - Uses tab"
+src="/images/concepts/webserver/resource-details-uses-tab.png"
+width={3046}
+height={1618}
+/>
+
+</TabItem>
+</TabGroup>
+</TabItem>
+</TabGroup>
+
+---
+
+## Backfills
+
+- **Description**: The **Backfills** tab contains information about the backfills in your Dagster deployment, across all code locations. It includes information about when the partition was created, its target, status, run status, and more.
+
+- **Accessed by**: Clicking **Overview (top nav) > Backfills tab**
+
+<!-- ![UI Backfills tab](/images/concepts/webserver/backfills-tab.png) -->
+
+<Image
+alt="UI Backfills tab"
+src="/images/concepts/webserver/backfills-tab.png"
+width={3046}
+height={1618}
+/>
+
+---
+
+## Jobs
+
+<TabGroup>
+<TabItem name="All jobs">
+
+### All jobs
+
+- **Description**: The **Jobs** page lists all [jobs](/concepts/ops-jobs-graphs/jobs) defined in your Dagster deployment across all code locations. It includes information about the job's schedule or sensor, its latest run time, and its history. Click a job to open the [**Job details**](#job-details) page.
+
+- **Accessed by**: Clicking **Overview (top nav) > Jobs tab**
+
+<!-- ![UI Job Definition](/images/concepts/webserver/jobs-tab.png) -->
+
+<Image
+alt="UI Job Definition"
+src="/images/concepts/webserver/jobs-tab.png"
+width={3064}
+height={1618}
+/>
+
+</TabItem>
+<TabItem name="Job details">
+
+### Job details
+
+- **Description**: The **Job details** page contains detailed information about a job. Click the tabs below for more information about the tabs on this page.
+
+- **Accessed by**: Clicking a job in the [**Jobs** page](#all-jobs)
 
 <TabGroup>
 <TabItem name="Overview tab">
 
 #### Overview tab
 
-The **Overview** tab shows the graph of ops that make up a job.
+- **Description**: The **Overview** tab in the **Job details** page shows the graph of assets and/or ops that make up a job.
 
-- [Job definition](#job-definition)
-- [Op definition](#op-definition)
+- **Accessed by:** On the [**Job details**](#job-details) page, clicking the **Overview** tab
 
-##### **Job definition**
-
-In this tab, you can view the definition of a job:
-
-<!-- ![UI Job Definition](/images/tutorial/complex-job.png) -->
+<!-- ![UI Job Definition](/images/concepts/webserver/jobs-definition-with-ops.png) -->
 
 <Image
 alt="UI Job Definition"
-src="/images/tutorial/complex-job.png"
-width={2313}
-height={1298}
+src="/images/concepts/webserver/job-definition-with-ops.png"
+width={1920}
+height={1020}
 />
-
-<br></br>
-
-##### **Op definition**
-
-To view detailed information about an op in the job, click an op to open a panel on the right side of the page:
-
-<!-- ![UI Op Definition](/images/concepts/webserver/op-definition.png) -->
-
-<Image
-alt="UI Op Definition"
-src="/images/concepts/webserver/op-definition.png"
-width={2315}
-height={1299}
-/>
-
----
 
 </TabItem>
 <TabItem name="Launchpad tab">
 
 #### Launchpad tab
 
-The **Launchpad tab** provides a configuration editor to let you experiment with configuration and launch runs:
+- **Description**: The **Launchpad tab** provides a configuration editor to let you experiment with configuration and launch runs. **Note**: For assets, this tab will only display if a job requires config. It displays by default for all op jobs.
 
-<!-- ![UI Launchpad](/images/tutorial/single-op-launchpad.png) -->
+- **Accessed by:** On the [**Job details**](#job-details) page, clicking the **Launchpad** tab
+
+<!-- ![UI Launchpad](/images/concepts/webserver/job-config-with-ops.png) -->
 
 <Image
 alt="UI Launchpad"
-src="/images/tutorial/single-op-launchpad.png"
-width={1523}
-height={1049}
+src="/images/concepts/webserver/job-config-with-ops.png"
+width={1920}
+height={1020}
 />
-
----
 
 </TabItem>
 <TabItem name="Runs tab">
 
 #### Runs tab
 
-The Runs tab displays a list of recent runs for the job:
+- **Description**: The **Runs** tab displays a list of recent runs for a job. Clicking a run will open the [**Run details**](#run-details) page.
 
-<!-- ![UI Job runs tab](/images/concepts/webserver/runs-tab.png) -->
+- **Accessed by:** On the [**Job details**](#job-details) page, clicking the **Runs** tab
+
+<!-- ![UI Job runs tab](/images/concepts/webserver/jobs-runs-tab.png) -->
 
 <Image
 alt="UI Job runs tab"
-src="/images/concepts/webserver/runs-tab.png"
-width={1446}
-height={754}
+src="/images/concepts/webserver/jobs-runs-tab.png"
+width={3060}
+height={1624}
 />
 
----
+</TabItem>
+<TabItem name="Partitions tab">
+
+#### Partitions tab
+
+- **Description**: The **Partitions** tab displays information about the [partitions](/concepts/partitions-schedules-sensors/partitions) associated with the job, including the total number of partitions, the number of missing partitions, and the job's backfill history. **Note**: This tab will display only if the job contains partitions.
+
+- **Accessed by:** On the [**Job details**](#job-details) page, clicking the **Partitions** tab
+
+<!-- ![UI Job Partitions tab](/images/concepts/webserver/jobs-partitions-tab.png) -->
+
+<Image
+alt="UI Job Partitions tab"
+src="/images/concepts/webserver/jobs-partitions-tab.png"
+width={3060}
+height={1624}
+/>
 
 </TabItem>
 </TabGroup>
 
-### Runs
+</TabItem>
+</TabGroup>
+
+---
+
+## Deployment
+
+The **Deployment** page includes information about the status of the code locations in your Dagster deployment, daemon (Open Source) or agent (Cloud) health, schedules, sensors, and configuration details.
 
 <TabGroup>
-<TabItem name="All runs">
+<TabItem name="Code locations tab">
 
-#### All runs
+### Code locations tab
 
-The Runs page lists all job runs, which can be filtered by job name, run ID, execution status, or tag. Click a run ID to open the [**Run details** page](#run-details) and view details for that run:
+- **Description**: The **Code locations** tab contains information about the code locations in your Dagster deployment, including their current status, when they were last updated, and high-level details about the definitions they contain. You can reload Dagster definitions by:
 
-<!-- ![UI Runs page](/images/concepts/webserver/all-runs.png) -->
+  - Clicking **Reload all** to reload all definitions in all code locations
+  - Clicking **Reload** next to a specific code location to reload only that code location's definitions
 
-<Image
-alt="UI Runs page"
-src="/images/concepts/webserver/all-runs.png"
-width={1861}
-height={1300}
-/>
+- **Accessed by**:
+  - Clicking **Deployment** in the top navigation bar
+  - On the **Deployment overview** page, clicking the **Code locations** tab
 
-</TabItem>
-<TabItem name="Run details">
-
-#### Run details
-
-The **Run details** page contains details about a single run, including timing information, errors, and logs.
-
-The upper left pane contains a Gantt chart, indicating how long each op took to execute. The bottom pane displays filterable events and logs emitted during the course of execution:
-
-<!-- ![UI Job run](/images/concepts/webserver/single-run.png) -->
-
-<Image
-alt="UI Job run"
-src="/images/concepts/webserver/single-run.png"
-width={2318}
-height={1298}
-/>
-
-From the **Run details** page, you can also re-execute a run using the same configuration by clicking the **Re-execute** button:
-
-<!-- ![UI job re-execution button](/images/concepts/webserver/re-execution.png) -->
-
-<Image
-alt="UI job re-execution button"
-src="/images/concepts/webserver/single-run.png"
-width={2318}
-height={1298}
-/>
-
-There are several re-execution options:
-
-- **All Steps**: Re-execute the run from scratch.
-- **Selected Steps**: Re-execute the selected steps.
-- **From Selected**: Re-execute the steps downstream from the selected steps
-- **From Failure**: Retry the run, skipping steps completed successfully. This is only enabled when the run has failed.
-
-Related runs (e.g., runs created by re-executing the same previous run) are grouped together in the right pane for easy reference.
-
-</TabItem>
-</TabGroup>
-
-### Assets
-
-<TabGroup>
-<TabItem name="Asset catalog">
-
-#### Asset catalog
-
-The **Asset catalog** page lists all assets, which can be filtered by asset key. Click an asset to open the [**Asset details** page](#asset-details):
-
-<!-- ![UI Asset Catalog](/images/concepts/webserver/all-assets.png) -->
-
-<Image
-alt="UI Asset Catalog"
-src="/images/concepts/webserver/all-assets.png"
-width={3574}
-height={1962}
-/>
-
----
-
-</TabItem>
-<TabItem name="Asset details">
-
-#### Asset details
-
-The **Asset details** page contains details about a single asset:
-
-<!-- ![UI Asset Details](/images/concepts/webserver/asset.png) -->
-
-<Image
-alt="UI Asset Details"
-src="/images/concepts/webserver/asset.png"
-width={3574}
-height={1962}
-/>
-
----
-
-</TabItem>
-</TabGroup>
-
-### Schedules and sensors
-
-<TabGroup>
-<TabItem name="Schedules">
-
-#### Schedules
-
-The Schedules page lists all schedules defined in your workspace, as well as information about upcoming ticks for anticipated scheduled runs.
-
-Click a schedule to view details about the schedule, including its recent tick history and recent runs.
-
-<!-- ![UI Schedules page](/images/concepts/webserver/schedules.png) -->
-
-<Image
-alt="UI Schedules page"
-src="/images/concepts/webserver/schedules.png"
-width={2315}
-height={1300}
-/>
-
----
-
-</TabItem>
-<TabItem name="Sensors">
-
-#### Sensors
-
-The Sensors page lists all sensors defined in your workspace, as well as information about the sensor's frequency and its last tick.
-
-Click a sensor to view details about the sensor, including its recent tick history and recent runs.
-
-<!-- ![UI Sensors page](/images/concepts/webserver/sensors.png) -->
-
-<Image
-alt="UI Sensors page"
-src="/images/concepts/webserver/sensors.png"
-width={2311}
-height={1299}
-/>
-
----
-
-</TabItem>
-</TabGroup>
-
-### Deployment overview
-
-The Deployment overview page includes information about the status of the code locations in your deployment, daemon (Open Source) or agent (Cloud) health, schedules, sensors, and configuration details:
-
-<!-- ![UI Deployment overview page](/images/concepts/webserver/deployment-status.png) -->
+<!-- ![UI Deployment overview page](/images/concepts/webserver/deployment-code-locations.png) -->
 
 <Image
 alt="UI Deployment overview page"
-src="/images/concepts/webserver/deployment-status.png"
-width={2311}
-height={1300}
+src="/images/concepts/webserver/deployment-code-locations.png"
+width={3564}
+height={1944}
 />
+
+</TabItem>
+<TabItem name="Open Source (OSS)">
+
+### Open Source (OSS)
+
+In addition to the [**Code locations** tab](#code-locations-tab), Dagster OSS deployments contain a few additional tabs. Click the tabs below for more information.
+
+<TabGroup>
+<TabItem name="Daemons tab">
+
+#### Daemons tab
+
+- **Description**: The **Daemons** tab contains information about the [daemons](/deployment/dagster-daemon) in an Open Source Dagster deployment, including their current status and when their last heartbeat was detected.
+- **Accessed by**: On the [**Deployment overview**](#code-locations-tab) page, clicking the **Daemons** tab
+
+<!-- ![UI Deployment - Daemons tab](/images/concepts/webserver/deployment-daemons-tab.png) -->
+
+<Image
+alt="UI Deployment - Daemons tab"
+src="/images/concepts/webserver/deployment-daemons-tab.png"
+width={3060}
+height={1626}
+/>
+
+</TabItem>
+<TabItem name="Configuration tab">
+
+#### Configuration tab
+
+- **Description**: The **Configuration** tab displays information about the configuration for a Dagster deployment, which is managed through the [`dagster.yaml`](/deployment/dagster-instance) file
+- **Accessed by**: On the [**Deployment overview**](#code-locations-tab) page, clicking the **Configuration** tab
+
+<!-- ![UI Deployment - Configuration tab](/images/concepts/webserver/deployment-configuration-tab.png) -->
+
+<Image
+alt="UI Deployment - Configuration tab"
+src="/images/concepts/webserver/deployment-configuration-tab.png"
+width={3566}
+height={1942}
+/>
+
+</TabItem>
+</TabGroup>
+</TabItem>
+
+<TabItem name="Cloud">
+
+### Cloud
+
+In addition to the [**Code locations** tab](#code-locations-tab), Dagster Cloud deployments contain a few additional tabs. Click the tabs below for more information.
+
+<TabGroup>
+<TabItem name="Agents tab">
+
+#### Agents tab
+
+- **Description**: The **Agents** tab contains information about the agents in a Dagster Cloud deployment. Refer to the [Dagster Cloud agent documentation](/dagster-cloud/deployment/agents) for more info.
+- **Accessed by**: On the [**Deployment overview**](#code-locations-tab) page, clicking the **Agents** tab
+
+<!-- ![UI Cloud Deployment - Agents tab](/images/concepts/webserver/deployment-cloud-agents-tab.png) -->
+
+<Image
+alt="UI Cloud Deployment - Agents tab"
+src="/images/concepts/webserver/deployment-cloud-agents-tab.png"
+width={1920}
+height={1016}
+/>
+
+</TabItem>
+<TabItem name="Environmental variables tab">
+
+#### Environment variables tab
+
+- **Description**: The **Agents** tab contains information about the environment variables configured in a Dagster Cloud deployment. Refer to the [Dagster Cloud environment variables and secrets documentation](/dagster-cloud/managing-deployments/environment-variables-and-secrets) for more info.
+- **Accessed by**: On the [**Deployment overview**](#code-locations-tab) page, clicking the **Environment variables** tab
+
+<!-- ![UI Cloud Deployment - Environment variables tab](/images/concepts/webserver/deployment-cloud-environment-variables-tab.png) -->
+
+<Image
+alt="UI Cloud Deployment - Environment variables tab"
+src="/images/concepts/webserver/deployment-cloud-environment-variables-tab.png"
+width={1920}
+height={1016}
+/>
+
+</TabItem>
+<TabItem name="Alerts tab">
+
+#### Alerts tab
+
+- **Description**: The **Alerts** tab contains information about the alert policies configured for a Dagster Cloud deployment. Refer to the [Setting up alerts guide](/dagster-cloud/managing-deployments/setting-up-alerts) for more info.
+- **Accessed by**: On the [**Deployment overview**](#code-locations-tab) page, clicking the **Alerts** tab
+
+<!-- ![UI Cloud Deployment - Alerts tab](/images/concepts/webserver/deployment-cloud-alerts-tab.png) -->
+
+<Image
+alt="UI Cloud Deployment - Alerts tab"
+src="/images/concepts/webserver/deployment-cloud-alerts-tab.png"
+width={1920}
+height={1020}
+/>
+
+</TabItem>
+</TabGroup>
+</TabItem>
+</TabGroup>

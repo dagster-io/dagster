@@ -2008,9 +2008,14 @@ class DagsterInstance(DynamicPartitionsStore):
 
     @traced
     def get_materialized_partitions(
-        self, asset_key: AssetKey, after_cursor: Optional[int] = None
+        self,
+        asset_key: AssetKey,
+        before_cursor: Optional[int] = None,
+        after_cursor: Optional[int] = None,
     ) -> Set[str]:
-        return self._event_storage.get_materialized_partitions(asset_key, after_cursor)
+        return self._event_storage.get_materialized_partitions(
+            asset_key, before_cursor=before_cursor, after_cursor=after_cursor
+        )
 
     @traced
     def get_latest_storage_id_by_partition(

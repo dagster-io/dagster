@@ -32,7 +32,7 @@ To verify that the installation was successful and that you can run Dagster loca
 dagster dev
 ```
 
-Navigate to localhost:3000, where you should see the Dagster UI:
+Navigate to `localhost:3000`, where you should see the Dagster UI:
 
 ![The Overview tab in the Dagster UI](/images/dagster-essentials/demo/lesson-2-dagster-ui.png)
 

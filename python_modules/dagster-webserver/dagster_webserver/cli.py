@@ -147,6 +147,7 @@ DEFAULT_POOL_RECYCLE = 3600  # 1 hr
     show_default=True,
     default="info",
     type=click.Choice(["critical", "error", "warning", "info", "debug"], case_sensitive=False),
+    envvar="DAGSTER_WEBSERVER_LOG_LEVEL",
 )
 @click.option(
     "--code-server-log-level",
