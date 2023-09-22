@@ -14,7 +14,7 @@
     "@rive-app/react-canvas": "^3.0.34",
     "@types/styled-components": "^5.1.26",
     "eslint-config-next": "^13.4.12",
-    "graphql": "^16.6.0",
+    "graphql": "^16.8.1",
     "next": "^13.4.12",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

@@ -26,8 +26,10 @@ def script_fn():
     value = 2 * multiplier
 
     context.log(f"{context.asset_key}: {2} * {multiplier} = {value}")
-    context.report_asset_metadata("value", value)
-    context.report_asset_data_version("alpha")
+    context.report_asset_materialization(
+        metadata={"value": value},
+        data_version="alpha",
+    )
 
 
 @contextmanager

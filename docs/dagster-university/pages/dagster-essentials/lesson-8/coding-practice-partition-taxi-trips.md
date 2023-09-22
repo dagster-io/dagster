@@ -28,9 +28,11 @@ To practice what you’ve learned, partition the `taxi_trips` asset by month usi
 
 ## Check your work
 
-The updated asset should look similar to the code contained in the **View answer** toggle. Click to open it.
+The updated asset should look similar to the following code. Click **View answer** to view it.
 
-```python
+**If there are differences**, compare what you wrote to the asset below and change them, as this asset will be used as-is in future lessons.
+
+```python {% obfuscated="true" %}
 from dagster import asset
 from .partitions import monthly_partitions
 
@@ -66,5 +68,3 @@ def taxi_trips(context, database: DuckDBResource):
     with database.get_connection() as conn:
       conn.execute(query)
 ```
-
-**If there are differences**, compare what you wrote to the asset above and change them, as this asset will be used as-is in future lessons.

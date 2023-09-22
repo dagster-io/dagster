@@ -34,7 +34,8 @@ from dagster._annotations import public
 from dagster._core.errors import DagsterInvalidPropertyError
 from dbt.contracts.results import NodeStatus, TestStatus
 from dbt.node_types import NodeType
-from pydantic import Field, validator
+from packaging import version
+from pydantic import Field, root_validator, validator
 from typing_extensions import Literal
 
 from ..asset_utils import (
@@ -549,6 +550,20 @@ class DbtCliResource(ConfigurableResource):
         )
 
         return os.fspath(resolved_project_dir)
+
+    @root_validator(pre=True)
+    def validate_dbt_version(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate that the dbt version is supported."""
+        from dbt.version import __version__ as dbt_version
+
+        if version.parse(dbt_version) < version.parse("1.4.0"):
+            raise ValueError(
+                "To use `dagster_dbt.DbtCliResource`, you must use `dbt-core>=1.4.0`. Currently,"
+                f" you are using `dbt-core=={dbt_version}`. Please install a compatible dbt-core"
+                " version."
+            )
+
+        return values
 
     def _get_unique_target_path(self, *, context: Optional[AssetExecutionContext]) -> str:
         """Get a unique target path for the dbt CLI invocation.

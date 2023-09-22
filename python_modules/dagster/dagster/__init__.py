@@ -115,12 +115,14 @@ from dagster._core.definitions.asset_check_spec import (
     AssetCheckSeverity as AssetCheckSeverity,
     AssetCheckSpec as AssetCheckSpec,
 )
+from dagster._core.definitions.asset_dep import AssetDep as AssetDep
 from dagster._core.definitions.asset_in import AssetIn as AssetIn
 from dagster._core.definitions.asset_out import AssetOut as AssetOut
 from dagster._core.definitions.asset_selection import AssetSelection as AssetSelection
 from dagster._core.definitions.asset_sensor_definition import (
     AssetSensorDefinition as AssetSensorDefinition,
 )
+from dagster._core.definitions.asset_spec import AssetSpec as AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition as AssetsDefinition
 from dagster._core.definitions.auto_materialize_policy import (
     AutoMaterializePolicy as AutoMaterializePolicy,
