@@ -4,7 +4,7 @@ from dagster import ConfigurableResource
 from deltalake import DeltaTable
 from pydantic import Field
 
-from .config import AzureConfig, LocalConfig, S3Config
+from .config import AzureConfig, GcsConfig, LocalConfig, S3Config
 
 
 class DeltaTableResource(ConfigurableResource):
@@ -34,7 +34,9 @@ class DeltaTableResource(ConfigurableResource):
 
     url: str
 
-    storage_options: Union[AzureConfig, S3Config, LocalConfig] = Field(discriminator="provider")
+    storage_options: Union[AzureConfig, S3Config, LocalConfig, GcsConfig] = Field(
+        discriminator="provider"
+    )
 
     def load(self) -> DeltaTable:
         options = self.storage_options.dict() if self.storage_options else {}

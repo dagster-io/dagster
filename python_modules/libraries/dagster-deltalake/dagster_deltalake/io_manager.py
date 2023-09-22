@@ -26,7 +26,7 @@ if sys.version_info >= (3, 11):
 else:
     from typing_extensions import NotRequired
 
-from .config import AzureConfig, LocalConfig, S3Config
+from .config import AzureConfig, GcsConfig, LocalConfig, S3Config
 
 DELTA_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 DELTA_DATE_FORMAT = "%Y-%m-%d"
@@ -105,7 +105,7 @@ class DeltaLakeIOManager(ConfigurableIOManagerFactory):
 
     root_uri: str = Field(description="Storage location where Delta tables are stored.")
 
-    storage_options: Union[AzureConfig, S3Config, LocalConfig] = Field(
+    storage_options: Union[AzureConfig, S3Config, LocalConfig, GcsConfig] = Field(
         discriminator="provider", description="Configuration for accessing storage location."
     )
 
@@ -119,8 +119,7 @@ class DeltaLakeIOManager(ConfigurableIOManagerFactory):
 
     @staticmethod
     @abstractmethod
-    def type_handlers() -> Sequence[DbTypeHandler]:
-        ...
+    def type_handlers() -> Sequence[DbTypeHandler]: ...
 
     @staticmethod
     def default_load_type() -> Optional[Type]:
