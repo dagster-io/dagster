@@ -10,18 +10,20 @@ Now that you’ve defined an asset in code, the next step is to **materialize** 
 
 To better understand how materialization works, let’s take another look at the `taxi_trips_file` asset you created and what its function does:
 
-```python
+```python file=/dagster-university/lesson_3.py startafter=start_taxi_trips_file_asset endbefore=end_taxi_trips_file_asset
 @asset
 def taxi_trips_file():
     """
-        The raw parquet files for the taxi trips dataset. Sourced from the NYC Open Data portal.
+    The raw parquet files for the taxi trips dataset. Sourced from the NYC Open Data portal.
     """
-    month_to_fetch = '2023-03'
+    month_to_fetch = "2023-03"
     raw_trips = requests.get(
         f"https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_{month_to_fetch}.parquet"
     )
 
-    with open(constants.TAXI_TRIPS_TEMPLATE_FILE_PATH.format(month_to_fetch), "wb") as output_file:
+    with open(
+        constants.TAXI_TRIPS_TEMPLATE_FILE_PATH.format(month_to_fetch), "wb"
+    ) as output_file:
         output_file.write(raw_trips.content)
 ```
 
