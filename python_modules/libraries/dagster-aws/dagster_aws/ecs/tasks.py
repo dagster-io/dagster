@@ -388,6 +388,6 @@ def get_task_kwargs_from_current_task(
             "assignPublicIp": "ENABLED" if public_ip else "DISABLED",
             "securityGroups": security_groups,
         }
-        run_task_kwargs["networkconfiguration"] = {"awsvpcConfiguration": aws_vpc_config}
+        run_task_kwargs["networkConfiguration"] = {"awsvpcConfiguration": aws_vpc_config}
 
     return run_task_kwargs
