@@ -1297,6 +1297,7 @@ OP_EXECUTION_CONTEXT_ONLY_METHODS = set(
         "has_events",
         "consume_events",
         "log_event",
+        "get_asset_provenance",
     ]
 )
 
@@ -1692,6 +1693,11 @@ class AssetExecutionContext(OpExecutionContext, IContext):
     @deprecated(**_get_deprecation_kwargs("log_event"))
     def log_event(self, event: UserEvent) -> None:
         return self._op_execution_context.log_event(event)
+
+    @deprecated(**_get_deprecation_kwargs("get_asset_provenance"))
+    @experimental
+    def get_asset_provenance(self, asset_key: AssetKey) -> Optional[DataProvenance]:
+        return self._op_execution_context.get_asset_provenance(asset_key)
 
 def build_execution_context(
     step_context: StepExecutionContext,
