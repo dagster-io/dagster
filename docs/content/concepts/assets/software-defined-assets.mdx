@@ -562,7 +562,7 @@ When writing a unit test, use <PyObject object="build_op_context" /> to mock the
 
 ```python file=/concepts/assets/asset_testing.py startafter=start_test_with_context_asset endbefore=end_test_with_context_asset
 def test_uses_context():
-    context = build_op_context()
+    context = build_asset_context()
     result = uses_context(context)
     assert result == "bar"
 ```
