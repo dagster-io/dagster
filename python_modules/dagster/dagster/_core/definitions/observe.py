@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence
 
 import dagster._check as check
-from dagster._core.definitions.assets_job import build_source_asset_observation_job
+from dagster._core.definitions.assets_job import build_assets_job
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._utils.warnings import disable_dagster_warnings
 
@@ -47,9 +47,7 @@ def observe(
     resources = check.opt_mapping_param(resources, "resources", key_type=str)
 
     with disable_dagster_warnings():
-        observation_job = build_source_asset_observation_job(
-            "in_process_observation_job", source_assets
-        )
+        observation_job = build_assets_job("in_process_observation_job", [], source_assets)
         defs = Definitions(
             assets=source_assets,
             jobs=[observation_job],

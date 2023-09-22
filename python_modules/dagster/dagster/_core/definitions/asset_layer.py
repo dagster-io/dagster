@@ -807,10 +807,7 @@ def build_asset_selection_job(
     asset_selection_data: Optional[AssetSelectionData] = None,
     hooks: Optional[AbstractSet[HookDefinition]] = None,
 ) -> "JobDefinition":
-    from dagster._core.definitions.assets_job import (
-        build_assets_job,
-        build_source_asset_observation_job,
-    )
+    from dagster._core.definitions.assets_job import build_assets_job
 
     if asset_selection is None and asset_check_selection is None:
         # no selections, include everything
@@ -854,36 +851,31 @@ def build_asset_selection_job(
             )
 
     if len(included_assets) or len(included_checks_defs) > 0:
-        asset_job = build_assets_job(
-            name=name,
-            assets=included_assets,
-            asset_checks=included_checks_defs,
-            config=config,
-            source_assets=[*source_assets, *excluded_assets],
-            resource_defs=resource_defs,
-            executor_def=executor_def,
-            partitions_def=partitions_def,
-            description=description,
-            tags=tags,
-            metadata=metadata,
-            hooks=hooks,
-            _asset_selection_data=asset_selection_data,
-        )
+        # Job materializes assets and/or executes checks
+        final_assets = included_assets
+        final_asset_checks = included_checks_defs
+        final_source_assets = [*source_assets, *excluded_assets]
     else:
-        asset_job = build_source_asset_observation_job(
-            name=name,
-            source_assets=included_source_assets,
-            config=config,
-            resource_defs=resource_defs,
-            executor_def=executor_def,
-            partitions_def=partitions_def,
-            description=description,
-            tags=tags,
-            hooks=hooks,
-            _asset_selection_data=asset_selection_data,
-        )
+        # Job only observes source assets
+        final_assets = []
+        final_asset_checks = []
+        final_source_assets = included_source_assets
 
-    return asset_job
+    return build_assets_job(
+        name=name,
+        assets=final_assets,
+        asset_checks=final_asset_checks,
+        config=config,
+        source_assets=final_source_assets,
+        resource_defs=resource_defs,
+        executor_def=executor_def,
+        partitions_def=partitions_def,
+        description=description,
+        tags=tags,
+        metadata=metadata,
+        hooks=hooks,
+        _asset_selection_data=asset_selection_data,
+    )
 
 
 def _subset_assets_defs(
