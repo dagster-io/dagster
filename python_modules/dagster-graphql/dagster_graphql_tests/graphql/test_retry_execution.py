@@ -17,6 +17,7 @@ from dagster_graphql.schema.inputs import GrapheneReexecutionStrategy
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
     execute_dagster_graphql_and_finish_runs,
+    infer_job_or_pipeline_selector,
     infer_pipeline_selector,
 )
 
@@ -558,6 +559,42 @@ class TestHardFailures(ExecutingGraphQLContextTestMatrix):
         assert step_did_succeed(logs, "always_succeed")
         assert step_did_succeed(logs, "conditionally_fail")
         assert step_did_succeed(logs, "after_failure")
+
+    def test_retry_asset_job_with_reexecution_params(
+        self, graphql_context: WorkspaceRequestContext
+    ):
+        selector = infer_job_or_pipeline_selector(
+            graphql_context, "two_assets_job", asset_selection=[{"path": ["asset_one"]}]
+        )
+        result = execute_dagster_graphql_and_finish_runs(
+            graphql_context,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
+            variables={
+                "executionParams": {
+                    "selector": selector,
+                }
+            },
+        )
+
+        run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+        logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
+            "pipelineRunLogs"
+        ]["messages"]
+
+        assert step_did_succeed(logs, "asset_one")
+        assert step_did_not_run(logs, "asset_two")
+
+        retry_one = execute_dagster_graphql_and_finish_runs(
+            graphql_context,
+            LAUNCH_PIPELINE_REEXECUTION_MUTATION,
+            variables={"reexecutionParams": {"parentRunId": run_id, "strategy": "ALL_STEPS"}},
+        )
+        run_id = retry_one.data["launchPipelineReexecution"]["run"]["runId"]
+        logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
+            "pipelineRunLogs"
+        ]["messages"]
+        assert step_did_succeed(logs, "asset_one")
+        assert step_did_not_run(logs, "asset_two")
 
     def test_retry_hard_failure_with_reexecution_params_run_config_changed(
         self, graphql_context: WorkspaceRequestContext
