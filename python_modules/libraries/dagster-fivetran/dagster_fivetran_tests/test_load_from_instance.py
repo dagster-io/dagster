@@ -86,9 +86,11 @@ def test_load_from_instance(
             rsps.add(
                 method=rsps.GET,
                 url=ft_resource.api_base_url + "groups/some_group/connectors",
-                json=get_sample_connectors_response_multiple()
-                if multiple_connectors
-                else get_sample_connectors_response(),
+                json=(
+                    get_sample_connectors_response_multiple()
+                    if multiple_connectors
+                    else get_sample_connectors_response()
+                ),
                 status=200,
                 match=[matchers.header_matcher(expected_auth_header)],
             )
@@ -112,6 +114,8 @@ def test_load_from_instance(
                     connector_filter=(lambda _: False) if filter_connector else None,
                     connector_to_asset_key_fn=connector_to_asset_key_fn,
                     connector_to_io_manager_key_fn=(lambda _: "test_io_manager"),
+                    poll_interval=10,
+                    poll_timeout=600,
                 )
             else:
                 ft_cacheable_assets = load_assets_from_fivetran_instance(
@@ -119,6 +123,8 @@ def test_load_from_instance(
                     connector_filter=(lambda _: False) if filter_connector else None,
                     connector_to_asset_key_fn=connector_to_asset_key_fn,
                     io_manager_key="test_io_manager",
+                    poll_interval=10,
+                    poll_timeout=600,
                 )
             ft_assets = ft_cacheable_assets.build_definitions(
                 ft_cacheable_assets.compute_cacheable_data()

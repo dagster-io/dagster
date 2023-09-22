@@ -24,6 +24,7 @@ from dagster._core.execution.stats import (
     build_run_step_stats_from_events,
 )
 from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
+from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecord
 from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
 from dagster._core.storage.sql import AlembicVersion
 from dagster._seven import json
@@ -264,8 +265,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         """Explicit lifecycle management."""
 
     def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
-        """Allows for optimizing database connection / use in the context of a long lived webserver process.
-        """
+        """Allows for optimizing database connection / use in the context of a long lived webserver process."""
 
     @abstractmethod
     def get_event_records(
@@ -289,8 +289,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         raise NotImplementedError()
 
     def get_maximum_record_id(self) -> Optional[int]:
-        """Get the current greatest record id in the event log. Only supported for non sharded sql storage.
-        """
+        """Get the current greatest record id in the event log. Only supported for non sharded sql storage."""
         raise NotImplementedError()
 
     @abstractmethod
@@ -485,4 +484,23 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     @abstractmethod
     def free_concurrency_slot_for_step(self, run_id: str, step_key: str) -> None:
         """Frees concurrency slots for a given run/step."""
+        raise NotImplementedError()
+
+    @property
+    def supports_asset_checks(self):
+        return True
+
+    def get_asset_check_executions(
+        self,
+        asset_key: AssetKey,
+        check_name: str,
+        limit: int,
+        cursor: Optional[int] = None,
+        materialization_event_storage_id: Optional[int] = None,
+        include_planned: bool = True,
+    ) -> Sequence[AssetCheckExecutionRecord]:
+        """Get the executions for an asset check, sorted by recency. If materialization_event_storage_id
+        is set and include_planned is True, the returned Sequence will include executions that are planned
+        but do not have a target materialization yet (since we don't set the target until the check is executed).
+        """
         raise NotImplementedError()

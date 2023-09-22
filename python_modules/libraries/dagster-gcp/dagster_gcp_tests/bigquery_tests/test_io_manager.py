@@ -220,6 +220,7 @@ class FakeHandler(DbTypeHandler[int]):
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE bigquery DB")
+@pytest.mark.integration
 def test_authenticate_via_config():
     schema = "BIGQUERY_IO_MANAGER_SCHEMA"
     with temporary_bigquery_table(

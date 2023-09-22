@@ -1,0 +1,37 @@
+{
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "ts": "tsc -p .",
+    "prettier": "prettier . --write"
+  },
+  "dependencies": {
+    "@headlessui/react": "^1.7.17",
+    "@markdoc/markdoc": "latest",
+    "@markdoc/next.js": "latest",
+    "next": "latest",
+    "prismjs": "latest",
+    "react": "latest",
+    "react-dom": "latest"
+  },
+  "devDependencies": {
+    "@tailwindcss/typography": "^0.5.9",
+    "@types/node": "latest",
+    "@types/prismjs": "^1.26.0",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "autoprefixer": "^10.4.15",
+    "babel-plugin-prismjs": "^2.1.0",
+    "eslint": "8.48.0",
+    "eslint-config-next": "13.4.19",
+    "eslint-config-prettier": "^9.0.0",
+    "postcss": "^8.4.29",
+    "prettier": "^3.0.3",
+    "tailwindcss": "^3.3.3",
+    "typescript": "latest"
+  },
+  "packageManager": "yarn@3.6.3"
+}

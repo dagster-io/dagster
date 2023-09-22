@@ -27,6 +27,10 @@ from dagster._core.definitions import (
     HookDefinition,
     NodeHandle,
 )
+from dagster._core.definitions.asset_check_evaluation import (
+    AssetCheckEvaluation,
+    AssetCheckEvaluationPlanned,
+)
 from dagster._core.definitions.events import AssetLineageInfo, ObjectStoreOperationType
 from dagster._core.definitions.metadata import (
     MetadataFieldSerializer,
@@ -56,6 +60,7 @@ if TYPE_CHECKING:
     from dagster._core.execution.plan.plan import ExecutionPlan
     from dagster._core.execution.plan.step import StepKind
 
+
 EventSpecificData = Union[
     StepOutputData,
     StepFailureData,
@@ -74,6 +79,8 @@ EventSpecificData = Union[
     "ComputeLogsCaptureData",
     "AssetObservationData",
     "AssetMaterializationPlannedData",
+    "AssetCheckEvaluation",
+    "AssetCheckEvaluationPlanned",
 ]
 
 
@@ -105,6 +112,8 @@ class DagsterEventType(str, Enum):
     ASSET_MATERIALIZATION_PLANNED = "ASSET_MATERIALIZATION_PLANNED"
     ASSET_OBSERVATION = "ASSET_OBSERVATION"
     STEP_EXPECTATION_RESULT = "STEP_EXPECTATION_RESULT"
+    ASSET_CHECK_EVALUATION_PLANNED = "ASSET_CHECK_EVALUATION_PLANNED"
+    ASSET_CHECK_EVALUATION = "ASSET_CHECK_EVALUATION"
 
     # We want to display RUN_* events in the Dagster UI and in our LogManager output, but in order to
     # support backcompat for our storage layer, we need to keep the persisted value to be strings
@@ -169,6 +178,7 @@ STEP_EVENTS = {
     DagsterEventType.ASSET_MATERIALIZATION,
     DagsterEventType.ASSET_OBSERVATION,
     DagsterEventType.STEP_EXPECTATION_RESULT,
+    DagsterEventType.ASSET_CHECK_EVALUATION,
     DagsterEventType.OBJECT_STORE_OPERATION,
     DagsterEventType.HANDLED_OUTPUT,
     DagsterEventType.LOADED_INPUT,
@@ -233,6 +243,11 @@ ASSET_EVENTS = {
     DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
 }
 
+ASSET_CHECK_EVENTS = {
+    DagsterEventType.ASSET_CHECK_EVALUATION,
+    DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED,
+}
+
 
 def _assert_type(
     method: str,
@@ -244,10 +259,8 @@ def _assert_type(
     )
     check.invariant(
         actual_type in _expected_type,
-        (
-            f"{method} only callable when event_type is"
-            f" {','.join([t.value for t in _expected_type])}, called on {actual_type}"
-        ),
+        f"{method} only callable when event_type is"
+        f" {','.join([t.value for t in _expected_type])}, called on {actual_type}",
     )
 
 
@@ -281,6 +294,10 @@ def _validate_event_specific_data(
         check.inst_param(
             event_specific_data, "event_specific_data", AssetMaterializationPlannedData
         )
+    elif event_type == DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED:
+        check.inst_param(event_specific_data, "event_specific_data", AssetCheckEvaluationPlanned)
+    elif event_type == DagsterEventType.ASSET_CHECK_EVALUATION:
+        check.inst_param(event_specific_data, "event_specific_data", AssetCheckEvaluation)
 
     return event_specific_data
 
@@ -799,17 +816,19 @@ class DagsterEvent(
                     output_name=step_output_data.step_output_handle.output_name,
                     output_type=output_def.dagster_type.display_name,
                     type_check_clause=(
-                        " Warning! Type check failed."
-                        if not step_output_data.type_check_data.success
-                        else " (Type check passed)."
-                    )
-                    if step_output_data.type_check_data
-                    else " (No type check).",
+                        (
+                            " Warning! Type check failed."
+                            if not step_output_data.type_check_data.success
+                            else " (Type check passed)."
+                        )
+                        if step_output_data.type_check_data
+                        else " (No type check)."
+                    ),
                     mapping_clause=(
                         f' mapping key "{step_output_data.step_output_handle.mapping_key}"'
-                    )
-                    if step_output_data.step_output_handle.mapping_key
-                    else "",
+                        if step_output_data.step_output_handle.mapping_key
+                        else ""
+                    ),
                 )
             ),
         )
@@ -838,9 +857,11 @@ class DagsterEvent(
             message=(
                 'Execution of step "{step_key}" failed and has requested a retry{wait_str}.'.format(
                     step_key=step_context.step.key,
-                    wait_str=f" in {step_retry_data.seconds_to_wait} seconds"
-                    if step_retry_data.seconds_to_wait
-                    else "",
+                    wait_str=(
+                        f" in {step_retry_data.seconds_to_wait} seconds"
+                        if step_retry_data.seconds_to_wait
+                        else ""
+                    ),
                 )
             ),
         )
@@ -859,12 +880,14 @@ class DagsterEvent(
                 input_name=step_input_data.input_name,
                 input_type=input_def.dagster_type.display_name,
                 type_check_clause=(
-                    " Warning! Type check failed."
-                    if not step_input_data.type_check_data.success
-                    else " (Type check passed)."
-                )
-                if step_input_data.type_check_data
-                else " (No type check).",
+                    (
+                        " Warning! Type check failed."
+                        if not step_input_data.type_check_data.success
+                        else " (Type check passed)."
+                    )
+                    if step_input_data.type_check_data
+                    else " (No type check)."
+                ),
             ),
         )
 
@@ -921,10 +944,12 @@ class DagsterEvent(
             event_type=DagsterEventType.ASSET_MATERIALIZATION,
             step_context=step_context,
             event_specific_data=StepMaterializationData(materialization),
-            message=materialization.description
-            if materialization.description
-            else "Materialized value{label_clause}.".format(
-                label_clause=f" {materialization.label}" if materialization.label else ""
+            message=(
+                materialization.description
+                if materialization.description
+                else "Materialized value{label_clause}.".format(
+                    label_clause=f" {materialization.label}" if materialization.label else ""
+                )
             ),
         )
 
@@ -936,6 +961,16 @@ class DagsterEvent(
             event_type=DagsterEventType.ASSET_OBSERVATION,
             step_context=step_context,
             event_specific_data=AssetObservationData(observation),
+        )
+
+    @staticmethod
+    def asset_check_evaluation(
+        step_context: IStepContext, asset_check_evaluation: AssetCheckEvaluation
+    ) -> "DagsterEvent":
+        return DagsterEvent.from_step(
+            event_type=DagsterEventType.ASSET_CHECK_EVALUATION,
+            step_context=step_context,
+            event_specific_data=asset_check_evaluation,
         )
 
     @staticmethod

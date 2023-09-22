@@ -2,6 +2,7 @@ from functools import lru_cache, update_wrapper
 from inspect import Parameter
 from typing import (
     TYPE_CHECKING,
+    AbstractSet,
     Any,
     Callable,
     List,
@@ -9,13 +10,13 @@ from typing import (
     NamedTuple,
     Optional,
     Sequence,
-    Set,
     Union,
     cast,
     overload,
 )
 
 import dagster._check as check
+from dagster._annotations import deprecated_param
 from dagster._config import UserConfigSchema
 from dagster._core.decorator_utils import (
     format_docstring_for_description,
@@ -30,7 +31,7 @@ from dagster._core.definitions.resource_annotation import (
 )
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.types.dagster_type import DagsterTypeKind
-from dagster._utils.backcompat import canonicalize_backcompat_args
+from dagster._utils.warnings import normalize_renamed_param
 
 from ..input import In, InputDefinition
 from ..output import Out
@@ -46,7 +47,7 @@ class _Op:
         self,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        required_resource_keys: Optional[Set[str]] = None,
+        required_resource_keys: Optional[AbstractSet[str]] = None,
         config_schema: Optional[Union[Any, Mapping[str, Any]]] = None,
         tags: Optional[Mapping[str, Any]] = None,
         code_version: Optional[str] = None,
@@ -116,10 +117,8 @@ class _Op:
         decorator_resource_keys = set(self.required_resource_keys or [])
         check.param_invariant(
             len(decorator_resource_keys) == 0 or len(arg_resource_keys) == 0,
-            (
-                "Cannot specify resource requirements in both @op decorator and as arguments to the"
-                " decorated function"
-            ),
+            "Cannot specify resource requirements in both @op decorator and as arguments to the"
+            " decorated function",
         )
         resolved_resource_keys = decorator_resource_keys.union(arg_resource_keys)
 
@@ -153,7 +152,7 @@ def op(
     ins: Optional[Mapping[str, In]] = ...,
     out: Optional[Union[Out, Mapping[str, Out]]] = ...,
     config_schema: Optional[UserConfigSchema] = ...,
-    required_resource_keys: Optional[Set[str]] = ...,
+    required_resource_keys: Optional[AbstractSet[str]] = ...,
     tags: Optional[Mapping[str, Any]] = ...,
     version: Optional[str] = ...,
     retry_policy: Optional[RetryPolicy] = ...,
@@ -162,6 +161,9 @@ def op(
     ...
 
 
+@deprecated_param(
+    param="version", breaking_version="2.0", additional_warn_text="Use `code_version` instead"
+)
 def op(
     compute_fn: Optional[Callable] = None,
     *,
@@ -170,7 +172,7 @@ def op(
     ins: Optional[Mapping[str, In]] = None,
     out: Optional[Union[Out, Mapping[str, Out]]] = None,
     config_schema: Optional[UserConfigSchema] = None,
-    required_resource_keys: Optional[Set[str]] = None,
+    required_resource_keys: Optional[AbstractSet[str]] = None,
     tags: Optional[Mapping[str, Any]] = None,
     version: Optional[str] = None,
     retry_policy: Optional[RetryPolicy] = None,
@@ -242,8 +244,11 @@ def op(
             def multi_out() -> Tuple[str, int]:
                 return 'cool', 4
     """
-    code_version = canonicalize_backcompat_args(
-        code_version, "code_version", version, "version", "2.0"
+    code_version = normalize_renamed_param(
+        code_version,
+        "code_version",
+        version,
+        "version",
     )
 
     if compute_fn is not None:
@@ -272,6 +277,10 @@ class DecoratedOpFunction(NamedTuple):
     """Wrapper around the decorated op function to provide commonly used util methods."""
 
     decorated_fn: Callable[..., Any]
+
+    @property
+    def name(self):
+        return self.decorated_fn.__name__
 
     @lru_cache(maxsize=1)
     def has_context_arg(self) -> bool:

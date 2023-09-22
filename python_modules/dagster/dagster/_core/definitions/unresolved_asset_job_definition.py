@@ -3,10 +3,11 @@ from datetime import datetime
 from typing import TYPE_CHECKING, AbstractSet, Any, Mapping, NamedTuple, Optional, Sequence, Union
 
 import dagster._check as check
+from dagster._annotations import deprecated
 from dagster._core.definitions import AssetKey
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._utils.backcompat import deprecation_warning
+from dagster._core.instance import DynamicPartitionsStore
 
 from .asset_layer import build_asset_selection_job
 from .config import ConfigMapping
@@ -83,6 +84,10 @@ class UnresolvedAssetJobDefinition(
             hooks=check.opt_nullable_set_param(hooks, "hooks", of_type=HookDefinition),
         )
 
+    @deprecated(
+        breaking_version="2.0.0",
+        additional_warn_text="Directly instantiate `RunRequest(partition_key=...)` instead.",
+    )
     def run_request_for_partition(
         self,
         partition_key: str,
@@ -91,6 +96,7 @@ class UnresolvedAssetJobDefinition(
         asset_selection: Optional[Sequence[AssetKey]] = None,
         run_config: Optional[Mapping[str, Any]] = None,
         current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> RunRequest:
         """Creates a RunRequest object for a run that processes the given partition.
 
@@ -105,8 +111,12 @@ class UnresolvedAssetJobDefinition(
             run_config (Optional[Mapping[str, Any]]: Configuration for the run. If the job has
                 a :py:class:`PartitionedConfig`, this value will override replace the config
                 provided by it.
-            current_time (Optional[datetime): Used to determine which time-partitions exist.
+            current_time (Optional[datetime]): Used to determine which time-partitions exist.
                 Defaults to now.
+            dynamic_partitions_store (Optional[DynamicPartitionsStore]): The DynamicPartitionsStore
+                object that is responsible for fetching dynamic partitions. Required when the
+                partitions definition is a DynamicPartitionsDefinition with a name defined. Users
+                can pass the DagsterInstance fetched via `context.instance` to this argument.
 
         Returns:
             RunRequest: an object that requests a run to process the given partition.
@@ -114,12 +124,6 @@ class UnresolvedAssetJobDefinition(
         from dagster._core.definitions.partition import (
             DynamicPartitionsDefinition,
             PartitionedConfig,
-        )
-
-        deprecation_warning(
-            "UnresolvedAssetJobDefinition.run_request_for_partition",
-            "2.0.0",
-            additional_warn_txt="Directly instantiate `RunRequest(partition_key=...)` instead.",
         )
 
         if not self.partitions_def:
@@ -141,7 +145,11 @@ class UnresolvedAssetJobDefinition(
                 " RunRequest(partition_key=...)"
             )
 
-        self.partitions_def.validate_partition_key(partition_key, current_time=current_time)
+        self.partitions_def.validate_partition_key(
+            partition_key,
+            current_time=current_time,
+            dynamic_partitions_store=dynamic_partitions_store,
+        )
 
         run_config = (
             run_config
@@ -209,6 +217,7 @@ class UnresolvedAssetJobDefinition(
         return build_asset_selection_job(
             name=self.name,
             assets=assets,
+            asset_checks=asset_graph.asset_checks,
             config=self.config,
             source_assets=source_assets,
             description=self.description,

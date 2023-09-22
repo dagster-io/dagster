@@ -74,9 +74,6 @@ def execute_run_command(input_json):
                 set_exit_code_on_failure=args.set_exit_code_on_failure or False,
             )
 
-            for line in buffer:
-                click.echo(line)
-
             if return_code != 0:
                 sys.exit(return_code)
 
@@ -174,9 +171,6 @@ def resume_run_command(input_json):
                 send_to_buffer,
                 set_exit_code_on_failure=args.set_exit_code_on_failure or False,
             )
-
-            for line in buffer:
-                click.echo(line)
 
             if return_code != 0:
                 sys.exit(return_code)
@@ -346,8 +340,9 @@ def execute_step_command(input_json, compressed_input_json):
             ):
                 buff.append(serialize_value(event))
 
-            for line in buff:
-                click.echo(line)
+            if args.print_serialized_events:
+                for line in buff:
+                    click.echo(line)
 
 
 def _execute_step_command_body(
@@ -440,10 +435,8 @@ def _execute_step_command_body(
         raise
     except Exception:
         yield instance.report_engine_event(
-            (
-                "An exception was thrown during step execution that is likely a framework error,"
-                " rather than an error in user code."
-            ),
+            "An exception was thrown during step execution that is likely a framework error,"
+            " rather than an error in user code.",
             dagster_run,
             EngineEventData.engine_error(serializable_error_info_from_exc_info(sys.exc_info())),
             step_key=single_step_key,
@@ -617,10 +610,8 @@ def grpc_command(
 
     check.invariant(
         max_workers is None or max_workers > 1 if heartbeat else True,
-        (
-            "max_workers must be greater than 1 or set to None if heartbeat is True. "
-            "If set to None, the server will use the gRPC default."
-        ),
+        "max_workers must be greater than 1 or set to None if heartbeat is True. "
+        "If set to None, the server will use the gRPC default.",
     )
 
     if seven.IS_WINDOWS and port is None:
@@ -696,6 +687,7 @@ def grpc_command(
         socket=socket,
         host=host,
         max_workers=max_workers,
+        logger=logger,
     )
 
     code_desc = " "

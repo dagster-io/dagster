@@ -1,6 +1,5 @@
 import collections.abc
 import itertools
-import warnings
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from datetime import datetime
@@ -30,12 +29,11 @@ from dagster._core.definitions.partition import (
     PartitionsSubset,
     StaticPartitionsDefinition,
 )
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._serdes import whitelist_for_serdes
-from dagster._utils.backcompat import ExperimentalWarning
 from dagster._utils.cached_method import cached_method
+from dagster._utils.warnings import disable_dagster_warnings
 
 
 class UpstreamPartitionsResult(NamedTuple):
@@ -174,20 +172,9 @@ class AllPartitionMapping(PartitionMapping, NamedTuple("_AllPartitionMapping", [
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> UpstreamPartitionsResult:
-        first = upstream_partitions_def.get_first_partition_key(
-            current_time=None, dynamic_partitions_store=dynamic_partitions_store
+        upstream_subset = upstream_partitions_def.subset_with_all_partitions(
+            current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
         )
-        last = upstream_partitions_def.get_last_partition_key(
-            current_time=None, dynamic_partitions_store=dynamic_partitions_store
-        )
-
-        upstream_subset = upstream_partitions_def.empty_subset()
-        if first is not None and last is not None:
-            upstream_subset = upstream_subset.with_partition_key_range(
-                PartitionKeyRange(first, last),
-                dynamic_partitions_store=dynamic_partitions_store,
-            )
-
         return UpstreamPartitionsResult(upstream_subset, [])
 
     def get_downstream_partitions_for_partitions(
@@ -941,8 +928,7 @@ class StaticPartitionMapping(
 
     @cached_method
     def _check_upstream(self, *, upstream_partitions_def: PartitionsDefinition):
-        """Validate that the mapping from upstream to downstream is only defined on upstream keys.
-        """
+        """Validate that the mapping from upstream to downstream is only defined on upstream keys."""
         check.inst(
             upstream_partitions_def,
             StaticPartitionsDefinition,
@@ -1055,8 +1041,7 @@ def infer_partition_mapping(
         if _can_infer_single_to_multi_partition_mapping(
             upstream_partitions_def, downstream_partitions_def
         ):
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", category=ExperimentalWarning)
+            with disable_dagster_warnings():
                 return MultiToSingleDimensionPartitionMapping()
         elif isinstance(upstream_partitions_def, TimeWindowPartitionsDefinition) and isinstance(
             downstream_partitions_def, TimeWindowPartitionsDefinition

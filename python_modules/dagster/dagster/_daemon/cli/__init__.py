@@ -46,6 +46,13 @@ def _get_heartbeat_tolerance():
     type=click.Choice(["critical", "error", "warning", "info", "debug"], case_sensitive=False),
 )
 @click.option(
+    "--log-level",
+    help="Set the log level for any code servers spun up by the daemon.",
+    show_default=True,
+    default="info",
+    type=click.Choice(["critical", "error", "warning", "info", "debug"], case_sensitive=False),
+)
+@click.option(
     "--instance-ref",
     type=click.STRING,
     required=False,
@@ -54,6 +61,7 @@ def _get_heartbeat_tolerance():
 @workspace_target_argument
 def run_command(
     code_server_log_level: str,
+    log_level: str,
     instance_ref: Optional[str],
     **kwargs: ClickArgValue,
 ) -> None:
@@ -62,14 +70,14 @@ def run_command(
             with get_instance_for_cli(
                 instance_ref=deserialize_value(instance_ref, InstanceRef) if instance_ref else None
             ) as instance:
-                _daemon_run_command(instance, code_server_log_level, kwargs)
+                _daemon_run_command(instance, log_level, code_server_log_level, kwargs)
     except KeyboardInterrupt:
         return  # Exit cleanly on interrupt
 
 
 @telemetry_wrapper(metadata={"DAEMON_SESSION_ID": get_telemetry_daemon_session_id()})
 def _daemon_run_command(
-    instance: DagsterInstance, code_server_log_level: str, kwargs: ClickArgMapping
+    instance: DagsterInstance, log_level: str, code_server_log_level: str, kwargs: ClickArgMapping
 ) -> None:
     workspace_load_target = get_workspace_load_target(kwargs)
 
@@ -77,6 +85,7 @@ def _daemon_run_command(
         instance,
         workspace_load_target=workspace_load_target,
         heartbeat_tolerance_seconds=_get_heartbeat_tolerance(),
+        log_level=log_level,
         code_server_log_level=code_server_log_level,
     ) as controller:
         controller.check_daemon_loop()

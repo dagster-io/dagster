@@ -1,6 +1,6 @@
 name: ❓ Report documentation issue
 description: Report problems and issues with Dagster documentation.
-labels: ["documentation"]
+labels: ["area: docs"]
 body:
   - type: markdown
     attributes:

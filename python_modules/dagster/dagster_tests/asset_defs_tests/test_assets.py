@@ -5,6 +5,7 @@ from typing import Sequence
 
 import pytest
 from dagster import (
+    AssetExecutionContext,
     AssetKey,
     AssetOut,
     AssetsDefinition,
@@ -14,6 +15,7 @@ from dagster import (
     EventRecordsFilter,
     FreshnessPolicy,
     GraphOut,
+    IdentityPartitionMapping,
     IOManager,
     IOManagerDefinition,
     LastPartitionMapping,
@@ -35,15 +37,21 @@ from dagster import (
 from dagster._check import CheckError
 from dagster._core.definitions import AssetIn, SourceAsset, asset, multi_asset
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.events import AssetMaterialization
+from dagster._core.definitions.result import MaterializeResult
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
     DagsterInvalidPropertyError,
+    DagsterInvariantViolationError,
+    DagsterStepOutputNotFoundError,
 )
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.mem_io_manager import InMemoryIOManager
 from dagster._core.test_utils import instance_for_test
+from dagster._core.types.dagster_type import Nothing
 
 
 def test_with_replaced_asset_keys():
@@ -391,6 +399,49 @@ def test_fail_on_subset_for_nonsubsettable():
         abc_.subset_for({AssetKey("start"), AssetKey("a")})
 
 
+def test_fail_for_non_topological_order():
+    @multi_asset(
+        outs={
+            "a": AssetOut(),
+            "b": AssetOut(),
+        },
+        internal_asset_deps={
+            "a": set(),
+            "b": {AssetKey("a")},
+        },
+    )
+    def foo():
+        yield Output(True, "b")
+        yield Output(True, "a")
+
+    with pytest.raises(
+        DagsterInvariantViolationError, match='Asset "b" was yielded before its dependency "a"'
+    ):
+        materialize_to_memory([foo])
+
+
+def test_from_graph_internal_deps():
+    @op
+    def foo():
+        return 1
+
+    @op
+    def bar(x):
+        return x + 2
+
+    @graph(out={"a": GraphOut(), "b": GraphOut()})
+    def baz():
+        x = foo()
+        return {"a": x, "b": bar(x)}
+
+    baz_asset = AssetsDefinition.from_graph(
+        baz,
+        keys_by_output_name={"a": AssetKey(["a"]), "b": AssetKey(["b"])},
+        internal_asset_deps={"a": set(), "b": {AssetKey("a")}},
+    )
+    assert materialize_to_memory([baz_asset])
+
+
 def test_to_source_assets():
     @asset(metadata={"a": "b"}, io_manager_key="abc", description="blablabla")
     def my_asset():
@@ -618,12 +669,6 @@ def test_asset_invocation_resource_errors():
     @asset(resource_defs={"used": ResourceDefinition.hardcoded_resource("foo")})
     def asset_uses_resources(context):
         assert context.resources.used == "foo"
-
-    with pytest.raises(
-        DagsterInvalidInvocationError,
-        match='op "asset_uses_resources" has required resources, but no context was provided',
-    ):
-        asset_uses_resources(None)
 
     asset_uses_resources(build_asset_context())
 
@@ -1501,3 +1546,514 @@ def test_asset_key_with_prefix():
 
     with pytest.raises(CheckError):
         AssetKey("foo").with_prefix(1)
+
+
+def _exec_asset(asset_def, selection=None):
+    result = materialize([asset_def], selection=selection)
+    assert result.success
+    return result.asset_materializations_for_node(asset_def.node_def.name)
+
+
+def test_multi_asset_return_none():
+    #
+    # non-optional Nothing
+    #
+    @multi_asset(
+        outs={
+            "asset1": AssetOut(dagster_type=Nothing),
+            "asset2": AssetOut(dagster_type=Nothing),
+        },
+    )
+    def my_function():
+        # ...materialize assets without IO manager
+        pass
+
+    # via job
+    _exec_asset(my_function)
+
+    # direct invoke
+    my_function()
+
+    #
+    # optional (fails)
+    #
+    @multi_asset(
+        outs={
+            "asset1": AssetOut(dagster_type=Nothing, is_required=False),
+            "asset2": AssetOut(dagster_type=Nothing, is_required=False),
+        },
+        can_subset=True,
+    )
+    def subset(context: AssetExecutionContext):
+        # ...use context.selected_asset_keys materialize subset of assets without IO manager
+        pass
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="has multiple outputs, but only one output was returned",
+    ):
+        _exec_asset(subset)
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="has multiple outputs, but only one output was returned",
+    ):
+        subset(build_asset_context())
+
+    #
+    # untyped (fails)
+    #
+    @multi_asset(
+        outs={
+            "asset1": AssetOut(),
+            "asset2": AssetOut(),
+        },
+    )
+    def untyped():
+        # ...materialize assets without IO manager
+        pass
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="has multiple outputs, but only one output was returned",
+    ):
+        _exec_asset(untyped)
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="has multiple outputs, but only one output was returned",
+    ):
+        untyped()
+
+
+def test_direct_instantiation_invalid_partition_mapping():
+    @op
+    def my_op():
+        return 1
+
+    with pytest.raises(CheckError, match="received a partition mapping"):
+        AssetsDefinition(
+            keys_by_input_name={},
+            keys_by_output_name={"my_output": AssetKey("foo")},
+            node_def=my_op,
+            partition_mappings={AssetKey("nonexistent_asset"): IdentityPartitionMapping()},
+        )
+
+
+def test_return_materialization():
+    #
+    # status quo - use add add_output_metadata
+    #
+    @asset
+    def add(context: AssetExecutionContext):
+        context.add_output_metadata(
+            metadata={"one": 1},
+        )
+
+    mats = _exec_asset(add)
+    assert len(mats) == 1
+    # working with core metadata repr values sucks, ie IntMetadataValue
+    assert "one" in mats[0].metadata
+    assert mats[0].tags
+
+    #
+    # may want to update this pattern to work better...
+    #
+    @asset
+    def logged(context: AssetExecutionContext):
+        context.log_event(
+            AssetMaterialization(
+                asset_key=context.asset_key,
+                metadata={"one": 1},
+            )
+        )
+
+    mats = _exec_asset(logged)
+    # ... currently get implicit materialization for output + logged event
+    assert len(mats) == 2
+    assert "one" in mats[0].metadata
+    # assert mats[0].tags # fails
+    # assert "one" in mats[1].metadata  # fails
+    assert mats[1].tags
+
+    #
+    # main exploration
+    #
+    @asset
+    def ret_untyped(context: AssetExecutionContext):
+        return MaterializeResult(
+            metadata={"one": 1},
+        )
+
+    mats = _exec_asset(ret_untyped)
+    assert len(mats) == 1, mats
+    assert "one" in mats[0].metadata
+    assert mats[0].tags
+
+    #
+    # key mismatch
+    #
+    @asset
+    def ret_mismatch(context: AssetExecutionContext):
+        return MaterializeResult(
+            asset_key="random",
+            metadata={"one": 1},
+        )
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Asset key random not found in AssetsDefinition",
+    ):
+        mats = _exec_asset(ret_mismatch)
+
+
+def test_return_materialization_multi_asset():
+    #
+    # yield successful
+    #
+    @multi_asset(outs={"one": AssetOut(), "two": AssetOut()})
+    def multi():
+        yield MaterializeResult(
+            asset_key="one",
+            metadata={"one": 1},
+        )
+        yield MaterializeResult(
+            asset_key="two",
+            metadata={"two": 2},
+        )
+
+    mats = _exec_asset(multi)
+
+    assert len(mats) == 2, mats
+    assert "one" in mats[0].metadata
+    assert mats[0].tags
+    assert "two" in mats[1].metadata
+    assert mats[1].tags
+
+    #
+    # missing a non optional out
+    #
+    @multi_asset(outs={"one": AssetOut(), "two": AssetOut()})
+    def missing():
+        yield MaterializeResult(
+            asset_key="one",
+            metadata={"one": 1},
+        )
+
+    # currently a less than ideal error
+    with pytest.raises(
+        DagsterStepOutputNotFoundError,
+        match=(
+            'Core compute for op "missing" did not return an output for non-optional output "two"'
+        ),
+    ):
+        _exec_asset(missing)
+
+    #
+    # missing asset_key
+    #
+    @multi_asset(outs={"one": AssetOut(), "two": AssetOut()})
+    def no_key():
+        yield MaterializeResult(
+            metadata={"one": 1},
+        )
+        yield MaterializeResult(
+            metadata={"two": 2},
+        )
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match=(
+            "MaterializeResult did not include asset_key and it can not be inferred. Specify which"
+            " asset_key, options are:"
+        ),
+    ):
+        _exec_asset(no_key)
+
+    #
+    # return tuple success
+    #
+    @multi_asset(outs={"one": AssetOut(), "two": AssetOut()})
+    def ret_multi():
+        return (
+            MaterializeResult(
+                asset_key="one",
+                metadata={"one": 1},
+            ),
+            MaterializeResult(
+                asset_key="two",
+                metadata={"two": 2},
+            ),
+        )
+
+    mats = _exec_asset(ret_multi)
+
+    assert len(mats) == 2, mats
+    assert "one" in mats[0].metadata
+    assert mats[0].tags
+    assert "two" in mats[1].metadata
+    assert mats[1].tags
+
+    #
+    # return list error
+    #
+    @multi_asset(outs={"one": AssetOut(), "two": AssetOut()})
+    def ret_list():
+        return [
+            MaterializeResult(
+                asset_key="one",
+                metadata={"one": 1},
+            ),
+            MaterializeResult(
+                asset_key="two",
+                metadata={"two": 2},
+            ),
+        ]
+
+    # not the best
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match=(
+            "When using multiple outputs, either yield each output, or return a tuple containing a"
+            " value for each output."
+        ),
+    ):
+        _exec_asset(ret_list)
+
+
+def test_multi_asset_no_out():
+    #
+    # base case
+    #
+    table_A = AssetSpec("table_A")
+    table_B = AssetSpec("table_B")
+
+    @multi_asset(specs=[table_A, table_B])
+    def basic():
+        pass
+
+    mats = _exec_asset(basic)
+
+    result = basic()
+    assert result is None
+
+    #
+    # internal deps
+    #
+    table_C = AssetSpec("table_C", deps=[table_A, table_B])
+
+    @multi_asset(specs=[table_A, table_B, table_C])
+    def basic_deps():
+        pass
+
+    _exec_asset(basic_deps)
+    assert table_A.asset_key in basic_deps.asset_deps[table_C.asset_key]
+    assert table_B.asset_key in basic_deps.asset_deps[table_C.asset_key]
+
+    result = basic_deps()
+    assert result is None
+
+    #
+    # sub-setting
+    #
+    @multi_asset(
+        specs=[table_A, table_B],
+        can_subset=True,
+    )
+    def basic_subset(context: AssetExecutionContext):
+        for key in context.selected_asset_keys:
+            yield MaterializeResult(asset_key=key)
+
+    mats = _exec_asset(basic_subset, ["table_A"])
+    assert table_A.asset_key in {mat.asset_key for mat in mats}
+    assert table_B.asset_key not in {mat.asset_key for mat in mats}
+
+    # selected_asset_keys breaks direct invocation
+    # basic_subset(build_asset_context())
+
+    #
+    # optional
+    #
+    @multi_asset(
+        specs=[table_A, AssetSpec("table_B", skippable=True)],
+    )
+    def basic_optional(context: AssetExecutionContext):
+        yield MaterializeResult(asset_key="table_A")
+
+    mats = _exec_asset(basic_optional)
+    assert table_A.asset_key in {mat.asset_key for mat in mats}
+    assert table_B.asset_key not in {mat.asset_key for mat in mats}
+
+    basic_optional(build_asset_context())
+
+    #
+    # metadata
+    #
+    @multi_asset(specs=[table_A, table_B])
+    def metadata(context: AssetExecutionContext):
+        yield MaterializeResult(asset_key="table_A", metadata={"one": 1})
+        yield MaterializeResult(asset_key="table_B", metadata={"two": 2})
+
+    mats = _exec_asset(metadata)
+    assert len(mats) == 2
+    assert mats[0].metadata["one"]
+    assert mats[1].metadata["two"]
+
+    # yielded event processing unresolved for assets
+    # results = list(metadata(build_asset_context()))
+    # assert len(results) == 2
+
+
+def test_multi_asset_nodes_out_names():
+    sales_users = AssetSpec(["sales", "users"])
+    marketing_users = AssetSpec(["marketing", "users"])
+
+    @multi_asset(specs=[sales_users, marketing_users])
+    def users():
+        pass
+
+    assert len(users.op.output_defs) == 2
+    assert {out_def.name for out_def in users.op.output_defs} == {"sales_users", "marketing_users"}
+
+
+def test_asset_spec_deps():
+    @asset
+    def table_A():
+        pass
+
+    table_b = AssetSpec("table_B", deps=[table_A])
+    table_c = AssetSpec("table_C", deps=[table_A, table_b])
+    table_b_no_dep = AssetSpec("table_B")
+    table_c_no_dep = AssetSpec("table_C")
+
+    @multi_asset(specs=[table_b, table_c])
+    def deps_in_specs():
+        ...
+
+    result = materialize([deps_in_specs, table_A])
+    assert result.success
+    mats = result.get_asset_materialization_events()
+    assert len(mats) == 3
+    # first event should be A materialization
+    assert mats[0].asset_key == table_A.key
+
+    with pytest.raises(DagsterInvalidDefinitionError, match="Can not pass deps and specs"):
+
+        @multi_asset(specs=[table_b_no_dep, table_c_no_dep], deps=["table_A"])
+        def no_deps_in_specs():
+            ...
+
+    @multi_asset(specs=[table_b, table_c])
+    def also_input(table_A):
+        ...
+
+    result = materialize([also_input, table_A])
+    assert result.success
+    mats = result.get_asset_materialization_events()
+    assert len(mats) == 3
+    # first event should be A materialization
+    assert mats[0].asset_key == table_A.key
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="do not have dependencies on the passed AssetSpec",
+    ):
+
+        @multi_asset(specs=[table_b, table_c])
+        def rogue_input(table_X):
+            ...
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="do not have dependencies on the passed AssetSpec",
+    ):
+
+        @multi_asset(specs=[table_b_no_dep, table_c_no_dep])
+        def no_spec_deps_but_input(table_A):
+            ...
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="specify deps on the AssetSpecs directly",
+    ):
+
+        @multi_asset(
+            specs=[table_b_no_dep, table_c_no_dep],
+            deps=[table_A],
+        )
+        def use_deps():
+            ...
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="specify deps on the AssetSpecs directly",
+    ):
+
+        @multi_asset(
+            specs=[table_b_no_dep, table_c_no_dep],
+            internal_asset_deps={"table_C": {AssetKey("table_B")}},
+        )
+        def use_internal_deps():
+            ...
+
+
+def test_asset_key_on_context():
+    @asset
+    def test_asset_key_on_context(context: AssetExecutionContext):
+        assert context.asset_key == AssetKey(["test_asset_key_on_context"])
+
+    @asset(key_prefix=["a_prefix"])
+    def test_asset_key_on_context_with_prefix(context: AssetExecutionContext):
+        assert context.asset_key == AssetKey(["a_prefix", "test_asset_key_on_context_with_prefix"])
+
+    materialize([test_asset_key_on_context, test_asset_key_on_context_with_prefix])
+
+
+def test_multi_asset_asset_key_on_context():
+    @multi_asset(
+        outs={
+            "my_string_asset": AssetOut(),
+        }
+    )
+    def asset_key_context(context: AssetExecutionContext):
+        assert context.asset_key == AssetKey(["my_string_asset"])
+
+    materialize([asset_key_context])
+
+    @multi_asset(
+        outs={
+            "my_string_asset": AssetOut(),
+            "my_int_asset": AssetOut(),
+        }
+    )
+    def two_assets_key_context(context: AssetExecutionContext):
+        return context.asset_key, 12
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Cannot call `context.asset_key` in a multi_asset with more than one asset",
+    ):
+        materialize([two_assets_key_context])
+
+    # test with AssetSpecs
+
+    spec1 = AssetSpec(asset_key="spec1")
+
+    @multi_asset(specs=[spec1])
+    def asset_key_context_with_specs(context: AssetExecutionContext):
+        assert context.asset_key == AssetKey(["spec1"])
+
+    materialize([asset_key_context_with_specs])
+
+    spec2 = AssetSpec(asset_key="spec2")
+    spec3 = AssetSpec(asset_key="spec3")
+
+    @multi_asset(specs=[spec2, spec3])
+    def asset_key_context_with_two_specs(context: AssetExecutionContext):
+        context.log.info(context.asset_key)
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Cannot call `context.asset_key` in a multi_asset with more than one asset",
+    ):
+        materialize([asset_key_context_with_two_specs])

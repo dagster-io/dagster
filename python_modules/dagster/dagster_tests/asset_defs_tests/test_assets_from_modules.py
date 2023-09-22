@@ -17,8 +17,8 @@ from dagster import (
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 
-get_unique_asset_identifier = (
-    lambda asset: asset.op.name if isinstance(asset, AssetsDefinition) else asset.key
+get_unique_asset_identifier = lambda asset: (
+    asset.op.name if isinstance(asset, AssetsDefinition) else asset.key
 )
 
 

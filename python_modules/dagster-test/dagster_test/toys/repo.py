@@ -52,6 +52,7 @@ from dagster_test.toys.sleepy import sleepy_job
 from dagster_test.toys.software_defined_assets import software_defined_assets
 from dagster_test.toys.unreliable import unreliable_job
 
+from .asset_checks import get_checks_and_assets
 from .auto_materializing.large_graph import (
     auto_materialize_large_static_graph as auto_materialize_large_static_graph,
     auto_materialize_large_time_graph as auto_materialize_large_time_graph,
@@ -121,6 +122,7 @@ def toys_repository():
         ]
         + get_toys_schedules()
         + get_toys_sensors()
+        + get_checks_and_assets()
     )
 
 

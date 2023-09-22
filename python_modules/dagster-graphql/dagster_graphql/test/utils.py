@@ -37,6 +37,11 @@ class GqlAssetKey(TypedDict):
     path: Sequence[str]
 
 
+class GqlAssetCheckHandle(TypedDict):
+    assetKey: GqlAssetKey
+    name: str
+
+
 def main_repo_location_name() -> str:
     return "test_location"
 
@@ -174,6 +179,7 @@ def infer_job_or_pipeline_selector(
     pipeline_name: str,
     op_selection: Optional[Sequence[str]] = None,
     asset_selection: Optional[Sequence[GqlAssetKey]] = None,
+    asset_check_selection: Optional[Sequence[GqlAssetCheckHandle]] = None,
 ) -> Selector:
     selector = infer_repository_selector(graphql_context)
     selector.update(
@@ -181,6 +187,7 @@ def infer_job_or_pipeline_selector(
             "pipelineName": pipeline_name,
             "solidSelection": op_selection,
             "assetSelection": asset_selection,
+            "assetCheckSelection": asset_check_selection,
         }
     )
     return selector

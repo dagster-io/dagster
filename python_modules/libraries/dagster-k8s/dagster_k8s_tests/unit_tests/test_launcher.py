@@ -28,7 +28,7 @@ def test_launcher_from_config(kubeconfig_file):
     }
 
     default_config = {
-        "service_account_name": "dagit-admin",
+        "service_account_name": "webserver-admin",
         "instance_config_map": "dagster-instance",
         "postgres_password_secret": "dagster-postgresql-secret",
         "dagster_home": "/opt/dagster/dagster_home",
@@ -71,7 +71,7 @@ def test_launcher_with_container_context(kubeconfig_file):
     # Construct a K8s run launcher in a fake k8s environment.
     mock_k8s_client_batch_api = mock.MagicMock()
     k8s_run_launcher = K8sRunLauncher(
-        service_account_name="dagit-admin",
+        service_account_name="webserver-admin",
         instance_config_map="dagster-instance",
         postgres_password_secret="dagster-postgresql-secret",
         dagster_home="/opt/dagster/dagster_home",
@@ -178,7 +178,7 @@ def test_launcher_with_k8s_config(kubeconfig_file):
     # Construct a K8s run launcher in a fake k8s environment.
     mock_k8s_client_batch_api = mock.MagicMock()
     k8s_run_launcher = K8sRunLauncher(
-        service_account_name="dagit-admin",
+        service_account_name="webserver-admin",
         instance_config_map="dagster-instance",
         postgres_password_secret="dagster-postgresql-secret",
         dagster_home="/opt/dagster/dagster_home",
@@ -272,6 +272,12 @@ def test_launcher_with_k8s_config(kubeconfig_file):
         # config from run tags applied
         assert container.working_dir == "my_working_dir"
 
+        # appropriate labels applied
+        labels = kwargs["body"].spec.template.metadata.labels
+        assert labels["dagster/code-location"] == "in_process"
+        assert labels["dagster/job"] == "fake_job"
+        assert labels["dagster/run-id"] == run.run_id
+
 
 def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
     labels = {"foo_label_key": "bar_label_value"}
@@ -279,7 +285,7 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
     # Construct a K8s run launcher in a fake k8s environment.
     mock_k8s_client_batch_api = mock.MagicMock()
     k8s_run_launcher = K8sRunLauncher(
-        service_account_name="dagit-admin",
+        service_account_name="webserver-admin",
         instance_config_map="dagster-instance",
         postgres_password_secret="dagster-postgresql-secret",
         dagster_home="/opt/dagster/dagster_home",
@@ -378,7 +384,7 @@ def test_raise_on_error(kubeconfig_file):
     # Construct a K8s run launcher in a fake k8s environment.
     mock_k8s_client_batch_api = mock.MagicMock()
     k8s_run_launcher = K8sRunLauncher(
-        service_account_name="dagit-admin",
+        service_account_name="webserver-admin",
         instance_config_map="dagster-instance",
         postgres_password_secret="dagster-postgresql-secret",
         dagster_home="/opt/dagster/dagster_home",
@@ -440,7 +446,7 @@ def test_no_postgres(kubeconfig_file):
     # Construct a K8s run launcher in a fake k8s environment.
     mock_k8s_client_batch_api = mock.MagicMock()
     k8s_run_launcher = K8sRunLauncher(
-        service_account_name="dagit-admin",
+        service_account_name="webserver-admin",
         instance_config_map="dagster-instance",
         dagster_home="/opt/dagster/dagster_home",
         job_image="fake_job_image",
@@ -504,7 +510,7 @@ def test_check_run_health(kubeconfig_file):
     mock_k8s_client_batch_api = mock.Mock(spec_set=["read_namespaced_job_status"])
 
     k8s_run_launcher = K8sRunLauncher(
-        service_account_name="dagit-admin",
+        service_account_name="webserver-admin",
         instance_config_map="dagster-instance",
         postgres_password_secret="dagster-postgresql-secret",
         dagster_home="/opt/dagster/dagster_home",

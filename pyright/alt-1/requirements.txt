@@ -37,6 +37,7 @@
   -e python_modules/libraries/dagster-duckdb-pandas/
     -e python_modules/libraries/dagster-duckdb/
     -e python_modules/libraries/dagster-duckdb-pyspark/
+  -e python_modules/libraries/dagster-pandas/
   -e python_modules/libraries/dagster-postgres/
   -e python_modules/libraries/dagster-pyspark/
   -e python_modules/libraries/dagster-slack/

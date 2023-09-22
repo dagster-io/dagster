@@ -18,12 +18,11 @@ from typing import (
 
 import dagster._check as check
 import dagster._seven as seven
-from dagster._annotations import PublicAttr, public
+from dagster._annotations import PublicAttr, experimental_param, public
 from dagster._core.definitions.data_version import DataVersion
 from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX, SYSTEM_TAG_PREFIX
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import NamedTupleSerializer
-from dagster._utils.backcompat import experimental_class_param_warning
 
 from .metadata import (
     MetadataFieldSerializer,
@@ -35,7 +34,10 @@ from .metadata import (
 from .utils import DEFAULT_OUTPUT, check_valid_name
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.source_asset import SourceAsset
     from dagster._core.execution.context.output import OutputContext
+
 
 ASSET_KEY_SPLIT_REGEX = re.compile("[^a-zA-Z0-9_]")
 ASSET_KEY_DELIMITER = "/"
@@ -173,6 +175,20 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
         else:
             check.failed(f"Unexpected type for AssetKey: {type(arg)}")
 
+    @staticmethod
+    def from_coercible_or_definition(
+        arg: Union["CoercibleToAssetKey", "AssetsDefinition", "SourceAsset"]
+    ) -> "AssetKey":
+        from dagster._core.definitions.assets import AssetsDefinition
+        from dagster._core.definitions.source_asset import SourceAsset
+
+        if isinstance(arg, AssetsDefinition):
+            return arg.key
+        elif isinstance(arg, SourceAsset):
+            return arg.key
+        else:
+            return AssetKey.from_coercible(arg)
+
     def has_prefix(self, prefix: Sequence[str]) -> bool:
         return len(self.path) >= len(prefix) and self.path[: len(prefix)] == prefix
 
@@ -230,6 +246,7 @@ class AssetLineageInfo(
 T = TypeVar("T")
 
 
+@experimental_param(param="data_version")
 class Output(Generic[T]):
     """Event corresponding to one of a op's outputs.
 
@@ -262,8 +279,6 @@ class Output(Generic[T]):
     ):
         self._value = value
         self._output_name = check.str_param(output_name, "output_name")
-        if data_version is not None:
-            experimental_class_param_warning("data_version", "Output")
         self._data_version = check.opt_inst_param(data_version, "data_version", DataVersion)
         self._metadata = normalize_metadata(
             check.opt_mapping_param(metadata, "metadata", key_type=str),
@@ -357,8 +372,7 @@ class DynamicOutput(Generic[T]):
     @public
     @property
     def output_name(self) -> str:
-        """Name of the :py:class:`DynamicOut` defined on the op that this DynamicOut is associated with.
-        """
+        """Name of the :py:class:`DynamicOut` defined on the op that this DynamicOut is associated with."""
         return self._output_name
 
     def __eq__(self, other: object) -> bool:

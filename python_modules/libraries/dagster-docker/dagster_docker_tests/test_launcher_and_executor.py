@@ -29,6 +29,7 @@ from . import IS_BUILDKITE, docker_postgres_instance
         (True, {AssetKey("foo"), AssetKey("bar")}),
     ],
 )
+@pytest.mark.integration
 def test_image_on_job(monkeypatch, aws_env, from_pending_repository, asset_selection):
     monkeypatch.setenv("IN_EXTERNAL_PROCESS", "yes")
     docker_image = get_test_project_docker_image()
@@ -109,6 +110,7 @@ def test_image_on_job(monkeypatch, aws_env, from_pending_repository, asset_selec
             assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.SUCCESS
 
 
+@pytest.mark.integration
 def test_container_context_on_job(aws_env):
     docker_image = get_test_project_docker_image()
 
@@ -181,6 +183,7 @@ def test_container_context_on_job(aws_env):
             assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.SUCCESS
 
 
+@pytest.mark.integration
 def test_recovery(aws_env):
     docker_image = get_test_project_docker_image()
 

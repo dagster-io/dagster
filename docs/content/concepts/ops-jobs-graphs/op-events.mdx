@@ -282,7 +282,7 @@ A <PyObject object="Failure" /> is a kind of [Exception](https://docs.python.org
 A <PyObject object="Failure" /> can include a dictionary with structured <PyObject object="MetadataValue"/> values, which will be rendered in the UI according to their type. It also has an `allow_retries` argument that can be used to bypass the op's retry policy.
 
 ```python file=/concepts/ops_jobs_graphs/op_events.py startafter=start_failure_op endbefore=end_failure_op
-from dagster import Failure, op
+from dagster import Failure, op, MetadataValue
 
 
 @op

@@ -73,7 +73,6 @@
     "children": [
       {
         "title": "Assets",
-        "path": "/concepts/assets/software-defined-assets",
         "children": [
           {
             "title": "Software-defined Assets",
@@ -101,67 +100,9 @@
           }
         ]
       },
-      {
-        "title": "Ops",
-        "path": "/concepts/ops-jobs-graphs/ops",
-        "children": [
-          {
-            "title": "Ops",
-            "path": "/concepts/ops-jobs-graphs/ops"
-          },
-          {
-            "title": "Op events",
-            "path": "/concepts/ops-jobs-graphs/op-events"
-          },
-          {
-            "title": "Op hooks",
-            "path": "/concepts/ops-jobs-graphs/op-hooks"
-          },
-          {
-            "title": "Op retries",
-            "path": "/concepts/ops-jobs-graphs/op-retries"
-          }
-        ]
-      },
-      {
-        "title": "Graphs",
-        "path": "/concepts/ops-jobs-graphs/graphs",
-        "children": [
-          {
-            "title": "Graphs",
-            "path": "/concepts/ops-jobs-graphs/graphs"
-          },
-          {
-            "title": "Nesting Graphs",
-            "path": "/concepts/ops-jobs-graphs/nesting-graphs"
-          },
-          {
-            "title": "Dynamic Graphs",
-            "path": "/concepts/ops-jobs-graphs/dynamic-graphs"
-          }
-        ]
-      },
-      {
-        "title": "Jobs",
-        "path": "/concepts/ops-jobs-graphs/jobs",
-        "children": [
-          {
-            "title": "Jobs",
-            "path": "/concepts/ops-jobs-graphs/jobs"
-          },
-          {
-            "title": "Job execution",
-            "path": "/concepts/ops-jobs-graphs/job-execution"
-          },
-          {
-            "title": "Metadata & tags",
-            "path": "/concepts/ops-jobs-graphs/metadata-tags"
-          }
-        ]
-      },
+
       {
         "title": "Schedules & Sensors",
-        "path": "/concepts/partitions-schedules-sensors/schedules",
         "children": [
           {
             "title": "Schedules",
@@ -178,8 +119,7 @@
         ]
       },
       {
-        "title": "Partitions & Backfills",
-        "path": "/concepts/partitions-schedules-sensors/partitions",
+        "title": "Partitions & backfills",
         "children": [
           {
             "title": "Partitions",
@@ -192,23 +132,12 @@
         ]
       },
       {
-        "title": "I/O management",
-        "path": "/concepts/io-management/io-managers",
+        "title": "Resources & configuration",
         "children": [
           {
-            "title": "I/O managers",
-            "path": "/concepts/io-management/io-managers"
+            "title": "Resources",
+            "path": "/concepts/resources"
           },
-          {
-            "title": "Unconnected inputs",
-            "path": "/concepts/io-management/unconnected-inputs"
-          }
-        ]
-      },
-      {
-        "title": "Configuration",
-        "path": "/concepts/configuration/config-schema",
-        "children": [
           {
             "title": "Run configuration",
             "path": "/concepts/configuration/config-schema"
@@ -220,12 +149,7 @@
         ]
       },
       {
-        "title": "Resources",
-        "path": "/concepts/resources"
-      },
-      {
         "title": "Code locations",
-        "path": "/concepts/code-locations",
         "children": [
           {
             "title": "Code locations (Definitions)",
@@ -238,42 +162,110 @@
         ]
       },
       {
-        "title": "Dagster webserver & UI",
-        "children": [
-          {
-            "title": "Dagster UI",
-            "path": "/concepts/webserver/ui"
-          },
-          {
-            "title": "GraphQL API",
-            "path": "/concepts/webserver/graphql"
-          },
-          {
-            "title": "GraphQL Python client",
-            "path": "/concepts/webserver/graphql-client"
-          }
-        ]
-      },
-      {
-        "title": "Dagster Types",
-        "path": "/concepts/types"
-      },
-      {
-        "title": "Logging",
-        "children": [
-          {
-            "title": "Loggers",
-            "path": "/concepts/logging/loggers"
-          },
-          {
-            "title": "Python logging",
-            "path": "/concepts/logging/python-logging"
-          }
-        ]
+        "title": "Dagster UI",
+        "path": "/concepts/webserver/ui"
       },
       {
         "title": "Testing",
         "path": "/concepts/testing"
+      },
+      {
+        "title": "Advanced",
+        "children": [
+          {
+            "title": "Ops",
+            "children": [
+              {
+                "title": "Ops",
+                "path": "/concepts/ops-jobs-graphs/ops"
+              },
+              {
+                "title": "Op events",
+                "path": "/concepts/ops-jobs-graphs/op-events"
+              },
+              {
+                "title": "Op hooks",
+                "path": "/concepts/ops-jobs-graphs/op-hooks"
+              },
+              {
+                "title": "Op retries",
+                "path": "/concepts/ops-jobs-graphs/op-retries"
+              },
+              {
+                "title": "Op graphs",
+                "path": "/concepts/ops-jobs-graphs/graphs"
+              },
+              {
+                "title": "Nesting op graphs",
+                "path": "/concepts/ops-jobs-graphs/nesting-graphs"
+              },
+              {
+                "title": "Dynamic op graphs",
+                "path": "/concepts/ops-jobs-graphs/dynamic-graphs"
+              }
+            ]
+          },
+          {
+            "title": "Jobs",
+            "children": [
+              {
+                "title": "Jobs",
+                "path": "/concepts/ops-jobs-graphs/jobs"
+              },
+              {
+                "title": "Job execution",
+                "path": "/concepts/ops-jobs-graphs/job-execution"
+              },
+              {
+                "title": "Metadata & tags",
+                "path": "/concepts/ops-jobs-graphs/metadata-tags"
+              }
+            ]
+          },
+          {
+            "title": "I/O management",
+            "children": [
+              {
+                "title": "I/O managers",
+                "path": "/concepts/io-management/io-managers"
+              },
+              {
+                "title": "Unconnected inputs",
+                "path": "/concepts/io-management/unconnected-inputs"
+              }
+            ]
+          },
+          {
+            "title": "Dagster Types",
+            "path": "/concepts/types"
+          },
+          {
+            "title": "Logging",
+            "children": [
+              {
+                "title": "Loggers",
+                "path": "/concepts/logging/loggers"
+              },
+              {
+                "title": "Python logging",
+                "path": "/concepts/logging/python-logging"
+              }
+            ]
+          },
+          {
+            "title": "GraphQL",
+            "children": [
+              {
+                "title": "GraphQL API",
+                "path": "/concepts/webserver/graphql"
+              },
+              {
+                "title": "GraphQL Python client",
+                "path": "/concepts/webserver/graphql-client"
+              }
+            ]
+          }
+        ]
       }
     ]
   },
@@ -804,7 +796,7 @@
           },
           {
             "title": "Migrating to graphs, jobs, ops",
-            "path": "https://docs.dagster.io/0.15.7/guides/dagster/graph_job_op",
+            "path": "https://legacy-versioned-docs.dagster.dagster-docs.io/0.15.7/guides/dagster/graph_job_op",
             "isExternalLink": true
           },
           {
@@ -812,6 +804,11 @@
             "path": "/guides/dagster/re-execution"
           }
         ]
+      },
+      {
+        "title": "Version migration",
+        "path": "/migration",
+        "isNotDynamic": true
       },
       {
         "title": "Migrating to Dagster",
@@ -862,7 +859,7 @@
                 "path": "/guides/customizing-run-queue-priority"
               },
               {
-                "title": "Validating data",
+                "title": "Validating data with Dagster Type factories",
                 "path": "/guides/dagster/dagster_type_factories"
               }
             ]
@@ -965,6 +962,10 @@
             "path": "/_apidocs/dynamic"
           },
           {
+            "title": "Asset checks (Experimental)",
+            "path": "/_apidocs/asset-checks"
+          },
+          {
             "title": "Job versioning & memoization (Deprecated)",
             "path": "/_apidocs/memoization"
           },
@@ -1032,6 +1033,10 @@
           {
             "title": "dbt (dagster-dbt)",
             "path": "/_apidocs/libraries/dagster-dbt"
+          },
+          {
+            "title": "Delta Lake (dagster-deltalake)",
+            "path": "/_apidocs/libraries/dagster-deltalake"
           },
           {
             "title": "Docker (dagster-docker)",
@@ -1172,7 +1177,7 @@
   {
     "title": "About",
     "icon": "About",
-    "isUnversioned": true,
+    "isNotDynamic": true,
     "children": [
       {
         "title": "Community",
@@ -1205,12 +1210,7 @@
       {
         "title": "Changelog",
         "path": "/changelog",
-        "isUnversioned": true
-      },
-      {
-        "title": "Migration guides",
-        "path": "/migration",
-        "isUnversioned": true
+        "isNotDynamic": true
       }
     ]
   }

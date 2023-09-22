@@ -197,6 +197,7 @@ def test_build_snowflake_pandas_io_manager():
 @pytest.mark.parametrize(
     "io_manager", [(old_snowflake_io_manager), (pythonic_snowflake_io_manager)]
 )
+@pytest.mark.integration
 def test_io_manager_with_snowflake_pandas(io_manager):
     with temporary_snowflake_table(
         schema_name=SCHEMA,
@@ -228,6 +229,7 @@ def test_io_manager_with_snowflake_pandas(io_manager):
 @pytest.mark.parametrize(
     "io_manager", [(snowflake_pandas_io_manager), (SnowflakePandasIOManager.configure_at_launch())]
 )
+@pytest.mark.integration
 def test_io_manager_with_snowflake_pandas_timestamp_data(io_manager):
     with temporary_snowflake_table(
         schema_name=SCHEMA,
@@ -296,6 +298,7 @@ def test_io_manager_with_snowflake_pandas_timestamp_data(io_manager):
 @pytest.mark.parametrize(
     "io_manager", [(old_snowflake_io_manager), (pythonic_snowflake_io_manager)]
 )
+@pytest.mark.integration
 def test_time_window_partitioned_asset(io_manager):
     with temporary_snowflake_table(
         schema_name=SCHEMA,
@@ -382,6 +385,7 @@ def test_time_window_partitioned_asset(io_manager):
 @pytest.mark.parametrize(
     "io_manager", [(old_snowflake_io_manager), (pythonic_snowflake_io_manager)]
 )
+@pytest.mark.integration
 def test_static_partitioned_asset(io_manager):
     with temporary_snowflake_table(
         schema_name=SCHEMA,
@@ -467,6 +471,7 @@ def test_static_partitioned_asset(io_manager):
 @pytest.mark.parametrize(
     "io_manager", [(old_snowflake_io_manager), (pythonic_snowflake_io_manager)]
 )
+@pytest.mark.integration
 def test_multi_partitioned_asset(io_manager):
     with temporary_snowflake_table(
         schema_name=SCHEMA,
@@ -571,6 +576,7 @@ def test_multi_partitioned_asset(io_manager):
 @pytest.mark.parametrize(
     "io_manager", [(old_snowflake_io_manager), (pythonic_snowflake_io_manager)]
 )
+@pytest.mark.integration
 def test_dynamic_partitions(io_manager):
     with temporary_snowflake_table(
         schema_name=SCHEMA,
@@ -676,6 +682,7 @@ def test_dynamic_partitions(io_manager):
 @pytest.mark.parametrize(
     "io_manager", [(old_snowflake_io_manager), (pythonic_snowflake_io_manager)]
 )
+@pytest.mark.integration
 def test_self_dependent_asset(io_manager):
     with temporary_snowflake_table(
         schema_name=SCHEMA,

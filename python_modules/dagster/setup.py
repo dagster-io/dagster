@@ -32,19 +32,23 @@ GRPC_VERSION_FLOOR = "1.44.0"
 setup(
     name="dagster",
     version=get_version(),
-    author="Elementl",
-    author_email="hello@elementl.com",
+    author="Dagster Labs",
+    author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
-    description="The data orchestration platform built for productivity.",
+    description=(
+        "Dagster is an orchestration platform for the development, production, and observation of"
+        " data assets."
+    ),
     long_description=get_description(),
     long_description_content_type="text/markdown",
     project_urls={
         "Homepage": "https://dagster.io",
         "GitHub": "https://github.com/dagster-io/dagster",
+        "Documentation": "https://docs.dagster.io",
         "Changelog": "https://github.com/dagster-io/dagster/releases",
         "Issue Tracker": "https://github.com/dagster-io/dagster/issues",
         "Twitter": "https://twitter.com/dagster",
-        "YouTube": "https://www.youtube.com/channel/UCfLnv9X8jyHTe6gJ4hVBo9Q",
+        "YouTube": "https://www.youtube.com/@dagsterio",
         "Slack": "https://dagster.io/slack",
         "Blog": "https://dagster.io/blog",
         "Newsletter": "https://dagster.io/newsletter-signup",
@@ -70,7 +74,6 @@ setup(
         # cli
         "click>=5.0",
         "coloredlogs>=6.1, <=14.0",
-        "contextvars; python_version < '3.7'",
         "Jinja2",
         "PyYAML>=5.1",
         # core (not explicitly expressed atm)
@@ -124,7 +127,7 @@ setup(
             "morefs[asynclocal]; python_version>='3.8'",
         ],
         "black": [
-            "black[jupyter]==22.12.0",
+            "black[jupyter]==23.7.0",
         ],
         "mypy": [
             "mypy==0.991",

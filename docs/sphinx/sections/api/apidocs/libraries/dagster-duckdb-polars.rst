@@ -14,7 +14,10 @@ Related guides:
 .. autoconfigurable:: DuckDBPolarsIOManager
   :annotation: IOManagerDefinition
 
+.. autoclass:: DuckDBPolarsTypeHandler
+
+Legacy
+=======
+
 .. autoconfigurable:: duckdb_polars_io_manager
   :annotation: IOManagerDefinition
-
-.. autoclass:: DuckDBPolarsTypeHandler

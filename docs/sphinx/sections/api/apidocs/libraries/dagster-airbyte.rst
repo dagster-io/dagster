@@ -7,18 +7,14 @@ For more information on getting started, see the `Airbyte integration guide </in
 
 .. currentmodule:: dagster_airbyte
 
-Ops
-===
 
-.. autoconfigurable:: airbyte_sync_op
 
 Resources
 =========
 
-.. autoconfigurable:: airbyte_resource
+.. autoconfigurable:: AirbyteResource
     :annotation: ResourceDefinition
 
-.. autoclass:: AirbyteResource
 
 Assets
 ======
@@ -28,6 +24,13 @@ Assets
 .. autofunction:: load_assets_from_airbyte_project
 
 .. autofunction:: build_airbyte_assets
+
+
+Ops
+===
+
+.. autoconfigurable:: airbyte_sync_op
+
 
 Managed Config
 ==============
@@ -1376,3 +1379,11 @@ Managed Config Generated Destinations
 
 .. autoclass:: MeilisearchDestination
     :special-members: __init__
+
+
+Legacy
+=========
+.. currentmodule:: dagster_airbyte
+    
+.. autoconfigurable:: airbyte_resource
+    :annotation: ResourceDefinition

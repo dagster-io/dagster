@@ -3,9 +3,14 @@ Prometheus (dagster-prometheus)
 
 .. currentmodule:: dagster_prometheus
 
-.. autoclass:: PrometheusResource
+.. autoconfigurable:: PrometheusResource
+  :annotation: ResourceDefinition
 
 .. autoclass:: dagster_prometheus.resources.PrometheusClient
 
-.. autodata:: prometheus_resource
+
+Legacy
+=======
+
+.. autoconfigurable:: prometheus_resource
   :annotation: ResourceDefinition

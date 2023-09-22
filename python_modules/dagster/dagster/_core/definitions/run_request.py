@@ -54,8 +54,7 @@ class AddDynamicPartitionsRequest(
         ],
     )
 ):
-    """A request to add partitions to a dynamic partitions definition, to be evaluated by a sensor or schedule.
-    """
+    """A request to add partitions to a dynamic partitions definition, to be evaluated by a sensor or schedule."""
 
     def __new__(
         cls,
@@ -79,8 +78,7 @@ class DeleteDynamicPartitionsRequest(
         ],
     )
 ):
-    """A request to delete partitions to a dynamic partitions definition, to be evaluated by a sensor or schedule.
-    """
+    """A request to delete partitions to a dynamic partitions definition, to be evaluated by a sensor or schedule."""
 
     def __new__(
         cls,
@@ -189,10 +187,8 @@ class RunRequest(
         partitions_def = target_definition.partitions_def
         if partitions_def is None:
             check.failed(
-                (
-                    "Cannot resolve partition for run request when target job"
-                    f" '{target_definition.name}' is unpartitioned."
-                ),
+                "Cannot resolve partition for run request when target job"
+                f" '{target_definition.name}' is unpartitioned.",
             )
         partitions_def = cast(PartitionsDefinition, partitions_def)
 
@@ -223,9 +219,11 @@ class RunRequest(
         }
 
         return self.with_replaced_attrs(
-            run_config=self.run_config
-            if self.run_config
-            else partitioned_config.get_run_config_for_partition_key(self.partition_key),
+            run_config=(
+                self.run_config
+                if self.run_config
+                else partitioned_config.get_run_config_for_partition_key(self.partition_key)
+            ),
             tags=tags,
         )
 
@@ -362,7 +360,8 @@ class SensorResult(
     Attributes:
         run_requests (Optional[Sequence[RunRequest]]): A list
             of run requests to be executed.
-        skip_reason (Optional[SkipReason]): A skip message indicating why sensor evaluation was skipped.
+        skip_reason (Optional[Union[str, SkipReason]]): A skip message indicating why sensor
+            evaluation was skipped.
         cursor (Optional[str]): The cursor value for this sensor, which will be provided on the
             context for the next sensor evaluation.
         dynamic_partitions_requests (Optional[Sequence[Union[DeleteDynamicPartitionsRequest,
@@ -374,7 +373,7 @@ class SensorResult(
     def __new__(
         cls,
         run_requests: Optional[Sequence[RunRequest]] = None,
-        skip_reason: Optional[SkipReason] = None,
+        skip_reason: Optional[Union[str, SkipReason]] = None,
         cursor: Optional[str] = None,
         dynamic_partitions_requests: Optional[
             Sequence[Union[DeleteDynamicPartitionsRequest, AddDynamicPartitionsRequest]]
@@ -382,14 +381,18 @@ class SensorResult(
     ):
         if skip_reason and len(run_requests if run_requests else []) > 0:
             check.failed(
-                "Expected a single SkipReason or one or more RunRequests: received both "
-                "RunRequest and SkipReason"
+                "Expected a single skip reason or one or more run requests: received values for "
+                "both run_requests and skip_reason"
             )
+
+        skip_reason = check.opt_inst_param(skip_reason, "skip_reason", (SkipReason, str))
+        if isinstance(skip_reason, str):
+            skip_reason = SkipReason(skip_reason)
 
         return super(SensorResult, cls).__new__(
             cls,
             run_requests=check.opt_sequence_param(run_requests, "run_requests", RunRequest),
-            skip_reason=check.opt_inst_param(skip_reason, "skip_reason", SkipReason),
+            skip_reason=skip_reason,
             cursor=check.opt_str_param(cursor, "cursor"),
             dynamic_partitions_requests=check.opt_sequence_param(
                 dynamic_partitions_requests,

@@ -89,6 +89,7 @@ def daemon_controller_from_instance(
     ] = create_daemons_from_instance,
     error_interval_seconds: int = DEFAULT_DAEMON_ERROR_INTERVAL_SECONDS,
     code_server_log_level: str = "info",
+    log_level: str = "info",
 ) -> Iterator["DagsterDaemonController"]:
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(workspace_load_target, "workspace_load_target", WorkspaceLoadTarget)
@@ -113,6 +114,7 @@ def daemon_controller_from_instance(
                 heartbeat_tolerance_seconds=heartbeat_tolerance_seconds,
                 error_interval_seconds=error_interval_seconds,
                 grpc_server_registry=grpc_server_registry,
+                log_level=log_level,
             )
         )
 
@@ -142,6 +144,7 @@ class DagsterDaemonController(AbstractContextManager):
         heartbeat_tolerance_seconds: float = DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
         error_interval_seconds: int = DEFAULT_DAEMON_ERROR_INTERVAL_SECONDS,
         handler: str = "default",
+        log_level: str = "info",
     ):
         self._daemon_uuid = str(uuid.uuid4())
 
@@ -167,7 +170,7 @@ class DagsterDaemonController(AbstractContextManager):
 
         self._daemon_shutdown_event = threading.Event()
 
-        configure_loggers(handler=handler)
+        configure_loggers(handler=handler, log_level=log_level.upper())
 
         self._logger = logging.getLogger("dagster.daemon")
         self._logger.info(
@@ -347,9 +350,11 @@ def create_daemon_of_type(daemon_type: str, instance: DagsterInstance) -> Dagste
         return EventLogConsumerDaemon()
     elif daemon_type == AssetDaemon.daemon_type():
         return AssetDaemon(
-            interval_seconds=instance.auto_materialize_minimum_interval_seconds
-            if instance.auto_materialize_minimum_interval_seconds is not None
-            else DEFAULT_DAEMON_INTERVAL_SECONDS
+            interval_seconds=(
+                instance.auto_materialize_minimum_interval_seconds
+                if instance.auto_materialize_minimum_interval_seconds is not None
+                else DEFAULT_DAEMON_INTERVAL_SECONDS
+            )
         )
     else:
         raise Exception(f"Unexpected daemon type {daemon_type}")
@@ -379,8 +384,7 @@ def all_daemons_live(
     heartbeat_interval_seconds: float = DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
     heartbeat_tolerance_seconds: float = DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
 ) -> bool:
-    """True if all required daemons have had a recent heartbeat, regardless of if it contained errors.
-    """
+    """True if all required daemons have had a recent heartbeat, regardless of if it contained errors."""
     statuses_by_type = get_daemon_statuses(
         instance,
         daemon_types=instance.get_required_daemon_types(),

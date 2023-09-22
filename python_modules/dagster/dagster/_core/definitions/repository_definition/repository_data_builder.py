@@ -20,6 +20,7 @@ from dagster._config.pythonic_config import (
     ConfigurableResourceFactoryResourceDefinition,
     ResourceWithKeyMapping,
 )
+from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.assets_job import (
     get_base_asset_jobs,
@@ -73,9 +74,11 @@ def _env_vars_from_resource_defaults(resource_def: ResourceDefinition) -> Set[st
 
     config_schema_default = cast(
         Mapping[str, Any],
-        json.loads(resource_def.config_schema.default_value_as_json_str)
-        if resource_def.config_schema.default_provided
-        else {},
+        (
+            json.loads(resource_def.config_schema.default_value_as_json_str)
+            if resource_def.config_schema.default_provided
+            else {}
+        ),
     )
 
     env_vars = _find_env_vars(config_schema_default)
@@ -120,6 +123,7 @@ def build_caching_repository_data_from_list(
     assets_defs: List[AssetsDefinition] = []
     asset_keys: Set[AssetKey] = set()
     source_assets: List[SourceAsset] = []
+    asset_checks_defs: List[AssetChecksDefinition] = []
     for definition in repository_definitions:
         if isinstance(definition, JobDefinition):
             if (
@@ -182,15 +186,18 @@ def build_caching_repository_data_from_list(
             assets_defs.append(definition)
         elif isinstance(definition, SourceAsset):
             source_assets.append(definition)
+        elif isinstance(definition, AssetChecksDefinition):
+            asset_checks_defs.append(definition)
         else:
             check.failed(f"Unexpected repository entry {definition}")
 
-    if assets_defs or source_assets:
+    if assets_defs or source_assets or asset_checks_defs:
         for job_def in get_base_asset_jobs(
             assets=assets_defs,
             source_assets=source_assets,
             executor_def=default_executor_def,
             resource_defs=top_level_resources,
+            asset_checks=asset_checks_defs,
         ):
             jobs[job_def.name] = job_def
 
@@ -215,7 +222,9 @@ def build_caching_repository_data_from_list(
                 schedule_def, coerced_graphs, unresolved_jobs, jobs, target
             )
 
-    asset_graph = AssetGraph.from_assets([*assets_defs, *source_assets])
+    asset_graph = AssetGraph.from_assets(
+        [*assets_defs, *source_assets], asset_checks=asset_checks_defs
+    )
 
     if unresolved_partitioned_asset_schedules:
         for (
@@ -399,9 +408,7 @@ def _process_and_validate_target(
             dupe_target_type = (
                 "graph"
                 if target.name in coerced_graphs
-                else "unresolved asset job"
-                if target.name in unresolved_jobs
-                else "job"
+                else "unresolved asset job" if target.name in unresolved_jobs else "job"
             )
             raise DagsterInvalidDefinitionError(
                 _get_error_msg_for_target_conflict(targeter, "job", target.name, dupe_target_type)

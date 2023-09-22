@@ -69,7 +69,7 @@
     "destination": "/tutorial/advanced-tutorial/scheduling",
     "statusCode": 302
   },
-  { "source": "/overview", "destination": "/concepts", "statusCode": 302 },
+  {"source": "/overview", "destination": "/concepts", "statusCode": 302},
   {
     "source": "/overview/solids-pipelines/solids",
     "destination": "/concepts/solids-pipelines/solids",
@@ -239,7 +239,7 @@
     "destination": "/guides/dagster/testing-assets",
     "statusCode": 302
   },
-    {
+  {
     "source": "/tutorial/assets/testing-assets",
     "destination": "/guides/dagster/testing-assets",
     "statusCode": 302
@@ -708,6 +708,26 @@
   {
     "source": "/integrations/dbt/using-dbt-with-dagster/part-four",
     "destination": "/integrations/dbt/using-dbt-with-dagster/downstream-assets",
+    "statusCode": 302
+  },
+  {
+    "source": "/guides/dagster/non-argument-deps",
+    "destination": "/concepts/assets/software-defined-assets#defining-basic-dependencies",
+    "statusCode": 302
+  },
+  {
+    "source": "/tutorial/managing-your-own-io",
+    "destination": "/tutorial/saving-your-data",
+    "statusCode": 302
+  },
+  {
+    "source": "/concepts/assets/asset-materializations",
+    "destination": "/concepts/ops-jobs-graphs/op-events#asset-materializations",
+    "statusCode": 302
+  },
+  {
+    "source": "/:version(\\d+.\\d+.\\d+)/:slug*",
+    "destination": "/:slug*",
     "statusCode": 302
   }
 ]

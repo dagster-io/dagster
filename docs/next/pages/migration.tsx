@@ -93,7 +93,7 @@ export const getStaticProps: GetStaticProps = async () => {
   const pathToMdxFile = path.resolve('../../MIGRATION.md');
 
   try {
-    // 2. Read and parse versioned MDX content
+    // 2. Read and parse MDX content
     const source = await fs.readFile(pathToMdxFile);
     const {content, data} = matter(source);
 
@@ -119,6 +119,7 @@ export const getStaticProps: GetStaticProps = async () => {
           frontMatter: data,
           tableOfContents,
           githubLink,
+          asPath: '/migration',
         },
       },
       revalidate: 10, // In seconds

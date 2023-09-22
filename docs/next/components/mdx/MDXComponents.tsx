@@ -4,8 +4,7 @@
 
 // For example, if you need to update `PyObject`, rename the existing component to `PyObjectLegacy`
 // and update all existing usage of it
-
-import path from 'path';
+import {LATEST_VERSION} from 'util/version';
 
 import {Tab, Transition} from '@headlessui/react';
 import cx from 'classnames';
@@ -15,7 +14,6 @@ import NextLink from 'next/link';
 import React, {ReactElement, useCallback, useContext, useEffect, useRef, useState} from 'react';
 import Zoom from 'react-medium-image-zoom';
 
-import {useVersion} from '../../util/useVersion';
 import Icons from '../Icons';
 import Link from '../Link';
 
@@ -284,8 +282,7 @@ const Warning = ({children}) => {
 };
 
 const CodeReferenceLink = ({filePath, isInline, children}) => {
-  const {version} = useVersion();
-  const url = `https://github.com/dagster-io/dagster/tree/${version}/${filePath}`;
+  const url = `https://github.com/dagster-io/dagster/tree/${LATEST_VERSION}/${filePath}`;
 
   if (isInline) {
     return <a href={url}>{children}</a>;
@@ -368,7 +365,7 @@ const PlaceholderImage = ({caption = 'Placeholder Image'}) => {
 
 const Experimental = () => {
   return (
-    <div className="experimental-tag inline-flex items-center px-3 py-0.5 rounded-full align-middle text-xs uppercase font-medium bg-sea-foam text-gable-green">
+    <div className="experimental-tag">
       <span className="hidden">(</span>Experimental<span className="hidden">)</span>
     </div>
   );
@@ -376,7 +373,7 @@ const Experimental = () => {
 
 const Legacy = () => {
   return (
-    <div className="legacy-tag inline-flex items-center px-3 py-0.5 rounded-full align-middle text-xs uppercase font-medium bg-yellow-200 text-yellow-700">
+    <div className="legacy-tag">
       <span className="hidden">(</span>Legacy<span className="hidden">)</span>
     </div>
   );
@@ -517,7 +514,9 @@ const ArticleListItem = ({title, href}) => {
       }}
     >
       {href.startsWith('http') ? (
-        <NextLink href={href}>{title}</NextLink>
+        <NextLink href={href} legacyBehavior>
+          {title}
+        </NextLink>
       ) : (
         <Link href={href}>{title}</Link>
       )}
@@ -677,7 +676,6 @@ const Image = ({children, ...props}) => {
    * - on non-master version
    * - in public/images/ dir
    */
-  const {version} = useVersion();
   const {src} = props;
   if (!src.startsWith('/images/')) {
     return (
@@ -686,19 +684,10 @@ const Image = ({children, ...props}) => {
       </span>
     );
   }
-
-  const resolvedPath =
-    version === 'master'
-      ? src
-      : new URL(
-          path.join('versioned_images', version, src.replace('/images/', '')),
-          'https://dagster-docs-versioned-content.s3.us-west-1.amazonaws.com',
-        ).href;
-
   return (
     <Zoom wrapElement="span" wrapStyle={{display: 'block'}}>
       <span className="block mx-auto">
-        <NextImage src={resolvedPath} width={props.width} height={props.height} alt={props.alt} />
+        <NextImage src={src} width={props.width} height={props.height} alt={props.alt} />
       </span>
     </Zoom>
   );

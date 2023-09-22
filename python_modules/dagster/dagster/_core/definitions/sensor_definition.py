@@ -296,15 +296,13 @@ class SensorEvaluationContext:
     @public
     @property
     def last_completion_time(self) -> Optional[float]:
-        """Optional[float]: Timestamp representing the last time this sensor completed an evaluation.
-        """
+        """Optional[float]: Timestamp representing the last time this sensor completed an evaluation."""
         return self._last_completion_time
 
     @public
     @property
     def last_run_key(self) -> Optional[str]:
-        """Optional[str]: The run key supplied to the most recent RunRequest produced by this sensor.
-        """
+        """Optional[str]: The run key supplied to the most recent RunRequest produced by this sensor."""
         return self._last_run_key
 
     @public
@@ -599,10 +597,8 @@ class SensorDefinition(IHasInternalInit):
 
         check.param_invariant(
             len(required_resource_keys or []) == 0 or len(resource_arg_names) == 0,
-            (
-                "Cannot specify resource requirements in both @sensor decorator and as arguments to"
-                " the decorated function"
-            ),
+            "Cannot specify resource requirements in both @sensor decorator and as arguments to"
+            " the decorated function",
         )
         self._raw_required_resource_keys = check.opt_set_param(
             required_resource_keys, "required_resource_keys", of_type=str
@@ -619,7 +615,7 @@ class SensorDefinition(IHasInternalInit):
         description: Optional[str],
         job: Optional[ExecutableDefinition],
         jobs: Optional[Sequence[ExecutableDefinition]],
-        default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
+        default_status: DefaultSensorStatus,
         asset_selection: Optional[AssetSelection],
         required_resource_keys: Optional[Set[str]],
     ) -> "SensorDefinition":
@@ -670,8 +666,7 @@ class SensorDefinition(IHasInternalInit):
     @public
     @property
     def minimum_interval_seconds(self) -> Optional[int]:
-        """Optional[int]: The minimum number of seconds between sequential evaluations of this sensor.
-        """
+        """Optional[int]: The minimum number of seconds between sequential evaluations of this sensor."""
         return self._min_interval
 
     @property

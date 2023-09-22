@@ -25,8 +25,14 @@ from dagster._core.definitions import (
     NodeOutput,
     OpDefinition,
 )
+from dagster._core.definitions.asset_layer import AssetLayer
 from dagster._core.definitions.composition import MappedInputPlaceholder
-from dagster._core.definitions.dependency import DependencyStructure
+from dagster._core.definitions.dependency import (
+    BlockingAssetChecksDependencyDefinition,
+    DependencyStructure,
+    MultiDependencyDefinition,
+    NodeInput,
+)
 from dagster._core.definitions.executor_definition import ExecutorRequirement
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.repository_definition import RepositoryLoadData
@@ -57,6 +63,7 @@ from .inputs import (
     FromDynamicCollect,
     FromInputManager,
     FromMultipleSources,
+    FromMultipleSourcesLoadSingleSource,
     FromPendingDynamicStepOutput,
     FromSourceAsset,
     FromStepOutput,
@@ -354,10 +361,8 @@ class _PlanBuilder:
             else:
                 check.invariant(
                     False,
-                    (
-                        f"Unexpected node type {type(node.definition)} encountered during execution"
-                        " planning"
-                    ),
+                    f"Unexpected node type {type(node.definition)} encountered during execution"
+                    " planning",
                 )
 
             ### 3. OUTPUTS
@@ -372,9 +377,9 @@ class _PlanBuilder:
                 )
                 step = self.get_step_by_node_handle(check.not_none(resolved_handle))
                 if isinstance(step, (ExecutionStep, UnresolvedCollectExecutionStep)):
-                    step_output_handle: Union[
-                        StepOutputHandle, UnresolvedStepOutputHandle
-                    ] = StepOutputHandle(step.key, resolved_output_def.name)
+                    step_output_handle: Union[StepOutputHandle, UnresolvedStepOutputHandle] = (
+                        StepOutputHandle(step.key, resolved_output_def.name)
+                    )
                 elif isinstance(step, UnresolvedMappedExecutionStep):
                     step_output_handle = UnresolvedStepOutputHandle(
                         step.handle,
@@ -464,44 +469,32 @@ def get_step_input_source(
         )
 
     if dependency_structure.has_fan_in_deps(input_handle):
-        sources: List[StepInputSource] = []
-        deps = dependency_structure.get_fan_in_deps(input_handle)
-        for idx, handle_or_placeholder in enumerate(deps):
-            if isinstance(handle_or_placeholder, NodeOutput):
-                step_output_handle = step_output_map[handle_or_placeholder]
-                if (
-                    isinstance(step_output_handle, UnresolvedStepOutputHandle)
-                    or handle_or_placeholder.output_def.is_dynamic
-                ):
-                    check.failed(
-                        "Unexpected dynamic output dependency in regular fan in, "
-                        "should have been caught at definition time."
-                    )
-
-                sources.append(
-                    FromStepOutput(
-                        step_output_handle=step_output_handle,
-                        fan_in=True,
-                    )
-                )
-            else:
-                check.invariant(
-                    handle_or_placeholder is MappedInputPlaceholder,
-                    f"Expected NodeOutput or MappedInputPlaceholder, got {handle_or_placeholder}",
-                )
-                if parent_step_inputs is None:
-                    check.failed("unexpected error in composition descent during plan building")
-
-                parent_name = node.container_mapped_fan_in_input(input_name, idx).graph_input_name
-                parent_inputs = {step_input.name: step_input for step_input in parent_step_inputs}
-                parent_input = parent_inputs[parent_name]
-                source = parent_input.source
-                if not isinstance(source, StepInputSource):
-                    check.failed(f"Unexpected parent mapped input source type {source}")
-                sources.append(source)
-
-        return FromMultipleSources(sources=sources)
-
+        dep_def = dependency_structure.get_dependency_definition(input_handle)
+        if isinstance(dep_def, MultiDependencyDefinition):
+            return _step_input_source_from_multi_dep_def(
+                dependency_structure=dependency_structure,
+                input_handle=input_handle,
+                step_output_map=step_output_map,
+                parent_step_inputs=parent_step_inputs,
+                node=node,
+                input_name=input_name,
+            )
+        elif isinstance(dep_def, BlockingAssetChecksDependencyDefinition):
+            return _step_input_source_from_blocking_asset_checks_dep_def(
+                dep_def=dep_def,
+                node_handle=handle,
+                dependency_structure=dependency_structure,
+                input_handle=input_handle,
+                step_output_map=step_output_map,
+                parent_step_inputs=parent_step_inputs,
+                input_name=input_name,
+                asset_layer=asset_layer,
+            )
+        else:
+            check.failed(
+                "Expected fan-in deps to correspond to a MultiDependencyDefinition or"
+                f" BlockingAssetChecksDependencyDefinition, but was {type(dep_def)}"
+            )
     if dependency_structure.has_dynamic_fan_in_dep(input_handle):
         node_output_handle = dependency_structure.get_dynamic_fan_in_dep(input_handle)
         step_output_handle = step_output_map[node_output_handle]
@@ -553,6 +546,104 @@ def get_step_input_source(
             described_node=node.describe_node(),
             input_name=input_name,
         )
+    )
+
+
+def _step_input_source_from_multi_dep_def(
+    dependency_structure: DependencyStructure,
+    input_handle: NodeInput,
+    step_output_map: Dict[NodeOutput, Union[StepOutputHandle, UnresolvedStepOutputHandle]],
+    parent_step_inputs: Optional[Sequence[StepInputUnion]],
+    node: Node,
+    input_name: str,
+) -> FromMultipleSources:
+    sources: List[StepInputSource] = []
+    deps = dependency_structure.get_fan_in_deps(input_handle)
+
+    for idx, handle_or_placeholder in enumerate(deps):
+        if isinstance(handle_or_placeholder, NodeOutput):
+            step_output_handle = step_output_map[handle_or_placeholder]
+            if (
+                isinstance(step_output_handle, UnresolvedStepOutputHandle)
+                or handle_or_placeholder.output_def.is_dynamic
+            ):
+                check.failed(
+                    "Unexpected dynamic output dependency in regular fan in, "
+                    "should have been caught at definition time."
+                )
+
+            sources.append(
+                FromStepOutput(
+                    step_output_handle=step_output_handle,
+                    fan_in=True,
+                )
+            )
+        else:
+            check.invariant(
+                handle_or_placeholder is MappedInputPlaceholder,
+                f"Expected NodeOutput or MappedInputPlaceholder, got {handle_or_placeholder}",
+            )
+            if parent_step_inputs is None:
+                check.failed("unexpected error in composition descent during plan building")
+
+            parent_name = node.container_mapped_fan_in_input(input_name, idx).graph_input_name
+            parent_inputs = {step_input.name: step_input for step_input in parent_step_inputs}
+            parent_input = parent_inputs[parent_name]
+            source = parent_input.source
+            if not isinstance(source, StepInputSource):
+                check.failed(f"Unexpected parent mapped input source type {source}")
+            sources.append(source)
+
+    return FromMultipleSources(sources=sources)
+
+
+def _step_input_source_from_blocking_asset_checks_dep_def(
+    dep_def: BlockingAssetChecksDependencyDefinition,
+    dependency_structure: DependencyStructure,
+    input_handle: NodeInput,
+    step_output_map: Dict[NodeOutput, Union[StepOutputHandle, UnresolvedStepOutputHandle]],
+    parent_step_inputs: Optional[Sequence[StepInputUnion]],
+    node_handle: NodeHandle,
+    input_name: str,
+    asset_layer: AssetLayer,
+) -> FromMultipleSourcesLoadSingleSource:
+    sources: List[StepInputSource] = []
+    source_to_load_from: Optional[StepInputSource] = None
+    deps = dependency_structure.get_fan_in_deps(input_handle)
+
+    for idx, node_output in enumerate(deps):
+        if isinstance(node_output, NodeOutput):
+            step_output_handle = step_output_map[node_output]
+            if (
+                isinstance(step_output_handle, UnresolvedStepOutputHandle)
+                or node_output.output_def.is_dynamic
+            ):
+                check.failed(
+                    "Unexpected dynamic output dependency in regular fan in, "
+                    "should have been caught at definition time."
+                )
+
+            source = FromStepOutput(step_output_handle=step_output_handle, fan_in=True)
+            sources.append(source)
+            if (
+                dep_def.other_dependency is not None
+                and dep_def.other_dependency.node == node_output.node_name
+                and dep_def.other_dependency.output == node_output.output_name
+            ):
+                source_to_load_from = source
+        else:
+            check.invariant(f"Expected NodeOutput, got {node_output}")
+
+    if source_to_load_from is None:
+        asset_key_for_input = asset_layer.asset_key_for_input(node_handle, input_handle.input_name)
+        if asset_key_for_input:
+            source_to_load_from = FromSourceAsset(node_handle=node_handle, input_name=input_name)
+            sources.append(source_to_load_from)
+        else:
+            check.failed("Unexpected: no sources to load from and no asset key to load from")
+
+    return FromMultipleSourcesLoadSingleSource(
+        sources=sources, source_to_load_from=source_to_load_from
     )
 
 
@@ -608,17 +699,19 @@ class ExecutionPlan(
             ),
             known_state=check.inst_param(known_state, "known_state", KnownExecutionState),
             artifacts_persisted=check.bool_param(artifacts_persisted, "artifacts_persisted"),
-            step_dict_by_key={step.key: step for step in step_dict.values()}
-            if step_dict_by_key is None
-            else check.dict_param(
-                step_dict_by_key,
-                "step_dict_by_key",
-                key_type=str,
-                value_type=(
-                    ExecutionStep,
-                    UnresolvedMappedExecutionStep,
-                    UnresolvedCollectExecutionStep,
-                ),
+            step_dict_by_key=(
+                {step.key: step for step in step_dict.values()}
+                if step_dict_by_key is None
+                else check.dict_param(
+                    step_dict_by_key,
+                    "step_dict_by_key",
+                    key_type=str,
+                    value_type=(
+                        ExecutionStep,
+                        UnresolvedMappedExecutionStep,
+                        UnresolvedCollectExecutionStep,
+                    ),
+                )
             ),
             executor_name=check.opt_str_param(executor_name, "executor_name"),
             repository_load_data=check.opt_inst_param(
@@ -770,10 +863,8 @@ class ExecutionPlan(
 
         if bad_keys:
             raise DagsterExecutionStepNotFoundError(
-                (
-                    f"Can not build subset plan from unknown step{'s' if len(bad_keys)> 1 else ''}:"
-                    f" {', '.join(bad_keys)}"
-                ),
+                f"Can not build subset plan from unknown step{'s' if len(bad_keys)> 1 else ''}:"
+                f" {', '.join(bad_keys)}",
                 step_keys=bad_keys,
             )
 
@@ -1379,9 +1470,9 @@ def _compute_step_maps(
     past_mappings = known_state.dynamic_mappings if known_state else {}
 
     executable_map: Dict[str, Union[StepHandle, ResolvedFromDynamicStepHandle]] = {}
-    resolvable_map: Dict[
-        FrozenSet[str], List[Union[StepHandle, UnresolvedStepHandle]]
-    ] = defaultdict(list)
+    resolvable_map: Dict[FrozenSet[str], List[Union[StepHandle, UnresolvedStepHandle]]] = (
+        defaultdict(list)
+    )
     for handle in step_handles_to_execute:
         step = step_dict[handle]
         if isinstance(step, ExecutionStep):

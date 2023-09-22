@@ -17,6 +17,7 @@ from typing_extensions import Self
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
+from dagster._core.definitions.asset_check_spec import AssetCheckHandle
 from dagster._core.definitions.events import AssetKey
 from dagster._core.origin import JobPythonOrigin
 from dagster._core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
@@ -188,10 +189,8 @@ class DagsterRunSerializer(NamedTupleSerializer["DagsterRun"]):
             job_name = unpacked_dict.get("pipeline_name")
             check.invariant(
                 job_name is None or selector_name == job_name,
-                (
-                    f"Conflicting pipeline name {job_name} in arguments to PipelineRun: "
-                    f"selector was passed with pipeline {selector_name}"
-                ),
+                f"Conflicting pipeline name {job_name} in arguments to PipelineRun: "
+                f"selector was passed with pipeline {selector_name}",
             )
             if job_name is None:
                 unpacked_dict["pipeline_name"] = selector_name
@@ -200,10 +199,8 @@ class DagsterRunSerializer(NamedTupleSerializer["DagsterRun"]):
             check.invariant(
                 solids_to_execute is None
                 or (selector_subset and set(selector_subset) == solids_to_execute),
-                (
-                    f"Conflicting solids_to_execute {solids_to_execute} in arguments to"
-                    f" PipelineRun: selector was passed with subset {selector_subset}"
-                ),
+                f"Conflicting solids_to_execute {solids_to_execute} in arguments to"
+                f" PipelineRun: selector was passed with subset {selector_subset}",
             )
             # for old runs that only have selector but no solids_to_execute
             if solids_to_execute is None:
@@ -240,6 +237,7 @@ class DagsterRun(
             ("run_id", str),
             ("run_config", Mapping[str, object]),
             ("asset_selection", Optional[AbstractSet[AssetKey]]),
+            ("asset_check_selection", Optional[AbstractSet[AssetCheckHandle]]),
             ("op_selection", Optional[Sequence[str]]),
             ("resolved_op_selection", Optional[AbstractSet[str]]),
             ("step_keys_to_execute", Optional[Sequence[str]]),
@@ -265,6 +263,7 @@ class DagsterRun(
         run_id: Optional[str] = None,
         run_config: Optional[Mapping[str, object]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
+        asset_check_selection: Optional[AbstractSet[AssetCheckHandle]] = None,
         op_selection: Optional[Sequence[str]] = None,
         resolved_op_selection: Optional[AbstractSet[str]] = None,
         step_keys_to_execute: Optional[Sequence[str]] = None,
@@ -281,10 +280,8 @@ class DagsterRun(
         check.invariant(
             (root_run_id is not None and parent_run_id is not None)
             or (root_run_id is None and parent_run_id is None),
-            (
-                "Must set both root_run_id and parent_run_id when creating a PipelineRun that "
-                "belongs to a run group"
-            ),
+            "Must set both root_run_id and parent_run_id when creating a PipelineRun that "
+            "belongs to a run group",
         )
         # a set which contains the names of the ops to execute
         resolved_op_selection = check.opt_nullable_set_param(
@@ -297,6 +294,9 @@ class DagsterRun(
 
         asset_selection = check.opt_nullable_set_param(
             asset_selection, "asset_selection", of_type=AssetKey
+        )
+        asset_check_selection = check.opt_nullable_set_param(
+            asset_check_selection, "asset_check_selection", of_type=AssetCheckHandle
         )
 
         # Placing this with the other imports causes a cyclic import
@@ -321,6 +321,7 @@ class DagsterRun(
             run_config=check.opt_mapping_param(run_config, "run_config", key_type=str),
             op_selection=op_selection,
             asset_selection=asset_selection,
+            asset_check_selection=asset_check_selection,
             resolved_op_selection=resolved_op_selection,
             step_keys_to_execute=step_keys_to_execute,
             status=check.opt_inst_param(
@@ -378,9 +379,9 @@ class DagsterRun(
         if self.external_job_origin:
             # tag the run with a label containing the repository name / location name, to allow for
             # per-repository filtering of runs from the Dagster UI.
-            repository_tags[
-                REPOSITORY_LABEL_TAG
-            ] = self.external_job_origin.external_repository_origin.get_label()
+            repository_tags[REPOSITORY_LABEL_TAG] = (
+                self.external_job_origin.external_repository_origin.get_label()
+            )
 
         if not self.tags:
             return repository_tags
@@ -637,7 +638,9 @@ class ExecutionSelector(
         return super(ExecutionSelector, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
-            solid_subset=None
-            if solid_subset is None
-            else check.sequence_param(solid_subset, "solid_subset", of_type=str),
+            solid_subset=(
+                None
+                if solid_subset is None
+                else check.sequence_param(solid_subset, "solid_subset", of_type=str)
+            ),
         )

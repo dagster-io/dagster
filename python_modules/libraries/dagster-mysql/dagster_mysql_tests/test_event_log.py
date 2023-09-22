@@ -94,9 +94,7 @@ class TestMySQLEventLogStorage(TestEventLogStorage):
             class: MySQLEventLogStorage
             config:
                 mysql_url: mysql+mysqlconnector://test:test@{hostname}:{port}/test
-        """.format(
-            hostname=hostname, port=port
-        )
+        """.format(hostname=hostname, port=port)
 
         explicit_cfg = """
         event_log_storage:
@@ -109,9 +107,7 @@ class TestMySQLEventLogStorage(TestEventLogStorage):
                     hostname: {hostname}
                     port: {port}
                     db_name: test
-        """.format(
-            hostname=hostname, port=port
-        )
+        """.format(hostname=hostname, port=port)
 
         with instance_for_test(overrides=yaml.safe_load(url_cfg)) as from_url_instance:
             from_url = from_url_instance._event_storage  # noqa: SLF001

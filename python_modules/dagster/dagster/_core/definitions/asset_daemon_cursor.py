@@ -17,12 +17,12 @@ from typing import (
 
 import dagster._check as check
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
+from dagster._core.definitions.time_window_partitions import (
+    TimeWindowPartitionsDefinition,
+    TimeWindowPartitionsSubset,
+)
 
 from .asset_graph import AssetGraph
-from .auto_materialize_condition import (
-    AutoMaterializeCondition,
-    AutoMaterializeDecisionType,
-)
 from .partition import (
     PartitionsDefinition,
     PartitionsSubset,
@@ -81,9 +81,8 @@ class AssetDaemonCursor(NamedTuple):
     def with_updates(
         self,
         latest_storage_id: Optional[int],
-        conditions_by_asset_partition: Mapping[
-            AssetKeyPartitionKey, AbstractSet[AutoMaterializeCondition]
-        ],
+        to_materialize: AbstractSet[AssetKeyPartitionKey],
+        to_discard: AbstractSet[AssetKeyPartitionKey],
         newly_materialized_root_asset_keys: AbstractSet[AssetKey],
         newly_materialized_root_partitions_by_asset_key: Mapping[AssetKey, AbstractSet[str]],
         evaluation_id: int,
@@ -97,25 +96,16 @@ class AssetDaemonCursor(NamedTuple):
         handled_root_partitions_by_asset_key: Dict[AssetKey, Set[str]] = defaultdict(set)
         handled_non_partitioned_root_assets: Set[AssetKey] = set()
 
-        for asset_partition, conditions in conditions_by_asset_partition.items():
-            if (
-                # only consider root assets
-                not asset_graph.has_non_source_parents(asset_partition.asset_key)
-                # which were discarded or materialized
-                and (
-                    AutoMaterializeDecisionType.from_conditions(conditions)
-                    in (
-                        AutoMaterializeDecisionType.DISCARD,
-                        AutoMaterializeDecisionType.MATERIALIZE,
-                    )
+        for asset_partition in to_materialize | to_discard:
+            # only consider root assets
+            if asset_graph.has_non_source_parents(asset_partition.asset_key):
+                continue
+            if asset_partition.partition_key:
+                handled_root_partitions_by_asset_key[asset_partition.asset_key].add(
+                    asset_partition.partition_key
                 )
-            ):
-                if asset_partition.partition_key:
-                    handled_root_partitions_by_asset_key[asset_partition.asset_key].add(
-                        asset_partition.partition_key
-                    )
-                else:
-                    handled_non_partitioned_root_assets.add(asset_partition.asset_key)
+            else:
+                handled_non_partitioned_root_assets.add(asset_partition.asset_key)
 
         result_handled_root_partitions_by_asset_key = {**self.handled_root_partitions_by_asset_key}
         for asset_key in set(newly_materialized_root_partitions_by_asset_key.keys()) | set(
@@ -127,12 +117,12 @@ class AssetDaemonCursor(NamedTuple):
                     PartitionsDefinition, asset_graph.get_partitions_def(asset_key)
                 ).empty_subset()
 
-            result_handled_root_partitions_by_asset_key[
-                asset_key
-            ] = prior_materialized_partitions.with_partition_keys(
-                itertools.chain(
-                    newly_materialized_root_partitions_by_asset_key[asset_key],
-                    handled_root_partitions_by_asset_key[asset_key],
+            result_handled_root_partitions_by_asset_key[asset_key] = (
+                prior_materialized_partitions.with_partition_keys(
+                    itertools.chain(
+                        newly_materialized_root_partitions_by_asset_key[asset_key],
+                        handled_root_partitions_by_asset_key[asset_key],
+                    )
                 )
             )
 
@@ -146,9 +136,9 @@ class AssetDaemonCursor(NamedTuple):
             **self.last_observe_request_timestamp_by_asset_key
         }
         for asset_key in newly_observe_requested_asset_keys:
-            result_last_observe_request_timestamp_by_asset_key[
-                asset_key
-            ] = observe_request_timestamp
+            result_last_observe_request_timestamp_by_asset_key[asset_key] = (
+                observe_request_timestamp
+            )
 
         if latest_storage_id and self.latest_storage_id:
             check.invariant(
@@ -215,11 +205,22 @@ class AssetDaemonCursor(NamedTuple):
             try:
                 # in the case that the partitions def has changed, we may not be able to deserialize
                 # the corresponding subset. in this case, we just use an empty subset
-                handled_root_partitions_by_asset_key[key] = partitions_def.deserialize_subset(
-                    serialized_subset
-                )
+                subset = partitions_def.deserialize_subset(serialized_subset)
+                # this covers the case in which the start date has changed for a time-partitioned
+                # asset. in reality, we should be using the can_deserialize method but because we
+                # are not storing the serializable unique id, we can't do that.
+                if (
+                    isinstance(subset, TimeWindowPartitionsSubset)
+                    and isinstance(partitions_def, TimeWindowPartitionsDefinition)
+                    and any(
+                        time_window.start < partitions_def.start
+                        for time_window in subset.included_time_windows
+                    )
+                ):
+                    subset = partitions_def.empty_subset()
             except:
-                handled_root_partitions_by_asset_key[key] = partitions_def.empty_subset()
+                subset = partitions_def.empty_subset()
+            handled_root_partitions_by_asset_key[key] = subset
         return cls(
             latest_storage_id=latest_storage_id,
             handled_root_asset_keys={
@@ -253,7 +254,9 @@ class AssetDaemonCursor(NamedTuple):
                 "handled_root_asset_keys": [
                     key.to_user_string() for key in self.handled_root_asset_keys
                 ],
-                "handled_root_partitions_by_asset_key": serializable_handled_root_partitions_by_asset_key,
+                "handled_root_partitions_by_asset_key": (
+                    serializable_handled_root_partitions_by_asset_key
+                ),
                 "evaluation_id": self.evaluation_id,
                 "last_observe_request_timestamp_by_asset_key": {
                     key.to_user_string(): timestamp

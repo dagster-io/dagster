@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "module": "es2022",
+    "target": "es2022",
+    "rootDir": "src",
+    "strict": true,
+    "noEmit": true,
+    "sourceMap": true,
+    "allowJs": true,
+    "jsx": "react",
+    "moduleResolution": "node",
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitReturns": true,
+    "noUncheckedIndexedAccess": true,
+    "allowSyntheticDefaultImports": true,
+    "allowUnreachableCode": true,
+    "types": ["jest", "node"],
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "exclude": ["node_modules", "lib"],
+  "include": ["src", "custom-next-env.d.ts"]
+}

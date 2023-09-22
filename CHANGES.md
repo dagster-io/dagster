@@ -1,5 +1,291 @@
 # Changelog
 
+# 1.4.12 / 0.20.12 (libraries)
+
+### New
+
+- The `context` object now has an `asset_key` property to get the `AssetKey` of the current asset.
+- Performance improvements to the auto-materialize daemon when running on large asset graphs.
+- The `dagster dev` and `dagster-daemon run` commands now include a `--log-level` argument that allows you to customize the logger level threshold.
+- [dagster-airbyte] `AirbyteResource` now includes a `poll_interval` key that allows you to configure how often it checks an Airbyte sync’s status.
+
+### Bugfixes
+
+- Fixed an issue where the dagster scheduler would sometimes raise an error if a schedule set its cron_schedule to a list of strings and also had its default status set to AUTOMATICALLY_RUNNING.
+- Fixed an issue where the auto-materialize daemon would sometimes raise a RecursionError when processing asset graphs with long upstream dependency chains.
+- [ui] Fixed an issue where the Raw Compute Logs dropdown on the Run page sometimes didn’t show the current step name or properly account for retried steps.
+
+### Community Contributions
+
+- [dagster-databricks] Fixed a regression causing `DatabricksStepLauncher` to fail. Thanks [@zyd14](https://github.com/zyd14)!
+- Fixed an issue where Dagster raised an exception when combining observable source assets with multiple partitions definitions. Thanks [@aroig](https://github.com/aroig)!
+- [dagster-databricks] Added support for client authentication with OAuth. Thanks [@zyd14](https://github.com/zyd14)!
+- [dagster-databricks] Added support for `workspace` and `volumes` init scripts in the databricks client. Thanks [@zyd14](https://github.com/zyd14)!
+- Fixed a missing import in our docs. Thanks [@C0DK](https://github.com/C0DK)!
+
+### Experimental
+
+- Asset checks are now displayed in the asset graph and sidebar.
+- [Breaking] Asset check severity is now set at runtime on `AssetCheckResult` instead of in the `@asset_check` definition. Now you can define one check that either errors or warns depending on your check logic. `ERROR` severity no longer causes the run to fail. We plan to reintroduce this functionality with a different API.
+- [Breaking] `@asset_check` now requires the `asset=` argument, even if the asset is passed as an input to the decorated function. Example:
+
+  ```python
+  @asset_check(asset=my_asset)
+  def my_check(my_asset) -> AssetCheckResult:
+      ...
+  ```
+
+- [Breaking] `AssetCheckSpec` now takes `asset=` instead of `asset_key=`, and can accept either a key or an asset definition.
+- [Bugfix] Asset checks now work on assets with `key_prefix` set.
+- [Bugfix] `Execution failure` asset checks are now displayed correctly on the checks tab.
+
+### Documentation
+
+- [dagster-dbt] Added example of invoking `DbtCliResource` in custom asset/op to API docs.
+- [dagster-dbt] Added reference to explain how a dbt manifest can be created at run time or build time.
+- [dagster-dbt] Added reference to outline the steps required to deploy a Dagster and dbt project in CI/CD.
+- Miscellaneous fixes to broken links and typos.
+
+# 1.4.11 / 0.20.11 (libraries)
+
+### New
+
+- Dagster code servers now wait to shut down until any calls that they are running have finished, preventing them from stopping while in the middle of executing sensor ticks or other long-running operations.
+- The `dagster execute job` cli now accepts `—-op-selection` (thanks @silent-lad!)
+- [ui] Option (Alt) + R now reloads all code locations (OSS only)
+
+### Bugfixes
+
+- Adds a check to validate partition mappings when directly constructing `AssetsDefinition` instances.
+- Assets invoked in composition functions like `@graph` and `@job` now work again, fixing a regression introduced in 1.4.5.
+- Fixed an issue where a race condition with parallel runs materializing the same asset could cause a run to raise a RecursionError during execution.
+- Fixed an issue where including a resource in both a schedule and a job raised a “Cannot specify resource requirements” exception when the definitions were loaded.
+- The `ins` argument to `graph_asset` is now respected correctly.
+- Fixed an issue where the daemon process could sometimes stop with a heartbeat failure when the first sensor it ran took a long time to execute.
+- Fixed an issue where `dagster dev` failed on startup when the `DAGSTER_GRPC_PORT` `environment variable was set in the environment.
+- `deps` arguments for an asset can now be specified as an iterable instead of a sequence, allowing for sets to be passed.
+- [dagster-aws] Fixed a bug where the S3PickleIOManager didn’t correctly handle missing partitions when allow_missing_partitions was set. Thanks @o-sirawat!
+- [dagster-k8s] in the helm chart, the daemon `securityContext` setting now applies correctly to all init containers (thanks @maowerner!)
+
+### Community Contributions
+
+- [dagster-databricks] Migrated to use new official databricks Python SDK. Thanks @judahrand!
+
+### Experimental
+
+- New APIs for defining and executing checks on software-defined assets. These APIs are very early and subject to change. The corresponding UI has limited functionality. [Docs](https://docs.dagster.io/_apidocs/asset-checks)
+- Adds a new auto-materialize skip rule `AutoMaterializeRule.skip_on_not_all_parents_updated` that enforces that an asset can only be materialized if all parents have been materialized since the asset's last materialization.
+- Exposed an auto-materialize skip rule – `AutoMaterializeRule.skip_on_parent_missing` –which is already part of the behavior of the default auto-materialize policy.
+- Auto-materialize evaluation history will now be stored for 1 month, instead of 1 week.
+- The auto-materialize asset daemon now includes more logs about what it’s doing for each asset in each tick in the Dagster Daemon process output.
+
+### Documentation
+
+- [dagster-dbt] Added reference docs for `dagster-dbt project scaffold`.
+
+### Dagster Cloud
+
+- Fixed an issue where the Docker agent would sometimes fail to load code locations with long names with a hostname connection error.
+
+# 1.4.10 / 0.20.10 (libraries)
+
+### Bugfixes
+
+- [dagster-webserver] Fixed an issue that broke loading static files on Windows.
+
+# 1.4.9 / 0.20.9 (libraries)
+
+### Bugfixes
+
+- [dagster-webserver] Fixed an issue that caused some missing icons in the UI.
+
+# 1.4.8 / 0.20.8 (libraries)
+
+### New
+
+- A new `@partitioned_config` decorator has been added for defined configuration for partitioned jobs. Thanks @danielgafni!
+- [dagster-aws] The `ConfigurablePickledObjectS3IOManager` has been renamed `S3PickleIOManager` for simplicity. The `ConfigurablePickledObjecS3IOManager` will continue to be available but is considered deprecated in favor of `S3PickleIOManager`. There is no change in the functionality of the I/O manager.
+- [dagster-azure] The `ConfigurablePickledObjectADLS2IOManager` has been renamed `ADLS2PickleIOManager` for simplicity. The `ConfigurablePickledObjectADLS2IOManager` will continue to be available but is considered deprecated in favor of `ADLS2PickleIOManager`. There is no change in the functionality of the I/O manager.
+- [dagster-dbt] When an exception is raised when invoking a dbt command using `DbtCliResource`, the exception message now includes a link to the `dbt.log` produced. This log file can be inspected for debugging.
+- [dagster-gcp] The `ConfigurablePickledObjectGCSIOManager` has been renamed `GCSPickleIOManager` for simplicity. The `ConfigurablePickledObjecGCSIOManager` will continue to be available but is considered deprecated in favor of `GCSPickleIOManager`. There is no change in the functionality of the I/O manager.
+
+### Bugfixes
+
+- Fixed a bug that caused a `DagsterInvariantViolationError` when executing a multi-asset where both assets have self-dependencies on earlier partitions.
+- Fixed an asset backfill issue where some runs continue to be submitted after a backfill is requested for cancellation.
+- [dagster-dbt] Fixed an issue where using the `--debug` flag raised an exception in the Dagster framework.
+- [ui] “Launched run” and “Launched backfill” toasts in the Dagster UI behave the same way. To open in a new tab, hold the cmd/ctrl key when clicking “View”
+- [ui] When opening step compute logs, the view defaults to `stderr` which aligns with Python’s logging defaults.
+- [ui] When viewing a global asset graph with more than 100 assets, the “choose a subset to display” prompt is correctly aligned to the query input.
+
+### Community Contributions
+
+- Fix for loading assets with a `BackfillPolicy`, thanks @ruizh22!
+
+### Experimental
+
+- [dagster-graphql] The Dagster GraphQL Python client now includes a default timeout of 300 seconds for each query, to ensure that GraphQL requests don’t hang and never return a response. If you are running a query that is expected to take longer than 300 seconds, you can set the `timeout` argument when constructing a `DagsterGraphQLClient`.
+- [ui] We are continuing to improve the new horizontal rendering of the asset graph, which you can enable in Settings. This release increases spacing between nodes and improves the traceability of arrows on the graph.
+
+### Documentation
+
+- Several Pythonic resources and I/O managers now have API docs entries.
+- Updated the tutorial’s example project and content to be more explicit about resources.
+- [dagster-dbt] Added API docs examples for `DbtCliResource` and `DbtCliResource.cli(...)`.
+- Some code samples in API docs for `InputContext` and `OutputContext` have been fixed. Thanks @Sergey Mezentsev!
+
+### Dagster Cloud
+
+- When setting up a new organization by importing a dbt project, using GitLab is now supported.
+
+# 1.4.7 / 0.20.7 (libraries)
+
+### Experimental
+
+- Added a `respect_materialization_data_versions` option to auto materialization. It can enabled in `dagster.yaml` with
+
+  ```yaml
+  auto_materialize:
+    respect_materialization_data_versions: True
+  ```
+
+  This flag may be changed or removed in the near future.
+
+# 1.4.6 / 0.20.6 (libraries)
+
+### New
+
+- ops or assets with multiple outputs that are all required and return type `None`/ `Nothing` will interpret an explicitly or implicitly returned value `None` to indicate that all outputs were successful.
+- The `skip_reason` argument to the constructor of `SensorResult` now accepts a string in addition to a `SkipReason`.
+- [dagster-k8s] Added a `step_k8s_config` field to `k8s_job_executor` that allows you to customize the raw Kubernetes config for each step in a job. See [the docs](https://docs.dagster.io/deployment/guides/kubernetes/customizing-your-deployment#kubernetes-configuration-on-every-step-in-a-run) for more information.
+- [dagster-k8s] Launched run pods now have an additional code location label.
+- [dagster-ui] The runs table now lets you toggle which tags are always visible.
+- [dagster-dbt] `dagster-dbt project scaffold` now creates the scaffold in multiple files:
+  - `constants.py` contains a reference to your manifest and dbt project directory
+  - `assets.py` contains your initial dbt assets definitions
+  - `definitions.py` contains the code to load your asset definitions into the Dagster UI
+  - `schedules.py` contains an optional schedule to add for your dbt assets
+- [dagster-dbt] Added new methods `get_auto_materialize_policy` and `get_freshness_policy` to `DagsterDbtTranslator`.
+- [dagster-fivertran] Sync options can now be passed to `load_assets_from_fivetran_instance`.
+- [dagster-wandb] W&B IO Manager now handles partitions natively. (Thanks [@chrishiste](https://github.com/chrishiste)!)
+
+### Bugfixes
+
+- Previously, canceling large asset backfills would cause the daemon to time out and display a “not running” error. This has been fixed.
+- [dagster-ssh] Previously the `SSHResource` would warn when `allow_host_key_change` was set. Now known hosts are always loaded from the system hosts file, and the `allow_host_key_change` parameter is ignored.
+- Previously, when using AutoMaterializePolicies, partitioned assets downstream of partitioned observable source assets could be materialized before their parent partitions were observed. This has been fixed.
+
+### Documentation
+
+- `@graph_multi_asset` now has an API docs entry.
+- The `GCSComputeLogManager` example in the [Dagster Instance reference](https://docs.dagster.io/deployment/dagster-instance#gcscomputelogmanager) is now correct.
+- Several outdated K8s documentation links have been removed from the [Customizing your Kubernetes deployment guide](https://docs.dagster.io/deployment/guides/kubernetes/customizing-your-deployment).
+- Added callouts to the [GitHub](https://docs.dagster.io/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments-with-github) and [GitLab](https://docs.dagster.io/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments-with-gitlab) Branch Deployment guides specifying that some steps are optional for Serverless users.
+- The “Graphs” page under the “Concepts” section has been renamed to “Op Graphs” and moved inside under the “Ops” heading.
+- [dagster-dbt] Added API examples for `@dbt_assets` for the following use-cases:
+  - Running dbt commands with flags
+  - Running dbt commands with `--vars`
+  - Running multiple dbt commands
+  - Retrieving dbt artifacts after running a dbt command
+  - Invoking other Dagster resouces alongside dbt
+  - Defining and accessing Dagster config alongside dbt
+
+### Dagster Cloud
+
+- The viewer role now has permission to edit their own user tokens.
+
+# 1.4.5 / 0.20.5 (libraries)
+
+### New
+
+- `@graph_asset` now takes a `config` parameter equivalent to the parameter on `@graph`.
+- Added an optional `dynamic_partitions_store` argument to `DynamicPartitionsDefinition` for multi-partition run properly with dynamic partitions (Thanks @elzzz!).
+- [dagster-grpahql] Added ` partitionsByAssets` to `backfillParams` for ranged partition backfill (Thanks @ruizh22!).
+- [dagster-dbt] Support for `dbt-core==1.6` has been added.
+- [dagster-dbt] `DbtCliResource` now supports configuring `profiles_dir`.
+- [dagster-k8s] Allow specifying `restart_policy` on `k8s_job_op` (Thanks @Taadas!).
+- [dagster-snowflake] Added `authenticator` to `SnowflakePandasIOManager`, which allows specifying the authentication mechanism to use (Thanks @pengw0048!).
+- [ui] The Asset > Events page now allows you to filter by event type, making it easy to hide observations.
+- [ui] The Asset > Partitions page checks to see if the selected partition is stale and displays stale causes in the details pane.
+- [ui] Hovering over "Fresh" tags now provides detailed information about why the last materialization meets the asset's freshness policy.
+- [ui] The global asset graph can now be filtered to display a subset of the available asset groups.
+
+### Bugfixes
+
+- In some situations, multiple materializations of the same asset could be kicked off when using a lazy `AutoMaterializePolicy` with assets that had at least one source asset parent and at least one non-source asset parent. This has been fixed.
+- After applying an eager `AutoMaterializePolicy` to a time-partitioned asset downstream of an unpartitioned asset, the latest partition would only ever be materialized a single time, rather than updating in response to any parent updates. This has been fixed.
+- Fixed an issue that would cause the creation of a `StaticPartitionsDefinition` containing many thousands of partitions could take a significant amount of time.
+- The run coordinator daemon now uses a fresh request context on each iteration, fixing an issue where stale grpc server references could be used in certain high volume conditions.
+- Automatically generated data versions for partitioned assets now correctly reflect the data versions of upstream partitions. Previously, they were computed using the data versions from the most recent materializations of upstream assets regardless of partition.
+- [dagster-airbyte] Previously, attempting to load assets from an Airbyte instance in which some of the tables had hyphens in their name would result in an error. This has been fixed.
+- [dagster-dbt] Previously, attempting to load assets from a dbt project in which some of the models had hyphens in their name would result in an error. This has been fixed.
+- [dagstermill] Fixed a bug where known state for executing dagstermill ops was not correctly passed in (Thanks @motuzov!).
+- [ui] Pressing the up or down arrow key without a selection in the asset graph no longer causes a page error.
+
+### Documentation
+
+- Added the starter project’s template for Dagster University.
+- Fixed an incorrect method name in DagsterDbtTranslator Docs (Thanks @akan72!).
+
+### Dagster Cloud
+
+- When importing a dbt project on the Dagster Cloud setup page, an `Unexpected exception` error would be raised when scaffolding a pull request on a repository with no `profiles.yml`. This behavior has been updated to raise a more descriptive error message on the repo selection page.
+- The running multiple agents guide has been revamped to discuss running agent replicas and zero-downtime deployment of the agent.
+- The `agentReplicas` config setting on the helm chart has been renamed to `isolatedAgents`. In order to use this config setting, your user code dagster version needs to be `1.4.3` or greater.
+
+# 1.4.4 / 0.20.4 (libraries)
+
+### New
+
+- [ui] When viewing a run for auto-materialized assets, show a tag with information about the assets that were materialized.
+- [ui] In the Auto-materialize History view, when one or more of an asset’s parents have been updated, the set of updated parents will be viewable.
+- [ui] Link to the auto-materialized history for an asset from the asset DAG view.
+- [ui] For runs that were the result of auto-observation, show a tag for this in the Runs list view.
+- Added warnings for storage incompatibility with the experimental global op concurrency.
+
+### Bugfixes
+
+- [dagster-dbt] Fixed an issue where `dagster-dbt project scaffold` didn’t create a project directory with all the scaffolded files.
+- Fixed an issue which could cause errors when using the `SpecificPartitionsPartitionMapping` with auto-materialization.
+
+### Breaking Change
+
+- Previously, it was possible to set `max_materializations_per_minute` on an `AutoMaterializePolicy` to a non-positive number. This will now result in an error.
+
+### Community Contributions
+
+- Fix for loading multipartitions paths in `upath_io_manager` from @harrylojames; thank you!
+- Docs typo fix from @C0DK; thank you!
+
+### Documentation
+
+- Revamped the dagster-dbt tutorial to take advantage of `dagster project scaffold` and the new dagster-dbt APIs.
+
+# 1.4.3 / 0.20.3 (libraries)
+
+### New
+
+- [dagster-dbt] When invoking`dagster-dbt project scaffold` on a dbt project directory, if a `profiles.yml` exists in the root of the directory, its contents are used to add dbt adapter packages to the scaffolded `setup.py`.
+- The default sentinel value for the multiprocessing executor’s `max_concurrent` field has been changed from `0` to `None` to more clearly signal its intent. A value of `0` is still interpreted as the sentinel value which dynamically allocates `max_concurrent` based on detected CPU count.
+
+### Bugfixes
+
+- IO managers defined on jobs will now be properly merged with resources defined in `Definitions`, so that jobs are able to override the IO manager used.
+- [dagster-fivetran] Fixed an issue where `EnvVars` in a `FivetranResource` would not be evaluated when loading assets from the Fivetran instance.
+- [dagster-airbyte] Fixed an issue where `EnvVars` in an `AirbyteResource` would not be evaluated when loading assets from the Airbyte resource.
+
+### Documentation
+
+- [dagster-dbt] Added API docs for `DbtCliResource`, `DbtCliInvocation`, `@dbt_assets`, `DagsterDbtTranslator`, `dagster-dbt project scaffold`
+- [dagster-dbt] Expanded references for new APIs:
+  - Added documentation to customize asset definition attributes for dbt assets
+  - Added documentation to define upstream and downstream dependencies to dbt assets
+  - Added documentation to define schedules for dbt assets
+
+### Dagster Cloud
+
+- The experimental agent config setting `agent_replicas`has been deprecated in favor of a new name `isolated_agents` (`agentReplicas` --> `isolatedAgents` in the helm chart). Upgrading to the new name requires all code locations to be on `1.4.3` or greater.
+
 # 1.4.2 / 0.20.2 (libraries)
 
 ### Bugfixes
@@ -14,20 +300,20 @@
 
 # 1.4.0 / 0.20.0 (libraries) "Material Girl"
 
-## ****Major Changes since 1.3.0 (core) / 0.19.0 (libraries)****
+## **Major Changes since 1.3.0 (core) / 0.19.0 (libraries)**
 
 ### Core
 
 - **Auto-materialize history** – We’ve added a UI that tracks why assets were or were not materialized according to their`AutoMaterializePolicy`. It’s located under `Assets` → Select an asset with an `AutoMaterializePolicy` → `Auto-materialize history` tab.
-- **********Auto-materialize performance********** – We’ve made significant performance improvements to the Asset Daemon, allowing it to keep up with asset graphs containing thousands of assets and assets with a large history of previously-materialized partitions.
+- **Auto-materialize performance** – We’ve made significant performance improvements to the Asset Daemon, allowing it to keep up with asset graphs containing thousands of assets and assets with a large history of previously-materialized partitions.
 - **Asset backfill cancellation** — Asset backfills can now be canceled, bring them to parity with job backfills. When an asset backfill is requested for cancellation, the daemon cancels runs until all runs are terminated, then marks the backfill as “canceled”.
 - **non_argument_deps → deps** – We’ve deprecated the `non_argument_deps` parameter of `@asset` and `@multi_asset` in favor of a new `deps` parameter. The new parameter makes it clear that this is a first-class way of defining dependencies, makes code more concise, and accepts `AssetsDefinition` and `SourceAsset` objects, in addition to the `str`s and `AssetKey`s that the previous parameter accepted.
 - **Group-level asset status UI** – the new Assets Overview dashboard, located underneath the Activity tab of the Overview page, shows the status all the assets in your deployment, rolled up by group.
 - **Op concurrency (experimental)** — We’ve added a feature that allows limiting the number of concurrently executing ops across runs. [[docs](https://docs.dagster.io/guides/limiting-concurrency-in-data-pipelines#limiting-opasset-concurrency-across-runs)]
 - `DynamicPartitionsDefinition` and `SensorResult` are no longer marked experimental.
-- **********************************************************************Automatically observe source assets, without defining jobs (experimental)********************************************************************** – The `@observable_source_asset` decorator now accepts an `auto_observe_interval_minutes` parameter. If the asset daemon is turned on, then the observation function will automatically be run at this interval. Downstream assets with eager auto-materialize policies will automatically run if the observation function indicates that the source asset has changed. [[docs](https://docs.dagster.io/concepts/assets/asset-auto-execution#auto-materialize-policies-and-data-versions)]
-- **********Dagit → Dagster UI********** – To reduce the number of Dagster-specific terms that new users need to learn when learning Dagster, “Dagit” has been renamed to the “The Dagster UI”. The `dagit` package is deprecated in favor of the `dagster-webserver` package.
-- ****************************************************************Default config in the Launchpad**************************************************************** - When you open the launchpad to kick off a job or asset materialization, Dagster will now automatically populate the default values for each field.
+- **Automatically observe source assets, without defining jobs (experimental** – The `@observable_source_asset` decorator now accepts an `auto_observe_interval_minutes` parameter. If the asset daemon is turned on, then the observation function will automatically be run at this interval. Downstream assets with eager auto-materialize policies will automatically run if the observation function indicates that the source asset has changed. [[docs](https://docs.dagster.io/concepts/assets/asset-auto-execution#auto-materialize-policies-and-data-versions)]
+- **Dagit → Dagster UI** – To reduce the number of Dagster-specific terms that new users need to learn when learning Dagster, “Dagit” has been renamed to the “The Dagster UI”. The `dagit` package is deprecated in favor of the `dagster-webserver` package.
+- **Default config in the Launchpad** - When you open the launchpad to kick off a job or asset materialization, Dagster will now automatically populate the default values for each field.
 
 ### dagster-dbt
 
@@ -76,11 +362,11 @@
 
 ### Deprecations
 
-- The `dagit` python package is deprecated and will be removed in 2.0 in favor  of `dagster-webserver`. See the migration guide for details.
-- The following fields containing “dagit” in the Dagster helm chart schema have been deprecated in favor of  “dagsterWebserver” equivalents (see migration guide for details):
-    - `dagit` → `dagsterWebserver`
-    - `ingress.dagit` → `ingress.dagsterWebserver`
-    - `ingress.readOnlyDagit` → `ingress.readOnlyDagsterWebserver`
+- The `dagit` python package is deprecated and will be removed in 2.0 in favor of `dagster-webserver`. See the migration guide for details.
+- The following fields containing “dagit” in the Dagster helm chart schema have been deprecated in favor of “dagsterWebserver” equivalents (see migration guide for details):
+  - `dagit` → `dagsterWebserver`
+  - `ingress.dagit` → `ingress.dagsterWebserver`
+  - `ingress.readOnlyDagit` → `ingress.readOnlyDagsterWebserver`
 - [Dagster Cloud ECS Agent] We've introduced performance improvements that rely on the [AWS Resource Groups Tagging API](https://docs.aws.amazon.com/resourcegroupstagging/latest/APIReference/overview.html). To enable, grant your agent's IAM policy permission to `tag:DescribeResources`. Without this policy, the ECS Agent will log a deprecation warning and fall back to its old behavior (listing all ECS services in the cluster and then listing each service's tags).
 - `DbtCliClientResource`, `dbt_cli_resource` and `DbtCliOutput` are now being deprecated in favor of `DbtCliResource`.
 - A number of arguments on `load_assets_from_dbt_project` and `load_assets_from_dbt_manifest` are now deprecated in favor of other options. See the migration for details.
@@ -94,7 +380,6 @@
 
 - All public methods in the Dagster API now have docstrings.
 - The entirety of the documentation has been updated to now refer to the “Dagster webserver” or “Dagster UI” where “Dagit” was previously used for both entities.
-
 
 # 1.3.14 (core) / 0.19.14 (libraries)
 
@@ -119,12 +404,12 @@
 - [dbt] When invoking `DbtCli.cli` from inside a `@dbt_assets`-decorated function, you no longer need to supply the manifest argument as long as you provide the context argument.
 - [dbt] The `DbtManifest` object can now generate schedules using dbt selection syntax.
 
-```yaml
+```python
 dbt_manifest.build_schedule(
-      job_name="materialize_dbt_models",
-      cron_schedule="0 0 * * *",
-      dbt_select="fqn:*"
-  )
+  job_name="materialize_dbt_models",
+  cron_schedule="0 0 * * *",
+  dbt_select="fqn:*"
+)
 ```
 
 - [dbt] When invoking `DbtCli.cli` and the underlying command fails, an exception will now be raised. To suppress the exception, run the `DbtCli.cli(..., raise_on_error=False`).

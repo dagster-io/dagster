@@ -354,9 +354,7 @@ compute_logs:
     prefix: "{prefix}"
     default_azure_credential:
       exclude_environment_credentials: true
-""".format(
-        storage_account=storage_account, container=container, prefix=prefix
-    )
+""".format(storage_account=storage_account, container=container, prefix=prefix)
 
     with tempfile.TemporaryDirectory() as tempdir:
         with open(os.path.join(tempdir, "dagster.yaml"), "wb") as f:

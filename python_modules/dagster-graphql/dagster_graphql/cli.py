@@ -98,14 +98,15 @@ def execute_query_against_remote(host, query, variables):
     parsed_url = urlparse(host)
     if not (parsed_url.scheme and parsed_url.netloc):
         raise click.UsageError(
-            "Host {host} is not a valid URL. Host URL should include scheme ie http://localhost"
-            .format(host=host)
+            f"Host {host} is not a valid URL. Host URL should include scheme ie http://localhost."
         )
 
-    sanity_check = requests.get(urljoin(host, "/dagit_info"))
+    sanity_check = requests.get(urljoin(host, "/server_info"))
     sanity_check.raise_for_status()
-    if "dagit" not in sanity_check.text:
-        raise click.UsageError(f"Host {host} failed sanity check. It is not a dagit server.")
+    if "dagster_webserver" not in sanity_check.text:
+        raise click.UsageError(
+            f"Host {host} failed sanity check. It is not a dagster-webserver instance."
+        )
     response = requests.post(
         urljoin(host, "/graphql"),
         # send query and vars as post body to avoid uri length limits
@@ -161,7 +162,7 @@ PREDEFINED_QUERIES = {
     "--remote",
     "-r",
     type=click.STRING,
-    help="A URL for a remote instance running dagit server to send the GraphQL request to.",
+    help="A URL for a remote instance running dagster-webserver to send the GraphQL request to.",
 )
 @click.option(
     "--output",

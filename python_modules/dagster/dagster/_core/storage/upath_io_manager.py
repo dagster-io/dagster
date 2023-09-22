@@ -196,17 +196,21 @@ class UPathIOManager(MemoizableIOManager):
             ]
             return "/".join(ordered_dimension_keys)
 
-        formatted_partition_keys = [
-            _formatted_multipartitioned_path(pk) if isinstance(pk, MultiPartitionKey) else pk
-            for pk in context.asset_partition_keys
-        ]
+        formatted_partition_keys = {
+            partition_key: (
+                _formatted_multipartitioned_path(partition_key)
+                if isinstance(partition_key, MultiPartitionKey)
+                else partition_key
+            )
+            for partition_key in context.asset_partition_keys
+        }
 
         asset_path = self._get_path_without_extension(context)
         return {
-            partition: self._with_extension(
+            partition_key: self._with_extension(
                 self.get_path_for_partition(context, asset_path, partition)
             )
-            for partition in formatted_partition_keys
+            for partition_key, partition in formatted_partition_keys.items()
         }
 
     def _get_multipartition_backcompat_paths(
@@ -425,16 +429,22 @@ class UPathIOManager(MemoizableIOManager):
         if context.dagster_type.typing_type == type(None):
             check.invariant(
                 obj is None,
-                (
-                    "Output had Nothing type or 'None' annotation, but handle_output received"
-                    f" value that was not None and was of type {type(obj)}."
-                ),
+                "Output had Nothing type or 'None' annotation, but handle_output received"
+                f" value that was not None and was of type {type(obj)}.",
             )
             return None
 
         if context.has_asset_partitions:
             paths = self._get_paths_for_partitions(context)
-            assert len(paths) == 1
+
+            check.invariant(
+                len(paths) == 1,
+                f"The current IO manager {type(self)} does not support persisting an output"
+                " associated with multiple partitions. This error is likely occurring because a"
+                " backfill was launched using the 'single run' option. Instead, launch the"
+                " backfill with the 'multiple runs' option.",
+            )
+
             path = list(paths.values())[0]
         else:
             path = self._get_path(context)

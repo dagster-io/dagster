@@ -687,9 +687,11 @@ def test_subsetting(
         job_id=DBT_CLOUD_JOB_ID,
         cause=f"Materializing software-defined assets in Dagster run {result.run_id[:8]}",
         steps_override=[
-            f"{dbt_materialization_command} {dbt_filter_option}".strip()
-            if dbt_filter_option
-            else full_dbt_materialization_command
+            (
+                f"{dbt_materialization_command} {dbt_filter_option}".strip()
+                if dbt_filter_option
+                else full_dbt_materialization_command
+            )
         ],
     )
 

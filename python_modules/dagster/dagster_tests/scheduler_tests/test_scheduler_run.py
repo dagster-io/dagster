@@ -528,7 +528,7 @@ def always_running_schedule(context):
 
 
 @schedule(
-    cron_schedule="@daily",
+    cron_schedule=["@daily", "0 0 * * 5"],
     job_name="the_job",
     execution_timezone="UTC",
     default_status=DefaultScheduleStatus.STOPPED,
@@ -1116,10 +1116,8 @@ def test_bad_should_execute(
             initial_datetime,
             TickStatus.FAILURE,
             [run.run_id for run in instance.get_runs()],
-            (
-                "Error occurred during the execution of should_execute for schedule"
-                " bad_should_execute_schedule"
-            ),
+            "Error occurred during the execution of should_execute for schedule"
+            " bad_should_execute_schedule",
             expected_failure_count=1,
         )
 
@@ -1899,10 +1897,8 @@ def test_multi_runs_missing_run_key(
             freeze_datetime,
             TickStatus.FAILURE,
             [],
-            (
-                "Error occurred during the execution function for schedule "
-                "multi_run_schedule_with_missing_run_key"
-            ),
+            "Error occurred during the execution function for schedule "
+            "multi_run_schedule_with_missing_run_key",
             expected_failure_count=1,
         )
 
@@ -2062,10 +2058,8 @@ def test_grpc_server_down(instance: DagsterInstance, executor: ThreadPoolExecuto
                 freeze_datetime,
                 TickStatus.FAILURE,
                 [],
-                (
-                    "Unable to reach the user code server for schedule simple_schedule. Schedule"
-                    " will resume execution once the server is available."
-                ),
+                "Unable to reach the user code server for schedule simple_schedule. Schedule"
+                " will resume execution once the server is available.",
                 expected_failure_count=0,
             )
 

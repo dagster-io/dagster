@@ -32,7 +32,11 @@ from dagster._grpc.server import (
 from dagster._grpc.types import ListRepositoriesResponse, SensorExecutionArgs, StartRunResult
 from dagster._serdes import serialize_value
 from dagster._serdes.serdes import deserialize_value
-from dagster._utils import file_relative_path, find_free_port
+from dagster._utils import (
+    file_relative_path,
+    find_free_port,
+    safe_tempfile_path_unmanaged,
+)
 from dagster._utils.error import SerializableErrorInfo
 from dagster.version import __version__ as dagster_version
 
@@ -104,6 +108,50 @@ def test_python_environment_args():
                 instance.get_ref(), port, socket=None, loadable_target_origin=loadable_target_origin
             )
             assert process.args[:5] == [sys.executable, "-m", "dagster", "api", "grpc"]
+        finally:
+            if process:
+                process.terminate()
+                process.wait()
+
+
+@pytest.mark.skipif(_seven.IS_WINDOWS, reason="Windows requires ports")
+def test_env_var_port_collision():
+    port = find_free_port()
+    socket = safe_tempfile_path_unmanaged()
+    python_file = file_relative_path(__file__, "grpc_repo.py")
+    loadable_target_origin = LoadableTargetOrigin(
+        executable_path=sys.executable, python_file=python_file
+    )
+
+    with instance_for_test() as instance:
+        process = None
+        try:
+            # env var that would cause a collision with port if we are not careful
+            with environ({"DAGSTER_GRPC_SOCKET": str(socket)}):
+                process = open_server_process(
+                    instance.get_ref(),
+                    port,
+                    socket=None,
+                    loadable_target_origin=loadable_target_origin,
+                )
+                client = DagsterGrpcClient(port=port, host="localhost")
+                wait_for_grpc_server(process, client, [])
+        finally:
+            if process:
+                process.terminate()
+                process.wait()
+
+        try:
+            # env var that would cause a collision with socket if we are not careful
+            with environ({"DAGSTER_GRPC_PORT": str(port)}):
+                process = open_server_process(
+                    instance.get_ref(),
+                    port=None,
+                    socket=socket,
+                    loadable_target_origin=loadable_target_origin,
+                )
+                client = DagsterGrpcClient(socket=socket, host="localhost")
+                wait_for_grpc_server(process, client, [])
         finally:
             if process:
                 process.terminate()

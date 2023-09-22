@@ -189,6 +189,30 @@ def test_multi_asset_deps_via_mixed_types():
     assert res.success
 
 
+def test_multi_asset_deps_with_set():
+    @multi_asset(
+        outs={
+            "asset_1": AssetOut(),
+            "asset_2": AssetOut(),
+        }
+    )
+    def a_multi_asset():
+        return None, None
+
+    @asset(deps=set(["asset_1", "asset_2"]))
+    def depends_on_both_sub_assets():
+        return None
+
+    assert len(depends_on_both_sub_assets.input_names) == 2
+    assert depends_on_both_sub_assets.op.ins["asset_1"].dagster_type.is_nothing
+    assert depends_on_both_sub_assets.op.ins["asset_2"].dagster_type.is_nothing
+
+    res = materialize(
+        [a_multi_asset, depends_on_both_sub_assets], resources={"io_manager": TestingIOManager()}
+    )
+    assert res.success
+
+
 def test_multi_asset_deps_via_assets_definition_fails():
     @multi_asset(
         outs={
@@ -393,12 +417,7 @@ def test_dep_via_deps_and_fn():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        # this is a known bad error experience. TODO - update the error to be helpful
-        match=(
-            "@op 'depends_on_upstream_asset' decorated function has parameter 'the_upstream_asset'"
-            " that is one of the input_defs of type 'Nothing' which should not be included since no"
-            " data will be passed for it."
-        ),
+        match=r"deps value .* also declared as input/AssetIn",
     ):
 
         @asset(deps=[the_upstream_asset])

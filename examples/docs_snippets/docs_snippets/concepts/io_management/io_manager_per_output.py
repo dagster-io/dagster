@@ -1,5 +1,5 @@
 # start_marker
-from dagster_aws.s3 import ConfigurablePickledObjectS3IOManager, S3Resource
+from dagster_aws.s3 import S3PickleIOManager, S3Resource
 
 from dagster import FilesystemIOManager, Out, job, op
 
@@ -17,9 +17,7 @@ def op_2(a):
 @job(
     resource_defs={
         "fs": FilesystemIOManager(),
-        "s3_io": ConfigurablePickledObjectS3IOManager(
-            s3_resource=S3Resource(), s3_bucket="test-bucket"
-        ),
+        "s3_io": S3PickleIOManager(s3_resource=S3Resource(), s3_bucket="test-bucket"),
     }
 )
 def my_job():

@@ -8,10 +8,13 @@ Utilities for interfacing with AWS with Dagster.
 S3
 --
 
-.. autoclass:: dagster_aws.s3.S3ComputeLogManager
-
-.. autoconfigurable:: dagster_aws.s3.s3_resource
+.. autoconfigurable:: dagster_aws.s3.S3Resource
   :annotation: ResourceDefinition
+
+.. autoconfigurable:: dagster_aws.s3.S3PickleIOManager
+  :annotation: IOManagerDefinition
+
+.. autoclass:: dagster_aws.s3.S3ComputeLogManager
 
 .. autodata:: dagster_aws.s3.S3Coordinate
   :annotation: DagsterType
@@ -29,8 +32,7 @@ S3
             bucket: my-bucket
             key: my-key
 
-.. autoconfigurable:: dagster_aws.s3.s3_pickle_io_manager
-  :annotation: IOManagerDefinition
+
 
 File Manager (Experimental)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -38,7 +40,7 @@ File Manager (Experimental)
 .. autoclass:: dagster_aws.s3.S3FileHandle
   :members:
 
-.. autoconfigurable:: dagster_aws.s3.s3_file_manager
+.. autoconfigurable:: dagster_aws.s3.S3FileManagerResource
   :annotation: ResourceDefinition
 
 
@@ -50,14 +52,14 @@ ECS
 
 Redshift
 --------
-.. autoconfigurable:: dagster_aws.redshift.redshift_resource
+.. autoconfigurable:: dagster_aws.redshift.RedshiftClientResource
   :annotation: ResourceDefinition
 
 
 Testing
 ^^^^^^^
 
-.. autoconfigurable:: dagster_aws.redshift.fake_redshift_resource
+.. autoconfigurable:: dagster_aws.redshift.FakeRedshiftClientResource
   :annotation: ResourceDefinition
 
 
@@ -86,6 +88,34 @@ SecretsManager
 --------------
 
 Resources which surface SecretsManager secrets for use in Dagster resources and jobs.
+
+.. autoconfigurable:: dagster_aws.secretsmanager.SecretsManagerResource
+  :annotation: ResourceDefinition
+
+.. autoconfigurable:: dagster_aws.secretsmanager.SecretsManagerSecretsResource
+  :annotation: ResourceDefinition
+
+
+Legacy
+--------
+
+.. autoconfigurable:: dagster_aws.s3.ConfigurablePickledObjectS3IOManager
+  :annotation: IOManagerDefinition
+
+.. autoconfigurable:: dagster_aws.s3.s3_resource
+  :annotation: ResourceDefinition
+
+.. autoconfigurable:: dagster_aws.s3.s3_pickle_io_manager
+  :annotation: IOManagerDefinition
+
+.. autoconfigurable:: dagster_aws.s3.s3_file_manager
+  :annotation: ResourceDefinition
+
+.. autoconfigurable:: dagster_aws.redshift.redshift_resource
+  :annotation: ResourceDefinition
+
+.. autoconfigurable:: dagster_aws.redshift.fake_redshift_resource
+  :annotation: ResourceDefinition
 
 .. autoconfigurable:: dagster_aws.secretsmanager.secretsmanager_resource
   :annotation: ResourceDefinition

@@ -29,6 +29,7 @@ from dagster_k8s.launcher import K8sRunLauncher
 from .client import DagsterKubernetesClient
 from .container_context import K8sContainerContext
 from .job import (
+    USER_DEFINED_K8S_CONFIG_SCHEMA,
     DagsterK8sJobConfig,
     construct_dagster_k8s_job,
     get_k8s_job_name,
@@ -67,6 +68,11 @@ _K8S_EXECUTOR_CONFIG_SCHEMA = merge_dicts(
             ),
         ),
         "tag_concurrency_limits": get_tag_concurrency_limits_config(),
+        "step_k8s_config": Field(
+            USER_DEFINED_K8S_CONFIG_SCHEMA,
+            is_required=False,
+            description="Raw Kubernetes configuration for each step launched by the executor.",
+        ),
     },
 )
 
@@ -133,6 +139,9 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
         namespace=exc_cfg.get("job_namespace"),  # type: ignore
         resources=exc_cfg.get("resources"),  # type: ignore
         scheduler_name=exc_cfg.get("scheduler_name"),  # type: ignore
+        # step_k8s_config feeds into the run_k8s_config field because it is merged
+        # with any configuration for the run that was set on the run launcher or code location
+        run_k8s_config=exc_cfg.get("step_k8s_config"),  # type: ignore
     )
 
     if "load_incluster_config" in exc_cfg:
@@ -256,6 +265,16 @@ class K8sStepHandler(StepHandler):
         if not job_config.job_image:
             raise Exception("No image included in either executor config or the job")
 
+        run = step_handler_context.dagster_run
+        labels = {
+            "dagster/job": run.job_name,
+            "dagster/op": step_key,
+            "dagster/run-id": step_handler_context.execute_step_args.run_id,
+        }
+        if run.external_job_origin:
+            labels["dagster/code-location"] = (
+                run.external_job_origin.external_repository_origin.code_location_origin.location_name
+            )
         job = construct_dagster_k8s_job(
             job_config=job_config,
             args=args,
@@ -263,16 +282,12 @@ class K8sStepHandler(StepHandler):
             pod_name=pod_name,
             component="step_worker",
             user_defined_k8s_config=container_context.get_run_user_defined_k8s_config(),
-            labels={
-                "dagster/job": step_handler_context.dagster_run.job_name,
-                "dagster/op": step_key,
-                "dagster/run-id": step_handler_context.execute_step_args.run_id,
-            },
+            labels=labels,
             env_vars=[
                 *step_handler_context.execute_step_args.get_command_env(),
                 {
                     "name": "DAGSTER_RUN_JOB_NAME",
-                    "value": step_handler_context.dagster_run.job_name,
+                    "value": run.job_name,
                 },
                 {"name": "DAGSTER_RUN_STEP_KEY", "value": step_key},
                 *container_context.env,

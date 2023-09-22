@@ -1,4 +1,5 @@
 import json
+import os
 from pathlib import Path
 from typing import Optional, Set
 
@@ -7,8 +8,9 @@ from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.events import AssetKey
 from dagster_dbt import build_dbt_asset_selection
 from dagster_dbt.asset_decorator import dbt_assets
+from dagster_dbt.dbt_manifest import DbtManifestParam
 
-manifest_path = Path(__file__).parent.joinpath("..", "sample_manifest.json")
+manifest_path = Path(__file__).joinpath("..", "..", "sample_manifest.json").resolve()
 
 with open(manifest_path, "r") as f:
     manifest = json.load(f)
@@ -117,6 +119,31 @@ def test_dbt_asset_selection(
         dbt_select=select or "fqn:*",
         dbt_exclude=exclude,
     )
+    selected_asset_keys = asset_selection.resolve(all_assets=asset_graph)
+
+    assert selected_asset_keys == expected_asset_keys
+
+
+@pytest.mark.parametrize("manifest", [manifest, manifest_path, os.fspath(manifest_path)])
+def test_dbt_asset_selection_manifest_argument(manifest: DbtManifestParam) -> None:
+    expected_asset_keys = {
+        AssetKey(key.split("/"))
+        for key in {
+            "sort_by_calories",
+            "cold_schema/sort_cold_cereals_by_calories",
+            "subdir_schema/least_caloric",
+            "sort_hot_cereals_by_calories",
+            "orders_snapshot",
+            "cereals",
+        }
+    }
+
+    @dbt_assets(manifest=manifest)
+    def my_dbt_assets():
+        ...
+
+    asset_graph = AssetGraph.from_assets([my_dbt_assets])
+    asset_selection = build_dbt_asset_selection([my_dbt_assets], dbt_select="fqn:*")
     selected_asset_keys = asset_selection.resolve(all_assets=asset_graph)
 
     assert selected_asset_keys == expected_asset_keys

@@ -1,3 +1,5 @@
+import uuid
+
 import kubernetes
 import pytest
 from dagster import RetryRequested, job, op
@@ -61,6 +63,33 @@ def test_k8s_job_op(namespace, cluster_provider):
 
     job_name = get_k8s_job_name(run_id, second_op.name)
     assert "GOODBYE" in _get_pod_logs(cluster_provider, job_name, namespace)
+
+
+@pytest.mark.default
+def test_custom_k8s_op_override_job_name(namespace, cluster_provider):
+    custom_k8s_job_name = str(uuid.uuid4())
+
+    @op
+    def my_custom_op(context):
+        execute_k8s_job(
+            context,
+            image="busybox",
+            command=["/bin/sh", "-c"],
+            args=["echo HI"],
+            namespace=namespace,
+            load_incluster_config=False,
+            kubeconfig_file=cluster_provider.kubeconfig_file,
+            k8s_job_name=custom_k8s_job_name,
+        )
+
+    @job
+    def my_job_with_custom_ops():
+        my_custom_op()
+
+    execute_result = my_job_with_custom_ops.execute_in_process()
+    assert execute_result.success
+
+    assert "HI" in _get_pod_logs(cluster_provider, custom_k8s_job_name, namespace)
 
 
 @pytest.mark.default
@@ -151,7 +180,7 @@ def test_k8s_job_op_with_timeout_fail(namespace, cluster_provider):
     def timeout_job():
         timeout_op()
 
-    with pytest.raises(DagsterK8sError, match="Timed out while waiting for pod to become ready"):
+    with pytest.raises(DagsterK8sError, match=r"Timed out while waiting for pod to become ready"):
         timeout_job.execute_in_process()
 
 
@@ -377,3 +406,56 @@ def test_k8s_job_op_with_paralellism(namespace, cluster_provider):
 
     assert "HI" in pods_logs[0]
     assert "HI" in pods_logs[1]
+
+
+@pytest.mark.default
+def test_k8s_job_op_with_restart_policy(namespace, cluster_provider):
+    """This tests works by creating a file in a volume mount, and then incrementing the number
+    in the file on each retry. If the number is 2, then the pod will succeed. Otherwise, it will
+    fail. This is to test that the pod restart policy is working as expected.
+    """
+    with_restart_policy = k8s_job_op.configured(
+        {
+            "image": "busybox",
+            "command": ["/bin/sh", "-c"],
+            "args": [
+                "filename=/data/retries; (count=$(cat $filename) && echo $(($count+1)) >"
+                " $filename) || (touch $filename && echo 0 > $filename); retries=$(cat $filename);"
+                ' if [ "$retries" = "2" ]; then echo HI && exit 0; else exit 1; fi;'
+            ],
+            "volume_mounts": [
+                {
+                    "name": "retry-policy-persistent-storage",
+                    "mount_path": "/data",
+                }
+            ],
+            "namespace": namespace,
+            "load_incluster_config": False,
+            "kubeconfig_file": cluster_provider.kubeconfig_file,
+            "job_spec_config": {
+                "backoffLimit": 5,
+                "parallelism": 2,
+                "completions": 2,
+            },
+            "pod_spec_config": {
+                "restart_policy": "OnFailure",
+                "volumes": [
+                    {
+                        "name": "retry-policy-persistent-storage",
+                        "empty_dir": {},
+                    }
+                ],
+            },
+        },
+        name="with_restart_policy",
+    )
+
+    @job
+    def with_restart_policy_job():
+        with_restart_policy()
+
+    execute_result = with_restart_policy_job.execute_in_process()
+    run_id = execute_result.dagster_run.run_id
+    job_name = get_k8s_job_name(run_id, with_restart_policy.name)
+
+    assert "HI" in _get_pod_logs(cluster_provider, job_name, namespace)

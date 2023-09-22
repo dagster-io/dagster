@@ -148,9 +148,9 @@ class DaemonWorkspace(BaseDaemonWorkspace):
             code_location=location,
             load_error=error,
             load_status=CodeLocationLoadStatus.LOADED,
-            display_metadata=location.get_display_metadata()
-            if location
-            else origin.get_display_metadata(),
+            display_metadata=(
+                location.get_display_metadata() if location else origin.get_display_metadata()
+            ),
             update_timestamp=time.time(),
         )
 

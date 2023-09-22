@@ -29,6 +29,7 @@ from dagster import (
     io_manager,
     materialize_to_memory,
     multi_asset,
+    observable_source_asset,
     op,
     resource,
     with_resources,
@@ -51,7 +52,9 @@ from dagster._core.snap.dep_snapshot import (
 from dagster._core.storage.event_log.base import EventRecordsFilter
 from dagster._core.test_utils import ignore_warning, instance_for_test
 from dagster._utils import safe_tempfile_path
-from dagster._utils.backcompat import ExperimentalWarning
+from dagster._utils.warnings import (
+    disable_dagster_warnings,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -83,7 +86,7 @@ def _asset_keys_for_node(result, node_name):
 def test_single_asset_job():
     @asset
     def asset1(context):
-        assert context.asset_key_for_output() == AssetKey(["asset1"])
+        assert context.asset_key == AssetKey(["asset1"])
         return 1
 
     job = build_assets_job("a", [asset1])
@@ -1378,9 +1381,7 @@ def reconstruct_asset_job():
 
 
 def test_asset_selection_reconstructable():
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=ExperimentalWarning)
-        warnings.simplefilter("ignore", category=DeprecationWarning)
+    with disable_dagster_warnings():
         with instance_for_test() as instance:
             run = instance.create_run_for_job(
                 job_def=my_job, asset_selection=frozenset([AssetKey("f")])
@@ -1679,7 +1680,7 @@ def test_graph_output_is_input_within_graph():
     assert result.output_for_node("complicated_graph", "asset_3") == 4
 
 
-@ignore_warning('"io_manager_def" is an experimental argument')
+@ignore_warning("Parameter `io_manager_def` .* is experimental")
 def test_source_asset_io_manager_def():
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
@@ -1767,8 +1768,8 @@ def test_source_asset_io_manager_key_provided():
     assert result.output_for_node("my_derived_asset") == 9
 
 
-@ignore_warning('"resource_defs" is an experimental argument')
-@ignore_warning('"io_manager_def" is an experimental argument')
+@ignore_warning("Parameter `resource_defs` .* is experimental")
+@ignore_warning("Parameter `io_manager_def` .* is experimental")
 def test_source_asset_requires_resource_defs():
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
@@ -1806,7 +1807,7 @@ def test_source_asset_requires_resource_defs():
     assert result.output_for_node("my_derived_asset") == 9
 
 
-@ignore_warning('"resource_defs" is an experimental argument')
+@ignore_warning("Parameter `resource_defs` .* is experimental")
 def test_other_asset_provides_req():
     # Demonstrate that assets cannot resolve each other's dependencies with
     # resources on each definition.
@@ -1825,7 +1826,7 @@ def test_other_asset_provides_req():
         build_assets_job(name="test", assets=[asset_reqs_foo, asset_provides_foo])
 
 
-@ignore_warning('"resource_defs" is an experimental argument')
+@ignore_warning("Parameter `resource_defs` .* is experimental")
 def test_transitive_deps_not_provided():
     @resource(required_resource_keys={"foo"})
     def unused_resource():
@@ -1842,7 +1843,7 @@ def test_transitive_deps_not_provided():
         build_assets_job(name="test", assets=[the_asset])
 
 
-@ignore_warning('"resource_defs" is an experimental argument')
+@ignore_warning("Parameter `resource_defs` .* is experimental")
 def test_transitive_resource_deps_provided():
     @resource(required_resource_keys={"foo"})
     def used_resource(context):
@@ -1858,7 +1859,7 @@ def test_transitive_resource_deps_provided():
     assert the_job.execute_in_process().success
 
 
-@ignore_warning('"io_manager_def" is an experimental argument')
+@ignore_warning("Parameter `io_manager_def` .* is experimental")
 def test_transitive_io_manager_dep_not_provided():
     @io_manager(required_resource_keys={"foo"})
     def the_manager():
@@ -1893,9 +1894,7 @@ def test_resolve_dependency_in_group():
         del asset1
         assert context.asset_key_for_input("asset1") == AssetKey(["abc", "asset1"])
 
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=ExperimentalWarning)
-
+    with disable_dagster_warnings():
         assert materialize_to_memory([asset1, asset2]).success
 
 
@@ -1915,9 +1914,7 @@ def test_resolve_dependency_fail_across_groups():
             " sources"
         ),
     ):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=ExperimentalWarning)
-
+        with disable_dagster_warnings():
             materialize_to_memory([asset1, asset2])
 
 
@@ -1944,9 +1941,7 @@ def test_resolve_dependency_multi_asset_different_groups():
             " sources"
         ),
     ):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=ExperimentalWarning)
-
+        with disable_dagster_warnings():
             materialize_to_memory([upstream, assets])
 
 
@@ -1982,6 +1977,7 @@ def test_get_base_asset_jobs_multiple_partitions_defs():
         source_assets=[],
         executor_def=None,
         resource_defs={},
+        asset_checks=[],
     )
     assert len(jobs) == 3
     assert {job_def.name for job_def in jobs} == {
@@ -1995,6 +1991,46 @@ def test_get_base_asset_jobs_multiple_partitions_defs():
         frozenset(["daily_asset", "daily_asset2", "unpartitioned_asset"]),
         frozenset(["hourly_asset", "unpartitioned_asset"]),
         frozenset(["daily_asset_different_start_date", "unpartitioned_asset"]),
+    }
+
+
+@ignore_warning("Function `observable_source_asset` is experimental")
+def test_get_base_asset_jobs_multiple_partitions_defs_and_observable_assets():
+    class B:
+        ...
+
+    partitions_a = StaticPartitionsDefinition(["a1"])
+
+    @observable_source_asset(partitions_def=partitions_a)
+    def asset_a():
+        ...
+
+    partitions_b = StaticPartitionsDefinition(["b1"])
+
+    @observable_source_asset(partitions_def=partitions_b)
+    def asset_b():
+        ...
+
+    @asset(partitions_def=partitions_b)
+    def asset_x(asset_b: B):
+        ...
+
+    jobs = get_base_asset_jobs(
+        assets=[
+            asset_x,
+        ],
+        source_assets=[
+            asset_a,
+            asset_b,
+        ],
+        executor_def=None,
+        resource_defs={},
+        asset_checks=[],
+    )
+    assert len(jobs) == 2
+    assert {job_def.name for job_def in jobs} == {
+        "__ASSET_JOB_0",
+        "__ASSET_JOB_1",
     }
 
 
@@ -2199,7 +2235,8 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
         b = 1
         c = b + 1
         out_values = {"a": a, "b": b, "c": c}
-        outputs_to_return = context.selected_output_names if allow_subset else "abc"
+        # Alphabetical order matches topological order here
+        outputs_to_return = sorted(context.selected_output_names) if allow_subset else "abc"
         for output_name in outputs_to_return:
             yield Output(out_values[output_name], output_name)
 
@@ -2233,7 +2270,8 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
         e = (c + 1) if c else None
         f = (d + e) if d and e else None
         out_values = {"d": d, "e": e, "f": f}
-        outputs_to_return = context.selected_output_names if allow_subset else "def"
+        # Alphabetical order matches topological order here
+        outputs_to_return = sorted(context.selected_output_names) if allow_subset else "def"
         for output_name in outputs_to_return:
             yield Output(out_values[output_name], output_name)
 

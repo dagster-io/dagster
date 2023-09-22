@@ -8,6 +8,7 @@ import coloredlogs
 
 import dagster._check as check
 import dagster._seven as seven
+from dagster._annotations import deprecated
 from dagster._config import Enum, EnumValue
 from dagster._core.definitions.logger_definition import logger
 from dagster._core.utils import PYTHON_LOGGING_LEVELS_MAPPING, coerce_valid_log_level
@@ -216,6 +217,11 @@ def define_default_formatter():
     return logging.Formatter(default_format_string(), default_date_format_string())
 
 
+@deprecated(
+    breaking_version="2.0",
+    subject="loggers.dagit",
+    emit_runtime_warning=False,
+)
 def configure_loggers(handler="default", log_level="INFO"):
     LOGGING_CONFIG = {
         "version": 1,
@@ -243,17 +249,17 @@ def configure_loggers(handler="default", log_level="INFO"):
         "loggers": {
             "dagster": {
                 "handlers": [handler],
-                "level": "INFO",
+                "level": log_level,
             },
             # Only one of dagster or dagster-webserver will be used at a time. We configure them
             # both here to avoid a dependency on the dagster-webserver package.
             "dagit": {
                 "handlers": [handler],
-                "level": "INFO",
+                "level": log_level,
             },
             "dagster-webserver": {
                 "handlers": [handler],
-                "level": "INFO",
+                "level": log_level,
             },
         },
     }

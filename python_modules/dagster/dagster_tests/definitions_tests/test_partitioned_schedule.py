@@ -9,11 +9,15 @@ from dagster import (
     build_schedule_context,
     define_asset_job,
     graph,
+    instance_for_test,
     op,
     repository,
 )
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
-from dagster._core.definitions.partition import StaticPartitionsDefinition
+from dagster._core.definitions.partition import (
+    DynamicPartitionsDefinition,
+    StaticPartitionsDefinition,
+)
 from dagster._core.definitions.partitioned_schedule import build_schedule_from_partitioned_job
 from dagster._core.definitions.time_window_partitions import (
     DailyPartitionsDefinition,
@@ -476,3 +480,44 @@ def test_unresolved_partitioned_schedule():
     )
     assert len(run_requests) == 1
     assert run_requests[0].partition_key == "2020-01-01"
+
+
+def test_dynamic_multipartitioned_job_schedule():
+    time_window_partitions = DailyPartitionsDefinition(start_date="2020-01-01")
+    dynamic_partitions = DynamicPartitionsDefinition(name="dummy")
+    multipartitions_def = MultiPartitionsDefinition(
+        {
+            "dynamic": dynamic_partitions,
+            "date": time_window_partitions,
+        }
+    )
+
+    @asset(partitions_def=multipartitions_def)
+    def my_asset():
+        return 1
+
+    my_job = define_asset_job("multipartitions_job", [my_asset], partitions_def=multipartitions_def)
+    my_schedule = build_schedule_from_partitioned_job(my_job)
+
+    @repository
+    def my_repo():
+        return [my_asset, my_schedule, my_job]
+
+    with instance_for_test() as instance:
+        instance.add_dynamic_partitions(dynamic_partitions.name, ["a", "b", "c", "d"])
+
+        run_requests = my_schedule.evaluate_tick(
+            build_schedule_context(
+                scheduled_execution_time=datetime.strptime("2020-01-02", DATE_FORMAT),
+                repository_def=my_repo,
+                instance=instance,
+            )
+        ).run_requests
+
+        assert len(run_requests) == 4
+        assert set([req.partition_key for req in run_requests]) == {
+            "2020-01-01|a",
+            "2020-01-01|b",
+            "2020-01-01|c",
+            "2020-01-01|d",
+        }

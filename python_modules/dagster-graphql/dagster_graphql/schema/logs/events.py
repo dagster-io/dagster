@@ -12,6 +12,7 @@ from dagster_graphql.schema.tags import GrapheneEventTag
 from ...implementation.events import construct_basic_params
 from ...implementation.fetch_runs import get_run_by_id, get_step_stats
 from ...implementation.loader import BatchRunLoader
+from ..asset_checks import GrapheneAssetCheckEvaluation
 from ..asset_key import GrapheneAssetKey, GrapheneAssetLineageInfo
 from ..errors import GraphenePythonError, GrapheneRunNotFoundError
 from ..metadata import GrapheneMetadataEntry
@@ -303,7 +304,7 @@ class GrapheneLogsCapturedEvent(graphene.ObjectType):
     externalStderrUrl = graphene.String()
     pid = graphene.Int()
     # legacy name for compute log file key... required for back-compat reasons, but has been
-    # renamed to fileKey for newer versions of dagit
+    # renamed to fileKey for newer versions of the Dagster UI
     logKey = graphene.NonNull(graphene.String)
 
 
@@ -541,6 +542,23 @@ class GrapheneStepExpectationResultEvent(graphene.ObjectType):
     expectation_result = graphene.NonNull(GrapheneExpectationResult)
 
 
+class GrapheneAssetCheckEvaluationPlannedEvent(graphene.ObjectType):
+    class Meta:
+        interfaces = (GrapheneMessageEvent, GrapheneStepEvent)
+        name = "AssetCheckEvaluationPlannedEvent"
+
+    assetKey = graphene.NonNull(GrapheneAssetKey)
+    checkName = graphene.NonNull(graphene.String)
+
+
+class GrapheneAssetCheckEvaluationEvent(graphene.ObjectType):
+    class Meta:
+        interfaces = (GrapheneMessageEvent, GrapheneStepEvent)
+        name = "AssetCheckEvaluationEvent"
+
+    evaluation = graphene.NonNull(GrapheneAssetCheckEvaluation)
+
+
 # Should be a union of all possible events
 class GrapheneDagsterRunEvent(graphene.Union):
     class Meta:
@@ -582,6 +600,8 @@ class GrapheneDagsterRunEvent(graphene.Union):
             GrapheneAlertSuccessEvent,
             GrapheneAlertFailureEvent,
             GrapheneAssetMaterializationPlannedEvent,
+            GrapheneAssetCheckEvaluationPlannedEvent,
+            GrapheneAssetCheckEvaluationEvent,
         )
         name = "DagsterRunEvent"
 

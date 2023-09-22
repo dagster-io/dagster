@@ -1,0 +1,15 @@
+node_modules/
+.DS_Store
+.next/
+.vercel
+package-lock.json
+
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+
+*.tsbuildinfo

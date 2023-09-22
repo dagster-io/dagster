@@ -1,5 +1,5 @@
 # Dagster
-FROM python:3.7-slim as dagster
+FROM python:3.10-slim as dagster
 
 COPY ./python_modules/ /tmp/python_modules/
 
@@ -21,21 +21,21 @@ RUN pip install \
   -e python_modules/libraries/dagster-aws \
   -e python_modules/libraries/dagster-postgres
 
-RUN ! pip list --exclude-editable | grep -e dagster -e dagit
+RUN ! pip list --exclude-editable | grep -e dagster
 
 WORKDIR $DAGSTER_HOME
 
-# Dagit
-FROM dagster as dagit
+# Webserver
+FROM dagster as webserver
 
 WORKDIR /tmp
 
 RUN pip install \
-  -e python_modules/dagit \
+  -e python_modules/dagster-webserver \
   -e python_modules/dagster-graphql \
   -e python_modules/dagster
 
-RUN ! pip list --exclude-editable | grep -e dagster -e dagit
+RUN ! pip list --exclude-editable | grep -e dagster
 
 WORKDIR $DAGSTER_HOME
 

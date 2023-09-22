@@ -8,7 +8,12 @@ ScheduleStorageSqlMetadata = db.MetaData()
 JobTable = db.Table(
     "jobs",
     ScheduleStorageSqlMetadata,
-    db.Column("id", db.Integer, primary_key=True, autoincrement=True),
+    db.Column(
+        "id",
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    ),
     db.Column("job_origin_id", db.String(255), unique=True),
     db.Column("selector_id", db.String(255)),
     db.Column("repository_origin_id", db.String(255)),
@@ -22,7 +27,12 @@ JobTable = db.Table(
 InstigatorsTable = db.Table(
     "instigators",
     ScheduleStorageSqlMetadata,
-    db.Column("id", db.Integer, primary_key=True, autoincrement=True),
+    db.Column(
+        "id",
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    ),
     db.Column("selector_id", db.String(255), unique=True),
     db.Column("repository_selector_id", db.String(255)),
     db.Column("status", db.String(63)),
@@ -35,7 +45,12 @@ InstigatorsTable = db.Table(
 JobTickTable = db.Table(
     "job_ticks",
     ScheduleStorageSqlMetadata,
-    db.Column("id", db.Integer, primary_key=True, autoincrement=True),
+    db.Column(
+        "id",
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    ),
     db.Column("job_origin_id", db.String(255), index=True),
     db.Column("selector_id", db.String(255)),
     db.Column("status", db.String(63)),
@@ -72,7 +87,12 @@ AssetDaemonAssetEvaluationsTable = db.Table(
 SecondaryIndexMigrationTable = db.Table(
     "secondary_indexes",
     ScheduleStorageSqlMetadata,
-    db.Column("id", db.Integer, primary_key=True, autoincrement=True),
+    db.Column(
+        "id",
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    ),
     db.Column("name", MySQLCompatabilityTypes.UniqueText, unique=True),
     db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
     db.Column("migration_completed", db.DateTime),

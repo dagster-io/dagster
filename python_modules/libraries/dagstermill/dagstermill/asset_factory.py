@@ -1,6 +1,6 @@
 import pickle
 import tempfile
-from typing import Any, Callable, Iterable, Mapping, Optional, Sequence, Set, Type, Union, cast
+from typing import Any, Callable, Iterable, Mapping, Optional, Set, Type, Union, cast
 
 import dagster._check as check
 from dagster import (
@@ -72,7 +72,7 @@ def define_dagstermill_asset(
     notebook_path: str,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     ins: Optional[Mapping[str, AssetIn]] = None,
-    deps: Optional[Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]] = None,
+    deps: Optional[Iterable[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]] = None,
     metadata: Optional[Mapping[str, Any]] = None,
     config_schema: Optional[Union[Any, Mapping[str, Any]]] = None,
     required_resource_keys: Optional[Set[str]] = None,
@@ -104,7 +104,7 @@ def define_dagstermill_asset(
             if it does not. If not set, Dagster will accept any config provided for the op.
         metadata (Optional[Dict[str, Any]]): A dict of metadata entries for the asset.
         required_resource_keys (Optional[Set[str]]): Set of resource handles required by the notebook.
-        description (Optional[str]): Description of the asset to display in Dagit.
+        description (Optional[str]): Description of the asset to display in the Dagster UI.
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the asset.
         op_tags (Optional[Dict[str, Any]]): A dictionary of tags for the op that computes the asset.
@@ -176,17 +176,13 @@ def define_dagstermill_asset(
     if op_tags is not None:
         check.invariant(
             "notebook_path" not in op_tags,
-            (
-                "user-defined op tags contains the `notebook_path` key, but the `notebook_path` key"
-                " is reserved for use by Dagster"
-            ),
+            "user-defined op tags contains the `notebook_path` key, but the `notebook_path` key"
+            " is reserved for use by Dagster",
         )
         check.invariant(
             "kind" not in op_tags,
-            (
-                "user-defined op tags contains the `kind` key, but the `kind` key is reserved for"
-                " use by Dagster"
-            ),
+            "user-defined op tags contains the `kind` key, but the `kind` key is reserved for"
+            " use by Dagster",
         )
 
     default_tags = {"notebook_path": _clean_path_for_windows(notebook_path), "kind": "ipynb"}

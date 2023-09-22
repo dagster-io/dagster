@@ -38,10 +38,12 @@ TEST_FRESHNESS_POLICY = FreshnessPolicy(maximum_lag_minutes=60)
 def airbyte_instance_fixture(request):
     with environ({"AIRBYTE_HOST": "some_host"}):
         if request.param:
-            yield AirbyteResource(host=EnvVar("AIRBYTE_HOST"), port="8000")
+            yield AirbyteResource(host=EnvVar("AIRBYTE_HOST"), port="8000", poll_interval=0)
         else:
             yield airbyte_resource(
-                build_init_resource_context({"host": "some_host", "port": "8000"})
+                build_init_resource_context(
+                    {"host": "some_host", "port": "8000", "poll_interval": 0}
+                )
             )
 
 
@@ -267,7 +269,7 @@ def test_load_from_instance(
 
 
 def test_load_from_instance_cloud() -> None:
-    airbyte_cloud_instance = AirbyteCloudResource(api_key="foo")
+    airbyte_cloud_instance = AirbyteCloudResource(api_key="foo", poll_interval=0)
 
     with pytest.raises(
         DagsterInvalidInvocationError,
@@ -278,7 +280,7 @@ def test_load_from_instance_cloud() -> None:
 
 def test_load_from_instance_with_downstream_asset_errors():
     ab_cacheable_assets = load_assets_from_airbyte_instance(
-        AirbyteResource(host="some_host", port="8000")
+        AirbyteResource(host="some_host", port="8000", poll_interval=0)
     )
 
     with pytest.raises(

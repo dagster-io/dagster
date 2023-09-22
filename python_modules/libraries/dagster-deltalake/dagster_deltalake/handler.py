@@ -41,7 +41,7 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
         obj: T,
         connection: TableConnection,
     ):
-        """Stores pyarrow types in Delta table."""
+        """Stores PyArrow types in a Delta table."""
         reader = self.to_arrow(obj=obj)
         delta_schema = Schema.from_pyarrow(reader.schema)
 
@@ -83,7 +83,7 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
     def load_input(
         self, context: InputContext, table_slice: TableSlice, connection: TableConnection
     ) -> T:
-        """Loads the input as a pyarrow Table or RecordBatchReader."""
+        """Loads the input as a PyArrow Table or RecordBatchReader."""
         table = DeltaTable(
             table_uri=connection.table_uri, storage_options=connection.storage_options
         )

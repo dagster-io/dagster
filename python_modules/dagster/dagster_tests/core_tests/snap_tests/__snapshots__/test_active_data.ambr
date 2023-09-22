@@ -1125,6 +1125,7 @@
   '''
   {
     "__class__": "ExternalRepositoryData",
+    "external_asset_checks": [],
     "external_asset_graph_data": [],
     "external_job_refs": null,
     "external_partition_set_datas": [
@@ -2286,6 +2287,7 @@
       }
     ],
     "external_sensor_datas": [],
+    "metadata": {},
     "name": "repo",
     "utilized_env_vars": {}
   }

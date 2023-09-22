@@ -1,3 +1,7 @@
+config: # this should be ignored
+  send_anonymous_usage_stats: false
+  use_colors: true
+
 jaffle_shop:
 
   target: dev

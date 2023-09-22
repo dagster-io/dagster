@@ -20,6 +20,7 @@ from typing import (
 
 import dateutil
 from dagster import (
+    AssetCheckResult,
     AssetKey,
     AssetsDefinition,
     AutoMaterializePolicy,
@@ -33,6 +34,7 @@ from dagster import (
     get_dagster_logger,
     op,
 )
+from dagster._annotations import deprecated_param
 from dagster._core.definitions.events import (
     AssetMaterialization,
     AssetObservation,
@@ -41,11 +43,11 @@ from dagster._core.definitions.events import (
 )
 from dagster._core.definitions.metadata import MetadataUserInput, RawMetadataValue
 from dagster._core.errors import DagsterInvalidSubsetError
-from dagster._utils.backcompat import (
-    canonicalize_backcompat_args,
-    deprecation_warning,
-)
 from dagster._utils.merger import deep_merge_dicts
+from dagster._utils.warnings import (
+    deprecation_warning,
+    normalize_renamed_param,
+)
 
 from dagster_dbt.asset_utils import (
     default_asset_key_fn,
@@ -246,7 +248,7 @@ def _stream_event_iterator(
     ],
     kwargs: Dict[str, Any],
     manifest_json: Mapping[str, Any],
-) -> Iterator[Union[AssetObservation, Output]]:
+) -> Iterator[Union[AssetObservation, Output, AssetCheckResult]]:
     """Yields events for a dbt cli invocation. Emits outputs as soon as the relevant dbt logs are
     emitted.
     """
@@ -326,10 +328,8 @@ def _get_dbt_op(
         check.inst(
             dbt_resource,
             (DbtCliResource, DbtCliClient),
-            (
-                "Resource with key 'dbt_resource_key' must be a DbtCliResource or DbtCliClient"
-                f" object, but is a {type(dbt_resource)}"
-            ),
+            "Resource with key 'dbt_resource_key' must be a DbtCliResource or DbtCliClient"
+            f" object, but is a {type(dbt_resource)}",
         )
 
         kwargs: Dict[str, Any] = {}
@@ -394,10 +394,6 @@ def _dbt_nodes_to_assets(
     use_build_command: bool,
     partitions_def: Optional[PartitionsDefinition],
     partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]],
-    node_info_to_freshness_policy_fn: Callable[[Mapping[str, Any]], Optional[FreshnessPolicy]],
-    node_info_to_auto_materialize_policy_fn: Callable[
-        [Mapping[str, Any]], Optional[AutoMaterializePolicy]
-    ],
     dagster_dbt_translator: DagsterDbtTranslator,
 ) -> AssetsDefinition:
     if use_build_command:
@@ -416,13 +412,12 @@ def _dbt_nodes_to_assets(
         group_names_by_key,
         freshness_policies_by_key,
         auto_materialize_policies_by_key,
+        check_specs_by_output_name,
         fqns_by_output_name,
         _,
     ) = get_asset_deps(
         dbt_nodes=dbt_nodes,
         deps=deps,
-        node_info_to_freshness_policy_fn=node_info_to_freshness_policy_fn,
-        node_info_to_auto_materialize_policy_fn=node_info_to_auto_materialize_policy_fn,
         io_manager_key=io_manager_key,
         manifest=manifest_json,
         dagster_dbt_translator=dagster_dbt_translator,
@@ -434,10 +429,20 @@ def _dbt_nodes_to_assets(
         if select != "fqn:*" or exclude:
             op_name += "_" + hashlib.md5(select.encode() + exclude.encode()).hexdigest()[-5:]
 
+    check_outs_by_output_name: Mapping[str, Out] = {}
+    if check_specs_by_output_name:
+        check_outs_by_output_name = {
+            output_name: Out(dagster_type=None, is_required=False)
+            for output_name in check_specs_by_output_name.keys()
+        }
+
     dbt_op = _get_dbt_op(
         op_name=op_name,
         ins=dict(asset_ins.values()),
-        outs=dict(asset_outs.values()),
+        outs={
+            **dict(asset_outs.values()),
+            **check_outs_by_output_name,
+        },
         select=select,
         exclude=exclude,
         use_build_command=use_build_command,
@@ -462,6 +467,7 @@ def _dbt_nodes_to_assets(
         group_names_by_key=group_names_by_key,
         freshness_policies_by_key=freshness_policies_by_key,
         auto_materialize_policies_by_key=auto_materialize_policies_by_key,
+        check_specs_by_output_name=check_specs_by_output_name,
         partitions_def=partitions_def,
     )
 
@@ -505,6 +511,9 @@ def load_assets_from_dbt_project(
 
     Creates one Dagster asset for each dbt model. All assets will be re-materialized using a single
     `dbt run` or `dbt build` command.
+
+    When searching for more flexibility in defining the computations that materialize your
+    dbt assets, we recommend that you use :py:class:`~dagster_dbt.dbt_assets`.
 
     Args:
         project_dir (Optional[str]): The directory containing the dbt project to load.
@@ -633,6 +642,45 @@ def load_assets_from_dbt_project(
     )
 
 
+@deprecated_param(
+    param="manifest_json", breaking_version="0.21", additional_warn_text="Use manifest instead"
+)
+@deprecated_param(
+    param="selected_unique_ids",
+    breaking_version="0.21",
+    additional_warn_text="Use the select parameter instead.",
+)
+@deprecated_param(
+    param="dbt_resource_key",
+    breaking_version="0.21",
+    additional_warn_text=(
+        "Use the `@dbt_assets` decorator if you need to customize your resource key."
+    ),
+)
+@deprecated_param(
+    param="use_build_command",
+    breaking_version="0.21",
+    additional_warn_text=(
+        "Use the `@dbt_assets` decorator if you need to customize the underlying dbt commands."
+    ),
+)
+@deprecated_param(
+    param="partitions_def",
+    breaking_version="0.21",
+    additional_warn_text="Use the `@dbt_assets` decorator to define partitioned dbt assets.",
+)
+@deprecated_param(
+    param="partition_key_to_vars_fn",
+    breaking_version="0.21",
+    additional_warn_text="Use the `@dbt_assets` decorator to define partitioned dbt assets.",
+)
+@deprecated_param(
+    param="runtime_metadata_fn",
+    breaking_version="0.21",
+    additional_warn_text=(
+        "Use the `@dbt_assets` decorator if you need to customize runtime metadata."
+    ),
+)
 def load_assets_from_dbt_manifest(
     manifest: Optional[Union[Path, Mapping[str, Any]]] = None,
     *,
@@ -673,6 +721,9 @@ def load_assets_from_dbt_manifest(
     Creates one Dagster asset for each dbt model. All assets will be re-materialized using a single
     `dbt run` command.
 
+    When searching for more flexibility in defining the computations that materialize your
+    dbt assets, we recommend that you use :py:class:`~dagster_dbt.dbt_assets`.
+
     Args:
         manifest (Optional[Mapping[str, Any]]): The contents of a DBT manifest.json, which contains
             a set of models to load into assets.
@@ -700,7 +751,6 @@ def load_assets_from_dbt_manifest(
             A function that will be run after any of the assets are materialized and returns
             metadata entries for the asset, to be displayed in the asset catalog for that run.
             Deprecated: use the @dbt_assets decorator if you need to customize runtime metadata.
-        manifest_json (Optional[Mapping[str, Any]]): [Deprecated] Use the manifest argument instead.
         selected_unique_ids (Optional[Set[str]]): [Deprecated] The set of dbt unique_ids that you want to load
             as assets. Deprecated: use the select argument instead.
         node_info_to_asset_key (Mapping[str, Any] -> AssetKey): [Deprecated] A function that takes a dictionary
@@ -746,8 +796,11 @@ def load_assets_from_dbt_manifest(
             this flag to False is advised to reduce the size of the resulting snapshot. Deprecated:
             instead, provide a custom DagsterDbtTranslator that overrides node_info_to_description.
     """
-    manifest = canonicalize_backcompat_args(
-        manifest, "manifest", manifest_json, "manifest_json", "0.21", stacklevel=4
+    manifest = normalize_renamed_param(
+        manifest,
+        "manifest",
+        manifest_json,
+        "manifest_json",
     )
     manifest = cast(
         Union[Mapping[str, Any], Path], check.inst_param(manifest, "manifest", (Path, dict))
@@ -905,6 +958,18 @@ def _load_assets_from_dbt_manifest(
             def get_group_name(cls, dbt_resource_props):
                 return node_info_to_group_fn(dbt_resource_props)
 
+            @classmethod
+            def get_freshness_policy(
+                cls, dbt_resource_props: Mapping[str, Any]
+            ) -> Optional[FreshnessPolicy]:
+                return node_info_to_freshness_policy_fn(dbt_resource_props)
+
+            @classmethod
+            def get_auto_materialize_policy(
+                cls, dbt_resource_props: Mapping[str, Any]
+            ) -> Optional[AutoMaterializePolicy]:
+                return node_info_to_auto_materialize_policy_fn(dbt_resource_props)
+
         dagster_dbt_translator = CustomDagsterDbtTranslator()
 
     dbt_assets_def = _dbt_nodes_to_assets(
@@ -920,8 +985,6 @@ def _load_assets_from_dbt_manifest(
         use_build_command=use_build_command,
         partitions_def=partitions_def,
         partition_key_to_vars_fn=partition_key_to_vars_fn,
-        node_info_to_freshness_policy_fn=node_info_to_freshness_policy_fn,
-        node_info_to_auto_materialize_policy_fn=node_info_to_auto_materialize_policy_fn,
         dagster_dbt_translator=dagster_dbt_translator,
         manifest_json=manifest,
     )
@@ -949,54 +1012,6 @@ def _raise_warnings_for_deprecated_args(
         [Mapping[str, Any]], Mapping[str, MetadataUserInput]
     ],
 ):
-    if selected_unique_ids is not None:
-        deprecation_warning(
-            f"The selected_unique_ids arg of {public_fn_name}",
-            "0.21",
-            "Use the select parameter instead.",
-            stacklevel=4,
-        )
-
-    if dbt_resource_key is not None:
-        deprecation_warning(
-            f"The dbt_resource_key arg of {public_fn_name}",
-            "0.21",
-            "Use the @dbt_assets decorator if you need to customize your resource key.",
-            stacklevel=4,
-        )
-
-    if use_build_command is not None:
-        deprecation_warning(
-            f"The use_build_command arg of {public_fn_name}",
-            "0.21",
-            "Use the @dbt_assets decorator if you need to customize the underlying dbt commands.",
-            stacklevel=4,
-        )
-
-    if partitions_def is not None:
-        deprecation_warning(
-            f"The partitions_def arg of {public_fn_name}",
-            "0.21",
-            "Use the @dbt_assets decorator to define partitioned dbt assets.",
-            stacklevel=4,
-        )
-
-    if partition_key_to_vars_fn is not None:
-        deprecation_warning(
-            f"The partition_key_to_vars_fn arg of {public_fn_name}",
-            "0.21",
-            "Use the @dbt_assets decorator to define partitioned dbt assets.",
-            stacklevel=4,
-        )
-
-    if runtime_metadata_fn is not None:
-        deprecation_warning(
-            f"The runtime_metadata_fn arg of {public_fn_name}",
-            "0.21",
-            "Use the @dbt_assets decorator if you need to customize runtime metadata.",
-            stacklevel=4,
-        )
-
     if node_info_to_asset_key != default_asset_key_fn:
         deprecation_warning(
             f"The node_info_to_asset_key_fn arg of {public_fn_name}",
@@ -1009,10 +1024,8 @@ def _raise_warnings_for_deprecated_args(
         deprecation_warning(
             f"The node_info_to_group_fn arg of {public_fn_name}",
             "0.21",
-            (
-                "Instead, configure dagster groups on a dbt resource's meta field or assign dbt"
-                " groups or provide a custom DagsterDbtTranslator that overrides get_group_name."
-            ),
+            "Instead, configure dagster groups on a dbt resource's meta field or assign dbt"
+            " groups or provide a custom DagsterDbtTranslator that overrides get_group_name.",
             stacklevel=4,
         )
 

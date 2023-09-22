@@ -40,6 +40,5 @@ class IAttachDifferentObjectToOpContext:
     """
 
     def get_object_to_set_on_execution_context(self) -> Any:
-        """Override to return the object to be attached to the execution context by this resource.
-        """
+        """Override to return the object to be attached to the execution context by this resource."""
         raise NotImplementedError()

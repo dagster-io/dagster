@@ -14,6 +14,7 @@ import subprocess
 import sys
 import tempfile
 import threading
+import time
 from collections import OrderedDict
 from datetime import timezone
 from enum import Enum
@@ -741,3 +742,15 @@ def normalize_to_repository(
 
 def xor(a, b):
     return bool(a) != bool(b)
+
+
+def tail_file(path_or_fd: Union[str, int], should_stop: Callable[[], bool]) -> Iterator[str]:
+    with open(path_or_fd, "r") as output_stream:
+        while True:
+            line = output_stream.readline()
+            if line:
+                yield line
+            elif should_stop():
+                break
+            else:
+                time.sleep(0.01)

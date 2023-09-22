@@ -101,10 +101,8 @@ def celery_k8s_job_executor(init_context):
 
     if not isinstance(run_launcher, CeleryK8sRunLauncher):
         raise DagsterUnmetExecutorRequirementsError(
-            (
-                "This engine is only compatible with a CeleryK8sRunLauncher; configure the "
-                "CeleryK8sRunLauncher on your instance to use it."
-            ),
+            "This engine is only compatible with a CeleryK8sRunLauncher; configure the "
+            "CeleryK8sRunLauncher on your instance to use it.",
         )
 
     job_config = run_launcher.get_k8s_job_config(
@@ -208,6 +206,7 @@ def _submit_task_k8s_job(app, plan_context, step, queue, priority, known_state):
         retry_mode=plan_context.executor.retries.for_inner_plan(),
         known_state=known_state,
         should_verify_step=True,
+        print_serialized_events=True,
     )
 
     job_config = plan_context.executor.job_config
@@ -362,6 +361,15 @@ def create_k8s_job_task(celery_app, **task_kwargs):
 
         args = execute_step_args.get_command_args()
 
+        labels = {
+            "dagster/job": dagster_run.job_name,
+            "dagster/op": step_key,
+            "dagster/run-id": execute_step_args.run_id,
+        }
+        if dagster_run.external_job_origin:
+            labels["dagster/code-location"] = (
+                dagster_run.external_job_origin.external_repository_origin.code_location_origin.location_name
+            )
         job = construct_dagster_k8s_job(
             job_config,
             args,
@@ -369,11 +377,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             user_defined_k8s_config,
             pod_name,
             component="step_worker",
-            labels={
-                "dagster/job": dagster_run.job_name,
-                "dagster/op": step_key,
-                "dagster/run-id": execute_step_args.run_id,
-            },
+            labels=labels,
             env_vars=[
                 {
                     "name": "DAGSTER_RUN_JOB_NAME",

@@ -8,6 +8,7 @@ from .gcs_fake_resource import (
 )
 from .io_manager import (
     ConfigurablePickledObjectGCSIOManager as ConfigurablePickledObjectGCSIOManager,
+    GCSPickleIOManager as GCSPickleIOManager,
     PickledObjectGCSIOManager as PickledObjectGCSIOManager,
     gcs_pickle_io_manager as gcs_pickle_io_manager,
 )

@@ -25,7 +25,7 @@ from dagster._config.config_schema import UserConfigSchema
 from dagster._core.definitions.events import AssetKey
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import EventHandlerFn
-from dagster._core.events import ASSET_EVENTS
+from dagster._core.events import ASSET_CHECK_EVENTS, ASSET_EVENTS
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
 from dagster._core.storage.event_log.base import EventLogCursor, EventLogRecord, EventRecordsFilter
@@ -192,10 +192,8 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                     raise
                 else:
                     logging.info(
-                        (
-                            "SqliteEventLogStorage._initdb: Encountered apparent concurrent init, "
-                            "retrying (%s retries left). Exception: %s"
-                        ),
+                        "SqliteEventLogStorage._initdb: Encountered apparent concurrent init, "
+                        "retrying (%s retries left). Exception: %s",
                         retry_limit,
                         err_msg,
                     )
@@ -242,10 +240,8 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         if event.is_dagster_event and event.dagster_event.asset_key:  # type: ignore
             check.invariant(
                 event.dagster_event_type in ASSET_EVENTS,
-                (
-                    "Can only store asset materializations, materialization_planned, and"
-                    " observations in index database"
-                ),
+                "Can only store asset materializations, materialization_planned, and"
+                " observations in index database",
             )
 
             event_id = None
@@ -263,6 +259,9 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 )
 
             self.store_asset_event_tags(event, event_id)
+
+        if event.is_dagster_event and event.dagster_event_type in ASSET_CHECK_EVENTS:
+            self.store_asset_check_event(event, None)
 
     def get_event_records(
         self,
@@ -296,14 +295,12 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         if event_records_filter.after_cursor is not None and not isinstance(
             event_records_filter.after_cursor, RunShardedEventsCursor
         ):
-            raise Exception(
-                """
+            raise Exception("""
                 Called `get_event_records` on a run-sharded event log storage with a cursor that
                 is not run-aware. Add a RunShardedEventsCursor to your query filter
                 or switch your instance configuration to use a non-run-sharded event log storage
                 (e.g. PostgresEventLogStorage, ConsolidatedSqliteEventLogStorage)
-            """
-            )
+            """)
 
         query = self._apply_filter_to_query(
             query=query,

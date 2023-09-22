@@ -227,6 +227,7 @@ def get_inputs_field(
         elif (
             # if you have asset definitions, input will be loaded from the source asset
             asset_layer.has_assets_defs
+            or asset_layer.hash_asset_check_defs
             and asset_layer.asset_key_for_input(handle, name)
             and not has_upstream
         ):
@@ -591,9 +592,11 @@ def _convert_config_classes_inner(configs: Any) -> Any:
         return configs
 
     return {
-        k: {"config": v._convert_to_config_dictionary()}  # noqa: SLF001
-        if isinstance(v, Config)
-        else _convert_config_classes_inner(v)
+        k: (
+            {"config": v._convert_to_config_dictionary()}  # noqa: SLF001
+            if isinstance(v, Config)
+            else _convert_config_classes_inner(v)
+        )
         for k, v in configs.items()
     }
 

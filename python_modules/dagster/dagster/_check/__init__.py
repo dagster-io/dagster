@@ -275,7 +275,6 @@ def opt_dict_param(
     return _check_mapping_entries(obj, key_type, value_type, mapping_type=dict)
 
 
-# pyright understands this overload but not mypy
 @overload
 def opt_nullable_dict_param(
     obj: None,
@@ -629,7 +628,7 @@ def opt_int_elem(
 # ##### INST
 # ########################
 
-# mypy note: Attempting to use the passed type (Type[T] -> T) to infer the output type has
+# type-checking note: Attempting to use the passed type (Type[T] -> T) to infer the output type has
 # issues with abstract classes, so here we count on the incoming object to be typed before
 # this runtime validation check.
 
@@ -711,29 +710,11 @@ def opt_inst(
 # ########################
 
 
-@overload
 def iterator_param(
     obj: Iterator[T],
     param_name: str,
-    additional_message: Optional[str] = ...,
-) -> Iterator[T]:
-    ...
-
-
-@overload
-def iterator_param(
-    obj: object,
-    param_name: str,
-    additional_message: Optional[str] = ...,
-) -> Iterator[Any]:
-    ...
-
-
-def iterator_param(
-    obj: Any,
-    param_name: str,
     additional_message: Optional[str] = None,
-) -> Iterator[Any]:
+) -> Iterator[T]:
     if not isinstance(obj, Iterator):
         raise _param_type_mismatch_exception(obj, Iterator, param_name, additional_message)
     return obj
@@ -782,7 +763,6 @@ def opt_list_param(
     return _check_iterable_items(obj, of_type, "list")
 
 
-# pyright understands this overload but not mypy
 @overload
 def opt_nullable_list_param(
     obj: None,
@@ -903,11 +883,33 @@ def is_list(
 
 
 # ########################
+# ##### LITERAL
+# ########################
+
+
+def literal_param(
+    obj: T, param_name: str, values: Sequence[object], additional_message: Optional[str] = None
+) -> T:
+    if obj not in values:
+        raise _param_value_mismatch_exception(obj, values, param_name, additional_message)
+    return obj
+
+
+def opt_literal_param(
+    obj: T, param_name: str, values: Sequence[object], additional_message: Optional[str] = None
+) -> T:
+    if obj is not None and obj not in values:
+        raise _param_value_mismatch_exception(
+            obj, values, param_name, additional_message, optional=True
+        )
+    return obj
+
+
+# ########################
 # ##### MAPPING
 # ########################
 
 
-@overload
 def mapping_param(
     obj: Mapping[T, U],
     param_name: str,
@@ -915,27 +917,6 @@ def mapping_param(
     value_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
 ) -> Mapping[T, U]:
-    ...
-
-
-@overload
-def mapping_param(
-    obj: object,
-    param_name: str,
-    key_type: Optional[TypeOrTupleOfTypes] = ...,
-    value_type: Optional[TypeOrTupleOfTypes] = ...,
-    additional_message: Optional[str] = ...,
-) -> Mapping[object, object]:
-    ...
-
-
-def mapping_param(
-    obj: object,
-    param_name: str,
-    key_type: Optional[TypeOrTupleOfTypes] = None,
-    value_type: Optional[TypeOrTupleOfTypes] = None,
-    additional_message: Optional[str] = None,
-) -> Mapping[Any, Any]:
     if not isinstance(obj, collections.abc.Mapping):
         raise _param_type_mismatch_exception(
             obj, (collections.abc.Mapping,), param_name, additional_message=additional_message
@@ -947,42 +928,19 @@ def mapping_param(
     return _check_mapping_entries(obj, key_type, value_type, mapping_type=collections.abc.Mapping)
 
 
-@overload
 def opt_mapping_param(
     obj: Optional[Mapping[T, U]],
-    param_name: str,
-    key_type: Optional[TypeOrTupleOfTypes] = ...,
-    value_type: Optional[TypeOrTupleOfTypes] = ...,
-    additional_message: Optional[str] = ...,
-) -> Mapping[T, U]:
-    ...
-
-
-@overload
-def opt_mapping_param(
-    obj: object,
-    param_name: str,
-    key_type: Optional[TypeOrTupleOfTypes] = ...,
-    value_type: Optional[TypeOrTupleOfTypes] = ...,
-    additional_message: Optional[str] = ...,
-) -> Mapping[object, object]:
-    ...
-
-
-def opt_mapping_param(
-    obj: Optional[object],
     param_name: str,
     key_type: Optional[TypeOrTupleOfTypes] = None,
     value_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
-) -> Mapping[Any, Any]:
+) -> Mapping[T, U]:
     if obj is None:
         return dict()
     else:
         return mapping_param(obj, param_name, key_type, value_type, additional_message)
 
 
-# pyright understands this overload but not mypy
 @overload
 def opt_nullable_mapping_param(
     obj: None,
@@ -1707,6 +1665,21 @@ def _element_check_error(
     additional_message = " " + additional_message if additional_message else ""
     return ElementCheckError(
         f"Value {value!r} from key {key} is not a {ttype!r}. Dict: {ddict!r}.{additional_message}"
+    )
+
+
+def _param_value_mismatch_exception(
+    obj: object,
+    values: Sequence[object],
+    param_name: str,
+    additional_message: Optional[str] = None,
+    optional: bool = False,
+) -> ParameterCheckError:
+    allow_none_clause = " or None" if optional else ""
+    additional_message = " " + additional_message if additional_message else ""
+    return ParameterCheckError(
+        f'Param "{param_name}" is not equal to one of {values}{allow_none_clause}. Got'
+        f" {obj!r}.{additional_message}"
     )
 
 

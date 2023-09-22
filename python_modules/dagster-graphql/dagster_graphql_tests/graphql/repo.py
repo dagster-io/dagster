@@ -12,6 +12,7 @@ from typing import Iterator, List, Mapping, Optional, Sequence, Tuple, TypeVar
 
 from dagster import (
     Any,
+    AssetCheckResult,
     AssetExecutionContext,
     AssetKey,
     AssetMaterialization,
@@ -57,6 +58,7 @@ from dagster import (
     WeeklyPartitionsDefinition,
     _check as check,
     asset,
+    asset_check,
     asset_sensor,
     dagster_type_loader,
     daily_partitioned_config,
@@ -228,7 +230,7 @@ def noop_op(_):
     pass
 
 
-# Won't pass cloud-dagit test suite without `in_process_executor`.
+# Won't pass cloud-webserver test suite without `in_process_executor`.
 @job(executor_def=in_process_executor)
 def noop_job():
     noop_op()
@@ -965,7 +967,7 @@ def get_retry_multi_execution_params(
         "executionMetadata": {
             "rootRunId": retry_id,
             "parentRunId": retry_id,
-            "tags": ([{"key": RESUME_RETRY_TAG, "value": "true"}] if retry_id else []),
+            "tags": [{"key": RESUME_RETRY_TAG, "value": "true"}] if retry_id else [],
         },
     }
 
@@ -1829,6 +1831,7 @@ def define_jobs():
         hanging_partition_asset_job,
         observation_job,
         failure_assets_job,
+        asset_check_job,
         foo_job,
         hanging_graph_asset_job,
         named_groups_job,
@@ -1903,15 +1906,41 @@ def define_asset_jobs():
     ]
 
 
-@repository
+@asset_check(asset=asset_1, description="asset_1 check")
+def my_check(asset_1):
+    return AssetCheckResult(
+        success=True,
+        metadata={
+            "foo": "bar",
+            "baz": "quux",
+        },
+    )
+
+
+asset_check_job = build_assets_job("asset_check_job", [asset_1], asset_checks=[my_check])
+
+
+def define_asset_checks():
+    return [
+        my_check,
+    ]
+
+
+@repository(default_executor_def=in_process_executor)
 def test_repo():
-    return [*define_jobs(), *define_schedules(), *define_sensors(), *define_asset_jobs()]
+    return [
+        *define_jobs(),
+        *define_schedules(),
+        *define_sensors(),
+        *define_asset_jobs(),
+        *define_asset_checks(),
+    ]
 
 
 defs = Definitions()
 
 
-@repository
+@repository(default_executor_def=in_process_executor)
 def test_dict_repo():
     return {
         "jobs": {job.name: job for job in define_jobs()},

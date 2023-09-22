@@ -44,6 +44,7 @@ def get_dataset():
     return "test_ds_" + str(uuid.uuid4()).replace("-", "_")
 
 
+@pytest.mark.integration
 def test_simple_queries():
     @job(resource_defs={"bigquery": bigquery_resource})
     def bq_test():
@@ -151,6 +152,7 @@ def test_bad_config():
         assert error_message in result.errors[0].message
 
 
+@pytest.mark.integration
 def test_create_delete_dataset():
     client = bigquery.Client()
     dataset = get_dataset()

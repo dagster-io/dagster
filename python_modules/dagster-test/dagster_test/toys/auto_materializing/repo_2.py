@@ -43,7 +43,7 @@ def lazy_downstream_3(lazy_downstream_1):
 
 @asset(
     auto_materialize_policy=AutoMaterializePolicy.lazy(),
-    freshness_policy=FreshnessPolicy(maximum_lag_minutes=5),
+    freshness_policy=FreshnessPolicy(maximum_lag_minutes=1440),
 )
 def lazy_downstream_4(lazy_downstream_2, lazy_downstream_3):
     return lazy_downstream_2 + lazy_downstream_3
@@ -89,7 +89,7 @@ def lazy_downstream_3_partitioned(lazy_downstream_1_partitioned):
 @asset(
     partitions_def=daily_partitions_def,
     auto_materialize_policy=AutoMaterializePolicy.lazy(),
-    freshness_policy=FreshnessPolicy(maximum_lag_minutes=5),
+    freshness_policy=FreshnessPolicy(maximum_lag_minutes=1440),
 )
 def lazy_downstream_4_partitioned(lazy_downstream_2_partitioned, lazy_downstream_3_partitioned):
     return lazy_downstream_2_partitioned + lazy_downstream_3_partitioned

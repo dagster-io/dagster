@@ -149,6 +149,7 @@ def create_run_for_test(
     external_job_origin=None,
     job_code_origin=None,
     asset_selection=None,
+    asset_check_selection=None,
     op_selection=None,
 ):
     return instance.create_run(
@@ -167,6 +168,7 @@ def create_run_for_test(
         external_job_origin=external_job_origin,
         job_code_origin=job_code_origin,
         asset_selection=asset_selection,
+        asset_check_selection=asset_check_selection,
         op_selection=op_selection,
     )
 
@@ -505,8 +507,7 @@ def create_test_daemon_workspace_context(
     workspace_load_target: WorkspaceLoadTarget,
     instance: DagsterInstance,
 ) -> Iterator[WorkspaceProcessContext]:
-    """Creates a DynamicWorkspace suitable for passing into a DagsterDaemon loop when running tests.
-    """
+    """Creates a DynamicWorkspace suitable for passing into a DagsterDaemon loop when running tests."""
     from dagster._daemon.controller import create_daemon_grpc_server_registry
 
     configure_loggers()
@@ -654,8 +655,7 @@ class SynchronousThreadPoolExecutor:
 
 
 class BlockingThreadPoolExecutor(ThreadPoolExecutor):
-    """Utility class for testing thread timing by allowing for manual unblocking of the submitted threaded work.
-    """
+    """Utility class for testing thread timing by allowing for manual unblocking of the submitted threaded work."""
 
     def __init__(self) -> None:
         self._proceed = Event()

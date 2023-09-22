@@ -96,7 +96,12 @@ from .types import (
     ShutdownServerResult,
     StartRunResult,
 )
-from .utils import get_loadable_targets, max_rx_bytes, max_send_bytes
+from .utils import (
+    default_grpc_server_shutdown_grace_period,
+    get_loadable_targets,
+    max_rx_bytes,
+    max_send_bytes,
+)
 
 if TYPE_CHECKING:
     from multiprocessing.synchronize import Event as MPEvent
@@ -436,9 +441,11 @@ class DagsterApiServer(DagsterApiServicer):
             serialized_response = serialize_value(
                 ListRepositoriesResponse(
                     loaded_repositories.loadable_repository_symbols,
-                    executable_path=self._loadable_target_origin.executable_path
-                    if self._loadable_target_origin
-                    else None,
+                    executable_path=(
+                        self._loadable_target_origin.executable_path
+                        if self._loadable_target_origin
+                        else None
+                    ),
                     repository_code_pointer_dict=loaded_repositories.code_pointers_by_repo_name,
                     entry_point=self._entry_point,
                     container_image=self._container_image,
@@ -577,6 +584,7 @@ class DagsterApiServer(DagsterApiServicer):
                     job_subset_snapshot_args.job_origin.job_name,
                     job_subset_snapshot_args.op_selection,
                     job_subset_snapshot_args.asset_selection,
+                    job_subset_snapshot_args.asset_check_selection,
                 )
             )
         except Exception:
@@ -922,10 +930,19 @@ class DagsterApiServer(DagsterApiServicer):
             )
 
 
-def server_termination_target(termination_event, server):
+def server_termination_target(termination_event, server, logger):
     termination_event.wait()
-    # We could make this grace period configurable if we set it in the ShutdownServer handler
-    server.stop(grace=5)
+
+    shutdown_grace_period = default_grpc_server_shutdown_grace_period()
+
+    logger.info(
+        f"Stopping server once all current RPC calls terminate or {shutdown_grace_period} seconds"
+        " pass"
+    )
+    finished_shutting_down_rpcs_event = server.stop(grace=shutdown_grace_period)
+    finished_shutting_down_rpcs_event.wait(shutdown_grace_period + 5)
+    if not finished_shutting_down_rpcs_event.is_set():
+        logger.warning("Server did not shut down cleanly")
 
 
 class DagsterGrpcServer:
@@ -933,6 +950,7 @@ class DagsterGrpcServer:
         self,
         server_termination_event: threading.Event,
         dagster_api_servicer: DagsterApiServicer,
+        logger: logging.Logger,
         host="localhost",
         port: Optional[int] = None,
         socket: Optional[str] = None,
@@ -950,6 +968,8 @@ class DagsterGrpcServer:
             host is not None if port else True,
             "Must provide a host when serving on a port",
         )
+
+        self._logger = logger
 
         self.server = grpc.server(
             ThreadPoolExecutor(
@@ -1017,7 +1037,7 @@ class DagsterGrpcServer:
 
         server_termination_thread = threading.Thread(
             target=server_termination_target,
-            args=[self._server_termination_event, self.server],
+            args=[self._server_termination_event, self.server, self._logger],
             name="grpc-server-termination",
         )
 
@@ -1113,6 +1133,18 @@ def open_server_process(
     if loadable_target_origin:
         subprocess_args += loadable_target_origin.get_cli_args()
 
+    env = {
+        **(env or os.environ),
+    }
+
+    # Unset click environment variables in the current environment
+    # that might conflict with arguments that we're using
+    if port and "DAGSTER_GRPC_SOCKET" in env:
+        del env["DAGSTER_GRPC_SOCKET"]
+
+    if socket and "DAGSTER_GRPC_PORT" in env:
+        del env["DAGSTER_GRPC_PORT"]
+
     server_process = open_ipc_subprocess(subprocess_args, cwd=cwd, env=env)
 
     from dagster._grpc.client import DagsterGrpcClient
@@ -1192,10 +1224,8 @@ class GrpcServerProcess:
         check.int_param(startup_timeout, "startup_timeout")
         check.invariant(
             max_workers is None or max_workers > 1 if heartbeat else True,
-            (
-                "max_workers must be greater than 1 or set to None if heartbeat is True. "
-                "If set to None, the server will use the gRPC default."
-            ),
+            "max_workers must be greater than 1 or set to None if heartbeat is True. "
+            "If set to None, the server will use the gRPC default.",
         )
 
         if seven.IS_WINDOWS or force_port:

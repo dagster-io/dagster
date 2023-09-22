@@ -21,6 +21,7 @@ from dagster._config import (
     Shape,
     get_builtin_scalar_by_name,
 )
+from dagster._core.definitions.asset_check_spec import AssetCheckHandle
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.job_definition import (
     JobDefinition,
@@ -176,6 +177,7 @@ class JobSnapshot(
                     cls.from_job_def(job_def.asset_selection_data.parent_job_def)
                 ),
                 asset_selection=job_def.asset_selection_data.asset_selection,
+                asset_check_selection=job_def.asset_selection_data.asset_check_selection,
             )
 
         return JobSnapshot(
@@ -266,9 +268,11 @@ def _construct_fields(
             construct_config_type_from_snap(config_snap_map[field.type_key], config_snap_map),
             description=field.description,
             is_required=field.is_required,
-            default_value=deserialize_value(cast(str, field.default_value_as_json_str))
-            if field.default_provided
-            else FIELD_NO_DEFAULT_PROVIDED,
+            default_value=(
+                deserialize_value(cast(str, field.default_value_as_json_str))
+                if field.default_provided
+                else FIELD_NO_DEFAULT_PROVIDED
+            ),
         )
         for field in fields
     }
@@ -415,6 +419,7 @@ class JobLineageSnapshot(
             ("op_selection", Optional[Sequence[str]]),
             ("resolved_op_selection", Optional[AbstractSet[str]]),
             ("asset_selection", Optional[AbstractSet[AssetKey]]),
+            ("asset_check_selection", Optional[AbstractSet[AssetCheckHandle]]),
         ],
     )
 ):
@@ -424,6 +429,7 @@ class JobLineageSnapshot(
         op_selection: Optional[Sequence[str]] = None,
         resolved_op_selection: Optional[AbstractSet[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
+        asset_check_selection: Optional[AbstractSet[AssetCheckHandle]] = None,
     ):
         check.opt_set_param(resolved_op_selection, "resolved_op_selection", of_type=str)
         return super(JobLineageSnapshot, cls).__new__(
@@ -432,4 +438,5 @@ class JobLineageSnapshot(
             op_selection,
             resolved_op_selection,
             asset_selection,
+            asset_check_selection,
         )

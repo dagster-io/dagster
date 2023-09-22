@@ -7,7 +7,7 @@ from dagster import RunConfig
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster_dbt import DbtManifestAssetSelection, build_schedule_from_dbt_selection, dbt_assets
 
-manifest_path = Path(__file__).parent.joinpath("..", "sample_manifest.json")
+manifest_path = Path(__file__).joinpath("..", "..", "sample_manifest.json").resolve()
 with open(manifest_path, "r") as f:
     manifest = json.load(f)
 

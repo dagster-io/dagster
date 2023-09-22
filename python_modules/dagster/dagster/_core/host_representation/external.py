@@ -16,6 +16,7 @@ from typing import (
 
 import dagster._check as check
 from dagster._config.snap import ConfigFieldSnap, ConfigSchemaSnapshot
+from dagster._core.definitions.asset_check_spec import AssetCheckHandle
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import (
     MetadataValue,
@@ -386,6 +387,14 @@ class ExternalJob(RepresentedJob):
         )
 
     @property
+    def asset_check_selection(self) -> Optional[AbstractSet[AssetCheckHandle]]:
+        return (
+            self._job_index.job_snapshot.lineage_snapshot.asset_check_selection
+            if self._job_index.job_snapshot.lineage_snapshot
+            else None
+        )
+
+    @property
     def active_presets(self) -> Sequence[ExternalPresetData]:
         return list(self._active_preset_dict.values())
 
@@ -528,8 +537,7 @@ class ExternalExecutionPlan:
 
 
 class ExternalResource:
-    """Represents a top-level resource in a repository, e.g. one passed through the Definitions API.
-    """
+    """Represents a top-level resource in a repository, e.g. one passed through the Definitions API."""
 
     def __init__(self, external_resource_data: ExternalResourceData, handle: RepositoryHandle):
         self._external_resource_data = check.inst_param(

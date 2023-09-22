@@ -8,6 +8,7 @@ from typing import Optional
 import click
 import dagster._check as check
 import uvicorn
+from dagster._annotations import deprecated
 from dagster._cli.utils import get_possibly_temporary_instance_for_cli
 from dagster._cli.workspace import (
     get_workspace_process_context_from_kwargs,
@@ -44,8 +45,7 @@ DEFAULT_POOL_RECYCLE = 3600  # 1 hr
 
 @click.command(
     name="dagster-webserver",
-    help=textwrap.dedent(
-        f"""
+    help=textwrap.dedent(f"""
         Run dagster-webserver. Loads a code location.
 
         {WORKSPACE_TARGET_WARNING}
@@ -71,8 +71,7 @@ DEFAULT_POOL_RECYCLE = 3600  # 1 hr
         Options can also provide arguments via environment variables prefixed with DAGSTER_WEBSERVER.
 
         For example, DAGSTER_WEBSERVER_PORT=3333 dagster-webserver
-    """
-    ),
+    """),
 )
 @workspace_target_argument
 @click.option(
@@ -133,13 +132,21 @@ DEFAULT_POOL_RECYCLE = 3600  # 1 hr
     is_flag=True,
 )
 @click.option(
-    "--log-level",
+    "--uvicorn-log-level",
+    "--log-level",  # Back-compat
     help="Set the log level for the uvicorn web server.",
     show_default=True,
     default="warning",
     type=click.Choice(
         ["critical", "error", "warning", "info", "debug", "trace"], case_sensitive=False
     ),
+)
+@click.option(
+    "--dagster-log-level",
+    help="Set the log level for dagster log events.",
+    show_default=True,
+    default="warning",
+    type=click.Choice(["critical", "error", "warning", "info", "debug"], case_sensitive=False),
 )
 @click.option(
     "--code-server-log-level",
@@ -163,7 +170,8 @@ def dagster_webserver(
     db_pool_recycle: int,
     read_only: bool,
     suppress_warnings: bool,
-    log_level: str,
+    uvicorn_log_level: str,
+    dagster_log_level: str,
     code_server_log_level: str,
     instance_ref: Optional[str],
     **kwargs: ClickArgValue,
@@ -171,7 +179,7 @@ def dagster_webserver(
     if suppress_warnings:
         os.environ["PYTHONWARNINGS"] = "ignore"
 
-    configure_loggers()
+    configure_loggers(log_level=dagster_log_level.upper())
     logger = logging.getLogger(WEBSERVER_LOGGER_NAME)
 
     if sys.argv[0].endswith("dagit"):
@@ -196,7 +204,7 @@ def dagster_webserver(
             code_server_log_level=code_server_log_level,
         ) as workspace_process_context:
             host_dagster_ui_with_workspace_process_context(
-                workspace_process_context, host, port, path_prefix, log_level
+                workspace_process_context, host, port, path_prefix, uvicorn_log_level
             )
 
 
@@ -257,6 +265,11 @@ def host_dagster_ui_with_workspace_process_context(
 cli = create_dagster_webserver_cli()
 
 
+@deprecated(
+    breaking_version="2.0",
+    subject="DAGIT_* environment variables, WEBSERVER_LOGGER_NAME",
+    emit_runtime_warning=False,
+)
 def main():
     # We only ever update this variable here. It is used to set the logger name as "dagit" if the
     # user invokes "dagit" on the command line.

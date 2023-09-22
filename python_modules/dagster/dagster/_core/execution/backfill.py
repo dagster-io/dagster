@@ -16,6 +16,7 @@ from dagster._serdes import whitelist_for_serdes
 from dagster._utils import utc_datetime_from_timestamp
 from dagster._utils.error import SerializableErrorInfo
 
+from ..definitions.selector import PartitionsByAssetSelector
 from .asset_backfill import (
     AssetBackfillData,
     PartitionedAssetBackfillStatus,
@@ -354,5 +355,29 @@ class PartitionBackfill(
                 dynamic_partitions_store=dynamic_partitions_store,
                 all_partitions=all_partitions,
                 backfill_start_time=utc_datetime_from_timestamp(backfill_timestamp),
+            ).serialize(dynamic_partitions_store=dynamic_partitions_store),
+        )
+
+    @classmethod
+    def from_partitions_by_assets(
+        cls,
+        backfill_id: str,
+        asset_graph: AssetGraph,
+        backfill_timestamp: float,
+        tags: Mapping[str, str],
+        dynamic_partitions_store: DynamicPartitionsStore,
+        partitions_by_assets: Sequence[PartitionsByAssetSelector],
+    ):
+        return cls(
+            backfill_id=backfill_id,
+            status=BulkActionStatus.REQUESTED,
+            from_failure=False,
+            tags=tags,
+            backfill_timestamp=backfill_timestamp,
+            serialized_asset_backfill_data=AssetBackfillData.from_partitions_by_assets(
+                asset_graph=asset_graph,
+                dynamic_partitions_store=dynamic_partitions_store,
+                backfill_start_time=utc_datetime_from_timestamp(backfill_timestamp),
+                partitions_by_assets=partitions_by_assets,
             ).serialize(dynamic_partitions_store=dynamic_partitions_store),
         )

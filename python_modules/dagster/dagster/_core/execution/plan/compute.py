@@ -17,6 +17,8 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._core.definitions import (
+    AssetCheckEvaluation,
+    AssetCheckResult,
     AssetMaterialization,
     AssetObservation,
     DynamicOutput,
@@ -27,6 +29,7 @@ from dagster._core.definitions import (
 )
 from dagster._core.definitions.asset_layer import AssetLayer
 from dagster._core.definitions.op_definition import OpComputeFunction
+from dagster._core.definitions.result import MaterializeResult
 from dagster._core.errors import DagsterExecutionStepExecutionError, DagsterInvariantViolationError
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.context.compute import OpExecutionContext
@@ -46,6 +49,9 @@ OpOutputUnion: TypeAlias = Union[
     ExpectationResult,
     AssetObservation,
     DagsterEvent,
+    AssetCheckEvaluation,
+    AssetCheckResult,
+    MaterializeResult,
 ]
 
 
@@ -66,6 +72,7 @@ def create_step_outputs(
     step_outputs: List[StepOutput] = []
     for name, output_def in node.definition.output_dict.items():
         asset_info = asset_layer.asset_info_for_output(handle, name)
+
         step_outputs.append(
             StepOutput(
                 node_handle=handle,
@@ -78,6 +85,7 @@ def create_step_outputs(
                     should_materialize=output_def.name in config_output_names,
                     asset_key=asset_info.key if asset_info and asset_info.is_required else None,
                     is_asset_partitioned=bool(asset_info.partitions_def) if asset_info else False,
+                    asset_check_handle=asset_layer.asset_check_handle_for_output(handle, name),
                 ),
             )
         )
@@ -94,6 +102,9 @@ def _validate_event(event: Any, step_context: StepExecutionContext) -> OpOutputU
             ExpectationResult,
             AssetObservation,
             DagsterEvent,
+            AssetCheckResult,
+            AssetCheckEvaluation,
+            MaterializeResult,
         ),
     ):
         raise DagsterInvariantViolationError(
@@ -194,8 +205,10 @@ def execute_core_compute(
         if isinstance(step_output, (DynamicOutput, Output)):
             emitted_result_names.add(step_output.output_name)
 
-    op_output_names = {output.name for output in step.step_outputs}
-    omitted_outputs = op_output_names.difference(emitted_result_names)
+    expected_op_output_names = {
+        output.name for output in step.step_outputs if not output.properties.asset_check_handle
+    }
+    omitted_outputs = expected_op_output_names.difference(emitted_result_names)
     if omitted_outputs:
         step_context.log.info(
             f"{step_context.op_def.node_type_str} '{step.node_handle}' did not fire "

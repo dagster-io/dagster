@@ -18,8 +18,8 @@ pin = "" if ver == "1!0+dev" else f"=={ver}"
 setup(
     name="dagster-duckdb",
     version=ver,
-    author="Elementl",
-    author_email="hello@elementl.com",
+    author="Dagster Labs",
+    author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
     description="Package for DuckDB-specific Dagster framework op and resource components.",
     url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-duckb",
@@ -37,12 +37,12 @@ setup(
         f"dagster{pin}",
     ],
     extras_require={
-        "pandas": ["pandas"],
-        # Pyspark 2.x is incompatible with Python 3.8+
-        "pyspark": [
-            'pyspark>=3.0.0; python_version >= "3.8"',
-            'pyspark>=2.0.2; python_version < "3.8"',
+        "pandas": [
+            # Pinned pending duckdb removal of broken pandas import. Pin can be
+            # removed as soon as it produces a working build.
+            "pandas<2.1",
         ],
+        "pyspark": ["pyspark>=3"],
     },
     zip_safe=False,
 )

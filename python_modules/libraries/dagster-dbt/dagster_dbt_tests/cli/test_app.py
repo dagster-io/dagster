@@ -15,15 +15,21 @@ if TYPE_CHECKING:
 
 pytest.importorskip("dbt.version", minversion="1.4")
 
-test_dagster_metadata_dbt_project_path = Path(__file__).parent.joinpath(
-    "..", "dbt_projects", "test_dagster_metadata"
+test_dagster_metadata_dbt_project_path = (
+    Path(__file__).joinpath("..", "..", "dbt_projects", "test_dagster_metadata").resolve()
 )
 
 runner = CliRunner()
 
 
+@pytest.fixture(name="disable_openblas_threading_affinity")
+def disable_openblas_threading_affinity_fixture(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("OPENBLAS_MAIN_FREE", "1")
+    monkeypatch.setenv("GOTOBLAS_MAIN_FREE", "1")
+
+
 @pytest.fixture(name="dbt_project_dir")
-def dbt_project_dir_fixture(tmp_path: Path) -> Path:
+def dbt_project_dir_fixture(tmp_path: Path, disable_openblas_threading_affinity) -> Path:
     dbt_project_dir = tmp_path.joinpath("test_dagster_metadata")
     shutil.copytree(
         src=test_dagster_metadata_dbt_project_path,
@@ -33,18 +39,12 @@ def dbt_project_dir_fixture(tmp_path: Path) -> Path:
     return dbt_project_dir
 
 
-@pytest.mark.parametrize("use_dbt_project_package_data_dir", [True, False])
-def test_project_scaffold_command_with_precompiled_manifest(
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
+def _assert_scaffold_invocation(
+    project_name: str,
     dbt_project_dir: Path,
+    dagster_project_dir: Path,
     use_dbt_project_package_data_dir: bool,
 ) -> None:
-    monkeypatch.chdir(tmp_path)
-
-    project_name = f"test_dagster_scaffold_{use_dbt_project_package_data_dir}"
-    dagster_project_dir = tmp_path.joinpath(project_name)
-
     result = runner.invoke(
         app,
         [
@@ -66,24 +66,13 @@ def test_project_scaffold_command_with_precompiled_manifest(
     assert not any(path.suffix == ".jinja" for path in dagster_project_dir.glob("**/*"))
     assert "dbt-duckdb" in dagster_project_dir.joinpath("setup.py").read_text()
 
-    if use_dbt_project_package_data_dir:
-        dbt_project_dir = dagster_project_dir.joinpath("dbt-project")
-        shutil.copytree(
-            src=test_dagster_metadata_dbt_project_path,
-            dst=dbt_project_dir,
-        )
 
-    subprocess.run(["dbt", "compile"], cwd=dbt_project_dir, check=True)
+def _assert_scaffold_defs(project_name: str, dagster_project_dir: Path) -> None:
+    schedules_py_path = dagster_project_dir.joinpath(project_name, "schedules.py")
+    schedules_py_path.write_text(schedules_py_path.read_text().replace("# ", ""))
 
-    assert dbt_project_dir.joinpath("target", "manifest.json").exists()
-
-    monkeypatch.chdir(tmp_path)
-    sys.path.append(os.fspath(tmp_path))
-
-    defs: Definitions = getattr(
-        importlib.import_module(f"{project_name}.{project_name}.definitions"),
-        "defs",
-    )
+    scaffold_defs_module = importlib.import_module(f"{project_name}.{project_name}.definitions")
+    defs: Definitions = getattr(scaffold_defs_module, "defs")
 
     materialize_dbt_models_job = defs.get_job_def("materialize_dbt_models")
     materialize_dbt_models_schedule = defs.get_schedule_def("materialize_dbt_models_schedule")
@@ -92,6 +81,56 @@ def test_project_scaffold_command_with_precompiled_manifest(
 
     assert result.success
     assert materialize_dbt_models_schedule.cron_schedule == "0 0 * * *"
+
+
+def _update_dbt_project_path(
+    dbt_project_dir: Path,
+    dagster_project_dir: Path,
+    use_dbt_project_package_data_dir: bool,
+) -> Path:
+    if use_dbt_project_package_data_dir:
+        dbt_project_dir = dagster_project_dir.joinpath("dbt-project")
+        shutil.copytree(
+            src=test_dagster_metadata_dbt_project_path,
+            dst=dbt_project_dir,
+        )
+
+    return dbt_project_dir
+
+
+@pytest.mark.parametrize("use_dbt_project_package_data_dir", [True, False])
+def test_project_scaffold_command_with_precompiled_manifest(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    dbt_project_dir: Path,
+    use_dbt_project_package_data_dir: bool,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    project_name = f"test_dagster_scaffold_precompiled_manifest_{use_dbt_project_package_data_dir}"
+    dagster_project_dir = tmp_path.joinpath(project_name)
+
+    _assert_scaffold_invocation(
+        project_name=project_name,
+        dbt_project_dir=dbt_project_dir,
+        dagster_project_dir=dagster_project_dir,
+        use_dbt_project_package_data_dir=use_dbt_project_package_data_dir,
+    )
+
+    dbt_project_dir = _update_dbt_project_path(
+        dbt_project_dir=dbt_project_dir,
+        dagster_project_dir=dagster_project_dir,
+        use_dbt_project_package_data_dir=use_dbt_project_package_data_dir,
+    )
+
+    subprocess.run(["dbt", "compile"], cwd=dbt_project_dir, check=True)
+
+    assert dbt_project_dir.joinpath("target", "manifest.json").exists()
+
+    monkeypatch.chdir(tmp_path)
+    sys.path.append(os.fspath(tmp_path))
+
+    _assert_scaffold_defs(project_name=project_name, dagster_project_dir=dagster_project_dir)
 
 
 @pytest.mark.parametrize("use_dbt_project_package_data_dir", [True, False])
@@ -106,59 +145,57 @@ def test_project_scaffold_command_with_runtime_manifest(
     project_name = f"test_dagster_scaffold_runtime_manifest_{use_dbt_project_package_data_dir}"
     dagster_project_dir = tmp_path.joinpath(project_name)
 
-    result = runner.invoke(
-        app,
-        [
-            "project",
-            "scaffold",
-            "--project-name",
-            project_name,
-            "--dbt-project-dir",
-            os.fspath(dbt_project_dir),
-            *(["--use-dbt-project-package-data-dir"] if use_dbt_project_package_data_dir else []),
-        ],
+    _assert_scaffold_invocation(
+        project_name=project_name,
+        dbt_project_dir=dbt_project_dir,
+        dagster_project_dir=dagster_project_dir,
+        use_dbt_project_package_data_dir=use_dbt_project_package_data_dir,
     )
 
-    assert result.exit_code == 0
-    assert f"Initializing Dagster project {project_name}" in result.stdout
-    assert "Your Dagster project has been initialized" in result.stdout
-    assert dagster_project_dir.exists()
-    assert dagster_project_dir.joinpath(project_name).exists()
-    assert not any(path.suffix == ".jinja" for path in dagster_project_dir.glob("**/*"))
-    assert not dbt_project_dir.joinpath("target", "manifest.json").exists()
-    assert "dbt-duckdb" in dagster_project_dir.joinpath("setup.py").read_text()
+    dbt_project_dir = _update_dbt_project_path(
+        dbt_project_dir=dbt_project_dir,
+        dagster_project_dir=dagster_project_dir,
+        use_dbt_project_package_data_dir=use_dbt_project_package_data_dir,
+    )
 
-    if use_dbt_project_package_data_dir:
-        dbt_project_dir = dagster_project_dir.joinpath("dbt-project")
-        shutil.copytree(
-            src=test_dagster_metadata_dbt_project_path,
-            dst=dbt_project_dir,
-        )
+    monkeypatch.setenv("DAGSTER_DBT_PARSE_PROJECT_ON_LOAD", "1")
+    monkeypatch.chdir(tmp_path)
+    sys.path.append(os.fspath(tmp_path))
+
+    _assert_scaffold_defs(project_name=project_name, dagster_project_dir=dagster_project_dir)
+
+
+@pytest.mark.parametrize("use_dbt_project_package_data_dir", [True, False])
+def test_project_scaffold_command_with_runtime_manifest_without_env_var(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    dbt_project_dir: Path,
+    use_dbt_project_package_data_dir: bool,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    project_name = f"test_scaffold_runtime_without_env_var_{use_dbt_project_package_data_dir}"
+    dagster_project_dir = tmp_path.joinpath(project_name)
+
+    _assert_scaffold_invocation(
+        project_name=project_name,
+        dbt_project_dir=dbt_project_dir,
+        dagster_project_dir=dagster_project_dir,
+        use_dbt_project_package_data_dir=use_dbt_project_package_data_dir,
+    )
+
+    dbt_project_dir = _update_dbt_project_path(
+        dbt_project_dir=dbt_project_dir,
+        dagster_project_dir=dagster_project_dir,
+        use_dbt_project_package_data_dir=use_dbt_project_package_data_dir,
+    )
 
     monkeypatch.chdir(tmp_path)
     sys.path.append(os.fspath(tmp_path))
 
     with pytest.raises(FileNotFoundError):
         monkeypatch.delenv("DAGSTER_DBT_PARSE_PROJECT_ON_LOAD", raising=False)
-        getattr(
-            importlib.import_module(f"{project_name}.{project_name}.definitions"),
-            "defs",
-        )
-
-    monkeypatch.setenv("DAGSTER_DBT_PARSE_PROJECT_ON_LOAD", "1")
-
-    defs: Definitions = getattr(
-        importlib.import_module(f"{project_name}.{project_name}.definitions"),
-        "defs",
-    )
-
-    materialize_dbt_models_job = defs.get_job_def("materialize_dbt_models")
-    materialize_dbt_models_schedule = defs.get_schedule_def("materialize_dbt_models_schedule")
-
-    result = materialize_dbt_models_job.execute_in_process()
-
-    assert result.success
-    assert materialize_dbt_models_schedule.cron_schedule == "0 0 * * *"
+        importlib.import_module(f"{project_name}.{project_name}.definitions")
 
 
 def test_project_scaffold_command_on_invalid_dbt_project(

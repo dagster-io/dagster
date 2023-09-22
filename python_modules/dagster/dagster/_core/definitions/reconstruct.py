@@ -33,6 +33,7 @@ from dagster._core.code_pointer import (
     ModuleCodePointer,
     get_python_file_from_target,
 )
+from dagster._core.definitions.asset_check_spec import AssetCheckHandle
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
@@ -208,6 +209,7 @@ class ReconstructableJob(
             ("job_name", str),
             ("op_selection", Optional[AbstractSet[str]]),
             ("asset_selection", Optional[AbstractSet[AssetKey]]),
+            ("asset_check_selection", Optional[AbstractSet[AssetCheckHandle]]),
         ],
     ),
     IJob,
@@ -231,6 +233,7 @@ class ReconstructableJob(
         job_name: str,
         op_selection: Optional[Iterable[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
+        asset_check_selection: Optional[AbstractSet[AssetCheckHandle]] = None,
     ):
         op_selection = set(op_selection) if op_selection else None
         return super(ReconstructableJob, cls).__new__(
@@ -240,6 +243,9 @@ class ReconstructableJob(
             op_selection=check.opt_nullable_set_param(op_selection, "op_selection", of_type=str),
             asset_selection=check.opt_nullable_set_param(
                 asset_selection, "asset_selection", AssetKey
+            ),
+            asset_check_selection=check.opt_nullable_set_param(
+                asset_check_selection, "asset_check_selection", AssetCheckHandle
             ),
         )
 
@@ -266,10 +272,12 @@ class ReconstructableJob(
         *,
         op_selection: Optional[Iterable[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
+        asset_check_selection: Optional[AbstractSet[AssetCheckHandle]] = None,
     ) -> Self:
-        if op_selection and asset_selection:
+        if op_selection and (asset_selection or asset_check_selection):
             check.failed(
-                "op_selection and asset_selection cannot both be provided as arguments",
+                "op_selection and asset_selection or asset_check_selection cannot both be provided"
+                " as arguments",
             )
         op_selection = set(op_selection) if op_selection else None
         return ReconstructableJob(
@@ -277,6 +285,7 @@ class ReconstructableJob(
             job_name=self.job_name,
             op_selection=op_selection,
             asset_selection=asset_selection,
+            asset_check_selection=asset_check_selection,
         )
 
     def describe(self) -> str:

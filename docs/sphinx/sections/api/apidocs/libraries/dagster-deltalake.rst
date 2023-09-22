@@ -5,8 +5,8 @@ This library provides an integration with the `Delta Lake <hhttps://delta.io/>`_
 
 Related Guides:
 
-* `Using Dagster with Delta Lake guide </integrations/deltalake>`_
-* `DeltaLake I/O manager reference </integrations/deltalake/reference>`_
+* `Using Dagster with Delta Lake tutorial </integrations/deltalake>`_
+* `Delta Lake reference </integrations/deltalake/reference>`_
 
 
 .. currentmodule:: dagster_deltalake

@@ -37,8 +37,7 @@ class EventLogConsumerDaemon(IntervalDaemon):
     def handle_updated_runs_fns(
         self,
     ) -> Sequence[Callable[[IWorkspaceProcessContext, Sequence[RunRecord]], Iterator]]:
-        """List of functions that will be called with the list of run records that have new events.
-        """
+        """List of functions that will be called with the list of run records that have new events."""
         return [consume_new_runs_for_automatic_reexecution]
 
     def run_iteration(self, workspace_process_context: IWorkspaceProcessContext):
@@ -50,9 +49,9 @@ class EventLogConsumerDaemon(IntervalDaemon):
         overall_max_event_id = instance.event_log_storage.get_maximum_record_id()
 
         events: List[EventLogEntry] = []
-        new_cursors: Dict[
-            DagsterEventType, int
-        ] = {}  # keep these in memory until we handle the events
+        new_cursors: Dict[DagsterEventType, int] = (
+            {}
+        )  # keep these in memory until we handle the events
         for event_type in DAGSTER_EVENT_TYPES:
             yield
 

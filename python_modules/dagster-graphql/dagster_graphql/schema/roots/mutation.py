@@ -26,7 +26,7 @@ from ...implementation.execution import (
     wipe_assets,
 )
 from ...implementation.external import fetch_workspace, get_full_external_job_or_raise
-from ...implementation.telemetry import log_dagit_telemetry_event
+from ...implementation.telemetry import log_ui_telemetry_event
 from ...implementation.utils import (
     ExecutionMetadata,
     ExecutionParams,
@@ -667,7 +667,7 @@ class GrapheneLogTelemetryMutation(graphene.Mutation):
     def mutate(
         self, graphene_info: ResolveInfo, action: str, clientTime: str, clientId: str, metadata: str
     ):
-        action = log_dagit_telemetry_event(
+        action = log_ui_telemetry_event(
             graphene_info,
             action=action,
             client_time=clientTime,

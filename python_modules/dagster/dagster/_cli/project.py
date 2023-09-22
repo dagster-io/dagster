@@ -68,10 +68,8 @@ def scaffold_repository_command(name: str):
 
     click.echo(
         click.style(
-            (
-                "WARNING: This command is deprecated. Use `dagster project scaffold-code-location`"
-                " instead."
-            ),
+            "WARNING: This command is deprecated. Use `dagster project scaffold-code-location`"
+            " instead.",
             fg="yellow",
         )
     )

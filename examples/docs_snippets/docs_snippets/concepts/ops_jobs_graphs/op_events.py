@@ -115,7 +115,7 @@ def my_metadata_expectation_op(context, df):
 # end_metadata_expectation_op
 
 # start_failure_op
-from dagster import Failure, op
+from dagster import Failure, op, MetadataValue
 
 
 @op

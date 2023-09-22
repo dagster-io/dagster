@@ -1,5 +1,4 @@
 import inspect
-import warnings
 from functools import wraps
 from typing import (
     Any,
@@ -20,6 +19,7 @@ from typing_extensions import get_args
 
 from dagster._config.pythonic_config import Config
 from dagster._core.definitions import (
+    AssetCheckResult,
     AssetMaterialization,
     DynamicOutput,
     ExpectationResult,
@@ -28,8 +28,10 @@ from dagster._core.definitions import (
 )
 from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 from dagster._core.definitions.op_definition import OpDefinition
+from dagster._core.definitions.result import MaterializeResult
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.types.dagster_type import DagsterTypeKind, is_generic_output_annotation
+from dagster._utils.warnings import disable_dagster_warnings
 
 from ..context.compute import OpExecutionContext
 
@@ -132,7 +134,7 @@ def _zip_and_iterate_op_result(
     result: Any, context: OpExecutionContext, output_defs: Sequence[OutputDefinition]
 ) -> Iterator[Tuple[int, Any, OutputDefinition]]:
     if len(output_defs) > 1:
-        _validate_multi_return(context, result, output_defs)
+        result = _validate_multi_return(context, result, output_defs)
         for position, (output_def, element) in enumerate(zip(output_defs, result)):
             yield position, output_def, element
     else:
@@ -143,7 +145,16 @@ def _validate_multi_return(
     context: OpExecutionContext,
     result: Any,
     output_defs: Sequence[OutputDefinition],
-) -> None:
+) -> Any:
+    # special cases for implicit/explicit returned None
+    if result is None:
+        # extrapolate None -> (None, None, ...) when appropriate
+        if all(
+            output_def.dagster_type.is_nothing and output_def.is_required
+            for output_def in output_defs
+        ):
+            return [None for _ in output_defs]
+
     # When returning from an op with multiple outputs, the returned object must be a tuple of the same length as the number of outputs. At the time of the op's construction, we verify that a provided annotation is a tuple with the same length as the number of outputs, so if the result matches the number of output defs on the op, it will transitively also match the annotation.
     if not isinstance(result, tuple):
         raise DagsterInvariantViolationError(
@@ -162,6 +173,7 @@ def _validate_multi_return(
             f"{len(output_tuple)} outputs, while "
             f"{context.op_def.node_type_str} has {len(output_defs)} outputs."
         )
+    return result
 
 
 def _get_annotation_for_output_position(
@@ -206,6 +218,8 @@ def validate_and_coerce_op_result_to_iterator(
             "value. Check out the docs on logging events here: "
             "https://docs.dagster.io/concepts/ops-jobs-graphs/op-events#op-events-and-exceptions"
         )
+    elif isinstance(result, AssetCheckResult):
+        yield result
     elif result is not None and not output_defs:
         raise DagsterInvariantViolationError(
             f"Error in {context.describe_op()}: Unexpectedly returned output of type"
@@ -236,15 +250,15 @@ def validate_and_coerce_op_result_to_iterator(
                     dynamic_output = cast(DynamicOutput, item)
                     _check_output_object_name(dynamic_output, output_def, position)
 
-                    with warnings.catch_warnings():
-                        warnings.simplefilter("ignore", category=DeprecationWarning)
-
+                    with disable_dagster_warnings():
                         yield DynamicOutput(
                             output_name=output_def.name,
                             value=dynamic_output.value,
                             mapping_key=dynamic_output.mapping_key,
                             metadata=dynamic_output.metadata,
                         )
+            elif isinstance(element, MaterializeResult):
+                yield element  # coerced in to Output in outer iterator
             elif isinstance(element, Output):
                 if annotation != inspect.Parameter.empty and not is_generic_output_annotation(
                     annotation
@@ -256,9 +270,7 @@ def validate_and_coerce_op_result_to_iterator(
                     )
                 _check_output_object_name(element, output_def, position)
 
-                with warnings.catch_warnings():
-                    warnings.simplefilter("ignore", category=DeprecationWarning)
-
+                with disable_dagster_warnings():
                     yield Output(
                         output_name=output_def.name,
                         value=element.value,

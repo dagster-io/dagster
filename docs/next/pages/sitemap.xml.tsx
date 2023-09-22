@@ -1,4 +1,4 @@
-import {latestAllVersionedPaths} from 'util/useNavigation';
+import {latestAllPaths} from 'util/navigation';
 
 const toUrl = (host, route) => `<url><loc>http://${host}${route}</loc></url>`;
 
@@ -11,7 +11,7 @@ const createSitemap = (host, routes) =>
 const Sitemap = () => {};
 
 Sitemap.getInitialProps = ({res, req}) => {
-  const routes = latestAllVersionedPaths().map(({params}) => '/' + params.page.join('/'));
+  const routes = latestAllPaths().map(({params}) => '/' + params.page.join('/'));
   const sitemap = createSitemap(req.headers.host, routes);
 
   res.setHeader('Content-Type', 'text/xml');

@@ -21,6 +21,11 @@ class FreshnessConstraint(NamedTuple):
     required_by_time: datetime.datetime
 
 
+class FreshnessMinutes(NamedTuple):
+    overdue_minutes: float
+    lag_minutes: float
+
+
 @experimental
 @whitelist_for_serdes
 class FreshnessPolicy(
@@ -167,7 +172,7 @@ class FreshnessPolicy(
         self,
         data_time: Optional[datetime.datetime],
         evaluation_time: datetime.datetime,
-    ) -> Optional[float]:
+    ) -> Optional[FreshnessMinutes]:
         """Returns a number of minutes past the specified freshness policy that this asset currently
         is. If the asset is missing upstream data, or is not materialized at all, then it is unknown
         how overdue it is, and this will return None.
@@ -184,4 +189,8 @@ class FreshnessPolicy(
         if evaluation_tick is None:
             return None
         required_time = evaluation_tick - self.maximum_lag_delta
-        return max(0.0, (required_time - data_time).total_seconds() / 60)
+
+        return FreshnessMinutes(
+            lag_minutes=max(0.0, (evaluation_tick - data_time).total_seconds() / 60),
+            overdue_minutes=max(0.0, (required_time - data_time).total_seconds() / 60),
+        )

@@ -8,7 +8,12 @@ SqlEventLogStorageMetadata = db.MetaData()
 SqlEventLogStorageTable = db.Table(
     "event_logs",
     SqlEventLogStorageMetadata,
-    db.Column("id", db.Integer, primary_key=True, autoincrement=True),
+    db.Column(
+        "id",
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    ),
     db.Column("run_id", db.String(255)),
     db.Column("event", db.Text, nullable=False),
     db.Column("dagster_event_type", db.Text),
@@ -21,7 +26,12 @@ SqlEventLogStorageTable = db.Table(
 SecondaryIndexMigrationTable = db.Table(
     "secondary_indexes",
     SqlEventLogStorageMetadata,
-    db.Column("id", db.Integer, primary_key=True, autoincrement=True),
+    db.Column(
+        "id",
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    ),
     db.Column("name", MySQLCompatabilityTypes.UniqueText, unique=True),
     db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
     db.Column("migration_completed", db.DateTime),
@@ -39,7 +49,12 @@ SecondaryIndexMigrationTable = db.Table(
 AssetKeyTable = db.Table(
     "asset_keys",
     SqlEventLogStorageMetadata,
-    db.Column("id", db.Integer, primary_key=True, autoincrement=True),
+    db.Column(
+        "id",
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    ),
     db.Column("asset_key", MySQLCompatabilityTypes.UniqueText, unique=True),
     db.Column("last_materialization", db.Text),
     db.Column("last_run_id", db.String(255)),
@@ -63,7 +78,11 @@ AssetEventTagsTable = db.Table(
         primary_key=True,
         autoincrement=True,
     ),
-    db.Column("event_id", db.Integer, db.ForeignKey("event_logs.id", ondelete="CASCADE")),
+    db.Column(
+        "event_id",
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+        db.ForeignKey("event_logs.id", ondelete="CASCADE"),
+    ),
     db.Column("asset_key", db.Text, nullable=False),
     db.Column("key", db.Text, nullable=False),
     db.Column("value", db.Text),
@@ -116,6 +135,56 @@ PendingStepsTable = db.Table(
     db.Column("priority", db.Integer),
     db.Column("assigned_timestamp", db.DateTime),
     db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
+)
+
+AssetCheckExecutionsTable = db.Table(
+    "asset_check_executions",
+    SqlEventLogStorageMetadata,
+    db.Column(
+        "id",
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    ),
+    db.Column("asset_key", db.Text),
+    db.Column("check_name", db.Text),
+    db.Column("partition", db.Text),  # Currently unused. Planned for future partition support
+    db.Column("run_id", db.String(255)),
+    db.Column("execution_status", db.String(255)),  # Planned, Success, or Failure
+    db.Column("evaluation_event", db.Text),
+    db.Column("evaluation_event_timestamp", db.DateTime),
+    db.Column(
+        "evaluation_event_storage_id",
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+    ),
+    db.Column(
+        "materialization_event_storage_id",
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+    ),
+    db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
+)
+
+db.Index(
+    "idx_asset_check_executions",
+    AssetCheckExecutionsTable.c.asset_key,
+    AssetCheckExecutionsTable.c.check_name,
+    AssetCheckExecutionsTable.c.materialization_event_storage_id,
+    AssetCheckExecutionsTable.c.partition,
+    mysql_length={
+        "asset_key": 64,
+        "partition": 64,
+        "check_name": 64,
+    },
+)
+
+db.Index(
+    "idx_asset_check_executions_unique",
+    AssetCheckExecutionsTable.c.asset_key,
+    AssetCheckExecutionsTable.c.check_name,
+    AssetCheckExecutionsTable.c.run_id,
+    AssetCheckExecutionsTable.c.partition,
+    unique=True,
+    mysql_length={"asset_key": 64, "partition": 64, "check_name": 64},
 )
 
 db.Index(

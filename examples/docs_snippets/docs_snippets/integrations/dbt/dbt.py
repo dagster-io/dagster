@@ -3,45 +3,24 @@
 MANIFEST_PATH = ""
 
 
-def scope_load_assets_from_dbt_project():
-    # start_load_assets_from_dbt_project
-    from dagster_dbt import load_assets_from_dbt_project
-
-    dbt_assets = load_assets_from_dbt_project(project_dir="path/to/dbt/project")
-    # end_load_assets_from_dbt_project
-
-
-def scope_load_assets_from_dbt_manifest():
-    # start_load_assets_from_dbt_manifest
-    import json
-
-    from dagster_dbt import load_assets_from_dbt_manifest
-
-    with open("path/to/dbt/manifest.json") as f:
-        manifest_json = json.load(f)
-
-    dbt_assets = load_assets_from_dbt_manifest(manifest_json)
-    # end_load_assets_from_dbt_manifest
-
-
-def scope_dbt_cli_resource_config():
-    # start_dbt_cli_resource
+def scope_compile_dbt_manifest(manifest):
+    # start_compile_dbt_manifest
     import os
+    from pathlib import Path
 
-    from dagster_dbt import DbtCliResource, load_assets_from_dbt_project
+    from dagster_dbt import DbtCliResource
 
-    from dagster import Definitions
+    dbt_project_dir = Path(__file__).joinpath("..", "..", "..").resolve()
+    dbt = DbtCliResource(project_dir=os.fspath(dbt_project_dir))
 
-    DBT_PROJECT_PATH = "path/to/dbt_project"
-    DBT_TARGET = "hive" if os.getenv("EXECUTION_ENV") == "prod" else "duckdb"
-
-    defs = Definitions(
-        assets=load_assets_from_dbt_project(DBT_PROJECT_PATH),
-        resources={
-            "dbt": DbtCliResource(project_dir=DBT_PROJECT_PATH, target=DBT_TARGET),
-        },
-    )
-    # end_dbt_cli_resource
+    # If DAGSTER_DBT_PARSE_PROJECT_ON_LOAD is set, a manifest will be created at runtime.
+    # Otherwise, we expect a manifest to be present in the project's target directory.
+    if os.getenv("DAGSTER_DBT_PARSE_PROJECT_ON_LOAD"):
+        dbt_parse_invocation = dbt.cli(["parse"], manifest={}).wait()
+        dbt_manifest_path = dbt_parse_invocation.target_path.joinpath("manifest.json")
+    else:
+        dbt_manifest_path = dbt_project_dir.joinpath("target", "manifest.json")
+    # end_compile_dbt_manifest
 
 
 def scope_schedule_assets_dbt_only(manifest):
@@ -184,47 +163,6 @@ def scope_existing_asset():
     # end_upstream_dagster_asset
 
 
-def scope_input_manager():
-    # start_input_manager
-    import pandas as pd
-
-    from dagster import ConfigurableIOManager
-
-    class PandasIOManager(ConfigurableIOManager):
-        connection_str: str
-
-        def handle_output(self, context, obj):
-            # dbt handles outputs for us
-            pass
-
-        def load_input(self, context) -> pd.DataFrame:
-            """Load the contents of a table as a pandas DataFrame."""
-            table_name = context.asset_key.path[-1]
-            return pd.read_sql(f"SELECT * FROM {table_name}", con=self.connection_str)
-
-    # end_input_manager
-
-
-def scope_input_manager_resources():
-    class PandasIOManager:
-        def __init__(self, connection_str: str):
-            pass
-
-    # start_input_manager_resources
-    from dagster_dbt import DbtCliResource, load_assets_from_dbt_project
-
-    from dagster import Definitions
-
-    defs = Definitions(
-        assets=load_assets_from_dbt_project(...),
-        resources={
-            "dbt": DbtCliResource(project_dir="path/to/dbt_project"),
-            "pandas_df_manager": PandasIOManager(connection_str=...),
-        },
-    )
-    # end_input_manager_resources
-
-
 def scope_custom_asset_key_dagster_dbt_translator():
     # start_custom_asset_key_dagster_dbt_translator
     from pathlib import Path
@@ -236,7 +174,7 @@ def scope_custom_asset_key_dagster_dbt_translator():
 
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
         def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
-            return self.get_asset_key(dbt_resource_props).with_prefix("snowflake")
+            return super().get_asset_key(dbt_resource_props).with_prefix("snowflake")
 
     @dbt_assets(
         manifest=manifest_path,
@@ -310,7 +248,9 @@ def scope_custom_metadata_dagster_dbt_translator():
         def get_metadata(
             self, dbt_resource_props: Mapping[str, Any]
         ) -> Mapping[str, Any]:
-            return {"meta": MetadataValue.json(dbt_resource_props.get("meta", {}))}
+            return {
+                "dbt_metadata": MetadataValue.json(dbt_resource_props.get("meta", {}))
+            }
 
     @dbt_assets(
         manifest=manifest_path,
@@ -320,3 +260,53 @@ def scope_custom_metadata_dagster_dbt_translator():
         yield from dbt.cli(["build"], context=context).stream()
 
     # end_custom_metadata_dagster_dbt_translator
+
+
+def scope_custom_auto_materialize_policy_dagster_dbt_translator():
+    # start_custom_auto_materialize_policy_dagster_dbt_translator
+    from pathlib import Path
+    from dagster import OpExecutionContext, AutoMaterializePolicy
+    from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
+    from typing import Any, Mapping, Optional
+
+    manifest_path = Path("path/to/dbt_project/target/manifest.json")
+
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+        def get_auto_materialize_policy(
+            self, dbt_resource_props: Mapping[str, Any]
+        ) -> Optional[AutoMaterializePolicy]:
+            return AutoMaterializePolicy.eager()
+
+    @dbt_assets(
+        manifest=manifest_path,
+        dagster_dbt_translator=CustomDagsterDbtTranslator(),
+    )
+    def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream()
+
+    # end_custom_auto_materialize_policy_dagster_dbt_translator
+
+
+def scope_custom_freshness_policy_dagster_dbt_translator():
+    # start_custom_freshness_policy_dagster_dbt_translator
+    from pathlib import Path
+    from dagster import OpExecutionContext, FreshnessPolicy
+    from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
+    from typing import Any, Mapping, Optional
+
+    manifest_path = Path("path/to/dbt_project/target/manifest.json")
+
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+        def get_freshness_policy(
+            self, dbt_resource_props: Mapping[str, Any]
+        ) -> Optional[FreshnessPolicy]:
+            return FreshnessPolicy(maximum_lag_minutes=60)
+
+    @dbt_assets(
+        manifest=manifest_path,
+        dagster_dbt_translator=CustomDagsterDbtTranslator(),
+    )
+    def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream()
+
+    # end_custom_freshness_policy_dagster_dbt_translator

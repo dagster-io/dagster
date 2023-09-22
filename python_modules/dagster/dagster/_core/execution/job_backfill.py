@@ -331,9 +331,10 @@ def create_backfill_run(
         external_job_origin=external_pipeline.get_external_origin(),
         job_code_origin=external_pipeline.get_python_origin(),
         op_selection=op_selection,
-        asset_selection=frozenset(backfill_job.asset_selection)
-        if backfill_job.asset_selection
-        else None,
+        asset_selection=(
+            frozenset(backfill_job.asset_selection) if backfill_job.asset_selection else None
+        ),
+        asset_check_selection=None,
     )
 
 

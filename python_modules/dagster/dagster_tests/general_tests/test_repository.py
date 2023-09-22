@@ -6,8 +6,10 @@ from dagster import (
     AssetKey,
     GraphDefinition,
     Int,
+    IntMetadataValue,
     IOManager,
     JobDefinition,
+    TextMetadataValue,
     asset,
     graph,
     io_manager,
@@ -85,6 +87,18 @@ def dagster_test_repository():
 
 def test_repository_construction():
     assert dagster_test_repository
+
+
+@repository(metadata={"string": "foo", "integer": 123})
+def metadata_repository():
+    return []
+
+
+def test_repository_metadata():
+    assert metadata_repository.metadata == {
+        "string": TextMetadataValue("foo"),
+        "integer": IntMetadataValue(123),
+    }
 
 
 @repository

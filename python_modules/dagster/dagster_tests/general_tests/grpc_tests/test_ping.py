@@ -1,5 +1,7 @@
+import logging
 import os
 import re
+import subprocess
 import threading
 import time
 from unittest import mock
@@ -15,6 +17,15 @@ from dagster._serdes.ipc import interrupt_ipc_subprocess_pid
 from dagster._utils import find_free_port, safe_tempfile_path
 
 
+def _cleanup_process(process):
+    interrupt_ipc_subprocess_pid(process.pid)
+    try:
+        process.wait(timeout=30)
+    except subprocess.TimeoutExpired:
+        print("subprocess did not terminate in 30s, killing")  # noqa: T201
+        process.kill()
+
+
 @pytest.mark.skipif(not seven.IS_WINDOWS, reason="Windows-only test")
 def test_server_socket_on_windows():
     with safe_tempfile_path() as skt:
@@ -22,6 +33,7 @@ def test_server_socket_on_windows():
             DagsterGrpcServer(
                 server_termination_event=threading.Event(),
                 dagster_api_servicer=mock.MagicMock(),
+                logger=logging.getLogger("dagster.code_server"),
                 socket=skt,
             )
 
@@ -35,6 +47,7 @@ def test_server_port_and_socket():
             DagsterGrpcServer(
                 server_termination_event=threading.Event(),
                 dagster_api_servicer=mock.MagicMock(),
+                logger=logging.getLogger("dagster.code_server"),
                 socket=skt,
                 port=find_free_port(),
             )
@@ -88,9 +101,7 @@ def test_server_port():
         try:
             assert DagsterGrpcClient(port=port).ping("foobar") == "foobar"
         finally:
-            interrupt_ipc_subprocess_pid(server_process.pid)
-            server_process.terminate()
-            server_process.wait()
+            _cleanup_process(server_process)
 
 
 def test_client_bad_port():
@@ -181,9 +192,7 @@ def test_fixed_server_id():
             api_client = DagsterGrpcClient(port=port)
             assert api_client.get_server_id() == "fixed_id"
         finally:
-            interrupt_ipc_subprocess_pid(server_process.pid)
-            server_process.terminate()
-            server_process.wait()
+            _cleanup_process(server_process)
 
 
 def test_detect_server_restart():
@@ -194,9 +203,7 @@ def test_detect_server_restart():
         server_id_one = api_client.get_server_id()
         assert server_id_one
     finally:
-        interrupt_ipc_subprocess_pid(server_process.pid)
-        server_process.terminate()
-        server_process.wait()
+        _cleanup_process(server_process)
 
     seven.wait_for_process(server_process, timeout=5)
     with pytest.raises(DagsterUserCodeUnreachableError):
@@ -209,8 +216,6 @@ def test_detect_server_restart():
         server_id_two = api_client.get_server_id()
         assert server_id_two
     finally:
-        interrupt_ipc_subprocess_pid(server_process.pid)
-        server_process.terminate()
-        server_process.wait()
+        _cleanup_process(server_process)
 
     assert server_id_one != server_id_two

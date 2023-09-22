@@ -12,7 +12,7 @@ import visit from 'unist-util-visit';
 
 import masterNavigation from '../../content/_navigation.json';
 import {getItems, getIds} from '../components/mdx/SidebarNavigation';
-import {flatten} from '../util/useNavigation';
+import {flatten} from '../util/navigation';
 
 // remark
 
@@ -37,7 +37,7 @@ test('No dead navs', async () => {
       elem.path &&
       !fileExists(path.join(DOCS_DIR, elem.path) + '.mdx') &&
       !elem.isExternalLink &&
-      !elem.isUnversioned
+      !elem.isNotDynamic
     ) {
       deadNavLinks.push({
         title: elem.title,

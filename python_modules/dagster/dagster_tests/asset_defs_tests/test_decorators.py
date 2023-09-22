@@ -26,11 +26,13 @@ from dagster import (
     graph_asset,
     graph_multi_asset,
     io_manager,
+    materialize,
     materialize_to_memory,
     op,
     resource,
 )
 from dagster._check import CheckError
+from dagster._config.pythonic_config import Config
 from dagster._core.definitions import (
     AssetIn,
     AssetsDefinition,
@@ -39,6 +41,7 @@ from dagster._core.definitions import (
     multi_asset,
 )
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.decorators.config_mapping_decorator import config_mapping
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_requirement import ensure_requirements_satisfied
 from dagster._core.errors import DagsterInvalidConfigError
@@ -304,7 +307,7 @@ def test_asset_with_dagster_type():
     assert my_asset.op.output_defs[0].dagster_type.display_name == "String"
 
 
-@ignore_warning("`version` property on OpDefinition is deprecated")
+@ignore_warning("Property `OpDefinition.version` is deprecated")
 def test_asset_with_code_version():
     @asset(code_version="foo")
     def my_asset(arg1):
@@ -314,7 +317,7 @@ def test_asset_with_code_version():
     assert my_asset.op.output_def_named("result").code_version == "foo"
 
 
-@ignore_warning("`version` property on OpDefinition is deprecated")
+@ignore_warning("Property `OpDefinition.version` is deprecated")
 def test_asset_with_code_version_direct_call():
     def func(arg1):
         return arg1
@@ -658,7 +661,7 @@ def test_kwargs_multi_asset_with_context():
     assert materialize_to_memory([upstream, my_asset]).success
 
 
-@ignore_warning('"resource_defs" is an experimental argument')
+@ignore_warning("Parameter `resource_defs` .* is experimental")
 def test_multi_asset_resource_defs():
     @resource
     def baz_resource():
@@ -705,8 +708,8 @@ def test_multi_asset_code_versions():
     }
 
 
-@ignore_warning('"io_manager_def" is an experimental argument')
-@ignore_warning('"resource_defs" is an experimental argument')
+@ignore_warning("Parameter `io_manager_def` .* is experimental")
+@ignore_warning("Parameter `resource_defs` .* is experimental")
 def test_asset_io_manager_def():
     @io_manager
     def the_manager():
@@ -813,7 +816,7 @@ def test_invalid_self_dep(partitions_def, partition_mapping):
             del b
 
 
-@ignore_warning('"MultiPartitionMapping" is an experimental class')
+@ignore_warning("Class `MultiPartitionMapping` is experimental")
 def test_invalid_self_dep_no_time_dimension():
     partitions_def = MultiPartitionsDefinition(
         {
@@ -884,9 +887,9 @@ def test_graph_asset_decorator_no_args():
     assert my_graph.keys_by_output_name["result"] == AssetKey("my_graph")
 
 
-@ignore_warning('"FreshnessPolicy" is an experimental class')
-@ignore_warning('"AutoMaterializePolicy" is an experimental class')
-@ignore_warning('"resource_defs" is an experimental argument')
+@ignore_warning("Class `FreshnessPolicy` is experimental")
+@ignore_warning("Class `AutoMaterializePolicy` is experimental")
+@ignore_warning("Parameter `resource_defs` .* is experimental")
 def test_graph_asset_with_args():
     @resource
     def foo_resource():
@@ -988,9 +991,47 @@ def test_graph_asset_w_key_prefix():
     assert str_prefix.keys_by_output_name["result"].path == ["prefix", "str_prefix"]
 
 
-@ignore_warning('"FreshnessPolicy" is an experimental class')
-@ignore_warning('"AutoMaterializePolicy" is an experimental class')
-@ignore_warning('"resource_defs" is an experimental argument')
+def test_graph_asset_w_config_dict():
+    class FooConfig(Config):
+        val: int
+
+    @op
+    def foo_op(config: FooConfig):
+        return config.val
+
+    @graph_asset(config={"foo_op": {"config": {"val": 1}}})
+    def foo():
+        return foo_op()
+
+    result = materialize_to_memory([foo])
+    assert result.success
+    assert result.output_for_node("foo") == 1
+
+
+def test_graph_asset_w_config_mapping():
+    class FooConfig(Config):
+        val: int
+
+    @op
+    def foo_op(config: FooConfig):
+        return config.val
+
+    @config_mapping(config_schema=int)
+    def foo_config_mapping(val: Any) -> Any:
+        return {"foo_op": {"config": {"val": val}}}
+
+    @graph_asset(config=foo_config_mapping)
+    def foo():
+        return foo_op()
+
+    result = materialize_to_memory([foo], run_config={"ops": {"foo": {"config": 1}}})
+    assert result.success
+    assert result.output_for_node("foo") == 1
+
+
+@ignore_warning("Class `FreshnessPolicy` is experimental")
+@ignore_warning("Class `AutoMaterializePolicy` is experimental")
+@ignore_warning("Parameter `resource_defs`")
 def test_graph_multi_asset_decorator():
     @resource
     def foo_resource():
@@ -1091,7 +1132,7 @@ def test_graph_multi_asset_w_key_prefix():
     }
 
 
-@ignore_warning('"resource_defs" is an experimental argument')
+@ignore_warning("Parameter `resource_defs` .* is experimental")
 def test_multi_asset_with_bare_resource():
     class BareResourceObject:
         pass
@@ -1108,7 +1149,7 @@ def test_multi_asset_with_bare_resource():
     assert executed["yes"]
 
 
-@ignore_warning('"AutoMaterializePolicy" is an experimental class')
+@ignore_warning("Class `AutoMaterializePolicy` is experimental")
 def test_multi_asset_with_auto_materialize_policy():
     @multi_asset(
         outs={
@@ -1173,3 +1214,29 @@ def test_error_on_asset_key_provided():
         @asset(key="the_asset", name="foo", key_prefix="bar")
         def three():
             ...
+
+
+def test_dynamic_graph_asset_ins():
+    @op(ins={"start_after": In(Nothing)})
+    def start_job():
+        return "x"
+
+    @op
+    def wait_until_job_done(x):
+        return x
+
+    @asset
+    def foo():
+        ...
+
+    all_assets = [foo]
+
+    @graph_asset(
+        ins={asset.key.path[-1]: AssetIn(asset.key) for asset in all_assets},
+    )
+    def some_graph_asset(**kwargs):
+        # block starting job til "all assets" are materialized
+        run_id = start_job([v for v in kwargs.values()])
+        return wait_until_job_done(run_id)
+
+    assert materialize([some_graph_asset, foo]).success

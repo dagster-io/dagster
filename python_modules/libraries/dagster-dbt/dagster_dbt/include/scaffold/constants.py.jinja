@@ -1,0 +1,19 @@
+import os
+from pathlib import Path
+
+from dagster_dbt import DbtCliResource
+
+{% if use_dbt_project_package_data_dir -%}
+# We expect the dbt project to be installed as package data.
+# For details, see https://docs.python.org/3/distutils/setupscript.html#installing-package-data.
+{% endif -%}
+dbt_project_dir = Path(__file__).joinpath({{ dbt_project_dir_relative_path_parts | join(', ')}}).resolve()
+dbt = DbtCliResource(project_dir=os.fspath(dbt_project_dir))
+
+# If DAGSTER_DBT_PARSE_PROJECT_ON_LOAD is set, a manifest will be created at run time.
+# Otherwise, we expect a manifest to be present in the project's target directory.
+if os.getenv("DAGSTER_DBT_PARSE_PROJECT_ON_LOAD"):
+    dbt_parse_invocation = dbt.cli([{{ dbt_parse_command | join(', ')}}]).wait()
+    dbt_manifest_path = dbt_parse_invocation.target_path.joinpath("manifest.json")
+else:
+    dbt_manifest_path = dbt_project_dir.joinpath("target", "manifest.json")

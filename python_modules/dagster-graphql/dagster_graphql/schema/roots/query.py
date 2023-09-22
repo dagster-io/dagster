@@ -33,6 +33,7 @@ from ...implementation.external import (
     fetch_repository,
     fetch_workspace,
 )
+from ...implementation.fetch_asset_checks import fetch_asset_checks
 from ...implementation.fetch_assets import (
     get_asset,
     get_asset_node,
@@ -60,7 +61,6 @@ from ...implementation.fetch_runs import (
     get_logs_for_run,
     get_run_by_id,
     get_run_group,
-    get_run_groups,
     get_run_tag_keys,
     get_run_tags,
     validate_pipeline_config,
@@ -83,6 +83,7 @@ from ...implementation.utils import (
     graph_selector_from_graphql,
     pipeline_selector_from_graphql,
 )
+from ..asset_checks import GrapheneAssetChecksOrError
 from ..asset_graph import (
     GrapheneAssetLatestInfo,
     GrapheneAssetNode,
@@ -135,7 +136,8 @@ from ..run_config import GrapheneRunConfigSchemaOrError
 from ..runs import (
     GrapheneRunConfigData,
     GrapheneRunGroupOrError,
-    GrapheneRunGroupsOrError,
+    GrapheneRunIds,
+    GrapheneRunIdsOrError,
     GrapheneRuns,
     GrapheneRunsOrError,
     GrapheneRunTagKeysOrError,
@@ -326,19 +328,18 @@ class GrapheneQuery(graphene.ObjectType):
         limit=graphene.Int(),
         description="Retrieve all the distinct key-value tags from all runs.",
     )
+    runIdsOrError = graphene.Field(
+        graphene.NonNull(GrapheneRunIdsOrError),
+        filter=graphene.Argument(GrapheneRunsFilter),
+        cursor=graphene.String(),
+        limit=graphene.Int(),
+        description="Retrieve run IDs after applying a filter, cursor, and limit.",
+    )
 
     runGroupOrError = graphene.Field(
         graphene.NonNull(GrapheneRunGroupOrError),
         runId=graphene.NonNull(graphene.ID),
         description="Retrieve a group of runs with the matching root run id.",
-    )
-
-    runGroupsOrError = graphene.Field(
-        graphene.NonNull(GrapheneRunGroupsOrError),
-        filter=graphene.Argument(GrapheneRunsFilter),
-        cursor=graphene.String(),
-        limit=graphene.Int(),
-        description="Retrieve groups of runs after applying a filter, cursor, and limit.",
     )
 
     isPipelineConfigValid = graphene.Field(
@@ -410,7 +411,7 @@ class GrapheneQuery(graphene.ObjectType):
             " Note: Assets should "
         )
         + "not be defined in more than one repository - this query is used to present warnings and"
-        " errors in Dagit.",
+        " errors in the Dagster UI.",
     )
 
     partitionBackfillOrError = graphene.Field(
@@ -475,6 +476,13 @@ class GrapheneQuery(graphene.ObjectType):
         limit=graphene.Argument(graphene.NonNull(graphene.Int)),
         cursor=graphene.Argument(graphene.String),
         description="Retrieve the auto materialization evaluation records for all assets.",
+    )
+
+    assetChecksOrError = graphene.Field(
+        graphene.NonNull(GrapheneAssetChecksOrError),
+        assetKey=graphene.Argument(graphene.NonNull(GrapheneAssetKeyInput)),
+        checkName=graphene.Argument(graphene.String()),
+        description="Retrieve the asset checks for a given asset key.",
     )
 
     @capture_error
@@ -674,21 +682,23 @@ class GrapheneQuery(graphene.ObjectType):
             limit=limit,
         )
 
-    def resolve_runOrError(self, graphene_info: ResolveInfo, runId):
-        return get_run_by_id(graphene_info, runId)
-
-    def resolve_runGroupsOrError(
+    def resolve_runIdsOrError(
         self,
-        graphene_info: ResolveInfo,
+        _graphene_info: ResolveInfo,
         filter: Optional[GrapheneRunsFilter] = None,  # noqa: A002
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
     ):
         selector = filter.to_selector() if filter is not None else None
 
-        return GrapheneRunGroupsOrError(
-            results=get_run_groups(graphene_info, selector, cursor, limit)
+        return GrapheneRunIds(
+            filters=selector,
+            cursor=cursor,
+            limit=limit,
         )
+
+    def resolve_runOrError(self, graphene_info: ResolveInfo, runId):
+        return get_run_by_id(graphene_info, runId)
 
     @capture_error
     def resolve_partitionSetsOrError(
@@ -997,3 +1007,11 @@ class GrapheneQuery(graphene.ObjectType):
         return fetch_auto_materialize_asset_evaluations(
             graphene_info=graphene_info, graphene_asset_key=assetKey, cursor=cursor, limit=limit
         )
+
+    def resolve_assetChecksOrError(
+        self,
+        graphene_info: ResolveInfo,
+        assetKey: GrapheneAssetKeyInput,
+        checkName: Optional[str] = None,
+    ):
+        return fetch_asset_checks(graphene_info, AssetKey.from_graphql_input(assetKey), checkName)

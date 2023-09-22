@@ -153,7 +153,7 @@ GET_ASSET_DATA_VERSIONS = """
             assetKey {
               path
             }
-            currentDataVersion
+            dataVersion
             staleStatus
             staleCauses {
                 key { path }
@@ -165,6 +165,45 @@ GET_ASSET_DATA_VERSIONS = """
                 tags {
                     key
                     value
+                }
+            }
+        }
+    }
+"""
+
+GET_ASSET_DATA_VERSIONS_BY_PARTITION = """
+    query AssetNodeQuery($assetKey: AssetKeyInput!, $partition: String, $partitions: [String!]) {
+        assetNodeOrError(assetKey: $assetKey) {
+            ... on AssetNode {
+                id
+                assetKey {
+                  path
+                }
+                dataVersion(partition: $partition)
+                dataVersionByPartition(partitions: $partitions)
+                staleStatus(partition: $partition)
+                staleCauses(partition: $partition) {
+                    key { path }
+                    partitionKey
+                    category
+                    reason
+                    dependency { path }
+                    dependencyPartitionKey
+                }
+                staleStatusByPartition(partitions: $partitions)
+                staleCausesByPartition(partitions: $partitions) {
+                    key { path }
+                    partitionKey
+                    category
+                    reason
+                    dependency { path }
+                    dependencyPartitionKey
+                }
+                assetMaterializations {
+                    tags {
+                        key
+                        value
+                    }
                 }
             }
         }
@@ -302,6 +341,17 @@ GET_ASSET_OBSERVATIONS = """
                     }
                 }
             }
+        }
+    }
+"""
+
+HAS_ASSET_CHECKS = """
+    query AssetNodeQuery {
+        assetNodes {
+            assetKey {
+                path
+            }
+            hasAssetChecks
         }
     }
 """
@@ -628,9 +678,9 @@ def _create_partitioned_run(
     return _create_run(
         graphql_context,
         job_name,
-        asset_selection=[{"path": asset_key.path} for asset_key in asset_selection]
-        if asset_selection
-        else None,
+        asset_selection=(
+            [{"path": asset_key.path} for asset_key in asset_selection] if asset_selection else None
+        ),
         tags=all_tags,
     )
 
@@ -2127,6 +2177,18 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert len(fresh_diamond_bottom) == 1
         assert fresh_diamond_bottom[0]["autoMaterializePolicy"]["policyType"] == "LAZY"
         assert fresh_diamond_bottom[0]["autoMaterializePolicy"]["maxMaterializationsPerMinute"] == 1
+
+    def test_has_asset_checks(self, graphql_context: WorkspaceRequestContext):
+        result = execute_dagster_graphql(graphql_context, HAS_ASSET_CHECKS)
+
+        assert result.data
+        assert result.data["assetNodes"]
+
+        for a in result.data["assetNodes"]:
+            if a["assetKey"]["path"] == ["asset_1"]:
+                assert a["hasAssetChecks"] is True
+            else:
+                assert a["hasAssetChecks"] is False, f"Asset {a['assetKey']} has asset checks"
 
 
 class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):

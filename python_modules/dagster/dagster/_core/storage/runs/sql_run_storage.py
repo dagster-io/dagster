@@ -11,7 +11,6 @@ from typing import (
     ContextManager,
     Dict,
     Iterable,
-    List,
     Mapping,
     NamedTuple,
     Optional,
@@ -74,7 +73,7 @@ from ..dagster_run import (
     RunsFilter,
     TagBucket,
 )
-from .base import RunGroupInfo, RunStorage
+from .base import RunStorage
 from .migration import (
     OPTIONAL_DATA_MIGRATIONS,
     REQUIRED_DATA_MIGRATIONS,
@@ -273,22 +272,6 @@ class SqlRunStorage(RunStorage):
         if filters.created_before:
             query = query.where(RunsTable.c.create_timestamp < filters.created_before)
 
-        if filters.tags and self.supports_intersect:
-            intersections = [
-                db_select([RunTagsTable.c.run_id]).where(
-                    db.and_(
-                        RunTagsTable.c.key == key,
-                        (
-                            RunTagsTable.c.value == value
-                            if isinstance(value, str)
-                            else RunTagsTable.c.value.in_(value)
-                        ),
-                    )
-                )
-                for key, value in filters.tags.items()
-            ]
-
-            query = query.where(RunsTable.c.run_id.in_(db.intersect(*intersections)))
         return query
 
     def _runs_query(
@@ -311,12 +294,7 @@ class SqlRunStorage(RunStorage):
         if columns is None:
             columns = ["run_body", "status"]
 
-        if bucket_by:
-            if limit or cursor:
-                check.failed("cannot specify bucket_by and limit/cursor at the same time")
-            return self._bucketed_runs_query(bucket_by, filters, columns, order_by, ascending)
-
-        if filters.tags and not self.supports_intersect:
+        if filters.tags:
             table = self._apply_tags_table_joins(RunsTable, filters.tags)
         else:
             table = RunsTable
@@ -326,105 +304,6 @@ class SqlRunStorage(RunStorage):
         )
         base_query = self._add_filters_to_query(base_query, filters)
         return self._add_cursor_limit_to_query(base_query, cursor, limit, order_by, ascending)
-
-    def _bucket_rank_column(
-        self, bucket_by: Union[JobBucket, TagBucket], order_by: Optional[str], ascending: bool
-    ):
-        check.inst_param(bucket_by, "bucket_by", (JobBucket, TagBucket))
-        check.invariant(
-            self.supports_bucket_queries, "Bucket queries are not supported by this storage layer"
-        )
-        sorting_column = getattr(RunsTable.c, order_by) if order_by else RunsTable.c.id
-        direction = db.asc if ascending else db.desc
-        bucket_column = (
-            RunsTable.c.pipeline_name if isinstance(bucket_by, JobBucket) else RunTagsTable.c.value
-        )
-        return (
-            db.func.rank()
-            .over(order_by=direction(sorting_column), partition_by=bucket_column)
-            .label("rank")
-        )
-
-    def _bucketed_runs_query(
-        self,
-        bucket_by: Union[JobBucket, TagBucket],
-        filters: RunsFilter,
-        columns: Sequence[str],
-        order_by: Optional[str] = None,
-        ascending: bool = False,
-    ) -> SqlAlchemyQuery:
-        bucket_rank = self._bucket_rank_column(bucket_by, order_by, ascending)
-        query_columns = [getattr(RunsTable.c, column) for column in columns] + [bucket_rank]
-
-        if isinstance(bucket_by, JobBucket):
-            if filters.tags and not self.supports_intersect:
-                table = self._apply_tags_table_joins(RunsTable, filters.tags)
-            else:
-                table = RunsTable
-            base_query = db_select(query_columns).select_from(table)
-            base_query = base_query.where(RunsTable.c.pipeline_name.in_(bucket_by.job_names))
-            base_query = self._add_filters_to_query(base_query, filters)
-
-        elif not filters.tags:
-            # bucketing by tag, no tag filters
-            if self.supports_intersect:
-                table = RunsTable.join(
-                    RunTagsTable,
-                    db.and_(
-                        RunsTable.c.run_id == RunTagsTable.c.run_id,
-                        RunTagsTable.c.key == bucket_by.tag_key,
-                        RunTagsTable.c.value.in_(bucket_by.tag_values),
-                    ),
-                )
-            else:
-                table = self._apply_tags_table_joins(
-                    RunsTable,
-                    {bucket_by.tag_key: bucket_by.tag_values},
-                )
-
-            base_query = db_select(query_columns).select_from(table)
-            base_query = self._add_filters_to_query(base_query, filters)
-        else:
-            # there are tag filters as well as tag buckets, so we have to apply the tag filters in
-            # a separate join
-            if self.supports_intersect:
-                filtered_query = db_select([RunsTable.c.run_id])
-            else:
-                filtered_query = db_select([RunsTable.c.run_id]).select_from(
-                    self._apply_tags_table_joins(RunsTable, filters.tags)
-                )
-
-            filtered_query = db_subquery(
-                self._add_filters_to_query(filtered_query, filters), "filtered_query"
-            )
-            if self.supports_intersect:
-                table = RunsTable.join(
-                    RunTagsTable,
-                    db.and_(
-                        RunsTable.c.run_id == RunTagsTable.c.run_id,
-                        RunTagsTable.c.key == bucket_by.tag_key,
-                        RunTagsTable.c.value.in_(bucket_by.tag_values),
-                    ),
-                )
-            else:
-                table = self._apply_tags_table_joins(
-                    RunsTable, {bucket_by.tag_key: bucket_by.tag_values}
-                )
-
-            base_query = db_select(query_columns).select_from(
-                table.join(filtered_query, RunsTable.c.run_id == filtered_query.c.run_id)
-            )
-
-        subquery = db_subquery(base_query, "runs_subquery")
-
-        # select all the columns, but skip the bucket_rank column, which is only used for applying
-        # the limit / order
-        subquery_columns = [getattr(subquery.c, column) for column in columns]
-        query = db_select(subquery_columns).order_by(subquery.c.rank.asc())
-        if bucket_by.bucket_limit:
-            query = query.where(subquery.c.rank <= bucket_by.bucket_limit)
-
-        return query
 
     def _apply_tags_table_joins(
         self,
@@ -464,6 +343,16 @@ class SqlRunStorage(RunStorage):
         query = self._runs_query(filters, cursor, limit, bucket_by=bucket_by)
         rows = self.fetchall(query)
         return self._rows_to_runs(rows)
+
+    def get_run_ids(
+        self,
+        filters: Optional[RunsFilter] = None,
+        cursor: Optional[str] = None,
+        limit: Optional[int] = None,
+    ) -> Sequence[str]:
+        query = self._runs_query(filters=filters, cursor=cursor, limit=limit, columns=["run_id"])
+        rows = self.fetchall(query)
+        return [row["run_id"] for row in rows]
 
     def get_runs_count(self, filters: Optional[RunsFilter] = None) -> int:
         subquery = db_subquery(self._runs_query(filters=filters))
@@ -515,9 +404,9 @@ class SqlRunStorage(RunStorage):
                 dagster_run=self._row_to_run(row),
                 create_timestamp=check.inst(row["create_timestamp"], datetime),
                 update_timestamp=check.inst(row["update_timestamp"], datetime),
-                start_time=check.opt_inst(row["start_time"], float)
-                if "start_time" in row
-                else None,
+                start_time=(
+                    check.opt_inst(row["start_time"], float) if "start_time" in row else None
+                ),
                 end_time=check.opt_inst(row["end_time"], float) if "end_time" in row else None,
             )
             for row in rows
@@ -610,10 +499,8 @@ class SqlRunStorage(RunStorage):
         root_run = self._get_run_by_id(root_run_id)
         if not root_run:
             raise DagsterRunNotFoundError(
-                (
-                    f"Run id {root_run_id} set as root run id for run {run_id} was not found in"
-                    " instance."
-                ),
+                f"Run id {root_run_id} set as root run id for run {run_id} was not found in"
+                " instance.",
                 invalid_run_id=root_run_id,
             )
 
@@ -641,152 +528,6 @@ class SqlRunStorage(RunStorage):
         run_group = self._rows_to_runs(res)
 
         return (root_run_id, [root_run, *run_group])
-
-    def get_run_groups(
-        self,
-        filters: Optional[RunsFilter] = None,
-        cursor: Optional[str] = None,
-        limit: Optional[int] = None,
-    ) -> Mapping[str, RunGroupInfo]:
-        # The runs that would be returned by calling RunStorage.get_runs with the same arguments
-        runs = db_subquery(
-            self._runs_query(
-                filters=filters,
-                cursor=cursor,
-                limit=limit,
-                columns=["run_body", "status", "run_id"],
-            ),
-            "runs",
-        )
-
-        # Gets us the run_id and associated root_run_id for every run in storage that is a
-        # descendant run of some root
-        #
-        # pseudosql:
-        #   with all_descendant_runs as (
-        #     select *
-        #     from run_tags
-        #     where key = @ROOT_RUN_ID_TAG
-        #   )
-
-        all_descendant_runs = db_subquery(
-            db_select([RunTagsTable]).where(RunTagsTable.c.key == ROOT_RUN_ID_TAG),
-            "all_descendant_runs",
-        )
-
-        # Augment the runs in our query, for those runs that are the descendant of some root run,
-        # with the root_run_id
-        #
-        # pseudosql:
-        #
-        #   with runs_augmented as (
-        #     select
-        #       runs.run_id as run_id,
-        #       all_descendant_runs.value as root_run_id
-        #     from runs
-        #     left outer join all_descendant_runs
-        #       on all_descendant_runs.run_id = runs.run_id
-        #   )
-
-        runs_augmented = db_subquery(
-            db_select(
-                [
-                    runs.c.run_id.label("run_id"),
-                    all_descendant_runs.c.value.label("root_run_id"),
-                ]
-            ).select_from(
-                runs.join(
-                    all_descendant_runs,
-                    all_descendant_runs.c.run_id == RunsTable.c.run_id,
-                    isouter=True,
-                )
-            ),
-            "runs_augmented",
-        )
-
-        # Get all the runs our query will return. This includes runs as well as their root runs.
-        #
-        # pseudosql:
-        #
-        #    with runs_and_root_runs as (
-        #      select runs.run_id as run_id
-        #      from runs, runs_augmented
-        #      where
-        #        runs.run_id = runs_augmented.run_id or
-        #        runs.run_id = runs_augmented.root_run_id
-        #    )
-
-        runs_and_root_runs = db_subquery(
-            db_select([RunsTable.c.run_id.label("run_id")])
-            .distinct()
-            .select_from(runs_augmented)
-            .where(
-                db.or_(
-                    RunsTable.c.run_id == runs_augmented.c.run_id,
-                    RunsTable.c.run_id == runs_augmented.c.root_run_id,
-                )
-            ),
-            "runs_and_root_runs",
-        )
-
-        # We count the descendants of all of the runs in our query that are roots so that
-        # we can accurately display when a root run has more descendants than are returned by this
-        # query and afford a drill-down. This might be an unnecessary complication, but the
-        # alternative isn't obvious -- we could go and fetch *all* the runs in any group that we're
-        # going to return in this query, and then append those.
-        #
-        # pseudosql:
-        #
-        #    select runs.run_body, count(all_descendant_runs.id) as child_counts
-        #    from runs
-        #    join runs_and_root_runs on runs.run_id = runs_and_root_runs.run_id
-        #    left outer join all_descendant_runs
-        #      on all_descendant_runs.value = runs_and_root_runs.run_id
-        #    group by runs.run_body
-        #    order by child_counts desc
-
-        runs_and_root_runs_with_descendant_counts = (
-            db_select(
-                [
-                    RunsTable.c.run_body,
-                    RunsTable.c.status,
-                    db.func.count(all_descendant_runs.c.id).label("child_counts"),
-                ]
-            )
-            .select_from(
-                RunsTable.join(
-                    runs_and_root_runs, RunsTable.c.run_id == runs_and_root_runs.c.run_id
-                ).join(
-                    all_descendant_runs,
-                    all_descendant_runs.c.value == runs_and_root_runs.c.run_id,
-                    isouter=True,
-                )
-            )
-            .group_by(RunsTable.c.run_body, RunsTable.c.status)
-            .order_by(db.desc(db.column("child_counts")))
-        )
-
-        res = self.fetchall(runs_and_root_runs_with_descendant_counts)
-
-        # Postprocess: descendant runs get aggregated with their roots
-        root_run_id_to_group: Dict[str, List[DagsterRun]] = defaultdict(list)
-        root_run_id_to_count: Dict[str, int] = defaultdict(int)
-        for row in res:
-            dagster_run = self._row_to_run(row)
-            root_run_id = dagster_run.get_root_run_id()
-            if root_run_id is not None:
-                root_run_id_to_group[root_run_id].append(dagster_run)
-            else:
-                root_run_id_to_group[dagster_run.run_id].append(dagster_run)
-                root_run_id_to_count[dagster_run.run_id] = cast(int, row["child_counts"]) + 1
-
-        return {
-            root_run_id: {
-                "runs": list(run_group),
-                "count": root_run_id_to_count[root_run_id],
-            }
-            for root_run_id, run_group in root_run_id_to_group.items()
-        }
 
     def has_run(self, run_id: str) -> bool:
         check.str_param(run_id, "run_id")

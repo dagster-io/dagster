@@ -1,4 +1,4 @@
-from typing import AbstractSet, Any, Mapping, Optional
+from typing import AbstractSet, Optional
 
 from dagster import (
     AssetKey,
@@ -9,9 +9,10 @@ from dagster._core.definitions.asset_graph import AssetGraph
 
 from .asset_utils import is_non_asset_node
 from .dagster_dbt_translator import DagsterDbtTranslator
+from .dbt_manifest import DbtManifestParam, validate_manifest
 from .utils import (
     ASSET_RESOURCE_TYPES,
-    get_node_info_by_dbt_unique_id_from_manifest,
+    get_dbt_resource_props_by_dbt_unique_id_from_manifest,
     select_unique_ids_from_manifest,
 )
 
@@ -40,13 +41,13 @@ class DbtManifestAssetSelection(AssetSelection):
 
     def __init__(
         self,
-        manifest: Mapping[str, Any],
+        manifest: DbtManifestParam,
         select: str = "fqn:*",
         *,
         dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
         exclude: Optional[str] = None,
     ) -> None:
-        self.manifest = check.dict_param(manifest, "manifest", key_type=str)
+        self.manifest = validate_manifest(manifest)
         self.select = check.str_param(select, "select")
         self.exclude = check.opt_str_param(exclude, "exclude", default="")
         self.dagster_dbt_translator = check.opt_inst_param(
@@ -57,7 +58,7 @@ class DbtManifestAssetSelection(AssetSelection):
         )
 
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
-        dbt_nodes = get_node_info_by_dbt_unique_id_from_manifest(self.manifest)
+        dbt_nodes = get_dbt_resource_props_by_dbt_unique_id_from_manifest(self.manifest)
 
         keys = set()
         for unique_id in select_unique_ids_from_manifest(
@@ -65,10 +66,10 @@ class DbtManifestAssetSelection(AssetSelection):
             exclude=self.exclude,
             manifest_json=self.manifest,
         ):
-            node_info = dbt_nodes[unique_id]
-            is_dbt_asset = node_info["resource_type"] in ASSET_RESOURCE_TYPES
-            if is_dbt_asset and not is_non_asset_node(node_info):
-                asset_key = self.dagster_dbt_translator.get_asset_key(node_info)
+            dbt_resource_props = dbt_nodes[unique_id]
+            is_dbt_asset = dbt_resource_props["resource_type"] in ASSET_RESOURCE_TYPES
+            if is_dbt_asset and not is_non_asset_node(dbt_resource_props):
+                asset_key = self.dagster_dbt_translator.get_asset_key(dbt_resource_props)
                 keys.add(asset_key)
 
         return keys

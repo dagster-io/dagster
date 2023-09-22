@@ -2,7 +2,7 @@
 title: Concepts | Dagster Docs
 ---
 
-# Concepts
+# Core concepts
 
 Learn about Dagster's core concepts and how to use them in your data platform.
 
@@ -41,6 +41,8 @@ An asset is an object in persistent storage, such as a table, file, or persisted
 
 Ops are the core unit of computation in Dagster. They typically perform relatively simple tasks, such as executing a database query or sending a Slack message.
 
+An op graph is a set of interconnected ops or sub-graphs. While individual ops typically perform simple tasks, ops can be assembled into a graph to accomplish complex tasks.
+
 <ArticleList>
   <ArticleListItem
     title="Ops"
@@ -58,25 +60,16 @@ Ops are the core unit of computation in Dagster. They typically perform relative
     title="Op retries"
     href="/concepts/ops-jobs-graphs/op-retries"
   ></ArticleListItem>
-</ArticleList>
-
----
-
-## Graphs
-
-A graph is a set of interconnected ops or sub-graphs. While individual ops typically perform simple tasks, ops can be assembled into a graph to accomplish complex tasks.
-
-<ArticleList>
   <ArticleListItem
-    title="Graphs"
+    title="Op graphs"
     href="/concepts/ops-jobs-graphs/graphs"
   ></ArticleListItem>
   <ArticleListItem
-    title="Nesting graphs"
+    title="Nesting op graphs"
     href="/concepts/ops-jobs-graphs/nesting-graphs"
   ></ArticleListItem>
   <ArticleListItem
-    title="Dynamic graphs"
+    title="Dynamic op graphs"
     href="/concepts/ops-jobs-graphs/dynamic-graphs"
   ></ArticleListItem>
 </ArticleList>

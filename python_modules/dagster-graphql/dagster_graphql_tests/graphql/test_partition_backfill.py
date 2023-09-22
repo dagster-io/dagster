@@ -237,8 +237,7 @@ def _execute_asset_backfill_iteration_no_side_effects(
 
 
 def _execute_backfill_iteration_with_side_effects(graphql_context, backfill_id):
-    """Executes an asset backfill iteration with side effects (i.e. updates run status and bulk action status).
-    """
+    """Executes an asset backfill iteration with side effects (i.e. updates run status and bulk action status)."""
     with get_workspace_process_context(graphql_context.instance) as context:
         backfill = graphql_context.instance.get_backfill(backfill_id)
         list(

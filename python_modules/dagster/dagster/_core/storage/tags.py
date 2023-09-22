@@ -61,12 +61,6 @@ AUTO_MATERIALIZE_TAG = f"{SYSTEM_TAG_PREFIX}auto_materialize"
 ASSET_EVALUATION_ID_TAG = f"{SYSTEM_TAG_PREFIX}asset_evaluation_id"
 AUTO_OBSERVE_TAG = f"{SYSTEM_TAG_PREFIX}auto_observe"
 
-USER_EDITABLE_SYSTEM_TAGS = [
-    PRIORITY_TAG,
-    MAX_RETRIES_TAG,
-    RETRY_STRATEGY_TAG,
-    MAX_RUNTIME_SECONDS_TAG,
-]
 
 RUN_WORKER_ID_TAG = f"{HIDDEN_TAG_PREFIX}run_worker"
 GLOBAL_CONCURRENCY_TAG = f"{SYSTEM_TAG_PREFIX}concurrency_key"
@@ -74,6 +68,17 @@ GLOBAL_CONCURRENCY_TAG = f"{SYSTEM_TAG_PREFIX}concurrency_key"
 # In cloud, we tag runs with the email of the user who triggered the run
 # This is used to display the user in the UI
 USER_TAG = "user"
+
+RUN_ISOLATION_TAG = f"{SYSTEM_TAG_PREFIX}isolation"
+
+
+USER_EDITABLE_SYSTEM_TAGS = [
+    PRIORITY_TAG,
+    MAX_RETRIES_TAG,
+    RETRY_STRATEGY_TAG,
+    MAX_RUNTIME_SECONDS_TAG,
+    RUN_ISOLATION_TAG,
+]
 
 
 class TagType(Enum):

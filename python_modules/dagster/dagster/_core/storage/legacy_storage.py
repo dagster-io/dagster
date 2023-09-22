@@ -13,8 +13,12 @@ from dagster import (
     _check as check,
 )
 from dagster._config.config_schema import UserConfigSchema
-from dagster._core.definitions.asset_reconciliation_sensor import AutoMaterializeAssetEvaluation
+from dagster._core.definitions.auto_materialize_rule import AutoMaterializeAssetEvaluation
+from dagster._core.definitions.events import AssetKey
 from dagster._core.event_api import EventHandlerFn
+from dagster._core.storage.asset_check_execution_record import (
+    AssetCheckExecutionRecord,
+)
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils import PrintFn
 from dagster._utils.concurrency import ConcurrencyClaimStatus, ConcurrencyKeyInfo
@@ -27,11 +31,10 @@ from .event_log.base import (
     EventLogStorage,
     EventRecordsFilter,
 )
-from .runs.base import RunGroupInfo, RunStorage
+from .runs.base import RunStorage
 from .schedules.base import ScheduleStorage
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.events import AssetKey
     from dagster._core.definitions.run_request import InstigatorType
     from dagster._core.events import DagsterEvent, DagsterEventType
     from dagster._core.events.log import EventLogEntry
@@ -201,19 +204,19 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
     ) -> Iterable["DagsterRun"]:
         return self._storage.run_storage.get_runs(filters, cursor, limit, bucket_by)
 
+    def get_run_ids(
+        self,
+        filters: Optional["RunsFilter"] = None,
+        cursor: Optional[str] = None,
+        limit: Optional[int] = None,
+    ) -> Iterable[str]:
+        return self._storage.run_storage.get_run_ids(filters, cursor=cursor, limit=limit)
+
     def get_runs_count(self, filters: Optional["RunsFilter"] = None) -> int:
         return self._storage.run_storage.get_runs_count(filters)
 
     def get_run_group(self, run_id: str) -> Optional[Tuple[str, Iterable["DagsterRun"]]]:
         return self._storage.run_storage.get_run_group(run_id)
-
-    def get_run_groups(
-        self,
-        filters: Optional["RunsFilter"] = None,
-        cursor: Optional[str] = None,
-        limit: Optional[int] = None,
-    ) -> Mapping[str, RunGroupInfo]:
-        return self._storage.run_storage.get_run_groups(filters, cursor, limit)
 
     def get_run_records(
         self,
@@ -286,10 +289,6 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
 
     def delete_run(self, run_id: str) -> None:
         return self._storage.run_storage.delete_run(run_id)
-
-    @property
-    def supports_bucket_queries(self) -> bool:
-        return self._storage.run_storage.supports_bucket_queries
 
     def migrate(self, print_fn: Optional[PrintFn] = None, force_rebuild_all: bool = False) -> None:
         return self._storage.run_storage.migrate(print_fn, force_rebuild_all)
@@ -597,6 +596,24 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
 
     def free_concurrency_slot_for_step(self, run_id: str, step_key: str) -> None:
         return self._storage.event_log_storage.free_concurrency_slot_for_step(run_id, step_key)
+
+    def get_asset_check_executions(
+        self,
+        asset_key: AssetKey,
+        check_name: str,
+        limit: int,
+        cursor: Optional[int] = None,
+        materialization_event_storage_id: Optional[int] = None,
+        include_planned: bool = True,
+    ) -> Sequence[AssetCheckExecutionRecord]:
+        return self._storage.event_log_storage.get_asset_check_executions(
+            asset_key=asset_key,
+            check_name=check_name,
+            limit=limit,
+            cursor=cursor,
+            materialization_event_storage_id=materialization_event_storage_id,
+            include_planned=include_planned,
+        )
 
 
 class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):

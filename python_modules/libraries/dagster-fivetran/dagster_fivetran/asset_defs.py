@@ -122,10 +122,8 @@ def _build_fivetran_assets(
                 asset_key = list(unmaterialized_asset_keys)[0]
                 output_name = "_".join(asset_key.path)
                 raise DagsterStepOutputNotFoundError(
-                    (
-                        f"Core compute for {context.op_def.name} did not return an output for"
-                        f' non-optional output "{output_name}".'
-                    ),
+                    f"Core compute for {context.op_def.name} did not return an output for"
+                    f' non-optional output "{output_name}".',
                     step_key=context.get_step_execution_context().step.key,
                     output_name=output_name,
                 )
@@ -285,6 +283,8 @@ class FivetranConnectionMetadata(
 def _build_fivetran_assets_from_metadata(
     assets_defn_meta: AssetsDefinitionCacheableData,
     resource_defs: Mapping[str, ResourceDefinition],
+    poll_interval: float,
+    poll_timeout: Optional[float] = None,
 ) -> AssetsDefinition:
     metadata = cast(Mapping[str, Any], assets_defn_meta.extra_metadata)
     connector_id = cast(str, metadata["connector_id"])
@@ -305,6 +305,8 @@ def _build_fivetran_assets_from_metadata(
         table_to_asset_key_map=assets_defn_meta.keys_by_output_name,
         resource_defs=resource_defs,
         group_name=assets_defn_meta.group_name,
+        poll_interval=poll_interval,
+        poll_timeout=poll_timeout,
     )[0]
 
 
@@ -317,6 +319,8 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
         connector_filter: Optional[Callable[[FivetranConnectionMetadata], bool]],
         connector_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]],
         connector_to_asset_key_fn: Optional[Callable[[FivetranConnectionMetadata, str], AssetKey]],
+        poll_interval: float,
+        poll_timeout: Optional[float],
     ):
         self._fivetran_resource_def = fivetran_resource_def
         self._fivetran_instance: FivetranResource = (
@@ -329,9 +333,11 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
         self._connector_to_group_fn = connector_to_group_fn
         self._connection_filter = connector_filter
         self._connector_to_io_manager_key_fn = connector_to_io_manager_key_fn
-        self._connector_to_asset_key_fn: Callable[
-            [FivetranConnectionMetadata, str], AssetKey
-        ] = connector_to_asset_key_fn or (lambda _, table: AssetKey(path=table.split(".")))
+        self._connector_to_asset_key_fn: Callable[[FivetranConnectionMetadata, str], AssetKey] = (
+            connector_to_asset_key_fn or (lambda _, table: AssetKey(path=table.split(".")))
+        )
+        self._poll_interval = poll_interval
+        self._poll_timeout = poll_timeout
 
         contents = hashlib.sha1()
         contents.update(",".join(key_prefix).encode("utf-8"))
@@ -385,12 +391,16 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
                 asset_defn_data.append(
                     connector.build_asset_defn_metadata(
                         key_prefix=self._key_prefix,
-                        group_name=self._connector_to_group_fn(connector.name)
-                        if self._connector_to_group_fn
-                        else None,
-                        io_manager_key=self._connector_to_io_manager_key_fn(connector.name)
-                        if self._connector_to_io_manager_key_fn
-                        else None,
+                        group_name=(
+                            self._connector_to_group_fn(connector.name)
+                            if self._connector_to_group_fn
+                            else None
+                        ),
+                        io_manager_key=(
+                            self._connector_to_io_manager_key_fn(connector.name)
+                            if self._connector_to_io_manager_key_fn
+                            else None
+                        ),
                         table_to_asset_key_fn=table_to_asset_key,
                     )
                 )
@@ -402,7 +412,10 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
     ) -> Sequence[AssetsDefinition]:
         return [
             _build_fivetran_assets_from_metadata(
-                meta, {"fivetran": self._fivetran_instance.get_resource_definition()}
+                meta,
+                {"fivetran": self._fivetran_instance.get_resource_definition()},
+                poll_interval=self._poll_interval,
+                poll_timeout=self._poll_timeout,
             )
             for meta in data
         ]
@@ -423,6 +436,8 @@ def load_assets_from_fivetran_instance(
     connector_to_asset_key_fn: Optional[
         Callable[[FivetranConnectionMetadata, str], AssetKey]
     ] = None,
+    poll_interval: float = DEFAULT_POLL_INTERVAL,
+    poll_timeout: Optional[float] = None,
 ) -> CacheableAssetsDefinition:
     """Loads Fivetran connector assets from a configured FivetranResource instance. This fetches information
     about defined connectors at initialization time, and will error on workspace load if the Fivetran
@@ -442,6 +457,12 @@ def load_assets_from_fivetran_instance(
             the IOManager specified determines how the inputs to those ops are loaded. Defaults to "io_manager".
         connector_filter (Optional[Callable[[FivetranConnectorMetadata], bool]]): Optional function which takes
             in connector metadata and returns False if the connector should be excluded from the output assets.
+        connector_to_asset_key_fn (Optional[Callable[[FivetranConnectorMetadata, str], AssetKey]]): Optional function
+            which takes in connector metadata and a table name and returns an AssetKey for that table. Defaults to
+            a function that generates an AssetKey matching the table name, split by ".".
+        poll_interval (float): The time (in seconds) that will be waited between successive polls.
+        poll_timeout (Optional[float]): The maximum time that will waited before this operation is
+            timed out. By default, this will never time out.
 
     **Examples:**
 
@@ -494,4 +515,6 @@ def load_assets_from_fivetran_instance(
         connector_to_io_manager_key_fn=connector_to_io_manager_key_fn,
         connector_filter=connector_filter,
         connector_to_asset_key_fn=connector_to_asset_key_fn,
+        poll_interval=poll_interval,
+        poll_timeout=poll_timeout,
     )

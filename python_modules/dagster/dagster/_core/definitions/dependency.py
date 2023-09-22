@@ -497,15 +497,13 @@ class NodeHandle(NamedTuple("_NodeHandle", [("name", str), ("parent", Optional["
 class NodeInputHandle(
     NamedTuple("_NodeInputHandle", [("node_handle", NodeHandle), ("input_name", str)])
 ):
-    """A structured object to uniquely identify inputs in the potentially recursive graph structure.
-    """
+    """A structured object to uniquely identify inputs in the potentially recursive graph structure."""
 
 
 class NodeOutputHandle(
     NamedTuple("_NodeOutputHandle", [("node_handle", NodeHandle), ("output_name", str)])
 ):
-    """A structured object to uniquely identify outputs in the potentially recursive graph structure.
-    """
+    """A structured object to uniquely identify outputs in the potentially recursive graph structure."""
 
 
 class NodeInput(NamedTuple("_NodeInput", [("node", Node), ("input_def", InputDefinition)])):
@@ -604,8 +602,7 @@ class IDependencyDefinition(ABC):
 
     @abstractmethod
     def is_fan_in(self) -> bool:
-        """The result passed to the corresponding input will be a List made from different node outputs.
-        """
+        """The result passed to the corresponding input will be a List made from different node outputs."""
 
 
 class DependencyDefinition(
@@ -767,9 +764,48 @@ class MultiDependencyDefinition(
     def get_dependencies_and_mappings(
         self,
     ) -> Sequence[Union[DependencyDefinition, Type["MappedInputPlaceholder"]]]:
-        """Return the combined list of dependencies contained by this object, inculding of :py:class:`DependencyDefinition` and :py:class:`MappedInputPlaceholder` objects.
-        """
+        """Return the combined list of dependencies contained by this object, inculding of :py:class:`DependencyDefinition` and :py:class:`MappedInputPlaceholder` objects."""
         return self.dependencies
+
+
+class BlockingAssetChecksDependencyDefinition(
+    IDependencyDefinition,
+    NamedTuple(
+        "_BlockingAssetChecksDependencyDefinition",
+        [
+            (
+                "asset_check_dependencies",
+                Sequence[DependencyDefinition],
+            ),
+            ("other_dependency", Optional[DependencyDefinition]),
+        ],
+    ),
+):
+    """An input that depends on a set of outputs that correspond to upstream asset checks, and also
+    optionally depends on a single upstream output that does not correspond to an asset check.
+
+    We model this with a different kind of DependencyDefinition than MultiDependencyDefinition,
+    because we treat the value that's passed to the input parameter differently: we ignore the asset
+    check dependencies and only pass a single value, instead of a fanned-in list.
+    """
+
+    @public
+    def get_node_dependencies(self) -> Sequence[DependencyDefinition]:
+        """Return the list of :py:class:`DependencyDefinition` contained by this object."""
+        if self.other_dependency:
+            return [*self.asset_check_dependencies, self.other_dependency]
+        else:
+            return self.asset_check_dependencies
+
+    @public
+    def is_fan_in(self) -> bool:
+        return False
+
+    @public
+    def get_dependencies_and_mappings(
+        self,
+    ) -> Sequence[Union[DependencyDefinition, Type["MappedInputPlaceholder"]]]:
+        return self.get_node_dependencies()
 
 
 class DynamicCollectDependencyDefinition(
@@ -805,7 +841,9 @@ def _create_handle_dict(
     for node_name, input_dict in dep_dict.items():
         from_node = node_dict[node_name]
         for input_name, dep_def in input_dict.items():
-            if isinstance(dep_def, MultiDependencyDefinition):
+            if isinstance(
+                dep_def, (MultiDependencyDefinition, BlockingAssetChecksDependencyDefinition)
+            ):
                 handles: List[Union[NodeOutput, Type[MappedInputPlaceholder]]] = []
                 for inner_dep in dep_def.get_dependencies_and_mappings():
                     if isinstance(inner_dep, DependencyDefinition):
@@ -843,16 +881,27 @@ class DependencyStructure:
     def from_definitions(
         nodes: Mapping[str, Node], dep_dict: DependencyMapping[str]
     ) -> "DependencyStructure":
-        return DependencyStructure(list(dep_dict.keys()), _create_handle_dict(nodes, dep_dict))
+        return DependencyStructure(
+            list(dep_dict.keys()),
+            _create_handle_dict(nodes, dep_dict),
+            dep_dict,
+        )
 
     _node_input_index: DefaultDict[str, Dict[NodeInput, List[NodeOutput]]]
     _node_output_index: Dict[str, DefaultDict[NodeOutput, List[NodeInput]]]
     _dynamic_fan_out_index: Dict[str, NodeOutput]
     _collect_index: Dict[str, Set[NodeOutput]]
+    _deps_by_node_name: DependencyMapping[str]
 
-    def __init__(self, node_names: Sequence[str], input_to_output_map: InputToOutputMap):
+    def __init__(
+        self,
+        node_names: Sequence[str],
+        input_to_output_map: InputToOutputMap,
+        deps_by_node_name: DependencyMapping[str],
+    ):
         self._node_names = node_names
         self._input_to_output_map = input_to_output_map
+        self._deps_by_node_name = deps_by_node_name
 
         # Building up a couple indexes here so that one can look up all the upstream output handles
         # or downstream input handles in O(1). Without this, this can become O(N^2) where N is node
@@ -1024,6 +1073,9 @@ class DependencyStructure:
             f"Cannot call get_direct_dep when dep is not singular, got {dep_type}",
         )
         return cast(NodeOutput, dep)
+
+    def get_dependency_definition(self, node_input: NodeInput) -> Optional[IDependencyDefinition]:
+        return self._deps_by_node_name[node_input.node_name].get(node_input.input_name)
 
     def has_fan_in_deps(self, node_input: NodeInput) -> bool:
         check.inst_param(node_input, "node_input", NodeInput)

@@ -23,6 +23,7 @@ from typing import (
 
 from typing_extensions import Literal, TypeAlias
 
+from dagster._core.definitions.asset_check_spec import AssetCheckHandle
 from dagster._core.definitions.dependency import DependencyStructure
 from dagster._core.definitions.events import AssetKey
 from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
@@ -84,6 +85,7 @@ class AssetSelectionData(
         "_AssetSelectionData",
         [
             ("asset_selection", AbstractSet[AssetKey]),
+            ("asset_check_selection", Optional[AbstractSet[AssetCheckHandle]]),
             ("parent_job_def", "JobDefinition"),
         ],
     )
@@ -96,12 +98,20 @@ class AssetSelectionData(
             pipeline snapshot lineage.
     """
 
-    def __new__(cls, asset_selection: AbstractSet[AssetKey], parent_job_def: "JobDefinition"):
+    def __new__(
+        cls,
+        asset_selection: AbstractSet[AssetKey],
+        asset_check_selection: Optional[AbstractSet[AssetCheckHandle]],
+        parent_job_def: "JobDefinition",
+    ):
         from dagster._core.definitions.job_definition import JobDefinition
+
+        check.opt_set_param(asset_check_selection, "asset_check_selection", AssetCheckHandle)
 
         return super(AssetSelectionData, cls).__new__(
             cls,
             asset_selection=check.set_param(asset_selection, "asset_selection", AssetKey),
+            asset_check_selection=asset_check_selection,
             parent_job_def=check.inst_param(parent_job_def, "parent_job_def", JobDefinition),
         )
 
@@ -436,10 +446,8 @@ def parse_step_selection(
     invalid_keys = [key for key in step_keys if key not in step_deps]
     if invalid_keys:
         raise DagsterExecutionStepNotFoundError(
-            (
-                f"Step selection refers to unknown step{'s' if len(invalid_keys)> 1 else ''}:"
-                f" {', '.join(invalid_keys)}"
-            ),
+            f"Step selection refers to unknown step{'s' if len(invalid_keys)> 1 else ''}:"
+            f" {', '.join(invalid_keys)}",
             step_keys=invalid_keys,
         )
 

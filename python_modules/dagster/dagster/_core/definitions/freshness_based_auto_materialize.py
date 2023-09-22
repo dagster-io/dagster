@@ -17,15 +17,11 @@ from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._utils.schedules import cron_string_iterator
 
 from .asset_graph import AssetGraph
-from .auto_materialize_condition import (
-    AutoMaterializeCondition,
-    AutoMaterializeDecisionType,
-    DownstreamFreshnessAutoMaterializeCondition,
-    FreshnessAutoMaterializeCondition,
-)
 
 if TYPE_CHECKING:
     from dagster._core.definitions.data_time import CachingDataTimeResolver
+
+    from .auto_materialize_rule import RuleEvaluationResults, TextRuleEvaluationData
 
 
 def get_execution_period_for_policy(
@@ -64,17 +60,20 @@ def get_execution_period_for_policy(
         )
 
 
-def get_execution_period_and_conditions_for_policies(
+def get_execution_period_and_evaluation_data_for_policies(
     local_policy: Optional[FreshnessPolicy],
     policies: AbstractSet[FreshnessPolicy],
     effective_data_time: Optional[datetime.datetime],
     current_time: datetime.datetime,
-) -> Tuple[Optional[pendulum.Period], AbstractSet[AutoMaterializeCondition]]:
+) -> Tuple[Optional[pendulum.Period], Optional["TextRuleEvaluationData"]]:
     """Determines a range of times for which you can kick off an execution of this asset to solve
     the most pressing constraint, alongside a maximum number of additional constraints.
     """
+    from .auto_materialize_rule import TextRuleEvaluationData
+
     merged_period = None
-    conditions = set()
+    contains_local = False
+    contains_downstream = False
     for period, policy in sorted(
         (
             (get_execution_period_for_policy(policy, effective_data_time, current_time), policy)
@@ -94,44 +93,46 @@ def get_execution_period_and_conditions_for_policies(
             break
 
         if policy == local_policy:
-            conditions.add(FreshnessAutoMaterializeCondition())
+            contains_local = True
         else:
-            conditions.add(DownstreamFreshnessAutoMaterializeCondition())
+            contains_downstream = True
 
-    return merged_period, conditions
+    if not contains_local and not contains_downstream:
+        evaluation_data = None
+    elif not contains_local:
+        evaluation_data = TextRuleEvaluationData("Required by downstream asset's policy")
+    elif not contains_downstream:
+        evaluation_data = TextRuleEvaluationData("Required by this asset's policy")
+    else:
+        evaluation_data = TextRuleEvaluationData(
+            "Required by this asset's policy and downstream asset's policy"
+        )
+
+    return merged_period, evaluation_data
 
 
-def freshness_conditions_for_asset_key(
-    asset_key: AssetKey,
-    data_time_resolver: "CachingDataTimeResolver",
+def get_expected_data_time_for_asset_key(
     asset_graph: AssetGraph,
-    current_time: datetime.datetime,
+    asset_key: AssetKey,
     will_materialize_mapping: Mapping[AssetKey, AbstractSet[AssetKeyPartitionKey]],
     expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]],
-) -> Tuple[
-    Mapping[AutoMaterializeCondition, AbstractSet[AssetKeyPartitionKey]],
-    AbstractSet[AssetKeyPartitionKey],
-    Optional[datetime.datetime],
-]:
-    """Returns a set of AssetKeyPartitionKeys to materialize in order to abide by the given
-    FreshnessPolicies.
-
-    Attempts to minimize the total number of asset executions.
+    data_time_resolver: "CachingDataTimeResolver",
+    current_time: datetime.datetime,
+    will_materialize: bool,
+) -> Optional[datetime.datetime]:
+    """Returns the data time that you would expect this asset to have if you were to execute it
+    on this tick.
     """
     from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 
-    if not asset_graph.get_downstream_freshness_policies(
-        asset_key=asset_key
-    ) or asset_graph.is_partitioned(asset_key):
-        return {}, set(), None
-
-    # figure out the current contents of this asset
-    current_data_time = data_time_resolver.get_current_data_time(asset_key, current_time)
-
-    expected_data_time = None
-    # figure out the expected data time of this asset if it were to be executed on this tick
-    # for root assets, this would just be the current time
-    if asset_graph.has_non_source_parents(asset_key):
+    # don't bother calculating if no downstream assets have freshness policies
+    if not asset_graph.get_downstream_freshness_policies(asset_key=asset_key):
+        return None
+    # if asset will not be materialized, just return the current time
+    elif not will_materialize:
+        return data_time_resolver.get_current_data_time(asset_key, current_time)
+    elif asset_graph.has_non_source_parents(asset_key):
+        expected_data_time = None
         for parent_key in asset_graph.get_parents(asset_key):
             # if the parent will be materialized on this tick, and it's not in the same repo, then
             # we must wait for this asset to be materialized
@@ -141,7 +142,7 @@ def freshness_conditions_for_asset_key(
             ):
                 parent_repo = asset_graph.get_repository_handle(parent_key)
                 if parent_repo != asset_graph.get_repository_handle(asset_key):
-                    return {}, set(), current_data_time
+                    return data_time_resolver.get_current_data_time(asset_key, current_time)
             # find the minimum non-None data time of your parents
             parent_expected_data_time = expected_data_time_mapping.get(
                 parent_key
@@ -150,8 +151,47 @@ def freshness_conditions_for_asset_key(
                 filter(None, [expected_data_time, parent_expected_data_time]),
                 default=None,
             )
+        return expected_data_time
+    # for root assets, this would just be the current time
     else:
-        expected_data_time = current_time
+        return current_time
+
+
+def freshness_evaluation_results_for_asset_key(
+    asset_key: AssetKey,
+    data_time_resolver: "CachingDataTimeResolver",
+    asset_graph: AssetGraph,
+    current_time: datetime.datetime,
+    will_materialize_mapping: Mapping[AssetKey, AbstractSet[AssetKeyPartitionKey]],
+    expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]],
+) -> "RuleEvaluationResults":
+    """Returns a set of AssetKeyPartitionKeys to materialize in order to abide by the given
+    FreshnessPolicies.
+
+    Attempts to minimize the total number of asset executions.
+    """
+    if not asset_graph.get_downstream_freshness_policies(
+        asset_key=asset_key
+    ) or asset_graph.is_partitioned(asset_key):
+        return []
+
+    # figure out the current contents of this asset
+    current_data_time = data_time_resolver.get_current_data_time(asset_key, current_time)
+
+    # figure out the data time you would expect if you were to execute this asset on this tick
+    expected_data_time = get_expected_data_time_for_asset_key(
+        asset_graph=asset_graph,
+        asset_key=asset_key,
+        will_materialize_mapping=will_materialize_mapping,
+        expected_data_time_mapping=expected_data_time_mapping,
+        data_time_resolver=data_time_resolver,
+        current_time=current_time,
+        will_materialize=True,
+    )
+
+    # if executing the asset on this tick would not change its data time, then return
+    if current_data_time == expected_data_time:
+        return []
 
     # calculate the data times you would expect after all currently-executing runs
     # were to successfully complete
@@ -169,8 +209,8 @@ def freshness_conditions_for_asset_key(
     # number of constraints
     (
         execution_period,
-        execution_conditions,
-    ) = get_execution_period_and_conditions_for_policies(
+        evaluation_data,
+    ) = get_execution_period_and_evaluation_data_for_policies(
         local_policy=asset_graph.freshness_policies_by_key.get(asset_key),
         policies=asset_graph.get_downstream_freshness_policies(asset_key=asset_key),
         effective_data_time=effective_data_time,
@@ -184,17 +224,8 @@ def freshness_conditions_for_asset_key(
         and expected_data_time is not None
         # if this is False, then executing it would still leave the asset overdue
         and expected_data_time >= execution_period.start
-        and all(
-            condition.decision_type == AutoMaterializeDecisionType.MATERIALIZE
-            for condition in execution_conditions
-        )
+        and evaluation_data is not None
     ):
-        return (
-            {condition: {asset_partition} for condition in execution_conditions},
-            {asset_partition},
-            expected_data_time,
-        )
+        return [(evaluation_data, {asset_partition})]
     else:
-        # if downstream assets consume this, they should expect data time equal to the
-        # current time for this asset, as it's not going to be updated
-        return {}, set(), current_data_time
+        return []

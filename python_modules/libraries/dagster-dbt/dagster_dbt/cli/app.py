@@ -85,6 +85,11 @@ def copy_scaffold(
 
     dbt_profiles_path = dbt_project_dir.joinpath(DBT_PROFILES_YML_NAME)
     dbt_profiles_yaml: Dict[str, Any] = yaml.safe_load(dbt_profiles_path.read_bytes())
+
+    # Remove config from profiles.yml
+    if "config" in dbt_profiles_yaml:
+        dbt_profiles_yaml.pop("config", None)
+
     dbt_adapter_packages = [
         dbt_adapter_pypi_package_for_target_type(target["type"])
         for profile in dbt_profiles_yaml.values()
@@ -97,7 +102,7 @@ def copy_scaffold(
     dbt_project_dir_relative_path = Path(
         os.path.relpath(
             dbt_project_dir,
-            start=dagster_project_dir.joinpath(project_name),
+            start=dagster_project_dir.joinpath(project_name, "definitions.py"),
         )
     )
     dbt_project_dir_relative_path_parts = [
@@ -114,7 +119,7 @@ def copy_scaffold(
         if path.suffix == ".jinja":
             relative_path = path.relative_to(Path.cwd())
             destination_path = os.fspath(relative_path.parent.joinpath(relative_path.stem))
-            template_path = os.fspath(path.relative_to(dagster_project_dir))
+            template_path = path.relative_to(dagster_project_dir).as_posix()
 
             env.get_template(template_path).stream(
                 dbt_project_dir_relative_path_parts=dbt_project_dir_relative_path_parts,
@@ -194,17 +199,13 @@ def project_scaffold_command(
     )
 
     console.print(
-        (
-            "Your Dagster project has been initialized. To view your dbt project in Dagster, run"
-            " the following commands:"
-        ),
+        "Your Dagster project has been initialized. To view your dbt project in Dagster, run"
+        " the following commands:",
         Syntax(
             code="\n".join(
                 [
-                    f"cd '{dbt_project_dir}' \\",
-                    "  && dbt parse --target-path target \\",
-                    f"  && cd '{dagster_project_dir}' \\",
-                    "  && dagster dev",
+                    f"cd '{dagster_project_dir}' \\",
+                    "  && (DAGSTER_DBT_PARSE_PROJECT_ON_LOAD=1 dagster dev)",
                 ]
             ),
             lexer="bash",

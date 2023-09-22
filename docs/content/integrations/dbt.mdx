@@ -5,11 +5,6 @@ description: Dagster can orchestrate dbt alongside other technologies.
 
 # dbt + Dagster
 
-<Note>
-  Using dbt Cloud? Check out the{" "}
-  <a href="/integrations/dbt-cloud">dbt Cloud with Dagster guide</a>!
-</Note>
-
 Dagster orchestrates dbt alongside other technologies, so you can schedule dbt with Spark, Python, etc. in a single data pipeline.
 
 Dagster's [Software-defined Asset](/concepts/assets/software-defined-assets) approach allows Dagster to understand dbt at the level of individual dbt models. This means that you can:
@@ -32,15 +27,28 @@ height={1220}
 Can be produced from code like this:
 
 ```python file=/integrations/dbt/potemkin_dag_for_cover_image.py startafter=start endbefore=end
-fivetran_assets = dagster_fivetran.build_fivetran_assets(
+from pathlib import Path
+
+from dagster_dbt import DbtCliResource, dbt_assets, get_asset_key_for_model
+from dagster_fivetran import build_fivetran_assets
+
+from dagster import AssetExecutionContext, asset
+
+fivetran_assets = build_fivetran_assets(
     connector_id="postgres",
-    table_names=["users", "orders"],
+    destination_tables=["users", "orders"],
 )
 
-dbt_assets = dagster_dbt.load_assets_from_dbt_manifest("manifest.json")
+
+@dbt_assets(manifest=Path("manifest.json"))
+def dbt_project_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+    yield from dbt.cli(["build"], context=context).stream()
 
 
-@asset(compute_kind="tensorflow", non_argument_deps={"daily_order_summary"})
+@asset(
+    compute_kind="tensorflow",
+    deps=[get_asset_key_for_model([dbt_project_assets], "daily_order_summary")],
+)
 def predicted_orders():
     ...
 ```

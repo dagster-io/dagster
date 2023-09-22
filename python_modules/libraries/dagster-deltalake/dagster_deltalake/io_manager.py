@@ -52,13 +52,13 @@ class _DeltaTableIOManagerResourceConfig(TypedDict):
 
 
 class DeltaLakeIOManager(ConfigurableIOManagerFactory):
-    """Base class for an IO manager definition that reads inputs from and writes outputs to DuckDB.
+    """Base class for an I/O manager definition that reads inputs from and writes outputs to Delta Lake.
 
     Examples:
         .. code-block:: python
 
             from dagster_deltalake import DeltaLakeIOManager
-            from dagster_duckdb_pandas import DeltaLakePandasTypeHandler
+            from dagster_deltalake_pandas import DeltaLakePandasTypeHandler
 
             class MyDeltaLakeIOManager(DeltaLakeIOManager):
                 @staticmethod
@@ -73,11 +73,11 @@ class DeltaLakeIOManager(ConfigurableIOManagerFactory):
 
             defs = Definitions(
                 assets=[my_table],
-                resources={"io_manager": MyDeltaLakeIOManager(database="my_db.duckdb")}
+                resources={"io_manager": MyDeltaLakeIOManager(database="my_db.deltalake")}
             )
 
     If you do not provide a schema, Dagster will determine a schema based on the assets and ops using
-    the IO Manager. For assets, the schema will be determined from the asset key, as in the above example.
+    the I/O Manager. For assets, the schema will be determined from the asset key, as in the above example.
     For ops, the schema can be specified by including a "schema" entry in output metadata. If none
     of these is provided, the schema will default to "public".
 
@@ -205,9 +205,11 @@ def _get_cleanup_statement(table_slice: TableSlice) -> str:
 
 def _partition_where_clause(partition_dimensions: Sequence[TablePartitionDimension]) -> str:
     return " AND\n".join(
-        _time_window_where_clause(partition_dimension)
-        if isinstance(partition_dimension.partitions, TimeWindow)
-        else _static_where_clause(partition_dimension)
+        (
+            _time_window_where_clause(partition_dimension)
+            if isinstance(partition_dimension.partitions, TimeWindow)
+            else _static_where_clause(partition_dimension)
+        )
         for partition_dimension in partition_dimensions
     )
 

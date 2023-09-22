@@ -117,15 +117,13 @@ class EventLogEntry(
     @public
     @property
     def dagster_event_type(self) -> Optional[DagsterEventType]:
-        """Optional[DagsterEventType]: The type of the DagsterEvent contained by this entry, if any.
-        """
+        """Optional[DagsterEventType]: The type of the DagsterEvent contained by this entry, if any."""
         return self.dagster_event.event_type if self.dagster_event else None
 
     @public
     @property
     def message(self) -> str:
-        """Return the message from the structured DagsterEvent if present, fallback to user_message.
-        """
+        """Return the message from the structured DagsterEvent if present, fallback to user_message."""
         if self.is_dagster_event:
             msg = self.get_dagster_event().message
             if msg is not None:

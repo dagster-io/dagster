@@ -179,7 +179,7 @@ class MlFlow(metaclass=MlflowMeta):
 
     def cleanup_on_error(self):
         """Method ends mlflow run with correct exit status for failed runs. Note that
-        this method does not work when a job running in dagit fails, it seems
+        this method does not work when a job running in the webserver fails, it seems
         that in this case a different process runs the job and when it fails
         the stack trace is therefore not available. For this case we can use the
         cleanup_on_failure hook defined below.

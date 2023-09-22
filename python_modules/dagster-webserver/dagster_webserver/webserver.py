@@ -1,11 +1,12 @@
 import gzip
 import io
 import uuid
-from os import path
+from os import path, walk
 from typing import Generic, List, TypeVar
 
 import dagster._check as check
 from dagster import __version__ as dagster_version
+from dagster._annotations import deprecated
 from dagster._core.debug import DebugRunPayload
 from dagster._core.storage.cloud_storage_compute_log_manager import CloudStorageComputeLogManager
 from dagster._core.storage.compute_log_manager import ComputeIOType
@@ -26,36 +27,31 @@ from starlette.responses import (
     JSONResponse,
     PlainTextResponse,
     RedirectResponse,
+    Response,
     StreamingResponse,
+    guess_type,
 )
 from starlette.routing import Mount, Route, WebSocketRoute
-from starlette.staticfiles import StaticFiles
 from starlette.types import Message
 
 from .graphql import GraphQLServer
 from .version import __version__
-
-ROOT_ADDRESS_STATIC_RESOURCES = [
-    "/manifest.json",
-    "/favicon.ico",
-    "/favicon.png",
-    "/favicon.svg",
-    "/favicon-run-pending.svg",
-    "/favicon-run-failed.svg",
-    "/favicon-run-success.svg",
-    "/asset-manifest.json",
-    "/robots.txt",
-    "/Dagster_world.mp4",
-]
 
 T_IWorkspaceProcessContext = TypeVar("T_IWorkspaceProcessContext", bound=IWorkspaceProcessContext)
 
 
 class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
     _process_context: T_IWorkspaceProcessContext
+    _uses_app_path_prefix: bool
 
-    def __init__(self, process_context: T_IWorkspaceProcessContext, app_path_prefix: str = ""):
+    def __init__(
+        self,
+        process_context: T_IWorkspaceProcessContext,
+        app_path_prefix: str = "",
+        uses_app_path_prefix: bool = True,
+    ):
         self._process_context = process_context
+        self._uses_app_path_prefix = uses_app_path_prefix
         super().__init__(app_path_prefix)
 
     def build_graphql_schema(self) -> Schema:
@@ -82,20 +78,18 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
         }
 
     def make_csp_header(self, nonce: str) -> str:
-        csp_conf_path = self.relative_path("webapp/build/csp-header.conf")
+        csp_conf_path = self.relative_path("webapp/build/csp-header.txt")
         try:
             with open(csp_conf_path, encoding="utf8") as f:
                 csp_template = f.read()
                 return csp_template.replace("NONCE-PLACEHOLDER", nonce)
         except FileNotFoundError:
-            raise Exception(
-                """
+            raise Exception("""
                 CSP configuration file could not be found.
                 If you are using dagster-webserver, then probably it's a corrupted installation or a bug.
                 However, if you are developing dagster-webserver locally, your problem can be fixed by running
                 "make rebuild_ui" in the project root.
-                """
-            )
+                """)
 
     async def webserver_info_endpoint(self, _request: Request):
         return JSONResponse(
@@ -218,8 +212,9 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                     **self.make_security_headers(),
                 }
                 return HTMLResponse(
-                    rendered_template.replace('href="/', f'href="{self._app_path_prefix}/')
-                    .replace('src="/', f'src="{self._app_path_prefix}/')
+                    rendered_template.replace(
+                        "BUILDTIME_ASSETPREFIX_REPLACE_ME", f"{self._app_path_prefix}"
+                    )
                     .replace("__PATH_PREFIX__", self._app_path_prefix)
                     .replace(
                         '"__TELEMETRY_ENABLED__"', str(context.instance.telemetry_enabled).lower()
@@ -228,54 +223,70 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                     headers=headers,
                 )
         except FileNotFoundError:
-            raise Exception(
-                """
+            raise Exception("""
                 Can't find webapp files.
                 If you are using dagster-webserver, then probably it's a corrupted installation or a bug.
                 However, if you are developing dagster-webserver locally, your problem can be fixed by running
                 "make rebuild_ui" in the project root.
-                """
-            )
+                """)
 
-    def root_static_file_routes(self) -> List[Route]:
-        def _static_file(file_path):
+    def build_static_routes(self):
+        def next_file_response(file_path):
+            with open(file_path, encoding="utf8") as f:
+                content = f.read().replace(
+                    "BUILDTIME_ASSETPREFIX_REPLACE_ME", f"{self._app_path_prefix}"
+                )
+                return Response(content=content, media_type=guess_type(file_path)[0])
+
+        def _next_static_file(path, file_path):
+            return Route(path, lambda _: next_file_response(file_path), name="next_static")
+
+        def _static_file(path, file_path):
             return Route(
-                file_path,
-                lambda _: FileResponse(path=self.relative_path(f"webapp/build{file_path}")),
+                path,
+                lambda _: FileResponse(path=file_path),
                 name="root_static",
             )
 
-        return [_static_file(f) for f in ROOT_ADDRESS_STATIC_RESOURCES]
+        routes = []
+        base_dir = self.relative_path("webapp/build/")
+        for subdir, _, files in walk(base_dir):
+            for file in files:
+                full_path = path.join(subdir, file)
 
-    def build_static_routes(self):
-        return [
-            # static resources addressed at /static/
-            Mount(
-                "/static",
-                StaticFiles(
-                    directory=self.relative_path("webapp/build/static"),
-                    check_dir=False,
-                ),
-                name="static",
-            ),
-            # static resources addressed at /vendor/
-            Mount(
-                "/vendor",
-                StaticFiles(
-                    directory=self.relative_path("webapp/build/vendor"),
-                    check_dir=False,
-                ),
-                name="vendor",
-            ),
-            # specific static resources addressed at /
-            *self.root_static_file_routes(),
-        ]
+                # Replace path.sep to make sure our routes use forward slashes on windows
+                mount_path = "/" + full_path[len(base_dir) :].replace(path.sep, "/")
+                # We only need to replace BUILDTIME_ASSETPREFIX_REPLACE_ME in javascript files
+                if self._uses_app_path_prefix and (
+                    file.endswith(".js") or file.endswith(".js.map")
+                ):
+                    routes.append(_next_static_file(mount_path, full_path))
+                else:
+                    routes.append(_static_file(mount_path, full_path))
 
+        # No build directory, this happens in a test environment. Don't fail loudly since we already have other tests that will fail loudly if
+        # there is in fact no build
+        if len(routes) == 0:
+            # These are tested by an internal test without building the app.
+            return [
+                Route("/favicon.png", lambda _: FileResponse(path="/favicon")),
+                Route(
+                    "/vendor/graphql-playground/index.css",
+                    lambda _: FileResponse(path="/vendor/graphql-playground/index.css"),
+                ),
+            ]
+
+        return routes
+
+    @deprecated(
+        breaking_version="2.0",
+        subject="/dagit_info and /dagit/notebook endpoint",
+        emit_runtime_warning=False,
+    )
     def build_routes(self):
         routes = (
             [
                 Route("/server_info", self.webserver_info_endpoint),
-                # Remove /dagit_info with 2.0
                 Route("/dagit_info", self.webserver_info_endpoint),
                 Route(
                     "/graphql",
@@ -304,7 +315,6 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                     "/notebook",
                     self.download_notebook,
                 ),
-                # Remove /dagit/notebook with 2.0
                 Route(
                     "/dagit/notebook",
                     self.download_notebook,

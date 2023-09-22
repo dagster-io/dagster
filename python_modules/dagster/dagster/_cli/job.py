@@ -289,9 +289,11 @@ def add_step_to_table(memoized_plan):
                     output=step_output_handle.output_name,
                 ),
                 version,
-                "stored"
-                if step_output_handle.step_key not in step_keys_not_stored
-                else "to-be-recomputed",
+                (
+                    "stored"
+                    if step_output_handle.step_key not in step_keys_not_stored
+                    else "to-be-recomputed"
+                ),
             ]
         )
     table_str = tabulate(
@@ -309,6 +311,21 @@ def add_step_to_table(memoized_plan):
 @python_job_target_argument
 @python_job_config_argument("execute")
 @click.option("--tags", type=click.STRING, help="JSON string of tags to use for this job run")
+@click.option(
+    "-o",
+    "--op-selection",
+    type=click.STRING,
+    help=(
+        "Specify the op subselection to execute. It can be multiple clauses separated by commas."
+        "Examples:"
+        '\n- "some_op" will execute "some_op" itself'
+        '\n- "*some_op" will execute "some_op" and all its ancestors (upstream dependencies)'
+        '\n- "*some_op+++" will execute "some_op", all its ancestors, and its descendants'
+        "   (downstream dependencies) within 3 levels down"
+        '\n- "*some_op,other_op_a,other_op_b+" will execute "some_op" and all its'
+        '   ancestors, "other_op_a" itself, and "other_op_b" and its direct child ops'
+    ),
+)
 def job_execute_command(**kwargs: ClickArgValue):
     with capture_interrupts():
         with get_possibly_temporary_instance_for_cli("``dagster job execute``") as instance:
@@ -382,7 +399,7 @@ def get_config_from_args(kwargs: Mapping[str, str]) -> Mapping[str, object]:
 
 
 def get_op_selection_from_args(kwargs: ClickArgMapping) -> Optional[Sequence[str]]:
-    op_selection_str = kwargs.get("solid_selection")
+    op_selection_str = kwargs.get("op_selection")
     if not isinstance(op_selection_str, str):
         return None
 
@@ -542,6 +559,7 @@ def _create_external_run(
         external_job_origin=external_job.get_external_origin(),
         job_code_origin=external_job.get_python_origin(),
         asset_selection=None,
+        asset_check_selection=None,
     )
 
 

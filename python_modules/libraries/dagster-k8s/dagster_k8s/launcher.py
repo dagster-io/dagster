@@ -212,11 +212,21 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         job_config = container_context.get_k8s_job_config(
             job_image=repository_origin.container_image, run_launcher=self
         )
+        job_image = job_config.job_image
+        if job_image:  # expected to be set
+            self._instance.add_run_tags(
+                run.run_id,
+                {DOCKER_IMAGE_TAG: job_image},
+            )
 
-        self._instance.add_run_tags(
-            run.run_id,
-            {DOCKER_IMAGE_TAG: job_config.job_image},
-        )
+        labels = {
+            "dagster/job": job_origin.job_name,
+            "dagster/run-id": run.run_id,
+        }
+        if run.external_job_origin:
+            labels["dagster/code-location"] = (
+                run.external_job_origin.external_repository_origin.code_location_origin.location_name
+            )
 
         job = construct_dagster_k8s_job(
             job_config=job_config,
@@ -225,10 +235,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             pod_name=pod_name,
             component="run_worker",
             user_defined_k8s_config=user_defined_k8s_config,
-            labels={
-                "dagster/job": job_origin.job_name,
-                "dagster/run-id": run.run_id,
-            },
+            labels=labels,
             env_vars=[
                 {
                     "name": "DAGSTER_RUN_JOB_NAME",

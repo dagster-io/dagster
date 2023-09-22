@@ -1,9 +1,9 @@
+import logging
 import random
 import string
-import tempfile
 import time
 from concurrent.futures import ThreadPoolExecutor
-from contextlib import ExitStack, contextmanager
+from contextlib import ExitStack
 from typing import Any
 from unittest import mock
 
@@ -37,7 +37,6 @@ from dagster import (
     run_failure_sensor,
 )
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_reconciliation_sensor import build_asset_reconciliation_sensor
 from dagster._core.definitions.decorators import op
 from dagster._core.definitions.decorators.job_decorator import job
 from dagster._core.definitions.decorators.sensor_decorator import asset_sensor, sensor
@@ -535,7 +534,19 @@ def instance_sensor():
 
 @sensor(job=the_job)
 def logging_sensor(context):
-    context.log.info("hello hello")
+    class Handler(logging.Handler):
+        def handle(self, record):
+            try:
+                self.message = record.getMessage()
+            except TypeError:
+                self.message = "error"
+
+    handler = Handler()
+    context.log.addHandler(handler)
+    context.log.info("hello %s", "hello")
+    context.log.info(handler.message)
+    context.log.removeHandler(handler)
+
     return SkipReason()
 
 
@@ -862,71 +873,6 @@ def asset_sensor_repo():
         depends_on_source,
         the_job,
         monitor_source_asset_sensor,
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(y),
-            name="just_y_OR",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(d),
-            name="just_d_OR",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(d, f),
-            name="d_and_f_OR",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(d, f, g),
-            name="d_and_f_and_g_OR",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(y, d),
-            name="y_and_d_OR",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(y, i),
-            name="y_and_i_OR",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(g),
-            name="just_g_OR",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(y),
-            name="just_y_AND",
-            run_tags={"hello": "world"},
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(d),
-            name="just_d_AND",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(d, f),
-            name="d_and_f_AND",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(d, f, g),
-            name="d_and_f_and_g_AND",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(y, d),
-            name="y_and_d_AND",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(y, i),
-            name="y_and_i_AND",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(g),
-            name="just_g_AND",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(waits_on_sleep),
-            name="in_progress_condition_sensor",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(depends_on_source),
-            name="source_asset_sensor",
-        ),
     ]
 
 
@@ -1474,120 +1420,6 @@ def test_launch_once(caplog, executor, instance, workspace_context, external_rep
             freeze_datetime,
             TickStatus.SKIPPED,
         )
-
-
-@contextmanager
-def instance_with_sensors_no_run_bucketing():
-    with tempfile.TemporaryDirectory() as temp_dir:
-        with instance_for_test(
-            overrides={
-                "run_storage": {
-                    "module": "dagster_tests.storage_tests.test_run_storage",
-                    "class": "NonBucketQuerySqliteRunStorage",
-                    "config": {"base_dir": temp_dir},
-                },
-                "run_launcher": {
-                    "module": "dagster._core.test_utils",
-                    "class": "MockedRunLauncher",
-                },
-            }
-        ) as instance:
-            yield instance
-
-
-def test_launch_once_unbatched(caplog, executor, workspace_context, external_repo):
-    freeze_datetime = to_timezone(
-        create_pendulum_time(
-            year=2019,
-            month=2,
-            day=27,
-            hour=23,
-            minute=59,
-            second=59,
-            tz="UTC",
-        ),
-        "US/Central",
-    )
-    with instance_with_sensors_no_run_bucketing() as instance:
-        no_bucket_workspace_context = workspace_context.copy_for_test_instance(instance)
-
-        with pendulum.test(freeze_datetime):
-            external_sensor = external_repo.get_external_sensor("run_key_sensor")
-            instance.add_instigator_state(
-                InstigatorState(
-                    external_sensor.get_external_origin(),
-                    InstigatorType.SENSOR,
-                    InstigatorStatus.RUNNING,
-                )
-            )
-            assert instance.get_runs_count() == 0
-            ticks = instance.get_ticks(
-                external_sensor.get_external_origin_id(), external_sensor.selector_id
-            )
-            assert len(ticks) == 0
-
-            evaluate_sensors(no_bucket_workspace_context, executor)
-            wait_for_all_runs_to_start(instance)
-
-            assert instance.get_runs_count() == 1
-            run = instance.get_runs()[0]
-            ticks = instance.get_ticks(
-                external_sensor.get_external_origin_id(), external_sensor.selector_id
-            )
-            assert len(ticks) == 1
-            validate_tick(
-                ticks[0],
-                external_sensor,
-                freeze_datetime,
-                TickStatus.SUCCESS,
-                expected_run_ids=[run.run_id],
-            )
-
-        # run again (after 30 seconds), to ensure that the run key maintains idempotence
-        freeze_datetime = freeze_datetime.add(seconds=30)
-        with pendulum.test(freeze_datetime):
-            evaluate_sensors(no_bucket_workspace_context, executor)
-            assert instance.get_runs_count() == 1
-            ticks = instance.get_ticks(
-                external_sensor.get_external_origin_id(), external_sensor.selector_id
-            )
-            assert len(ticks) == 2
-            validate_tick(
-                ticks[0],
-                external_sensor,
-                freeze_datetime,
-                TickStatus.SKIPPED,
-            )
-            assert (
-                "Skipping 1 run for sensor run_key_sensor already completed with run keys:"
-                ' ["only_once"]'
-                in caplog.text
-            )
-
-            launched_run = instance.get_runs()[0]
-
-            # Manually create a new run with the same tags
-            the_job.execute_in_process(
-                run_config=launched_run.run_config,
-                tags=launched_run.tags,
-                instance=instance,
-            )
-
-            # Sensor loop still executes
-        freeze_datetime = freeze_datetime.add(seconds=30)
-        with pendulum.test(freeze_datetime):
-            evaluate_sensors(no_bucket_workspace_context, executor)
-            ticks = instance.get_ticks(
-                external_sensor.get_external_origin_id(), external_sensor.selector_id
-            )
-
-            assert len(ticks) == 3
-            validate_tick(
-                ticks[0],
-                external_sensor,
-                freeze_datetime,
-                TickStatus.SKIPPED,
-            )
 
 
 def test_custom_interval_sensor(executor, instance, workspace_context, external_repo):
@@ -2622,11 +2454,9 @@ def test_bad_run_request_untargeted(executor, instance, workspace_context, exter
             freeze_datetime,
             TickStatus.FAILURE,
             None,
-            (
-                "Error in sensor bad_request_untargeted: Sensor evaluation function returned a "
-                "RunRequest for a sensor lacking a specified target (job_name, job, or "
-                "jobs)."
-            ),
+            "Error in sensor bad_request_untargeted: Sensor evaluation function returned a "
+            "RunRequest for a sensor lacking a specified target (job_name, job, or "
+            "jobs).",
         )
 
 
@@ -2649,10 +2479,8 @@ def test_bad_run_request_mismatch(executor, instance, workspace_context, externa
             freeze_datetime,
             TickStatus.FAILURE,
             None,
-            (
-                "Error in sensor bad_request_mismatch: Sensor returned a RunRequest with "
-                "job_name config_job. Expected one of: ['the_job']"
-            ),
+            "Error in sensor bad_request_mismatch: Sensor returned a RunRequest with "
+            "job_name config_job. Expected one of: ['the_job']",
         )
 
 
@@ -2675,11 +2503,9 @@ def test_bad_run_request_unspecified(executor, instance, workspace_context, exte
             freeze_datetime,
             TickStatus.FAILURE,
             None,
-            (
-                "Error in sensor bad_request_unspecified: Sensor returned a RunRequest that "
-                "did not specify job_name for the requested run. Expected one of: "
-                "['the_job', 'config_job']"
-            ),
+            "Error in sensor bad_request_unspecified: Sensor returned a RunRequest that "
+            "did not specify job_name for the requested run. Expected one of: "
+            "['the_job', 'config_job']",
         )
 
 
@@ -3027,9 +2853,9 @@ def test_sensor_logging(executor, instance, workspace_context, external_repo):
     tick = ticks[0]
     assert tick.log_key
     records = get_instigation_log_records(instance, tick.log_key)
-    assert len(records) == 1
-    record = records[0]
-    assert record[DAGSTER_META_KEY]["orig_message"] == "hello hello"
+    assert len(records) == 2
+    assert records[0][DAGSTER_META_KEY]["orig_message"] == "hello hello"
+    assert records[1][DAGSTER_META_KEY]["orig_message"].endswith("hello hello")
     instance.compute_log_manager.delete_logs(log_key=tick.log_key)
 
 

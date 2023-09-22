@@ -11,9 +11,11 @@ from .utils import get_project_connection_json, get_project_job_json
 @pytest.fixture(name="airbyte_instance", params=[True, False], scope="module")
 def airbyte_instance_fixture(request) -> AirbyteResource:
     if request.param:
-        return AirbyteResource(host="some_host", port="8000")
+        return AirbyteResource(host="some_host", port="8000", poll_interval=0)
     else:
-        return airbyte_resource(build_init_resource_context({"host": "some_host", "port": "8000"}))
+        return airbyte_resource(
+            build_init_resource_context({"host": "some_host", "port": "8000", "poll_interval": 0})
+        )
 
 
 @responses.activate
@@ -36,9 +38,9 @@ def test_load_from_project(
             create_assets_for_normalization_tables=use_normalization_tables,
             connection_to_group_fn=connection_to_group_fn,
             connection_filter=(lambda _: False) if filter_connection == "filter_fn" else None,
-            connection_directories=["github_snowflake_ben"]
-            if filter_connection == "dirs"
-            else None,
+            connection_directories=(
+                ["github_snowflake_ben"] if filter_connection == "dirs" else None
+            ),
             connection_to_asset_key_fn=connection_to_asset_key_fn,
         )
     else:
@@ -46,9 +48,9 @@ def test_load_from_project(
             file_relative_path(__file__, "./test_airbyte_project"),
             create_assets_for_normalization_tables=use_normalization_tables,
             connection_filter=(lambda _: False) if filter_connection == "filter_fn" else None,
-            connection_directories=["github_snowflake_ben"]
-            if filter_connection == "dirs"
-            else None,
+            connection_directories=(
+                ["github_snowflake_ben"] if filter_connection == "dirs" else None
+            ),
             connection_to_asset_key_fn=connection_to_asset_key_fn,
         )
     ab_assets = ab_cacheable_assets.build_definitions(ab_cacheable_assets.compute_cacheable_data())
@@ -127,6 +129,7 @@ def test_load_from_project(
                     {
                         "host": "some_host",
                         "port": "8000",
+                        "poll_interval": 0,
                     }
                 )
             },

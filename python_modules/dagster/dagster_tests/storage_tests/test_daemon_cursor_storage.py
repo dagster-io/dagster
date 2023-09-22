@@ -3,7 +3,6 @@ import pytest
 from .test_run_storage import (
     create_in_memory_storage,
     create_legacy_run_storage,
-    create_non_bucket_sqlite_run_storage,
     create_sqlite_run_storage,
 )
 from .utils.daemon_cursor_storage import TestDaemonCursorStorage
@@ -17,7 +16,6 @@ class TestDaemonCursorStorages(TestDaemonCursorStorage):
         params=[
             create_in_memory_storage,
             create_sqlite_run_storage,
-            create_non_bucket_sqlite_run_storage,
             create_legacy_run_storage,
         ],
     )

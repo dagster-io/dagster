@@ -18,8 +18,8 @@ pin = "" if ver == "1!0+dev" else f"=={ver}"
 setup(
     name="dagster-databricks",
     version=ver,
-    author="Elementl",
-    author_email="hello@elementl.com",
+    author="Dagster Labs",
+    author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
     description="Package for Databricks-specific Dagster framework op and resource components.",
     url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-databricks",
@@ -35,8 +35,9 @@ setup(
     install_requires=[
         f"dagster{pin}",
         f"dagster-pyspark{pin}",
-        "databricks-cli~=0.17",
-        "databricks_api",  # Divest from this library in the future since it is unnecessary indirection.
+        "databricks-cli~=0.17",  # TODO: Remove this dependency in the next minor release.
+        "databricks_api",  # TODO: Remove this dependency in the next minor release.
+        "databricks-sdk<0.7",  # Breaking changes occur in minor versions.
     ],
     zip_safe=False,
 )

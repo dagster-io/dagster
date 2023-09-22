@@ -41,6 +41,9 @@ from pandas import read_csv
 
 from .utils import assert_assets_match_project
 
+manifest_path = Path(__file__).joinpath("..", "sample_manifest.json").resolve()
+manifest_json = json.loads(manifest_path.read_bytes())
+
 
 def test_custom_resource_key_asset_load(
     dbt_seed, dbt_cli_resource_factory, test_project_dir, dbt_config_dir
@@ -72,10 +75,6 @@ def test_custom_resource_key_asset_load(
     ],
 )
 def test_load_from_manifest_json(prefix):
-    manifest_path = file_relative_path(__file__, "sample_manifest.json")
-    with open(manifest_path, "r", encoding="utf8") as f:
-        manifest_json = json.load(f)
-
     run_results_path = file_relative_path(__file__, "sample_run_results.json")
     with open(run_results_path, "r", encoding="utf8") as f:
         run_results_json = json.load(f)
@@ -97,10 +96,7 @@ def test_load_from_manifest_json(prefix):
     assert assets_job.execute_in_process().success
 
 
-manifest_path = Path(__file__).parent.joinpath("sample_manifest.json")
-
-
-@pytest.mark.parametrize("manifest", [json.load(manifest_path.open()), manifest_path])
+@pytest.mark.parametrize("manifest", [json.loads(manifest_path.read_bytes()), manifest_path])
 def test_manifest_argument(manifest):
     my_dbt_assets = load_assets_from_dbt_manifest(manifest)
 
@@ -123,10 +119,6 @@ def test_runtime_metadata_fn(
     test_project_dir,
     dbt_config_dir,
 ):
-    manifest_path = file_relative_path(__file__, "sample_manifest.json")
-    with open(manifest_path, "r", encoding="utf8") as f:
-        manifest_json = json.load(f)
-
     def runtime_metadata_fn(context, node_info):
         return {"op_name": context.op_def.name, "dbt_model": node_info["name"]}
 
@@ -328,10 +320,6 @@ def test_custom_groups(dbt_seed, test_project_dir, dbt_config_dir):
 
 
 def test_custom_freshness_policy():
-    manifest_path = file_relative_path(__file__, "sample_manifest.json")
-    with open(manifest_path, "r", encoding="utf8") as f:
-        manifest_json = json.load(f)
-
     dbt_assets = load_assets_from_dbt_manifest(
         manifest_json=manifest_json,
         node_info_to_freshness_policy_fn=lambda node_info: FreshnessPolicy(
@@ -345,10 +333,6 @@ def test_custom_freshness_policy():
 
 
 def test_custom_auto_materialize_policy():
-    manifest_path = file_relative_path(__file__, "sample_manifest.json")
-    with open(manifest_path, "r", encoding="utf8") as f:
-        manifest_json = json.load(f)
-
     dbt_assets = load_assets_from_dbt_manifest(
         manifest_json=manifest_json,
         node_info_to_auto_materialize_policy_fn=lambda _: AutoMaterializePolicy.lazy(),
@@ -360,10 +344,6 @@ def test_custom_auto_materialize_policy():
 
 
 def test_custom_definition_metadata():
-    manifest_path = file_relative_path(__file__, "sample_manifest.json")
-    with open(manifest_path, "r", encoding="utf8") as f:
-        manifest_json = json.load(f)
-
     dbt_assets_custom = load_assets_from_dbt_manifest(
         manifest_json=manifest_json,
         node_info_to_definition_metadata_fn=lambda node_info: {
@@ -510,9 +490,6 @@ def test_dbt_ls_fail_fast():
 def test_select_from_manifest(
     dbt_seed, dbt_cli_resource_factory, test_project_dir, dbt_config_dir, use_build
 ):
-    manifest_path = file_relative_path(__file__, "sample_manifest.json")
-    with open(manifest_path, "r", encoding="utf8") as f:
-        manifest_json = json.load(f)
     dbt_assets = load_assets_from_dbt_manifest(
         manifest_json,
         selected_unique_ids={
@@ -613,6 +590,14 @@ def test_dagster_dbt_translator(
         def get_group_name(cls, dbt_resource_props):
             return "foo_group" if dbt_resource_props["name"] == "cereals" else None
 
+        @classmethod
+        def get_freshness_policy(cls, dbt_resource_props):
+            return FreshnessPolicy(maximum_lag_minutes=1)
+
+        @classmethod
+        def get_auto_materialize_policy(cls, dbt_resource_props):
+            return AutoMaterializePolicy.lazy()
+
     dbt_assets = load_assets_from_dbt_project(
         test_project_dir, dbt_config_dir, dagster_dbt_translator=CustomDagsterDbtTranslator()
     )
@@ -631,6 +616,12 @@ def test_dagster_dbt_translator(
     )
     assert dbt_assets[0].group_names_by_key[AssetKey(["foo", "cereals"])] == "foo_group"
     assert dbt_assets[0].group_names_by_key[AssetKey(["foo", "least_caloric"])] == "default"
+
+    for freshness_policy in dbt_assets[0].freshness_policies_by_key.values():
+        assert freshness_policy == FreshnessPolicy(maximum_lag_minutes=1)
+
+    for auto_materialize_policy in dbt_assets[0].auto_materialize_policies_by_key.values():
+        assert auto_materialize_policy == AutoMaterializePolicy.lazy()
 
     result = materialize_to_memory(
         dbt_assets,
@@ -744,9 +735,6 @@ def test_op_config(
             "sort_by_calories,cold_schema/sort_cold_cereals_by_calories,"
             "sort_hot_cereals_by_calories,subdir_schema/least_caloric,cereals,orders_snapshot"
         )
-    manifest_path = file_relative_path(__file__, "sample_manifest.json")
-    with open(manifest_path, "r", encoding="utf8") as f:
-        manifest_json = json.load(f)
 
     dbt_assets = load_assets_from_dbt_manifest(manifest_json)
     result = materialize_to_memory(
@@ -770,18 +758,16 @@ def test_op_config(
 
 def test_op_custom_name():
     instances = [{"target": "target_a"}, {"target": "target_b"}]
-    manifest_path = file_relative_path(__file__, "sample_manifest.json")
     dbt_assets = []
     for instance in instances:
-        with open(manifest_path) as manifest_json:
-            dbt_assets.extend(
-                load_assets_from_dbt_manifest(
-                    manifest_json=json.load(manifest_json),
-                    key_prefix=[instance["target"], "duckdb", "test-schema"],
-                    op_name=f"{instance['target']}_dbt_op",
-                    select="fqn:* fqn:*",  # just a non-default selection
-                )
+        dbt_assets.extend(
+            load_assets_from_dbt_manifest(
+                manifest_json=manifest_json,
+                key_prefix=[instance["target"], "duckdb", "test-schema"],
+                op_name=f"{instance['target']}_dbt_op",
+                select="fqn:* fqn:*",  # just a non-default selection
             )
+        )
     op_names = [asset_group.op.name for asset_group in dbt_assets]
     assert len(op_names) == len(set(op_names)), (
         "Multiple instances of a dbt project cannot have the same op name.\n"
@@ -891,10 +877,6 @@ def test_dbt_selections(
     expected_asset_names,
 ):
     if load_from_manifest:
-        manifest_path = file_relative_path(__file__, "sample_manifest.json")
-        with open(manifest_path, "r", encoding="utf8") as f:
-            manifest_json = json.load(f)
-
         dbt_assets = load_assets_from_dbt_manifest(manifest_json, select=select, exclude=exclude)
     else:
         dbt_assets = load_assets_from_dbt_project(
@@ -938,10 +920,6 @@ def test_dbt_selections(
     ],
 )
 def test_static_select_invalid_selection(select, error_match):
-    manifest_path = file_relative_path(__file__, "sample_manifest.json")
-    with open(manifest_path, "r", encoding="utf8") as f:
-        manifest_json = json.load(f)
-
     with pytest.raises(Exception, match=error_match):
         load_assets_from_dbt_manifest(manifest_json, select=select)
 
@@ -975,11 +953,11 @@ def test_source_tag_selection(test_python_project_dir, dbt_python_config_dir):
 
     assert len(dbt_assets[0].keys) == 2
 
-    manifest_path = os.path.join(test_python_project_dir, "target", "manifest.json")
-    with open(manifest_path, "r", encoding="utf8") as f:
-        manifest_json = json.load(f)
+    test_python_manifest_path = os.path.join(test_python_project_dir, "target", "manifest.json")
+    with open(test_python_manifest_path, "r", encoding="utf8") as f:
+        test_python_manifest_json = json.load(f)
 
-    dbt_assets = load_assets_from_dbt_manifest(manifest_json, select="tag:events")
+    dbt_assets = load_assets_from_dbt_manifest(test_python_manifest_json, select="tag:events")
 
     assert len(dbt_assets[0].keys) == 2
 

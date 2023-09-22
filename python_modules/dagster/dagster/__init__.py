@@ -34,17 +34,15 @@ sys.meta_path.insert(
 # ##### NOTES ON IMPORT FORMAT
 # ########################
 #
-# ok
 # This file defines dagster's public API. Imports need to be structured/formatted so as to to ensure
-# that the broadest possible set of static analyzers understand Dagster's
-# public API as intended. The below guidelines ensure this is the case.
+# that the broadest possible set of static analyzers understand Dagster's public API as intended.
+# The below guidelines ensure this is the case.
 #
 # (1) All imports in this module intended to define exported symbols should be of the form `from
 # dagster.foo import X as X`. This is because imported symbols are not by default considered public
 # by static analyzers. The redundant alias form `import X as X` overwrites the private imported `X`
 # with a public `X` bound to the same value. It is also possible to expose `X` as public by listing
-# it inside `__all__`, but the redundant alias form is preferred here due to easier maintainability
-# and shorter file length.
+# it inside `__all__`, but the redundant alias form is preferred here due to easier maintainability.
 
 # (2) All imports should target the module in which a symbol is actually defined, rather than a
 # container module where it is imported. This rule also derives from the default private status of
@@ -112,6 +110,11 @@ from dagster._config.source import (
     IntSource as IntSource,
     StringSource as StringSource,
 )
+from dagster._core.definitions import AssetCheckResult as AssetCheckResult
+from dagster._core.definitions.asset_check_spec import (
+    AssetCheckSeverity as AssetCheckSeverity,
+    AssetCheckSpec as AssetCheckSpec,
+)
 from dagster._core.definitions.asset_in import AssetIn as AssetIn
 from dagster._core.definitions.asset_out import AssetOut as AssetOut
 from dagster._core.definitions.asset_selection import AssetSelection as AssetSelection
@@ -122,6 +125,10 @@ from dagster._core.definitions.assets import AssetsDefinition as AssetsDefinitio
 from dagster._core.definitions.auto_materialize_policy import (
     AutoMaterializePolicy as AutoMaterializePolicy,
 )
+from dagster._core.definitions.auto_materialize_rule import (
+    AutoMaterializeRule as AutoMaterializeRule,
+)
+from dagster._core.definitions.backfill_policy import BackfillPolicy as BackfillPolicy
 from dagster._core.definitions.composition import PendingNodeInvocation as PendingNodeInvocation
 from dagster._core.definitions.config import ConfigMapping as ConfigMapping
 from dagster._core.definitions.configurable import configured as configured
@@ -129,6 +136,9 @@ from dagster._core.definitions.data_version import (
     DataProvenance as DataProvenance,
     DataVersion as DataVersion,
     DataVersionsByPartition as DataVersionsByPartition,
+)
+from dagster._core.definitions.decorators.asset_check_decorator import (
+    asset_check as asset_check,
 )
 from dagster._core.definitions.decorators.asset_decorator import (
     asset as asset,
@@ -265,6 +275,7 @@ from dagster._core.definitions.partition import (
     PartitionsDefinition as PartitionsDefinition,
     StaticPartitionsDefinition as StaticPartitionsDefinition,
     dynamic_partitioned_config as dynamic_partitioned_config,
+    partitioned_config as partitioned_config,
     static_partitioned_config as static_partitioned_config,
 )
 from dagster._core.definitions.partition_key_range import PartitionKeyRange as PartitionKeyRange
@@ -533,9 +544,9 @@ from dagster._utils import (
 from dagster._utils.alert import (
     make_email_on_run_failure_sensor as make_email_on_run_failure_sensor,
 )
-from dagster._utils.backcompat import ExperimentalWarning as ExperimentalWarning
 from dagster._utils.dagster_type import check_dagster_type as check_dagster_type
 from dagster._utils.log import get_dagster_logger as get_dagster_logger
+from dagster._utils.warnings import ExperimentalWarning as ExperimentalWarning
 from dagster.version import __version__ as __version__
 
 # ruff: isort: split
@@ -556,7 +567,7 @@ from typing import (
 
 from typing_extensions import Final
 
-from dagster._utils.backcompat import deprecation_warning, rename_warning
+from dagster._utils.warnings import deprecation_warning
 
 # NOTE: Unfortunately we have to declare deprecated aliases twice-- the
 # TYPE_CHECKING declaration satisfies linters and type checkers, but the entry
@@ -595,7 +606,12 @@ def __getattr__(name: str) -> TypingAny:
     elif name in _DEPRECATED_RENAMED:
         value, breaking_version = _DEPRECATED_RENAMED[name]
         stacklevel = 3 if sys.version_info >= (3, 7) else 4
-        rename_warning(value.__name__, name, breaking_version, stacklevel=stacklevel)
+        deprecation_warning(
+            value.__name__,
+            breaking_version,
+            additional_warn_text=f"Use `{name}` instead.",
+            stacklevel=stacklevel,
+        )
         return value
     else:
         raise AttributeError(f"module '{__name__}' has no attribute '{name}'")

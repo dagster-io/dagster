@@ -1,9 +1,9 @@
-import {useNavigation} from 'util/useNavigation';
-import {useVersion} from 'util/useVersion';
+import navigation from 'util/navigation';
+import {usePath} from 'util/usePath';
+import {SHOW_VERSION_NOTICE} from 'util/version';
 
 import cx from 'classnames';
 import Icons from 'components/Icons';
-import Link from 'components/Link';
 import VersionDropdown from 'components/VersionDropdown';
 import MDXComponents, {SearchIndexContext} from 'components/mdx/MDXComponents';
 import SidebarNavigation from 'components/mdx/SidebarNavigation';
@@ -30,9 +30,7 @@ export type MDXData = {
 };
 
 export const VersionNotice = () => {
-  const {asPath, version, defaultVersion} = useVersion();
-
-  if (version === defaultVersion) {
+  if (!SHOW_VERSION_NOTICE) {
     return null;
   }
 
@@ -40,31 +38,15 @@ export const VersionNotice = () => {
     <div className="bg-yellow-100 mb-10 mt-6 mx-4 shadow sm:rounded-lg">
       <div className="px-4 py-5 sm:p-6">
         <h3 className="text-lg leading-6 font-medium text-gray-900">
-          {version === 'master'
-            ? 'You are viewing an unreleased version of the documentation.'
-            : 'You are viewing an outdated version of the documentation.'}
+          You are viewing an unreleased or outdated version of the documentation
         </h3>
-        <div className="mt-2 text-sm text-gray-500">
-          {version === 'master' ? (
-            <p>
-              This documentation is for an unreleased version ({version}) of Dagster. The content
-              here is not guaranteed to be correct or stable. You can view the version of this page
-              from our latest release below.
-            </p>
-          ) : (
-            <p>
-              This documentation is for an older version ({version}) of Dagster. You can view the
-              version of this page from our latest release below.
-            </p>
-          )}
-        </div>
         <div className="mt-3 text-sm">
-          <Link href={asPath} version={defaultVersion}>
-            <a className="font-medium text-indigo-600 hover:text-indigo-500">
-              {' '}
-              View Latest Documentation <span aria-hidden="true">→</span>
-            </a>
-          </Link>
+          <a
+            href="https://docs.dagster.io"
+            className="font-medium text-indigo-600 hover:text-indigo-500"
+          >
+            View Latest Documentation <span aria-hidden="true">→</span>
+          </a>
         </div>
       </div>
     </div>
@@ -72,10 +54,8 @@ export const VersionNotice = () => {
 };
 
 const BreadcrumbNav = ({asPath}) => {
-  const {asPathWithoutAnchor} = useVersion();
+  const {asPathWithoutAnchor} = usePath();
   const pagePath = asPath ? asPath : asPathWithoutAnchor;
-
-  const navigation = useNavigation();
 
   function traverse(currNode, path, stack) {
     if (currNode.path === path) {
@@ -105,16 +85,16 @@ const BreadcrumbNav = ({asPath}) => {
   }
 
   return (
-    breadcrumbItems.length > 1 && (
-      <nav className="flex flex-nowrap lg:px-4 py-2" aria-label="Breadcrumb">
-        <ol className="md:inline-flex space-x-1 lg:space-x-3">
+    breadcrumbItems.length >= 1 && (
+      <nav className="flex py-2" aria-label="Breadcrumb">
+        <ol className="inline-flex">
           {breadcrumbItems.map((item, index) => {
             return (
               <li key={item.path || item.title}>
-                <div className="flex flex-nowrap items-center">
+                <div className="flex items-center">
                   {index > 0 && (
                     <svg
-                      className="w-3 h-3 text-gray-400 flex-shrink-0"
+                      className="w-3 h-3 text-gray-400 flex-shrink-0 mr-2"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 20 20"
@@ -124,15 +104,12 @@ const BreadcrumbNav = ({asPath}) => {
                   )}
                   <a
                     href={item.path}
-                    className={cx(
-                      'ml-1 lg:ml-2 text-xs lg:text-sm lg:font-normal text-gable-green truncate',
-                      {
-                        // Map nav hierarchy to levels for docs search
-                        'DocSearch-lvl0': index === 0,
-                        'DocSearch-lvl1': index === 1,
-                        'DocSearch-lvl2': index === 2,
-                      },
-                    )}
+                    className={cx('mr-1 lg:mr-2 text-sm lg:font-normal text-gable-green truncate', {
+                      // Map nav hierarchy to levels for docs search
+                      'DocSearch-lvl0': index === 0,
+                      'DocSearch-lvl1': index === 1,
+                      'DocSearch-lvl2': index === 2,
+                    })}
                   >
                     {item.title}
                   </a>
@@ -226,13 +203,11 @@ export const VersionedContentLayout = ({children, asPath = null}) => {
         style={{marginLeft: 'auto', marginRight: 'auto'}}
       >
         <div className="flex justify-between px-4 mb-4">
-          <div className="flex justify-start flex-col lg:flex-row lg:px-4 w-full">
-            <div className="flex">
+          <div className="flex justify-start flex-col lg:flex-row lg:px-4 w-full lg:items-center">
+            <div className="flex pr-4">
               <VersionDropdown />
             </div>
-            <div className="flex">
-              <BreadcrumbNav asPath={asPath} />
-            </div>
+            <BreadcrumbNav asPath={asPath} />
           </div>
         </div>
         <div className="flex flex-col">
@@ -262,7 +237,7 @@ export function UnversionedMDXRenderer({
   const {query} = useRouter();
   const {editMode} = query;
 
-  const {mdxSource, frontMatter, searchIndex, tableOfContents, githubLink} = data;
+  const {mdxSource, frontMatter, searchIndex, tableOfContents, githubLink, asPath} = data;
 
   const content = hydrate(mdxSource, {
     components,
@@ -284,6 +259,9 @@ export function UnversionedMDXRenderer({
         }}
       />
       <div className="flex-1 min-w-0 relative z-0 focus:outline-none pt-4" tabIndex={0}>
+        <div className="pl-4 sm:pl-6 lg:pl-8 ">
+          <BreadcrumbNav asPath={asPath} />
+        </div>
         <div
           className="flex flex-row pb-8 max-w-7xl"
           style={{marginLeft: 'auto', marginRight: 'auto'}}

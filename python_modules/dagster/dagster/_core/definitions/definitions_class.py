@@ -17,6 +17,7 @@ from dagster._annotations import deprecated, experimental, public
 from dagster._config.pythonic_config import (
     attach_resource_id_to_key_mapping,
 )
+from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_graph import InternalAssetGraph
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
@@ -60,6 +61,7 @@ def create_repository_using_definitions_args(
     resources: Optional[Mapping[str, Any]] = None,
     executor: Optional[Union[ExecutorDefinition, Executor]] = None,
     loggers: Optional[Mapping[str, LoggerDefinition]] = None,
+    asset_checks: Optional[Iterable[AssetChecksDefinition]] = None,
 ) -> Union[RepositoryDefinition, PendingRepositoryDefinition]:
     """Create a named repository using the same arguments as :py:class:`Definitions`. In older
     versions of Dagster, repositories were the mechanism for organizing assets, schedules, sensors,
@@ -94,6 +96,7 @@ def create_repository_using_definitions_args(
         resources=resources,
         executor=executor,
         loggers=loggers,
+        asset_checks=asset_checks,
     )
 
 
@@ -202,24 +205,32 @@ def _attach_resources_to_jobs_and_instigator_jobs(
 
     # Update all schedules and sensors to use the resource bound version
     updated_schedules = [
-        schedule.with_updated_job(unsatisfied_job_to_resource_bound_job[id(schedule.job)])
-        if (
-            isinstance(schedule, ScheduleDefinition)
-            and schedule.has_loadable_target()
-            and schedule.job in unsatisfied_jobs
+        (
+            schedule.with_updated_job(unsatisfied_job_to_resource_bound_job[id(schedule.job)])
+            if (
+                isinstance(schedule, ScheduleDefinition)
+                and schedule.has_loadable_target()
+                and schedule.job in unsatisfied_jobs
+            )
+            else schedule
         )
-        else schedule
         for schedule in schedules
     ]
     updated_sensors = [
-        sensor.with_updated_jobs(
-            [
-                unsatisfied_job_to_resource_bound_job[id(job)] if job in unsatisfied_jobs else job
-                for job in sensor.jobs
-            ]
+        (
+            sensor.with_updated_jobs(
+                [
+                    (
+                        unsatisfied_job_to_resource_bound_job[id(job)]
+                        if job in unsatisfied_jobs
+                        else job
+                    )
+                    for job in sensor.jobs
+                ]
+            )
+            if sensor.has_loadable_targets() and any(job in unsatisfied_jobs for job in sensor.jobs)
+            else sensor
         )
-        if sensor.has_loadable_targets() and any(job in unsatisfied_jobs for job in sensor.jobs)
-        else sensor
         for sensor in sensors
     ]
 
@@ -239,6 +250,7 @@ def _create_repository_using_definitions_args(
     resources: Optional[Mapping[str, Any]] = None,
     executor: Optional[Union[ExecutorDefinition, Executor]] = None,
     loggers: Optional[Mapping[str, LoggerDefinition]] = None,
+    asset_checks: Optional[Iterable[AssetChecksDefinition]] = None,
 ):
     check.opt_iterable_param(
         assets, "assets", (AssetsDefinition, SourceAsset, CacheableAssetsDefinition)
@@ -291,6 +303,7 @@ def _create_repository_using_definitions_args(
     def created_repo():
         return [
             *with_resources(assets or [], resource_defs),
+            *with_resources(asset_checks or [], resource_defs),
             *(schedules_with_resources),
             *(sensors_with_resources),
             *(jobs_with_resources),
@@ -299,7 +312,13 @@ def _create_repository_using_definitions_args(
     return created_repo
 
 
-@deprecated
+@deprecated(
+    breaking_version="2.0",
+    additional_warn_text=(
+        "Instantiations can be removed. Since it's behavior is now the default, this class is now a"
+        " no-op."
+    ),
+)
 class BindResourcesToJobs(list):
     """Used to instruct Dagster to bind top-level resources to jobs and any jobs attached to schedules
     and sensors. Now deprecated since this behavior is the default.
@@ -316,6 +335,9 @@ class Definitions:
             :py:func:`@observable_source_asset <observable_source_asset>`.
             Or they can by directly instantiating :py:class:`AssetsDefinition`,
             :py:class:`SourceAsset`, or :py:class:`CacheableAssetsDefinition`.
+
+        asset_checks (Optional[Iterable[AssetChecksDefinition]]):
+            A list of asset checks.
 
         schedules (Optional[Iterable[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]]):
             List of schedules.
@@ -362,7 +384,8 @@ class Definitions:
             jobs=[a_job],
             resources={
                 "a_resource": some_resource,
-            }
+            },
+            asset_checks=[asset_one_check_one]
         )
 
     Dagster separates user-defined code from system tools such the web server and
@@ -404,6 +427,7 @@ class Definitions:
         resources: Optional[Mapping[str, Any]] = None,
         executor: Optional[Union[ExecutorDefinition, Executor]] = None,
         loggers: Optional[Mapping[str, LoggerDefinition]] = None,
+        asset_checks: Optional[Iterable[AssetChecksDefinition]] = None,
     ):
         self._created_pending_or_normal_repo = _create_repository_using_definitions_args(
             name=SINGLETON_REPOSITORY_NAME,
@@ -414,6 +438,7 @@ class Definitions:
             resources=resources,
             executor=executor,
             loggers=loggers,
+            asset_checks=asset_checks,
         )
 
     @public

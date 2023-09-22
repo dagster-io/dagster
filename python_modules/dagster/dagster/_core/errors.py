@@ -94,13 +94,11 @@ def _generate_pythonic_config_error_message(
         PYTHONIC_CONFIG_ERROR_VERBIAGE + (PYTHONIC_RESOURCE_ADDITIONAL_TYPES if is_resource else "")
     ).format(invalid_type_str=invalid_type_name)
 
-    return (
-        """
+    return ("""
 Error defining Dagster config class{config_class}{field_name}.
 Unable to resolve config type {invalid_type} to a supported Dagster config type.
 
-{PYTHONIC_CONFIG_ERROR_VERBIAGE}"""
-    ).format(
+{PYTHONIC_CONFIG_ERROR_VERBIAGE}""").format(
         config_class=f" {config_class!r}" if config_class else "",
         field_name=f" on field '{field_name}'" if field_name else "",
         invalid_type=repr(invalid_type),
@@ -109,8 +107,7 @@ Unable to resolve config type {invalid_type} to a supported Dagster config type.
 
 
 class DagsterInvalidPythonicConfigDefinitionError(DagsterError):
-    """Indicates that you have attempted to construct a Pythonic config or resource class with an invalid value.
-    """
+    """Indicates that you have attempted to construct a Pythonic config or resource class with an invalid value."""
 
     def __init__(
         self,
@@ -484,8 +481,7 @@ class DagsterUserCodeProcessError(DagsterError):
 
 
 class DagsterMaxRetriesExceededError(DagsterError):
-    """Raised when raise_on_error is true, and retries were exceeded, this error should be raised.
-    """
+    """Raised when raise_on_error is true, and retries were exceeded, this error should be raised."""
 
     def __init__(self, *args, **kwargs):
         from dagster._utils.error import SerializableErrorInfo
@@ -584,6 +580,10 @@ class DagsterTypeCheckDidNotPass(DagsterError):
         self.dagster_type = check.opt_inst_param(dagster_type, "dagster_type", DagsterType)
 
 
+class DagsterAssetCheckFailedError(DagsterError):
+    """Indicates than an asset check failed."""
+
+
 class DagsterEventLogInvalidForRun(DagsterError):
     """Raised when the event logs for a historical run are malformed or invalid."""
 
@@ -659,8 +659,7 @@ class DagsterUnknownPartitionError(DagsterError):
 
 
 class DagsterUndefinedDataVersionError(DagsterError):
-    """The user attempted to retrieve the most recent logical version for an asset, but no logical version is defined.
-    """
+    """The user attempted to retrieve the most recent logical version for an asset, but no logical version is defined."""
 
 
 class DagsterAssetBackfillDataLoadError(DagsterError):
@@ -673,3 +672,7 @@ class DagsterDefinitionChangedDeserializationError(DagsterError):
     """Indicates that a stored value can't be deserialized because the definition needed to interpret
     it has changed.
     """
+
+
+class DagsterExternalExecutionError(DagsterError):
+    """Indicates that an error occurred during the execution of an external process."""

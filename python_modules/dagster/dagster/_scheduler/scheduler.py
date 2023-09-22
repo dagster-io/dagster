@@ -245,12 +245,12 @@ def launch_scheduled_runs(
     # Remove any schedule states that were previously created with AUTOMATICALLY_RUNNING
     # and can no longer be found in the workspace (so that if they are later added
     # back again, their timestamps will start at the correct place)
-    states_to_delete = {
+    states_to_delete = [
         schedule_state
         for selector_id, schedule_state in all_schedule_states.items()
         if selector_id not in schedules
         and schedule_state.status == InstigatorStatus.AUTOMATICALLY_RUNNING
-    }
+    ]
     for state in states_to_delete:
         location_name = state.origin.external_repository_origin.code_location_origin.location_name
         # don't clean up auto running state if its location is an error state
@@ -295,11 +295,9 @@ def launch_scheduled_runs(
                 )
             else:
                 logger.warning(
-                    (
-                        f"Could not find schedule {schedule_name} in repository {repo_name}. If"
-                        " this schedule no longer exists, you can turn it off in the Dagster UI"
-                        " from the Status tab."
-                    ),
+                    f"Could not find schedule {schedule_name} in repository {repo_name}. If"
+                    " this schedule no longer exists, you can turn it off in the Dagster UI"
+                    " from the Status tab.",
                 )
 
     if not schedules:
@@ -887,9 +885,10 @@ def _create_scheduler_run(
         parent_job_snapshot=external_job.parent_job_snapshot,
         external_job_origin=external_job.get_external_origin(),
         job_code_origin=external_job.get_python_origin(),
-        asset_selection=frozenset(run_request.asset_selection)
-        if run_request.asset_selection
-        else None,
+        asset_selection=(
+            frozenset(run_request.asset_selection) if run_request.asset_selection else None
+        ),
+        asset_check_selection=None,
     )
 
 

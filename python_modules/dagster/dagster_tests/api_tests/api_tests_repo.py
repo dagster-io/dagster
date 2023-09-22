@@ -147,9 +147,11 @@ def define_bar_schedules():
             cron_schedule="* * * * *",
             job_name="foo",
             run_config_fn=lambda context: {
-                "passed_in_time": context.scheduled_execution_time.isoformat()
-                if context.scheduled_execution_time
-                else ""
+                "passed_in_time": (
+                    context.scheduled_execution_time.isoformat()
+                    if context.scheduled_execution_time
+                    else ""
+                )
             },
         ),
         "partitioned_run_request_schedule": partitioned_run_request_schedule,
@@ -172,7 +174,7 @@ def sensor_raises_dagster_error(_):
     raise DagsterError("Dagster error")
 
 
-@repository
+@repository(metadata={"string": "foo", "integer": 123})
 def bar_repo():
     return {
         "jobs": {

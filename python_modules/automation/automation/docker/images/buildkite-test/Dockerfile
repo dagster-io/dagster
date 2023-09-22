@@ -9,7 +9,7 @@
 ARG BASE_IMAGE
 FROM "${BASE_IMAGE}" AS system_base
 
-LABEL maintainer="Elementl"
+LABEL maintainer="Dagster Labs"
 
 # Never prompts the user for choices on installation/configuration of packages (NOTE:
 # DEBIAN_FRONTEND does not affect the apt-get command)
@@ -55,10 +55,14 @@ RUN apt-get update -yqq \
     libxmlsec1-dev \
     pkg-config
 
+# Install Java (required by pyspark)
+COPY --from=openjdk:8-jre-slim /usr/local/openjdk-8 /usr/local/openjdk-8
+ENV JAVA_HOME /usr/local/openjdk-8
+RUN update-alternatives --install /usr/bin/java java /usr/local/openjdk-8/bin/java 1
+
 # Install various packages used in running/installing/testing Dagster:
 # - git/make (cloning dagster, running checks defined in Makefile)
-# - openjdk-11-{jdk,jre}-headless 8 (Java required by pyspark) see: http://bit.ly/2ZIuHRh
-# - nodejs/yarn (dagit)
+# - nodejs/yarn (dagster UI)
 # - assorted others-- some may no longer be required, but leaving in place for now
 #
 # deb.nodesource script adds node source to apt
@@ -81,8 +85,6 @@ RUN curl -sL https://deb.nodesource.com/setup_20.x | bash - \
     make \
     mariadb-client \
     nodejs \
-    openjdk-11-jdk-headless \
-    openjdk-11-jre-headless \
     pandoc \
     postgresql \
     rabbitmq-server \
@@ -92,9 +94,7 @@ RUN curl -sL https://deb.nodesource.com/setup_20.x | bash - \
     unzip \
     wget \
     xz-utils \
-    yarn \
-    # Confirm Java works
-    && java -version
+    yarn
 
 # Install FOSSA cli for analyzing our open-source dependencies
 # https://github.com/fossas/fossa-cli
@@ -108,13 +108,12 @@ RUN wget https://github.com/fossas/fossa-cli/releases/download/v${FOSSA_VERSION}
 # Install Google Cloud SDK
 # https://cloud.google.com/sdk/docs/install#deb
 # Add Google Cloud GPG key and apt source
-RUN curl https://packages.cloud.google.com/apt/doc/apt-key.gpg > /usr/share/keyrings/cloud.google.gpg \
-    && echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.cloud.google.com/apt cloud-sdk main" | \
+RUN curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key --keyring /usr/share/keyrings/cloud.google.gpg add - \
+    && echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | \
     tee -a /etc/apt/sources.list.d/google-cloud-sdk.list > /dev/null \
-    # Install google cloud
     && apt-get -yqq update \
     && apt-get -yqq install \
-    google-cloud-sdk
+    google-cloud-cli
 
 # Install Docker -- note that we have some older code using `docker-compose` instead of `docker
 # compose`, so we have to install both the `docker-compose` executable and the docker compose CLI

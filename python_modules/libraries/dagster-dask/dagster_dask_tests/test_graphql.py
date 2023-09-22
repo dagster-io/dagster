@@ -9,7 +9,7 @@ from dagster_graphql.test.utils import (
 )
 
 
-def test_execute_hammer_through_dagit():
+def test_execute_hammer_through_webserver():
     with instance_for_test() as instance:
         with get_workspace_process_context_from_kwargs(
             instance,

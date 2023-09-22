@@ -152,10 +152,8 @@ def test_scaffold_repository_deprecation():
     with runner.isolated_filesystem():
         result = runner.invoke(scaffold_repository_command, ["--name", "my_dagster_project"])
         assert re.match(
-            (
-                "WARNING: This command is deprecated. Use `dagster project scaffold-code-location`"
-                " instead."
-            ),
+            "WARNING: This command is deprecated. Use `dagster project scaffold-code-location`"
+            " instead.",
             result.output,
         )
 

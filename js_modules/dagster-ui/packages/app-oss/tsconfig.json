@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "paths": {
+      "@dagster-io/ui-core/*": ["../ui-core/src/*"],
+      "@dagster-io/ui-components": ["../ui-components/src"]
+    },
+    "module": "esnext",
+    "target": "es2022",
+    "allowJs": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": true,
+    "allowUnreachableCode": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "preserve",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "incremental": true
+  },
+  "include": ["src", "custom-next-env.d.ts"],
+  "exclude": ["node_modules", "next-env.d.ts"]
+}

@@ -2,7 +2,7 @@ import {Menu, Transition} from '@headlessui/react';
 import React from 'react';
 
 import Icons from '../components/Icons';
-import {useVersion} from '../util/useVersion';
+import {LATEST_VERSION, SHOW_VERSION_NOTICE, getOlderVersions} from '../util/version';
 
 import Link from './Link';
 
@@ -19,8 +19,8 @@ function getLibraryVersionText(coreVersion) {
 }
 
 export default function VersionDropdown() {
-  const {latestVersion, version: currentVersion, versions, asPath} = useVersion();
-  const libraryVersionText = getLibraryVersionText(currentVersion);
+  const libraryVersionText = getLibraryVersionText(LATEST_VERSION);
+  const olderVersions = getOlderVersions();
   return (
     <div className="z-20 relative inline-flex text-left w-full">
       <div className="relative block text-left w-full">
@@ -29,13 +29,14 @@ export default function VersionDropdown() {
             <>
               <div>
                 <Menu.Button className="group rounded-full px-2 lg:px-4 lg:py-2 text-gray-400 border border-gray-300 hover:bg-white transition-colors duration-200">
-                  <span className="flex w-full justify-between items-center">
+                  <span className="flex w-full justify-between items-center gap-x-2">
                     <span className="flex min-w-0 items-center justify-between space-x-3">
                       <span className="flex-1 min-w-0 text-gable-green dark:text-gray-300 text-xs lg:text-sm truncate space-x-1">
                         <span>
-                          {currentVersion} {libraryVersionText}
+                          {LATEST_VERSION} {libraryVersionText}
                         </span>
-                        {currentVersion === latestVersion ? (
+                        {/* When show version notice, do not show the "latest" tag to avoid confusion */}
+                        {!SHOW_VERSION_NOTICE ? (
                           <span className="bg-lavender rounded-full px-2 py-1">latest</span>
                         ) : null}
                       </span>
@@ -72,7 +73,7 @@ export default function VersionDropdown() {
                     <p className="text-sm leading-5">
                       You&apos;re currently viewing the docs for Dagster{' '}
                       <span className="text-sm font-medium leading-5 text-gray-900">
-                        {currentVersion}
+                        {LATEST_VERSION}
                       </span>
                       . Select a different version below. Note that prior to 1.0, all Dagster
                       packages shared the same version. After 1.0, we adopted separate version
@@ -85,22 +86,23 @@ export default function VersionDropdown() {
                   </div>
 
                   <div className="py-1">
-                    {versions.map((version) => {
+                    {olderVersions.map((item) => {
+                      const version = item.version;
+                      const url = item.url;
                       const libraryVersionText = getLibraryVersionText(version);
                       return (
-                        <Link key={version} href={asPath} version={version}>
-                          <Menu.Item>
-                            {({active}) => (
-                              <a
-                                className={`${
-                                  active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
-                                } flex cursor-pointer justify-between w-full px-4 py-2 text-sm leading-5 text-left`}
-                              >
-                                {version} {libraryVersionText}
-                              </a>
-                            )}
-                          </Menu.Item>
-                        </Link>
+                        <Menu.Item key={version}>
+                          {({active}) => (
+                            <a
+                              href={url}
+                              className={`${
+                                active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                              } flex cursor-pointer justify-between w-full px-4 py-2 text-sm leading-5 text-left`}
+                            >
+                              {version} {libraryVersionText}
+                            </a>
+                          )}
+                        </Menu.Item>
                       );
                     })}
                   </div>

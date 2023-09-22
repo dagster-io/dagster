@@ -1,0 +1,50 @@
+@font-face {
+  font-family: 'Neue Montreal';
+  font-weight: 400;
+  src: url('/fonts/PPNeueMontreal-Regular.woff') format('woff');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Neue Montreal';
+  font-weight: 400;
+  font-style: italic;
+  src: url('/fonts/PPNeueMontreal-Italic.woff?v=3.26') format('woff');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Neue Montreal';
+  font-weight: 500;
+  font-style: italic;
+  src: url('/fonts/PPNeueMontreal-SemiBolditalic.woff?v=3.26') format('woff');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Neue Montreal';
+  font-weight: 500;
+  src: url('/fonts/PPNeueMontreal-Medium.woff?v=3.26') format('woff');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Neue Montreal';
+  font-weight: 700;
+  src: url('/fonts/PPNeueMontreal-Bold.woff?v=3.27') format('woff');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Diatype Mono';
+  font-weight: 400;
+  src: url('/fonts/ABCDiatypeMono-Regular.woff?v=3.26') format('woff');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Diatype Mono';
+  font-weight: 500;
+  src: url('/fonts/ABCDiatypeMono-Medium.woff?v=3.26') format('woff');
+  font-display: swap;
+}

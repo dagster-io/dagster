@@ -1,9 +1,47 @@
 from enum import Enum
-from typing import NamedTuple, Optional
+from typing import TYPE_CHECKING, AbstractSet, Dict, FrozenSet, NamedTuple, Optional, Sequence
 
 import dagster._check as check
 from dagster._annotations import experimental, public
-from dagster._serdes.serdes import whitelist_for_serdes
+from dagster._serdes.serdes import (
+    NamedTupleSerializer,
+    UnpackContext,
+    UnpackedValue,
+    whitelist_for_serdes,
+)
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.auto_materialize_rule import (
+        AutoMaterializeRule,
+        AutoMaterializeRuleSnapshot,
+    )
+
+
+class AutoMaterializePolicySerializer(NamedTupleSerializer):
+    def before_unpack(
+        self, context: UnpackContext, unpacked_dict: Dict[str, UnpackedValue]
+    ) -> Dict[str, UnpackedValue]:
+        from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
+
+        backcompat_map = {
+            "on_missing": AutoMaterializeRule.materialize_on_missing(),
+            "on_new_parent_data": AutoMaterializeRule.materialize_on_parent_updated(),
+            "for_freshness": AutoMaterializeRule.materialize_on_required_for_freshness(),
+        }
+
+        # determine if this namedtuple was serialized with the old format (booleans for rules)
+        if any(backcompat_key in unpacked_dict for backcompat_key in backcompat_map):
+            # all old policies had these rules by default
+            rules = {
+                AutoMaterializeRule.skip_on_parent_outdated(),
+                AutoMaterializeRule.skip_on_parent_missing(),
+            }
+            for backcompat_key, rule in backcompat_map.items():
+                if unpacked_dict.get(backcompat_key):
+                    rules.add(rule)
+            unpacked_dict["rules"] = frozenset(rules)
+
+        return unpacked_dict
 
 
 class AutoMaterializePolicyType(Enum):
@@ -12,44 +50,60 @@ class AutoMaterializePolicyType(Enum):
 
 
 @experimental
-@whitelist_for_serdes(old_fields={"time_window_partition_scope_minutes": 1e-6})
+@whitelist_for_serdes(
+    old_fields={"time_window_partition_scope_minutes": 1e-6},
+    serializer=AutoMaterializePolicySerializer,
+)
 class AutoMaterializePolicy(
     NamedTuple(
         "_AutoMaterializePolicy",
         [
-            ("on_missing", bool),
-            ("on_new_parent_data", bool),
-            ("for_freshness", bool),
+            ("rules", FrozenSet["AutoMaterializeRule"]),
             ("max_materializations_per_minute", Optional[int]),
         ],
     )
 ):
     """An AutoMaterializePolicy specifies how Dagster should attempt to keep an asset up-to-date.
 
-    There are two main kinds of auto-materialize policies: eager and lazy. In essence, an asset with
-    an eager policy will try to immediately materialize after upstream changes, while an asset with
-    a lazy policy will only materialize when necessary in order to satisfy the relevant
-    FreshnessPolicies.
+    Each policy consists of a set of AutoMaterializeRules, which are used to determine whether an
+    asset or a partition of an asset should or should not be auto-materialized.
 
-    For an asset / partition of an asset with an _eager_ policy to be auto-materialized, at least
-    one of the following must be true:
+    The most common policy is `AutoMaterializePolicy.eager()`, which consists of the following rules:
 
-    - it is missing
-    - it has a freshness policy that requires more up-to-date data
-    - any of its descendants have a freshness policy that require more up-to-date data
-    - any of its parent assets / partitions have newer data
+    - `AutoMaterializeRule.materialize_on_missing()`
+        Materialize an asset or a partition if it has never been materialized.
+    - `AutoMaterializeRule.materialize_on_parent_updated()`
+        Materialize an asset or a partition if one of its parents have been updated more recently
+        than it has.
+    - `AutoMaterializeRule.materialize_on_required_for_freshness()`
+        Materialize an asset or a partition if it is required to satisfy a freshness policy.
+    - `AutoMaterializeRule.skip_on_parent_outdated()`
+        Skip materializing an asset or partition if any of its parents have ancestors that have
+        been materialized more recently.
+    - `AutoMaterializeRule.skip_on_parent_missing()`
+        Skip materializing an asset or a partition if any parent has never been materialized or
+        observed.
 
-    For an asset / partition of an asset with a _lazy_ policy to be auto-materialized, at least one
-    of the following must be true:
+    Policies can be customized by adding or removing rules. For example, if you'd like to allow
+    an asset to be materialized even if some of its parent partitions are missing:
 
-    - it has a freshness policy that requires more up-to-date data
-    - any of its descendants have a freshness policy that require more up-to-date data
+    .. code-block:: python
 
-    If an asset / partition meets the above criteria, then it will be auto-materialized only if none
-    of the following are true:
+        from dagster import AutoMaterializePolicy, AutoMaterializeRule
 
-    - any of its parent assets / partitions are missing
-    - any of its ancestor assets / partitions have ancestors of their own with newer data
+        my_policy = AutoMaterializePolicy.eager().without_rules(
+            AutoMaterializeRule.skip_on_parent_missing(),
+        )
+
+    If you'd like an asset to wait for all of its parents to be updated before materializing:
+
+    .. code-block:: python
+
+        from dagster import AutoMaterializePolicy, AutoMaterializeRule
+
+        my_policy = AutoMaterializePolicy.eager().with_rules(
+            AutoMaterializeRule.skip_on_all_parents_not_updated(),
+        )
 
     Lastly, the `max_materializations_per_minute` parameter, which is set to 1 by default,
     rate-limits the number of auto-materializations that can occur for a particular asset within
@@ -66,23 +120,40 @@ class AutoMaterializePolicy(
 
     def __new__(
         cls,
-        on_missing: bool,
-        on_new_parent_data: bool,
-        for_freshness: bool,
+        rules: AbstractSet["AutoMaterializeRule"],
         max_materializations_per_minute: Optional[int] = 1,
     ):
+        from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
+
         check.invariant(
-            on_new_parent_data or for_freshness,
-            "One of on_new_parent_data or for_freshness must be True",
+            max_materializations_per_minute is None or max_materializations_per_minute > 0,
+            "max_materializations_per_minute must be positive. To disable rate-limiting, set it"
+            " to None. To disable auto materializing, remove the policy.",
         )
 
         return super(AutoMaterializePolicy, cls).__new__(
             cls,
-            on_missing=on_missing,
-            on_new_parent_data=on_new_parent_data,
-            for_freshness=for_freshness,
+            rules=frozenset(check.set_param(rules, "rules", of_type=AutoMaterializeRule)),
             max_materializations_per_minute=max_materializations_per_minute,
         )
+
+    @property
+    def materialize_rules(self) -> AbstractSet["AutoMaterializeRule"]:
+        from dagster._core.definitions.auto_materialize_rule import AutoMaterializeDecisionType
+
+        return {
+            rule
+            for rule in self.rules
+            if rule.decision_type == AutoMaterializeDecisionType.MATERIALIZE
+        }
+
+    @property
+    def skip_rules(self) -> AbstractSet["AutoMaterializeRule"]:
+        from dagster._core.definitions.auto_materialize_rule import AutoMaterializeDecisionType
+
+        return {
+            rule for rule in self.rules if rule.decision_type == AutoMaterializeDecisionType.SKIP
+        }
 
     @public
     @staticmethod
@@ -95,10 +166,16 @@ class AutoMaterializePolicy(
                 is exceeded, the partitions which would have been materialized will be discarded,
                 and will require manual materialization in order to be updated. Defaults to 1.
         """
+        from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
+
         return AutoMaterializePolicy(
-            on_missing=True,
-            on_new_parent_data=True,
-            for_freshness=True,
+            rules={
+                AutoMaterializeRule.materialize_on_missing(),
+                AutoMaterializeRule.materialize_on_parent_updated(),
+                AutoMaterializeRule.materialize_on_required_for_freshness(),
+                AutoMaterializeRule.skip_on_parent_outdated(),
+                AutoMaterializeRule.skip_on_parent_missing(),
+            },
             max_materializations_per_minute=check.opt_int_param(
                 max_materializations_per_minute, "max_materializations_per_minute"
             ),
@@ -115,17 +192,48 @@ class AutoMaterializePolicy(
                 is exceeded, the partitions which would have been materialized will be discarded,
                 and will require manual materialization in order to be updated. Defaults to 1.
         """
+        from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
+
         return AutoMaterializePolicy(
-            on_missing=False,
-            on_new_parent_data=False,
-            for_freshness=True,
+            rules={
+                AutoMaterializeRule.materialize_on_required_for_freshness(),
+                AutoMaterializeRule.skip_on_parent_outdated(),
+                AutoMaterializeRule.skip_on_parent_missing(),
+            },
             max_materializations_per_minute=check.opt_int_param(
                 max_materializations_per_minute, "max_materializations_per_minute"
             ),
         )
 
+    @public
+    def without_rules(self, *rules_to_remove: "AutoMaterializeRule") -> "AutoMaterializePolicy":
+        """Constructs a copy of this policy with the specified rules removed. Raises an error
+        if any of the arguments are not rules in this policy.
+        """
+        non_matching_rules = set(rules_to_remove).difference(self.rules)
+        check.param_invariant(
+            not non_matching_rules,
+            "rules_to_remove",
+            f"Rules {[rule for rule in rules_to_remove if rule in non_matching_rules]} do not"
+            " exist in this policy.",
+        )
+        return self._replace(
+            rules=self.rules.difference(set(rules_to_remove)),
+        )
+
+    @public
+    def with_rules(self, *rules_to_add: "AutoMaterializeRule") -> "AutoMaterializePolicy":
+        """Constructs a copy of this policy with the specified rules added."""
+        return self._replace(rules=self.rules.union(set(rules_to_add)))
+
     @property
     def policy_type(self) -> AutoMaterializePolicyType:
-        if self.on_new_parent_data is True:
+        from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
+
+        if AutoMaterializeRule.materialize_on_parent_updated() in self.rules:
             return AutoMaterializePolicyType.EAGER
         return AutoMaterializePolicyType.LAZY
+
+    @property
+    def rule_snapshots(self) -> Sequence["AutoMaterializeRuleSnapshot"]:
+        return [rule.to_snapshot() for rule in self.rules]

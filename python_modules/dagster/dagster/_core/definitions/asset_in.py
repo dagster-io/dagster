@@ -72,7 +72,9 @@ class AssetIn(
             partition_mapping=check.opt_inst_param(
                 partition_mapping, "partition_mapping", PartitionMapping
             ),
-            dagster_type=NoValueSentinel
-            if dagster_type is NoValueSentinel
-            else resolve_dagster_type(dagster_type),
+            dagster_type=(
+                NoValueSentinel
+                if dagster_type is NoValueSentinel
+                else resolve_dagster_type(dagster_type)
+            ),
         )
