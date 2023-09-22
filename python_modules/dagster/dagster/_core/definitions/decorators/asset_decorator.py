@@ -457,6 +457,59 @@ class _Asset:
         )
 
 
+def asset_from_spec(
+    compute_fn: Optional[Callable] = None,
+    *,
+    spec: AssetSpec,
+    config_schema: Optional[UserConfigSchema] = None,
+    compute_kind: Optional[str] = None,
+    partitions_def: Optional[PartitionsDefinition] = None,
+    op_tags: Optional[Mapping[str, Any]] = None,
+    backfill_policy: Optional[BackfillPolicy] = None,
+    retry_policy: Optional[RetryPolicy] = None,
+    check_specs: Optional[Sequence[AssetCheckSpec]] = None,
+) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
+    def create_asset() -> _Asset:
+        upstream_asset_deps = _deps_and_non_argument_deps_to_asset_deps(
+            deps=spec.deps, non_argument_deps=None
+        )
+
+        return _Asset(
+            name=None,  # (mypy bug that it can't infer name is Optional[str])
+            key_prefix=None,
+            ins=None,
+            deps=upstream_asset_deps,
+            metadata=spec.metadata,
+            description=spec.description,
+            config_schema=config_schema,
+            required_resource_keys=None,
+            resource_defs=None,
+            io_manager_key=None,
+            io_manager_def=None,
+            compute_kind=check.opt_str_param(compute_kind, "compute_kind"),
+            dagster_type=None,
+            partitions_def=partitions_def,
+            op_tags=op_tags,
+            group_name=spec.group_name,
+            output_required=not spec.skippable,
+            freshness_policy=spec.freshness_policy,
+            auto_materialize_policy=spec.auto_materialize_policy,
+            backfill_policy=backfill_policy,
+            retry_policy=retry_policy,
+            code_version=spec.code_version,
+            check_specs=check_specs,
+            key=spec.key,
+        )
+
+    if compute_fn is not None:
+        return create_asset()(compute_fn)
+
+    def inner(fn: Callable[..., Any]) -> AssetsDefinition:
+        return create_asset()(fn)
+
+    return inner
+
+
 @experimental_param(param="resource_defs")
 @deprecated_param(
     param="non_argument_deps", breaking_version="2.0.0", additional_warn_text="use `deps` instead."

@@ -41,6 +41,7 @@ from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.decorators.asset_decorator import asset_from_spec
 from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.errors import (
@@ -2070,3 +2071,12 @@ def test_multi_asset_asset_key_on_context():
         match="Cannot call `context.asset_key` in a multi_asset with more than one asset",
     ):
         materialize([asset_key_context_with_two_specs])
+
+
+def test_asset_from_spec() -> None:
+    @asset_from_spec(spec=AssetSpec("my_asset"))
+    def _my_asset() -> int:
+        return 1
+
+    assert isinstance(_my_asset, AssetsDefinition)
+    assert _my_asset.key == AssetKey("my_asset")
