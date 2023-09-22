@@ -3,6 +3,7 @@ host processes and user processes. They should contain no
 business logic or clever indexing. Use the classes in external.py
 for that.
 """
+import enum
 import inspect
 import json
 from abc import ABC, abstractmethod
@@ -45,7 +46,6 @@ from dagster._core.definitions import (
     ScheduleDefinition,
     SourceAsset,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_sensor_definition import AssetSensorDefinition
 from dagster._core.definitions.asset_spec import (
     SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
@@ -1092,6 +1092,12 @@ class ExternalResourceData(
 
 
 @whitelist_for_serdes
+class AssetCheckCanExecuteIndividually(enum.Enum):
+    TRUE = "TRUE"
+    CANNOT_SUBSET = "CANNOT_SUBSET"
+
+
+@whitelist_for_serdes
 class ExternalAssetCheck(
     NamedTuple(
         "_ExternalAssetCheck",
@@ -1099,6 +1105,7 @@ class ExternalAssetCheck(
             ("name", str),
             ("asset_key", AssetKey),
             ("description", Optional[str]),
+            ("can_execute_individually", Optional[AssetCheckCanExecuteIndividually]),
         ],
     )
 ):
@@ -1109,20 +1116,18 @@ class ExternalAssetCheck(
         name: str,
         asset_key: AssetKey,
         description: Optional[str],
+        can_execute_individually: Optional[AssetCheckCanExecuteIndividually] = None,
     ):
         return super(ExternalAssetCheck, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
             asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
             description=check.opt_str_param(description, "description"),
-        )
-
-    @classmethod
-    def from_spec(cls, spec: AssetCheckSpec):
-        return cls(
-            name=spec.name,
-            asset_key=spec.asset_key,
-            description=spec.description,
+            can_execute_individually=check.opt_inst_param(
+                can_execute_individually,
+                "can_execute_individually",
+                AssetCheckCanExecuteIndividually,
+            ),
         )
 
 
@@ -1440,23 +1445,35 @@ def external_asset_checks_from_defs(
     job_defs: Sequence[JobDefinition],
 ) -> Sequence[ExternalAssetCheck]:
     # put specs in a dict to dedupe, since the same check can exist in multiple jobs
-    check_specs_dict = {}
+    checks_dict = {}
     for job_def in job_defs:
         asset_layer = job_def.asset_layer
 
         # checks defined with @asset_check
         for asset_check_def in asset_layer.asset_checks_defs:
             for spec in asset_check_def.specs:
-                check_specs_dict[(spec.asset_key, spec.name)] = spec
+                checks_dict[spec.handle] = ExternalAssetCheck(
+                    name=spec.name,
+                    asset_key=spec.asset_key,
+                    description=spec.description,
+                    can_execute_individually=AssetCheckCanExecuteIndividually.TRUE,
+                )
 
-        # checks defined on @asset
+        # checks defined on assets
         for asset_def in asset_layer.assets_defs_by_key.values():
             for spec in asset_def.check_specs:
-                check_specs_dict[(spec.asset_key, spec.name)] = spec
+                checks_dict[spec.handle] = ExternalAssetCheck(
+                    name=spec.name,
+                    asset_key=spec.asset_key,
+                    description=spec.description,
+                    can_execute_individually=(
+                        AssetCheckCanExecuteIndividually.TRUE
+                        if asset_def.can_subset
+                        else AssetCheckCanExecuteIndividually.CANNOT_SUBSET
+                    ),
+                )
 
-    check_specs = sorted(check_specs_dict.values(), key=lambda spec: (spec.asset_key, spec.name))
-
-    return [ExternalAssetCheck.from_spec(spec) for spec in check_specs]
+    return sorted(checks_dict.values(), key=lambda check: (check.asset_key, check.name))
 
 
 def external_asset_graph_from_defs(

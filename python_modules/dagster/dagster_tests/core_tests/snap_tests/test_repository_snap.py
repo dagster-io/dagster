@@ -2,11 +2,13 @@ from typing import Dict, List, cast
 
 from dagster import (
     AssetCheckSpec,
+    AssetOut,
     Definitions,
     asset,
     asset_check,
     graph,
     job,
+    multi_asset,
     op,
     repository,
     resource,
@@ -29,6 +31,7 @@ from dagster._core.host_representation import (
     external_repository_data_from_def,
 )
 from dagster._core.host_representation.external_data import (
+    AssetCheckCanExecuteIndividually,
     ExternalResourceData,
     NestedResource,
     NestedResourceType,
@@ -626,7 +629,15 @@ def test_asset_check():
 
     assert len(external_repo_data.external_asset_checks) == 2
     assert external_repo_data.external_asset_checks[0].name == "my_asset_check"
+    assert (
+        external_repo_data.external_asset_checks[0].can_execute_individually
+        == AssetCheckCanExecuteIndividually.TRUE
+    )
     assert external_repo_data.external_asset_checks[1].name == "my_asset_check_2"
+    assert (
+        external_repo_data.external_asset_checks[1].can_execute_individually
+        == AssetCheckCanExecuteIndividually.TRUE
+    )
 
 
 def test_asset_check_in_asset_op():
@@ -652,8 +663,20 @@ def test_asset_check_in_asset_op():
 
     assert len(external_repo_data.external_asset_checks) == 3
     assert external_repo_data.external_asset_checks[0].name == "my_asset_check"
+    assert (
+        external_repo_data.external_asset_checks[0].can_execute_individually
+        == AssetCheckCanExecuteIndividually.TRUE
+    )
     assert external_repo_data.external_asset_checks[1].name == "my_other_asset_check"
+    assert (
+        external_repo_data.external_asset_checks[1].can_execute_individually
+        == AssetCheckCanExecuteIndividually.CANNOT_SUBSET
+    )
     assert external_repo_data.external_asset_checks[2].name == "my_other_asset_check_2"
+    assert (
+        external_repo_data.external_asset_checks[2].can_execute_individually
+        == AssetCheckCanExecuteIndividually.CANNOT_SUBSET
+    )
 
 
 def test_asset_check_multiple_jobs():
@@ -681,7 +704,47 @@ def test_asset_check_multiple_jobs():
 
     assert len(external_repo_data.external_asset_checks) == 2
     assert external_repo_data.external_asset_checks[0].name == "my_asset_check"
+    assert (
+        external_repo_data.external_asset_checks[0].can_execute_individually
+        == AssetCheckCanExecuteIndividually.TRUE
+    )
     assert external_repo_data.external_asset_checks[1].name == "my_other_asset_check"
+    assert (
+        external_repo_data.external_asset_checks[1].can_execute_individually
+        == AssetCheckCanExecuteIndividually.CANNOT_SUBSET
+    )
+
+
+def test_asset_check_in_subsettable_multi_asset():
+    @multi_asset(
+        outs={"asset1": AssetOut(is_required=False), "asset2": AssetOut(is_required=False)},
+        check_specs=[
+            AssetCheckSpec(name="my_other_asset_check", asset="asset1"),
+            AssetCheckSpec(name="my_other_asset_check_2", asset="asset2"),
+        ],
+        can_subset=True,
+    )
+    def my_asset():
+        pass
+
+    defs = Definitions(
+        assets=[my_asset],
+    )
+
+    repo = resolve_pending_repo_if_required(defs)
+    external_repo_data = external_repository_data_from_def(repo)
+
+    assert len(external_repo_data.external_asset_checks) == 2
+    assert external_repo_data.external_asset_checks[0].name == "my_other_asset_check"
+    assert (
+        external_repo_data.external_asset_checks[0].can_execute_individually
+        == AssetCheckCanExecuteIndividually.TRUE
+    )
+    assert external_repo_data.external_asset_checks[1].name == "my_other_asset_check_2"
+    assert (
+        external_repo_data.external_asset_checks[1].can_execute_individually
+        == AssetCheckCanExecuteIndividually.TRUE
+    )
 
 
 def test_repository_snap_definitions_resources_schedule_sensor_usage():
