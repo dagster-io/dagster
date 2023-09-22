@@ -1,9 +1,8 @@
-from dagster import repository
-from dagster._core.definitions.assets_job import build_assets_job
 from dagster._core.definitions.data_version import (
     extract_data_version_from_entry,
 )
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.observe import observe
 from dagster._core.instance_for_test import instance_for_test
 from docs_snippets.concepts.assets.observable_source_assets import (
     foo_source_asset,
@@ -13,12 +12,7 @@ from docs_snippets.concepts.assets.observable_source_assets import (
 
 
 def test_observable_source_asset():
-    @repository
-    def repo():
-        return [foo_source_asset]
-
-    job_def = build_assets_job("test_job", [], [foo_source_asset])
-    result = job_def.execute_in_process()
+    result = observe([foo_source_asset])
     assert result.success
 
 

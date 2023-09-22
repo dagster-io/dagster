@@ -211,11 +211,7 @@ def build_assets_job(
             *(asset_check.node_def for asset_check in asset_checks),
         ]
     else:
-        node_defs = [
-            asset.node_def
-            for asset in source_assets
-            if isinstance(asset, SourceAsset) and asset.is_observable and asset.node_def is not None
-        ]
+        check.failed("Should not get here")
 
     graph = GraphDefinition(
         name=name,
