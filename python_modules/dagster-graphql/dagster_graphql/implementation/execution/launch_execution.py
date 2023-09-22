@@ -88,6 +88,8 @@ def launch_reexecution_from_parent_run(
         location_name=origin.external_repository_origin.code_location_origin.location_name,
         repository_name=origin.external_repository_origin.repository_name,
         job_name=parent_run.job_name,
+        asset_selection=parent_run.asset_selection,
+        asset_check_selection=parent_run.asset_check_selection,
         op_selection=None,
     )
 
