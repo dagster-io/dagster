@@ -1388,11 +1388,6 @@ class AssetExecutionContext(OpExecutionContext):
         return self._op_execution_context
 
     # IContext interface methods
-
-    @property
-    def is_asset_step(self) -> bool:
-        return self.op_execution_context.has_assets_def
-
     @public
     @property
     def asset_key(self) -> AssetKey:
@@ -1420,21 +1415,8 @@ class AssetExecutionContext(OpExecutionContext):
 
     @public
     @property
-    def is_partition_step(self) -> bool:
+    def is_partitioned(self) -> bool:
         return self._op_execution_context.has_partition_key
-
-    @property
-    def partition_key(self) -> str:
-        return self.op_execution_context.partition_key
-
-    @public
-    @property
-    def partition_key_range(self) -> PartitionKeyRange:
-        return self._op_execution_context.partition_key_range
-
-    @property
-    def partition_time_window(self) -> TimeWindow:
-        return self.op_execution_context.partition_time_window
 
     @public
     @property
@@ -1517,7 +1499,19 @@ class AssetExecutionContext(OpExecutionContext):
         """dict: The run config for the current execution."""
         return self._op_execution_context.run_config
 
-    # partition methods that will be marked deprecated once we have aligned on future partition methods
+    # partition methods that may be marked deprecated once we have aligned on future partition methods
+    @property
+    def partition_key(self) -> str:
+        return self.op_execution_context.partition_key
+
+    @public
+    @property
+    def partition_key_range(self) -> PartitionKeyRange:
+        return self._op_execution_context.partition_key_range
+
+    @property
+    def partition_time_window(self) -> TimeWindow:
+        return self.op_execution_context.partition_time_window
 
     @public
     def asset_partition_key_for_input(self, input_name: str) -> str:
