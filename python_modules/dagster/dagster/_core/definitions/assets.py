@@ -21,7 +21,10 @@ import dagster._check as check
 from dagster._annotations import experimental_param, public
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
 from dagster._core.definitions.asset_layer import get_dep_node_handles_of_graph_backed_asset
-from dagster._core.definitions.asset_spec import AssetExecutionType
+from dagster._core.definitions.asset_spec import (
+    SYSTEM_METADATA_KEY_AUTO_OBSERVE_INTERVAL_MINUTES,
+    AssetExecutionType,
+)
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPolicyType
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
@@ -887,6 +890,9 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 identified by the asset key and the name of the check.
         """
         return self._selected_asset_check_keys
+
+    def is_auto_observable(self, key: AssetKey) -> bool:
+        return SYSTEM_METADATA_KEY_AUTO_OBSERVE_INTERVAL_MINUTES in self._metadata_by_key[key]
 
     def is_asset_executable(self, asset_key: AssetKey) -> bool:
         """Returns True if the asset key is materializable by this AssetsDefinition.

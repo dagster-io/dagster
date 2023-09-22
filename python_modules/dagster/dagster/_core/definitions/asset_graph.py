@@ -155,6 +155,8 @@ class AssetGraph:
         all_assets: Iterable[Union[AssetsDefinition, SourceAsset]],
         asset_checks: Optional[Sequence[AssetChecksDefinition]] = None,
     ) -> "InternalAssetGraph":
+        from dagster._core.definitions.external_asset import get_auto_observe_interval_minutes
+
         assets_defs: List[AssetsDefinition] = []
         source_assets: List[SourceAsset] = []
         partitions_defs_by_key: Dict[AssetKey, Optional[PartitionsDefinition]] = {}
@@ -182,19 +184,36 @@ class AssetGraph:
                     asset.auto_observe_interval_minutes
                 )
             else:  # AssetsDefinition
-                assets_defs.append(asset)
+                # rename so code makes sense in this code path
+                assets_def: AssetsDefinition = asset
+                # banish the cursed ambiguous asset variable from this scope
+                del asset
+                assets_defs.append(assets_def)
                 partition_mappings_by_key.update(
-                    {key: asset.partition_mappings for key in asset.keys}
+                    {key: assets_def.partition_mappings for key in assets_def.keys}
                 )
-                partitions_defs_by_key.update({key: asset.partitions_def for key in asset.keys})
-                group_names_by_key.update(asset.group_names_by_key)
-                freshness_policies_by_key.update(asset.freshness_policies_by_key)
-                auto_materialize_policies_by_key.update(asset.auto_materialize_policies_by_key)
-                backfill_policies_by_key.update({key: asset.backfill_policy for key in asset.keys})
-                code_versions_by_key.update(asset.code_versions_by_key)
+                partitions_defs_by_key.update(
+                    {key: assets_def.partitions_def for key in assets_def.keys}
+                )
+                group_names_by_key.update(assets_def.group_names_by_key)
+                freshness_policies_by_key.update(assets_def.freshness_policies_by_key)
+                auto_materialize_policies_by_key.update(assets_def.auto_materialize_policies_by_key)
+                backfill_policies_by_key.update(
+                    {key: assets_def.backfill_policy for key in assets_def.keys}
+                )
+                # if len(assets_def.keys) > 1 and not assets_def.can_subset:
+                #     for key in assets_def.keys:
+                #         required_multi_asset_sets_by_key[key] = assets_def.keys
+                code_versions_by_key.update(assets_def.code_versions_by_key)
 
-                if not asset.can_subset:
-                    all_required_keys = {*asset.check_keys, *asset.keys}
+                for key in assets_def.keys:
+                    if assets_def.is_auto_observable(key):
+                        auto_observe_interval_minutes_by_key[key] = (
+                            get_auto_observe_interval_minutes(assets_def, key)
+                        )
+
+                if not assets_def.can_subset:
+                    all_required_keys = {*assets_def.check_keys, *assets_def.keys}
                     if len(all_required_keys) > 1:
                         for key in all_required_keys:
                             required_assets_and_checks_by_key[key] = all_required_keys

@@ -23,6 +23,7 @@ if TYPE_CHECKING:
 # log keyed off of them, making Dagster usable as a observability and lineage tool
 # for externally materialized assets.
 SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE = "dagster/asset_execution_type"
+SYSTEM_METADATA_KEY_AUTO_OBSERVE_INTERVAL_MINUTES = "dagster/auto_observe_interval_minutes"
 
 
 class AssetExecutionType(Enum):
