@@ -8,7 +8,8 @@ from dagster._core.execution.context.compute import _get_deprecation_kwargs
 
 def test_deprecation_warnings():
     # Test that every method on OpExecutionContext is either reimplemented by AssetExecutionContext
-    # or throws a deprecation warning on AssetExecutionContext
+    # or throws a deprecation warning on AssetExecutionContext. This will allow us to eventually make
+    # AssetExecutionContext not a subclass of OpExecutionContext without doing a breaking change.
 
     # If this test fails, it is likely because you added a method to OpExecutionContext without
     # also adding that method to AssetExecutionContext. Please add the same method to AssetExecutionContext
@@ -18,17 +19,13 @@ def test_deprecation_warnings():
 
     asset_execution_context_attrs = [
         "op_execution_context",
-        "is_asset_step",
         "asset_key",
         "asset_keys",
         "provenance",
         "provenance_by_asset_key",
         "code_version",
         "code_version_by_asset_key",
-        "is_partition_step",
-        "partition_key",
-        "partition_key_range",
-        "partition_time_window",
+        "is_partitioned",
         "run_id",
         "job_name",
         "retry_number",
@@ -45,6 +42,9 @@ def test_deprecation_warnings():
         "resources",
         "run_config",
         # Partition methods that will be marked deprecated once new APIs take their place
+        "partition_key",
+        "partition_key_range",
+        "partition_time_window",
         "asset_partition_key_range",
         "has_partition_key",
         "asset_partition_key_for_input",
