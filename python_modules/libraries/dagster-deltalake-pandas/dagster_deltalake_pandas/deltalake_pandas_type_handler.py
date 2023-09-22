@@ -5,7 +5,10 @@ import pyarrow as pa
 from dagster._core.storage.db_io_manager import (
     DbTypeHandler,
 )
-from dagster_deltalake.handler import DeltalakeBaseArrowTypeHandler
+from dagster_deltalake.handler import (
+    DeltalakeBaseArrowTypeHandler,
+    DeltaLakePyArrowTypeHandler,
+)
 from dagster_deltalake.io_manager import DeltaLakeIOManager
 
 
@@ -30,7 +33,7 @@ class DeltaLakePandasIOManager(DeltaLakeIOManager):
 
     @staticmethod
     def type_handlers() -> Sequence[DbTypeHandler]:
-        return [DeltaLakePandasTypeHandler()]
+        return [DeltaLakePandasTypeHandler(), DeltaLakePyArrowTypeHandler()]
 
     @staticmethod
     def default_load_type() -> Optional[Type]:
