@@ -57,7 +57,7 @@ defs = Definitions(
 
 ---
 
-## Anatomy of the \_\_init\_\_.py file
+## Anatomy of the `__init__.py` file
 
 Let’s break down this file’s code line-by-line.
 

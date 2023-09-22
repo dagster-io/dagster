@@ -26,13 +26,17 @@ def taxi_trips_file():
 ```
 
 1. A description of the asset is added using a docstring (`”””`), which will display in the Dagster UI.
+
 2. Next, a variable named `month_to_fetch` is defined. The value is `2023-03`, or March 2023.
+
 3. A second variable named `raw_trips` is defined. This variable uses the `get` function from the `requests` library (`requests.get`) to retrieve a parquet file from the NYC Open Data portal website.
 
    Using the `month_to_fetch` variable, the URL to retrieve the file from becomes: `https://.../trip-data/yellow_tripdata_2023-03.parquet`
 
 4. Next, the path of the file will be stored at is constructed. The value of `TAXI_TRIPS_TEMPLATE_FILE_PATH`, stored in your project’s `assets/constants.py` file, is retrieved: `data/raw/taxi_trips_{}.parquet`
+
 5. The parquet file is created and saved at `data/raw/taxi_trips_2023-03.parquet`
+
 6. The asset function’s execution completes successfully. This completion indicates to Dagster that an asset has been materialized, and Dagster will update the UI to reflect that asset materialized successfully.
 
 With the basics of materialization out of the way, let’s move on to actually materializing the `taxi_trips_file` asset.
