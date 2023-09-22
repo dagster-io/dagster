@@ -1316,6 +1316,7 @@ ALTERNATE_AVAILABLE_METHODS = {
     "set_data_version": "use MaterializeResult instead",
     "run": "use dagster_run instead",
     "asset_check_spec": "use check_specs_by_asset_key instead",
+    "selected_asset_keys": "use asset_keys instead",
 }
 
 
@@ -1350,17 +1351,16 @@ class AssetExecutionContext(OpExecutionContext, IContext):
         self._op_execution_context = check.inst_param(
             op_execution_context, "op_execution_context", OpExecutionContext
         )
-        self._asset_keys = list(self.op_execution_context.assets_def.keys_by_output_name.values())
-        self._selected_asset_keys = self._op_execution_context.selected_asset_keys
+        self._asset_keys = self._op_execution_context.selected_asset_keys
         self._assets_def = self._op_execution_context.assets_def
 
         with disable_dagster_warnings():
             self._provenance_by_asset_key = {
                 key: self._op_execution_context.get_asset_provenance(key)
-                for key in self._selected_asset_keys
+                for key in self._asset_keys
             }
         self._code_version_by_asset_key = {
-            key: self._assets_def.code_versions_by_key[key] for key in self._selected_asset_keys
+            key: self._assets_def.code_versions_by_key[key] for key in self._asset_keys
         }
         self._check_specs_by_asset_key = {
             check.asset_key: check for check in self._assets_def.check_specs_by_output_name.values()
@@ -1444,27 +1444,6 @@ class AssetExecutionContext(OpExecutionContext, IContext):
     @property
     def assets_def(self) -> AssetsDefinition:
         return self._assets_def
-
-    @public
-    @property
-    def selected_asset_keys(self) -> AbstractSet[AssetKey]:
-        return self._selected_asset_keys
-
-    # TODO - both get_asset_provenance and get_assets_code_version query the instance - do we want to
-    # disallow this, or make the function name more indicative that they are querying the db?
-    @public
-    @experimental
-    def get_asset_provenance(self, asset_key: AssetKey) -> Optional[DataProvenance]:
-        return self._op_execution_context.get_asset_provenance(asset_key)
-
-    @public
-    # TODO - method naming
-    def get_assets_code_version(
-        self, asset_keys: Sequence[AssetKey]
-    ) -> Mapping[AssetKey, Optional[str]]:
-        return self.op_execution_context.instance.get_latest_materialization_code_versions(
-            asset_keys
-        )
 
     @public
     @property
@@ -1557,6 +1536,11 @@ class AssetExecutionContext(OpExecutionContext, IContext):
 
     # deprecated methods. All remaining methods on OpExecutionContext should be here with the
     # appropriate deprecation warning
+
+    @deprecated(**_get_deprecation_kwargs("selected_asset_keys"))
+    @property
+    def selected_asset_keys(self) -> AbstractSet[AssetKey]:
+        return self.op_execution_context.selected_asset_keys
 
     @deprecated(**_get_deprecation_kwargs("op_def"))
     @property
