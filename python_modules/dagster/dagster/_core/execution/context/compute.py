@@ -1387,50 +1387,69 @@ class AssetExecutionContext(OpExecutionContext, IContext):
     @public
     @property
     def op_execution_context(self) -> OpExecutionContext:
+        """An instance of OpExecutionContext created for the execution of this step."""
         return self._op_execution_context
 
     # IContext interface methods
     @public
     @property
     def asset_key(self) -> AssetKey:
+        """The AssetKey for the current asset. Errors if the current step is not an asset, or is a
+        multi_asset. For multi_assets, use asset_keys.
+        """
         return self._op_execution_context.asset_key
 
     @property
-    def asset_keys(self) -> Sequence[AssetKey]:
+    def asset_keys(self) -> AbstractSet[AssetKey]:
+        """The set of AssetKeys that are being materialized by the current asset. Errors if the current
+        step is not an asset.
+        """
         return self._asset_keys
 
     @property
     def provenance(self) -> Optional[DataProvenance]:
+        """The data provenance for the current asset. For multi_assets, use provenance_by_asset_key."""
         return self._provenance_by_asset_key[self.asset_key]
 
     @property
     def provenance_by_asset_key(self) -> Mapping[AssetKey, Optional[DataProvenance]]:
+        """A dictionary of AssetKey: DataProvenance of the provenance of each asset being materialized
+        by the current asset.
+        """
         return self._provenance_by_asset_key
 
     @property
     def code_version(self) -> Optional[str]:
+        """The code version for the current asset. For multi_assets, use code_version_by_asset_key."""
         return self.code_version_by_asset_key[self.asset_key]
 
     @property
     def code_version_by_asset_key(self) -> Mapping[AssetKey, Optional[str]]:
+        """A dictionary of AssetKey: code version of the code version of each asset being materialized
+        by the current asset.
+        """
         return self._code_version_by_asset_key
 
     @public
     @property
     def is_partitioned(self) -> bool:
+        """True if the current execution is partitioned."""
         return self._op_execution_context.has_partition_key
 
     @public
     @property
     def run_id(self) -> str:
+        """The run id of the current execution."""
         return self._op_execution_context.run_id
 
     @property
     def job_name(self) -> Optional[str]:
+        """The name of the currently executing job."""
         return self.op_execution_context.job_name
 
     @property
     def retry_number(self) -> int:
+        """The number of attempted retries for this step."""
         return self.op_execution_context.retry_number
 
     # Additional methods
@@ -1450,6 +1469,7 @@ class AssetExecutionContext(OpExecutionContext, IContext):
     @public
     @property
     def pdb(self) -> ForkedPdb:
+        """An instance of pdb for debugging."""
         return self._op_execution_context.pdb
 
     @public
@@ -1461,11 +1481,15 @@ class AssetExecutionContext(OpExecutionContext, IContext):
     @public
     @property
     def assets_def(self) -> AssetsDefinition:
+        """The AssetsDefinition for the current asset."""
         return self._assets_def
 
     @public
     @property
     def check_specs_by_asset_key(self) -> Mapping[AssetKey, AssetCheckSpec]:
+        """A dictionary of AssetKey: AssetCheckSpec of the AssetCheckSpec for each asset being materialized
+        by the current asset.
+        """
         return self._check_specs_by_asset_key
 
     @public
