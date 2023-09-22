@@ -820,7 +820,7 @@ def build_asset_selection_job(
     else:
         if asset_selection is not None or asset_check_selection is not None:
             selected_asset_keys = asset_selection or set()
-            selected_asset_check_handles = asset_check_selection or set()
+            selected_asset_check_handles = asset_check_selection
 
             (included_assets, excluded_assets) = _subset_assets_defs(
                 assets, selected_asset_keys, selected_asset_check_handles
@@ -889,7 +889,7 @@ def build_asset_selection_job(
 def _subset_assets_defs(
     assets: Iterable["AssetsDefinition"],
     selected_asset_keys: AbstractSet[AssetKey],
-    selected_asset_check_handles: AbstractSet[AssetCheckHandle],
+    selected_asset_check_handles: Optional[AbstractSet[AssetCheckHandle]],
 ) -> Tuple[Sequence["AssetsDefinition"], Sequence["AssetsDefinition"],]:
     """Given a list of asset key selection queries, generate a set of AssetsDefinition objects
     representing the included/excluded definitions.
@@ -900,7 +900,18 @@ def _subset_assets_defs(
     for asset in set(assets):
         # intersection
         selected_subset = selected_asset_keys & asset.keys
-        selected_check_subset = selected_asset_check_handles & asset.asset_check_handles
+
+        # if specific checks were selected, only include those
+        if selected_asset_check_handles is not None:
+            selected_check_subset = selected_asset_check_handles & asset.asset_check_handles
+        # if no checks were selected, filter to checks that target selected assets
+        else:
+            selected_check_subset = {
+                handle
+                for handle in asset.asset_check_handles
+                if handle.asset_key in selected_subset
+            }
+
         # all assets in this def are selected
         if selected_subset == asset.keys and selected_check_subset == asset.asset_check_handles:
             included_assets.add(asset)
@@ -909,7 +920,7 @@ def _subset_assets_defs(
             excluded_assets.add(asset)
         elif asset.can_subset:
             # subset of the asset that we want
-            subset_asset = asset.subset_for(selected_asset_keys, selected_asset_check_handles)
+            subset_asset = asset.subset_for(selected_asset_keys, selected_check_subset)
             included_assets.add(subset_asset)
             # subset of the asset that we don't want
             excluded_assets.add(

@@ -1127,7 +1127,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     def subset_for(
         self,
         selected_asset_keys: AbstractSet[AssetKey],
-        selected_asset_check_handles: Optional[AbstractSet[AssetCheckHandle]] = None,
+        selected_asset_check_handles: AbstractSet[AssetCheckHandle],
     ) -> "AssetsDefinition":
         """Create a subset of this AssetsDefinition that will only materialize the assets and checks
         in the selected set.
@@ -1145,11 +1145,8 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
         # Set of assets within selected_asset_keys which are outputted by this AssetDefinition
         asset_subselection = selected_asset_keys & self.keys
-        asset_check_subselection = (
-            selected_asset_check_handles & self.check_handles
-            if selected_asset_check_handles
-            else None
-        )
+        asset_check_subselection = selected_asset_check_handles & self.check_handles
+
         # Early escape if all assets in AssetsDefinition are selected
         if asset_subselection == self.keys and asset_check_subselection == self.check_handles:
             return self
@@ -1206,7 +1203,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             # multi_asset subsetting
             replaced_attributes = {
                 "selected_asset_keys": asset_subselection,
-                "selected_asset_check_handles": asset_check_subselection or set(),
+                "selected_asset_check_handles": asset_check_subselection,
             }
             return self.__class__(**merge_dicts(self.get_attributes_dict(), replaced_attributes))
 
