@@ -56,6 +56,10 @@ def test_with_asset_checks() -> None:
         )
         assert asset_def.check_specs_by_output_name
 
+        # dbt singular tests are not modeled as Dagster asset checks
+        for check_spec in asset_def.check_specs_by_output_name.values():
+            assert "assert_singular_test_is_not_asset_check" != check_spec.name
+
 
 @pytest.mark.parametrize(
     "dbt_commands",

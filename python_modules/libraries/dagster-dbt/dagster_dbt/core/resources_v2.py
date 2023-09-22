@@ -139,27 +139,40 @@ class DbtCliEventMessage:
             )
         elif manifest and node_resource_type == NodeType.Test and is_node_finished:
             upstream_unique_ids: List[str] = manifest["parent_map"][unique_id]
+            test_resource_props = manifest["nodes"][unique_id]
+            metadata = {"unique_id": unique_id, "status": node_status}
 
-            for upstream_unique_id in upstream_unique_ids:
-                test_resource_props = manifest["nodes"][unique_id]
-                upstream_resource_props: Dict[str, Any] = manifest["nodes"].get(
-                    upstream_unique_id
-                ) or manifest["sources"].get(upstream_unique_id)
-                upstream_asset_key = dagster_dbt_translator.get_asset_key(upstream_resource_props)
+            is_asset_check = is_asset_check_from_dbt_resource_props(test_resource_props)
+            attached_node_unique_id = test_resource_props.get("attached_node")
+            is_generic_test = bool(attached_node_unique_id)
 
+            if is_asset_check and is_generic_test:
                 is_test_successful = node_status == TestStatus.Pass
-                metadata = {"unique_id": unique_id, "status": node_status}
                 severity = AssetCheckSeverity(test_resource_props["config"]["severity"].upper())
 
-                if is_asset_check_from_dbt_resource_props(test_resource_props):
-                    yield AssetCheckResult(
-                        success=is_test_successful,
-                        asset_key=upstream_asset_key,
-                        check_name=event_node_info["node_name"],
-                        metadata=metadata,
-                        severity=severity,
+                attached_node_resource_props: Dict[str, Any] = manifest["nodes"].get(
+                    attached_node_unique_id
+                ) or manifest["sources"].get(attached_node_unique_id)
+                attached_node_asset_key = dagster_dbt_translator.get_asset_key(
+                    attached_node_resource_props
+                )
+
+                yield AssetCheckResult(
+                    success=is_test_successful,
+                    asset_key=attached_node_asset_key,
+                    check_name=event_node_info["node_name"],
+                    metadata=metadata,
+                    severity=severity,
+                )
+            else:
+                for upstream_unique_id in upstream_unique_ids:
+                    upstream_resource_props: Dict[str, Any] = manifest["nodes"].get(
+                        upstream_unique_id
+                    ) or manifest["sources"].get(upstream_unique_id)
+                    upstream_asset_key = dagster_dbt_translator.get_asset_key(
+                        upstream_resource_props
                     )
-                else:
+
                     yield AssetObservation(
                         asset_key=upstream_asset_key,
                         metadata=metadata,
