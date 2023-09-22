@@ -156,8 +156,8 @@ def direct_invocation_result(
                     f"Decorated function '{compute_fn.name}' has context argument, "
                     "but no context was provided when invoking."
                 )
-            context = args[0]
-            # context = cast(UnboundExecutionContext, args[0])
+            # context = args[0]
+            context = cast(UnboundExecutionContext, args[0])
             # update args to omit context
             args = args[1:]
         else:  # context argument is provided under kwargs
@@ -168,16 +168,16 @@ def direct_invocation_result(
                     f"'{context_param_name}', but no value for '{context_param_name}' was "
                     f"found when invoking. Provided kwargs: {kwargs}"
                 )
-            context = kwargs[context_param_name]
-            # context = cast(UnboundExecutionContext, kwargs[context_param_name])
+            # context: UnboundExecutionContext = kwargs[context_param_name]
+            context = cast(UnboundExecutionContext, kwargs[context_param_name])
             # update kwargs to remove context
             kwargs = {
                 kwarg: val for kwarg, val in kwargs.items() if not kwarg == context_param_name
             }
     # allow passing context, even if the function doesn't have an arg for it
     elif len(args) > 0 and isinstance(args[0], UnboundExecutionContext):
-        context = args[0]
-        # context = cast(UnboundExecutionContext, args[0])
+        # context = args[0]
+        context = cast(UnboundExecutionContext, args[0])
         args = args[1:]
 
     resource_arg_mapping = {arg.name: arg.name for arg in compute_fn.get_resource_args()}
