@@ -70,7 +70,11 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
 
         # TODO make stats computation configurable on type handler
         dt = DeltaTable(connection.table_uri, storage_options=connection.storage_options)
-        _table, stats = _get_partition_stats(dt=dt, partition_filters=partition_filters)
+        try:
+            # TODO investigate where null come from .. empty table?
+            _table, stats = _get_partition_stats(dt=dt, partition_filters=partition_filters)
+        except:
+            stats = {}
 
         context.add_output_metadata(
             {
