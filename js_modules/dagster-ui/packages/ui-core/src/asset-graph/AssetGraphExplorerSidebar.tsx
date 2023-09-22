@@ -689,7 +689,7 @@ const SearchFilter = <T,>({
         itemPredicate={(query, item) =>
           item.label.toLocaleLowerCase().includes(query.toLocaleLowerCase())
         }
-        popoverProps={{targetProps: {style: {width: viewport.width + 'px'}}}}
+        popoverProps={{usePortal: false}}
         itemRenderer={(item, itemProps) => (
           <MenuItem
             active={itemProps.modifiers.active}
