@@ -628,73 +628,63 @@ class IContext(ABC):
 
     @property
     @abstractmethod
-    def is_asset_step(self) -> bool:
-        """TODO."""
+    def asset_key(self):
+        """The AssetKey for the asset being materialized. If no asset is being materialized, errors. If
+        multiple assets are being materialized (as in a @multi_asset), errors.
+        """
 
     @property
     @abstractmethod
-    def asset_key(self) -> str:
-        """TODO."""
+    def asset_keys(self):
+        """The AssetKeys for the asset being materialized. If no asset is being materialized, errors."""
 
     @property
     @abstractmethod
-    def asset_keys(self) -> Sequence[str]:
-        """TODO."""
+    def provenance(self):
+        """The data provenance for the asset being materialized. If no asset is being materialized, errors. If
+        multiple assets are being materialized (as in a @multi_asset), errors.
+        """
 
     @property
     @abstractmethod
-    def provenance(self) -> Optional[ExtDataProvenance]:
-        """TODO."""
+    def provenance_by_asset_key(self):
+        """A dictionary of data provenance for the assets being materialized, keyed by asset key.
+        If no asset is being materialized, errors.
+        """
 
     @property
     @abstractmethod
-    def provenance_by_asset_key(self) -> Mapping[str, Optional[ExtDataProvenance]]:
-        """TODO."""
+    def code_version(self):
+        """The code version for the asset being materialized. If no asset is being materialized, errors. If
+        multiple assets are being materialized (as in a @multi_asset), errors.
+        """
 
     @property
     @abstractmethod
-    def code_version(self) -> Optional[str]:
-        """TODO."""
+    def code_version_by_asset_key(self):
+        """A dictionary of code versions for the assets being materialized, keyed by asset key.
+        If no asset is being materialized, errors.
+        """
 
     @property
     @abstractmethod
-    def code_version_by_asset_key(self) -> Mapping[str, Optional[str]]:
-        """TODO."""
-
-    @property
-    @abstractmethod
-    def is_partition_step(self) -> bool:
-        """TODO."""
-
-    @property
-    @abstractmethod
-    def partition_key(self) -> str:
-        """TODO."""
-
-    @property
-    @abstractmethod
-    def partition_key_range(self) -> Optional["ExtPartitionKeyRange"]:
-        """TODO."""
-
-    @property
-    @abstractmethod
-    def partition_time_window(self) -> Optional["ExtTimeWindow"]:
-        """TODO."""
+    def is_partitioned(self) -> bool:
+        """True if the current execution is partitioned."""
 
     @property
     @abstractmethod
     def run_id(self) -> str:
-        """TODO."""
+        """The run id of the current execution."""
 
     @property
     @abstractmethod
     def job_name(self) -> Optional[str]:
-        """TODO."""
+        """The name of the job that is executing."""
 
     @property
     @abstractmethod
     def retry_number(self) -> int:
-        """TODO."""
+        """The number of retries of this execution."""
 
 
 def init_dagster_ext(
@@ -808,7 +798,7 @@ class ExtContext(IContext):
         return code_version_by_asset_key
 
     @property
-    def is_partition_step(self) -> bool:
+    def is_partitioned(self) -> bool:
         return self._data["partition_key_range"] is not None
 
     @property
