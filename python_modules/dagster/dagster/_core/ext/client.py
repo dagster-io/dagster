@@ -11,7 +11,7 @@ from dagster_ext import (
 from dagster._core.execution.context.compute import OpExecutionContext
 
 if TYPE_CHECKING:
-    from .context import ExtMessageHandler
+    from .context import ExtMessageHandler, ExtResult
 
 
 class ExtClient(ABC):
@@ -21,7 +21,7 @@ class ExtClient(ABC):
         *,
         context: OpExecutionContext,
         extras: Optional[ExtExtras] = None,
-    ) -> None: ...
+    ) -> Iterator["ExtResult"]: ...
 
 
 class ExtContextInjector(ABC):

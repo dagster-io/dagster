@@ -9,11 +9,12 @@ from typing import Any, Callable, Iterator
 
 import boto3
 import pytest
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.data_version import (
     DATA_VERSION_IS_USER_PROVIDED_TAG,
     DATA_VERSION_TAG,
 )
-from dagster._core.definitions.decorators.asset_decorator import asset
+from dagster._core.definitions.decorators.asset_decorator import asset, multi_asset
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.metadata import (
@@ -30,8 +31,8 @@ from dagster._core.definitions.metadata import (
     TextMetadataValue,
     UrlMetadataValue,
 )
-from dagster._core.errors import DagsterExternalExecutionError
-from dagster._core.execution.context.compute import AssetExecutionContext
+from dagster._core.errors import DagsterExternalExecutionError, DagsterInvariantViolationError
+from dagster._core.execution.context.compute import AssetExecutionContext, OpExecutionContext
 from dagster._core.execution.context.invocation import build_asset_context
 from dagster._core.ext.subprocess import (
     ExtSubprocess,
@@ -150,7 +151,7 @@ def test_ext_subprocess(
     def foo(context: AssetExecutionContext, ext: ExtSubprocess):
         extras = {"bar": "baz"}
         cmd = [_PYTHON_EXECUTABLE, external_script]
-        ext.run(
+        yield from ext.run(
             cmd,
             context=context,
             extras=extras,
@@ -163,11 +164,7 @@ def test_ext_subprocess(
     resource = ExtSubprocess(context_injector=context_injector, message_reader=message_reader)
 
     with instance_for_test() as instance:
-        materialize(
-            [foo],
-            instance=instance,
-            resources={"ext": resource},
-        )
+        materialize([foo], instance=instance, resources={"ext": resource})
         mat = instance.get_latest_materialization_event(foo.key)
         assert mat and mat.asset_materialization
         assert isinstance(mat.asset_materialization.metadata["bar"], MarkdownMetadataValue)
@@ -178,6 +175,35 @@ def test_ext_subprocess(
 
         captured = capsys.readouterr()
         assert re.search(r"dagster - INFO - [^\n]+ - hello world\n", captured.err, re.MULTILINE)
+
+
+def test_ext_multi_asset():
+    def script_fn():
+        from dagster_ext import init_dagster_ext
+
+        context = init_dagster_ext()
+        context.report_asset_materialization(
+            {"foo_meta": "ok"}, data_version="alpha", asset_key="foo"
+        )
+        context.report_asset_materialization(data_version="alpha", asset_key="bar")
+
+    @multi_asset(specs=[AssetSpec("foo"), AssetSpec("bar")])
+    def foo_bar(context: AssetExecutionContext, ext: ExtSubprocess):
+        with temp_script(script_fn) as script_path:
+            cmd = [_PYTHON_EXECUTABLE, script_path]
+            yield from ext.run(cmd, context=context)
+
+    with instance_for_test() as instance:
+        materialize([foo_bar], instance=instance, resources={"ext": ExtSubprocess()})
+        foo_mat = instance.get_latest_materialization_event(AssetKey(["foo"]))
+        assert foo_mat and foo_mat.asset_materialization
+        assert foo_mat.asset_materialization.metadata["foo_meta"].value == "ok"
+        assert foo_mat.asset_materialization.tags
+        assert foo_mat.asset_materialization.tags[DATA_VERSION_TAG] == "alpha"
+        bar_mat = instance.get_latest_materialization_event(AssetKey(["foo"]))
+        assert bar_mat and bar_mat.asset_materialization
+        assert bar_mat.asset_materialization.tags
+        assert bar_mat.asset_materialization.tags[DATA_VERSION_TAG] == "alpha"
 
 
 def test_ext_typed_metadata():
@@ -207,7 +233,7 @@ def test_ext_typed_metadata():
     def foo(context: AssetExecutionContext, ext: ExtSubprocess):
         with temp_script(script_fn) as script_path:
             cmd = [_PYTHON_EXECUTABLE, script_path]
-            ext.run(cmd, context=context)
+            yield from ext.run(cmd, context=context)
 
     with instance_for_test() as instance:
         materialize(
@@ -254,7 +280,7 @@ def test_ext_asset_failed():
     def foo(context: AssetExecutionContext, ext: ExtSubprocess):
         with temp_script(script_fn) as script_path:
             cmd = [_PYTHON_EXECUTABLE, script_path]
-            ext.run(cmd, context=context)
+            yield from ext.run(cmd, context=context)
 
     with pytest.raises(DagsterExternalExecutionError):
         materialize([foo], resources={"ext": ExtSubprocess()})
@@ -321,6 +347,7 @@ def test_ext_no_client(external_script):
             extras=extras,
         ) as ext_context:
             subprocess.run(cmd, env=ext_context.get_external_process_env_vars(), check=False)
+        yield from ext_context.get_results()
 
     with instance_for_test() as instance:
         materialize(
@@ -333,3 +360,28 @@ def test_ext_no_client(external_script):
         assert mat.asset_materialization.tags
         assert mat.asset_materialization.tags[DATA_VERSION_TAG] == "alpha"
         assert mat.asset_materialization.tags[DATA_VERSION_IS_USER_PROVIDED_TAG]
+
+
+def test_ext_no_client_no_yield():
+    def script_fn():
+        pass
+
+    @asset
+    def foo(context: OpExecutionContext):
+        with temp_script(script_fn) as external_script:
+            with ext_protocol(
+                context,
+                ExtTempFileContextInjector(),
+                ExtTempFileMessageReader(),
+            ) as ext_context:
+                cmd = [_PYTHON_EXECUTABLE, external_script]
+                subprocess.run(cmd, env=ext_context.get_external_process_env_vars(), check=False)
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match=(
+            r"did not yield or return expected outputs.*Did you forget to `yield from"
+            r" ext_context.get_results\(\)`?"
+        ),
+    ):
+        materialize([foo])
