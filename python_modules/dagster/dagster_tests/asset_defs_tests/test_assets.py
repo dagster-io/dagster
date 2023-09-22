@@ -1585,7 +1585,7 @@ def test_multi_asset_return_none():
         can_subset=True,
     )
     def subset(context: AssetExecutionContext):
-        # ...use context.selected_asset_keys materialize subset of assets without IO manager
+        # ...use context.asset_keys materialize subset of assets without IO manager
         pass
 
     with pytest.raises(
@@ -1882,7 +1882,7 @@ def test_multi_asset_no_out():
         can_subset=True,
     )
     def basic_subset(context: AssetExecutionContext):
-        for key in context.selected_asset_keys:
+        for key in context.asset_keys:
             yield MaterializeResult(asset_key=key)
 
     mats = _exec_asset(basic_subset, ["table_A"])

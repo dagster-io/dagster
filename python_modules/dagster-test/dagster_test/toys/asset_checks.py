@@ -144,10 +144,10 @@ def random_fail_check_on_partitioned_asset():
     can_subset=True,
 )
 def multi_asset_1_and_2(context):
-    if AssetKey("multi_asset_piece_1") in context.selected_asset_keys:
+    if AssetKey("multi_asset_piece_1") in context.asset_keys:
         yield Output(1, output_name="one")
         yield AssetCheckResult(success=True, metadata={"foo": "bar"})
-    if AssetKey("multi_asset_piece_2") in context.selected_asset_keys:
+    if AssetKey("multi_asset_piece_2") in context.asset_keys:
         yield Output(1, output_name="two")
 
 

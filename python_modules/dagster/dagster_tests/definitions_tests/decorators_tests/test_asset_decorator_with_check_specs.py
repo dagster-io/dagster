@@ -403,10 +403,10 @@ def test_multi_asset_with_check_subset():
         can_subset=True,
     )
     def asset_1_and_2(context: AssetExecutionContext):
-        if AssetKey("asset1") in context.selected_asset_keys:
+        if AssetKey("asset1") in context.asset_keys:
             yield Output(None, output_name="one")
             yield AssetCheckResult(check_name="check1", success=True)
-        if AssetKey("asset2") in context.selected_asset_keys:
+        if AssetKey("asset2") in context.asset_keys:
             yield Output(None, output_name="two")
 
     # no selection

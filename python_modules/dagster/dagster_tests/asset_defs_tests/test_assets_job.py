@@ -2738,10 +2738,10 @@ def test_subset_cycle_resolution_basic():
         can_subset=True,
     )
     def foo(context, s, a_prime):
-        context.log.info(context.selected_asset_keys)
-        if AssetKey("a") in context.selected_asset_keys:
+        context.log.info(context.asset_keys)
+        if AssetKey("a") in context.asset_keys:
             yield Output(s + 1, "a")
-        if AssetKey("b") in context.selected_asset_keys:
+        if AssetKey("b") in context.asset_keys:
             yield Output(a_prime + 1, "b")
 
     @multi_asset(
@@ -2753,10 +2753,10 @@ def test_subset_cycle_resolution_basic():
         can_subset=True,
     )
     def foo_prime(context, a, b):
-        context.log.info(context.selected_asset_keys)
-        if AssetKey("a_prime") in context.selected_asset_keys:
+        context.log.info(context.asset_keys)
+        if AssetKey("a_prime") in context.asset_keys:
             yield Output(a + 1, "a_prime")
-        if AssetKey("b_prime") in context.selected_asset_keys:
+        if AssetKey("b_prime") in context.asset_keys:
             yield Output(b + 1, "b_prime")
 
     job = Definitions(
