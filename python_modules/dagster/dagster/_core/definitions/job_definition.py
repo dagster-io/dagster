@@ -776,10 +776,8 @@ class JobDefinition(IHasInternalInit):
                 f"{', '.join(nonexistent_asset_strings)} do not exist in parent asset group or job."
             )
 
-        all_check_handles = set()
-        for asset_checks_def in self.asset_layer.asset_checks_defs:
-            for spec in asset_checks_def.specs:
-                all_check_handles.add(spec.handle)
+        # Test that selected asset checks exist
+        all_check_handles = self.asset_layer.node_output_handles_by_asset_check_handle.keys()
 
         nonexistent_asset_checks = [
             asset_check
@@ -794,6 +792,28 @@ class JobDefinition(IHasInternalInit):
                 "Asset checks provided in asset_check_selection argument"
                 f" {', '.join(nonexistent_asset_check_strings)} do not exist in parent asset group"
                 " or job."
+            )
+
+        # Test that selected asset checks can be run individually. Currently this is only supported
+        # on checks defined with @asset_check, which will have an AssetChecksDefinition.
+        all_check_handles_in_checks_defs = set()
+        for asset_checks_def in self.asset_layer.asset_checks_defs:
+            for spec in asset_checks_def.specs:
+                all_check_handles_in_checks_defs.add(spec.handle)
+
+        non_checks_defs_asset_checks = [
+            asset_check
+            for asset_check in asset_check_selection or set()
+            if asset_check not in all_check_handles_in_checks_defs
+        ]
+        non_checks_defs_asset_check_strings = [
+            asset_check.name for asset_check in non_checks_defs_asset_checks
+        ]
+        if non_checks_defs_asset_checks:
+            raise DagsterInvalidSubsetError(
+                f"Can't execute asset checks [{', '.join(non_checks_defs_asset_check_strings)}],"
+                " because they weren't defined with @asset_check or AssetChecksDefinition. To"
+                " execute these checks, materialize the asset."
             )
 
         asset_selection_data = AssetSelectionData(
@@ -816,6 +836,7 @@ class JobDefinition(IHasInternalInit):
             description=self.description,
             tags=self.tags,
             asset_selection=asset_selection,
+            asset_check_selection=asset_check_selection,
             asset_selection_data=asset_selection_data,
             config=self.config_mapping or self.partitioned_config,
             asset_checks=self.asset_layer.asset_checks_defs,

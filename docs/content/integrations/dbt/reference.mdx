@@ -260,7 +260,7 @@ Alternatively, to override the asset key generation for all dbt nodes in your db
 
 ```python startafter=start_custom_asset_key_dagster_dbt_translator endbefore=end_custom_asset_key_dagster_dbt_translator file=/integrations/dbt/dbt.py dedent=4
 from pathlib import Path
-from dagster import AssetKey, OpExecutionContext
+from dagster import AssetKey, AssetExecutionContext
 from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
 from typing import Any, Mapping
 
@@ -274,7 +274,7 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
     manifest=manifest_path,
     dagster_dbt_translator=CustomDagsterDbtTranslator(),
 )
-def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
 ```
 
@@ -308,7 +308,7 @@ Alternatively, to override the Dagster group name generation for all dbt nodes i
 
 ```python startafter=start_custom_group_name_dagster_dbt_translator endbefore=end_custom_group_name_dagster_dbt_translator file=/integrations/dbt/dbt.py dedent=4
 from pathlib import Path
-from dagster import OpExecutionContext
+from dagster import AssetExecutionContext
 from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
 from typing import Any, Mapping, Optional
 
@@ -324,7 +324,7 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
     manifest=manifest_path,
     dagster_dbt_translator=CustomDagsterDbtTranslator(),
 )
-def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
 ```
 
@@ -337,7 +337,7 @@ To override the Dagster description for all dbt nodes in your dbt project, you c
 ```python startafter=start_custom_description_dagster_dbt_translator endbefore=end_custom_description_dagster_dbt_translator file=/integrations/dbt/dbt.py dedent=4
 import textwrap
 from pathlib import Path
-from dagster import OpExecutionContext
+from dagster import AssetExecutionContext
 from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
 from typing import Any, Mapping
 
@@ -351,7 +351,7 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
     manifest=manifest_path,
     dagster_dbt_translator=CustomDagsterDbtTranslator(),
 )
-def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
 ```
 
@@ -363,7 +363,7 @@ To override the Dagster metadata for all dbt nodes in your dbt project, you can 
 
 ```python startafter=start_custom_metadata_dagster_dbt_translator endbefore=end_custom_metadata_dagster_dbt_translator file=/integrations/dbt/dbt.py dedent=4
 from pathlib import Path
-from dagster import MetadataValue, OpExecutionContext
+from dagster import MetadataValue, AssetExecutionContext
 from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
 from typing import Any, Mapping
 
@@ -381,7 +381,7 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
     manifest=manifest_path,
     dagster_dbt_translator=CustomDagsterDbtTranslator(),
 )
-def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
 ```
 
@@ -410,7 +410,7 @@ Alternatively, to override the Dagster auto-materialize policy generation for al
 
 ```python startafter=start_custom_auto_materialize_policy_dagster_dbt_translator endbefore=end_custom_auto_materialize_policy_dagster_dbt_translator file=/integrations/dbt/dbt.py dedent=4
 from pathlib import Path
-from dagster import OpExecutionContext, AutoMaterializePolicy
+from dagster import AssetExecutionContext, AutoMaterializePolicy
 from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
 from typing import Any, Mapping, Optional
 
@@ -426,7 +426,7 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
     manifest=manifest_path,
     dagster_dbt_translator=CustomDagsterDbtTranslator(),
 )
-def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
 ```
 
@@ -457,7 +457,7 @@ Alternatively, to override the Dagster freshness policy generation for all dbt n
 
 ```python startafter=start_custom_freshness_policy_dagster_dbt_translator endbefore=end_custom_freshness_policy_dagster_dbt_translator file=/integrations/dbt/dbt.py dedent=4
 from pathlib import Path
-from dagster import OpExecutionContext, FreshnessPolicy
+from dagster import AssetExecutionContext, FreshnessPolicy
 from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
 from typing import Any, Mapping, Optional
 
@@ -473,7 +473,7 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
     manifest=manifest_path,
     dagster_dbt_translator=CustomDagsterDbtTranslator(),
 )
-def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
 ```
 
@@ -550,11 +550,11 @@ Then this model has an upstream source with the `jaffle_shop/orders` asset key.
 In order to manage this upstream asset with Dagster, you can define it by passing the key into an asset definition via <PyObject module="dagster_dbt" object="get_asset_key_for_source"/>:
 
 ```python startafter=start_upstream_asset endbefore=end_upstream_asset file=/integrations/dbt/dbt.py dedent=4
-from dagster import asset, OpExecutionContext
+from dagster import asset, AssetExecutionContext
 from dagster_dbt import DbtCliResource, get_asset_key_for_source, dbt_assets
 
 @dbt_assets(manifest=MANIFEST_PATH)
-def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     ...
 
 @asset(key=get_asset_key_for_source([my_dbt_assets], "jaffle_shop"))

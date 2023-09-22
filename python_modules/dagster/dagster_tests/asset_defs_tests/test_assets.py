@@ -36,6 +36,8 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._core.definitions import AssetIn, SourceAsset, asset, multi_asset
+from dagster._core.definitions.asset_check_result import AssetCheckResult
+from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
@@ -49,6 +51,7 @@ from dagster._core.errors import (
     DagsterStepOutputNotFoundError,
 )
 from dagster._core.instance import DagsterInstance
+from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 from dagster._core.storage.mem_io_manager import InMemoryIOManager
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.dagster_type import Nothing
@@ -139,8 +142,7 @@ def test_with_replaced_description() -> None:
             "baz": AssetOut(description="baz"),
         }
     )
-    def abc():
-        ...
+    def abc(): ...
 
     assert abc.descriptions_by_key == {
         AssetKey("foo"): "foo",
@@ -173,8 +175,7 @@ def test_with_replaced_metadata() -> None:
             "baz": AssetOut(metadata={"baz": "baz"}),
         }
     )
-    def abc():
-        ...
+    def abc(): ...
 
     assert abc.metadata_by_key == {
         AssetKey("foo"): {"foo": "foo"},
@@ -444,8 +445,7 @@ def test_from_graph_internal_deps():
 
 def test_to_source_assets():
     @asset(metadata={"a": "b"}, io_manager_key="abc", description="blablabla")
-    def my_asset():
-        ...
+    def my_asset(): ...
 
     assert (
         my_asset.to_source_assets()
@@ -575,10 +575,10 @@ def test_multiple_assets_io_manager_defs():
 
     assert num_times[0] == 2
 
-    the_asset_key = [key for key in io_manager_inst.values.keys() if key[1] == "the_asset"][0]
+    the_asset_key = next(key for key in io_manager_inst.values.keys() if key[1] == "the_asset")
     assert io_manager_inst.values[the_asset_key] == 5
 
-    other_asset_key = [key for key in io_manager_inst.values.keys() if key[1] == "other_asset"][0]
+    other_asset_key = next(key for key in io_manager_inst.values.keys() if key[1] == "other_asset")
     assert io_manager_inst.values[other_asset_key] == 6
 
 
@@ -595,7 +595,7 @@ def test_asset_with_io_manager_key_only():
 
     materialize([the_asset], resources={"the_key": the_io_manager})
 
-    assert list(io_manager_inst.values.values())[0] == 5
+    assert next(iter(io_manager_inst.values.values())) == 5
 
 
 def test_asset_both_io_manager_args_provided():
@@ -1467,8 +1467,7 @@ def test_self_dependency():
         del a
 
     class MyIOManager(IOManager):
-        def handle_output(self, context, obj):
-            ...
+        def handle_output(self, context, obj): ...
 
         def load_input(self, context):
             assert context.asset_key.path[-1] == "a"
@@ -1707,6 +1706,27 @@ def test_return_materialization():
         mats = _exec_asset(ret_mismatch)
 
 
+def test_return_materialization_with_asset_checks():
+    with instance_for_test() as instance:
+
+        @asset(check_specs=[AssetCheckSpec(name="foo_check", asset=AssetKey("ret_checks"))])
+        def ret_checks(context: AssetExecutionContext):
+            return MaterializeResult(
+                check_results=[
+                    AssetCheckResult(check_name="foo_check", metadata={"one": 1}, success=True)
+                ]
+            )
+
+        materialize([ret_checks], instance=instance)
+        asset_check_executions = instance.event_log_storage.get_asset_check_executions(
+            asset_key=ret_checks.key,
+            check_name="foo_check",
+            limit=1,
+        )
+        assert len(asset_check_executions) == 1
+        assert asset_check_executions[0].status == AssetCheckExecutionRecordStatus.SUCCEEDED
+
+
 def test_return_materialization_multi_asset():
     #
     # yield successful
@@ -1847,8 +1867,8 @@ def test_multi_asset_no_out():
         pass
 
     _exec_asset(basic_deps)
-    assert table_A.asset_key in basic_deps.asset_deps[table_C.asset_key]
-    assert table_B.asset_key in basic_deps.asset_deps[table_C.asset_key]
+    assert table_A.key in basic_deps.asset_deps[table_C.key]
+    assert table_B.key in basic_deps.asset_deps[table_C.key]
 
     result = basic_deps()
     assert result is None
@@ -1865,8 +1885,8 @@ def test_multi_asset_no_out():
             yield MaterializeResult(asset_key=key)
 
     mats = _exec_asset(basic_subset, ["table_A"])
-    assert table_A.asset_key in {mat.asset_key for mat in mats}
-    assert table_B.asset_key not in {mat.asset_key for mat in mats}
+    assert table_A.key in {mat.asset_key for mat in mats}
+    assert table_B.key not in {mat.asset_key for mat in mats}
 
     # selected_asset_keys breaks direct invocation
     # basic_subset(build_asset_context())
@@ -1881,8 +1901,8 @@ def test_multi_asset_no_out():
         yield MaterializeResult(asset_key="table_A")
 
     mats = _exec_asset(basic_optional)
-    assert table_A.asset_key in {mat.asset_key for mat in mats}
-    assert table_B.asset_key not in {mat.asset_key for mat in mats}
+    assert table_A.key in {mat.asset_key for mat in mats}
+    assert table_B.key not in {mat.asset_key for mat in mats}
 
     basic_optional(build_asset_context())
 
@@ -1927,8 +1947,7 @@ def test_asset_spec_deps():
     table_c_no_dep = AssetSpec("table_C")
 
     @multi_asset(specs=[table_b, table_c])
-    def deps_in_specs():
-        ...
+    def deps_in_specs(): ...
 
     result = materialize([deps_in_specs, table_A])
     assert result.success
@@ -1940,12 +1959,10 @@ def test_asset_spec_deps():
     with pytest.raises(DagsterInvalidDefinitionError, match="Can not pass deps and specs"):
 
         @multi_asset(specs=[table_b_no_dep, table_c_no_dep], deps=["table_A"])
-        def no_deps_in_specs():
-            ...
+        def no_deps_in_specs(): ...
 
     @multi_asset(specs=[table_b, table_c])
-    def also_input(table_A):
-        ...
+    def also_input(table_A): ...
 
     result = materialize([also_input, table_A])
     assert result.success
@@ -1960,8 +1977,7 @@ def test_asset_spec_deps():
     ):
 
         @multi_asset(specs=[table_b, table_c])
-        def rogue_input(table_X):
-            ...
+        def rogue_input(table_X): ...
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
@@ -1969,8 +1985,7 @@ def test_asset_spec_deps():
     ):
 
         @multi_asset(specs=[table_b_no_dep, table_c_no_dep])
-        def no_spec_deps_but_input(table_A):
-            ...
+        def no_spec_deps_but_input(table_A): ...
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
@@ -1981,8 +1996,7 @@ def test_asset_spec_deps():
             specs=[table_b_no_dep, table_c_no_dep],
             deps=[table_A],
         )
-        def use_deps():
-            ...
+        def use_deps(): ...
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
@@ -1993,8 +2007,7 @@ def test_asset_spec_deps():
             specs=[table_b_no_dep, table_c_no_dep],
             internal_asset_deps={"table_C": {AssetKey("table_B")}},
         )
-        def use_internal_deps():
-            ...
+        def use_internal_deps(): ...
 
 
 def test_asset_key_on_context():
@@ -2037,7 +2050,7 @@ def test_multi_asset_asset_key_on_context():
 
     # test with AssetSpecs
 
-    spec1 = AssetSpec(asset_key="spec1")
+    spec1 = AssetSpec(key="spec1")
 
     @multi_asset(specs=[spec1])
     def asset_key_context_with_specs(context: AssetExecutionContext):
@@ -2045,8 +2058,8 @@ def test_multi_asset_asset_key_on_context():
 
     materialize([asset_key_context_with_specs])
 
-    spec2 = AssetSpec(asset_key="spec2")
-    spec3 = AssetSpec(asset_key="spec3")
+    spec2 = AssetSpec(key="spec2")
+    spec3 = AssetSpec(key="spec3")
 
     @multi_asset(specs=[spec2, spec3])
     def asset_key_context_with_two_specs(context: AssetExecutionContext):

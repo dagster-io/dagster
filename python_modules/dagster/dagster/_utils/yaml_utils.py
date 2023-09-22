@@ -98,10 +98,8 @@ def merge_yamls(
             merged = deep_merge_dicts(merged, yaml_dict)
         else:
             check.failed(
-                (
-                    "Expected YAML from file {yaml_file} to parse to dictionary, "
-                    'instead got: "{yaml_dict}"'
-                ).format(yaml_file=yaml_file, yaml_dict=yaml_dict)
+                f"Expected YAML from file {yaml_file} to parse to dictionary, "
+                f'instead got: "{yaml_dict}"'
             )
     return merged
 

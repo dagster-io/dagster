@@ -14,7 +14,7 @@ In this section, we’ll walk you through code locations in the Dagster UI.
 
 ---
 
-- {% width="60%" %}
+- {% width="60%; fixed" %}
   To view code locations in the Dagster UI, click **Deployments** in the top navigation. The list of code locations will be under the code locations tab, with the status, last updated and other information.
 
   By default, code locations are named using the name of the module loaded by Dagster. In this case, that’s `dagster_university`, which is the name of the folder (or module) the project is contained in.
@@ -29,7 +29,7 @@ In this section, we’ll walk you through code locations in the Dagster UI.
 
 ---
 
-- {% width="60%" %}
+- {% width="60%; fixed" %}
   If something is wrong with your code location, the status will appear as **Failed.**
 
   Click **View Error** to view the stack trace and troubleshoot issues.
@@ -44,7 +44,7 @@ In this section, we’ll walk you through code locations in the Dagster UI.
 
 ---
 
-- {% width="60%" %}
+- {% width="60%; fixed" %}
   As you add or change definitions in your project, you may need to refresh the code location. When you reload definitions, you’re telling Dagster to retrieve and use the last saved version of your project’s files.
 
   You can reload definitions in the UI by:

@@ -17,6 +17,7 @@ paths = [
     ### dagster packages
     "../../python_modules/automation",
     "../../python_modules/dagster",
+    "../../python_modules/dagster-ext",
     "../../python_modules/dagster-graphql",
     "../../python_modules/dagit",
     "../../python_modules/dagster-webserver",

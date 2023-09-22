@@ -3,7 +3,8 @@ import faker from 'faker';
 import * as React from 'react';
 import {MemoryRouter} from 'react-router-dom';
 
-import {AssetKeyTagCollection} from '../AssetKeyTagCollection';
+import {displayNameForAssetKey} from '../../asset-graph/Utils';
+import {AssetKeyTagCollection} from '../AssetTagCollections';
 
 describe('AssetKeyTagCollection', () => {
   const makeKeys = (count: number) => {
@@ -12,33 +13,30 @@ describe('AssetKeyTagCollection', () => {
       .map((_) => ({path: [faker.random.word()]}));
   };
 
-  it('renders individual tags if <= 3', async () => {
+  it('renders individual tag if there is just one key', async () => {
+    const key = makeKeys(1)[0]!;
     render(
       <MemoryRouter>
-        <AssetKeyTagCollection assetKeys={makeKeys(3)} useTags />
+        <AssetKeyTagCollection assetKeys={[key]} useTags />
       </MemoryRouter>,
     );
 
-    const links = await screen.findAllByRole('link');
-    expect(links).toHaveLength(3);
-
-    expect(screen.queryByRole('button')).toBeNull();
+    expect(screen.queryByText('1 asset')).toBeNull();
+    expect(screen.queryByText(displayNameForAssetKey(key))).toBeDefined();
   });
 
-  it('renders single tag if > 3', async () => {
+  it('renders a "5 assets" tag if there are >1 key', async () => {
+    const keys = makeKeys(5);
     // `act` because we're asserting a null state
     await act(async () => {
       render(
         <MemoryRouter>
-          <AssetKeyTagCollection assetKeys={makeKeys(5)} useTags />
+          <AssetKeyTagCollection assetKeys={keys} useTags />
         </MemoryRouter>,
       );
     });
 
-    const links = screen.queryByRole('link');
-    expect(links).toBeNull();
-
-    const button = screen.queryByRole('button') as HTMLButtonElement;
-    expect(button.textContent).toBe('5 assets');
+    expect(screen.queryByText('5 assets')).toBeDefined();
+    expect(screen.queryByText(displayNameForAssetKey(keys[0]!))).toBeNull();
   });
 });

@@ -272,8 +272,8 @@ def verify_step(instance, dagster_run, retry_state, step_keys_to_execute):
             # If this is the first attempt, there shouldn't be any step stats for this
             # event yet.
             instance.report_engine_event(
-                "Attempted to run {step_key} again even though it was already started. "
-                "Exiting to prevent re-running the step.".format(step_key=step_key),
+                f"Attempted to run {step_key} again even though it was already started. "
+                "Exiting to prevent re-running the step.",
                 dagster_run,
             )
             return False
@@ -283,18 +283,16 @@ def verify_step(instance, dagster_run, retry_state, step_keys_to_execute):
 
             if step_stat_for_key.attempts != current_attempt - 1:
                 instance.report_engine_event(
-                    "Attempted to run retry attempt {current_attempt} for step {step_key} again "
+                    f"Attempted to run retry attempt {current_attempt} for step {step_key} again "
                     "even though it was already started. Exiting to prevent re-running "
-                    "the step.".format(current_attempt=current_attempt, step_key=step_key),
+                    "the step.",
                     dagster_run,
                 )
                 return False
         elif current_attempt > 1 and not step_stat_for_key:
             instance.report_engine_event(
-                "Attempting to retry attempt {current_attempt} for step {step_key} "
-                "but there is no record of the original attempt".format(
-                    current_attempt=current_attempt, step_key=step_key
-                ),
+                f"Attempting to retry attempt {current_attempt} for step {step_key} "
+                "but there is no record of the original attempt",
                 dagster_run,
             )
             return False

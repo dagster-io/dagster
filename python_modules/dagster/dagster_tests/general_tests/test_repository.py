@@ -127,8 +127,7 @@ def test_asset_value_loader():
         return MyIOManager()
 
     @asset
-    def asset1():
-        ...
+    def asset1(): ...
 
     @repository
     def repo():
@@ -154,8 +153,7 @@ def test_asset_value_loader_with_config():
         return MyIOManager(context.resource_config["key"])
 
     @asset
-    def asset1():
-        ...
+    def asset1(): ...
 
     @repository
     def repo():
@@ -183,8 +181,7 @@ def test_asset_value_loader_with_resources():
         return MyIOManager()
 
     @asset
-    def asset1():
-        ...
+    def asset1(): ...
 
     @repository
     def repo():
@@ -211,12 +208,10 @@ def test_asset_value_loader_with_metadata():
         return MyIOManager()
 
     @asset
-    def asset1():
-        ...
+    def asset1(): ...
 
     @asset(metadata={"return": 20})
-    def asset2():
-        ...
+    def asset2(): ...
 
     @repository
     def repo():

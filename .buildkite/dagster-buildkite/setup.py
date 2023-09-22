@@ -22,6 +22,9 @@ setup(
         "requests",
         "typing_extensions>=4.2",
         "pathspec",
+        # Need this until we have OpenSSL 1.1.1+ available in BK base image
+        # Context: https://github.com/psf/requests/issues/6432
+        "urllib3<2",
     ],
     entry_points={
         "console_scripts": [

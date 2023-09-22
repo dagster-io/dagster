@@ -28,7 +28,13 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import public
+from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
+from dagster._core.definitions.events import (
+    AssetMaterialization,
+    AssetObservation,
+)
 from dagster._core.definitions.instigation_logger import InstigationLogger
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.partition import (
     CachingDynamicPartitionsLoader,
 )
@@ -55,7 +61,6 @@ from ..decorator_utils import (
 )
 from .asset_selection import AssetSelection
 from .graph_definition import GraphDefinition
-from .job_definition import JobDefinition
 from .run_request import (
     AddDynamicPartitionsRequest,
     DagsterRunReaction,
@@ -723,6 +728,7 @@ class SensorDefinition(IHasInternalInit):
             Sequence[Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]]
         ] = []
         updated_cursor = context.cursor
+        asset_events = []
 
         if not result or result == [None]:
             skip_message = "Sensor function returned an empty result"
@@ -748,6 +754,7 @@ class SensorDefinition(IHasInternalInit):
                         "SensorResult.cursor cannot be set if context.update_cursor() was called."
                     )
                 updated_cursor = item.cursor
+                asset_events = item.asset_events
 
             elif isinstance(item, RunRequest):
                 run_requests = [item]
@@ -799,6 +806,7 @@ class SensorDefinition(IHasInternalInit):
             dagster_run_reactions,
             captured_log_key=context.log_key if context.has_captured_logs() else None,
             dynamic_partitions_requests=dynamic_partitions_requests,
+            asset_events=asset_events,
         )
 
     def has_loadable_targets(self) -> bool:
@@ -939,6 +947,10 @@ class SensorExecutionData(
                     Sequence[Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]]
                 ],
             ),
+            (
+                "asset_events",
+                Sequence[Union[AssetMaterialization, AssetObservation, AssetCheckEvaluation]],
+            ),
         ],
     )
 ):
@@ -954,6 +966,9 @@ class SensorExecutionData(
         dynamic_partitions_requests: Optional[
             Sequence[Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]]
         ] = None,
+        asset_events: Optional[
+            Sequence[Union[AssetMaterialization, AssetObservation, AssetCheckEvaluation]]
+        ] = None,
     ):
         check.opt_sequence_param(run_requests, "run_requests", RunRequest)
         check.opt_str_param(skip_message, "skip_message")
@@ -964,6 +979,11 @@ class SensorExecutionData(
             dynamic_partitions_requests,
             "dynamic_partitions_requests",
             (AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest),
+        )
+        check.opt_sequence_param(
+            asset_events,
+            "asset_events",
+            (AssetMaterialization, AssetObservation, AssetCheckEvaluation),
         )
         check.invariant(
             not (run_requests and skip_message), "Found both skip data and run request data"
@@ -976,6 +996,7 @@ class SensorExecutionData(
             dagster_run_reactions=dagster_run_reactions,
             captured_log_key=captured_log_key,
             dynamic_partitions_requests=dynamic_partitions_requests,
+            asset_events=asset_events or [],
         )
 
 
@@ -1094,7 +1115,7 @@ T = TypeVar("T")
 
 def get_sensor_context_from_args_or_kwargs(
     fn: Callable,
-    args: Tuple[Any],
+    args: Tuple[Any, ...],
     kwargs: Dict[str, Any],
     context_type: Type[T],
 ) -> Optional[T]:

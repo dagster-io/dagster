@@ -92,6 +92,7 @@ export const AssetViewDefinitionSourceAsset: MockedResponse<AssetViewDefinitionQ
           computeKind: null,
           isPartitioned: false,
           isObservable: true,
+          isExecutable: true,
           isSource: true,
           assetKey: {
             path: ['observable_source_asset'],
@@ -159,6 +160,7 @@ export const AssetViewDefinitionSDA: MockedResponse<AssetViewDefinitionQuery> = 
           computeKind: null,
           isPartitioned: false,
           isObservable: false,
+          isExecutable: true,
           isSource: false,
           assetKey: {
             path: ['sda_asset'],

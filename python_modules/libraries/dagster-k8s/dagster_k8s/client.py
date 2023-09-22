@@ -261,8 +261,8 @@ class DagsterKubernetesClient:
                 if jobs.items:
                     check.invariant(
                         len(jobs.items) == 1,
-                        'There should only be one k8s job with name "{}", but got multiple'
-                        ' jobs:" {}'.format(job_name, jobs.items),
+                        f'There should only be one k8s job with name "{job_name}", but got multiple'
+                        f' jobs:" {jobs.items}',
                     )
                     return jobs.items[0]
                 else:
@@ -292,9 +292,7 @@ class DagsterKubernetesClient:
         while True:
             if wait_timeout and (self.timer() - start > wait_timeout):
                 raise DagsterK8sTimeoutError(
-                    "Timed out while waiting for job {job_name} to have pods".format(
-                        job_name=job_name
-                    )
+                    f"Timed out while waiting for job {job_name} to have pods"
                 )
 
             pod_list = k8s_api_retry(_get_pods, max_retries=3, timeout=wait_time_between_attempts)
@@ -377,9 +375,7 @@ class DagsterKubernetesClient:
         while True:
             if wait_timeout and (self.timer() - start_time > wait_timeout):
                 raise DagsterK8sTimeoutError(
-                    "Timed out while waiting for job {job_name} to complete".format(
-                        job_name=job_name
-                    )
+                    f"Timed out while waiting for job {job_name} to complete"
                 )
 
             # Reads the status of the specified job. Returns a V1Job object that
@@ -397,10 +393,8 @@ class DagsterKubernetesClient:
             # status.failed represents the number of pods which reached phase Failed.
             if status.failed and status.failed > 0:
                 raise DagsterK8sError(
-                    "Encountered failed job pods for job {job_name} with status: {status}, "
-                    "in namespace {namespace}".format(
-                        job_name=job_name, status=status, namespace=namespace
-                    )
+                    f"Encountered failed job pods for job {job_name} with status: {status}, "
+                    f"in namespace {namespace}"
                 )
 
             if instance and run_id:

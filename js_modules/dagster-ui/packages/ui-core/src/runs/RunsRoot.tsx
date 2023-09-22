@@ -3,7 +3,6 @@ import {
   Alert,
   Box,
   ButtonLink,
-  Colors,
   CursorHistoryControls,
   Heading,
   NonIdealState,
@@ -165,7 +164,7 @@ export const RunsRoot = () => {
         <Box
           flex={{direction: 'column', gap: 8}}
           padding={{horizontal: 24, vertical: 16}}
-          border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+          border="bottom"
         >
           <Alert
             intent="info"

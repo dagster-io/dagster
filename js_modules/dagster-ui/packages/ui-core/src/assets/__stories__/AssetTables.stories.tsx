@@ -17,7 +17,10 @@ import {
 } from '../__fixtures__/AssetTables.fixtures';
 
 // eslint-disable-next-line import/no-default-export
-export default {component: AssetsCatalogTable};
+export default {
+  title: 'Assets/AssetsCatalogTable',
+  component: AssetsCatalogTable,
+};
 
 const MOCKS = [
   AssetCatalogTableMock,

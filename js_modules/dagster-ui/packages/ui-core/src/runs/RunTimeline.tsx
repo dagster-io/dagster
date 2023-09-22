@@ -84,12 +84,15 @@ export const RunTimeline = (props: Props) => {
   const [_, end] = range;
   const includesTicks = now <= end;
 
-  const buckets = jobs.reduce((accum, job) => {
-    const {repoAddress} = job;
-    const repoKey = repoAddressAsURLString(repoAddress);
-    const jobsForRepo = accum[repoKey] || [];
-    return {...accum, [repoKey]: [...jobsForRepo, job]};
-  }, {} as Record<string, TimelineJob[]>);
+  const buckets = jobs.reduce(
+    (accum, job) => {
+      const {repoAddress} = job;
+      const repoKey = repoAddressAsURLString(repoAddress);
+      const jobsForRepo = accum[repoKey] || [];
+      return {...accum, [repoKey]: [...jobsForRepo, job]};
+    },
+    {} as Record<string, TimelineJob[]>,
+  );
 
   const allKeys = Object.keys(buckets);
   const {expandedKeys, onToggle, onToggleAll} = useRepoExpansionState(
@@ -150,7 +153,7 @@ export const RunTimeline = (props: Props) => {
         padding={{left: 24}}
         flex={{direction: 'column', justifyContent: 'center'}}
         style={{fontSize: '16px', flex: `0 0 ${DATE_TIME_HEIGHT}px`}}
-        border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+        border="top-and-bottom"
       >
         Jobs
       </Box>
@@ -215,16 +218,8 @@ interface TimelineHeaderRowProps {
 }
 
 const TimelineHeaderRow = (props: TimelineHeaderRowProps) => {
-  const {
-    expanded,
-    onToggle,
-    onToggleAll,
-    repoAddress,
-    isDuplicateRepoName,
-    jobs,
-    height,
-    top,
-  } = props;
+  const {expanded, onToggle, onToggleAll, repoAddress, isDuplicateRepoName, jobs, height, top} =
+    props;
 
   return (
     <RepoRow
@@ -460,7 +455,9 @@ const DividerContainer = styled.div`
 const DividerLabels = styled.div`
   display: flex;
   align-items: center;
-  box-shadow: inset 1px 0 0 ${Colors.KeylineGray}, inset 0 1px 0 ${Colors.KeylineGray},
+  box-shadow:
+    inset 1px 0 0 ${Colors.KeylineGray},
+    inset 0 1px 0 ${Colors.KeylineGray},
     inset -1px 0 0 ${Colors.KeylineGray};
   height: ${TIME_HEADER_HEIGHT}px;
   position: relative;
@@ -488,7 +485,9 @@ const DividerLines = styled.div`
   height: 100%;
   position: relative;
   width: 100%;
-  box-shadow: inset 1px 0 0 ${Colors.KeylineGray}, inset -1px 0 0 ${Colors.KeylineGray};
+  box-shadow:
+    inset 1px 0 0 ${Colors.KeylineGray},
+    inset -1px 0 0 ${Colors.KeylineGray};
 `;
 
 const DividerLine = styled.div`
@@ -640,7 +639,7 @@ const RunsEmptyOrLoading = (props: {loading: boolean; includesTicks: boolean}) =
       background={Colors.White}
       padding={{vertical: 24}}
       flex={{direction: 'row', justifyContent: 'center'}}
-      border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+      border="top-and-bottom"
     >
       {content()}
     </Box>
@@ -706,7 +705,9 @@ const RunChunk = styled.div<ChunkProps>`
   top: 2px;
   ${({$multiple}) => ($multiple ? `min-width: ${MIN_WIDTH_FOR_MULTIPLE}px` : null)};
 
-  transition: background-color 300ms linear, width 300ms ease-in-out;
+  transition:
+    background-color 300ms linear,
+    width 300ms ease-in-out;
 
   .chunk-popover-target {
     display: block;
@@ -736,14 +737,14 @@ const RunHoverContent = (props: RunHoverContentProps) => {
 
   return (
     <Box style={{width: '260px'}}>
-      <Box padding={12} border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}>
+      <Box padding={12} border="bottom">
         <HoverContentJobName>{job.jobName}</HoverContentJobName>
       </Box>
       <div style={{maxHeight: '240px', overflowY: 'auto'}}>
         {sliced.map((run, ii) => (
           <Box
             key={run.id}
-            border={ii > 0 ? {side: 'top', width: 1, color: Colors.KeylineGray} : null}
+            border={ii > 0 ? 'top' : null}
             flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
             padding={{vertical: 8, horizontal: 12}}
           >
@@ -768,7 +769,7 @@ const RunHoverContent = (props: RunHoverContentProps) => {
         ))}
       </div>
       {remaining > 0 ? (
-        <Box padding={12} border={{side: 'top', width: 1, color: Colors.KeylineGray}}>
+        <Box padding={12} border="top">
           <Link to={`${job.path}/runs`}>+ {remaining} more</Link>
         </Box>
       ) : null}

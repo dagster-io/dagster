@@ -24,9 +24,8 @@ const SUBSCRIPTION_MAX_POLL_RATE = 2 * 1000;
  * node that has changed is not in scope.
  */
 export function useLiveDataForAssetKeys(assetKeys: AssetKeyInput[], batched?: boolean) {
-  const {currentBatch, nextBatch, setBatchData, isLastBatch} = useLiveDataForAssetKeysBatcher(
-    assetKeys,
-  );
+  const {currentBatch, nextBatch, setBatchData, isLastBatch} =
+    useLiveDataForAssetKeysBatcher(assetKeys);
 
   const liveResult = useQuery<AssetGraphLiveQuery, AssetGraphLiveQueryVariables>(
     ASSETS_GRAPH_LIVE_QUERY,
@@ -95,7 +94,12 @@ export function useLiveDataForAssetKeys(assetKeys: AssetKeyInput[], batched?: bo
 
   // If the event log storage does not support streaming us asset events, fall back to
   // a polling approach and trigger a single refresh when a run is launched for immediate feedback
-  const liveDataRefreshState = useQueryRefreshAtInterval(liveResult, SUBSCRIPTION_IDLE_POLL_RATE);
+  const liveDataRefreshState = useQueryRefreshAtInterval(
+    liveResult,
+    SUBSCRIPTION_IDLE_POLL_RATE,
+    true,
+    refetch,
+  );
 
   useDidLaunchEvent(refetch, SUBSCRIPTION_MAX_POLL_RATE);
 
@@ -173,6 +177,7 @@ const ASSET_NODE_LIVE_FRAGMENT = gql`
     }
     assetChecks {
       name
+      canExecuteIndividually
       executionForLatestMaterialization {
         id
         runId

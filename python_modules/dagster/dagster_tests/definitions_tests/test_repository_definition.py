@@ -1274,8 +1274,7 @@ def test_scheduled_partitioned_asset_job():
     partitions_def = DailyPartitionsDefinition(start_date="2022-06-06")
 
     @asset(partitions_def=partitions_def)
-    def asset1():
-        ...
+    def asset1(): ...
 
     @repository
     def repo():
@@ -1389,16 +1388,13 @@ def test_default_loggers_keys_conflict():
 
 def test_base_jobs():
     @asset
-    def asset1():
-        ...
+    def asset1(): ...
 
     @asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c"]))
-    def asset2():
-        ...
+    def asset2(): ...
 
     @asset(partitions_def=StaticPartitionsDefinition(["x", "y", "z"]))
-    def asset3():
-        ...
+    def asset3(): ...
 
     @repository
     def repo():

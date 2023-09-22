@@ -1,30 +1,27 @@
+import {gql} from '@apollo/client';
 import {Body2, Box, Caption, Colors} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {AssetKeyInput} from '../../graphql/types';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 import {testId} from '../../testing/testId';
 import {HeaderCell, Row, RowCell, Container, Inner} from '../../ui/VirtualizedTable';
-import {assetDetailsPathForKey} from '../assetDetailsPathForKey';
+import {assetDetailsPathForAssetCheck} from '../assetDetailsPathForKey';
 
-import {MetadataCell} from './AssetCheckDetailModal';
+import {ASSET_CHECK_EXECUTION_FRAGMENT, MetadataCell} from './AssetCheckDetailModal';
 import {AssetCheckStatusTag} from './AssetCheckStatusTag';
-import {AssetChecksQuery} from './types/AssetChecks.types';
-
-type Check = Extract<
-  AssetChecksQuery['assetChecksOrError'],
-  {__typename: 'AssetChecks'}
->['checks'][0];
+import {ExecuteChecksButton} from './ExecuteChecksButton';
+import {ExecuteChecksButtonAssetNodeFragment} from './types/ExecuteChecksButton.types';
+import {AssetCheckTableFragment} from './types/VirtualizedAssetCheckTable.types';
 
 type Props = {
-  assetKey: AssetKeyInput;
-  rows: Check[];
+  assetNode: ExecuteChecksButtonAssetNodeFragment;
+  rows: AssetCheckTableFragment[];
 };
 
-export const VirtualizedAssetCheckTable: React.FC<Props> = ({assetKey, rows}: Props) => {
+export const VirtualizedAssetCheckTable: React.FC<Props> = ({assetNode, rows}: Props) => {
   const parentRef = React.useRef<HTMLDivElement | null>(null);
   const count = rows.length;
 
@@ -44,10 +41,10 @@ export const VirtualizedAssetCheckTable: React.FC<Props> = ({assetKey, rows}: Pr
         <VirtualizedAssetCheckHeader />
         <Inner $totalHeight={totalHeight}>
           {items.map(({index, key, size, start}) => {
-            const row: Check = rows[index]!;
+            const row: AssetCheckTableFragment = rows[index]!;
             return (
               <VirtualizedAssetCheckRow
-                assetKey={assetKey}
+                assetNode={assetNode}
                 key={key}
                 height={size}
                 start={start}
@@ -61,29 +58,26 @@ export const VirtualizedAssetCheckTable: React.FC<Props> = ({assetKey, rows}: Pr
   );
 };
 
-const TEMPLATE_COLUMNS = '2fr 150px 1fr 1fr';
+const TEMPLATE_COLUMNS = '2fr 150px 1fr 1.5fr 120px';
 
 interface AssetCheckRowProps {
-  assetKey: AssetKeyInput;
+  row: AssetCheckTableFragment;
+  assetNode: ExecuteChecksButtonAssetNodeFragment;
   height: number;
   start: number;
-  row: Check;
 }
 
-export const VirtualizedAssetCheckRow = ({assetKey, height, start, row}: AssetCheckRowProps) => {
+export const VirtualizedAssetCheckRow = ({assetNode, height, start, row}: AssetCheckRowProps) => {
   const execution = row.executionForLatestMaterialization;
   const timestamp = execution?.evaluation?.timestamp;
 
   return (
     <Row $height={height} $start={start} data-testid={testId(`row-#TODO_USE_CHECK_ID`)}>
-      <RowGrid border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}>
+      <RowGrid border="bottom">
         <RowCell style={{flexDirection: 'row', alignItems: 'center'}}>
           <Box flex={{direction: 'column', gap: 4}}>
             <Link
-              to={assetDetailsPathForKey(assetKey, {
-                view: 'checks',
-                checkDetail: row.name,
-              })}
+              to={assetDetailsPathForAssetCheck({assetKey: assetNode.assetKey, name: row.name})}
             >
               <Body2>{row.name}</Body2>
             </Link>
@@ -107,6 +101,16 @@ export const VirtualizedAssetCheckRow = ({assetKey, height, start, row}: AssetCh
         <RowCell>
           <MetadataCell metadataEntries={execution?.evaluation?.metadataEntries} />
         </RowCell>
+        <RowCell>
+          <Box flex={{justifyContent: 'flex-end'}}>
+            <ExecuteChecksButton
+              assetNode={assetNode}
+              checks={[row]}
+              label="Execute"
+              icon={false}
+            />
+          </Box>
+        </RowCell>
       </RowGrid>
     </Row>
   );
@@ -122,7 +126,7 @@ const CaptionEllipsed = styled(Caption)`
 export const VirtualizedAssetCheckHeader = () => {
   return (
     <Box
-      border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+      border="top-and-bottom"
       style={{
         display: 'grid',
         gridTemplateColumns: TEMPLATE_COLUMNS,
@@ -135,6 +139,7 @@ export const VirtualizedAssetCheckHeader = () => {
       <HeaderCell>Status</HeaderCell>
       <HeaderCell>Evaluation timestamp</HeaderCell>
       <HeaderCell>Evaluation metadata</HeaderCell>
+      <HeaderCell>Actions</HeaderCell>
     </Box>
   );
 };
@@ -143,4 +148,16 @@ const RowGrid = styled(Box)`
   display: grid;
   grid-template-columns: ${TEMPLATE_COLUMNS};
   height: 100%;
+`;
+
+export const ASSET_CHECK_TABLE_FRAGMENT = gql`
+  fragment AssetCheckTableFragment on AssetCheck {
+    name
+    description
+    canExecuteIndividually
+    executionForLatestMaterialization {
+      ...AssetCheckExecutionFragment
+    }
+  }
+  ${ASSET_CHECK_EXECUTION_FRAGMENT}
 `;

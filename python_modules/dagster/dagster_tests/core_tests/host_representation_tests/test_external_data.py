@@ -20,9 +20,11 @@ from dagster import (
 from dagster._check import ParameterCheckError
 from dagster._core.definitions import AssetIn, SourceAsset, asset, build_assets_job, multi_asset
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.backfill_policy import BackfillPolicy
-from dagster._core.definitions.metadata import MetadataValue, normalize_metadata
+from dagster._core.definitions.metadata import MetadataValue, TextMetadataValue, normalize_metadata
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
+from dagster._core.definitions.observable_asset import create_unexecutable_observable_assets_def
 from dagster._core.definitions.partition import ScheduleType
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
@@ -1001,8 +1003,7 @@ def test_nasty_nested_graph_asset():
 
 def test_deps_resolve_group():
     @asset(key_prefix="abc")
-    def asset1():
-        ...
+    def asset1(): ...
 
     @asset
     def asset2(asset1):
@@ -1130,8 +1131,7 @@ def test_external_multi_partitions_def():
 
 def test_graph_asset_description():
     @op
-    def op1():
-        ...
+    def op1(): ...
 
     @graph_asset(description="bar")
     def foo():
@@ -1145,12 +1145,10 @@ def test_graph_asset_description():
 
 def test_graph_multi_asset_description():
     @op
-    def op1():
-        ...
+    def op1(): ...
 
     @op
-    def op2():
-        ...
+    def op2(): ...
 
     @graph_multi_asset(
         outs={
@@ -1187,3 +1185,29 @@ def test_external_time_window_valid_partition_key():
             datetime.strptime("2023-03-11-15:00", "%Y-%m-%d-%H:%M"), tz="UTC"
         ).timestamp()
     )
+
+
+def test_unexecutable_external_asset_node() -> None:
+    asset_one = create_unexecutable_observable_assets_def([AssetSpec("asset_one")])
+
+    assets_job = build_assets_job("assets_job", [asset_one])
+    external_asset_nodes = external_asset_graph_from_defs([assets_job], source_assets_by_key={})
+
+    assert len(external_asset_nodes) == 1
+    assert next(iter(external_asset_nodes)).is_executable is False
+
+
+def test_historical_external_asset_node() -> None:
+    assert not ExternalAssetNode(
+        asset_key=AssetKey("asset_one"),
+        dependencies=[],
+        depended_by=[],
+        # purposefully not using constants here so we know when we are breaking ourselves
+        metadata={"dagster/asset_execution_type": TextMetadataValue("UNEXECUTABLE")},
+    ).is_executable
+
+    assert ExternalAssetNode(
+        asset_key=AssetKey("asset_one"),
+        dependencies=[],
+        depended_by=[],
+    ).is_executable

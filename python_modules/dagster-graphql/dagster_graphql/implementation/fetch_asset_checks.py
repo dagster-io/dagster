@@ -11,9 +11,11 @@ from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionResolvedStatus,
 )
 from dagster._core.storage.dagster_run import DagsterRunStatus
+from packaging import version
 
 from ..schema.asset_checks import (
     GrapheneAssetCheck,
+    GrapheneAssetCheckCanExecuteIndividually,
     GrapheneAssetCheckExecution,
     GrapheneAssetCheckNeedsMigrationError,
     GrapheneAssetChecks,
@@ -30,14 +32,26 @@ def _fetch_asset_checks(
 ) -> GrapheneAssetChecks:
     external_asset_checks = []
     for location in graphene_info.context.code_locations:
+        # check if the code location is too old to support executing asset checks individually
+        code_location_version = (location.get_dagster_library_versions() or {}).get("dagster")
+        if code_location_version and version.parse(code_location_version) < version.parse("1.4.14"):
+            can_execute_individually = (
+                GrapheneAssetCheckCanExecuteIndividually.NEEDS_USER_CODE_UPGRADE
+            )
+        else:
+            can_execute_individually = GrapheneAssetCheckCanExecuteIndividually.CAN_EXECUTE
+
         for repository in location.get_repositories().values():
             for external_check in repository.external_repository_data.external_asset_checks or []:
                 if external_check.asset_key == asset_key:
                     if not check_name or check_name == external_check.name:
-                        external_asset_checks.append(external_check)
+                        external_asset_checks.append((external_check, can_execute_individually))
 
     return GrapheneAssetChecks(
-        checks=[GrapheneAssetCheck(check) for check in external_asset_checks]
+        checks=[
+            GrapheneAssetCheck(asset_check=check, can_execute_individually=can_execute_individually)
+            for check, can_execute_individually in external_asset_checks
+        ]
     )
 
 

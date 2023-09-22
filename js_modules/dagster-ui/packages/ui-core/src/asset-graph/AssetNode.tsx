@@ -48,11 +48,7 @@ export const AssetNode: React.FC<{
             </div>
             <div style={{flex: 1}} />
           </Name>
-          <Box
-            style={{padding: '6px 8px'}}
-            flex={{direction: 'column', gap: 4}}
-            border={{side: 'top', width: 1, color: Colors.KeylineGray}}
-          >
+          <Box style={{padding: '6px 8px'}} flex={{direction: 'column', gap: 4}} border="top">
             {definition.description ? (
               <Description $color={Colors.Gray800}>
                 {markdownToPlaintext(definition.description).split('\n')[0]}
@@ -187,7 +183,7 @@ const AssetNodeChecksRow: React.FC<{
     <AssetNodeRowBox
       padding={{horizontal: 8}}
       flex={{justifyContent: 'space-between', alignItems: 'center', gap: 6}}
-      border={{side: 'top', width: 1, color: Colors.KeylineGray}}
+      border="top"
       background={Colors.Gray50}
     >
       Checks
@@ -334,7 +330,7 @@ const NameTooltipCSS: CSSObject = {
   fontSize: 16.8,
 };
 
-const NameTooltipStyle = JSON.stringify({
+export const NameTooltipStyle = JSON.stringify({
   ...NameTooltipCSS,
   background: Colors.Blue50,
   border: `1px solid ${Colors.Blue100}`,

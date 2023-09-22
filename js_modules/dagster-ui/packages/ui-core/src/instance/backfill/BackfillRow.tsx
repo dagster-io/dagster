@@ -12,7 +12,7 @@ import {isHiddenAssetGroupJob} from '../../asset-graph/Utils';
 import {BulkActionStatus, RunStatus} from '../../graphql/types';
 import {PartitionStatus, PartitionStatusHealthSourceOps} from '../../partitions/PartitionStatus';
 import {PipelineReference} from '../../pipelines/PipelineReference';
-import {AssetKeyTagCollection} from '../../runs/AssetKeyTagCollection';
+import {AssetKeyTagCollection} from '../../runs/AssetTagCollections';
 import {inProgressStatuses} from '../../runs/RunStatuses';
 import {RunStatusTagsWithCounts} from '../../runs/RunTimeline';
 import {runsPathWithFilters} from '../../runs/RunsFilterInput';
@@ -174,10 +174,13 @@ const BackfillRunStatus = ({
   counts: {[status: string]: number};
 }) => {
   const history = useHistory();
-  const partitionCounts = Object.entries(counts).reduce((partitionCounts, [runStatus, count]) => {
-    partitionCounts[runStatus] = (partitionCounts[runStatus] || 0) + count;
-    return partitionCounts;
-  }, {} as {[status: string]: number});
+  const partitionCounts = Object.entries(counts).reduce(
+    (partitionCounts, [runStatus, count]) => {
+      partitionCounts[runStatus] = (partitionCounts[runStatus] || 0) + count;
+      return partitionCounts;
+    },
+    {} as {[status: string]: number},
+  );
 
   const health: PartitionStatusHealthSourceOps = React.useMemo(
     () => ({

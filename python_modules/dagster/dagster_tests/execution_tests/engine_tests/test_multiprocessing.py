@@ -397,7 +397,7 @@ def sys_exit(context):
     context.log.info("Informational message")
     print("Crashy output to stdout")  # noqa: T201
     sys.stdout.flush()
-    os._exit(1)  # noqa: SLF001
+    os._exit(1)
 
 
 @job

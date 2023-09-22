@@ -31,6 +31,8 @@ import {
   UNPARTITIONED_ASSET,
   UNPARTITIONED_ASSET_OTHER_REPO,
   UNPARTITIONED_ASSET_WITH_REQUIRED_CONFIG,
+  UNPARTITIONED_SOURCE_ASSET,
+  UNPARTITIONED_NON_EXECUTABLE_ASSET,
 } from '../__fixtures__/LaunchAssetExecutionButton.fixtures';
 
 // This file must be mocked because Jest can't handle `import.meta.url`.
@@ -84,6 +86,50 @@ describe('LaunchAssetExecutionButton', () => {
     });
   });
 
+  describe('source assets', () => {
+    it('should skip over source assets in the selection', async () => {
+      renderButton({
+        scope: {selected: [UNPARTITIONED_ASSET, UNPARTITIONED_SOURCE_ASSET, ASSET_DAILY]},
+      });
+      expect((await screen.findByTestId('materialize-button')).textContent).toEqual(
+        'Materialize selected (2)…', // 2 instead of 3
+      );
+    });
+
+    it('should be disabled if the entire selection is source assets', async () => {
+      renderButton({
+        scope: {selected: [UNPARTITIONED_SOURCE_ASSET]},
+      });
+      const button = await screen.findByTestId('materialize-button');
+      expect(button).toBeDisabled();
+
+      userEvent.hover(button);
+      expect(await screen.findByText('Source assets cannot be materialized')).toBeDefined();
+    });
+  });
+
+  describe('non-executable assets', () => {
+    it('should skip over non-executable assets in the selection', async () => {
+      renderButton({
+        scope: {selected: [UNPARTITIONED_ASSET, UNPARTITIONED_NON_EXECUTABLE_ASSET, ASSET_DAILY]},
+      });
+      expect((await screen.findByTestId('materialize-button')).textContent).toEqual(
+        'Materialize selected (2)…', // 2 instead of 3
+      );
+    });
+
+    it('should be disabled if the entire selection is non-executable assets', async () => {
+      renderButton({
+        scope: {selected: [UNPARTITIONED_NON_EXECUTABLE_ASSET]},
+      });
+      const button = await screen.findByTestId('materialize-button');
+      expect(button).toBeDisabled();
+
+      userEvent.hover(button);
+      expect(await screen.findByText('Non-executable assets cannot be materialized')).toBeDefined();
+    });
+  });
+
   describe('unpartitioned assets', () => {
     it('should directly launch via the in-context asset job', async () => {
       const launchMock = buildExpectedLaunchSingleRunMutation({
@@ -106,6 +152,21 @@ describe('LaunchAssetExecutionButton', () => {
       });
       await clickMaterializeButton();
       await waitFor(() => expect(launchMock.result).toHaveBeenCalled());
+    });
+
+    describe('permissions', () => {
+      it('should be disabled if you do not have permission to execute assets', async () => {
+        renderButton({
+          scope: {all: [{...UNPARTITIONED_ASSET, hasMaterializePermission: false}]},
+        });
+        const button = await screen.findByTestId('materialize-button');
+        expect(button).toBeDisabled();
+
+        userEvent.hover(button);
+        expect(
+          await screen.findByText('You do not have permission to materialize assets'),
+        ).toBeDefined();
+      });
     });
 
     it('should directly launch via the hidden job if no job is in context', async () => {

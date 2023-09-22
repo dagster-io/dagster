@@ -35,9 +35,6 @@ from dagster._utils import tail_file
 _CONTEXT_INJECTOR_FILENAME = "context"
 _MESSAGE_READER_FILENAME = "messages"
 
-_CONTEXT_INJECTOR_FILENAME = "context"
-_MESSAGE_READER_FILENAME = "messages"
-
 
 class ExtFileContextInjector(ExtContextInjector):
     def __init__(self, path: str):
@@ -112,7 +109,7 @@ class ExtTempFileMessageReader(ExtMessageReader):
     ) -> Iterator[ExtParams]:
         with tempfile.TemporaryDirectory() as tempdir:
             with ExtFileMessageReader(
-                os.path.join(tempdir, _CONTEXT_INJECTOR_FILENAME)
+                os.path.join(tempdir, _MESSAGE_READER_FILENAME)
             ).read_messages(handler) as params:
                 yield params
 
@@ -130,7 +127,7 @@ class ExtBlobStoreMessageReader(ExtMessageReader):
         self,
         handler: "ExtMessageHandler",
     ) -> Iterator[ExtParams]:
-        with self.setup():
+        with self.get_params() as params:
             is_task_complete = Event()
             thread = None
             try:
@@ -138,35 +135,33 @@ class ExtBlobStoreMessageReader(ExtMessageReader):
                     target=self._reader_thread,
                     args=(
                         handler,
+                        params,
                         is_task_complete,
                     ),
                     daemon=True,
                 )
                 thread.start()
-                yield self.get_params()
+                yield params
             finally:
                 is_task_complete.set()
                 if thread:
                     thread.join()
 
+    @abstractmethod
     @contextmanager
-    def setup(self) -> Iterator[None]:
-        yield
+    def get_params(self) -> Iterator[ExtParams]: ...
 
     @abstractmethod
-    def get_params(self) -> ExtParams:
-        ...
+    def download_messages_chunk(self, index: int, params: ExtParams) -> Optional[str]: ...
 
-    @abstractmethod
-    def download_messages_chunk(self, index: int) -> Optional[str]:
-        ...
-
-    def _reader_thread(self, handler: "ExtMessageHandler", is_task_complete: Event) -> None:
+    def _reader_thread(
+        self, handler: "ExtMessageHandler", params: ExtParams, is_task_complete: Event
+    ) -> None:
         start_or_last_download = datetime.datetime.now()
         while True:
             now = datetime.datetime.now()
             if (now - start_or_last_download).seconds > self.interval or is_task_complete.is_set():
-                chunk = self.download_messages_chunk(self.counter)
+                chunk = self.download_messages_chunk(self.counter, params)
                 start_or_last_download = now
                 if chunk:
                     for line in chunk.split("\n"):
@@ -201,15 +196,15 @@ def ext_protocol(
     that need to be provided to the external process.
     """
     context_data = build_external_execution_context_data(context, extras)
-    msg_handler = ExtMessageHandler(context)
+    message_handler = ExtMessageHandler(context)
     with context_injector.inject_context(
         context_data,
     ) as ci_params, message_reader.read_messages(
-        msg_handler,
+        message_handler,
     ) as mr_params:
         yield ExtOrchestrationContext(
             context_data=context_data,
-            message_handler=msg_handler,
+            message_handler=message_handler,
             context_injector_params=ci_params,
             message_reader_params=mr_params,
         )

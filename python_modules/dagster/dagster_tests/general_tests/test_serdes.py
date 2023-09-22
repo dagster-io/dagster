@@ -162,8 +162,6 @@ def test_serdes_enum_backcompat():
         def unpack(self, value):
             if value == "FOO":
                 value = "FOO_FOO"
-            else:
-                value = value
 
             return super().unpack(value)
 

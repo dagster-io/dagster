@@ -376,9 +376,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             full_msg = "\n".join(pod_debug_info)
         except Exception:
             logging.exception(
-                "Error trying to get debug information for failed k8s job {job_name}".format(
-                    job_name=job_name
-                )
+                f"Error trying to get debug information for failed k8s job {job_name}"
             )
         if pod_names:
             full_msg = (

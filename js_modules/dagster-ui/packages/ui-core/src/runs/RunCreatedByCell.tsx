@@ -1,24 +1,28 @@
 import {Box, Tag} from '@dagster-io/ui-components';
 import React from 'react';
+import {Link} from 'react-router-dom';
 
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
+import {RepoAddress} from '../workspace/types';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {DagsterTag} from './RunTag';
 import {RunTagsFragment} from './types/RunTable.types';
 
 type Props = {
+  repoAddress?: RepoAddress | null;
   tags: RunTagsFragment[];
 };
 
-export const RunCreatedByCell = React.memo(({tags}: Props) => {
+export const RunCreatedByCell = React.memo(({repoAddress, tags}: Props) => {
   return (
     <Box flex={{direction: 'column', alignItems: 'flex-start'}}>
-      <RunCreatedByTag tags={tags} />
+      <RunCreatedByTag repoAddress={repoAddress} tags={tags} />
     </Box>
   );
 });
 
-export const RunCreatedByTag = ({tags}: Props) => {
+export const RunCreatedByTag = ({repoAddress, tags}: Props) => {
   const {UserDisplay} = useLaunchPadHooks();
 
   const user = tags.find((tag) => tag.key === DagsterTag.User);
@@ -28,12 +32,26 @@ export const RunCreatedByTag = ({tags}: Props) => {
 
   const scheduleTag = tags.find((tag) => tag.key === DagsterTag.ScheduleName);
   if (scheduleTag) {
-    return <Tag icon="schedule">{scheduleTag.value}</Tag>;
+    const scheduleName = scheduleTag.value;
+    const tagContent = repoAddress ? (
+      <Link to={workspacePathFromAddress(repoAddress, `/schedules/${scheduleName}`)}>
+        {scheduleName}
+      </Link>
+    ) : (
+      scheduleName
+    );
+    return <Tag icon="schedule">{tagContent}</Tag>;
   }
 
   const sensorTag = tags.find((tag) => tag.key === DagsterTag.SensorName);
   if (sensorTag) {
-    return <Tag icon="sensors">{sensorTag.value}</Tag>;
+    const sensorName = sensorTag.value;
+    const tagContent = repoAddress ? (
+      <Link to={workspacePathFromAddress(repoAddress, `/sensors/${sensorName}`)}>{sensorName}</Link>
+    ) : (
+      sensorName
+    );
+    return <Tag icon="sensors">{tagContent}</Tag>;
   }
 
   const automaterialize = tags.some(

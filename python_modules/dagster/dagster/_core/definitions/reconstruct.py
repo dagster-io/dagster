@@ -289,9 +289,7 @@ class ReconstructableJob(
         )
 
     def describe(self) -> str:
-        return '"{name}" in repository ({repo})'.format(
-            repo=self.repository.pointer.describe, name=self.job_name
-        )
+        return f'"{self.job_name}" in repository ({self.repository.pointer.describe})'
 
     @staticmethod
     def for_file(python_file: str, fn_name: str) -> "ReconstructableJob":
@@ -311,9 +309,7 @@ class ReconstructableJob(
         inst = unpack_value(val)
         check.invariant(
             isinstance(inst, ReconstructableJob),
-            "Deserialized object is not instance of ReconstructableJob, got {type}".format(
-                type=type(inst)
-            ),
+            f"Deserialized object is not instance of ReconstructableJob, got {type(inst)}",
         )
         return inst  # type: ignore  # (illegible runtime check)
 
@@ -408,7 +404,7 @@ def reconstructable(target: Callable[..., "JobDefinition"]) -> ReconstructableJo
             )
         raise DagsterInvariantViolationError(
             "Reconstructable target should be a function or definition produced "
-            "by a decorated function, got {type}.".format(type=type(target)),
+            f"by a decorated function, got {type(target)}.",
         )
 
     if seven.is_lambda(target):
@@ -420,12 +416,10 @@ def reconstructable(target: Callable[..., "JobDefinition"]) -> ReconstructableJo
 
     if seven.qualname_differs(target):
         raise DagsterInvariantViolationError(
-            'Reconstructable target "{target.__name__}" has a different '
-            '__qualname__ "{target.__qualname__}" indicating it is not '
+            f'Reconstructable target "{target.__name__}" has a different '
+            f'__qualname__ "{target.__qualname__}" indicating it is not '
             "defined at module scope. Use a function or decorated function "
-            "defined at module scope instead, or use build_reconstructable_job.".format(
-                target=target
-            )
+            "defined at module scope instead, or use build_reconstructable_job."
         )
 
     try:
@@ -659,10 +653,8 @@ def def_from_pointer(
 
     if seven.get_arg_names(target):
         raise DagsterInvariantViolationError(
-            "Error invoking function at {target} with no arguments. "
-            "Reconstructable target must be callable with no arguments".format(
-                target=pointer.describe()
-            )
+            f"Error invoking function at {pointer.describe()} with no arguments. "
+            "Reconstructable target must be callable with no arguments"
         )
 
     return _check_is_loadable(target())
@@ -686,15 +678,13 @@ def job_def_from_pointer(pointer: CodePointer) -> "JobDefinition":
 def repository_def_from_target_def(
     target: Union["RepositoryDefinition", "JobDefinition", "GraphDefinition"],
     repository_load_data: Optional["RepositoryLoadData"] = None,
-) -> "RepositoryDefinition":
-    ...
+) -> "RepositoryDefinition": ...
 
 
 @overload
 def repository_def_from_target_def(
     target: object, repository_load_data: Optional["RepositoryLoadData"] = None
-) -> None:
-    ...
+) -> None: ...
 
 
 def repository_def_from_target_def(
@@ -749,8 +739,8 @@ def repository_def_from_pointer(
     repo_def = repository_def_from_target_def(target, repository_load_data)
     if not repo_def:
         raise DagsterInvariantViolationError(
-            "CodePointer ({str}) must resolve to a "
+            f"CodePointer ({pointer.describe()}) must resolve to a "
             "RepositoryDefinition, JobDefinition, or JobDefinition. "
-            "Received a {type}".format(str=pointer.describe(), type=type(target))
+            f"Received a {type(target)}"
         )
     return repo_def

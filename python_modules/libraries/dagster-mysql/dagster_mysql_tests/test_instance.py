@@ -15,7 +15,7 @@ from sqlalchemy.pool import NullPool
 
 
 def full_mysql_config(hostname, port):
-    return """
+    return f"""
       run_storage:
         module: dagster_mysql.run_storage
         class: MySQLRunStorage
@@ -48,7 +48,7 @@ def full_mysql_config(hostname, port):
               hostname: {hostname}
               port: {port}
               db_name: test
-    """.format(hostname=hostname, port=port)
+    """
 
 
 def unified_mysql_config(hostname, port):

@@ -189,7 +189,7 @@ const TEMPLATE_COLUMNS = '5fr 1fr 1fr 1fr 1fr';
 function VirtualHeaderRow() {
   return (
     <Box
-      border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+      border="top-and-bottom"
       style={{
         display: 'grid',
         gridTemplateColumns: TEMPLATE_COLUMNS,
@@ -218,14 +218,15 @@ type RowProps = {
   group: ReturnType<typeof groupAssets>[0];
 };
 function VirtualRow({height, start, group}: RowProps) {
-  const assetKeys = React.useMemo(() => group.assets.map((asset) => ({path: asset.key.path})), [
-    group.assets,
-  ]);
+  const assetKeys = React.useMemo(
+    () => group.assets.map((asset) => ({path: asset.key.path})),
+    [group.assets],
+  );
 
   const {liveDataByNode} = useLiveDataForAssetKeys(assetKeys, true);
 
   const statuses = React.useMemo(() => {
-    type assetType = typeof group['assets'][0];
+    type assetType = (typeof group)['assets'][0];
     type StatusesType = {asset: assetType; status: ReturnType<typeof buildAssetNodeStatusContent>};
     const statuses = {
       successful: [] as StatusesType[],
@@ -302,7 +303,7 @@ function VirtualRow({height, start, group}: RowProps) {
 
   return (
     <Row $height={height} $start={start}>
-      <RowGrid border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}>
+      <RowGrid border="bottom">
         <Cell>
           <Box flex={{direction: 'row', justifyContent: 'space-between', grow: 1}}>
             <Box flex={{direction: 'column', gap: 2, grow: 1}}>

@@ -326,5 +326,17 @@
   {
     "url": "https://release-1-4-12.dagster.dagster-docs.io/",
     "version": "1.4.12"
+  },
+  {
+    "url": "https://release-1-4-13.dagster.dagster-docs.io/",
+    "version": "1.4.13"
+  },
+  {
+    "url": "https://release-1-4-14.dagster.dagster-docs.io/",
+    "version": "1.4.14"
+  },
+  {
+    "url": "https://release-1-4-15.dagster.dagster-docs.io/",
+    "version": "1.4.15"
   }
 ]

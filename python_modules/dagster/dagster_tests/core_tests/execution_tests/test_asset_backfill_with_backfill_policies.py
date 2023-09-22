@@ -312,15 +312,21 @@ def test_asset_backfill_status_count_with_backfill_policies():
     def unpartitioned_upstream_of_partitioned():
         return 1
 
-    @asset(partitions_def=daily_partitions_def, backfill_policy=BackfillPolicy.single_run())
-    def upstream_daily_partitioned_asset(unpartitioned_upstream_of_partitioned):
-        return unpartitioned_upstream_of_partitioned
+    @asset(
+        partitions_def=daily_partitions_def,
+        backfill_policy=BackfillPolicy.single_run(),
+        deps={unpartitioned_upstream_of_partitioned},
+    )
+    def upstream_daily_partitioned_asset():
+        return 2
 
-    @asset(partitions_def=weekly_partitions_def, backfill_policy=BackfillPolicy.single_run())
-    def downstream_weekly_partitioned_asset(
-        upstream_daily_partitioned_asset,
-    ):
-        return upstream_daily_partitioned_asset + 1
+    @asset(
+        partitions_def=weekly_partitions_def,
+        backfill_policy=BackfillPolicy.single_run(),
+        deps={upstream_daily_partitioned_asset},
+    )
+    def downstream_weekly_partitioned_asset():
+        return 3
 
     assets_by_repo_name = {
         "repo": [
@@ -358,31 +364,122 @@ def test_asset_backfill_status_count_with_backfill_policies():
         fail_asset_partitions=set(),
     )
 
-    # The daily partitioned asset should have all partitions and its downstream failed prematurely,
-    # so weekly partitioned asset's partitions were never requested
-    assert (
-        len(requested_asset_partitions | fail_and_downstream_asset_partitions)
-        == 1 + num_of_daily_partitions
-    )
-
     counts = completed_backfill_data.get_backfill_status_per_asset_key()
 
     assert counts[0].asset_key == unpartitioned_upstream_of_partitioned.key
     assert counts[0].backfill_status == AssetBackfillStatus.MATERIALIZED
 
     assert counts[1].asset_key == upstream_daily_partitioned_asset.key
-    assert counts[1].partitions_counts_by_status[AssetBackfillStatus.MATERIALIZED] == 0
     assert (
-        counts[1].partitions_counts_by_status[AssetBackfillStatus.FAILED] == num_of_daily_partitions
+        counts[1].partitions_counts_by_status[AssetBackfillStatus.MATERIALIZED]
+        == num_of_daily_partitions
     )
-    assert counts[1].partitions_counts_by_status[AssetBackfillStatus.IN_PROGRESS] == 0
     assert counts[1].num_targeted_partitions == num_of_daily_partitions
 
     assert counts[2].asset_key == downstream_weekly_partitioned_asset.key
-    assert counts[2].partitions_counts_by_status[AssetBackfillStatus.MATERIALIZED] == 0
     assert (
-        counts[2].partitions_counts_by_status[AssetBackfillStatus.FAILED]
+        counts[2].partitions_counts_by_status[AssetBackfillStatus.MATERIALIZED]
         == num_of_weekly_partitions
     )
-    assert counts[2].partitions_counts_by_status[AssetBackfillStatus.IN_PROGRESS] == 0
     assert counts[2].num_targeted_partitions == num_of_weekly_partitions
+
+
+def test_backfill_run_contains_more_than_one_asset():
+    upstream_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
+    downstream_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-02")
+
+    time_now = pendulum.now("UTC")
+    upstream_num_of_partitions = upstream_partitions_def.get_num_partitions(time_now)
+    downstream_num_of_partitions = downstream_partitions_def.get_num_partitions(time_now)
+
+    @asset(partitions_def=upstream_partitions_def, backfill_policy=BackfillPolicy.single_run())
+    def upstream_a():
+        return 1
+
+    @asset(partitions_def=upstream_partitions_def, backfill_policy=BackfillPolicy.single_run())
+    def upstream_b():
+        return 2
+
+    @asset(
+        partitions_def=downstream_partitions_def,
+        backfill_policy=BackfillPolicy.single_run(),
+        deps={"upstream_a"},
+    )
+    def downstream_a():
+        return 1
+
+    @asset(
+        partitions_def=downstream_partitions_def,
+        backfill_policy=BackfillPolicy.single_run(),
+        deps={"upstream_b"},
+    )
+    def downstream_b():
+        return 2
+
+    assets_by_repo_name = {"repo": [upstream_a, upstream_b, downstream_a, downstream_b]}
+    asset_graph = get_asset_graph(assets_by_repo_name)
+    instance = DagsterInstance.ephemeral()
+
+    backfill_data = AssetBackfillData.from_asset_partitions(
+        partition_names=None,
+        asset_graph=asset_graph,
+        asset_selection=[
+            upstream_a.key,
+            upstream_b.key,
+            downstream_a.key,
+            downstream_b.key,
+        ],
+        dynamic_partitions_store=MagicMock(),
+        all_partitions=True,
+        backfill_start_time=time_now,
+    )
+
+    (
+        completed_backfill_data,
+        _,
+        _,
+    ) = run_backfill_to_completion(
+        instance=instance,
+        asset_graph=asset_graph,
+        assets_by_repo_name=assets_by_repo_name,
+        backfill_data=backfill_data,
+        fail_asset_partitions=set(),
+    )
+
+    counts = completed_backfill_data.get_backfill_status_per_asset_key()
+
+    assert counts[0].asset_key == upstream_a.key
+    assert (
+        counts[0].partitions_counts_by_status[AssetBackfillStatus.MATERIALIZED]
+        == upstream_num_of_partitions
+    )
+    assert counts[0].partitions_counts_by_status[AssetBackfillStatus.FAILED] == 0
+    assert counts[0].partitions_counts_by_status[AssetBackfillStatus.IN_PROGRESS] == 0
+    assert counts[0].num_targeted_partitions == upstream_num_of_partitions
+
+    assert counts[1].asset_key == upstream_b.key
+    assert (
+        counts[1].partitions_counts_by_status[AssetBackfillStatus.MATERIALIZED]
+        == upstream_num_of_partitions
+    )
+    assert counts[1].partitions_counts_by_status[AssetBackfillStatus.FAILED] == 0
+    assert counts[1].partitions_counts_by_status[AssetBackfillStatus.IN_PROGRESS] == 0
+    assert counts[1].num_targeted_partitions == upstream_num_of_partitions
+
+    assert counts[2].asset_key == downstream_a.key
+    assert (
+        counts[2].partitions_counts_by_status[AssetBackfillStatus.MATERIALIZED]
+        == downstream_num_of_partitions
+    )
+    assert counts[2].partitions_counts_by_status[AssetBackfillStatus.FAILED] == 0
+    assert counts[2].partitions_counts_by_status[AssetBackfillStatus.IN_PROGRESS] == 0
+    assert counts[2].num_targeted_partitions == downstream_num_of_partitions
+
+    assert counts[3].asset_key == downstream_b.key
+    assert (
+        counts[3].partitions_counts_by_status[AssetBackfillStatus.MATERIALIZED]
+        == downstream_num_of_partitions
+    )
+    assert counts[3].partitions_counts_by_status[AssetBackfillStatus.FAILED] == 0
+    assert counts[3].partitions_counts_by_status[AssetBackfillStatus.IN_PROGRESS] == 0
+    assert counts[3].num_targeted_partitions == downstream_num_of_partitions

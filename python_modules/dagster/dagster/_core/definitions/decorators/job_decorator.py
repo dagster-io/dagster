@@ -114,8 +114,7 @@ class _Job:
 
 
 @overload
-def job(compose_fn: Callable[..., Any]) -> JobDefinition:
-    ...
+def job(compose_fn: Callable[..., Any]) -> JobDefinition: ...
 
 
 @overload
@@ -134,8 +133,7 @@ def job(
     version_strategy: Optional[VersionStrategy] = ...,
     partitions_def: Optional["PartitionsDefinition"] = ...,
     input_values: Optional[Mapping[str, object]] = ...,
-) -> _Job:
-    ...
+) -> _Job: ...
 
 
 @deprecated_param(

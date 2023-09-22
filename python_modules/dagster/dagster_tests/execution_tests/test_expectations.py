@@ -8,6 +8,7 @@ from dagster import (
     GraphDefinition,
     op,
 )
+from dagster._annotations import get_deprecated_info, is_deprecated
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.execution_result import ExecutionResult
 
@@ -85,3 +86,11 @@ def test_return_expectation_failure():
         ),
     ):
         job_def.execute_in_process()
+
+
+def test_expectation_result_deprecated() -> None:
+    assert is_deprecated(ExpectationResult)
+    assert (
+        get_deprecated_info(ExpectationResult).additional_warn_text
+        == "Please use AssetCheckResult and @asset_check instead."
+    )

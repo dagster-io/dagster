@@ -585,7 +585,7 @@ class AssetLayer(NamedTuple):
         return len(self.assets_defs_by_key) > 0
 
     @property
-    def hash_asset_check_defs(self) -> bool:
+    def has_asset_check_defs(self) -> bool:
         return len(self.asset_checks_defs_by_node_handle) > 0
 
     def has_assets_def_for_asset(self, asset_key: AssetKey) -> bool:
@@ -785,16 +785,13 @@ def build_asset_selection_job(
     tags: Optional[Mapping[str, Any]] = None,
     metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     asset_selection: Optional[AbstractSet[AssetKey]] = None,
+    asset_check_selection: Optional[AbstractSet[AssetCheckHandle]] = None,
     asset_selection_data: Optional[AssetSelectionData] = None,
     hooks: Optional[AbstractSet[HookDefinition]] = None,
 ) -> "JobDefinition":
     from dagster._core.definitions.assets_job import (
         build_assets_job,
         build_source_asset_observation_job,
-    )
-
-    asset_check_selection = (
-        asset_selection_data.asset_check_selection if asset_selection_data else None
     )
 
     if asset_selection is None and asset_check_selection is None:

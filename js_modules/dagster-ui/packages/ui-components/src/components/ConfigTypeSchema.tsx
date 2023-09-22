@@ -17,12 +17,32 @@ interface ConfigTypeSchemaProps {
   maxDepth?: number;
 }
 
-function renderTypeRecursive(
+// Either type is guaranteed not to be undefined or if its possibly undefined
+// then pass in the type name. This is a union to avoid called of ConfigEditorHelp from needing to pass a type name
+// which doens't make sense at the root
+type renderTypeRecursiveType = ((
   type: TypeData,
   typeLookup: {[typeName: string]: TypeData},
   depth: number,
   props: ConfigTypeSchemaProps,
-): React.ReactElement<HTMLElement> {
+  typeName?: string,
+) => React.ReactElement<HTMLElement>) &
+  ((
+    type: TypeData | undefined,
+    typeLookup: {[typeName: string]: TypeData},
+    depth: number,
+    props: ConfigTypeSchemaProps,
+    typeName: string,
+  ) => React.ReactElement<HTMLElement>);
+
+const renderTypeRecursive: renderTypeRecursiveType = (type, typeLookup, depth, props, typeName) => {
+  if (!type) {
+    return (
+      <span style={{color: Colors.Red500, opacity: 0.6}}>
+        type &quot;{typeName}&quot; not found
+      </span>
+    );
+  }
   if (type.__typename === 'CompositeConfigType' && props.maxDepth && depth === props.maxDepth) {
     return <span>...</span>;
   }
@@ -67,10 +87,11 @@ function renderTypeRecursive(
               {!fieldData.isRequired && Optional}
               {`: `}
               {renderTypeRecursive(
-                typeLookup[fieldData.configTypeKey]!,
+                typeLookup[fieldData.configTypeKey],
                 typeLookup,
                 depth + 1,
                 props,
+                fieldData.configTypeKey,
               )}
             </DictEntry>
           );
@@ -82,7 +103,7 @@ function renderTypeRecursive(
 
   if (type.__typename === 'ArrayConfigType') {
     const ofTypeKey = type.typeParamKeys[0]!;
-    return <>[{renderTypeRecursive(typeLookup[ofTypeKey]!, typeLookup, depth, props)}]</>;
+    return <>[{renderTypeRecursive(typeLookup[ofTypeKey], typeLookup, depth, props, ofTypeKey)}]</>;
   }
 
   if (type.__typename === 'MapConfigType') {
@@ -98,8 +119,15 @@ function renderTypeRecursive(
         {`{`}
         <DictEntry>
           {innerIndent}[{type.keyLabelName ? `${type.keyLabelName}: ` : null}
-          {renderTypeRecursive(typeLookup[keyTypeKey]!, typeLookup, depth + 1, props)}]{`: `}
-          {renderTypeRecursive(typeLookup[valueTypeKey]!, typeLookup, depth + 1, props)}
+          {renderTypeRecursive(typeLookup[keyTypeKey], typeLookup, depth + 1, props, keyTypeKey)}]
+          {`: `}
+          {renderTypeRecursive(
+            typeLookup[valueTypeKey],
+            typeLookup,
+            depth + 1,
+            props,
+            valueTypeKey,
+          )}
         </DictEntry>
         {'  '.repeat(depth) + '}'}
       </>
@@ -110,7 +138,7 @@ function renderTypeRecursive(
     const ofTypeKey = type.typeParamKeys[0]!;
     return (
       <>
-        {renderTypeRecursive(typeLookup[ofTypeKey]!, typeLookup, depth, props)}
+        {renderTypeRecursive(typeLookup[ofTypeKey], typeLookup, depth, props, ofTypeKey)}
         {Optional}
       </>
     );
@@ -118,16 +146,18 @@ function renderTypeRecursive(
 
   if (type.__typename === 'ScalarUnionConfigType') {
     const nonScalarTypeMarkup = renderTypeRecursive(
-      typeLookup[type.nonScalarTypeKey]!,
+      typeLookup[type.nonScalarTypeKey],
       typeLookup,
       depth,
       props,
+      type.nonScalarTypeKey,
     );
     const scalarTypeMarkup = renderTypeRecursive(
-      typeLookup[type.scalarTypeKey]!,
+      typeLookup[type.scalarTypeKey],
       typeLookup,
       depth,
       props,
+      type.scalarTypeKey,
     );
 
     return (
@@ -138,7 +168,7 @@ function renderTypeRecursive(
   }
 
   return <span>{type.givenName}</span>;
-}
+};
 
 export const tryPrettyPrintJSON = (jsonString: string) => {
   try {
@@ -276,9 +306,8 @@ const DictEntry = React.forwardRef(
     props: React.ComponentProps<typeof DictEntryDiv>,
     ref: React.ForwardedRef<HTMLButtonElement>,
   ) => {
-    const {hovered, onMouseEnter, onMouseLeave} = React.useContext(
-      HoveredDictEntryContext,
-    ).useDictEntryHover();
+    const {hovered, onMouseEnter, onMouseLeave} =
+      React.useContext(HoveredDictEntryContext).useDictEntryHover();
 
     return (
       <DictEntryDiv2>

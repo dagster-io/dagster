@@ -404,7 +404,7 @@ class PlanExecutionContext(IPlanContext):
             if range_start != range_end:
                 raise DagsterInvariantViolationError(
                     "Cannot access partition_key for a partitioned run with a range of partitions."
-                    " Call asset_partition_key_range instead."
+                    " Call partition_key_range instead."
                 )
             else:
                 if isinstance(self.partitions_def, MultiPartitionsDefinition):

@@ -21,20 +21,16 @@ class ExtClient(ABC):
         *,
         context: OpExecutionContext,
         extras: Optional[ExtExtras] = None,
-        message_reader: Optional["ExtMessageReader"] = None,
-    ) -> None:
-        ...
+    ) -> None: ...
 
 
 class ExtContextInjector(ABC):
     @abstractmethod
     @contextmanager
-    def inject_context(self, context_data: "ExtContextData") -> Iterator[ExtParams]:
-        ...
+    def inject_context(self, context_data: "ExtContextData") -> Iterator[ExtParams]: ...
 
 
 class ExtMessageReader(ABC):
     @abstractmethod
     @contextmanager
-    def read_messages(self, handler: "ExtMessageHandler") -> Iterator[ExtParams]:
-        ...
+    def read_messages(self, handler: "ExtMessageHandler") -> Iterator[ExtParams]: ...

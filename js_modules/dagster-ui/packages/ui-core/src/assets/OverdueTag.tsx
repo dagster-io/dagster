@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Tooltip, Tag, Popover, Box, Colors} from '@dagster-io/ui-components';
+import {Tooltip, Tag, Popover, Box} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -133,12 +133,8 @@ const OverdueLineagePopoverContent: React.FC<{
 
   const hasUpstreams = data.assetMaterializationUsedData.length > 0;
   const {currentLagMinutes, currentMinutesLate} = data.freshnessInfo;
-  const {
-    lastEvaluationTimestamp,
-    cronSchedule,
-    cronScheduleTimezone,
-    maximumLagMinutes,
-  } = data.freshnessPolicy;
+  const {lastEvaluationTimestamp, cronSchedule, cronScheduleTimezone, maximumLagMinutes} =
+    data.freshnessPolicy;
   const maxLagMinutesStr = humanizedMinutesLateString(maximumLagMinutes);
   const lagMinutesStr = humanizedMinutesLateString(currentLagMinutes || 0);
   const derivedStr = hasUpstreams ? ` is derived from source data that` : '';
@@ -153,7 +149,7 @@ const OverdueLineagePopoverContent: React.FC<{
 
   return (
     <Box style={{width: 600}}>
-      <Box padding={12} border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}>
+      <Box padding={12} border="bottom">
         {currentMinutesLate === 0 // fresh
           ? cronSchedule
             ? `The latest materialization contains all data up to ${maxLagMinutesStr} before ${lastEvaluationStr}. `
@@ -185,18 +181,10 @@ const OverdueLineagePopoverContent: React.FC<{
         </>
       ) : (
         <>
-          <Box
-            padding={12}
-            style={{fontWeight: 600}}
-            border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-          >
+          <Box padding={12} style={{fontWeight: 600}} border="bottom">
             Latest materialization:
           </Box>
-          <Box
-            padding={12}
-            flex={{justifyContent: 'space-between'}}
-            border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-          >
+          <Box padding={12} flex={{justifyContent: 'space-between'}} border="bottom">
             <Timestamp timestamp={{ms: Number(timestamp)}} />
             <TimeSinceWithOverdueColor
               timestamp={Number(timestamp)}

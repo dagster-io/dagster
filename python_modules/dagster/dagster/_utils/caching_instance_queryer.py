@@ -835,6 +835,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         asset_partition: AssetKeyPartitionKey,
         parent_asset_partitions: AbstractSet[AssetKeyPartitionKey],
         respect_materialization_data_versions: bool,
+        ignored_parent_keys: AbstractSet[AssetKey],
     ) -> AbstractSet[AssetKeyPartitionKey]:
         parent_asset_partitions_by_key: Dict[AssetKey, Set[AssetKeyPartitionKey]] = defaultdict(set)
         for parent in parent_asset_partitions:
@@ -844,6 +845,10 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         updated_parents = set()
 
         for parent_key, parent_asset_partitions in parent_asset_partitions_by_key.items():
+            # ignore updates to particular parents
+            if parent_key in ignored_parent_keys:
+                continue
+
             # ignore non-observable source parents
             if self.asset_graph.is_source(parent_key) and not self.asset_graph.is_observable(
                 parent_key
@@ -911,7 +916,12 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             ).parent_partitions
 
             for parent in parent_asset_partitions:
-                if parent not in visited and parent not in self._root_unreconciled_ancestors_cache:
+                if (
+                    parent not in visited
+                    and parent not in self._root_unreconciled_ancestors_cache
+                    # do not evaluate self-dependency asset partitions
+                    and parent.asset_key != current_partition.asset_key
+                ):
                     queue.append(parent)
 
         # Toposort them so that at each iteration we can count on the cache being full for
@@ -935,6 +945,8 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                         asset_partition=current_partition,
                         parent_asset_partitions=parent_asset_partitions,
                         respect_materialization_data_versions=self._respect_materialization_data_versions,
+                        # ignore self-dependency asset partitions
+                        ignored_parent_keys={current_partition.asset_key},
                     )
                 )
 
@@ -944,7 +956,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
 
                 for parent in set(parent_asset_partitions) - updated_parents:
                     root_unreconciled_ancestors.update(
-                        self._root_unreconciled_ancestors_cache[parent]
+                        self._root_unreconciled_ancestors_cache.get(parent, set())
                     )
 
                 self._root_unreconciled_ancestors_cache[current_partition] = (

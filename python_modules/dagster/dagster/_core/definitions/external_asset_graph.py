@@ -272,7 +272,11 @@ class ExternalAssetGraph(AssetGraph):
             for job_name, external_partitions_def in partitions_def_by_job_name.items():
                 if not job_name.startswith(ASSET_BASE_JOB_PREFIX):
                     continue
-                if external_partitions_def == target_partitions_def and all(
+                if (
+                    # unpartitioned observable source assets may be materialized in any job
+                    target_partitions_def is None
+                    or external_partitions_def == target_partitions_def
+                ) and all(
                     asset_key in self._asset_keys_by_job_name[job_name] for asset_key in asset_keys
                 ):
                     return job_name

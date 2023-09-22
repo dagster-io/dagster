@@ -95,10 +95,7 @@ def _module_in_package_dir(file_path: str, package_dir: str) -> str:
     abs_package_dir = os.path.abspath(package_dir)
     check.invariant(
         os.path.commonprefix([abs_path, abs_package_dir]) == abs_package_dir,
-        "File {abs_path} is not underneath package dir {abs_package_dir}".format(
-            abs_path=abs_path,
-            abs_package_dir=abs_package_dir,
-        ),
+        f"File {abs_path} is not underneath package dir {abs_package_dir}",
     )
 
     relative_path = os.path.relpath(abs_path, abs_package_dir)

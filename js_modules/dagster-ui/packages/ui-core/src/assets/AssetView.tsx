@@ -1,13 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {
-  Alert,
-  Box,
-  Colors,
-  NonIdealState,
-  Spinner,
-  Tag,
-  ErrorBoundary,
-} from '@dagster-io/ui-components';
+import {Alert, Box, NonIdealState, Spinner, Tag, ErrorBoundary} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link, useLocation} from 'react-router-dom';
 
@@ -67,14 +59,12 @@ export const AssetView = ({assetKey}: Props) => {
   const {tabBuilder, renderFeatureView} = React.useContext(AssetFeatureContext);
 
   // Load the asset definition
-  const {definition, definitionQueryResult, lastMaterialization} = useAssetViewAssetDefinition(
-    assetKey,
+  const {definition, definitionQueryResult, lastMaterialization} =
+    useAssetViewAssetDefinition(assetKey);
+  const tabList = React.useMemo(
+    () => tabBuilder({definition, params}),
+    [definition, params, tabBuilder],
   );
-  const tabList = React.useMemo(() => tabBuilder({definition, params}), [
-    definition,
-    params,
-    tabBuilder,
-  ]);
 
   const defaultTab = tabList.some((t) => t.id === 'partitions') ? 'partitions' : 'events';
   const selectedTab = params.view || defaultTab;
@@ -440,10 +430,7 @@ const HistoricalViewAlert = ({asOf, hasDefinition}: {asOf: string; hasDefinition
   searchParams.set('time', asOf);
 
   return (
-    <Box
-      padding={{vertical: 16, horizontal: 24}}
-      border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-    >
+    <Box padding={{vertical: 16, horizontal: 24}} border="bottom">
       <Alert
         intent="info"
         title={

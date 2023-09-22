@@ -1,8 +1,9 @@
 from dataclasses import dataclass
-from typing import Any, Mapping, Optional, get_args
+from typing import Any, Mapping, Optional
 
 from dagster_ext import (
     DAGSTER_EXT_ENV_KEYS,
+    EXT_METADATA_TYPE_INFER,
     IS_DAGSTER_EXT_PROCESS_ENV_VAR,
     ExtContextData,
     ExtDataProvenance,
@@ -28,30 +29,8 @@ class ExtMessageHandler:
     def __init__(self, context: OpExecutionContext) -> None:
         self._context = context
 
-    # Type ignores because we currently validate in individual handlers
-    def handle_message(self, message: ExtMessage) -> None:
-        if message["method"] == "report_asset_metadata":
-            self._handle_report_asset_metadata(**message["params"])  # type: ignore
-        elif message["method"] == "report_asset_data_version":
-            self._handle_report_asset_data_version(**message["params"])  # type: ignore
-        elif message["method"] == "log":
-            self._handle_log(**message["params"])  # type: ignore
-
-    def _handle_report_asset_metadata(
-        self, asset_key: str, label: str, value: Any, type: ExtMetadataType  # noqa: A002
-    ) -> None:
-        check.str_param(asset_key, "asset_key")
-        check.str_param(label, "label")
-        check.opt_literal_param(type, "type", get_args(ExtMetadataType))
-        key = AssetKey.from_user_string(asset_key)
-        output_name = self._context.output_for_asset_key(key)
-        metadata_value = self._resolve_metadata_value(value, type)
-        self._context.add_output_metadata({label: metadata_value}, output_name)
-
-    def _resolve_metadata_value(
-        self, value: Any, metadata_type: Optional[ExtMetadataType]
-    ) -> MetadataValue:
-        if metadata_type is None:
+    def _resolve_metadata_value(self, value: Any, metadata_type: ExtMetadataType) -> MetadataValue:
+        if metadata_type == EXT_METADATA_TYPE_INFER:
             return normalize_metadata_value(value)
         elif metadata_type == "text":
             return MetadataValue.text(value)
@@ -82,11 +61,28 @@ class ExtMessageHandler:
         else:
             check.failed(f"Unexpected metadata type {metadata_type}")
 
-    def _handle_report_asset_data_version(self, asset_key: str, data_version: str) -> None:
+    # Type ignores because we currently validate in individual handlers
+    def handle_message(self, message: ExtMessage) -> None:
+        if message["method"] == "report_asset_materialization":
+            self._handle_report_asset_materialization(**message["params"])  # type: ignore
+        elif message["method"] == "log":
+            self._handle_log(**message["params"])  # type: ignore
+
+    def _handle_report_asset_materialization(
+        self, asset_key: str, metadata: Optional[Mapping[str, Any]], data_version: Optional[str]
+    ) -> None:
         check.str_param(asset_key, "asset_key")
-        check.str_param(data_version, "data_version")
-        key = AssetKey.from_user_string(asset_key)
-        self._context.set_data_version(key, DataVersion(data_version))
+        check.opt_str_param(data_version, "data_version")
+        metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
+        resolved_asset_key = AssetKey.from_user_string(asset_key)
+        resolved_metadata = {
+            k: self._resolve_metadata_value(v["raw_value"], v["type"]) for k, v in metadata.items()
+        }
+        if data_version is not None:
+            self._context.set_data_version(resolved_asset_key, DataVersion(data_version))
+        if resolved_metadata:
+            output_name = self._context.output_for_asset_key(resolved_asset_key)
+            self._context.add_output_metadata(resolved_metadata, output_name)
 
     def _handle_log(self, message: str, level: str = "info") -> None:
         check.str_param(message, "message")

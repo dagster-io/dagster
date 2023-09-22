@@ -48,9 +48,7 @@ class _TypedPythonSet(DagsterType):
         if not isinstance(value, set):
             return TypeCheck(
                 success=False,
-                description="Value should be a set, got a{value_type}".format(
-                    value_type=type(value)
-                ),
+                description=f"Value should be a set, got a{type(value)}",
             )
 
         for item in value:

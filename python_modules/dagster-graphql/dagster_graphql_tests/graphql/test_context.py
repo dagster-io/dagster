@@ -64,7 +64,7 @@ def test_reload_on_process_context():
 
             # Save the repository name
             code_location = request_context.code_locations[0]
-            repo = list(code_location.get_repositories().values())[0]
+            repo = next(iter(code_location.get_repositories().values()))
             repo_name = repo.name
 
             # Reload the location and save the new repository name
@@ -73,7 +73,7 @@ def test_reload_on_process_context():
             new_request_context = process_context.create_request_context()
 
             code_location = new_request_context.code_locations[0]
-            repo = list(code_location.get_repositories().values())[0]
+            repo = next(iter(code_location.get_repositories().values()))
             new_repo_name = repo.name
 
             # Check that the repository has changed
@@ -90,7 +90,7 @@ def test_reload_on_request_context():
 
             # Save the repository name
             code_location = request_context.code_locations[0]
-            repo = list(code_location.get_repositories().values())[0]
+            repo = next(iter(code_location.get_repositories().values()))
             repo_name = repo.name
 
             # Reload the location and save the new repository name
@@ -98,7 +98,7 @@ def test_reload_on_request_context():
 
             new_request_context = process_context.create_request_context()
             code_location = new_request_context.code_locations[0]
-            repo = list(code_location.get_repositories().values())[0]
+            repo = next(iter(code_location.get_repositories().values()))
             new_repo_name = repo.name
 
             # Check that the repository has changed
@@ -107,7 +107,7 @@ def test_reload_on_request_context():
             # Check that the repository name is still the same on the old request context,
             # confirming that the old repository location is still running
             code_location = request_context.code_locations[0]
-            repo = list(code_location.get_repositories().values())[0]
+            repo = next(iter(code_location.get_repositories().values()))
             assert repo_name == repo.name
 
 
@@ -123,14 +123,14 @@ def test_reload_on_request_context_2():
 
             # Save the repository name
             code_location = request_context.code_locations[0]
-            repo = list(code_location.get_repositories().values())[0]
+            repo = next(iter(code_location.get_repositories().values()))
             repo_name = repo.name
 
             # Reload the location from the request context
             new_request_context = request_context.reload_code_location(code_location.name)
 
             code_location = new_request_context.code_locations[0]
-            repo = list(code_location.get_repositories().values())[0]
+            repo = next(iter(code_location.get_repositories().values()))
             new_repo_name = repo.name
 
             # Check that the repository has changed
@@ -139,7 +139,7 @@ def test_reload_on_request_context_2():
             # Check that the repository name is still the same on the old request context,
             # confirming that the old repository location is still running
             code_location = request_context.code_locations[0]
-            repo = list(code_location.get_repositories().values())[0]
+            repo = next(iter(code_location.get_repositories().values()))
             assert repo_name == repo.name
 
 
