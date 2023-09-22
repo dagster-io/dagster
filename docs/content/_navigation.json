@@ -165,7 +165,7 @@
         "title": "Dagster UI",
         "path": "/concepts/webserver/ui"
       },
-            {
+      {
         "title": "Logging",
         "children": [
           {
