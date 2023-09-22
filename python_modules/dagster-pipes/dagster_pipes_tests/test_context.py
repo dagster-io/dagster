@@ -132,7 +132,7 @@ def test_multi_asset_context():
 def test_no_partition_context():
     context = _make_external_execution_context()
 
-    assert not context.is_partition_step
+    assert not context.is_partitioned
     _assert_undefined(context, "partition_key")
     _assert_undefined(context, "partition_key_range")
     _assert_undefined(context, "partition_time_window")
@@ -147,7 +147,7 @@ def test_single_partition_context():
         partition_time_window=None,
     )
 
-    assert context.is_partition_step
+    assert context.is_partitioned
     assert context.partition_key == "foo"
     assert context.partition_key_range == partition_key_range
     assert context.partition_time_window is None
@@ -163,7 +163,7 @@ def test_multiple_partition_context():
         partition_time_window=time_window,
     )
 
-    assert context.is_partition_step
+    assert context.is_partitioned
     _assert_undefined(context, "partition_key")
     assert context.partition_key_range == partition_key_range
     assert context.partition_time_window == time_window
