@@ -28,9 +28,9 @@ Let’s go back to our cookie example and take a look at what different situatio
 
   Let’s go back to our cookie example and take a look at what different situations might look like for both a task-centric and asset-centric approach.
 
-- 1.  Figure out where in the workflow cookie dough is created
-  2.  Add a fork to add in peanuts
-  3.  Remake cookies from start to finish
+- 1. Figure out where in the workflow cookie dough is created
+  2. Add a fork to add in peanuts
+  3. Remake cookies from start to finish
 
 - 1. Add two new assets: peanuts and peanut cookie dough
   2. Add peanuts to cookie dough
@@ -62,6 +62,7 @@ With a task-centric approach, it may not be immediately obvious how and when ass
 - 1. Figure out where in the workflow cookie dough is created
   2. Add a fork to add in peanuts
   3. Remake cookies from start to finish
+
 - 1. Add two new assets: peanuts and peanut cookie dough
   2. Add peanuts to cookie dough
   3. Result is peanut cookie dough
@@ -89,12 +90,13 @@ With a task-centric approach, more changes may be required to create additional 
 
   In the real world, think of this as producing assets that use the most up-to-date data.
 
-- 1.  Add a step that checks the date on the eggs after gathering the ingredients
-  2.  Start the process
-  3.  If expired, fail and re-start the process
-- 1.  Check the last updated time for the individual egg asset in the wet ingredients
-  2.  Start the process
-  3.  If expired, refresh the eggs before proceeding
+- 1. Add a step that checks the date on the eggs after gathering the ingredients
+  2. Start the process
+  3. If expired, fail and re-start the process
+
+- 1. Check the last updated time for the individual egg asset in the wet ingredients
+  2. Start the process
+  3. If expired, refresh the eggs before proceeding
 
 {% /table %}
 

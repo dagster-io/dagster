@@ -19,8 +19,10 @@ To practice what you’ve learned, create an asset in `metrics.py` that:
     - `trip_distance` - The total miles driven in all trips that happened that week
 
 {% callout %}
+
 > 💡 **Extra credit!** If want a challenge, follow this constraint:
 > Imagine that the entire `trips` data is too big to fit into memory. However, a week’s worth of data fits comfortably. How would you structure your asset’s function to accommodate this?
+
 {% /callout %}
 
 ---
@@ -49,7 +51,7 @@ period,num_trips,total_amount,trip_distance,passenger_count
 
 The asset you built should look similar to the following code. Click **View answer** to view it.
 
-Note that the solution below is one of many possible ways to solve this challenge. Your way can be completely valid and more performant than this one! 
+Note that the solution below is one of many possible ways to solve this challenge. Your way can be completely valid and more performant than this one!
 
 We’ll assume your code looks like the following for the rest of the module. Despite not being the highest quality code, it’s flexible enough for us to extend in a later section.
 

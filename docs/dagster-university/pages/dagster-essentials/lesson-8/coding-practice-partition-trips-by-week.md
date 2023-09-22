@@ -69,7 +69,7 @@ def trips_by_week(context, database: DuckDBResource):
         aggregate.to_csv(constants.TRIPS_BY_WEEK_FILE_PATH, index=False)
 ```
 
-### In jobs/__init__.py:
+### In `jobs/__init__.py`:
 
 ```python {% obfuscated="true" %}
 # jobs/__init__.py
