@@ -2594,6 +2594,17 @@ class SqlEventLogStorage(EventLogStorage):
                 f" {rows_updated}."
             )
 
+    def _get_wipe_timestamp(self, asset_key: AssetKey) -> Optional[float]:
+        query = self._apply_asset_filter_to_query(
+            db_select([AssetKeyTable.c.asset_details]), asset_keys=[asset_key]
+        )
+        with self.index_connection() as conn:
+            rows = db_fetch_mappings(conn, query)
+        if not rows:
+            return None
+        asset_details = AssetDetails.from_db_string(rows[0]["asset_details"])
+        return asset_details.last_wipe_timestamp if asset_details else None
+
     def get_asset_check_executions(
         self,
         asset_key: AssetKey,
@@ -2603,6 +2614,8 @@ class SqlEventLogStorage(EventLogStorage):
         materialization_event_storage_id: Optional[int] = None,
         include_planned: bool = True,
     ) -> Sequence[AssetCheckExecutionRecord]:
+        last_wipe_timestamp = self._get_wipe_timestamp(asset_key)
+
         query = (
             db_select(
                 [
@@ -2649,7 +2662,7 @@ class SqlEventLogStorage(EventLogStorage):
         with self.index_connection() as conn:
             rows = conn.execute(query).fetchall()
 
-        return [
+        records = [
             AssetCheckExecutionRecord(
                 id=cast(int, row[0]),
                 run_id=cast(str, row[1]),
@@ -2659,6 +2672,18 @@ class SqlEventLogStorage(EventLogStorage):
             )
             for row in rows
         ]
+
+        # filter to only include records created after the last wipe timestamp. It's ok to do this filtering
+        # here because records are already sorted by timestamp. In order to do this filtering in the query,
+        # will need a timestamp column or to sort out datetime timezone issues.
+        if last_wipe_timestamp is not None:
+            return [
+                record
+                for record in records
+                if record.event is None or record.event.timestamp > last_wipe_timestamp
+            ]
+
+        return records
 
     @property
     def supports_asset_checks(self):

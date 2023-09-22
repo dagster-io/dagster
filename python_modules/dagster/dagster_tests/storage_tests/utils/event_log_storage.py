@@ -4086,6 +4086,76 @@ class TestEventLogStorage:
         )
         assert len(checks) == 1
 
+    def test_asset_checks_wipe(self, storage):
+        if self.can_wipe():
+            storage.wipe()
+
+        storage.store_event(
+            EventLogEntry(
+                error_info=None,
+                user_message="",
+                level="debug",
+                run_id="foo",
+                timestamp=time.time(),
+                dagster_event=DagsterEvent(
+                    DagsterEventType.ASSET_MATERIALIZATION.value,
+                    "nonce",
+                    event_specific_data=StepMaterializationData(
+                        materialization=AssetMaterialization(asset_key=AssetKey(["my_asset"]))
+                    ),
+                ),
+            )
+        )
+
+        storage.store_event(
+            EventLogEntry(
+                error_info=None,
+                user_message="",
+                level="debug",
+                run_id="foo",
+                timestamp=time.time(),
+                dagster_event=DagsterEvent(
+                    DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED.value,
+                    "nonce",
+                    event_specific_data=AssetCheckEvaluationPlanned(
+                        asset_key=AssetKey(["my_asset"]), check_name="my_check"
+                    ),
+                ),
+            )
+        )
+
+        checks = storage.get_asset_check_executions(AssetKey(["my_asset"]), "my_check", limit=10)
+        assert len(checks) == 1
+
+        storage.wipe_asset(AssetKey(["my_asset"]))
+
+        time.sleep(0.1)
+
+        checks = storage.get_asset_check_executions(AssetKey(["my_asset"]), "my_check", limit=10)
+        assert len(checks) == 0
+
+        time.sleep(0.1)
+
+        storage.store_event(
+            EventLogEntry(
+                error_info=None,
+                user_message="",
+                level="debug",
+                run_id="foo",
+                timestamp=time.time(),
+                dagster_event=DagsterEvent(
+                    DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED.value,
+                    "nonce",
+                    event_specific_data=AssetCheckEvaluationPlanned(
+                        asset_key=AssetKey(["my_asset"]), check_name="my_check"
+                    ),
+                ),
+            )
+        )
+
+        checks = storage.get_asset_check_executions(AssetKey(["my_asset"]), "my_check", limit=10)
+        assert len(checks) == 1
+
     def test_external_asset_event(self, storage):
         key = AssetKey("test_asset")
         log_entry = EventLogEntry(
