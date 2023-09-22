@@ -27,7 +27,7 @@ Logging handlers are automatically invoked whenever [ops](/concepts/ops-jobs-gra
 
 By default, Dagster comes with a built-in logger that tracks all execution events. Built-in loggers are defined internally using the <PyObject object="LoggerDefinition" /> class. The <PyObject object="logger" decorator /> decorator exposes a simpler API for the common logging use case, which is typically what should be used to define your own loggers.
 
-The decorated function should take a single argument, the `init_context` available during logger initialization, and return a `logging.Logger`. Refer to the [Customizing loggers](#customizing-loggers) section for an example.
+The decorated function should take a single argument, the `init_context` available during logger initialization, and return a `logging.Logger`. Refer to the [Customizing loggers guide](/concepts/logging/custom-loggers) for an example.
 
 ---
 
