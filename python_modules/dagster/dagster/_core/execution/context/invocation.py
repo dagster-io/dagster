@@ -67,7 +67,7 @@ def _property_msg(prop_name: str, method_name: str) -> str:
     )
 
 
-class BoundExecutionContext(ABC):
+class BoundExecutionContext(OpExecutionContext):
     @property
     @abstractmethod
     def alias(self) -> str:
@@ -428,7 +428,7 @@ def _validate_resource_requirements(
                 ensure_requirements_satisfied(resource_defs, [requirement])
 
 
-class BoundOpExecutionContext(OpExecutionContext, BoundExecutionContext):
+class BoundOpExecutionContext(BoundExecutionContext):
     """The op execution context that is passed to the compute function during invocation.
 
     This context is bound to a specific op definition, for which the resources and config have

@@ -30,9 +30,7 @@ from .output import DynamicOutputDefinition
 
 if TYPE_CHECKING:
     from ..execution.context.invocation import (
-        BoundAssetExecutionContext,
         BoundExecutionContext,
-        BoundOpExecutionContext,
     )
     from .assets import AssetsDefinition
     from .composition import PendingNodeInvocation
@@ -447,7 +445,7 @@ def _type_check_output_wrapper(
 def _type_check_function_output(
     op_def: "OpDefinition",
     result: T,
-    context: Union["BoundOpExecutionContext", "BoundAssetExecutionContext"],
+    context: "BoundExecutionContext",
 ) -> T:
     from ..execution.plan.compute_generator import validate_and_coerce_op_result_to_iterator
 
@@ -460,7 +458,7 @@ def _type_check_function_output(
 def _type_check_output(
     output_def: "OutputDefinition",
     output: T,
-    context: Union["BoundOpExecutionContext", "BoundAssetExecutionContext"],
+    context: "BoundExecutionContext",
 ) -> T:
     """Validates and performs core type check on a provided output.
 
