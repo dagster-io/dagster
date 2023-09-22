@@ -1323,7 +1323,10 @@ def _make_asset_deps(deps: Optional[Iterable[CoercibleToAssetDep]]) -> Optional[
             # we cannot do deduplication via a set because MultiPartitionMappings have an internal
             # dictionary that cannot be hashed. Instead deduplicate by making a dictionary and checking
             # for existing keys.
-            if asset_dep.asset_key in dep_dict.keys():
+            if (
+                asset_dep.asset_key in dep_dict.keys()
+                and asset_dep != dep_dict[asset_dep.asset_key]
+            ):
                 raise DagsterInvariantViolationError(
                     f"Cannot set a dependency on asset {asset_dep.asset_key} more than once per"
                     " asset."
