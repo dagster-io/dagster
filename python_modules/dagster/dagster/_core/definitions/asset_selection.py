@@ -71,10 +71,10 @@ class AssetSelection(ABC):
             AssetSelection.groups("marketing") - AssetSelection.all_asset_checks()
 
             # Select all asset checks that target a list of assets:
-            AssetSelection.asset_checks_for_assets(*my_assets_list)
+            AssetSelection.checks_for_assets(*my_assets_list)
 
             # Select a specific asset check:
-            AssetSelection.asset_checks(my_asset_check)
+            AssetSelection.checks(my_asset_check)
 
     """
 
@@ -157,6 +157,26 @@ class AssetSelection(ABC):
         """
         check.tuple_param(group_strs, "group_strs", of_type=str)
         return GroupsAssetSelection(*group_strs, include_sources=include_sources)
+
+    @public
+    @staticmethod
+    def checks_for_assets(*assets_defs: AssetsDefinition) -> "AssetChecksForAssetKeys":
+        """Returns a selection with the asset checks that target the provided assets."""
+        return AssetChecksForAssetKeys(
+            [key for assets_def in assets_defs for key in assets_def.keys]
+        )
+
+    @public
+    @staticmethod
+    def checks(*asset_checks: AssetChecksDefinition) -> "AssetChecksForHandles":
+        """Returns a selection that includes all of the provided asset checks."""
+        return AssetChecksForHandles(
+            [
+                AssetCheckHandle(asset_key=AssetKey.from_coercible(spec.asset_key), name=spec.name)
+                for checks_def in asset_checks
+                for spec in checks_def.specs
+            ]
+        )
 
     @public
     def downstream(
@@ -255,24 +275,9 @@ class AssetSelection(ABC):
         return SourceAssetSelection(self)
 
     @public
-    @staticmethod
-    def asset_checks_for_assets(*assets_defs: AssetsDefinition) -> "AssetChecksForAssetKeys":
-        """Returns a selection with the asset checks that target the provided assets."""
-        return AssetChecksForAssetKeys(
-            [key for assets_def in assets_defs for key in assets_def.keys]
-        )
-
-    @public
-    @staticmethod
-    def asset_checks(*asset_checks: AssetChecksDefinition) -> "AssetChecksForHandles":
-        """Returns a selection that includes all of the provided asset checks."""
-        return AssetChecksForHandles(
-            [
-                AssetCheckHandle(asset_key=AssetKey.from_coercible(spec.asset_key), name=spec.name)
-                for checks_def in asset_checks
-                for spec in checks_def.specs
-            ]
-        )
+    def without_checks(self) -> "AssetSelection":
+        """Removes all asset checks in the selection."""
+        return self - AssetSelection.all_asset_checks()
 
     def __or__(self, other: "AssetSelection") -> "OrAssetSelection":
         check.inst_param(other, "other", AssetSelection)
