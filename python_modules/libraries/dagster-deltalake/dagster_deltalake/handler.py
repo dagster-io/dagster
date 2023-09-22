@@ -1,7 +1,8 @@
 from abc import abstractmethod
-from typing import Generic, List, Optional, Sequence, Type, TypeVar, Union, cast
+from typing import Generic, Iterable, List, Optional, Sequence, Type, TypeVar, Union, cast
 
 import pyarrow as pa
+import pyarrow.compute as pc
 from dagster import (
     InputContext,
     MetadataValue,
@@ -23,11 +24,12 @@ from deltalake.writer import write_deltalake
 from .io_manager import DELTA_DATE_FORMAT, DELTA_DATETIME_FORMAT, TableConnection
 
 T = TypeVar("T")
+ArrowTypes = Union[pa.Table, pa.RecordBatchReader]
 
 
 class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
     @abstractmethod
-    def from_arrow(self, obj: pa.RecordBatchReader, target_type: Type) -> T:
+    def from_arrow(self, obj: pa.RecordBatchReader, target_type: type) -> T:
         pass
 
     @abstractmethod
@@ -41,7 +43,7 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
         obj: T,
         connection: TableConnection,
     ):
-        """Stores PyArrow types in a Delta table."""
+        """Stores pyarrow types in Delta table."""
         reader = self.to_arrow(obj=obj)
         delta_schema = Schema.from_pyarrow(reader.schema)
 
@@ -58,13 +60,17 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
             partition_columns = [dim.partition_expr for dim in table_slice.partition_dimensions]
 
         write_deltalake(
-            connection.table_uri,
-            reader,
+            table_or_uri=connection.table_uri,
+            data=reader,
             storage_options=connection.storage_options,
             mode="overwrite",
             partition_filters=partition_filters,
             partition_by=partition_columns,
         )
+
+        # TODO make stats computation configurable on type handler
+        dt = DeltaTable(connection.table_uri, storage_options=connection.storage_options)
+        _table, stats = _get_partition_stats(dt=dt, partition_filters=partition_filters)
 
         context.add_output_metadata(
             {
@@ -72,18 +78,24 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
                     TableSchema(
                         columns=[
                             TableColumn(name=name, type=str(dtype))
-                            for name, dtype in zip(reader.schema.names, reader.schema.types)
+                            for name, dtype in zip(  # type: ignore pyarrow does not expose types
+                                reader.schema.names, reader.schema.types, strict=True
+                            )
                         ]
                     )
                 ),
                 "table_uri": connection.table_uri,
+                **stats,
             }
         )
 
     def load_input(
-        self, context: InputContext, table_slice: TableSlice, connection: TableConnection
+        self,
+        context: InputContext,
+        table_slice: TableSlice,
+        connection: TableConnection,
     ) -> T:
-        """Loads the input as a PyArrow Table or RecordBatchReader."""
+        """Loads the input as a pyarrow Table or RecordBatchReader."""
         table = DeltaTable(
             table_uri=connection.table_uri, storage_options=connection.storage_options
         )
@@ -91,7 +103,8 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
         partition_expr = None
         if table_slice.partition_dimensions is not None:
             partition_filters = partition_dimensions_to_dnf(
-                partition_dimensions=table_slice.partition_dimensions, table_schema=table.schema()
+                partition_dimensions=table_slice.partition_dimensions,
+                table_schema=table.schema(),
             )
             if partition_filters is not None:
                 partition_expr = _filters_to_expression([partition_filters])
@@ -100,9 +113,6 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
         )
 
         return self.from_arrow(scanner.to_reader(), context.dagster_type.typing_type)
-
-
-ArrowTypes = Union[pa.Table, pa.RecordBatchReader]
 
 
 class DeltaLakePyArrowTypeHandler(DeltalakeBaseArrowTypeHandler[ArrowTypes]):
@@ -122,7 +132,7 @@ class DeltaLakePyArrowTypeHandler(DeltalakeBaseArrowTypeHandler[ArrowTypes]):
 
 
 def partition_dimensions_to_dnf(
-    partition_dimensions: Sequence[TablePartitionDimension],
+    partition_dimensions: Iterable[TablePartitionDimension],
     table_schema: Schema,
     str_values: bool = False,
 ) -> Optional[List[FilterLiteralType]]:
@@ -183,3 +193,17 @@ def _field_from_schema(field_name: str, schema: Schema) -> Optional[DeltaField]:
         if field.name == field_name:
             return field
     return None
+
+
+def _get_partition_stats(dt: DeltaTable, partition_filters=None):
+    files = pa.array(dt.files(partition_filters=partition_filters))
+    files_table = pa.Table.from_arrays([files], names=["path"])
+    actions_table = pa.Table.from_batches([dt.get_add_actions(flatten=True)])
+    table = files_table.join(actions_table, keys="path")
+
+    stats = {
+        "size_bytes": pc.sum(table.column("size_bytes")).as_py(),
+        "num_rows": pc.sum(table.column("num_records")).as_py(),
+    }
+
+    return table, stats

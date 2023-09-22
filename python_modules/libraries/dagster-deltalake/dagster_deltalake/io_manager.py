@@ -43,6 +43,7 @@ class _StorageOptionsConfig(TypedDict, total=False):
     local: Dict[str, str]
     s3: Dict[str, str]
     azure: Dict[str, str]
+    gcs: Dict[str, str]
 
 
 class _DeltaTableIOManagerResourceConfig(TypedDict):
@@ -52,7 +53,7 @@ class _DeltaTableIOManagerResourceConfig(TypedDict):
 
 
 class DeltaLakeIOManager(ConfigurableIOManagerFactory):
-    """Base class for an I/O manager definition that reads inputs from and writes outputs to Delta Lake.
+    """Base class for an IO manager definition that reads inputs from and writes outputs to DuckDB.
 
     Examples:
         .. code-block:: python
@@ -66,14 +67,14 @@ class DeltaLakeIOManager(ConfigurableIOManagerFactory):
                     return [DeltaLakePandasTypeHandler()]
 
             @asset(
-                key_prefix=["my_schema"]  # will be used as the schema (parent folder) in Delta Lake.
+                key_prefix=["my_schema"]  # will be used as the schema (parent folder) in Delta Lake
             )
             def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
                 ...
 
             defs = Definitions(
                 assets=[my_table],
-                resources={"io_manager": MyDeltaLakeIOManager(database="my_db.deltalake")}
+                resources={"io_manager": MyDeltaLakeIOManager()}
             )
 
     If you do not provide a schema, Dagster will determine a schema based on the assets and ops using
@@ -106,11 +107,13 @@ class DeltaLakeIOManager(ConfigurableIOManagerFactory):
     root_uri: str = Field(description="Storage location where Delta tables are stored.")
 
     storage_options: Union[AzureConfig, S3Config, LocalConfig, GcsConfig] = Field(
-        discriminator="provider", description="Configuration for accessing storage location."
+        discriminator="provider",
+        description="Configuration for accessing storage location.",
     )
 
     table_config: Optional[Dict[str, str]] = Field(
-        default=None, description="Additional config and metadata added to table on creation."
+        default=None,
+        description="Additional config and metadata added to table on creation.",
     )
 
     schema_: Optional[str] = Field(
@@ -142,7 +145,7 @@ class DeltaLakeDbClient(DbClient):
     def delete_table_slice(
         context: OutputContext, table_slice: TableSlice, connection: TableConnection
     ) -> None:
-        # deleting the table slice here is a no-op, since we use deltalakes internal mechanism
+        # deleting the table slice here is a no-op, since we use deltalake's internal mechanism
         # to overwrite table partitions.
         pass
 
@@ -155,8 +158,9 @@ class DeltaLakeDbClient(DbClient):
 
     @staticmethod
     def get_select_statement(table_slice: TableSlice) -> str:
-        # The select statement here is just for illustrative purposes, and is never actually executed.
-        # It does however logically correspond the the operation being executed.
+        # The select statement here is just for illustrative purposes,
+        # and is never actually executed. It does however logically correspond
+        # the the operation being executed.
         col_str = ", ".join(table_slice.columns) if table_slice.columns else "*"
 
         if table_slice.partition_dimensions and len(table_slice.partition_dimensions) > 0:
@@ -178,6 +182,8 @@ class DeltaLakeDbClient(DbClient):
             storage_options = storage_options["s3"]
         elif "azure" in storage_options:
             storage_options = storage_options["azure"]
+        elif "gcs" in storage_options:
+            storage_options = storage_options["gcs"]
         else:
             storage_options = {}
 
@@ -185,7 +191,9 @@ class DeltaLakeDbClient(DbClient):
         table_uri = f"{root_uri}/{table_slice.schema}/{table_slice.table}"
 
         conn = TableConnection(
-            table_uri=table_uri, storage_options=storage_options, table_config=table_config
+            table_uri=table_uri,
+            storage_options=storage_options,
+            table_config=table_config,
         )
 
         yield conn
@@ -202,7 +210,9 @@ def _get_cleanup_statement(table_slice: TableSlice) -> str:
         return f"DELETE FROM {table_slice.schema}.{table_slice.table}"
 
 
-def _partition_where_clause(partition_dimensions: Sequence[TablePartitionDimension]) -> str:
+def _partition_where_clause(
+    partition_dimensions: Sequence[TablePartitionDimension],
+) -> str:
     return " AND\n".join(
         (
             _time_window_where_clause(partition_dimension)
