@@ -16,6 +16,7 @@ import {
   Spinner,
   ButtonGroup,
   Tooltip,
+  Suggest,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React from 'react';
@@ -677,61 +678,31 @@ const SearchFilter = <T,>({
   values: {label: string; value: T}[];
   onSelectValue: (e: React.MouseEvent<any>, value: T) => void;
 }) => {
-  const [searchValue, setSearchValue] = React.useState('');
-  const filteredValues = React.useMemo(() => {
-    if (searchValue) {
-      return values.filter(({label}) => label.toLowerCase().includes(searchValue.toLowerCase()));
-    }
-    return values;
-  }, [searchValue, values]);
-
   const {viewport, containerProps} = useViewport();
   return (
-    <Popover
-      placement="bottom-start"
-      targetTagName="div"
-      content={
-        searchValue ? (
-          <Menu
-            style={{
-              width: viewport.width + 'px',
-              borderRadius: '8px',
-              maxHeight: 'min(500px, 50vw)',
-              overflow: 'auto',
-            }}
-          >
-            {filteredValues.length ? (
-              filteredValues.map((value) => (
-                <MenuItem
-                  key={value.label}
-                  onClick={(e) => {
-                    onSelectValue(e, value.value);
-                    setSearchValue('');
-                  }}
-                  text={value.label}
-                />
-              ))
-            ) : (
-              <Box padding={8}>No results</Box>
-            )}
-          </Menu>
-        ) : (
-          <div />
-        )
-      }
-    >
-      <div style={{display: 'grid', gridTemplateColumns: '1fr'}}>
-        <TextInput
-          icon="search"
-          value={searchValue}
-          onChange={(e) => {
-            setSearchValue(e.target.value);
-          }}
-          placeholder="Search assets"
-          {...(containerProps as any)}
-        />
-      </div>
-    </Popover>
+    <div {...containerProps}>
+      <Suggest<(typeof values)[0]>
+        key="asset-graph-explorer-search-bar"
+        inputProps={{placeholder: 'Search', style: {width: viewport.width + 'px'}}}
+        items={values}
+        inputValueRenderer={(item) => item.label}
+        itemPredicate={(query, item) =>
+          item.label.toLocaleLowerCase().includes(query.toLocaleLowerCase())
+        }
+        popoverProps={{targetProps: {style: {width: viewport.width + 'px'}}}}
+        itemRenderer={(item, itemProps) => (
+          <MenuItem
+            active={itemProps.modifiers.active}
+            onClick={(e) => itemProps.handleClick(e)}
+            key={item.label}
+            text={item.label}
+          />
+        )}
+        noResults={<MenuItem disabled={true} text="No results" />}
+        onItemSelect={(item, e) => onSelectValue(e as any, item.value)}
+        selectedItem={null}
+      />
+    </div>
   );
 };
 
