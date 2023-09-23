@@ -83,9 +83,14 @@ def hackernews_topstories_word_cloud(
     # Also, upload the image to S3
     bucket_name = os.environ.get("S3_BUCKET")
     bucket_location = s3.get_client().get_bucket_location(Bucket=bucket_name)["LocationConstraint"]
+    endpoint_url = os.environ.get("AWS_ENDPOINT_URL")
     file_name = "hackernews_topstories_word_cloud.png"
     s3.get_client().upload_fileobj(buffer, bucket_name, file_name)
-    s3_path = f"https://s3.{bucket_location}.amazonaws.com/{bucket_name}/{file_name}"
+    if endpoint_url:
+        s3_path = f"{endpoint_url}/{bucket_name}/{file_name}"
+    else:
+        s3_path = f"https://s3.{bucket_location}.amazonaws.com/{bucket_name}/{file_name}"
+
     context.add_output_metadata(
         {
             # Attach the Markdown content and s3 file path as metadata to the asset
