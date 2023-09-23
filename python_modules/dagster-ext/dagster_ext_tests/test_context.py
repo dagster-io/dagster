@@ -88,6 +88,16 @@ def test_single_asset_context():
     )
 
     _assert_unknown_asset_key(context, "report_asset_materialization", asset_key="fake")
+    context.report_asset_check(
+        "foo_check",
+        True,
+        metadata={
+            "meta_1": 1,
+            "meta_2": {"raw_value": "foo", "type": "text"},
+        },
+    )
+
+    _assert_unknown_asset_key(context, "report_asset_check", "foo_check", True, asset_key="fake")
 
 
 def test_multi_asset_context():
@@ -115,6 +125,8 @@ def test_multi_asset_context():
 
     _assert_undefined_asset_key(context, "report_asset_materialization", "bar")
     _assert_unknown_asset_key(context, "report_asset_materialization", "bar", asset_key="fake")
+    _assert_undefined_asset_key(context, "report_asset_check", "foo_check", True)
+    _assert_unknown_asset_key(context, "report_asset_check", "foo_check", True, asset_key="fake")
 
 
 def test_no_partition_context():

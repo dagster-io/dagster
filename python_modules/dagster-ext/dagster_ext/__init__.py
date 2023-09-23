@@ -106,6 +106,8 @@ class ExtDataProvenance(TypedDict):
     is_user_provided: bool
 
 
+ExtAssetCheckSeverity = Literal["WARN", "ERROR"]
+
 ExtMetadataRawValue = Union[int, float, str, Mapping[str, Any], Sequence[Any], bool, None]
 
 
@@ -807,6 +809,35 @@ class ExtContext:
             {"asset_key": asset_key, "data_version": data_version, "metadata": metadata},
         )
         self._materialized_assets.add(asset_key)
+
+    def report_asset_check(
+        self,
+        check_name: str,
+        success: bool,
+        severity: ExtAssetCheckSeverity = "ERROR",
+        metadata: Optional[Mapping[str, Union[ExtMetadataRawValue, ExtMetadataValue]]] = None,
+        asset_key: Optional[str] = None,
+    ) -> None:
+        asset_key = _resolve_optionally_passed_asset_key(
+            self._data, asset_key, "report_asset_check"
+        )
+        check_name = _assert_param_type(check_name, str, "report_asset_check", "check_name")
+        success = _assert_param_type(success, bool, "report_asset_check", "success")
+        metadata = (
+            _normalize_param_metadata(metadata, "report_asset_check", "metadata")
+            if metadata
+            else None
+        )
+        self._write_message(
+            "report_asset_check",
+            {
+                "asset_key": asset_key,
+                "check_name": check_name,
+                "success": success,
+                "metadata": metadata,
+                "severity": severity,
+            },
+        )
 
     def log(self, message: str, level: str = "info") -> None:
         message = _assert_param_type(message, str, "log", "asset_key")
