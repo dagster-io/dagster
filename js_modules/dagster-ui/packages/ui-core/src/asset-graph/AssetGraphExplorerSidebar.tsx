@@ -9,7 +9,6 @@ import {
   Menu,
   MenuItem,
   Popover,
-  TextInput,
   MiddleTruncate,
   useViewport,
   MenuDivider,
@@ -680,16 +679,17 @@ const SearchFilter = <T,>({
 }) => {
   const {viewport, containerProps} = useViewport();
   return (
-    <div {...containerProps}>
+    <SuggestWrapper {...containerProps}>
       <Suggest<(typeof values)[0]>
         key="asset-graph-explorer-search-bar"
-        inputProps={{placeholder: 'Search', style: {width: viewport.width + 'px'}}}
+        inputProps={{placeholder: 'Search', style: {width: `min(100%, ${viewport.width}px)`}}}
         items={values}
         inputValueRenderer={(item) => item.label}
         itemPredicate={(query, item) =>
           item.label.toLocaleLowerCase().includes(query.toLocaleLowerCase())
         }
-        popoverProps={{usePortal: false}}
+        menuWidth={viewport.width}
+        popoverProps={{usePortal: false, fill: true}}
         itemRenderer={(item, itemProps) => (
           <MenuItem
             active={itemProps.modifiers.active}
@@ -702,7 +702,7 @@ const SearchFilter = <T,>({
         onItemSelect={(item, e) => onSelectValue(e as any, item.value)}
         selectedItem={null}
       />
-    </div>
+    </SuggestWrapper>
   );
 };
 
@@ -736,3 +736,9 @@ const ButtonGroupWrapper = styled.div`
 function nodeId(node: {path: string; id: string} | {id: string}) {
   return 'path' in node ? node.path : node.id;
 }
+
+const SuggestWrapper = styled.div`
+  .bp4-input-group.dagster-suggest-input {
+    width: 100%;
+  }
+`;
