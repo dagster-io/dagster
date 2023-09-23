@@ -65,6 +65,8 @@ The configurations of the S3 connection are defined in [`quickstart_aws/reposito
   - *Note: `S3Resource` uses boto under the hood, so if you are accessing your private buckets, you will need to provide the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` environment variables or follow one of the other boto authentication methods. Check out the [AWS documentation for accessing AWS using your AWS credentials](https://docs.aws.amazon.com/general/latest/gr/aws-sec-cred-types.html).*
 - `AWS_SECRET_ACCESS_KEY`
 - `S3_BUCKET`
+- `AWS_ENDPOINT_URL_S3` (*optional)
+  - *Note: `AWS_ENDPOINT_URL_S3` is used when using AWS S3 compatible services like MinIO Object Storage. Check out the [Service-specific endpoints](https://docs.aws.amazon.com/sdkref/latest/guide/feature-ss-endpoints.html).*
 
 You can declare environment variables in various ways:
 - **Local development**: [Using `.env` files to load env vars into local environments](https://docs.dagster.io/guides/dagster/using-environment-variables-and-secrets#declaring-environment-variables)

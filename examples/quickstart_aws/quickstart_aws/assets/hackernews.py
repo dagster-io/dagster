@@ -83,7 +83,7 @@ def hackernews_topstories_word_cloud(
     # Also, upload the image to S3
     bucket_name = os.environ.get("S3_BUCKET")
     bucket_location = s3.get_client().get_bucket_location(Bucket=bucket_name)["LocationConstraint"]
-    endpoint_url = os.environ.get("AWS_ENDPOINT_URL")
+    endpoint_url = os.environ.get("AWS_ENDPOINT_URL_S3")
     file_name = "hackernews_topstories_word_cloud.png"
     s3.get_client().upload_fileobj(buffer, bucket_name, file_name)
     if endpoint_url:
