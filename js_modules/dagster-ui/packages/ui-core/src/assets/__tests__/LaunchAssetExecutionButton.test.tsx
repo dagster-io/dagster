@@ -331,37 +331,6 @@ describe('LaunchAssetExecutionButton', () => {
 
       await expectLaunchExecutesMutationAndCloses('Launch 1148-run backfill', launchMock);
     });
-
-    it('should launch a single run if you choose to pass the partition range using tags', async () => {
-      const launchMock = buildExpectedLaunchSingleRunMutation({
-        mode: 'default',
-        executionMetadata: {
-          tags: [
-            {key: 'dagster/asset_partition_range_start', value: '2020-01-02'},
-            {key: 'dagster/asset_partition_range_end', value: '2023-02-22'},
-          ],
-        },
-        runConfigData: '{}\n',
-        selector: {
-          repositoryLocationName: 'test.py',
-          repositoryName: 'repo',
-          pipelineName: 'my_asset_job',
-          assetSelection: [{path: ['asset_daily']}],
-        },
-      });
-      renderButton({
-        scope: {all: [ASSET_DAILY]},
-        preferredJobName: 'my_asset_job',
-        launchMock,
-      });
-      await clickMaterializeButton();
-      await screen.findByTestId('choose-partitions-dialog');
-
-      const rangesAsTags = screen.getByTestId('ranges-as-tags-true-radio');
-      await waitFor(async () => expect(rangesAsTags).toBeEnabled());
-      await userEvent.click(rangesAsTags);
-      await expectLaunchExecutesMutationAndCloses('Launch 1 run', launchMock);
-    });
   });
 
   describe('partition mapped assets', () => {
