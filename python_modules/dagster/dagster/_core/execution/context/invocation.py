@@ -99,7 +99,7 @@ class UnboundOpExecutionContext(OpExecutionContext):
         self._resources = self._exit_stack.enter_context(
             build_resources(
                 resources=self._resource_defs,
-                instance=instance,
+                instance=self._instance,
                 resource_config=resources_config,
             )
         )
