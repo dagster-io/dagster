@@ -1,7 +1,8 @@
+from abc import ABC
 from typing import (
     TYPE_CHECKING,
     Any,
-    Dict,
+    Generic,
     Iterable,
     Iterator,
     Mapping,
@@ -9,6 +10,7 @@ from typing import (
     Optional,
     Sequence,
     Set,
+    TypeVar,
 )
 
 from dagster import _check as check
@@ -29,15 +31,29 @@ from dagster._core.types.dagster_type import Nothing
 if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition
 
+TPropsType = TypeVar("TPropsType", bound=NamedTuple)
+TDefType = TypeVar("TDefType")
 
-@experimental
-class AssetChecksDefinitionInputOutputProps(NamedTuple):
+
+class IDefinitionPropsClassMatchesInit(Generic[TPropsType, TDefType], ABC):
+    @staticmethod
+    def from_props(props: TPropsType) -> TDefType: ...
+
+
+class AssetChecksDefinitionProps(NamedTuple):
+    node_def: NodeDefinition
+    resource_defs: Mapping[str, ResourceDefinition]
+    specs: Sequence[AssetCheckSpec]
     asset_check_keys_by_output_name: Mapping[str, AssetCheckKey]
     asset_keys_by_input_name: Mapping[str, AssetKey]
 
 
 @experimental
-class AssetChecksDefinition(ResourceAddable, RequiresResources):
+class AssetChecksDefinition(
+    ResourceAddable,
+    RequiresResources,
+    IDefinitionPropsClassMatchesInit[AssetChecksDefinitionProps, "AssetChecksDefinition"],
+):
     """Defines a set of checks that are produced by the same op or op graph.
 
     AssetChecksDefinition are typically not instantiated directly, but rather produced using a
@@ -46,30 +62,52 @@ class AssetChecksDefinition(ResourceAddable, RequiresResources):
 
     def __init__(
         self,
-        *,
         node_def: NodeDefinition,
         resource_defs: Mapping[str, ResourceDefinition],
         specs: Sequence[AssetCheckSpec],
-        input_output_props: AssetChecksDefinitionInputOutputProps
-        # if adding new fields, make sure to handle them in the get_attributes_dict method
+        asset_check_keys_by_output_name: Mapping[str, AssetCheckKey],
+        asset_keys_by_input_name: Mapping[str, AssetKey],
     ):
-        self._node_def = node_def
-        self._resource_defs = resource_defs
-        self._specs = check.sequence_param(specs, "specs", of_type=AssetCheckSpec)
-        self._input_output_props = check.inst_param(
-            input_output_props, "input_output_props", AssetChecksDefinitionInputOutputProps
+        self._props = AssetChecksDefinitionProps(
+            node_def=check.inst_param(node_def, "node_def", NodeDefinition),
+            resource_defs=check.dict_param(
+                resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition
+            ),
+            specs=check.list_param(specs, "specs", of_type=AssetCheckSpec),
+            asset_check_keys_by_output_name=check.dict_param(
+                asset_check_keys_by_output_name,
+                "asset_check_keys_by_output_name",
+                key_type=str,
+                value_type=AssetCheckKey,
+            ),
+            asset_keys_by_input_name=check.dict_param(
+                asset_keys_by_input_name,
+                "asset_keys_by_input_name",
+                key_type=str,
+                value_type=AssetKey,
+            ),
         )
         self._specs_by_handle = {spec.key: spec for spec in specs}
         self._specs_by_output_name = {
             output_name: self._specs_by_handle[check_key]
-            for output_name, check_key in input_output_props.asset_check_keys_by_output_name.items()
+            for output_name, check_key in self._props.asset_check_keys_by_output_name.items()
         }
+
+    @staticmethod
+    def from_props(props: AssetChecksDefinitionProps) -> "AssetChecksDefinition":
+        return AssetChecksDefinition(
+            node_def=props.node_def,
+            resource_defs=props.resource_defs,
+            specs=props.specs,
+            asset_check_keys_by_output_name=props.asset_check_keys_by_output_name,
+            asset_keys_by_input_name=props.asset_keys_by_input_name,
+        )
 
     @public
     @property
     def node_def(self) -> NodeDefinition:
         """The op or op graph that can be executed to check the assets."""
-        return self._node_def
+        return self._props.node_def
 
     @public
     @property
@@ -109,11 +147,11 @@ class AssetChecksDefinition(ResourceAddable, RequiresResources):
 
     @property
     def asset_keys_by_input_name(self) -> Mapping[str, AssetKey]:
-        return self._input_output_props.asset_keys_by_input_name
+        return self._props.asset_keys_by_input_name
 
     def get_resource_requirements(self) -> Iterator[ResourceRequirement]:
         yield from self.node_def.get_resource_requirements()  # type: ignore[attr-defined]
-        for source_key, resource_def in self._resource_defs.items():
+        for source_key, resource_def in self._props.resource_defs.items():
             yield from resource_def.get_resource_requirements(outer_context=source_key)
 
     def get_spec_for_check_key(self, asset_check_key: AssetCheckKey) -> AssetCheckSpec:
@@ -128,20 +166,14 @@ class AssetChecksDefinition(ResourceAddable, RequiresResources):
     def with_resources(
         self, resource_defs: Mapping[str, ResourceDefinition]
     ) -> "AssetChecksDefinition":
-        attributes_dict = self.get_attributes_dict()
-        attributes_dict["resource_defs"] = merge_resource_defs(
-            old_resource_defs=self._resource_defs,
-            resource_defs_to_merge_in=resource_defs,
-            requires_resources=self,
-        )
-        return self.__class__(**attributes_dict)
-
-    def get_attributes_dict(self) -> Dict[str, Any]:
-        return dict(
-            node_def=self._node_def,
-            resource_defs=self._resource_defs,
-            specs=self._specs,
-            input_output_props=self._input_output_props,
+        return self.__class__(
+            **self._props._replace(
+                resource_defs=merge_resource_defs(
+                    old_resource_defs=self._props.resource_defs,
+                    resource_defs_to_merge_in=resource_defs,
+                    requires_resources=self,
+                )
+            )._asdict()
         )
 
 

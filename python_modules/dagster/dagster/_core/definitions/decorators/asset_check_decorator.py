@@ -8,7 +8,6 @@ from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_checks import (
     AssetChecksDefinition,
-    AssetChecksDefinitionInputOutputProps,
 )
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
@@ -170,12 +169,10 @@ def asset_check(
             node_def=op_def,
             resource_defs={},
             specs=[spec],
-            input_output_props=AssetChecksDefinitionInputOutputProps(
-                asset_keys_by_input_name={
-                    input_tuples_by_asset_key[resolved_asset_key][0]: resolved_asset_key
-                },
-                asset_check_keys_by_output_name={op_def.output_defs[0].name: spec.key},
-            ),
+            asset_keys_by_input_name={
+                input_tuples_by_asset_key[resolved_asset_key][0]: resolved_asset_key
+            },
+            asset_check_keys_by_output_name={op_def.output_defs[0].name: spec.key},
         )
 
         return checks_def

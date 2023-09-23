@@ -3,6 +3,7 @@ import shutil
 import tempfile
 from collections import defaultdict
 from contextlib import contextmanager
+from types import ModuleType
 from typing import Any, Dict, List, Mapping, Optional, Type, cast
 
 # top-level include is dangerous in terms of incurring circular deps
@@ -330,12 +331,20 @@ class ConcurrencyEnabledSqliteTestEventLogStorage(SqliteEventLogStorage, Configu
         return claim_status.with_sleep_interval(float(self._sleep_interval))
 
 
-def get_all_direct_subclasses_of_marker(marker_interface_cls: Type) -> List[Type]:
-    import dagster as dagster
+def get_all_direct_subclasses_of_marker(
+    marker_interface_cls: Type, module: Optional[ModuleType] = None
+) -> List[Type]:
+    """Get all direct subclasses of a given marker interface class from a given module. If the
+    module is not specified, it defaults to the dagster module.
+    """
+    if module is None:
+        import dagster as dagster
+
+        module = dagster
 
     return [
         symbol
-        for symbol in dagster.__dict__.values()
+        for symbol in module.__dict__.values()
         if isinstance(symbol, type)
         and issubclass(symbol, marker_interface_cls)
         and marker_interface_cls
