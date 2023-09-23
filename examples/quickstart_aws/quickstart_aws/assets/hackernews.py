@@ -76,6 +76,7 @@ def hackernews_topstories_word_cloud(
     # Save the image to a buffer and embed the image into Markdown content for quick view
     buffer = BytesIO()
     plt.savefig(buffer, format="png")
+    buffer.seek(0) # set the pointer to the beginning
     image_data = base64.b64encode(buffer.getvalue())
     md_content = f"![img](data:image/png;base64,{image_data.decode()})"
 
