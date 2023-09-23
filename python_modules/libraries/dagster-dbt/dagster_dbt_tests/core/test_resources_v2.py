@@ -127,9 +127,27 @@ def test_dbt_cli_get_artifact() -> None:
         dbt_cli_invocation_2.get_artifact("sources.json")
 
     # Artifacts are stored in separate paths by manipulating DBT_TARGET_PATH.
+    # By default, they are stored in the `target` directory of the DBT project.
+    assert dbt_cli_invocation_1.target_path.parent == Path(TEST_PROJECT_DIR, "target")
+
     # As a result, their contents should be different, and newer artifacts
     # should not overwrite older ones.
     assert manifest_json_1 != manifest_json_2
+
+
+@pytest.mark.parametrize("target_path", [Path("tmp"), Path("/tmp")])
+def test_dbt_cli_target_path(monkeypatch: pytest.MonkeyPatch, target_path: Path) -> None:
+    dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR)
+    expected_target_path = (
+        target_path if target_path.is_absolute() else Path(TEST_PROJECT_DIR).joinpath(target_path)
+    )
+
+    monkeypatch.setenv("DBT_TARGET_PATH", os.fspath(target_path))
+
+    dbt_cli_invocation = dbt.cli(["compile"]).wait()
+
+    assert dbt_cli_invocation.target_path.parent == expected_target_path
+    assert dbt_cli_invocation.get_artifact("manifest.json")
 
 
 def test_dbt_profile_configuration() -> None:
