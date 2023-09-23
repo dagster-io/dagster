@@ -48,6 +48,7 @@ setup(
         f"dagster-graphql{pin}",
         "starlette",
         "uvicorn[standard]",
+        "urllib3 <2",
     ],
     extras_require={
         "notebook": ["nbconvert"],  # notebooks support
