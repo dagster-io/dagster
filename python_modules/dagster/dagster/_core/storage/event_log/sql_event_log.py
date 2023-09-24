@@ -2524,6 +2524,8 @@ class SqlEventLogStorage(EventLogStorage):
                     check_name=planned.check_name,
                     run_id=event.run_id,
                     execution_status=AssetCheckExecutionRecordStatus.PLANNED.value,
+                    evaluation_event=serialize_value(event),
+                    evaluation_event_timestamp=datetime.utcfromtimestamp(event.timestamp),
                 )
             )
 
@@ -2652,9 +2654,7 @@ class SqlEventLogStorage(EventLogStorage):
                 id=cast(int, row[0]),
                 run_id=cast(str, row[1]),
                 status=AssetCheckExecutionRecordStatus(row[2]),
-                evaluation_event=(
-                    deserialize_value(cast(str, row[3]), EventLogEntry) if row[3] else None
-                ),
+                event=(deserialize_value(cast(str, row[3]), EventLogEntry) if row[3] else None),
                 create_timestamp=datetime_as_float(cast(datetime, row[4])),
             )
             for row in rows

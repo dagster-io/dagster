@@ -100,11 +100,7 @@ class GrapheneAssetCheckExecution(graphene.ObjectType):
         self.id = str(execution.id)
         self.runId = execution.run_id
         self.status = status
-        self.evaluation = (
-            GrapheneAssetCheckEvaluation(execution.evaluation_event)
-            if execution.evaluation_event
-            else None
-        )
+        self.evaluation = GrapheneAssetCheckEvaluation(execution.event) if execution.event else None
         self.timestamp = execution.create_timestamp
 
 

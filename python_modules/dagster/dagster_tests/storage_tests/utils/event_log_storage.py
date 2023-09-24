@@ -4025,6 +4025,7 @@ class TestEventLogStorage:
         assert len(checks) == 1
         assert checks[0].status == AssetCheckExecutionRecordStatus.PLANNED
         assert checks[0].run_id == "foo"
+        assert checks[0].event.dagster_event_type == DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED
 
         checks = storage.get_asset_check_executions(
             AssetKey(["my_asset"]), "my_check", limit=10, include_planned=False
@@ -4064,10 +4065,9 @@ class TestEventLogStorage:
         checks = storage.get_asset_check_executions(AssetKey(["my_asset"]), "my_check", limit=10)
         assert len(checks) == 1
         assert checks[0].status == AssetCheckExecutionRecordStatus.SUCCEEDED
+        assert checks[0].event.dagster_event_type == DagsterEventType.ASSET_CHECK_EVALUATION
         assert (
-            checks[
-                0
-            ].evaluation_event.dagster_event.event_specific_data.target_materialization_data.storage_id
+            checks[0].event.dagster_event.event_specific_data.target_materialization_data.storage_id
             == 42
         )
 
