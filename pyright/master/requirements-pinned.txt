@@ -13,7 +13,7 @@ ansiwrap==0.8.4
 anyio==4.0.0
 apache-airflow==2.7.1
 apache-airflow-providers-apache-spark==4.1.5
-apache-airflow-providers-cncf-kubernetes==7.5.1
+apache-airflow-providers-cncf-kubernetes==7.6.0
 apache-airflow-providers-common-sql==1.7.2
 apache-airflow-providers-docker==3.7.5
 apache-airflow-providers-ftp==3.5.2
@@ -25,7 +25,7 @@ apeye-core==1.1.4
 apispec==6.3.0
 appdirs==1.4.4
 appnope==0.1.3
-argcomplete==3.1.1
+argcomplete==3.1.2
 argon2-cffi==23.1.0
 argon2-cffi-bindings==21.2.0
 arrow==1.2.3
@@ -56,8 +56,8 @@ bitmath==1.3.3.1
 bleach==6.0.0
 blinker==1.6.2
 bokeh==3.2.2
-boto3==1.28.48
-botocore==1.31.48
+boto3==1.28.53
+botocore==1.31.53
 buildkite-test-collector==0.1.7
 CacheControl==0.13.1
 cached-property==1.5.2
@@ -87,11 +87,11 @@ comm==0.1.4
 ConfigUpdater==3.1.1
 confluent-kafka==2.2.0
 connexion==2.14.2
-contourpy==1.1.0
+contourpy==1.1.1
 coverage==7.3.1
 cron-descriptor==1.4.0
 croniter==1.4.1
-cryptography==41.0.3
+cryptography==41.0.4
 cssutils==2.7.1
 cycler==0.11.0
 -e python_modules/dagit
@@ -114,7 +114,6 @@ cycler==0.11.0
 -e python_modules/libraries/dagster-duckdb-pandas
 -e python_modules/libraries/dagster-duckdb-polars
 -e python_modules/libraries/dagster-duckdb-pyspark
--e python_modules/dagster-pipes
 -e python_modules/libraries/dagster-fivetran
 -e python_modules/libraries/dagster-gcp
 -e python_modules/libraries/dagster-gcp-pandas
@@ -133,6 +132,7 @@ cycler==0.11.0
 -e python_modules/libraries/dagster-pandas
 -e python_modules/libraries/dagster-pandera
 -e python_modules/libraries/dagster-papertrail
+-e python_modules/dagster-pipes
 -e python_modules/libraries/dagster-postgres
 -e python_modules/libraries/dagster-prometheus
 -e python_modules/libraries/dagster-pyspark
@@ -150,12 +150,12 @@ cycler==0.11.0
 -e python_modules/libraries/dagster-wandb
 -e python_modules/dagster-webserver
 -e python_modules/libraries/dagstermill
-dask==2023.9.1
+dask==2023.9.2
 dask-jobqueue==0.8.2
 dask-kubernetes==2022.9.0
 dask-yarn==0.9
 databricks-api==0.9.0
-databricks-cli==0.17.7
+databricks-cli==0.17.8
 databricks-sdk==0.8.0
 datadog==0.47.0
 DataProperty==1.0.1
@@ -172,7 +172,7 @@ dict2css==0.3.0
 diff-match-patch==20200713
 dill==0.3.7
 distlib==0.3.7
-distributed==2023.9.1
+distributed==2023.9.2
 dnspython==2.4.2
 docker==5.0.3
 docker-image-py==0.1.12
@@ -206,19 +206,19 @@ flatbuffers==23.5.26
 fonttools==4.42.1
 fqdn==1.5.1
 frozenlist==1.4.0
-fsspec==2023.9.0
+fsspec==2023.9.2
 future==0.18.3
 gitdb==4.0.10
-GitPython==3.1.36
+GitPython==3.1.37
 google-api-core==2.11.1
-google-api-python-client==2.99.0
+google-api-python-client==2.100.0
 google-auth==2.23.0
 google-auth-httplib2==0.1.1
 google-auth-oauthlib==1.1.0
 google-cloud-bigquery==3.11.4
 google-cloud-bigquery-storage==2.22.0
 google-cloud-core==2.3.3
-google-cloud-storage==2.10.0
+google-cloud-storage==2.11.0
 google-crc32c==1.5.0
 google-re2==1.1
 google-resumable-media==2.6.0
@@ -229,6 +229,7 @@ graphql-core==3.2.3
 graphql-relay==3.2.0
 graphviz==0.20.1
 great-expectations==0.17.11
+greenlet==2.0.2
 grpcio==1.58.0
 grpcio-health-checking==1.58.0
 grpcio-status==1.58.0
@@ -246,7 +247,7 @@ idna==3.4
 ijson==3.2.3
 imagesize==1.4.1
 importlib-metadata==6.8.0
-importlib-resources==6.0.1
+importlib-resources==6.1.0
 inflection==0.5.1
 iniconfig==2.0.0
 ipykernel==6.25.2
@@ -265,7 +266,7 @@ json5==0.9.14
 jsonpatch==1.33
 jsonpointer==2.4
 jsonref==1.1.0
-jsonschema==4.19.0
+jsonschema==4.19.1
 jsonschema-specifications==2023.7.1
 jupyter-events==0.7.0
 jupyter-lsp==2.2.0
@@ -307,36 +308,36 @@ mdurl==0.1.2
 minimal-snowplow-tracker==0.0.2
 mistune==3.0.1
 mixpanel==4.10.0
-mlflow==2.7.0
+mlflow==2.7.1
 mock==3.0.5
 morefs==0.1.2
-moto==4.2.2
+moto==4.2.4
 mpmath==1.3.0
 msal==1.24.0
 msal-extensions==1.0.0
-msgpack==1.0.5
+msgpack==1.0.6
 multidict==6.0.4
-multimethod==1.9.1
+multimethod==1.10
 mypy-extensions==1.0.0
 mysql-connector-python==8.1.0
 natsort==8.4.0
 nbclient==0.8.0
 nbconvert==7.8.0
 nbformat==5.9.2
-nest-asyncio==1.5.7
+nest-asyncio==1.5.8
 networkx==2.8.8
 nh3==0.2.14
 nodeenv==1.8.0
 noteable-origami==1.0.0
-notebook==7.0.3
+notebook==7.0.4
 notebook_shim==0.2.3
-numpy==1.25.2
+numpy==1.26.0
 oauth2client==4.1.3
 oauthlib==3.2.2
 objgraph==3.6.0
 onnx==1.14.1
 onnxconverter-common==1.13.0
-onnxruntime==1.15.1
+onnxruntime==1.16.0
 opentelemetry-api==1.20.0
 opentelemetry-exporter-otlp==1.20.0
 opentelemetry-exporter-otlp-proto-common==1.20.0
@@ -354,7 +355,7 @@ packaging==23.1
 pandas==2.0.3
 pandas-gbq==0.19.2
 pandas-stubs==2.0.3.230814
-pandera==0.16.1
+pandera==0.17.0
 pandocfilters==1.5.0
 papermill==2.4.0
 papermill-origami==0.0.29
@@ -365,7 +366,7 @@ partd==1.4.0
 path==16.7.1
 pathspec==0.11.2
 pathtools==0.1.2
-pathvalidate==3.1.0
+pathvalidate==3.2.0
 pendulum==2.1.2
 pexpect==4.8.0
 pickleshare==0.7.5
@@ -374,8 +375,8 @@ pkginfo==1.9.6
 platformdirs==2.6.2
 plotly==5.17.0
 pluggy==1.3.0
-polars==0.19.2
-portalocker==2.7.0
+polars==0.19.3
+portalocker==2.8.2
 prison==0.2.1
 progressbar2==4.2.0
 prometheus-client==0.17.1
@@ -392,7 +393,7 @@ pyarrow==10.0.1
 pyasn1==0.5.0
 pyasn1-modules==0.3.0
 pycparser==2.21
-pycryptodomex==3.18.0
+pycryptodomex==3.19.0
 pydantic==1.10.12
 pydata-google-auth==1.8.2
 pyflakes==3.1.0
@@ -440,13 +441,13 @@ requests-toolbelt==0.10.1
 responses==0.23.1
 rfc3339-validator==0.1.4
 rfc3986-validator==0.1.1
-rich==13.5.2
+rich==13.5.3
 rich-argparse==1.3.0
 rpds-py==0.10.3
 rsa==4.9
 ruamel.yaml==0.17.17
 s3transfer==0.6.2
-scikit-learn==1.3.0
+scikit-learn==1.3.1
 scipy==1.11.2
 scrapbook==0.5.0
 seaborn==0.12.2
@@ -459,7 +460,7 @@ six==1.16.0
 skein==0.8.2
 skl2onnx==1.15.0
 slack-sdk==3.22.0
-smmap==5.0.0
+smmap==5.0.1
 sniffio==1.3.0
 snowballstemmer==2.2.0
 snowflake-connector-python==3.2.0
@@ -487,7 +488,7 @@ stack-data==0.6.2
 starlette==0.31.1
 sympy==1.12
 syrupy==3.0.6
-tabledata==1.3.1
+tabledata==1.3.3
 tabulate==0.9.0
 tblib==2.0.0
 tenacity==8.2.3
@@ -511,7 +512,7 @@ traitlets==5.10.0
 trio==0.22.2
 trio-websocket==0.10.4
 -e examples/tutorial_notebook_assets
-twilio==8.8.0
+twilio==8.9.0
 twine==1.15.0
 typeguard==4.0.0
 typepy==1.3.1
@@ -526,9 +527,9 @@ types-paramiko==3.3.0.0
 types-pkg-resources==0.1.3
 types-pyOpenSSL==23.2.0.2
 types-python-dateutil==2.8.19.14
-types-pytz==2023.3.0.1
-types-PyYAML==6.0.12.11
-types-requests==2.31.0.2
+types-pytz==2023.3.1.1
+types-PyYAML==6.0.12.12
+types-requests==2.31.0.4
 types-simplejson==3.19.0.2
 types-six==1.16.21.9
 types-SQLAlchemy==1.4.53.34
@@ -574,4 +575,4 @@ xyzservices==2023.7.0
 yamllint==1.32.0
 yarl==1.9.2
 zict==3.0.0
-zipp==3.16.2
+zipp==3.17.0
