@@ -3,7 +3,8 @@ from typing import NamedTuple, Optional
 
 import dagster._check as check
 from dagster import EventLogEntry
-from dagster._serdes import deserialize_value
+from dagster._core.events import DagsterEventType
+from dagster._serdes.serdes import deserialize_value
 from dagster._utils import datetime_as_float
 
 
@@ -32,7 +33,10 @@ class AssetCheckExecutionRecord(
             ("id", int),
             ("run_id", str),
             ("status", AssetCheckExecutionRecordStatus),
-            ("evaluation_event", Optional[EventLogEntry]),
+            # Either an AssetCheckEvaluationPlanned or AssetCheckEvaluation event.
+            # Optional for backwards compatibility, before we started storing planned events.
+            # Old records won't have an event if the status is PLANNED.
+            ("event", Optional[EventLogEntry]),
             ("create_timestamp", float),
         ],
     )
@@ -42,18 +46,39 @@ class AssetCheckExecutionRecord(
         id: int,
         run_id: str,
         status: AssetCheckExecutionRecordStatus,
-        evaluation_event: Optional[EventLogEntry],
+        event: Optional[EventLogEntry],
         create_timestamp: float,
     ):
-        return super().__new__(
+        check.int_param(id, "id")
+        check.str_param(run_id, "run_id")
+        check.inst_param(status, "status", AssetCheckExecutionRecordStatus)
+        check.opt_inst_param(event, "event", EventLogEntry)
+        check.float_param(create_timestamp, "create_timestamp")
+
+        event_type = event.dagster_event_type if event else None
+        if status == AssetCheckExecutionRecordStatus.PLANNED:
+            check.invariant(
+                event is None or event_type == DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED,
+                f"The asset check row status is PLANNED, but the event is type {event_type} instead"
+                " of ASSET_CHECK_EVALUATION_PLANNED",
+            )
+        elif status in [
+            AssetCheckExecutionRecordStatus.FAILED,
+            AssetCheckExecutionRecordStatus.SUCCEEDED,
+        ]:
+            check.invariant(
+                event_type == DagsterEventType.ASSET_CHECK_EVALUATION,
+                f"The asset check row status is {status}, but the event is type"
+                f" {event_type} instead of ASSET_CHECK_EVALUATION",
+            )
+
+        return super(AssetCheckExecutionRecord, cls).__new__(
             cls,
-            id=check.int_param(id, "id"),
-            run_id=check.str_param(run_id, "run_id"),
-            status=check.inst_param(status, "status", AssetCheckExecutionRecordStatus),
-            evaluation_event=check.opt_inst_param(
-                evaluation_event, "evaluation_event", EventLogEntry
-            ),
-            create_timestamp=check.float_param(create_timestamp, "create_timestamp"),
+            id=id,
+            run_id=run_id,
+            status=status,
+            event=event,
+            create_timestamp=create_timestamp,
         )
 
     @classmethod
@@ -62,7 +87,7 @@ class AssetCheckExecutionRecord(
             id=row["id"],
             run_id=row["run_id"],
             status=AssetCheckExecutionRecordStatus(row["execution_status"]),
-            evaluation_event=(
+            event=(
                 deserialize_value(row["evaluation_event"], EventLogEntry)
                 if row["evaluation_event"]
                 else None
