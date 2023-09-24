@@ -21,7 +21,7 @@ from dagster._core.pipes.utils import (
     extract_message_or_forward_to_stdout,
     pipes_protocol,
 )
-from dagster_ext import (
+from dagster_pipes import (
     DagsterPipesError,
     DefaultPipeableMessageWriter,
     PipedProcessExtras,

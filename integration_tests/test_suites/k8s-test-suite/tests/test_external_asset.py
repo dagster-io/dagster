@@ -8,10 +8,10 @@ from dagster._core.pipes.client import (
     PipedContextInjector,
 )
 from dagster._core.pipes.utils import EnvPipedContextInjector, pipes_protocol
-from dagster_ext import DefaultPipedProcessContextLoader, PipedProcessContextData
 from dagster_k8s import execute_k8s_job
 from dagster_k8s.client import DagsterKubernetesClient
 from dagster_k8s.pipes_client import K8sPodLogsMessageReader, PipedK8sPod
+from dagster_pipes import DefaultPipedProcessContextLoader, PipedProcessContextData
 from dagster_test.test_project import (
     get_test_project_docker_image,
 )

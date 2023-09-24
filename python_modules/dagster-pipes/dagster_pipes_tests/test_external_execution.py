@@ -74,7 +74,7 @@ def external_script() -> Iterator[str]:
         import os
         import time
 
-        from dagster_ext import (
+        from dagster_pipes import (
             PipedProcessContext,
             S3PipeableMessageWriter,
             init_dagster_piped_process,
@@ -200,7 +200,7 @@ def test_pipes_subprocess(
 
 def test_pipes_multi_asset():
     def script_fn():
-        from dagster_ext import init_dagster_piped_process
+        from dagster_pipes import init_dagster_piped_process
 
         context = init_dagster_piped_process()
         context.report_asset_materialization(
@@ -229,7 +229,7 @@ def test_pipes_multi_asset():
 
 def test_pipes_typed_metadata():
     def script_fn():
-        from dagster_ext import init_dagster_piped_process
+        from dagster_pipes import init_dagster_piped_process
 
         context = init_dagster_piped_process()
         context.report_asset_materialization(
@@ -309,7 +309,7 @@ def test_pipes_asset_failed():
 
 def test_pipes_asset_invocation():
     def script_fn():
-        from dagster_ext import init_dagster_piped_process
+        from dagster_pipes import init_dagster_piped_process
 
         context = init_dagster_piped_process()
         context.log("hello world")
@@ -328,7 +328,7 @@ PATH_WITH_NONEXISTENT_DIR = "/tmp/does-not-exist/foo"
 
 def test_pipes_no_orchestration():
     def script_fn():
-        from dagster_ext import (
+        from dagster_pipes import (
             PipedProcessContext,
             init_dagster_piped_process,
             is_dagster_pipes_process,

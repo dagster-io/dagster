@@ -1,4 +1,4 @@
-from dagster_ext import init_dagster_piped_process
+from dagster_pipes import init_dagster_piped_process
 
 context = init_dagster_piped_process()
 

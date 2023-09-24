@@ -17,7 +17,7 @@ from dagster._core.pipes.utils import (
     BlobStorePipedMessageReader,
     pipes_protocol,
 )
-from dagster_ext import (
+from dagster_pipes import (
     PipedProcessContextData,
     PipedProcessExtras,
     PipedProcessParams,

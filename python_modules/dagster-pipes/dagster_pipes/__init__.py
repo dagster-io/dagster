@@ -69,7 +69,7 @@ PIPES_PROTOCOL_VERSION_FIELD = "__dagster_pipes_version"
 
 
 class PipeableOutboundMessage(TypedDict):
-    __dagster_ext_version: str
+    __dagster_pipes_version: str
     method: str
     params: Optional[Mapping[str, Any]]
 
@@ -667,7 +667,7 @@ class PipedProcessContext:
     def get(cls) -> "PipedProcessContext":
         if cls._instance is None:
             raise Exception(
-                "ExtContext has not been initialized. You must call `init_dagster_ext()`."
+                "ExtContext has not been initialized. You must call `init_dagster_pipes()`."
             )
         return cls._instance
 

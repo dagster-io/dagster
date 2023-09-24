@@ -37,8 +37,8 @@ def databricks_asset(context: AssetExecutionContext, ext: ExtDatabricks):
     task = jobs.SubmitTask.from_dict({
         "new_cluster": { ... },
         "libraries": [
-            # must include dagster-ext-process
-            {"pypi": {"package": "dagster-ext-process"}},
+            # must include dagster-pipes
+            {"pypi": {"package": "dagster-pipes"}},
         ],
         "task_key": "some-key",
         "spark_python_task": {
@@ -77,13 +77,13 @@ like:
 ```
 ### dbfs:/myscript.py
 
-# `dagster_ext` must be available in the databricks python environment
-from dagster_ext import ExtDbfsContextLoader, ExtDbfsMessageWriter, init_dagster_ext
+# `dagster_pipes` must be available in the databricks python environment
+from dagster_pipes import ExtDbfsContextLoader, ExtDbfsMessageWriter, init_dagster_pipes
 
 # Sets up communication channels and downloads the context data sent from Dagster.
 # Note that while other `context_loader` and `message_writer` settings are
 # possible, it is recommended to use the below settings for Databricks.
-context = init_dagster_ext(
+context = init_dagster_pipes(
     context_loader=ExtDbfsContextLoader(),
     message_writer=ExtDbfsMessageWriter()
 )

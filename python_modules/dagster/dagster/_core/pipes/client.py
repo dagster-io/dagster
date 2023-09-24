@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Iterator, Optional
 
-from dagster_ext import (
+from dagster_pipes import (
     PipedProcessContextData,
     PipedProcessExtras,
     PipedProcessParams,

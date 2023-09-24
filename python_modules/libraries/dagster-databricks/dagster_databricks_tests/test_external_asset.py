@@ -16,7 +16,7 @@ IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
 
 def script_fn():
-    from dagster_ext import (
+    from dagster_pipes import (
         DbfsPipeableMessageWriter,
         DbfsPipedProcessContextLoader,
         init_dagster_piped_process,
@@ -65,7 +65,7 @@ CLUSTER_DEFAULTS = {
 TASK_KEY = "DAGSTER_PIPES_TASK"
 
 # This has been manually uploaded to a test DBFS workspace.
-DAGSTER_EXTERNALS_WHL_PATH = "dbfs:/FileStore/jars/dagster_ext-1!0+dev-py3-none-any.whl"
+DAGSTER_EXTERNALS_WHL_PATH = "dbfs:/FileStore/jars/dagster_pipes-1!0+dev-py3-none-any.whl"
 
 
 def _make_submit_task(path: str) -> jobs.SubmitTask:

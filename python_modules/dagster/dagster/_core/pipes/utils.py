@@ -9,7 +9,7 @@ from contextlib import contextmanager
 from threading import Event, Thread
 from typing import Iterator, Optional
 
-from dagster_ext import (
+from dagster_pipes import (
     PIPES_PROTOCOL_VERSION_FIELD,
     DefaultPipeableMessageWriter,
     DefaultPipedProcessContextLoader,
