@@ -138,14 +138,14 @@ def test_pod_building():
                     "volume_mounts": [
                         {
                             "mountPath": "/mnt/dagster/",
-                            "name": "dagster-ext-context",
+                            "name": "dagster-pipes-context",
                         }
                     ],
                 }
             ],
             "volumes": [
                 {
-                    "name": "dagster-ext-context",
+                    "name": "dagster-pipes-context",
                     "configMap": {
                         "name": "cm",
                     },

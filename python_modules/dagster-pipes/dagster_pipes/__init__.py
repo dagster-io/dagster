@@ -345,7 +345,7 @@ def is_dagster_pipes_process() -> bool:
 def _emit_orchestration_inactive_warning() -> None:
     warnings.warn(
         "This process was not launched by a Dagster orchestration process. All calls to the"
-        " `dagster-ext` context or attempts to initialize `dagster-ext` abstractions"
+        " `dagster-pipes` context or attempts to initialize `dagster-pipes` abstractions"
         " are no-ops.",
         category=DagsterPipesWarning,
     )

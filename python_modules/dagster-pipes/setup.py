@@ -22,7 +22,7 @@ setup(
     author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
     description="Toolkit for Dagster integrations with transform logic outside of Dagster",
-    url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-ext",
+    url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-pipes",
     classifiers=[
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",

@@ -63,7 +63,7 @@ class ExtConfigMapContextInjector(PipedContextInjector):
     ):
         self._client = k8s_client
         self._namespace = namespace
-        self._cm_name = "dagster-ext-cm"
+        self._cm_name = "dagster-pipes-cm"
 
     @contextmanager
     def inject_context(
@@ -97,14 +97,14 @@ class ExtConfigMapContextInjector(PipedContextInjector):
                     "volume_mounts": [
                         {
                             "mountPath": "/mnt/dagster/",
-                            "name": "dagster-ext-context",
+                            "name": "dagster-pipes-context",
                         }
                     ],
                 }
             ],
             "volumes": [
                 {
-                    "name": "dagster-ext-context",
+                    "name": "dagster-pipes-context",
                     "configMap": {
                         "name": self._cm_name,
                     },
