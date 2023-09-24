@@ -1,6 +1,6 @@
 import pytest
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster_k8s.ext import build_pod_body
+from dagster_k8s.pipes_client import build_pod_body
 
 
 def test_pod_building():

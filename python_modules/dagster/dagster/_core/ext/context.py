@@ -7,14 +7,14 @@ from dagster_ext import (
     DAGSTER_PIPES_ENV_KEYS,
     IS_DAGSTER_PIPES_PROCESS_ENV_VAR,
     PIPES_METADATA_TYPE_INFER,
-    ExtExtras,
-    PipedContextData,
-    PipedDataProvenance,
-    PipedMetadataValue,
-    PipedParams,
-    PipedTimeWindow,
+    PipeableDataProvenance,
+    PipeableMetadataValue,
+    PipeableOutboundMessage,
+    PipeableTimeWindow,
+    PipedProcessContextData,
+    PipedProcessExtras,
+    PipedProcessParams,
     PipesMetadataType,
-    PipesOutboundMessage,
     encode_env_var,
 )
 from typing_extensions import TypeAlias
@@ -30,7 +30,7 @@ from dagster._core.definitions.result import MaterializeResult
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.execution.context.invocation import BoundOpExecutionContext
-from dagster._core.ext.client import PipesMessageReader
+from dagster._core.ext.client import PipedMessageReader
 
 PipesResult: TypeAlias = Union[MaterializeResult, AssetCheckResult]
 
@@ -44,7 +44,7 @@ class PipesMessageHandler:
         self._unmaterialized_assets: Set[AssetKey] = set(context.selected_asset_keys)
 
     @contextmanager
-    def handle_messages(self, message_reader: PipesMessageReader) -> Iterator[PipedParams]:
+    def handle_messages(self, message_reader: PipedMessageReader) -> Iterator[PipedProcessParams]:
         with message_reader.read_messages(self) as params:
             yield params
         for key in self._unmaterialized_assets:
@@ -55,7 +55,7 @@ class PipesMessageHandler:
             yield self._result_queue.get()
 
     def _resolve_metadata(
-        self, metadata: Mapping[str, PipedMetadataValue]
+        self, metadata: Mapping[str, PipeableMetadataValue]
     ) -> Mapping[str, MetadataValue]:
         return {
             k: self._resolve_metadata_value(v["raw_value"], v["type"]) for k, v in metadata.items()
@@ -96,7 +96,7 @@ class PipesMessageHandler:
             check.failed(f"Unexpected metadata type {metadata_type}")
 
     # Type ignores because we currently validate in individual handlers
-    def handle_message(self, message: PipesOutboundMessage) -> None:
+    def handle_message(self, message: PipeableOutboundMessage) -> None:
         if message["method"] == "report_asset_materialization":
             self._handle_report_asset_materialization(**message["params"])  # type: ignore
         elif message["method"] == "report_asset_check":
@@ -107,7 +107,7 @@ class PipesMessageHandler:
     def _handle_report_asset_materialization(
         self,
         asset_key: str,
-        metadata: Optional[Mapping[str, PipedMetadataValue]],
+        metadata: Optional[Mapping[str, PipeableMetadataValue]],
         data_version: Optional[str],
     ) -> None:
         check.str_param(asset_key, "asset_key")
@@ -130,7 +130,7 @@ class PipesMessageHandler:
         check_name: str,
         success: bool,
         severity: str,
-        metadata: Mapping[str, PipedMetadataValue],
+        metadata: Mapping[str, PipeableMetadataValue],
     ) -> None:
         check.str_param(asset_key, "asset_key")
         check.str_param(check_name, "check_name")
@@ -155,7 +155,7 @@ class PipesMessageHandler:
 
 
 def _ext_params_as_env_vars(
-    context_injector_params: PipedParams, message_reader_params: PipedParams
+    context_injector_params: PipedProcessParams, message_reader_params: PipedProcessParams
 ) -> Mapping[str, str]:
     return {
         DAGSTER_PIPES_ENV_KEYS["context"]: encode_env_var(context_injector_params),
@@ -164,11 +164,11 @@ def _ext_params_as_env_vars(
 
 
 @dataclass
-class PipesClientRequest:
-    context_data: PipedContextData
+class PipedClientRequest:
+    context_data: PipedProcessContextData
     message_handler: PipesMessageHandler
-    context_injector_params: PipedParams
-    message_reader_params: PipedParams
+    context_injector_params: PipedProcessParams
+    message_reader_params: PipedProcessParams
 
     def get_external_process_env_vars(self):
         return {
@@ -185,8 +185,8 @@ class PipesClientRequest:
 
 def build_pipes_context_data(
     context: OpExecutionContext,
-    extras: Optional[ExtExtras],
-) -> "PipedContextData":
+    extras: Optional[PipedProcessExtras],
+) -> "PipedProcessContextData":
     asset_keys = (
         [_convert_asset_key(key) for key in sorted(context.selected_asset_keys)]
         if context.has_assets_def
@@ -211,7 +211,7 @@ def build_pipes_context_data(
     partition_key = context.partition_key if context.has_partition_key else None
     partition_time_window = context.partition_time_window if context.has_partition_key else None
     partition_key_range = context.partition_key_range if context.has_partition_key else None
-    return PipedContextData(
+    return PipedProcessContextData(
         asset_keys=asset_keys,
         code_version_by_asset_key=code_version_by_asset_key,
         provenance_by_asset_key=provenance_by_asset_key,
@@ -235,11 +235,11 @@ def _convert_asset_key(asset_key: AssetKey) -> str:
 
 def _convert_data_provenance(
     provenance: Optional[DataProvenance],
-) -> Optional["PipedDataProvenance"]:
+) -> Optional["PipeableDataProvenance"]:
     return (
         None
         if provenance is None
-        else PipedDataProvenance(
+        else PipeableDataProvenance(
             code_version=provenance.code_version,
             input_data_versions={
                 _convert_asset_key(k): v.value for k, v in provenance.input_data_versions.items()
@@ -251,8 +251,8 @@ def _convert_data_provenance(
 
 def _convert_time_window(
     time_window: TimeWindow,
-) -> "PipedTimeWindow":
-    return PipedTimeWindow(
+) -> "PipeableTimeWindow":
+    return PipeableTimeWindow(
         start=time_window.start.isoformat(),
         end=time_window.end.isoformat(),
     )
@@ -260,8 +260,8 @@ def _convert_time_window(
 
 def _convert_partition_key_range(
     partition_key_range: PartitionKeyRange,
-) -> "PipedTimeWindow":
-    return PipedTimeWindow(
+) -> "PipeableTimeWindow":
+    return PipeableTimeWindow(
         start=partition_key_range.start,
         end=partition_key_range.end,
     )

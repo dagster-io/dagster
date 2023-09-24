@@ -3,14 +3,14 @@ from unittest.mock import MagicMock
 import pytest
 from dagster_ext import (
     DagsterPipesError,
-    PipeableContextData,
     PipeableDataProvenance,
     PipeablePartitionKeyRange,
-    PipeableRequest,
     PipeableTimeWindow,
+    PipedProcessContext,
+    PipedProcessContextData,
 )
 
-TEST_EXT_CONTEXT_DEFAULTS = PipeableContextData(
+TEST_EXT_CONTEXT_DEFAULTS = PipedProcessContextData(
     asset_keys=None,
     code_version_by_asset_key=None,
     provenance_by_asset_key=None,
@@ -26,8 +26,8 @@ TEST_EXT_CONTEXT_DEFAULTS = PipeableContextData(
 
 def _make_external_execution_context(**kwargs):
     kwargs = {**TEST_EXT_CONTEXT_DEFAULTS, **kwargs}
-    return PipeableRequest(
-        data=PipeableContextData(**kwargs),
+    return PipedProcessContext(
+        data=PipedProcessContextData(**kwargs),
         message_channel=MagicMock(),
     )
 

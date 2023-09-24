@@ -1,26 +1,26 @@
 from subprocess import Popen
 from typing import Iterator, Mapping, Optional, Sequence, Union
 
-from dagster_ext import ExtExtras
+from dagster_ext import PipedProcessExtras
 
 from dagster import _check as check
 from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.errors import DagsterExternalExecutionError
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.ext.client import (
-    PipesClient,
-    PipesContextInjector,
-    PipesMessageReader,
+    PipedContextInjector,
+    PipedMessageReader,
+    PipedProcessClient,
 )
 from dagster._core.ext.context import PipesResult
 from dagster._core.ext.utils import (
     ExtTempFileContextInjector,
     ExtTempFileMessageReader,
-    setup_pipes_client_req,
+    pipe_protocol,
 )
 
 
-class _ExtSubprocess(PipesClient):
+class _PipedSubprocess(PipedProcessClient):
     """An ext client that runs a subprocess with the given command and environment.
 
     By default parameters are injected via environment variables. And then context is passed via
@@ -37,8 +37,8 @@ class _ExtSubprocess(PipesClient):
         self,
         env: Optional[Mapping[str, str]] = None,
         cwd: Optional[str] = None,
-        context_injector: Optional[PipesContextInjector] = None,
-        message_reader: Optional[PipesMessageReader] = None,
+        context_injector: Optional[PipedContextInjector] = None,
+        message_reader: Optional[PipedMessageReader] = None,
     ):
         self.env = check.opt_mapping_param(env, "env", key_type=str, value_type=str)
         self.cwd = check.opt_str_param(cwd, "cwd")
@@ -46,7 +46,7 @@ class _ExtSubprocess(PipesClient):
             check.opt_inst_param(
                 context_injector,
                 "context_injector",
-                PipesContextInjector,
+                PipedContextInjector,
             )
             or ExtTempFileContextInjector()
         )
@@ -54,7 +54,7 @@ class _ExtSubprocess(PipesClient):
             check.opt_inst_param(
                 message_reader,
                 "message_reader",
-                PipesMessageReader,
+                PipedMessageReader,
             )
             or ExtTempFileMessageReader()
         )
@@ -64,11 +64,11 @@ class _ExtSubprocess(PipesClient):
         command: Union[str, Sequence[str]],
         *,
         context: OpExecutionContext,
-        extras: Optional[ExtExtras] = None,
+        extras: Optional[PipedProcessExtras] = None,
         env: Optional[Mapping[str, str]] = None,
         cwd: Optional[str] = None,
     ) -> Iterator[PipesResult]:
-        with setup_pipes_client_req(
+        with pipe_protocol(
             context=context,
             context_injector=self.context_injector,
             message_reader=self.message_reader,
@@ -90,7 +90,8 @@ class _ExtSubprocess(PipesClient):
                 raise DagsterExternalExecutionError(
                     f"External execution process failed with code {process.returncode}"
                 )
+
         yield from ext_context.get_results()
 
 
-ExtSubprocess = ResourceParam[_ExtSubprocess]
+PipedSubprocess = ResourceParam[_PipedSubprocess]

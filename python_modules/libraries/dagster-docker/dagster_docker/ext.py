@@ -8,36 +8,36 @@ from dagster import (
     _check as check,
 )
 from dagster._core.ext.client import (
-    PipesClient,
-    PipesContextInjector,
-    PipesMessageReader,
+    PipedContextInjector,
+    PipedMessageReader,
+    PipedProcessClient,
 )
 from dagster._core.ext.context import (
     PipesMessageHandler,
     PipesResult,
 )
 from dagster._core.ext.utils import (
-    ExtEnvContextInjector,
+    EnvPipedContextInjector,
     extract_message_or_forward_to_stdout,
-    setup_pipes_client_req,
+    pipe_protocol,
 )
 from dagster_ext import (
     DagsterPipesError,
-    ExtDefaultMessageWriter,
-    ExtExtras,
-    PipedParams,
+    DefaultPipeableMessageWriter,
+    PipedProcessExtras,
+    PipedProcessParams,
 )
 
 
-class DockerLogsMessageReader(PipesMessageReader):
+class DockerLogsMessageReader(PipedMessageReader):
     @contextmanager
     def read_messages(
         self,
         handler: PipesMessageHandler,
-    ) -> Iterator[PipedParams]:
+    ) -> Iterator[PipedProcessParams]:
         self._handler = handler
         try:
-            yield {ExtDefaultMessageWriter.STDIO_KEY: ExtDefaultMessageWriter.STDERR}
+            yield {DefaultPipeableMessageWriter.STDIO_KEY: DefaultPipeableMessageWriter.STDERR}
         finally:
             self._handler = None
 
@@ -49,7 +49,7 @@ class DockerLogsMessageReader(PipesMessageReader):
             extract_message_or_forward_to_stdout(handler, log_line)
 
 
-class _ExtDocker(PipesClient):
+class _PipedDockerClient(PipedProcessClient):
     """An ext protocol compliant resource for launching docker containers.
 
     By default context is injected via environment variables and messages are parsed out of the
@@ -66,8 +66,8 @@ class _ExtDocker(PipesClient):
         self,
         env: Optional[Mapping[str, str]] = None,
         registry: Optional[Mapping[str, str]] = None,
-        context_injector: Optional[PipesContextInjector] = None,
-        message_reader: Optional[PipesMessageReader] = None,
+        context_injector: Optional[PipedContextInjector] = None,
+        message_reader: Optional[PipedMessageReader] = None,
     ):
         self.env = check.opt_mapping_param(env, "env", key_type=str, value_type=str)
         self.registry = check.opt_mapping_param(registry, "registry", key_type=str, value_type=str)
@@ -75,13 +75,13 @@ class _ExtDocker(PipesClient):
             check.opt_inst_param(
                 context_injector,
                 "context_injector",
-                PipesContextInjector,
+                PipedContextInjector,
             )
-            or ExtEnvContextInjector()
+            or EnvPipedContextInjector()
         )
 
         self.message_reader = (
-            check.opt_inst_param(message_reader, "message_reader", PipesMessageReader)
+            check.opt_inst_param(message_reader, "message_reader", PipedMessageReader)
             or DockerLogsMessageReader()
         )
 
@@ -94,7 +94,7 @@ class _ExtDocker(PipesClient):
         env: Optional[Mapping[str, str]] = None,
         registry: Optional[Mapping[str, str]] = None,
         container_kwargs: Optional[Mapping[str, Any]] = None,
-        extras: Optional[ExtExtras] = None,
+        extras: Optional[PipedProcessExtras] = None,
     ) -> Iterator[PipesResult]:
         """Create a docker container and run it to completion, enriched with the ext protocol.
 
@@ -118,12 +118,12 @@ class _ExtDocker(PipesClient):
             message_Reader (Optional[ExtMessageReader]):
                 Override the default ext protocol message reader.
         """
-        with setup_pipes_client_req(
+        with pipe_protocol(
             context=context,
             context_injector=self.context_injector,
             message_reader=self.message_reader,
             extras=extras,
-        ) as ext_context:
+        ) as piped_client_req:
             client = docker.client.from_env()
             registry = registry or self.registry
             if registry:
@@ -139,7 +139,7 @@ class _ExtDocker(PipesClient):
                     image=image,
                     command=command,
                     env=env,
-                    ext_protocol_env=ext_context.get_external_process_env_vars(),
+                    ext_protocol_env=piped_client_req.get_external_process_env_vars(),
                     container_kwargs=container_kwargs,
                 )
             except docker.errors.ImageNotFound:
@@ -149,7 +149,7 @@ class _ExtDocker(PipesClient):
                     image=image,
                     command=command,
                     env=env,
-                    ext_protocol_env=ext_context.get_external_process_env_vars(),
+                    ext_protocol_env=piped_client_req.get_external_process_env_vars(),
                     container_kwargs=container_kwargs,
                 )
 
@@ -163,7 +163,7 @@ class _ExtDocker(PipesClient):
                     raise DagsterPipesError(f"Container exited with non-zero status code: {result}")
             finally:
                 container.stop()
-        return ext_context.get_results()
+        return piped_client_req.get_results()
 
     def _create_container(
         self,
@@ -190,4 +190,4 @@ class _ExtDocker(PipesClient):
         )
 
 
-ExtDocker = ResourceParam[_ExtDocker]
+ExtDocker = ResourceParam[_PipedDockerClient]

@@ -21,9 +21,9 @@ from .databricks_pyspark_step_launcher import (
     databricks_pyspark_step_launcher as databricks_pyspark_step_launcher,
 )
 from .ext import (
-    ExtDatabricks as ExtDatabricks,
-    ExtDbfsContextInjector as ExtDbfsContextInjector,
-    ExtDbfsMessageReader as ExtDbfsMessageReader,
+    DbfsPipedContextInjector as DbfsPipedContextInjector,
+    DbfsPipedMessageReader as DbfsPipedMessageReader,
+    PipedDatabricksClient as PipedDatabricksClient,
     dbfs_tempdir as dbfs_tempdir,
 )
 from .ops import (

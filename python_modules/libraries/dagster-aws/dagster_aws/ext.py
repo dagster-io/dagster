@@ -7,12 +7,12 @@ import boto3
 import dagster._check as check
 from botocore.exceptions import ClientError
 from dagster._core.ext.client import (
-    PipedParams,
+    PipedProcessParams,
 )
-from dagster._core.ext.utils import ExtBlobStoreMessageReader
+from dagster._core.ext.utils import BlobStorePipedMessageReader
 
 
-class ExtS3MessageReader(ExtBlobStoreMessageReader):
+class ExtS3MessageReader(BlobStorePipedMessageReader):
     def __init__(self, *, interval: float = 10, bucket: str, client: boto3.client):
         super().__init__(interval=interval)
         self.bucket = check.str_param(bucket, "bucket")
@@ -20,10 +20,10 @@ class ExtS3MessageReader(ExtBlobStoreMessageReader):
         self.client = client
 
     @contextmanager
-    def get_params(self) -> Iterator[PipedParams]:
+    def get_params(self) -> Iterator[PipedProcessParams]:
         yield {"bucket": self.bucket, "key_prefix": self.key_prefix}
 
-    def download_messages_chunk(self, index: int, params: PipedParams) -> Optional[str]:
+    def download_messages_chunk(self, index: int, params: PipedProcessParams) -> Optional[str]:
         key = f"{self.key_prefix}/{index}.json"
         try:
             obj = self.client.get_object(Bucket=self.bucket, Key=key)
