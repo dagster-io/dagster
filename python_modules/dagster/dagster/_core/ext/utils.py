@@ -189,12 +189,12 @@ def extract_message_or_forward_to_stdout(handler: "PipesMessageHandler", log_lin
 
 _FAIL_TO_YIELD_ERROR_MESSAGE = (
     "Did you forget to `yield from piped_client_req.get_results()`? `get_results` should be called"
-    " once after the `pipe_protocol` block has exited to yield any remaining buffered results."
+    " once after the `pipes_protocol` block has exited to yield any remaining buffered results."
 )
 
 
 @contextmanager
-def pipe_protocol(
+def pipes_protocol(
     context: OpExecutionContext,
     context_injector: PipedContextInjector,
     message_reader: PipedMessageReader,

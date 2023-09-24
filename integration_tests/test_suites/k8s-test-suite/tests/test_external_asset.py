@@ -7,26 +7,26 @@ from dagster import AssetExecutionContext, asset, materialize
 from dagster._core.ext.client import (
     PipedContextInjector,
 )
-from dagster._core.ext.utils import EnvPipedContextInjector, pipe_protocol
+from dagster._core.ext.utils import EnvPipedContextInjector, pipes_protocol
 from dagster_ext import DefaultPipedProcessContextLoader, PipedProcessContextData
 from dagster_k8s import execute_k8s_job
 from dagster_k8s.client import DagsterKubernetesClient
-from dagster_k8s.pipes_client import ExtK8sPod, K8sPodLogsMessageReader
+from dagster_k8s.pipes_client import K8sPodLogsMessageReader, PipedK8sPod
 from dagster_test.test_project import (
     get_test_project_docker_image,
 )
 
 
 @pytest.mark.default
-def test_ext_k8s_pod(namespace, cluster_provider):
+def test_pipes_k8s_pod(namespace, cluster_provider):
     docker_image = get_test_project_docker_image()
 
     @asset
     def number_y(
         context: AssetExecutionContext,
-        ext_k8s_pod: ExtK8sPod,
+        piped_k8s_pod: PipedK8sPod,
     ):
-        yield from ext_k8s_pod.run(
+        yield from piped_k8s_pod.run(
             context=context,
             namespace=namespace,
             image=docker_image,
@@ -46,7 +46,7 @@ def test_ext_k8s_pod(namespace, cluster_provider):
 
     result = materialize(
         [number_y],
-        resources={"ext_k8s_pod": ExtK8sPod()},
+        resources={"piped_k8s_pod": PipedK8sPod()},
         raise_on_error=False,
     )
     assert result.success
@@ -114,7 +114,7 @@ class ExtConfigMapContextInjector(PipedContextInjector):
 
 
 @pytest.mark.default
-def test_ext_k8s_pod_file_inject(namespace, cluster_provider):
+def test_pipes_k8s_pod_file_inject(namespace, cluster_provider):
     # a convoluted test to
     # - vet base_pod_spec works for setting volumes & mounts
     # - preserve file injection via config map code
@@ -127,7 +127,7 @@ def test_ext_k8s_pod_file_inject(namespace, cluster_provider):
     @asset
     def number_y(
         context: AssetExecutionContext,
-        ext_k8s_pod: ExtK8sPod,
+        piped_k8s_pod: PipedK8sPod,
     ):
         pod_spec = injector.build_pod_spec(
             image=docker_image,
@@ -138,7 +138,7 @@ def test_ext_k8s_pod_file_inject(namespace, cluster_provider):
             ],
         )
 
-        yield from ext_k8s_pod.run(
+        yield from piped_k8s_pod.run(
             context=context,
             namespace=namespace,
             extras={
@@ -153,7 +153,7 @@ def test_ext_k8s_pod_file_inject(namespace, cluster_provider):
 
     result = materialize(
         [number_y],
-        resources={"ext_k8s_pod": ExtK8sPod(context_injector=injector)},
+        resources={"piped_k8s_pod": PipedK8sPod(context_injector=injector)},
         raise_on_error=False,
     )
     assert result.success
@@ -169,12 +169,12 @@ def test_use_excute_k8s_job(namespace, cluster_provider):
     def number_y_job(context: AssetExecutionContext):
         core_api = kubernetes.client.CoreV1Api()
         reader = K8sPodLogsMessageReader()
-        with pipe_protocol(
+        with pipes_protocol(
             context,
             EnvPipedContextInjector(),
             reader,
             extras={"storage_root": "/tmp/"},
-        ) as ext_context:
+        ) as piped_client_req:
             job_name = "number_y_asset_job"
 
             # stand-in for any means of creating kubernetes work
@@ -191,17 +191,17 @@ def test_use_excute_k8s_job(namespace, cluster_provider):
                     for k, v in {
                         "PYTHONPATH": "/dagster_test/toys/external_execution/",
                         "NUMBER_Y": "2",
-                        **ext_context.get_external_process_env_vars(),
+                        **piped_client_req.get_external_process_env_vars(),
                     }.items()
                 ],
                 k8s_job_name=job_name,
             )
             reader.consume_pod_logs(core_api, job_name, namespace)
-        yield from ext_context.get_results()
+        yield from piped_client_req.get_results()
 
     result = materialize(
         [number_y_job],
-        resources={"ext_k8s_pod": ExtK8sPod()},
+        resources={"piped_k8s_pod": PipedK8sPod()},
         raise_on_error=False,
     )
     assert result.success

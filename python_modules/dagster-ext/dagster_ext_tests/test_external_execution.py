@@ -32,7 +32,7 @@ from dagster._core.definitions.metadata import (
     TextMetadataValue,
     UrlMetadataValue,
 )
-from dagster._core.errors import DagsterExternalExecutionError, DagsterInvariantViolationError
+from dagster._core.errors import DagsterInvariantViolationError, DagsterPipedProcessExecutionError
 from dagster._core.execution.context.compute import AssetExecutionContext, OpExecutionContext
 from dagster._core.execution.context.invocation import build_asset_context
 from dagster._core.ext.subprocess import (
@@ -42,7 +42,7 @@ from dagster._core.ext.utils import (
     EnvPipedContextInjector,
     ExtTempFileContextInjector,
     ExtTempFileMessageReader,
-    pipe_protocol,
+    pipes_protocol,
 )
 from dagster._core.instance_for_test import instance_for_test
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
@@ -135,7 +135,7 @@ def s3_client() -> Iterator[boto3.client]:
         ("user/env", "user/file"),
     ],
 )
-def test_ext_subprocess(
+def test_pipes_subprocess(
     capsys, tmpdir, external_script, s3_client, context_injector_spec, message_reader_spec
 ):
     if context_injector_spec == "default":
@@ -198,7 +198,7 @@ def test_ext_subprocess(
     #     assert asset_check_executions[0].status == AssetCheckExecutionRecordStatus.SUCCEEDED
 
 
-def test_ext_multi_asset():
+def test_pipes_multi_asset():
     def script_fn():
         from dagster_ext import init_dagster_piped_process
 
@@ -227,7 +227,7 @@ def test_ext_multi_asset():
         assert bar_mat.asset_materialization.tags[DATA_VERSION_TAG] == "alpha"
 
 
-def test_ext_typed_metadata():
+def test_pipes_typed_metadata():
     def script_fn():
         from dagster_ext import init_dagster_piped_process
 
@@ -293,7 +293,7 @@ def test_ext_typed_metadata():
         assert metadata["null_meta"].value is None
 
 
-def test_ext_asset_failed():
+def test_pipes_asset_failed():
     def script_fn():
         raise Exception("foo")
 
@@ -303,11 +303,11 @@ def test_ext_asset_failed():
             cmd = [_PYTHON_EXECUTABLE, script_path]
             yield from ext.run(cmd, context=context)
 
-    with pytest.raises(DagsterExternalExecutionError):
+    with pytest.raises(DagsterPipedProcessExecutionError):
         materialize([foo], resources={"ext": PipedSubprocess()})
 
 
-def test_ext_asset_invocation():
+def test_pipes_asset_invocation():
     def script_fn():
         from dagster_ext import init_dagster_piped_process
 
@@ -326,7 +326,7 @@ def test_ext_asset_invocation():
 PATH_WITH_NONEXISTENT_DIR = "/tmp/does-not-exist/foo"
 
 
-def test_ext_no_orchestration():
+def test_pipes_no_orchestration():
     def script_fn():
         from dagster_ext import (
             PipedProcessContext,
@@ -355,13 +355,13 @@ def test_ext_no_orchestration():
         )
 
 
-def test_ext_no_client(external_script):
+def test_pipes_no_client(external_script):
     @asset(check_specs=[AssetCheckSpec(name="foo_check", asset=AssetKey(["subproc_run"]))])
     def subproc_run(context: AssetExecutionContext):
         extras = {"bar": "baz"}
         cmd = [_PYTHON_EXECUTABLE, external_script]
 
-        with pipe_protocol(
+        with pipes_protocol(
             context,
             ExtTempFileContextInjector(),
             ExtTempFileMessageReader(),
@@ -391,14 +391,14 @@ def test_ext_no_client(external_script):
         assert asset_check_executions[0].status == AssetCheckExecutionRecordStatus.SUCCEEDED
 
 
-def test_ext_no_client_no_yield():
+def test_pipes_no_client_no_yield():
     def script_fn():
         pass
 
     @asset
     def foo(context: OpExecutionContext):
         with temp_script(script_fn) as external_script:
-            with pipe_protocol(
+            with pipes_protocol(
                 context,
                 ExtTempFileContextInjector(),
                 ExtTempFileMessageReader(),

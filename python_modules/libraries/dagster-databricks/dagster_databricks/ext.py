@@ -9,13 +9,13 @@ from typing import Iterator, Mapping, Optional
 
 import dagster._check as check
 from dagster._core.definitions.resource_annotation import ResourceParam
-from dagster._core.errors import DagsterExternalExecutionError
+from dagster._core.errors import DagsterPipedProcessExecutionError
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.ext.client import PipedContextInjector, PipedMessageReader, PipedProcessClient
 from dagster._core.ext.context import PipesResult
 from dagster._core.ext.utils import (
     BlobStorePipedMessageReader,
-    pipe_protocol,
+    pipes_protocol,
 )
 from dagster_ext import (
     PipedProcessContextData,
@@ -79,7 +79,7 @@ class _PipedDatabricksClient(PipedProcessClient):
             submit_args (Optional[Mapping[str, str]]): Additional keyword arguments that will be
                 forwarded as-is to `WorkspaceClient.jobs.submit`.
         """
-        with pipe_protocol(
+        with pipes_protocol(
             context=context,
             extras=extras,
             context_injector=self.context_injector,
@@ -109,11 +109,11 @@ class _PipedDatabricksClient(PipedProcessClient):
                     if run.state.result_state == jobs.RunResultState.SUCCESS:
                         break
                     else:
-                        raise DagsterExternalExecutionError(
+                        raise DagsterPipedProcessExecutionError(
                             f"Error running Databricks job: {run.state.state_message}"
                         )
                 elif run.state.life_cycle_state == jobs.RunLifeCycleState.INTERNAL_ERROR:
-                    raise DagsterExternalExecutionError(
+                    raise DagsterPipedProcessExecutionError(
                         f"Error running Databricks job: {run.state.state_message}"
                     )
                 yield from pipes_client_req.get_results()

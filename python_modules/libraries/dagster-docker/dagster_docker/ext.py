@@ -19,7 +19,7 @@ from dagster._core.ext.context import (
 from dagster._core.ext.utils import (
     EnvPipedContextInjector,
     extract_message_or_forward_to_stdout,
-    pipe_protocol,
+    pipes_protocol,
 )
 from dagster_ext import (
     DagsterPipesError,
@@ -118,7 +118,7 @@ class _PipedDockerClient(PipedProcessClient):
             message_Reader (Optional[ExtMessageReader]):
                 Override the default ext protocol message reader.
         """
-        with pipe_protocol(
+        with pipes_protocol(
             context=context,
             context_injector=self.context_injector,
             message_reader=self.message_reader,
@@ -139,7 +139,7 @@ class _PipedDockerClient(PipedProcessClient):
                     image=image,
                     command=command,
                     env=env,
-                    ext_protocol_env=piped_client_req.get_external_process_env_vars(),
+                    pipes_protocol_env=piped_client_req.get_external_process_env_vars(),
                     container_kwargs=container_kwargs,
                 )
             except docker.errors.ImageNotFound:
@@ -149,7 +149,7 @@ class _PipedDockerClient(PipedProcessClient):
                     image=image,
                     command=command,
                     env=env,
-                    ext_protocol_env=piped_client_req.get_external_process_env_vars(),
+                    pipes_protocol_env=piped_client_req.get_external_process_env_vars(),
                     container_kwargs=container_kwargs,
                 )
 
@@ -172,7 +172,7 @@ class _PipedDockerClient(PipedProcessClient):
         command: Union[str, Sequence[str]],
         env: Optional[Mapping[str, str]],
         container_kwargs: Optional[Mapping[str, Any]],
-        ext_protocol_env: Mapping[str, str],
+        pipes_protocol_env: Mapping[str, str],
     ):
         kwargs = dict(container_kwargs or {})
         kwargs_env = kwargs.pop("environment", {})
@@ -181,7 +181,7 @@ class _PipedDockerClient(PipedProcessClient):
             command=command,
             detach=True,
             environment={
-                **ext_protocol_env,
+                **pipes_protocol_env,
                 **(self.env or {}),
                 **(env or {}),
                 **kwargs_env,

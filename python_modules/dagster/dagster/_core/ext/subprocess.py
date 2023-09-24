@@ -5,7 +5,7 @@ from dagster_ext import PipedProcessExtras
 
 from dagster import _check as check
 from dagster._core.definitions.resource_annotation import ResourceParam
-from dagster._core.errors import DagsterExternalExecutionError
+from dagster._core.errors import DagsterPipedProcessExecutionError
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.ext.client import (
     PipedContextInjector,
@@ -16,7 +16,7 @@ from dagster._core.ext.context import PipesResult
 from dagster._core.ext.utils import (
     ExtTempFileContextInjector,
     ExtTempFileMessageReader,
-    pipe_protocol,
+    pipes_protocol,
 )
 
 
@@ -68,30 +68,30 @@ class _PipedSubprocess(PipedProcessClient):
         env: Optional[Mapping[str, str]] = None,
         cwd: Optional[str] = None,
     ) -> Iterator[PipesResult]:
-        with pipe_protocol(
+        with pipes_protocol(
             context=context,
             context_injector=self.context_injector,
             message_reader=self.message_reader,
             extras=extras,
-        ) as ext_context:
+        ) as piped_client_req:
             process = Popen(
                 command,
                 cwd=cwd or self.cwd,
                 env={
-                    **ext_context.get_external_process_env_vars(),
+                    **piped_client_req.get_external_process_env_vars(),
                     **self.env,
                     **(env or {}),
                 },
             )
             while process.poll() is None:
-                yield from ext_context.get_results()
+                yield from piped_client_req.get_results()
 
             if process.returncode != 0:
-                raise DagsterExternalExecutionError(
+                raise DagsterPipedProcessExecutionError(
                     f"External execution process failed with code {process.returncode}"
                 )
 
-        yield from ext_context.get_results()
+        yield from piped_client_req.get_results()
 
 
 PipedSubprocess = ResourceParam[_PipedSubprocess]
