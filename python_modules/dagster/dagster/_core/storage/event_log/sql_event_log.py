@@ -1960,7 +1960,20 @@ class SqlEventLogStorage(EventLogStorage):
 
     def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
         self._check_partitions_table()
-        return partition_key in self._fetch_partition_keys_for_partition_def(partitions_def_name)
+        query = (
+            db_select([1])
+            .where(
+                db.and_(
+                    DynamicPartitionsTable.c.partitions_def_name == partitions_def_name,
+                    DynamicPartitionsTable.c.partition == partition_key,
+                )
+            )
+            .limit(1)
+        )
+        with self.index_connection() as conn:
+            results = conn.execute(query).fetchall()
+
+        return len(results) > 0
 
     def add_dynamic_partitions(
         self, partitions_def_name: str, partition_keys: Sequence[str]
