@@ -190,4 +190,4 @@ class _PipedDockerClient(PipedProcessClient):
         )
 
 
-ExtDocker = ResourceParam[_PipedDockerClient]
+PipedDockerClient = ResourceParam[_PipedDockerClient]

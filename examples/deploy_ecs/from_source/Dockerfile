@@ -17,6 +17,7 @@ WORKDIR /tmp
 # - dagster-postgres so we can use PostgresEventStorage,
 #   PostgresRunStorage, and PostgresScheduleStorage
 RUN pip install \
+  -e python_modules/dagster-pipes \
   -e python_modules/dagster \
   -e python_modules/libraries/dagster-aws \
   -e python_modules/libraries/dagster-postgres
@@ -33,6 +34,7 @@ WORKDIR /tmp
 RUN pip install \
   -e python_modules/dagster-webserver \
   -e python_modules/dagster-graphql \
+  -e python_modules/dagster-pipes \
   -e python_modules/dagster
 
 RUN ! pip list --exclude-editable | grep -e dagster

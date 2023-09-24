@@ -4,9 +4,9 @@ import tempfile
 import pytest
 from dagster import AssetExecutionContext, asset, materialize
 from dagster._core.pipes.utils import (
-    ExtFileContextInjector,
+    FilePipedContextInjector,
 )
-from dagster_docker.ext import ExtDocker
+from dagster_docker.piped_client import PipedDockerClient
 from dagster_test.test_project import (
     IS_BUILDKITE,
     find_local_test_image,
@@ -29,7 +29,7 @@ def test_default():
     @asset
     def number_x(
         context: AssetExecutionContext,
-        ext_docker: ExtDocker,
+        ext_docker: PipedDockerClient,
     ):
         yield from ext_docker.run(
             image=docker_image,
@@ -45,7 +45,7 @@ def test_default():
 
     result = materialize(
         [number_x],
-        resources={"ext_docker": ExtDocker(**ext_config)},
+        resources={"ext_docker": PipedDockerClient(**ext_config)},
         raise_on_error=False,
     )
     assert result.success
@@ -69,7 +69,7 @@ def test_file_io():
         @asset
         def number_x(
             context: AssetExecutionContext,
-            ext_docker: ExtDocker,
+            ext_docker: PipedDockerClient,
         ):
             instance_storage = context.instance.storage_directory()
             host_storage = os.path.join(instance_storage, "number_example")
@@ -107,8 +107,8 @@ def test_file_io():
         result = materialize(
             [number_x],
             resources={
-                "ext_docker": ExtDocker(
-                    context_injector=ExtFileContextInjector(os.path.join(tempdir, "context"))
+                "ext_docker": PipedDockerClient(
+                    context_injector=FilePipedContextInjector(os.path.join(tempdir, "context"))
                 )
             },
             raise_on_error=False,
