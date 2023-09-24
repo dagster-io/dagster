@@ -6,7 +6,7 @@ from dagster import (
     asset,
     asset_check,
 )
-from dagster._core.definitions.asset_checks import build_blocking_asset_check
+from dagster._core.definitions.asset_checks import build_asset_with_blocking_check
 from dagster._core.definitions.asset_in import AssetIn
 
 
@@ -45,7 +45,7 @@ def fail_check_if_tagged(context):
     )
 
 
-blocking_asset = build_blocking_asset_check(
+blocking_asset = build_asset_with_blocking_check(
     asset_def=my_asset, checks=[pass_check, fail_check_if_tagged]
 )
 
@@ -114,7 +114,7 @@ def fail_check_if_tagged_2(context, my_asset_with_managed_input):
     )
 
 
-blocking_asset_with_managed_input = build_blocking_asset_check(
+blocking_asset_with_managed_input = build_asset_with_blocking_check(
     asset_def=my_asset_with_managed_input, checks=[fail_check_if_tagged_2]
 )
 

@@ -146,11 +146,12 @@ class AssetChecksDefinition(ResourceAddable, RequiresResources):
 
 
 @experimental
-def build_blocking_asset_check(
+def build_asset_with_blocking_check(
     asset_def: "AssetsDefinition",
     checks: Sequence[AssetChecksDefinition],
 ) -> "AssetsDefinition":
-    from dagster import AssetIn, In, OpExecutionContext, Output, graph_asset, op
+    from dagster import AssetIn, In, OpExecutionContext, Output, op
+    from dagster._core.definitions.decorators.asset_decorator import graph_asset_no_defaults
     from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 
     check_specs = []
@@ -162,9 +163,13 @@ def build_blocking_asset_check(
     check.invariant(len(asset_def.op.output_defs) == 1)
     asset_out_type = asset_def.op.output_defs[0].dagster_type
 
-    @op(ins={"materialization": In(asset_out_type), "check_evaluations": In(Nothing)})
-    def fan_in_checks_and_materialization(context: OpExecutionContext, materialization):
-        yield Output(materialization)
+    @op(ins={"asset_return_value": In(asset_out_type), "check_evaluations": In(Nothing)})
+    def fan_in_checks_and_asset_return_value(context: OpExecutionContext, asset_return_value: Any):
+        # we pass the asset_return_value through and store it again so that downstream assets can load it.
+        # This is a little silly- we only do this because this op has the asset key in its StepOutputProperties
+        # so the output is written to the right path. We could probably get the asset_def.op to write to the
+        # asset path (and make sure we don't override it here) to avoid the double write.
+        yield Output(asset_return_value)
 
         for check_spec in check_specs:
             executions = context.instance.event_log_storage.get_asset_check_executions(
@@ -181,7 +186,21 @@ def build_blocking_asset_check(
             if execution.status != AssetCheckExecutionRecordStatus.SUCCEEDED:
                 raise DagsterAssetCheckFailedError()
 
-    @graph_asset(
+    # kwargs are the inputs to the asset_def.op that we are wrapping
+    def blocking_asset(**kwargs):
+        asset_return_value = asset_def.op.with_replaced_properties(name="asset_op")(**kwargs)
+        check_evaluations = [check.node_def(asset_return_value) for check in checks]
+
+        return {
+            "result": fan_in_checks_and_asset_return_value(asset_return_value, check_evaluations),
+            **{
+                check_output_name: check_result
+                for check_output_name, check_result in zip(check_output_names, check_evaluations)
+            },
+        }
+
+    return graph_asset_no_defaults(
+        compose_fn=blocking_asset,
         name=asset_def.key.path[-1],
         key_prefix=asset_def.key.path[:-1] if len(asset_def.key.path) > 1 else None,
         group_name=asset_def.group_names_by_key.get(asset_def.key),
@@ -194,17 +213,5 @@ def build_blocking_asset_check(
         freshness_policy=asset_def.freshness_policies_by_key.get(asset_def.key),
         auto_materialize_policy=asset_def.auto_materialize_policies_by_key.get(asset_def.key),
         backfill_policy=asset_def.backfill_policy,
+        config=None,  # gets config from asset_def.op
     )
-    def blocking_asset(**kwargs):
-        asset_result = asset_def.op.with_replaced_properties(name="asset_op")(**kwargs)
-        check_evaluations = [check.node_def(asset_result) for check in checks]
-
-        return {
-            "result": fan_in_checks_and_materialization(asset_result, check_evaluations),
-            **{
-                check_output_name: check_result
-                for check_output_name, check_result in zip(check_output_names, check_evaluations)
-            },
-        }
-
-    return blocking_asset
