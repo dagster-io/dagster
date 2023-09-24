@@ -8,19 +8,19 @@ from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.errors import DagsterExternalExecutionError
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.ext.client import (
-    ExtClient,
-    ExtContextInjector,
-    ExtMessageReader,
+    PipesClient,
+    PipesContextInjector,
+    PipesMessageReader,
 )
-from dagster._core.ext.context import ExtResult
+from dagster._core.ext.context import PipesResult
 from dagster._core.ext.utils import (
     ExtTempFileContextInjector,
     ExtTempFileMessageReader,
-    ext_protocol,
+    setup_pipes_client_req,
 )
 
 
-class _ExtSubprocess(ExtClient):
+class _ExtSubprocess(PipesClient):
     """An ext client that runs a subprocess with the given command and environment.
 
     By default parameters are injected via environment variables. And then context is passed via
@@ -37,8 +37,8 @@ class _ExtSubprocess(ExtClient):
         self,
         env: Optional[Mapping[str, str]] = None,
         cwd: Optional[str] = None,
-        context_injector: Optional[ExtContextInjector] = None,
-        message_reader: Optional[ExtMessageReader] = None,
+        context_injector: Optional[PipesContextInjector] = None,
+        message_reader: Optional[PipesMessageReader] = None,
     ):
         self.env = check.opt_mapping_param(env, "env", key_type=str, value_type=str)
         self.cwd = check.opt_str_param(cwd, "cwd")
@@ -46,7 +46,7 @@ class _ExtSubprocess(ExtClient):
             check.opt_inst_param(
                 context_injector,
                 "context_injector",
-                ExtContextInjector,
+                PipesContextInjector,
             )
             or ExtTempFileContextInjector()
         )
@@ -54,7 +54,7 @@ class _ExtSubprocess(ExtClient):
             check.opt_inst_param(
                 message_reader,
                 "message_reader",
-                ExtMessageReader,
+                PipesMessageReader,
             )
             or ExtTempFileMessageReader()
         )
@@ -67,8 +67,8 @@ class _ExtSubprocess(ExtClient):
         extras: Optional[ExtExtras] = None,
         env: Optional[Mapping[str, str]] = None,
         cwd: Optional[str] = None,
-    ) -> Iterator[ExtResult]:
-        with ext_protocol(
+    ) -> Iterator[PipesResult]:
+        with setup_pipes_client_req(
             context=context,
             context_injector=self.context_injector,
             message_reader=self.message_reader,

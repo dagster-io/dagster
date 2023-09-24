@@ -11,19 +11,19 @@ from dagster import (
 from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.ext.client import (
-    ExtClient,
-    ExtContextInjector,
-    ExtMessageReader,
-    ExtParams,
+    PipedParams,
+    PipesClient,
+    PipesContextInjector,
+    PipesMessageReader,
 )
 from dagster._core.ext.context import (
-    ExtMessageHandler,
-    ExtResult,
+    PipesMessageHandler,
+    PipesResult,
 )
 from dagster._core.ext.utils import (
     ExtEnvContextInjector,
-    ext_protocol,
     extract_message_or_forward_to_stdout,
+    setup_pipes_client_req,
 )
 from dagster_ext import (
     ExtDefaultMessageWriter,
@@ -45,12 +45,12 @@ def get_pod_name(run_id: str, op_name: str):
 DEFAULT_CONTAINER_NAME = "dagster-ext-execution"
 
 
-class K8sPodLogsMessageReader(ExtMessageReader):
+class K8sPodLogsMessageReader(PipesMessageReader):
     @contextmanager
     def read_messages(
         self,
-        handler: ExtMessageHandler,
-    ) -> Iterator[ExtParams]:
+        handler: PipesMessageHandler,
+    ) -> Iterator[PipedParams]:
         self._handler = handler
         try:
             yield {ExtDefaultMessageWriter.STDIO_KEY: ExtDefaultMessageWriter.STDERR}
@@ -77,7 +77,7 @@ class K8sPodLogsMessageReader(ExtMessageReader):
                 extract_message_or_forward_to_stdout(handler, log_line)
 
 
-class _ExtK8sPod(ExtClient):
+class _ExtK8sPod(PipesClient):
     """An ext protocol compliant resource for launching kubernetes pods.
 
     By default context is injected via environment variables and messages are parsed out of
@@ -95,21 +95,21 @@ class _ExtK8sPod(ExtClient):
     def __init__(
         self,
         env: Optional[Mapping[str, str]] = None,
-        context_injector: Optional[ExtContextInjector] = None,
-        message_reader: Optional[ExtMessageReader] = None,
+        context_injector: Optional[PipesContextInjector] = None,
+        message_reader: Optional[PipesMessageReader] = None,
     ):
         self.env = check.opt_mapping_param(env, "env", key_type=str, value_type=str)
         self.context_injector = (
             check.opt_inst_param(
                 context_injector,
                 "context_injector",
-                ExtContextInjector,
+                PipesContextInjector,
             )
             or ExtEnvContextInjector()
         )
 
         self.message_reader = (
-            check.opt_inst_param(message_reader, "message_reader", ExtMessageReader)
+            check.opt_inst_param(message_reader, "message_reader", PipesMessageReader)
             or K8sPodLogsMessageReader()
         )
 
@@ -124,7 +124,7 @@ class _ExtK8sPod(ExtClient):
         base_pod_meta: Optional[Mapping[str, Any]] = None,
         base_pod_spec: Optional[Mapping[str, Any]] = None,
         extras: Optional[ExtExtras] = None,
-    ) -> Iterator[ExtResult]:
+    ) -> Iterator[PipesResult]:
         """Publish a kubernetes pod and wait for it to complete, enriched with the ext protocol.
 
         Args:
@@ -154,12 +154,12 @@ class _ExtK8sPod(ExtClient):
         """
         client = DagsterKubernetesClient.production_client()
 
-        with ext_protocol(
+        with setup_pipes_client_req(
             context=context,
             extras=extras,
             context_injector=self.context_injector,
             message_reader=self.message_reader,
-        ) as ext_context:
+        ) as pipes_client_req:
             namespace = namespace or "default"
             pod_name = get_pod_name(context.run_id, context.op.name)
             pod_body = build_pod_body(
@@ -167,7 +167,7 @@ class _ExtK8sPod(ExtClient):
                 image=image,
                 command=command,
                 env_vars={
-                    **ext_context.get_external_process_env_vars(),
+                    **pipes_client_req.get_external_process_env_vars(),
                     **(self.env or {}),
                     **(env or {}),
                 },
@@ -197,7 +197,7 @@ class _ExtK8sPod(ExtClient):
                     )
             finally:
                 client.core_api.delete_namespaced_pod(pod_name, namespace)
-        return ext_context.get_results()
+        return pipes_client_req.get_results()
 
 
 def build_pod_body(

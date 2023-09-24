@@ -42,7 +42,7 @@ from dagster._core.ext.utils import (
     ExtEnvContextInjector,
     ExtTempFileContextInjector,
     ExtTempFileMessageReader,
-    ext_protocol,
+    setup_pipes_client_req,
 )
 from dagster._core.instance_for_test import instance_for_test
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
@@ -75,8 +75,8 @@ def external_script() -> Iterator[str]:
         import time
 
         from dagster_ext import (
-            ExtContext,
             ExtS3MessageWriter,
+            PipeableRequest,
             init_dagster_ext,
         )
 
@@ -91,7 +91,7 @@ def external_script() -> Iterator[str]:
             message_writer = None  # use default
 
         init_dagster_ext(message_writer=message_writer)
-        context = ExtContext.get()
+        context = PipeableRequest.get()
         context.log("hello world")
         time.sleep(0.1)  # sleep to make sure that we encompass multiple intervals for blob store IO
         context.report_asset_materialization(
@@ -327,7 +327,7 @@ PATH_WITH_NONEXISTENT_DIR = "/tmp/does-not-exist/foo"
 def test_ext_no_orchestration():
     def script_fn():
         from dagster_ext import (
-            ExtContext,
+            PipeableRequest,
             init_dagster_ext,
             is_dagster_ext_process,
         )
@@ -335,7 +335,7 @@ def test_ext_no_orchestration():
         assert not is_dagster_ext_process()
 
         init_dagster_ext()
-        context = ExtContext.get()
+        context = PipeableRequest.get()
         context.log("hello world")
         context.report_asset_materialization(
             metadata={"bar": context.get_extra("bar")},
@@ -359,7 +359,7 @@ def test_ext_no_client(external_script):
         extras = {"bar": "baz"}
         cmd = [_PYTHON_EXECUTABLE, external_script]
 
-        with ext_protocol(
+        with setup_pipes_client_req(
             context,
             ExtTempFileContextInjector(),
             ExtTempFileMessageReader(),
@@ -396,7 +396,7 @@ def test_ext_no_client_no_yield():
     @asset
     def foo(context: OpExecutionContext):
         with temp_script(script_fn) as external_script:
-            with ext_protocol(
+            with setup_pipes_client_req(
                 context,
                 ExtTempFileContextInjector(),
                 ExtTempFileMessageReader(),

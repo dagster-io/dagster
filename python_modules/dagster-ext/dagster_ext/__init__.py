@@ -43,7 +43,7 @@ if TYPE_CHECKING:
 EXT_PROTOCOL_VERSION = "0.1"
 
 ExtExtras = Mapping[str, Any]
-ExtParams = Mapping[str, Any]
+PipeableParams = Mapping[str, Any]
 
 
 _ENV_KEY_PREFIX = "DAGSTER_EXT_"
@@ -55,10 +55,10 @@ def _param_name_to_env_key(key: str) -> str:
 
 # ##### PARAMETERS
 
-IS_DAGSTER_EXT_PROCESS_ENV_VAR = "IS_DAGSTER_EXT_PROCESS"
+IS_DAGSTER_PIPES_PROCESS_ENV_VAR = "IS_DAGSTER_EXT_PROCESS"
 
-DAGSTER_EXT_ENV_KEYS = {
-    k: _param_name_to_env_key(k) for k in (IS_DAGSTER_EXT_PROCESS_ENV_VAR, "context", "messages")
+DAGSTER_PIPES_ENV_KEYS = {
+    k: _param_name_to_env_key(k) for k in (IS_DAGSTER_PIPES_PROCESS_ENV_VAR, "context", "messages")
 }
 
 
@@ -68,58 +68,58 @@ DAGSTER_EXT_ENV_KEYS = {
 EXT_PROTOCOL_VERSION_FIELD = "__dagster_ext_version"
 
 
-class ExtMessage(TypedDict):
+class PipesOutboundMessage(TypedDict):
     __dagster_ext_version: str
     method: str
     params: Optional[Mapping[str, Any]]
 
 
-# ##### EXT CONTEXT
+# ##### Pipeable data classes
 
 
-class ExtContextData(TypedDict):
+class PipeableContextData(TypedDict):
     asset_keys: Optional[Sequence[str]]
     code_version_by_asset_key: Optional[Mapping[str, Optional[str]]]
-    provenance_by_asset_key: Optional[Mapping[str, Optional["ExtDataProvenance"]]]
+    provenance_by_asset_key: Optional[Mapping[str, Optional["PipeableDataProvenance"]]]
     partition_key: Optional[str]
-    partition_key_range: Optional["ExtPartitionKeyRange"]
-    partition_time_window: Optional["ExtTimeWindow"]
+    partition_key_range: Optional["PipeablePartitionKeyRange"]
+    partition_time_window: Optional["PipeableTimeWindow"]
     run_id: str
     job_name: Optional[str]
     retry_number: int
     extras: Mapping[str, Any]
 
 
-class ExtPartitionKeyRange(TypedDict):
+class PipeablePartitionKeyRange(TypedDict):
     start: str
     end: str
 
 
-class ExtTimeWindow(TypedDict):
+class PipeableTimeWindow(TypedDict):
     start: str  # timestamp
     end: str  # timestamp
 
 
-class ExtDataProvenance(TypedDict):
+class PipeableDataProvenance(TypedDict):
     code_version: str
     input_data_versions: Mapping[str, str]
     is_user_provided: bool
 
 
-ExtAssetCheckSeverity = Literal["WARN", "ERROR"]
+PipeableAssetCheckSeverity = Literal["WARN", "ERROR"]
 
-ExtMetadataRawValue = Union[int, float, str, Mapping[str, Any], Sequence[Any], bool, None]
+PipeableMetadataRawValue = Union[int, float, str, Mapping[str, Any], Sequence[Any], bool, None]
 
 
-class ExtMetadataValue(TypedDict):
-    type: "ExtMetadataType"
-    raw_value: ExtMetadataRawValue
+class PipeableMetadataValue(TypedDict):
+    type: "PipesMetadataType"
+    raw_value: PipeableMetadataRawValue
 
 
 # Infer the type from the raw value on the orchestration end
-EXT_METADATA_TYPE_INFER = "__infer__"
+PIPES_METADATA_TYPE_INFER = "__infer__"
 
-ExtMetadataType = Literal[
+PipesMetadataType = Literal[
     "__infer__",
     "text",
     "url",
@@ -143,17 +143,17 @@ ExtMetadataType = Literal[
 _T = TypeVar("_T")
 
 
-class DagsterExtError(Exception):
+class DagsterPipesError(Exception):
     pass
 
 
-class DagsterExtWarning(Warning):
+class DagsterPipesWarning(Warning):
     pass
 
 
 def _assert_not_none(value: Optional[_T], desc: Optional[str] = None) -> _T:
     if value is None:
-        raise DagsterExtError(f"Missing required property: {desc}")
+        raise DagsterPipesError(f"Missing required property: {desc}")
     return value
 
 
@@ -162,27 +162,27 @@ def _assert_defined_asset_property(value: Optional[_T], key: str) -> _T:
 
 
 # This should only be called under the precondition that the current step targets assets.
-def _assert_single_asset(data: ExtContextData, key: str) -> None:
+def _assert_single_asset(data: PipeableContextData, key: str) -> None:
     asset_keys = data["asset_keys"]
     assert asset_keys is not None
     if len(asset_keys) != 1:
-        raise DagsterExtError(f"`{key}` is undefined. Current step targets multiple assets.")
+        raise DagsterPipesError(f"`{key}` is undefined. Current step targets multiple assets.")
 
 
 def _resolve_optionally_passed_asset_key(
-    data: ExtContextData,
+    data: PipeableContextData,
     asset_key: Optional[str],
     method: str,
 ) -> str:
     asset_keys = _assert_defined_asset_property(data["asset_keys"], method)
     asset_key = _assert_opt_param_type(asset_key, str, method, "asset_key")
     if asset_key and asset_key not in asset_keys:
-        raise DagsterExtError(
+        raise DagsterPipesError(
             f"Invalid asset key. Expected one of `{asset_keys}`, got `{asset_key}`."
         )
     if not asset_key:
         if len(asset_keys) != 1:
-            raise DagsterExtError(
+            raise DagsterPipesError(
                 f"Calling `{method}` without passing an asset key is undefined. Current step"
                 " targets multiple assets."
             )
@@ -197,22 +197,22 @@ def _assert_defined_partition_property(value: Optional[_T], key: str) -> _T:
 
 
 # This should only be called under the precondition that the current steps targets assets.
-def _assert_single_partition(data: ExtContextData, key: str) -> None:
+def _assert_single_partition(data: PipeableContextData, key: str) -> None:
     partition_key_range = data["partition_key_range"]
     assert partition_key_range is not None
     if partition_key_range["start"] != partition_key_range["end"]:
-        raise DagsterExtError(f"`{key}` is undefined. Current step targets multiple partitions.")
+        raise DagsterPipesError(f"`{key}` is undefined. Current step targets multiple partitions.")
 
 
 def _assert_defined_extra(extras: ExtExtras, key: str) -> Any:
     if key not in extras:
-        raise DagsterExtError(f"Extra `{key}` is undefined. Extras must be provided by user.")
+        raise DagsterPipesError(f"Extra `{key}` is undefined. Extras must be provided by user.")
     return extras[key]
 
 
 def _assert_param_type(value: _T, expected_type: Any, method: str, param: str) -> _T:
     if not isinstance(value, expected_type):
-        raise DagsterExtError(
+        raise DagsterPipesError(
             f"Invalid type for parameter `{param}` of `{method}`. Expected `{expected_type}`, got"
             f" `{type(value)}`."
         )
@@ -221,7 +221,7 @@ def _assert_param_type(value: _T, expected_type: Any, method: str, param: str) -
 
 def _assert_opt_param_type(value: _T, expected_type: Any, method: str, param: str) -> _T:
     if not (isinstance(value, expected_type) or value is None):
-        raise DagsterExtError(
+        raise DagsterPipesError(
             f"Invalid type for parameter `{param}` of `{method}`. Expected"
             f" `Optional[{expected_type}]`, got `{type(value)}`."
         )
@@ -229,11 +229,11 @@ def _assert_opt_param_type(value: _T, expected_type: Any, method: str, param: st
 
 
 def _assert_env_param_type(
-    env_params: ExtParams, key: str, expected_type: Type[_T], cls: Type
+    env_params: PipeableParams, key: str, expected_type: Type[_T], cls: Type
 ) -> _T:
     value = env_params.get(key)
     if not isinstance(value, expected_type):
-        raise DagsterExtError(
+        raise DagsterPipesError(
             f"Invalid type for parameter `{key}` passed from orchestration side to"
             f" `{cls.__name__}`. Expected `{expected_type}`, got `{type(value)}`."
         )
@@ -241,11 +241,11 @@ def _assert_env_param_type(
 
 
 def _assert_opt_env_param_type(
-    env_params: ExtParams, key: str, expected_type: Type[_T], cls: Type
+    env_params: PipeableParams, key: str, expected_type: Type[_T], cls: Type
 ) -> Optional[_T]:
     value = env_params.get(key)
     if value is not None and not isinstance(value, expected_type):
-        raise DagsterExtError(
+        raise DagsterPipesError(
             f"Invalid type for parameter `{key}` passed from orchestration side to"
             f" `{cls.__name__}`. Expected `Optional[{expected_type}]`, got `{type(value)}`."
         )
@@ -254,7 +254,7 @@ def _assert_opt_env_param_type(
 
 def _assert_param_value(value: _T, expected_values: Sequence[_T], method: str, param: str) -> _T:
     if value not in expected_values:
-        raise DagsterExtError(
+        raise DagsterPipesError(
             f"Invalid value for parameter `{param}` of `{method}`. Expected one of"
             f" `{expected_values}`, got `{value}`."
         )
@@ -265,7 +265,7 @@ def _assert_opt_param_value(
     value: _T, expected_values: Sequence[_T], method: str, param: str
 ) -> _T:
     if value is not None and value not in expected_values:
-        raise DagsterExtError(
+        raise DagsterPipesError(
             f"Invalid value for parameter `{param}` of `{method}`. Expected one of"
             f" `{expected_values}`, got `{value}`."
         )
@@ -276,37 +276,39 @@ def _assert_param_json_serializable(value: _T, method: str, param: str) -> _T:
     try:
         json.dumps(value)
     except (TypeError, OverflowError):
-        raise DagsterExtError(
+        raise DagsterPipesError(
             f"Invalid type for parameter `{param}` of `{method}`. Expected a JSON-serializable"
             f" type, got `{type(value)}`."
         )
     return value
 
 
-_METADATA_VALUE_KEYS = frozenset(ExtMetadataValue.__annotations__.keys())
+_METADATA_VALUE_KEYS = frozenset(PipeableMetadataValue.__annotations__.keys())
 
 
 def _normalize_param_metadata(
-    metadata: Mapping[str, Union[ExtMetadataRawValue, ExtMetadataValue]], method: str, param: str
-) -> Mapping[str, Union[ExtMetadataRawValue, ExtMetadataValue]]:
+    metadata: Mapping[str, Union[PipeableMetadataRawValue, PipeableMetadataValue]],
+    method: str,
+    param: str,
+) -> Mapping[str, Union[PipeableMetadataRawValue, PipeableMetadataValue]]:
     _assert_param_type(metadata, dict, method, param)
-    new_metadata: Dict[str, ExtMetadataValue] = {}
+    new_metadata: Dict[str, PipeableMetadataValue] = {}
     for key, value in metadata.items():
         if not isinstance(key, str):
-            raise DagsterExtError(
+            raise DagsterPipesError(
                 f"Invalid type for parameter `{param}` of `{method}`. Expected a dict with string"
                 f" keys, got a key `{key}` of type `{type(key)}`."
             )
         elif isinstance(value, dict):
             if not {*value.keys()} == _METADATA_VALUE_KEYS:
-                raise DagsterExtError(
+                raise DagsterPipesError(
                     f"Invalid type for parameter `{param}` of `{method}`. Expected a dict with"
                     " string keys and values that are either raw metadata values or dictionaries"
                     f" with schema `{{raw_value: ..., type: ...}}`. Got a value `{value}`."
                 )
-            new_metadata[key] = cast(ExtMetadataValue, value)
+            new_metadata[key] = cast(PipeableMetadataValue, value)
         else:
-            new_metadata[key] = {"raw_value": value, "type": EXT_METADATA_TYPE_INFER}
+            new_metadata[key] = {"raw_value": value, "type": PIPES_METADATA_TYPE_INFER}
     return new_metadata
 
 
@@ -337,7 +339,7 @@ def _env_var_to_param_name(env_var: str) -> str:
 
 
 def is_dagster_ext_process() -> bool:
-    return _param_from_env_var(IS_DAGSTER_EXT_PROCESS_ENV_VAR)
+    return _param_from_env_var(IS_DAGSTER_PIPES_PROCESS_ENV_VAR)
 
 
 def _emit_orchestration_inactive_warning() -> None:
@@ -345,7 +347,7 @@ def _emit_orchestration_inactive_warning() -> None:
         "This process was not launched by a Dagster orchestration process. All calls to the"
         " `dagster-ext` context or attempts to initialize `dagster-ext` abstractions"
         " are no-ops.",
-        category=DagsterExtWarning,
+        category=DagsterPipesWarning,
     )
 
 
@@ -360,36 +362,36 @@ def _get_mock() -> "MagicMock":
 # ########################
 
 
-class ExtContextLoader(ABC):
+class PipeableContextLoader(ABC):
     @abstractmethod
     @contextmanager
-    def load_context(self, params: ExtParams) -> Iterator[ExtContextData]: ...
+    def load_context(self, params: PipeableParams) -> Iterator[PipeableContextData]: ...
 
 
-T_MessageChannel = TypeVar("T_MessageChannel", bound="ExtMessageWriterChannel")
+T_MessageChannel = TypeVar("T_MessageChannel", bound="PipeableMessageWriterChannel")
 
 
 class ExtMessageWriter(ABC, Generic[T_MessageChannel]):
     @abstractmethod
     @contextmanager
-    def open(self, params: ExtParams) -> Iterator[T_MessageChannel]: ...
+    def open(self, params: PipeableParams) -> Iterator[T_MessageChannel]: ...
 
 
-class ExtMessageWriterChannel(ABC, Generic[T_MessageChannel]):
+class PipeableMessageWriterChannel(ABC, Generic[T_MessageChannel]):
     @abstractmethod
-    def write_message(self, message: ExtMessage) -> None: ...
+    def write_message(self, message: PipesOutboundMessage) -> None: ...
 
 
 class ExtParamLoader(ABC):
     @abstractmethod
-    def load_context_params(self) -> ExtParams: ...
+    def load_context_params(self) -> PipeableParams: ...
 
     @abstractmethod
-    def load_messages_params(self) -> ExtParams: ...
+    def load_messages_params(self) -> PipeableParams: ...
 
 
 T_BlobStoreMessageWriterChannel = TypeVar(
-    "T_BlobStoreMessageWriterChannel", bound="ExtBlobStoreMessageWriterChannel"
+    "T_BlobStoreMessageWriterChannel", bound="PipeableBlobStoreMessageWriterChannel"
 )
 
 
@@ -398,27 +400,27 @@ class ExtBlobStoreMessageWriter(ExtMessageWriter[T_BlobStoreMessageWriterChannel
         self.interval = interval
 
     @contextmanager
-    def open(self, params: ExtParams) -> Iterator[T_BlobStoreMessageWriterChannel]:
+    def open(self, params: PipeableParams) -> Iterator[T_BlobStoreMessageWriterChannel]:
         channel = self.make_channel(params)
         with channel.buffered_upload_loop():
             yield channel
 
     @abstractmethod
-    def make_channel(self, params: ExtParams) -> T_BlobStoreMessageWriterChannel: ...
+    def make_channel(self, params: PipeableParams) -> T_BlobStoreMessageWriterChannel: ...
 
 
-class ExtBlobStoreMessageWriterChannel(ExtMessageWriterChannel):
+class PipeableBlobStoreMessageWriterChannel(PipeableMessageWriterChannel):
     def __init__(self, *, interval: float = 10):
         self._interval = interval
         self._lock = Lock()
         self._buffer = []
         self._counter = 1
 
-    def write_message(self, message: ExtMessage) -> None:
+    def write_message(self, message: PipesOutboundMessage) -> None:
         with self._lock:
             self._buffer.append(message)
 
-    def flush_messages(self) -> Sequence[ExtMessage]:
+    def flush_messages(self) -> Sequence[PipesOutboundMessage]:
         with self._lock:
             messages = list(self._buffer)
             self._buffer.clear()
@@ -455,7 +457,7 @@ class ExtBlobStoreMessageWriterChannel(ExtMessageWriterChannel):
             time.sleep(1)
 
 
-class ExtBufferedFilesystemMessageWriterChannel(ExtBlobStoreMessageWriterChannel):
+class ExtBufferedFilesystemMessageWriterChannel(PipeableBlobStoreMessageWriterChannel):
     def __init__(self, path: str, *, interval: float = 10):
         super().__init__(interval=interval)
         self._path = path
@@ -471,12 +473,12 @@ class ExtBufferedFilesystemMessageWriterChannel(ExtBlobStoreMessageWriterChannel
 # ########################
 
 
-class ExtDefaultContextLoader(ExtContextLoader):
+class ExtDefaultContextLoader(PipeableContextLoader):
     FILE_PATH_KEY = "path"
     DIRECT_KEY = "data"
 
     @contextmanager
-    def load_context(self, params: ExtParams) -> Iterator[ExtContextData]:
+    def load_context(self, params: PipeableParams) -> Iterator[PipeableContextData]:
         if self.FILE_PATH_KEY in params:
             path = _assert_env_param_type(params, self.FILE_PATH_KEY, str, self.__class__)
             with open(path, "r") as f:
@@ -484,9 +486,9 @@ class ExtDefaultContextLoader(ExtContextLoader):
                 yield data
         elif self.DIRECT_KEY in params:
             data = _assert_env_param_type(params, self.DIRECT_KEY, dict, self.__class__)
-            yield cast(ExtContextData, data)
+            yield cast(PipeableContextData, data)
         else:
-            raise DagsterExtError(
+            raise DagsterPipesError(
                 f'Invalid params for {self.__class__.__name__}, expected key "{self.FILE_PATH_KEY}"'
                 f' or "{self.DIRECT_KEY}", received {params}',
             )
@@ -499,7 +501,7 @@ class ExtDefaultMessageWriter(ExtMessageWriter):
     STDOUT = "stdout"
 
     @contextmanager
-    def open(self, params: ExtParams) -> Iterator[ExtMessageWriterChannel]:
+    def open(self, params: PipeableParams) -> Iterator[PipeableMessageWriterChannel]:
         if self.FILE_PATH_KEY in params:
             path = _assert_env_param_type(params, self.FILE_PATH_KEY, str, self.__class__)
             yield ExtFileMessageWriterChannel(path)
@@ -510,39 +512,39 @@ class ExtDefaultMessageWriter(ExtMessageWriter):
             elif stream == self.STDOUT:
                 yield ExtStreamMessageWriterChannel(sys.stdout)
             else:
-                raise DagsterExtError(
+                raise DagsterPipesError(
                     f'Invalid value for key "std", expected "{self.STDERR}" or "{self.STDOUT}" but'
                     f" received {stream}"
                 )
         else:
-            raise DagsterExtError(
+            raise DagsterPipesError(
                 f'Invalid params for {self.__class__.__name__}, expected key "path" or "std",'
                 f" received {params}"
             )
 
 
-class ExtFileMessageWriterChannel(ExtMessageWriterChannel):
+class ExtFileMessageWriterChannel(PipeableMessageWriterChannel):
     def __init__(self, path: str):
         self._path = path
 
-    def write_message(self, message: ExtMessage) -> None:
+    def write_message(self, message: PipesOutboundMessage) -> None:
         with open(self._path, "a") as f:
             f.write(json.dumps(message) + "\n")
 
 
-class ExtStreamMessageWriterChannel(ExtMessageWriterChannel):
+class ExtStreamMessageWriterChannel(PipeableMessageWriterChannel):
     def __init__(self, stream: TextIO):
         self._stream = stream
 
-    def write_message(self, message: ExtMessage) -> None:
+    def write_message(self, message: PipesOutboundMessage) -> None:
         self._stream.writelines((json.dumps(message), "\n"))
 
 
 class ExtEnvVarParamLoader(ExtParamLoader):
-    def load_context_params(self) -> ExtParams:
+    def load_context_params(self) -> PipeableParams:
         return _param_from_env_var("context")
 
-    def load_messages_params(self) -> ExtParams:
+    def load_messages_params(self) -> PipeableParams:
         return _param_from_env_var("messages")
 
 
@@ -561,7 +563,7 @@ class ExtS3MessageWriter(ExtBlobStoreMessageWriter):
 
     def make_channel(
         self,
-        params: ExtParams,
+        params: PipeableParams,
     ) -> "ExtS3MessageChannel":
         bucket = _assert_env_param_type(params, "bucket", str, self.__class__)
         key_prefix = _assert_opt_env_param_type(params, "key_prefix", str, self.__class__)
@@ -573,7 +575,7 @@ class ExtS3MessageWriter(ExtBlobStoreMessageWriter):
         )
 
 
-class ExtS3MessageChannel(ExtBlobStoreMessageWriterChannel):
+class ExtS3MessageChannel(PipeableBlobStoreMessageWriterChannel):
     # client is a boto3.client("s3") object
     def __init__(
         self, client: Any, bucket: str, key_prefix: Optional[str], *, interval: float = 10
@@ -597,9 +599,9 @@ class ExtS3MessageChannel(ExtBlobStoreMessageWriterChannel):
 # ########################
 
 
-class ExtDbfsContextLoader(ExtContextLoader):
+class ExtDbfsContextLoader(PipeableContextLoader):
     @contextmanager
-    def load_context(self, params: ExtParams) -> Iterator[ExtContextData]:
+    def load_context(self, params: PipeableParams) -> Iterator[PipeableContextData]:
         unmounted_path = _assert_env_param_type(params, "path", str, self.__class__)
         path = os.path.join("/dbfs", unmounted_path.lstrip("/"))
         with open(path, "r") as f:
@@ -609,7 +611,7 @@ class ExtDbfsContextLoader(ExtContextLoader):
 class ExtDbfsMessageWriter(ExtBlobStoreMessageWriter):
     def make_channel(
         self,
-        params: ExtParams,
+        params: PipeableParams,
     ) -> "ExtBufferedFilesystemMessageWriterChannel":
         unmounted_path = _assert_env_param_type(params, "path", str, self.__class__)
         return ExtBufferedFilesystemMessageWriterChannel(
@@ -625,12 +627,12 @@ class ExtDbfsMessageWriter(ExtBlobStoreMessageWriter):
 
 def init_dagster_ext(
     *,
-    context_loader: Optional[ExtContextLoader] = None,
+    context_loader: Optional[PipeableContextLoader] = None,
     message_writer: Optional[ExtMessageWriter] = None,
     param_loader: Optional[ExtParamLoader] = None,
-) -> "ExtContext":
-    if ExtContext.is_initialized():
-        return ExtContext.get()
+) -> "PipeableRequest":
+    if PipeableRequest.is_initialized():
+        return PipeableRequest.get()
 
     if is_dagster_ext_process():
         param_loader = param_loader or ExtEnvVarParamLoader()
@@ -642,27 +644,27 @@ def init_dagster_ext(
         context_data = stack.enter_context(context_loader.load_context(context_params))
         message_channel = stack.enter_context(message_writer.open(messages_params))
         atexit.register(stack.__exit__, None, None, None)
-        context = ExtContext(context_data, message_channel)
+        piped_request = PipeableRequest(context_data, message_channel)
     else:
         _emit_orchestration_inactive_warning()
-        context = _get_mock()
-    ExtContext.set(context)
-    return context
+        piped_request = _get_mock()
+    PipeableRequest.set(piped_request)
+    return piped_request
 
 
-class ExtContext:
-    _instance: ClassVar[Optional["ExtContext"]] = None
+class PipeableRequest:
+    _instance: ClassVar[Optional["PipeableRequest"]] = None
 
     @classmethod
     def is_initialized(cls) -> bool:
         return cls._instance is not None
 
     @classmethod
-    def set(cls, context: "ExtContext") -> None:
+    def set(cls, context: "PipeableRequest") -> None:
         cls._instance = context
 
     @classmethod
-    def get(cls) -> "ExtContext":
+    def get(cls) -> "PipeableRequest":
         if cls._instance is None:
             raise Exception(
                 "ExtContext has not been initialized. You must call `init_dagster_ext()`."
@@ -671,15 +673,15 @@ class ExtContext:
 
     def __init__(
         self,
-        data: ExtContextData,
-        message_channel: ExtMessageWriterChannel,
+        data: PipeableContextData,
+        message_channel: PipeableMessageWriterChannel,
     ) -> None:
         self._data = data
         self._message_channel = message_channel
         self._materialized_assets: set[str] = set()
 
     def _write_message(self, method: str, params: Optional[Mapping[str, Any]] = None) -> None:
-        message = ExtMessage(
+        message = PipesOutboundMessage(
             {EXT_PROTOCOL_VERSION_FIELD: EXT_PROTOCOL_VERSION, "method": method, "params": params}
         )
         self._message_channel.write_message(message)
@@ -704,7 +706,7 @@ class ExtContext:
         return asset_keys
 
     @property
-    def provenance(self) -> Optional[ExtDataProvenance]:
+    def provenance(self) -> Optional[PipeableDataProvenance]:
         provenance_by_asset_key = _assert_defined_asset_property(
             self._data["provenance_by_asset_key"], "provenance"
         )
@@ -712,7 +714,7 @@ class ExtContext:
         return next(iter(provenance_by_asset_key.values()))
 
     @property
-    def provenance_by_asset_key(self) -> Mapping[str, Optional[ExtDataProvenance]]:
+    def provenance_by_asset_key(self) -> Mapping[str, Optional[PipeableDataProvenance]]:
         provenance_by_asset_key = _assert_defined_asset_property(
             self._data["provenance_by_asset_key"], "provenance_by_asset_key"
         )
@@ -745,14 +747,14 @@ class ExtContext:
         return partition_key
 
     @property
-    def partition_key_range(self) -> Optional["ExtPartitionKeyRange"]:
+    def partition_key_range(self) -> Optional["PipeablePartitionKeyRange"]:
         partition_key_range = _assert_defined_partition_property(
             self._data["partition_key_range"], "partition_key_range"
         )
         return partition_key_range
 
     @property
-    def partition_time_window(self) -> Optional["ExtTimeWindow"]:
+    def partition_time_window(self) -> Optional["PipeableTimeWindow"]:
         # None is a valid value for partition_time_window, but we check that a partition key range
         # is defined.
         _assert_defined_partition_property(
@@ -783,7 +785,9 @@ class ExtContext:
 
     def report_asset_materialization(
         self,
-        metadata: Optional[Mapping[str, Union[ExtMetadataRawValue, ExtMetadataValue]]] = None,
+        metadata: Optional[
+            Mapping[str, Union[PipeableMetadataRawValue, PipeableMetadataValue]]
+        ] = None,
         data_version: Optional[str] = None,
         asset_key: Optional[str] = None,
     ):
@@ -791,7 +795,7 @@ class ExtContext:
             self._data, asset_key, "report_asset_materialization"
         )
         if asset_key in self._materialized_assets:
-            raise DagsterExtError(
+            raise DagsterPipesError(
                 f"Calling `report_asset_materialization` with asset key `{asset_key}` is undefined."
                 " Asset has already been materialized, so no additional data can be reported"
                 " for it."
@@ -814,8 +818,10 @@ class ExtContext:
         self,
         check_name: str,
         success: bool,
-        severity: ExtAssetCheckSeverity = "ERROR",
-        metadata: Optional[Mapping[str, Union[ExtMetadataRawValue, ExtMetadataValue]]] = None,
+        severity: PipeableAssetCheckSeverity = "ERROR",
+        metadata: Optional[
+            Mapping[str, Union[PipeableMetadataRawValue, PipeableMetadataValue]]
+        ] = None,
         asset_key: Optional[str] = None,
     ) -> None:
         asset_key = _resolve_optionally_passed_asset_key(

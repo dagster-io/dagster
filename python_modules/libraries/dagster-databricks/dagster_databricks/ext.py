@@ -11,23 +11,23 @@ import dagster._check as check
 from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.errors import DagsterExternalExecutionError
 from dagster._core.execution.context.compute import OpExecutionContext
-from dagster._core.ext.client import ExtClient, ExtContextInjector, ExtMessageReader
-from dagster._core.ext.context import ExtResult
+from dagster._core.ext.client import PipesClient, PipesContextInjector, PipesMessageReader
+from dagster._core.ext.context import PipesResult
 from dagster._core.ext.utils import (
     ExtBlobStoreMessageReader,
-    ext_protocol,
+    setup_pipes_client_req,
 )
 from dagster_ext import (
-    ExtContextData,
     ExtExtras,
-    ExtParams,
+    PipedContextData,
+    PipedParams,
 )
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service import files, jobs
 from pydantic import Field
 
 
-class _ExtDatabricks(ExtClient):
+class _ExtDatabricks(PipesClient):
     """Ext client for databricks.
 
     Args:
@@ -44,20 +44,20 @@ class _ExtDatabricks(ExtClient):
         self,
         client: WorkspaceClient,
         env: Optional[Mapping[str, str]] = None,
-        context_injector: Optional[ExtContextInjector] = None,
-        message_reader: Optional[ExtMessageReader] = None,
+        context_injector: Optional[PipesContextInjector] = None,
+        message_reader: Optional[PipesMessageReader] = None,
     ):
         self.client = client
         self.env = env
         self.context_injector = check.opt_inst_param(
             context_injector,
             "context_injector",
-            ExtContextInjector,
+            PipesContextInjector,
         ) or ExtDbfsContextInjector(client=self.client)
         self.message_reader = check.opt_inst_param(
             message_reader,
             "message_reader",
-            ExtMessageReader,
+            PipesMessageReader,
         ) or ExtDbfsMessageReader(client=self.client)
 
     def run(
@@ -67,7 +67,7 @@ class _ExtDatabricks(ExtClient):
         context: OpExecutionContext,
         extras: Optional[ExtExtras] = None,
         submit_args: Optional[Mapping[str, str]] = None,
-    ) -> Iterator[ExtResult]:
+    ) -> Iterator[PipesResult]:
         """Run a Databricks job with the EXT protocol.
 
         Args:
@@ -79,17 +79,17 @@ class _ExtDatabricks(ExtClient):
             submit_args (Optional[Mapping[str, str]]): Additional keyword arguments that will be
                 forwarded as-is to `WorkspaceClient.jobs.submit`.
         """
-        with ext_protocol(
+        with setup_pipes_client_req(
             context=context,
             extras=extras,
             context_injector=self.context_injector,
             message_reader=self.message_reader,
-        ) as ext_context:
+        ) as pipes_client_req:
             submit_task_dict = task.as_dict()
             submit_task_dict["new_cluster"]["spark_env_vars"] = {
                 **submit_task_dict["new_cluster"].get("spark_env_vars", {}),
                 **(self.env or {}),
-                **ext_context.get_external_process_env_vars(),
+                **pipes_client_req.get_external_process_env_vars(),
             }
             task = jobs.SubmitTask.from_dict(submit_task_dict)
             run_id = self.client.jobs.submit(
@@ -116,9 +116,9 @@ class _ExtDatabricks(ExtClient):
                     raise DagsterExternalExecutionError(
                         f"Error running Databricks job: {run.state.state_message}"
                     )
-                yield from ext_context.get_results()
+                yield from pipes_client_req.get_results()
                 time.sleep(5)
-        yield from ext_context.get_results()
+        yield from pipes_client_req.get_results()
 
 
 ExtDatabricks = ResourceParam[_ExtDatabricks]
@@ -137,13 +137,13 @@ def dbfs_tempdir(dbfs_client: files.DbfsAPI) -> Iterator[str]:
         dbfs_client.delete(tempdir, recursive=True)
 
 
-class ExtDbfsContextInjector(ExtContextInjector):
+class ExtDbfsContextInjector(PipesContextInjector):
     def __init__(self, *, client: WorkspaceClient):
         super().__init__()
         self.dbfs_client = files.DbfsAPI(client.api_client)
 
     @contextmanager
-    def inject_context(self, context: "ExtContextData") -> Iterator[ExtParams]:
+    def inject_context(self, context: "PipedContextData") -> Iterator[PipedParams]:
         with dbfs_tempdir(self.dbfs_client) as tempdir:
             path = os.path.join(tempdir, _CONTEXT_FILENAME)
             contents = base64.b64encode(json.dumps(context).encode("utf-8")).decode("utf-8")
@@ -157,11 +157,11 @@ class ExtDbfsMessageReader(ExtBlobStoreMessageReader):
         self.dbfs_client = files.DbfsAPI(client.api_client)
 
     @contextmanager
-    def get_params(self) -> Iterator[ExtParams]:
+    def get_params(self) -> Iterator[PipedParams]:
         with dbfs_tempdir(self.dbfs_client) as tempdir:
             yield {"path": tempdir}
 
-    def download_messages_chunk(self, index: int, params: ExtParams) -> Optional[str]:
+    def download_messages_chunk(self, index: int, params: PipedParams) -> Optional[str]:
         message_path = os.path.join(params["path"], f"{index}.json")
         try:
             raw_message = self.dbfs_client.read(message_path)

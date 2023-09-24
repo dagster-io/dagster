@@ -5,10 +5,10 @@ import kubernetes
 import pytest
 from dagster import AssetExecutionContext, asset, materialize
 from dagster._core.ext.client import (
-    ExtContextInjector,
+    PipesContextInjector,
 )
-from dagster._core.ext.utils import ExtEnvContextInjector, ext_protocol
-from dagster_ext import ExtContextData, ExtDefaultContextLoader
+from dagster._core.ext.utils import ExtEnvContextInjector, setup_pipes_client_req
+from dagster_ext import ExtDefaultContextLoader, PipedContextData
 from dagster_k8s import execute_k8s_job
 from dagster_k8s.client import DagsterKubernetesClient
 from dagster_k8s.ext import ExtK8sPod, K8sPodLogsMessageReader
@@ -55,7 +55,7 @@ def test_ext_k8s_pod(namespace, cluster_provider):
     assert mats[0].metadata["is_even"].value is True
 
 
-class ExtConfigMapContextInjector(ExtContextInjector):
+class ExtConfigMapContextInjector(PipesContextInjector):
     def __init__(
         self,
         k8s_client: DagsterKubernetesClient,
@@ -68,7 +68,7 @@ class ExtConfigMapContextInjector(ExtContextInjector):
     @contextmanager
     def inject_context(
         self,
-        context_data: "ExtContextData",
+        context_data: "PipedContextData",
     ):
         context_config_map_body = kubernetes.client.V1ConfigMap(
             metadata=kubernetes.client.V1ObjectMeta(
@@ -169,7 +169,7 @@ def test_use_excute_k8s_job(namespace, cluster_provider):
     def number_y_job(context: AssetExecutionContext):
         core_api = kubernetes.client.CoreV1Api()
         reader = K8sPodLogsMessageReader()
-        with ext_protocol(
+        with setup_pipes_client_req(
             context,
             ExtEnvContextInjector(),
             reader,
