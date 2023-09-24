@@ -3,7 +3,7 @@ import tempfile
 
 import pytest
 from dagster import AssetExecutionContext, asset, materialize
-from dagster._core.ext.utils import (
+from dagster._core.pipes.utils import (
     ExtFileContextInjector,
 )
 from dagster_docker.ext import ExtDocker

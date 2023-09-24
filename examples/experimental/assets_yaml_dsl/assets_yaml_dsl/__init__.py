@@ -1,5 +1,5 @@
 from dagster import Definitions
-from dagster._core.ext.subprocess import PipedSubprocess
+from dagster._core.pipes.subprocess import PipedSubprocess
 
 from .domain_specific_dsl.stocks_dsl import get_stocks_dsl_example_defs
 from .pure_assets_dsl.assets_dsl import get_asset_dsl_example_defs

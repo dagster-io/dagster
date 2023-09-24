@@ -13,7 +13,7 @@ except ImportError:
     from yaml import Loader
 
 from dagster import AssetKey, asset
-from dagster._core.ext.subprocess import PipedSubprocess
+from dagster._core.pipes.subprocess import PipedSubprocess
 
 
 def load_yaml(relative_path) -> Dict[str, Any]:

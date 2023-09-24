@@ -6,10 +6,10 @@ from typing import Iterator, Optional
 import boto3
 import dagster._check as check
 from botocore.exceptions import ClientError
-from dagster._core.ext.client import (
+from dagster._core.pipes.client import (
     PipedProcessParams,
 )
-from dagster._core.ext.utils import BlobStorePipedMessageReader
+from dagster._core.pipes.utils import BlobStorePipedMessageReader
 
 
 class ExtS3MessageReader(BlobStorePipedMessageReader):

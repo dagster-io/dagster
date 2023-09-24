@@ -4,10 +4,10 @@ from contextlib import contextmanager
 import kubernetes
 import pytest
 from dagster import AssetExecutionContext, asset, materialize
-from dagster._core.ext.client import (
+from dagster._core.pipes.client import (
     PipedContextInjector,
 )
-from dagster._core.ext.utils import EnvPipedContextInjector, pipes_protocol
+from dagster._core.pipes.utils import EnvPipedContextInjector, pipes_protocol
 from dagster_ext import DefaultPipedProcessContextLoader, PipedProcessContextData
 from dagster_k8s import execute_k8s_job
 from dagster_k8s.client import DagsterKubernetesClient
