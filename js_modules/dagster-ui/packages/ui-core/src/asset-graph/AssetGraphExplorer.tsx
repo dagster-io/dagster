@@ -147,7 +147,7 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
   allAssetKeys,
 }) => {
   const findAssetLocation = useFindAssetLocation();
-  const {layout, loading, async} = useAssetLayout(assetGraphData);
+  const {layout, loading, async} = useAssetLayout(assetGraphData, fullAssetGraphData);
   const viewportEl = React.useRef<SVGViewport>();
   const {flagHorizontalDAGs, flagDAGSidebar} = useFeatureFlags();
 

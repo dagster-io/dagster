@@ -148,6 +148,52 @@ export function asyncMemoize<T, R, U extends (arg: T, ...rest: any[]) => Promise
   }) as any;
 }
 
+export function localStorageAsyncMemoize<
+  T,
+  R,
+  U extends (versionKey: string, arg: T, ...rest: any[]) => Promise<R>,
+>(
+  // Key to that acts as a DB for memoized values
+  localStorageKey: string,
+  fn: U,
+  hashFn?: (arg: T, ...rest: any[]) => any,
+): U {
+  const key = `localStorageAsyncMemoize:${localStorageKey}`;
+  return (async (
+    // Key that is used to determine if a value in the DB is stale
+    versionKey: string,
+    arg: T,
+    ...rest: any[]
+  ) => {
+    type DBWithVersion = Record<string, R> & {version: string};
+    const hashKey = hashFn ? hashFn(arg, ...rest) : arg;
+    let db = {version: versionKey} as DBWithVersion;
+    const dbString = localStorage.getItem(key);
+    if (dbString) {
+      try {
+        db = JSON.parse(dbString!);
+      } catch (e) {
+        localStorage.removeItem(key);
+        db = {version: versionKey} as DBWithVersion;
+      }
+    }
+    if (db && db.version === versionKey) {
+      if (db[hashKey]) {
+        return db[hashKey];
+      }
+    } else {
+      // If the version has changed, clear the DB
+      localStorage.removeItem(key);
+      db = {version: versionKey} as DBWithVersion;
+    }
+
+    const r = (await fn(versionKey, arg, ...rest)) as R;
+    db[hashKey] = r;
+    localStorage.setItem(key, JSON.stringify(db));
+    return r;
+  }) as any;
+}
+
 // Simple memoization function for methods that take a single object argument.
 // Returns a memoized copy of the provided function which retrieves the result
 // from a cache after the first invocation with a given object.

@@ -2,7 +2,7 @@ import memoize from 'lodash/memoize';
 import React from 'react';
 
 import {useFeatureFlags} from '../app/Flags';
-import {asyncMemoize} from '../app/Util';
+import {asyncMemoize, localStorageAsyncMemoize} from '../app/Util';
 import {GraphData} from '../asset-graph/Utils';
 import {AssetGraphLayout, LayoutAssetGraphOptions, layoutAssetGraph} from '../asset-graph/layout';
 
@@ -36,13 +36,18 @@ const asyncGetFullOpLayout = asyncMemoize((ops: ILayoutOp[], opts: LayoutOpGraph
 const _assetLayoutCacheKey = (graphData: GraphData) => {
   // Note: The "show secondary edges" toggle means that we need a cache key that incorporates
   // both the displayed nodes and the displayed edges.
-  return JSON.stringify(graphData);
+  return JSON.stringify({
+    downstream: graphData.downstream,
+    upstream: graphData.upstream,
+    nodes: Object.keys(graphData),
+  });
 };
 
 const getFullAssetLayout = memoize(layoutAssetGraph, _assetLayoutCacheKey);
 
-const asyncGetFullAssetLayout = asyncMemoize(
-  (graphData: GraphData, opts: LayoutAssetGraphOptions) => {
+const asyncGetFullAssetLayout = localStorageAsyncMemoize(
+  'assetGraphLayout',
+  (_versionKey: string, graphData: GraphData, opts: LayoutAssetGraphOptions) => {
     return new Promise<AssetGraphLayout>((resolve) => {
       const worker = new Worker(new URL('../workers/dagre_layout.worker', import.meta.url));
       worker.addEventListener('message', (event) => {
@@ -67,7 +72,14 @@ type State = {
 
 type Action =
   | {type: 'loading'}
-  | {type: 'layout'; payload: {layout: OpGraphLayout | AssetGraphLayout; cacheKey: string}};
+  | {
+      type: 'layout';
+      payload: {
+        layout: OpGraphLayout | AssetGraphLayout;
+        cacheKey: string;
+        fullDataCacheKey: string;
+      };
+    };
 
 const reducer = (state: State, action: Action): State => {
   switch (action.type) {
@@ -107,13 +119,13 @@ export function useOpLayout(ops: ILayoutOp[], parentOp?: ILayoutOp) {
       const layout = await asyncGetFullOpLayout(ops, {parentOp});
       dispatch({
         type: 'layout',
-        payload: {layout, cacheKey},
+        payload: {layout, cacheKey, fullDataCacheKey: ''},
       });
     }
 
     if (!runAsync) {
       const layout = getFullOpLayout(ops, {parentOp});
-      dispatch({type: 'layout', payload: {layout, cacheKey}});
+      dispatch({type: 'layout', payload: {layout, cacheKey, fullDataCacheKey: ''}});
     } else {
       void runAsyncLayout();
     }
@@ -126,11 +138,12 @@ export function useOpLayout(ops: ILayoutOp[], parentOp?: ILayoutOp) {
   };
 }
 
-export function useAssetLayout(graphData: GraphData) {
+export function useAssetLayout(graphData: GraphData, fullAssetGraphData: GraphData) {
   const [state, dispatch] = React.useReducer(reducer, initialState);
   const flags = useFeatureFlags();
 
   const cacheKey = _assetLayoutCacheKey(graphData);
+  const fullDataCacheKey = _assetLayoutCacheKey(fullAssetGraphData);
   const nodeCount = Object.keys(graphData.nodes).length;
   const runAsync = nodeCount >= ASYNC_LAYOUT_SOLID_COUNT;
 
@@ -139,17 +152,17 @@ export function useAssetLayout(graphData: GraphData) {
 
     async function runAsyncLayout() {
       dispatch({type: 'loading'});
-      const layout = await asyncGetFullAssetLayout(graphData, opts);
-      dispatch({type: 'layout', payload: {layout, cacheKey}});
+      const layout = await asyncGetFullAssetLayout(fullDataCacheKey, graphData, opts);
+      dispatch({type: 'layout', payload: {layout, cacheKey, fullDataCacheKey}});
     }
 
     if (!runAsync) {
       const layout = getFullAssetLayout(graphData, opts);
-      dispatch({type: 'layout', payload: {layout, cacheKey}});
+      dispatch({type: 'layout', payload: {layout, cacheKey, fullDataCacheKey}});
     } else {
       void runAsyncLayout();
     }
-  }, [cacheKey, graphData, runAsync, flags]);
+  }, [cacheKey, fullDataCacheKey, graphData, runAsync, flags]);
 
   return {
     loading: state.loading || !state.layout || state.cacheKey !== cacheKey,
