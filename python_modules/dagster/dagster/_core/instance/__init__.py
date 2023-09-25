@@ -1356,6 +1356,7 @@ class DagsterInstance(DynamicPartitionsStore):
                                 target_asset_key,
                                 check_name=check_name,
                             ),
+                            step_key=step.key,
                         )
                         self.report_dagster_event(event, dagster_run.run_id, logging.DEBUG)
 

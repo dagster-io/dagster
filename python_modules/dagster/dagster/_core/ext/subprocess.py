@@ -1,5 +1,5 @@
 from subprocess import Popen
-from typing import Mapping, Optional, Sequence, Union
+from typing import Iterator, Mapping, Optional, Sequence, Union
 
 from dagster_ext import ExtExtras
 
@@ -12,6 +12,7 @@ from dagster._core.ext.client import (
     ExtContextInjector,
     ExtMessageReader,
 )
+from dagster._core.ext.context import ExtResult
 from dagster._core.ext.utils import (
     ExtTempFileContextInjector,
     ExtTempFileMessageReader,
@@ -66,7 +67,7 @@ class _ExtSubprocess(ExtClient):
         extras: Optional[ExtExtras] = None,
         env: Optional[Mapping[str, str]] = None,
         cwd: Optional[str] = None,
-    ) -> None:
+    ) -> Iterator[ExtResult]:
         with ext_protocol(
             context=context,
             context_injector=self.context_injector,
@@ -82,12 +83,14 @@ class _ExtSubprocess(ExtClient):
                     **(env or {}),
                 },
             )
-            process.wait()
+            while process.poll() is None:
+                yield from ext_context.get_results()
 
             if process.returncode != 0:
                 raise DagsterExternalExecutionError(
                     f"External execution process failed with code {process.returncode}"
                 )
+        yield from ext_context.get_results()
 
 
 ExtSubprocess = ResourceParam[_ExtSubprocess]

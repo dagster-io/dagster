@@ -17,8 +17,9 @@ databricks jobs using Dagster's ext protocol.
 specification. After setting up ext communications channels (which by default
 use DBFS), it injects the information needed to connect to these channels from
 Databricks into the task specification. It then launches a Databricks job by
-passing the specification to `WorkspaceClient.jobs.submit`. It polls the job
-state and exits gracefully on success or failure:
+passing the specification to `WorkspaceClient.jobs.submit`. It polls the job,
+state, exits gracefully on success or failure, and returns a stream of
+`MaterializeResult` events that should be yielded:
 
 
 ```
@@ -52,7 +53,7 @@ def databricks_asset(context: AssetExecutionContext, ext: ExtDatabricks):
     extras = {"sample_rate": 1.0}
 
     # synchronously execute the databricks job
-    ext.run(
+    yield from ext.run(
         task=task,
         context=context,
         extras=extras,
@@ -114,6 +115,18 @@ launched within the scope of the `ext_process` context manager; (2) your job is
 launched on a cluster containing the environment variables available on the
 yielded `ext_context`. 
 
+While your databricks code is running, any calls to
+`report_asset_materialization` in the external script are streamed back to
+Dagster, causing a `MaterializationResult` object to be buffered on the
+`ext_context`. You can either leave these objects buffered until execution is
+complete (Option (1) in below example code) or stream them to Dagster machinery
+during execution by calling `yield ext_context.get_results()` (Option (2)).
+
+With either option, once the `ext_protocol` block closes, you must call `yield
+ext_context.get_results()` to yield any remaining buffered results, since we
+cannot guarantee that all communications from databricks have been processed
+until the `ext_protocol` block closes.
+
 ```
 import os
 
@@ -142,10 +155,31 @@ def databricks_asset(context: AssetExecutionContext):
         message_reader=ExtDbfsMessageReader(client=client),
     ) as ext_context:
         
+        ##### Option (1)
+        # NON-STREAMING. Just pass the necessary environment variables down.
+        # During execution, all reported materializations are buffered on the
+        # `ext_context`. Yield them all after Databricks execution is finished.
+
         # Dict[str, str] with environment variables containing ext comms info.
         env_vars = ext_context.get_external_process_env_vars()
 
         # Some function that handles launching/monitoring of the databricks job.
         # It must ensure that the `env_vars` are set on the executing cluster.
         custom_databricks_launch_code(env_vars)
+
+        ##### Option (2)
+        # STREAMING. Pass `ext_context` down. During execution, you can yield any
+        # asset materializations that have been reported by calling `
+        # ext_context.get_results()` as often as you like. `get_results` returns
+        # an iterator that your custom code can `yield from` to forward the
+        # results back to the materialize funciton. Note you will need to extract
+        # the env vars by calling `ext_context.get_external_process_env_vars()`,
+        # and launch the databricks job in the same way as with (1).
+
+        # The function should return an `Iterator[MaterializeResult]`.
+        yield from custom_databricks_launch_code(ext_context)
+
+    # With either option (1) or (2), this is required to yield any remaining
+    # buffered results.
+    yield from ext_context.get_results()
 ```

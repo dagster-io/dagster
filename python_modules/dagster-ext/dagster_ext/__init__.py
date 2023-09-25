@@ -23,7 +23,6 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
-    Set,
     TextIO,
     Type,
     TypedDict,
@@ -39,6 +38,9 @@ if TYPE_CHECKING:
 # ##### PROTOCOL
 # ########################
 
+# This represents the version of the protocol, rather than the version of the package. It must be
+# manually updated whenever there are changes to the protocol.
+EXT_PROTOCOL_VERSION = "0.1"
 
 ExtExtras = Mapping[str, Any]
 ExtParams = Mapping[str, Any]
@@ -62,8 +64,12 @@ DAGSTER_EXT_ENV_KEYS = {
 
 # ##### MESSAGE
 
+# Can't use a constant for TypedDict key so this value is repeated in `ExtMessage` defn.
+EXT_PROTOCOL_VERSION_FIELD = "__dagster_ext_version"
+
 
 class ExtMessage(TypedDict):
+    __dagster_ext_version: str
     method: str
     params: Optional[Mapping[str, Any]]
 
@@ -99,6 +105,8 @@ class ExtDataProvenance(TypedDict):
     input_data_versions: Mapping[str, str]
     is_user_provided: bool
 
+
+ExtAssetCheckSeverity = Literal["WARN", "ERROR"]
 
 ExtMetadataRawValue = Union[int, float, str, Mapping[str, Any], Sequence[Any], bool, None]
 
@@ -165,7 +173,6 @@ def _resolve_optionally_passed_asset_key(
     data: ExtContextData,
     asset_key: Optional[str],
     method: str,
-    already_materialized_assets: Set[str],
 ) -> str:
     asset_keys = _assert_defined_asset_property(data["asset_keys"], method)
     asset_key = _assert_opt_param_type(asset_key, str, method, "asset_key")
@@ -180,11 +187,6 @@ def _resolve_optionally_passed_asset_key(
                 " targets multiple assets."
             )
         asset_key = asset_keys[0]
-    if asset_key in already_materialized_assets:
-        raise DagsterExtError(
-            f"Calling `{method}` with asset key `{asset_key}` is undefined. Asset has already been"
-            " materialized, so no additional data can be reported for it."
-        )
     return asset_key
 
 
@@ -677,7 +679,9 @@ class ExtContext:
         self._materialized_assets: set[str] = set()
 
     def _write_message(self, method: str, params: Optional[Mapping[str, Any]] = None) -> None:
-        message = ExtMessage(method=method, params=params)
+        message = ExtMessage(
+            {EXT_PROTOCOL_VERSION_FIELD: EXT_PROTOCOL_VERSION, "method": method, "params": params}
+        )
         self._message_channel.write_message(message)
 
     # ########################
@@ -784,8 +788,14 @@ class ExtContext:
         asset_key: Optional[str] = None,
     ):
         asset_key = _resolve_optionally_passed_asset_key(
-            self._data, asset_key, "report_asset_materialization", self._materialized_assets
+            self._data, asset_key, "report_asset_materialization"
         )
+        if asset_key in self._materialized_assets:
+            raise DagsterExtError(
+                f"Calling `report_asset_materialization` with asset key `{asset_key}` is undefined."
+                " Asset has already been materialized, so no additional data can be reported"
+                " for it."
+            )
         metadata = (
             _normalize_param_metadata(metadata, "report_asset_materialization", "metadata")
             if metadata
@@ -799,6 +809,35 @@ class ExtContext:
             {"asset_key": asset_key, "data_version": data_version, "metadata": metadata},
         )
         self._materialized_assets.add(asset_key)
+
+    def report_asset_check(
+        self,
+        check_name: str,
+        success: bool,
+        severity: ExtAssetCheckSeverity = "ERROR",
+        metadata: Optional[Mapping[str, Union[ExtMetadataRawValue, ExtMetadataValue]]] = None,
+        asset_key: Optional[str] = None,
+    ) -> None:
+        asset_key = _resolve_optionally_passed_asset_key(
+            self._data, asset_key, "report_asset_check"
+        )
+        check_name = _assert_param_type(check_name, str, "report_asset_check", "check_name")
+        success = _assert_param_type(success, bool, "report_asset_check", "success")
+        metadata = (
+            _normalize_param_metadata(metadata, "report_asset_check", "metadata")
+            if metadata
+            else None
+        )
+        self._write_message(
+            "report_asset_check",
+            {
+                "asset_key": asset_key,
+                "check_name": check_name,
+                "success": success,
+                "metadata": metadata,
+                "severity": severity,
+            },
+        )
 
     def log(self, message: str, level: str = "info") -> None:
         message = _assert_param_type(message, str, "log", "asset_key")

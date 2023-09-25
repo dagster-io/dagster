@@ -31,7 +31,7 @@ def test_default():
         context: AssetExecutionContext,
         ext_docker: ExtDocker,
     ):
-        ext_docker.run(
+        yield from ext_docker.run(
             image=docker_image,
             command=[
                 "python",
@@ -88,7 +88,7 @@ def test_file_io():
                 },
             }
 
-            ext_docker.run(
+            yield from ext_docker.run(
                 image=docker_image,
                 command=[
                     "python",

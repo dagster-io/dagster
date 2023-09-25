@@ -10,6 +10,7 @@ from threading import Event, Thread
 from typing import Iterator, Optional
 
 from dagster_ext import (
+    EXT_PROTOCOL_VERSION_FIELD,
     ExtContextData,
     ExtDefaultContextLoader,
     ExtDefaultMessageWriter,
@@ -177,12 +178,17 @@ def extract_message_or_forward_to_stdout(handler: "ExtMessageHandler", log_line:
     # exceptions as control flow, you love to see it
     try:
         message = json.loads(log_line)
-        # need better message check
-        if message.keys() == {"method", "params"}:
+        if EXT_PROTOCOL_VERSION_FIELD in message.keys():
             handler.handle_message(message)
     except Exception:
         # move non-message logs in to stdout for compute log capture
         sys.stdout.writelines((log_line, "\n"))
+
+
+_FAIL_TO_YIELD_ERROR_MESSAGE = (
+    "Did you forget to `yield from ext_context.get_results()`? `get_results` should be called once"
+    " after the `ext_protocol` block has exited to yield any remaining buffered results."
+)
 
 
 @contextmanager
@@ -195,13 +201,13 @@ def ext_protocol(
     """Enter the context managed context injector and message reader that power the EXT protocol and receive the environment variables
     that need to be provided to the external process.
     """
+    # This will trigger an error if expected outputs are not yielded
+    context.set_requires_typed_event_stream(error_message=_FAIL_TO_YIELD_ERROR_MESSAGE)
     context_data = build_external_execution_context_data(context, extras)
     message_handler = ExtMessageHandler(context)
     with context_injector.inject_context(
-        context_data,
-    ) as ci_params, message_reader.read_messages(
-        message_handler,
-    ) as mr_params:
+        context_data
+    ) as ci_params, message_handler.handle_messages(message_reader) as mr_params:
         yield ExtOrchestrationContext(
             context_data=context_data,
             message_handler=message_handler,
