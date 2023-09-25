@@ -20,8 +20,28 @@ import {isDocumentVisible, useDocumentVisibility} from '../hooks/useDocumentVisi
 const _assetKeyListeners: Record<string, Array<DataForNodeListener>> = {};
 
 export function useAssetNodeLiveData(assetKeys: AssetKeyInput[]) {
-  const context = React.useContext(AssetLiveDataContext);
-  return context.useAssetNodeLiveData(assetKeys);
+  const [data, setData] = React.useState<Record<string, LiveDataForNode | null>>({});
+
+  const client = useApolloClient();
+  const setNeedsImmediateFetch = React.useContext(AssetLiveDataContext).setNeedsImmediateFetch;
+
+  React.useEffect(() => {
+    const setDataSingle = (stringKey: string, assetData: LiveDataForNode) => {
+      setData((data) => {
+        return {...data, [stringKey]: assetData};
+      });
+    };
+    assetKeys.forEach((key) => {
+      _subscribeToAssetKey(client, key, setDataSingle, setNeedsImmediateFetch);
+    });
+    return () => {
+      assetKeys.forEach((key) => {
+        _unsubscribeToAssetKey(key, setDataSingle);
+      });
+    };
+  }, [assetKeys, client, setNeedsImmediateFetch]);
+
+  return data;
 }
 
 function _getAssetFromCache(client: ApolloClient<any>, uniqueId: string) {
@@ -82,9 +102,9 @@ export const SUBSCRIPTION_IDLE_POLL_RATE = 30 * 1000;
 type DataForNodeListener = (stringKey: string, data: LiveDataForNode) => void;
 
 const AssetLiveDataContext = React.createContext<{
-  useAssetNodeLiveData: (keys: AssetKeyInput[]) => Record<string, LiveDataForNode | null>;
+  setNeedsImmediateFetch: () => void;
 }>({
-  useAssetNodeLiveData: () => ({}),
+  setNeedsImmediateFetch: () => {},
 });
 
 // Map of asset keys to their last fetched time and last requested time
@@ -97,28 +117,6 @@ export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) =
   const [needsImmediateFetch, setNeedsImmediateFetch] = React.useState<boolean>(false);
 
   const client = useApolloClient();
-
-  function useAssetNodeLiveData(assetKeys: AssetKeyInput[]) {
-    const [data, setData] = React.useState<Record<string, LiveDataForNode | null>>({});
-
-    React.useEffect(() => {
-      const setDataSingle = (stringKey: string, assetData: LiveDataForNode) => {
-        setData((data) => {
-          return {...data, [stringKey]: assetData};
-        });
-      };
-      assetKeys.forEach((key) => {
-        _subscribeToAssetKey(client, key, setDataSingle, setNeedsImmediateFetch);
-      });
-      return () => {
-        assetKeys.forEach((key) => {
-          _unsubscribeToAssetKey(key, setDataSingle);
-        });
-      };
-    }, [assetKeys]);
-
-    return data;
-  }
 
   const isDocumentVisible = useDocumentVisibility();
 
@@ -151,7 +149,16 @@ export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) =
   }, [client, needsImmediateFetch]);
 
   return (
-    <AssetLiveDataContext.Provider value={{useAssetNodeLiveData}}>
+    <AssetLiveDataContext.Provider
+      value={React.useMemo(
+        () => ({
+          setNeedsImmediateFetch: () => {
+            setNeedsImmediateFetch(true);
+          },
+        }),
+        [],
+      )}
+    >
       {children}
     </AssetLiveDataContext.Provider>
   );
@@ -214,7 +221,7 @@ function _subscribeToAssetKey(
   client: ApolloClient<any>,
   assetKey: AssetKeyInput,
   setData: DataForNodeListener,
-  setNeedsImmediateFetch: (needsFetch: boolean) => void,
+  setNeedsImmediateFetch: () => void,
 ) {
   const stringKey = JSON.stringify(assetKey.path);
   _assetKeyListeners[stringKey] = _assetKeyListeners[stringKey] || [];
@@ -225,7 +232,7 @@ function _subscribeToAssetKey(
     const {cachedAssetData, cachedLatestInfo} = cachedData;
     setData(stringKey, buildLiveDataForNode(cachedAssetData, cachedLatestInfo));
   } else {
-    setNeedsImmediateFetch(true);
+    setNeedsImmediateFetch();
   }
 }
 
