@@ -199,6 +199,7 @@ def asset(
             execute in the decorated function after materializing the asset.
         non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Deprecated, use deps instead.
             Set of asset keys that are upstream dependencies, but do not pass an input to the asset.
+        key (Optional[CoeercibleToAssetKey]): The key for this asset. If provided, cannot specify key_prefix or name.
 
     Examples:
         .. code-block:: python
@@ -939,6 +940,7 @@ def graph_asset(
     backfill_policy: Optional[BackfillPolicy] = ...,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = ...,
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
+    key: Optional[CoercibleToAssetKey] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]: ...
 
 
@@ -958,6 +960,7 @@ def graph_asset(
     backfill_policy: Optional[BackfillPolicy] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
+    key: Optional[CoercibleToAssetKey] = None,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Creates a software-defined asset that's computed using a graph of ops.
 
@@ -1001,6 +1004,7 @@ def graph_asset(
         auto_materialize_policy (Optional[AutoMaterializePolicy]): The AutoMaterializePolicy to use
             for this asset.
         backfill_policy (Optional[BackfillPolicy]): The BackfillPolicy to use for this asset.
+        key (Optional[CoeercibleToAssetKey]): The key for this asset. If provided, cannot specify key_prefix or name.
 
     Examples:
         .. code-block:: python
@@ -1033,13 +1037,24 @@ def graph_asset(
             backfill_policy=backfill_policy,
             resource_defs=resource_defs,
             check_specs=check_specs,
+            key=key,
         )
     else:
+        if (name or key_prefix) and key:
+            raise DagsterInvalidDefinitionError(
+                "Cannot specify a name or key prefix for graph_asset when the key argument is"
+                " provided."
+            )
+
+        key = AssetKey.from_coercible(key) if key is not None else None
+
         key_prefix = [key_prefix] if isinstance(key_prefix, str) else key_prefix
         ins = ins or {}
         asset_name = name or compose_fn.__name__
         asset_ins = build_asset_ins(compose_fn, ins or {}, set())
-        out_asset_key = AssetKey(list(filter(None, [*(key_prefix or []), asset_name])))
+        out_asset_key = (
+            key if key else AssetKey(list(filter(None, [*(key_prefix or []), asset_name])))
+        )
 
         keys_by_input_name = {
             input_name: asset_key for asset_key, (input_name, _) in asset_ins.items()
