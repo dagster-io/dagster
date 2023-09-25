@@ -10,11 +10,9 @@ from typing import (
     Optional,
     Sequence,
     Set,
-    cast,
     Union,
+    cast,
 )
-
-from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 
 import dagster._check as check
 from dagster._annotations import deprecated, experimental, public
@@ -25,6 +23,7 @@ from dagster._core.definitions.data_version import (
     DataVersion,
     extract_data_provenance_from_entry,
 )
+from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 from dagster._core.definitions.dependency import Node, NodeHandle
 from dagster._core.definitions.events import (
     AssetKey,
