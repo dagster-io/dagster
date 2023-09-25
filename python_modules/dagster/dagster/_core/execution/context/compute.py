@@ -1,4 +1,5 @@
 from abc import ABC, ABCMeta, abstractmethod
+from inspect import _empty as EmptyAnnotation
 from typing import (
     AbstractSet,
     Any,
@@ -10,7 +11,10 @@ from typing import (
     Sequence,
     Set,
     cast,
+    Union,
 )
+
+from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 
 import dagster._check as check
 from dagster._annotations import deprecated, experimental, public
@@ -36,6 +40,7 @@ from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.step_launcher import StepLauncher
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.errors import (
+    DagsterInvalidDefinitionError,
     DagsterInvalidPropertyError,
     DagsterInvariantViolationError,
 )
@@ -1263,3 +1268,59 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
 class AssetExecutionContext(OpExecutionContext):
     def __init__(self, step_execution_context: StepExecutionContext):
         super().__init__(step_execution_context=step_execution_context)
+
+
+def build_execution_context(
+    step_context: StepExecutionContext,
+) -> Union[OpExecutionContext, AssetExecutionContext]:
+    """Get the correct context based on the type of step (op or asset) and the user provided context
+    type annotation. Follows these rules.
+
+    step type     annotation                result
+    asset         AssetExecutionContext     AssetExecutionContext
+    asset         OpExecutionContext        OpExecutionContext
+    asset         None                      AssetExecutionContext
+    op            AssetExecutionContext     Error - we cannot init an AssetExecutionContext w/o an AssetsDefinition
+    op            OpExecutionContext        OpExecutionContext
+    op            None                      OpExecutionContext
+    For ops in graph-backed assets
+    step type     annotation                result
+    op            AssetExecutionContext     AssetExecutionContext
+    op            OpExecutionContext        OpExecutionContext
+    op            None                      OpExecutionContext
+    """
+    is_sda_step = step_context.is_sda_step
+    is_op_in_graph_asset = is_sda_step and step_context.is_op_in_graph
+    context_annotation = EmptyAnnotation
+    compute_fn = step_context.op_def._compute_fn  # noqa: SLF001
+    compute_fn = (
+        compute_fn
+        if isinstance(compute_fn, DecoratedOpFunction)
+        else DecoratedOpFunction(compute_fn)
+    )
+    if compute_fn.has_context_arg():
+        context_param = compute_fn.get_context_arg()
+        context_annotation = context_param.annotation
+
+    # TODO - i dont know how to move this check to Definition time since we don't know if the op is
+    # part of a graph-backed asset until we have the step execution context, i think
+    if context_annotation is AssetExecutionContext and not is_sda_step:
+        # AssetExecutionContext requires an AssetsDefinition during init, so an op in an op job
+        # cannot be annotated with AssetExecutionContext
+        raise DagsterInvalidDefinitionError(
+            "Cannot annotate @op `context` parameter with type AssetExecutionContext unless the"
+            " op is part of a graph-backed asset. `context` must be annotated with"
+            " OpExecutionContext, or left blank."
+        )
+
+    if context_annotation is EmptyAnnotation:
+        # if no type hint has been given, default to:
+        # * AssetExecutionContext for sda steps, not in graph-backed assets
+        # * OpExecutionContext for non sda steps
+        # * OpExecutionContext for ops in graph-backed assets
+        if is_op_in_graph_asset or not is_sda_step:
+            return OpExecutionContext(step_context)
+        return AssetExecutionContext(step_context)
+    if context_annotation is AssetExecutionContext:
+        return AssetExecutionContext(step_context)
+    return OpExecutionContext(step_context)
