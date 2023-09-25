@@ -46,8 +46,12 @@ const _assetLayoutCacheKey = (graphData: GraphData) => {
 const getFullAssetLayout = memoize(layoutAssetGraph, _assetLayoutCacheKey);
 
 const asyncGetFullAssetLayoutLocalStorage = localStorageAsyncMemoize(
-  'assetGraphLayout',
-  (_versionKey: string, graphData: GraphData, opts: LayoutAssetGraphOptions) => {
+  (
+    _localStorageKey: string,
+    _versionKey: string,
+    graphData: GraphData,
+    opts: LayoutAssetGraphOptions,
+  ) => {
     return new Promise<AssetGraphLayout>((resolve) => {
       const worker = new Worker(new URL('../workers/dagre_layout.worker', import.meta.url));
       worker.addEventListener('message', (event) => {
@@ -151,7 +155,11 @@ export function useOpLayout(ops: ILayoutOp[], parentOp?: ILayoutOp) {
   };
 }
 
-export function useAssetLayout(graphData: GraphData, fullAssetGraphData?: GraphData) {
+export function useAssetLayout(
+  graphData: GraphData,
+  localStorageKey?: string,
+  fullAssetGraphData?: GraphData,
+) {
   const [state, dispatch] = React.useReducer(reducer, initialState);
   const flags = useFeatureFlags();
 
@@ -166,8 +174,13 @@ export function useAssetLayout(graphData: GraphData, fullAssetGraphData?: GraphD
     async function runAsyncLayout() {
       dispatch({type: 'loading'});
       let layout;
-      if (fullDataCacheKey) {
-        layout = await asyncGetFullAssetLayoutLocalStorage(fullDataCacheKey, graphData, opts);
+      if (localStorageKey) {
+        layout = await asyncGetFullAssetLayoutLocalStorage(
+          localStorageKey,
+          fullDataCacheKey ?? cacheKey,
+          graphData,
+          opts,
+        );
       } else {
         layout = await asyncGetFullAssetLayout(graphData, opts);
       }

@@ -151,20 +151,21 @@ export function asyncMemoize<T, R, U extends (arg: T, ...rest: any[]) => Promise
 export function localStorageAsyncMemoize<
   T,
   R,
-  U extends (versionKey: string, arg: T, ...rest: any[]) => Promise<R>,
+  U extends (localStorageKey: string, versionKey: string, arg: T, ...rest: any[]) => Promise<R>,
 >(
   // Key to that acts as a DB for memoized values
-  localStorageKey: string,
   fn: U,
   hashFn?: (arg: T, ...rest: any[]) => any,
 ): U {
-  const key = `localStorageAsyncMemoize:${localStorageKey}`;
   return (async (
+    // Allows for independent db invalidation on per code location + group basis
+    localStorageKey: string,
     // Key that is used to determine if a value in the DB is stale
     versionKey: string,
     arg: T,
     ...rest: any[]
   ) => {
+    const key = `localStorageAsyncMemoize:${localStorageKey}`;
     type DBWithVersion = Record<string, R> & {version: string};
     const hashKey = hashFn ? hashFn(arg, ...rest) : arg;
     let db = {version: versionKey} as DBWithVersion;
