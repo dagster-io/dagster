@@ -28,7 +28,13 @@ Specifically, an asset includes:
 - **A set of upstream asset dependencies**, referenced using their asset keys. We’ll talk about this more in the next lesson, which focuses on asset dependencies.
 - **A Python function** that defines how the asset is computed.
 
-**Let’s look at our cookie example to demonstrate**. The code on the right creates a `cookie_dough` asset, which depends on the upstream `dry_ingredients` and `wet_ingredients` assets.
+**Let’s look at our cookie example to demonstrate**. The following code creates a `cookie_dough` asset, which depends on the upstream `dry_ingredients` and `wet_ingredients` assets:
+
+```python
+@asset
+def cookie_dough(dry_ingredients, wet_ingredients):
+  return dry_ingredients + wet_ingredients
+```
 
 When naming assets, it’s best practice to use a **noun**, specifically **a descriptor of what is produced,** and not the steps required to produce it.
 
