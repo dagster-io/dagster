@@ -6,7 +6,7 @@ from setuptools import find_packages, setup
 
 def get_version() -> str:
     version: Dict[str, str] = {}
-    with open(Path(__file__).parent / "dagster_ext/version.py", encoding="utf8") as fp:
+    with open(Path(__file__).parent / "dagster_pipes/version.py", encoding="utf8") as fp:
         exec(fp.read(), version)
 
     return version["__version__"]
@@ -31,7 +31,7 @@ setup(
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
-    packages=find_packages(exclude=["dagster_ext_tests*"]),
+    packages=find_packages(exclude=["dagster_pipes_test*"]),
     extras_require={
         "test": [
             f"dagster{pin}",
