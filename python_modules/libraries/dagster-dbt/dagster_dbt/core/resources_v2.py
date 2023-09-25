@@ -56,6 +56,10 @@ DBT_PROFILES_YML_NAME = "profiles.yml"
 PARTIAL_PARSE_FILE_NAME = "partial_parse.msgpack"
 
 
+def _get_dbt_target_path() -> Path:
+    return Path(os.getenv("DBT_TARGET_PATH", "target"))
+
+
 @dataclass
 class DbtCliEventMessage:
     """The representation of a dbt CLI event.
@@ -198,7 +202,12 @@ class DbtCliInvocation:
         # This effectively allows us to skip the parsing of the manifest, which can be expensive.
         # See https://docs.getdbt.com/reference/programmatic-invocations#reusing-objects for more
         # details.
-        partial_parse_file_path = project_dir.joinpath("target", PARTIAL_PARSE_FILE_NAME)
+        current_target_path = _get_dbt_target_path()
+        partial_parse_file_path = (
+            current_target_path.joinpath(PARTIAL_PARSE_FILE_NAME)
+            if current_target_path.is_absolute()
+            else project_dir.joinpath(current_target_path, PARTIAL_PARSE_FILE_NAME)
+        )
         partial_parse_destination_target_path = target_path.joinpath(PARTIAL_PARSE_FILE_NAME)
 
         if partial_parse_file_path.exists():
@@ -565,7 +574,7 @@ class DbtCliResource(ConfigurableResource):
 
         return values
 
-    def _get_unique_target_path(self, *, context: Optional[AssetExecutionContext]) -> str:
+    def _get_unique_target_path(self, *, context: Optional[AssetExecutionContext]) -> Path:
         """Get a unique target path for the dbt CLI invocation.
 
         Args:
@@ -579,7 +588,9 @@ class DbtCliResource(ConfigurableResource):
         if context:
             path = f"{context.op.name}-{context.run_id[:7]}-{unique_id}"
 
-        return f"target/{path}"
+        current_target_path = _get_dbt_target_path()
+
+        return current_target_path.joinpath(path)
 
     @public
     def cli(
@@ -726,10 +737,10 @@ class DbtCliResource(ConfigurableResource):
             # invocation so that artifact paths are separated.
             # See https://discourse.getdbt.com/t/multiple-run-results-json-and-manifest-json-files/7555
             # for more information.
-            "DBT_TARGET_PATH": target_path,
+            "DBT_TARGET_PATH": os.fspath(target_path),
             # The DBT_LOG_PATH environment variable is set to the same value as DBT_TARGET_PATH
             # so that logs for each dbt invocation has separate log files.
-            "DBT_LOG_PATH": target_path,
+            "DBT_LOG_PATH": os.fspath(target_path),
             # The DBT_PROFILES_DIR environment variable is set to the path containing the dbt
             # profiles.yml file.
             # See https://docs.getdbt.com/docs/core/connect-data-platform/connection-profiles#advanced-customizing-a-profile-directory
@@ -768,13 +779,16 @@ class DbtCliResource(ConfigurableResource):
         args = ["dbt"] + self.global_config_flags + args + profile_args + selection_args
         project_dir = Path(self.project_dir)
 
+        if not target_path.is_absolute():
+            target_path = project_dir.joinpath(target_path)
+
         return DbtCliInvocation.run(
             args=args,
             env=env,
             manifest=manifest,
             dagster_dbt_translator=dagster_dbt_translator,
             project_dir=project_dir,
-            target_path=project_dir.joinpath(target_path),
+            target_path=target_path,
             raise_on_error=raise_on_error,
         )
 
