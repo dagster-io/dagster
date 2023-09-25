@@ -20,8 +20,8 @@ from dagster._annotations import deprecated_param
 from dagster._config import UserConfigSchema
 from dagster._core.decorator_utils import (
     format_docstring_for_description,
+    is_context_provided,
     get_function_params,
-    get_valid_name_permutations,
     param_is_var_keyword,
     positional_arg_name_list,
 )
@@ -284,6 +284,11 @@ class DecoratedOpFunction(NamedTuple):
     def has_context_arg(self) -> bool:
         return is_context_provided(get_function_params(self.decorated_fn))
 
+    def get_context_arg(self) -> Parameter:
+        if self.has_context_arg():
+            return get_function_params(self.decorated_fn)[0]
+        check.failed("Requested context arg on function that does not have one")
+
     @lru_cache(maxsize=1)
     def _get_function_params(self) -> Sequence[Parameter]:
         return get_function_params(self.decorated_fn)
@@ -335,12 +340,6 @@ class NoContextDecoratedOpFunction(DecoratedOpFunction):
     @lru_cache(maxsize=1)
     def has_context_arg(self) -> bool:
         return False
-
-
-def is_context_provided(params: Sequence[Parameter]) -> bool:
-    if len(params) == 0:
-        return False
-    return params[0].name in get_valid_name_permutations("context")
 
 
 def resolve_checked_op_fn_inputs(
