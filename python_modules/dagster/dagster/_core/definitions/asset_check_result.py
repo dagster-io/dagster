@@ -138,7 +138,7 @@ class AssetCheckResult(
         return AssetCheckEvaluation(
             check_name=resolved_check_name,
             asset_key=resolved_asset_key,
-            success=self.passed,
+            passed=self.passed,
             metadata=self.metadata,
             target_materialization_data=target_materialization_data,
             severity=self.severity,

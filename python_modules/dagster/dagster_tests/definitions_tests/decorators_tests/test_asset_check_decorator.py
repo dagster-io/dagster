@@ -255,7 +255,7 @@ def test_asset_check_separate_op_downstream_still_executes():
     check_eval = check_evals[0]
     assert check_eval.asset_key == AssetKey("asset1")
     assert check_eval.check_name == "asset1_check"
-    assert not check_eval.success
+    assert not check_eval.passed
 
 
 def test_error_severity_skip_downstream():
@@ -361,7 +361,7 @@ def test_error_severity_with_source_asset_success():
     check_eval = check_evals[0]
     assert check_eval.asset_key == AssetKey("asset1")
     assert check_eval.check_name == "check1"
-    assert check_eval.success
+    assert check_eval.passed
 
 
 def test_definitions_conflicting_checks():
