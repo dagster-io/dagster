@@ -24,7 +24,7 @@ from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.metadata import MetadataValue, TextMetadataValue, normalize_metadata
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
-from dagster._core.definitions.observable_asset import create_unexecutable_observable_assets_def
+from dagster._core.definitions.observable_asset import external_assets_def_from_specs
 from dagster._core.definitions.partition import ScheduleType
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
@@ -1188,7 +1188,7 @@ def test_external_time_window_valid_partition_key():
 
 
 def test_unexecutable_external_asset_node() -> None:
-    asset_one = create_unexecutable_observable_assets_def([AssetSpec("asset_one")])
+    asset_one = external_assets_def_from_specs([AssetSpec("asset_one")])
 
     assets_job = build_assets_job("assets_job", [asset_one])
     external_asset_nodes = external_asset_graph_from_defs([assets_job], source_assets_by_key={})

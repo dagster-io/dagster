@@ -88,7 +88,7 @@ from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
-from dagster._core.definitions.observable_asset import create_unexecutable_observable_assets_def
+from dagster._core.definitions.observable_asset import external_assets_def_from_specs
 from dagster._core.definitions.partition import PartitionedConfig
 from dagster._core.definitions.reconstruct import ReconstructableRepository
 from dagster._core.definitions.sensor_definition import RunRequest, SkipReason
@@ -1383,7 +1383,7 @@ def executable_asset() -> None:
     pass
 
 
-unexecutable_asset = create_unexecutable_observable_assets_def([AssetSpec("unexecutable_asset")])
+unexecutable_asset = external_assets_def_from_specs([AssetSpec("unexecutable_asset")])
 
 executable_test_job = build_assets_job(
     name="executable_test_job", assets=[executable_asset, unexecutable_asset]

@@ -17,14 +17,14 @@ from dagster import (
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.observable_asset import (
-    create_unexecutable_observable_assets_def,
-    create_unexecutable_observable_assets_def_from_source_asset,
+    create_external_assets_def_from_source_asset,
+    external_assets_def_from_specs,
 )
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
 
 
 def test_observable_asset_basic_creation() -> None:
-    assets_def = create_unexecutable_observable_assets_def(
+    assets_def = external_assets_def_from_specs(
         specs=[
             AssetSpec(
                 key="observable_asset_one",
@@ -56,7 +56,7 @@ def test_invalid_observable_asset_creation() -> None:
 
     for invalid_spec in invalid_specs:
         with pytest.raises(check.CheckError):
-            create_unexecutable_observable_assets_def(specs=[invalid_spec])
+            external_assets_def_from_specs(specs=[invalid_spec])
 
 
 def test_normal_asset_materializeable() -> None:
@@ -68,7 +68,7 @@ def test_normal_asset_materializeable() -> None:
 
 def test_observable_asset_creation_with_deps() -> None:
     asset_two = AssetSpec("observable_asset_two")
-    assets_def = create_unexecutable_observable_assets_def(
+    assets_def = external_assets_def_from_specs(
         specs=[
             AssetSpec(
                 "observable_asset_one",
@@ -112,7 +112,7 @@ def test_how_source_assets_are_backwards_compatible() -> None:
     assert result_one.output_for_node("an_asset") == "hardcoded-computed"
 
     defs_with_shim = Definitions(
-        assets=[create_unexecutable_observable_assets_def_from_source_asset(source_asset), an_asset]
+        assets=[create_external_assets_def_from_source_asset(source_asset), an_asset]
     )
 
     assert isinstance(defs_with_shim.get_assets_def("source_asset"), AssetsDefinition)
@@ -175,9 +175,9 @@ def test_how_partitioned_source_assets_are_backwards_compatible() -> None:
     assert result_one.success
     assert result_one.output_for_node("an_asset") == "hardcoded-computed-2021-01-02"
 
-    shimmed_source_asset = create_unexecutable_observable_assets_def_from_source_asset(source_asset)
+    shimmed_source_asset = create_external_assets_def_from_source_asset(source_asset)
     defs_with_shim = Definitions(
-        assets=[create_unexecutable_observable_assets_def_from_source_asset(source_asset), an_asset]
+        assets=[create_external_assets_def_from_source_asset(source_asset), an_asset]
     )
 
     assert isinstance(defs_with_shim.get_assets_def("source_asset"), AssetsDefinition)
