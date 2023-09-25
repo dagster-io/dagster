@@ -32,13 +32,5 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_pipes_tests*"]),
-    extras_require={
-        "test": [
-            f"dagster{pin}",
-            "boto3",
-            "botocore",
-            "moto[s3,server]",
-        ],
-    },
     zip_safe=False,
 )
