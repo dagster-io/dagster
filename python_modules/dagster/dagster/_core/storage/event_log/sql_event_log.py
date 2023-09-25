@@ -1958,7 +1958,7 @@ class SqlEventLogStorage(EventLogStorage):
     def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
         self._check_partitions_table()
         query = (
-            db_select([1])
+            db_select([DynamicPartitionsTable.c.partition])
             .where(
                 db.and_(
                     DynamicPartitionsTable.c.partitions_def_name == partitions_def_name,
