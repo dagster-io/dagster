@@ -283,3 +283,22 @@ def test_error_on_invalid_context_annotation():
         @asset
         def the_asset(context: int):
             pass
+
+
+def test_instance_check():
+    # turn off any outer warnings filters, e.g. ignores that are set in pyproject.toml
+    warnings.resetwarnings()
+    warnings.filterwarnings("error")
+
+    @asset
+    def test_op_context_instance_check(context: AssetExecutionContext):
+        isinstance(context, OpExecutionContext)
+
+    with pytest.raises(DeprecationWarning):
+        materialize([test_op_context_instance_check])
+
+    @asset
+    def test_asset_context_instance_check(context: AssetExecutionContext):
+        isinstance(context, AssetExecutionContext)
+
+    assert materialize([test_asset_context_instance_check]).success
