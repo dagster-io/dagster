@@ -484,8 +484,14 @@ class PlanExecutionContext(IPlanContext):
         return ASSET_PARTITION_RANGE_START_TAG in self._plan_data.dagster_run.tags
 
     def for_type(self, dagster_type: DagsterType) -> "TypeCheckContext":
+        partition_key = self.partition_key if self.has_partitions else None
+
         return TypeCheckContext(
-            self.run_id, self.log, self._execution_data.scoped_resources_builder, dagster_type
+            self.run_id,
+            self.log,
+            self._execution_data.scoped_resources_builder,
+            dagster_type,
+            partition_key,
         )
 
 
@@ -1277,10 +1283,12 @@ class TypeCheckContext:
         log_manager: DagsterLogManager,
         scoped_resources_builder: ScopedResourcesBuilder,
         dagster_type: DagsterType,
+        partition_key: Optional[str] = None,
     ):
         self._run_id = run_id
         self._log = log_manager
         self._resources = scoped_resources_builder.build(dagster_type.required_resource_keys)
+        self._partition_key = partition_key
 
     @public
     @property
@@ -1299,6 +1307,12 @@ class TypeCheckContext:
     def log(self) -> DagsterLogManager:
         """Centralized log dispatch from user code."""
         return self._log
+
+    @public
+    @property
+    def partition_key(self) -> Optional[str]:
+        """Partition key of current run."""
+        return self._partition_key
 
 
 class DagsterTypeLoaderContext(StepExecutionContext):

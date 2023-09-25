@@ -1,8 +1,13 @@
 import dagster._check as check
-from dagster import OpExecutionContext, job, op
+import pytest
+from dagster import OpExecutionContext, asset, job, op
 from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.materialize import materialize_to_memory
 from dagster._core.definitions.op_definition import OpDefinition
+from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
+from dagster._core.execution.context.system import TypeCheckContext
 from dagster._core.storage.dagster_run import DagsterRun
+from dagster._core.types.dagster_type import DagsterType
 
 
 def test_op_execution_context():
@@ -20,3 +25,41 @@ def test_op_execution_context():
         ctx_op()
 
     assert foo.execute_in_process().success
+
+
+class Catch:
+    def __call__(self, context: TypeCheckContext, _) -> bool:
+        self.partition_key = context.partition_key
+        return True
+
+
+@pytest.fixture
+def catch() -> Catch:
+    return Catch()
+
+
+def test_type_check_context_has_partition_key(catch: Catch):
+    first_partition_key = "1970-01-01"
+    partition_def = DailyPartitionsDefinition(start_date=first_partition_key)
+
+    DummyDagsterType = DagsterType(name="DummyDagsterType", type_check_fn=catch)
+
+    @asset(partitions_def=partition_def, dagster_type=DummyDagsterType)
+    def asset01():
+        ...
+
+    materialize_to_memory([asset01], partition_key=first_partition_key)
+
+    assert catch.partition_key == first_partition_key
+
+
+def test_type_check_context_no_partition_key(catch: Catch):
+    DummyDagsterType = DagsterType(name="DummyDagsterType", type_check_fn=catch)
+
+    @asset(dagster_type=DummyDagsterType)
+    def asset01():
+        ...
+
+    materialize_to_memory([asset01])
+
+    assert catch.partition_key is None
