@@ -45,9 +45,23 @@ const _assetLayoutCacheKey = (graphData: GraphData) => {
 
 const getFullAssetLayout = memoize(layoutAssetGraph, _assetLayoutCacheKey);
 
-const asyncGetFullAssetLayout = localStorageAsyncMemoize(
+const asyncGetFullAssetLayoutLocalStorage = localStorageAsyncMemoize(
   'assetGraphLayout',
   (_versionKey: string, graphData: GraphData, opts: LayoutAssetGraphOptions) => {
+    return new Promise<AssetGraphLayout>((resolve) => {
+      const worker = new Worker(new URL('../workers/dagre_layout.worker', import.meta.url));
+      worker.addEventListener('message', (event) => {
+        resolve(event.data);
+        worker.terminate();
+      });
+      worker.postMessage({type: 'layoutAssetGraph', opts, graphData});
+    });
+  },
+  _assetLayoutCacheKey,
+);
+
+const asyncGetFullAssetLayout = asyncMemoize(
+  (graphData: GraphData, opts: LayoutAssetGraphOptions) => {
     return new Promise<AssetGraphLayout>((resolve) => {
       const worker = new Worker(new URL('../workers/dagre_layout.worker', import.meta.url));
       worker.addEventListener('message', (event) => {
@@ -77,7 +91,6 @@ type Action =
       payload: {
         layout: OpGraphLayout | AssetGraphLayout;
         cacheKey: string;
-        fullDataCacheKey: string;
       };
     };
 
@@ -119,13 +132,13 @@ export function useOpLayout(ops: ILayoutOp[], parentOp?: ILayoutOp) {
       const layout = await asyncGetFullOpLayout(ops, {parentOp});
       dispatch({
         type: 'layout',
-        payload: {layout, cacheKey, fullDataCacheKey: ''},
+        payload: {layout, cacheKey},
       });
     }
 
     if (!runAsync) {
       const layout = getFullOpLayout(ops, {parentOp});
-      dispatch({type: 'layout', payload: {layout, cacheKey, fullDataCacheKey: ''}});
+      dispatch({type: 'layout', payload: {layout, cacheKey}});
     } else {
       void runAsyncLayout();
     }
@@ -138,12 +151,12 @@ export function useOpLayout(ops: ILayoutOp[], parentOp?: ILayoutOp) {
   };
 }
 
-export function useAssetLayout(graphData: GraphData, fullAssetGraphData: GraphData) {
+export function useAssetLayout(graphData: GraphData, fullAssetGraphData?: GraphData) {
   const [state, dispatch] = React.useReducer(reducer, initialState);
   const flags = useFeatureFlags();
 
   const cacheKey = _assetLayoutCacheKey(graphData);
-  const fullDataCacheKey = _assetLayoutCacheKey(fullAssetGraphData);
+  const fullDataCacheKey = fullAssetGraphData ? _assetLayoutCacheKey(fullAssetGraphData) : null;
   const nodeCount = Object.keys(graphData.nodes).length;
   const runAsync = nodeCount >= ASYNC_LAYOUT_SOLID_COUNT;
 
@@ -152,13 +165,18 @@ export function useAssetLayout(graphData: GraphData, fullAssetGraphData: GraphDa
 
     async function runAsyncLayout() {
       dispatch({type: 'loading'});
-      const layout = await asyncGetFullAssetLayout(fullDataCacheKey, graphData, opts);
-      dispatch({type: 'layout', payload: {layout, cacheKey, fullDataCacheKey}});
+      let layout;
+      if (fullDataCacheKey) {
+        layout = await asyncGetFullAssetLayoutLocalStorage(fullDataCacheKey, graphData, opts);
+      } else {
+        layout = await asyncGetFullAssetLayout(graphData, opts);
+      }
+      dispatch({type: 'layout', payload: {layout, cacheKey}});
     }
 
     if (!runAsync) {
       const layout = getFullAssetLayout(graphData, opts);
-      dispatch({type: 'layout', payload: {layout, cacheKey, fullDataCacheKey}});
+      dispatch({type: 'layout', payload: {layout, cacheKey}});
     } else {
       void runAsyncLayout();
     }
