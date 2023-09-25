@@ -1,12 +1,11 @@
 import contextlib
-import os
+import json
 import tempfile
 from enum import Enum
 from subprocess import PIPE, STDOUT, Popen
 from typing import Any, Dict, Generator, List, Optional
 
-import yaml
-from dagster import Config, ConfigurableResource, get_dagster_logger
+from dagster import Config, ConfigurableResource, PermissiveConfig, get_dagster_logger
 from dagster._utils.env import environ
 from pydantic import Field
 from sling import Sling  # type: ignore
@@ -25,7 +24,7 @@ class SlingMode(str, Enum):
     SNAPSHOT = "snapshot"
 
 
-class SlingSource(Config):
+class SlingSourceConfig(Config):
     """Sling Source configuration.
 
 
@@ -64,6 +63,22 @@ class SlingTarget(Config):
     )
 
 
+class SlingSourceConnection(PermissiveConfig):
+    type: str = Field(description="Type of the source connection. Use 'file' for local storage.")
+    connection_string: Optional[str] = Field(
+        description="The connection string for the source database."
+    )
+
+
+class SlingTargetConnection(PermissiveConfig):
+    type: str = Field(
+        description="Type of the destination connection. Use 'file' for local storage."
+    )
+    connection_string: Optional[str] = Field(
+        description="The connection string for the target database."
+    )
+
+
 class SlingResource(ConfigurableResource):
     """Resource for interacting with the Sling package.
 
@@ -94,21 +109,25 @@ class SlingResource(ConfigurableResource):
         )
     """
 
-    source_connection: Optional[str] = Field(
-        description="The Sling source connection string, often a database connection string."
-    )
-    target_connection: str = Field(description="Connection string for the target database")
+    source_connection: SlingSourceConnection
+    target_connection: SlingTargetConnection
 
-    def _get_env_config(self) -> Dict[str, str]:
-        return {"connections": "test"}
+    def _get_env_config(self) -> Dict[str, Any]:
+        return {
+            "connections": {
+                "sling_source": repr(self.source_connection.dict()),
+            }
+        }
 
     @contextlib.contextmanager
     def _setup_config(self) -> Generator[None, None, None]:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            with open(os.path.join(temp_dir, "env.yaml"), "w") as f:
-                f.write(yaml.dump(self._get_env_config()))
-            with environ({"SLING_HOME_DIR": temp_dir}):
-                yield
+        with environ(
+            {
+                "SLING_SOURCE": json.dumps(self.source_connection.dict()),
+                "SLING_TARGET": json.dumps(self.target_connection.dict()),
+            }
+        ):
+            yield
 
     def exec_sling_cmd(
         self, cmd, stdin=None, stdout=PIPE, stderr=STDOUT
@@ -129,61 +148,64 @@ class SlingResource(ConfigurableResource):
 
     def _sync(
         self,
-        source_conn: str,
-        target_conn: str,
-        source_table: str,
-        dest_table: str,
+        source_stream: str,
+        target_object: str,
         mode: SlingMode = SlingMode.FULL_REFRESH,
         primary_key: Optional[List[str]] = None,
         update_key: Optional[str] = None,
+        source_options: Optional[Dict[str, Any]] = None,
+        target_options: Optional[Dict[str, Any]] = None,
     ) -> Generator[str, None, None]:
         """Runs a Sling sync from the given source table to the given destination table. Generates
         output lines from the Sling CLI.
         """
+        if self.source_connection.type == "file" and not source_stream.startswith("file://"):
+            source_stream = "file://" + source_stream
+
+        if self.target_connection.type == "file" and not target_object.startswith("file://"):
+            target_object = "file://" + target_object
+
         with self._setup_config():
             config = {
                 "source": {
-                    "conn": source_conn,
-                    "stream": source_table,
-                    **(
-                        {
-                            "primary_key": primary_key,
-                        }
-                        if primary_key
-                        else {}
-                    ),
-                    **(
-                        {
-                            "update_key": update_key,
-                        }
-                        if update_key
-                        else {}
-                    ),
+                    "conn": "SLING_SOURCE",
+                    "stream": source_stream,
+                    "primary_key": primary_key,
+                    "update_key": update_key,
+                    "options": source_options,
                 },
                 "target": {
-                    "conn": target_conn,
-                    "object": dest_table,
+                    "conn": "SLING_TARGET",
+                    "object": target_object,
+                    "options": target_options,
                 },
-                "mode": mode.value,
             }
+            config["source"] = {k: v for k, v in config["source"].items() if v is not None}
+            config["target"] = {k: v for k, v in config["target"].items() if v is not None}
 
             sling_cli = Sling(**config)
-
             logger.info("Starting Sling sync with mode: %s", mode)
             cmd = sling_cli._prep_cmd()  # noqa: SLF001
 
             yield from self.exec_sling_cmd(cmd)
 
     def sync(
-        self, source: SlingSource, target: SlingTarget, mode: SlingMode
+        self,
+        source_stream: str,
+        target_object: str,
+        mode: SlingMode,
+        primary_key: Optional[List[str]] = None,
+        update_key: Optional[str] = None,
+        source_options: Optional[Dict[str, Any]] = None,
+        target_options: Optional[Dict[str, Any]] = None,
     ) -> Generator[str, None, None]:
         """Syncs the source and target objects."""
         yield from self._sync(
-            source_conn=self.source_connection,
-            target_conn=self.target_connection,
-            source_table=source.stream,
-            dest_table=target.object,
+            source_stream=source_stream,
+            target_object=target_object,
             mode=mode,
-            primary_key=source.primary_key,
-            update_key=source.update_key,
+            primary_key=primary_key,
+            update_key=update_key,
+            source_options=source_options,
+            target_options=target_options,
         )

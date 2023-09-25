@@ -4,8 +4,7 @@ import tempfile
 
 from dagster import AssetKey, file_relative_path
 from dagster._core.definitions import build_assets_job
-from dagster_elt import SlingMode, SlingSource, SlingTarget, SlingResource
-from dagster_elt.asset_defs import build_sling_asset
+from dagster_elt import SlingMode, SlingResource, build_sling_asset
 
 
 def test_build_sling_asset():
