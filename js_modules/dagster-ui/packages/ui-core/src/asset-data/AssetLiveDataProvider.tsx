@@ -126,22 +126,11 @@ export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) =
     if (!isDocumentVisible) {
       return;
     }
-    const interval = setInterval(() => {
-      _batchedQueryAssets(_determineAssetsToFetch(), client, (data) => {
-        Object.entries(data).forEach(([key, assetData]) => {
-          const listeners = _assetKeyListeners[key];
-          if (!listeners) {
-            return;
-          }
-          listeners.forEach((listener) => {
-            listener(key, assetData);
-          });
-        });
-      });
-      // Check for assets to fetch every 5 seconds to simplify logic
-      // This means assets will be fetched at most 5 + SUBSCRIPTION_IDLE_POLL_RATE after their first fetch
-      // but then will be fetched every SUBSCRIPTION_IDLE_POLL_RATE after that
-    }, 5000);
+    // Check for assets to fetch every 5 seconds to simplify logic
+    // This means assets will be fetched at most 5 + SUBSCRIPTION_IDLE_POLL_RATE after their first fetch
+    // but then will be fetched every SUBSCRIPTION_IDLE_POLL_RATE after that
+    const interval = setInterval(() => fetchData(client), 5000);
+    fetchData(client);
     return () => {
       clearInterval(interval);
     };
@@ -152,17 +141,7 @@ export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) =
       return;
     }
     const timeout = setTimeout(() => {
-      _batchedQueryAssets(_determineAssetsToFetch(), client, (data) => {
-        Object.entries(data).forEach(([key, assetData]) => {
-          const listeners = _assetKeyListeners[key];
-          if (!listeners) {
-            return;
-          }
-          listeners.forEach((listener) => {
-            listener(key, assetData);
-          });
-        });
-      });
+      fetchData(client);
       setNeedsImmediateFetch(false);
       // Wait BATCHING_INTERVAL before doing fetch in case the component is unmounted quickly (eg. in the case of scrolling/filtering quickly)
     }, BATCHING_INTERVAL);
@@ -185,7 +164,7 @@ async function _batchedQueryAssets(
   setData: (data: Record<string, LiveDataForNode>) => void,
 ) {
   // Bail if the document isn't visible
-  if (!assetKeys.length || !isDocumentVisible() || isFetching) {
+  if (!assetKeys.length || isFetching) {
     return;
   }
   isFetching = true;
@@ -278,7 +257,7 @@ function _determineAssetsToFetch() {
     if (lastFetchTime !== null && Date.now() - lastFetchTime < SUBSCRIPTION_IDLE_POLL_RATE) {
       continue;
     }
-    if (lastFetchTime) {
+    if (lastFetchTime && isDocumentVisible()) {
       assetsToFetch.push({path: JSON.parse(key)});
     } else {
       assetsWithoutData.push({path: JSON.parse(key)});
@@ -286,6 +265,20 @@ function _determineAssetsToFetch() {
   }
   // Prioritize fetching assets for which there is no data in the cache
   return assetsWithoutData.concat(assetsToFetch).slice(0, 50);
+}
+
+function fetchData(client: ApolloClient<any>) {
+  _batchedQueryAssets(_determineAssetsToFetch(), client, (data) => {
+    Object.entries(data).forEach(([key, assetData]) => {
+      const listeners = _assetKeyListeners[key];
+      if (!listeners) {
+        return;
+      }
+      listeners.forEach((listener) => {
+        listener(key, assetData);
+      });
+    });
+  });
 }
 
 // Map of AssetKeyInput to its unique asset ID. We won't know until we query because the backend implementation depends on the repository location and name.

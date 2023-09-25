@@ -1,7 +1,7 @@
 jest.useFakeTimers();
 
 import {MockedProvider, MockedResponse} from '@apollo/client/testing';
-import {render, act} from '@testing-library/react';
+import {render, act, waitFor} from '@testing-library/react';
 import React from 'react';
 
 import {
@@ -42,6 +42,11 @@ function buildMockedQuery(assetKeys: AssetKeyInput[]) {
     },
   });
 }
+
+beforeEach(() => {
+  jest.resetModules();
+  jest.advanceTimersByTime(100000);
+});
 
 function Test({
   mocks,
@@ -133,5 +138,73 @@ describe('AssetLiveDataProvider', () => {
     });
     expect(resultFn2).toHaveBeenCalled();
     expect(hookResult2.mock.results[2]).toEqual(hookResult.mock.results[1]);
+  });
+
+  it('obeys document visibility', async () => {
+    const assetKeys = [buildAssetKey({path: ['key1']})];
+    const mockedQuery = buildMockedQuery(assetKeys);
+    const mockedQuery2 = buildMockedQuery(assetKeys);
+
+    const resultFn = getMockResultFn(mockedQuery);
+    const resultFn2 = getMockResultFn(mockedQuery2);
+
+    const hookResult = jest.fn();
+    const hookResult2 = jest.fn();
+
+    const {rerender} = render(
+      <Test mocks={[mockedQuery, mockedQuery2]} hooks={[{keys: assetKeys, hookResult}]} />,
+    );
+
+    // Initially an empty object
+    expect(resultFn).toHaveBeenCalledTimes(0);
+    expect(hookResult.mock.results[0]!.value).toEqual(undefined);
+
+    act(() => {
+      jest.runOnlyPendingTimers();
+    });
+
+    expect(resultFn).toHaveBeenCalled();
+    expect(resultFn2).not.toHaveBeenCalled();
+
+    // Re-render with the same asset keys and expect the cache to be used this time.
+
+    rerender(
+      <Test
+        mocks={[mockedQuery, mockedQuery2]}
+        hooks={[{keys: assetKeys, hookResult: hookResult2}]}
+      />,
+    );
+
+    // Initially an empty object
+    expect(resultFn2).not.toHaveBeenCalled();
+    expect(hookResult2.mock.results[0]!.value).toEqual(undefined);
+    act(() => {
+      jest.runOnlyPendingTimers();
+    });
+
+    // Not called because we use the cache instead
+    expect(resultFn2).not.toHaveBeenCalled();
+    expect(hookResult2.mock.results[1]).toEqual(hookResult.mock.results[1]);
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    (document as any).visibilityState = 'hidden';
+
+    // Document isn't visible so we don't make a request
+    act(() => {
+      jest.advanceTimersByTime(SUBSCRIPTION_IDLE_POLL_RATE + 1);
+    });
+    expect(resultFn2).not.toHaveBeenCalled();
+
+    act(() => {
+      (document as any).visibilityState = 'visible';
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+
+    await waitFor(() => {
+      expect(resultFn2).toHaveBeenCalled();
+    });
   });
 });
