@@ -141,6 +141,7 @@ export function useLiveDataForAssetKeys(assetKeys: AssetKeyInput[], batched?: bo
 
 export const ASSET_LATEST_INFO_FRAGMENT = gql`
   fragment AssetLatestInfoFragment on AssetLatestInfo {
+    id
     assetKey {
       path
     }
@@ -159,7 +160,7 @@ export const ASSET_LATEST_INFO_FRAGMENT = gql`
   }
 `;
 
-const ASSET_NODE_LIVE_FRAGMENT = gql`
+export const ASSET_NODE_LIVE_FRAGMENT = gql`
   fragment AssetNodeLiveFragment on AssetNode {
     id
     opNames
