@@ -233,9 +233,15 @@ def get_assets_latest_info(
 
     return [
         GrapheneAssetLatestInfo(
-            get_unique_asset_id(
-                asset_key, asset_nodes[asset_key].repository_location.name, asset_nodes[asset_key].external_repository.name
-            ) if asset_nodes[asset_key] else get_unique_asset_id(asset_key),
+            (
+                get_unique_asset_id(
+                    asset_key,
+                    asset_nodes[asset_key].repository_location.name,
+                    asset_nodes[asset_key].external_repository.name,
+                )
+                if asset_nodes[asset_key]
+                else get_unique_asset_id(asset_key)
+            ),
             asset_key,
             latest_materialization_by_asset.get(asset_key),
             list(unstarted_run_ids_by_asset.get(asset_key, [])),
