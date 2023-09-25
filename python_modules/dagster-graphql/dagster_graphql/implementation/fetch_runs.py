@@ -229,8 +229,13 @@ def get_assets_latest_info(
         unstarted_run_ids_by_asset,
     ) = _get_in_progress_runs_for_assets(graphene_info, in_progress_records, step_keys_by_asset)
 
+    from .fetch_assets import get_unique_asset_id
+
     return [
         GrapheneAssetLatestInfo(
+            get_unique_asset_id(
+                asset_key, asset_nodes[asset_key].repository_location.name, asset_nodes[asset_key].external_repository.name
+            ) if asset_nodes[asset_key] else get_unique_asset_id(asset_key),
             asset_key,
             latest_materialization_by_asset.get(asset_key),
             list(unstarted_run_ids_by_asset.get(asset_key, [])),
