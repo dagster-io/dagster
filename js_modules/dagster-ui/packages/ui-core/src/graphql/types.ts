@@ -2131,6 +2131,7 @@ export type MutationTerminateRunArgs = {
 
 export type MutationTerminateRunsArgs = {
   runIds: Array<Scalars['String']>;
+  terminatePolicy?: InputMaybe<TerminateRunPolicy>;
 };
 
 export type MutationWipeAssetsArgs = {

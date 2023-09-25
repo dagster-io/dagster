@@ -151,7 +151,9 @@ def terminate_pipeline_execution(
 
 
 def terminate_pipeline_execution_for_runs(
-    graphene_info: "ResolveInfo", run_ids: Sequence[str]
+    graphene_info: "ResolveInfo",
+    run_ids: Sequence[str],
+    terminate_policy: "GrapheneTerminateRunPolicy",
 ) -> "GrapheneTerminateRunsResult":
     from ...schema.roots.mutation import (
         GrapheneTerminateRunPolicy,
@@ -166,9 +168,7 @@ def terminate_pipeline_execution_for_runs(
         result = terminate_pipeline_execution(
             graphene_info,
             run_id,
-            cast(
-                GrapheneTerminateRunPolicy, GrapheneTerminateRunPolicy.MARK_AS_CANCELED_IMMEDIATELY
-            ),
+            terminate_policy,
         )
 
         terminate_run_results.append(result)

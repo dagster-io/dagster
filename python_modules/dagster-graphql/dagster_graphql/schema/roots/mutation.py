@@ -479,6 +479,7 @@ class GrapheneTerminateRunsMutation(graphene.Mutation):
 
     class Arguments:
         runIds = non_null_list(graphene.String)
+        terminatePolicy = graphene.Argument(GrapheneTerminateRunPolicy)
 
     class Meta:
         name = "TerminateRunsMutation"
@@ -489,10 +490,12 @@ class GrapheneTerminateRunsMutation(graphene.Mutation):
         self,
         graphene_info: ResolveInfo,
         runIds: Sequence[str],
+        terminatePolicy: Optional[GrapheneTerminateRunPolicy] = None,
     ):
         return terminate_pipeline_execution_for_runs(
             graphene_info,
             runIds,
+            terminatePolicy or GrapheneTerminateRunPolicy.SAFE_TERMINATE,
         )
 
 

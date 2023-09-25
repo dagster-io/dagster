@@ -3278,7 +3278,10 @@ type Mutation {
     terminatePolicy: TerminateRunPolicy
   ): TerminateRunResult!
   terminateRun(runId: String!, terminatePolicy: TerminateRunPolicy): TerminateRunResult!
-  terminateRuns(runIds: [String!]!): TerminateRunsResultOrError!
+  terminateRuns(
+    runIds: [String!]!
+    terminatePolicy: TerminateRunPolicy
+  ): TerminateRunsResultOrError!
   deletePipelineRun(runId: String!): DeletePipelineRunResult!
   deleteRun(runId: String!): DeletePipelineRunResult!
   reloadRepositoryLocation(repositoryLocationName: String!): ReloadRepositoryLocationMutationResult!
