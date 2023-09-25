@@ -1,4 +1,4 @@
-from dagster_ext.version import __version__
+from dagster_pipes.version import __version__
 
 
 def test_version():

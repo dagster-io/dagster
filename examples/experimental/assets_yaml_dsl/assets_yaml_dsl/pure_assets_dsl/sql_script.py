@@ -1,6 +1,6 @@
 import sys
 
-from dagster_ext import init_dagster_ext
+from dagster_pipes import init_dagster_ext
 
 
 class SomeSqlClient:

@@ -21,7 +21,7 @@ from dagster._core.ext.utils import (
     ext_protocol,
     extract_message_or_forward_to_stdout,
 )
-from dagster_ext import (
+from dagster_pipes import (
     DagsterExtError,
     ExtDefaultMessageWriter,
     ExtExtras,

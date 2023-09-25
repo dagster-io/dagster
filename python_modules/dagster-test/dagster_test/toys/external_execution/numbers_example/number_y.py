@@ -1,6 +1,6 @@
 import os
 
-from dagster_ext import init_dagster_ext
+from dagster_pipes import init_dagster_ext
 
 from .util import compute_data_version, store_asset_value
 

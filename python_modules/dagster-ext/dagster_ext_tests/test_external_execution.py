@@ -74,7 +74,7 @@ def external_script() -> Iterator[str]:
         import os
         import time
 
-        from dagster_ext import (
+        from dagster_pipes import (
             ExtContext,
             ExtS3MessageWriter,
             init_dagster_ext,
@@ -198,7 +198,7 @@ def test_ext_subprocess(
 
 def test_ext_multi_asset():
     def script_fn():
-        from dagster_ext import init_dagster_ext
+        from dagster_pipes import init_dagster_ext
 
         context = init_dagster_ext()
         context.report_asset_materialization(
@@ -227,7 +227,7 @@ def test_ext_multi_asset():
 
 def test_ext_typed_metadata():
     def script_fn():
-        from dagster_ext import init_dagster_ext
+        from dagster_pipes import init_dagster_ext
 
         context = init_dagster_ext()
         context.report_asset_materialization(
@@ -307,7 +307,7 @@ def test_ext_asset_failed():
 
 def test_ext_asset_invocation():
     def script_fn():
-        from dagster_ext import init_dagster_ext
+        from dagster_pipes import init_dagster_ext
 
         context = init_dagster_ext()
         context.log("hello world")
@@ -326,7 +326,7 @@ PATH_WITH_NONEXISTENT_DIR = "/tmp/does-not-exist/foo"
 
 def test_ext_no_orchestration():
     def script_fn():
-        from dagster_ext import (
+        from dagster_pipes import (
             ExtContext,
             init_dagster_ext,
             is_dagster_ext_process,

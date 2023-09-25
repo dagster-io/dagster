@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock
 
 import pytest
-from dagster_ext import (
+from dagster_pipes import (
     DagsterExtError,
     ExtContext,
     ExtContextData,

@@ -17,7 +17,7 @@ from dagster._core.ext.utils import (
     ExtBlobStoreMessageReader,
     ext_protocol,
 )
-from dagster_ext import (
+from dagster_pipes import (
     ExtContextData,
     ExtExtras,
     ExtParams,
