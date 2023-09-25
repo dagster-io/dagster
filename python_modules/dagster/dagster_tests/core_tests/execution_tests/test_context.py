@@ -2,7 +2,20 @@ import warnings
 
 import dagster._check as check
 import pytest
-from dagster import AssetExecutionContext, OpExecutionContext, job, op, asset, materialize, graph_asset, graph_multi_asset, multi_asset, AssetOut, Output, GraphDefinition
+from dagster import (
+    AssetExecutionContext,
+    AssetOut,
+    GraphDefinition,
+    OpExecutionContext,
+    Output,
+    asset,
+    graph_asset,
+    graph_multi_asset,
+    job,
+    materialize,
+    multi_asset,
+    op,
+)
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
@@ -45,6 +58,7 @@ def test_instance_check():
         test_op_context_instance_check()
 
     test_isinstance.execute_in_process()
+
 
 def test_context_provided_to_asset():
     @asset
