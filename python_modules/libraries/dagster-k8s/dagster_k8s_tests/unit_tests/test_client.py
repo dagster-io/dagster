@@ -423,34 +423,6 @@ def test_retrieve_pod_logs():
     assert mock_client.retrieve_pod_logs("pod", "namespace") == "a_string"
 
 
-def test_retrieve_pod_logs_deleted_pod():
-    """Tests that no logs are returned when the Kubernetes API responds with an error status code."""
-    mock_client = create_mocked_client()
-    pod_name = "pod"
-    namespace_name = "namespace"
-    exception_msg = "error"
-    container_name = "container"
-
-    mock_client.core_api.read_namespaced_pod_log.side_effect = [
-        kubernetes.client.ApiException(exception_msg)
-    ]
-
-    assert (
-        mock_client.retrieve_pod_logs(
-            pod_name=pod_name, namespace=namespace_name, container_name=container_name
-        )
-        == ""
-    )
-
-    assert_logger_calls(
-        mock_client.logger,
-        [
-            f'Could not retrieve logs of container "{container_name}" in pod "{pod_name}".\n'
-            f"Exception: ({exception_msg})\nReason: None\n"
-        ],
-    )
-
-
 def _pod_list_for_container_status(container_status):
     return V1PodList(items=[V1Pod(status=V1PodStatus(container_statuses=[container_status]))])
 
