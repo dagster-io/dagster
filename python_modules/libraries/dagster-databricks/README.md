@@ -37,8 +37,8 @@ def databricks_asset(context: AssetExecutionContext, ext: ExtDatabricks):
     task = jobs.SubmitTask.from_dict({
         "new_cluster": { ... },
         "libraries": [
-            # must include dagster-ext-process
-            {"pypi": {"package": "dagster-ext-process"}},
+            # must include dagster-pipes
+            {"pypi": {"package": "dagster-pipes"}},
         ],
         "task_key": "some-key",
         "spark_python_task": {

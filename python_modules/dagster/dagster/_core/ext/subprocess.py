@@ -1,7 +1,7 @@
 from subprocess import Popen
 from typing import Iterator, Mapping, Optional, Sequence, Union
 
-from dagster_ext import ExtExtras
+from dagster_pipes import ExtExtras
 
 from dagster import _check as check
 from dagster._core.definitions.resource_annotation import ResourceParam

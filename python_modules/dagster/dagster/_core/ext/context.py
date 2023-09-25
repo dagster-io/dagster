@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from queue import Queue
 from typing import Any, Iterator, Mapping, Optional, Set, Union
 
-from dagster_ext import (
+from dagster_pipes import (
     DAGSTER_EXT_ENV_KEYS,
     EXT_METADATA_TYPE_INFER,
     IS_DAGSTER_EXT_PROCESS_ENV_VAR,

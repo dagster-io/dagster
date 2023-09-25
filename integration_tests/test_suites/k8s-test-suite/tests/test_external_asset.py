@@ -8,10 +8,10 @@ from dagster._core.ext.client import (
     ExtContextInjector,
 )
 from dagster._core.ext.utils import ExtEnvContextInjector, ext_protocol
-from dagster_ext import ExtContextData, ExtDefaultContextLoader
 from dagster_k8s import execute_k8s_job
 from dagster_k8s.client import DagsterKubernetesClient
 from dagster_k8s.ext import ExtK8sPod, K8sPodLogsMessageReader
+from dagster_pipes import ExtContextData, ExtDefaultContextLoader
 from dagster_test.test_project import (
     get_test_project_docker_image,
 )
@@ -63,7 +63,7 @@ class ExtConfigMapContextInjector(ExtContextInjector):
     ):
         self._client = k8s_client
         self._namespace = namespace
-        self._cm_name = "dagster-ext-cm"
+        self._cm_name = "dagster-pipes-cm"
 
     @contextmanager
     def inject_context(
@@ -97,14 +97,14 @@ class ExtConfigMapContextInjector(ExtContextInjector):
                     "volume_mounts": [
                         {
                             "mountPath": "/mnt/dagster/",
-                            "name": "dagster-ext-context",
+                            "name": "dagster-pipes-context",
                         }
                     ],
                 }
             ],
             "volumes": [
                 {
-                    "name": "dagster-ext-context",
+                    "name": "dagster-pipes-context",
                     "configMap": {
                         "name": self._cm_name,
                     },
