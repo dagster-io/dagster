@@ -39,7 +39,7 @@ def test_asset_check_same_op():
     @asset(check_specs=[AssetCheckSpec("check1", asset="asset1", description="desc")])
     def asset1():
         yield Output(None)
-        yield AssetCheckResult(check_name="check1", success=True, metadata={"foo": "bar"})
+        yield AssetCheckResult(check_name="check1", passed=True, metadata={"foo": "bar"})
 
     instance = DagsterInstance.ephemeral()
     result = materialize(assets=[asset1], instance=instance)
@@ -70,7 +70,7 @@ def test_asset_check_same_op_with_key_prefix():
     )
     def asset1():
         yield Output(None)
-        yield AssetCheckResult(check_name="check1", success=True, metadata={"foo": "bar"})
+        yield AssetCheckResult(check_name="check1", passed=True, metadata={"foo": "bar"})
 
     instance = DagsterInstance.ephemeral()
     result = materialize(assets=[asset1], instance=instance)
@@ -101,8 +101,8 @@ def test_multiple_asset_checks_same_op():
     )
     def asset1():
         yield Output(None)
-        yield AssetCheckResult(check_name="check1", success=True, metadata={"foo": "bar"})
-        yield AssetCheckResult(check_name="check2", success=False, metadata={"baz": "bla"})
+        yield AssetCheckResult(check_name="check1", passed=True, metadata={"foo": "bar"})
+        yield AssetCheckResult(check_name="check2", passed=False, metadata={"baz": "bla"})
 
     result = materialize(assets=[asset1])
     assert result.success
@@ -136,7 +136,7 @@ def test_no_result_for_check():
 def test_check_result_but_no_output():
     @asset(check_specs=[AssetCheckSpec("check1", asset="asset1")])
     def asset1():
-        yield AssetCheckResult(success=True)
+        yield AssetCheckResult(passed=True)
 
     with pytest.raises(
         DagsterStepOutputNotFoundError,
@@ -150,7 +150,7 @@ def test_check_result_but_no_output():
 def test_unexpected_check_name():
     @asset(check_specs=[AssetCheckSpec("check1", asset="asset1", description="desc")])
     def asset1():
-        return AssetCheckResult(check_name="check2", success=True, metadata={"foo": "bar"})
+        return AssetCheckResult(check_name="check2", passed=True, metadata={"foo": "bar"})
 
     with pytest.raises(
         DagsterInvariantViolationError,
@@ -165,7 +165,7 @@ def test_unexpected_check_name():
 def test_asset_decorator_unexpected_asset_key():
     @asset(check_specs=[AssetCheckSpec("check1", asset="asset1", description="desc")])
     def asset1():
-        return AssetCheckResult(asset_key=AssetKey("asset2"), check_name="check1", success=True)
+        return AssetCheckResult(asset_key=AssetKey("asset2"), check_name="check1", passed=True)
 
     with pytest.raises(
         DagsterInvariantViolationError,
@@ -186,7 +186,7 @@ def test_result_missing_check_name():
     )
     def asset1():
         yield Output(None)
-        yield AssetCheckResult(success=True)
+        yield AssetCheckResult(passed=True)
 
     with pytest.raises(
         DagsterInvariantViolationError,
@@ -202,7 +202,7 @@ def test_asset_check_fails_downstream_still_executes():
     @asset(check_specs=[AssetCheckSpec("check1", asset="asset1")])
     def asset1():
         yield Output(None)
-        yield AssetCheckResult(success=False)
+        yield AssetCheckResult(passed=False)
 
     @asset(deps=[asset1])
     def asset2(): ...
@@ -229,7 +229,7 @@ def test_error_severity_skip_downstream():
     )
     def asset1():
         yield Output(5)
-        yield AssetCheckResult(success=False)
+        yield AssetCheckResult(passed=False)
 
     @asset
     def asset2(asset1: int):
@@ -294,7 +294,7 @@ def test_multi_asset_with_check():
     def asset_1_and_2():
         yield Output(None, output_name="one")
         yield Output(None, output_name="two")
-        yield AssetCheckResult(check_name="check1", success=True, metadata={"foo": "bar"})
+        yield AssetCheckResult(check_name="check1", passed=True, metadata={"foo": "bar"})
 
     result = materialize(assets=[asset_1_and_2])
     assert result.success
@@ -341,7 +341,7 @@ def test_result_missing_asset_key():
     def asset_1_and_2():
         yield Output(None, output_name="one")
         yield Output(None, output_name="two")
-        yield AssetCheckResult(success=True)
+        yield AssetCheckResult(passed=True)
 
     with pytest.raises(
         DagsterInvariantViolationError,
@@ -371,7 +371,7 @@ def test_asset_check_doesnt_store_output():
     @asset(check_specs=[AssetCheckSpec("check1", asset="asset1", description="desc")])
     def asset1():
         yield Output("the-only-allowed-output")
-        yield AssetCheckResult(check_name="check1", success=True, metadata={"foo": "bar"})
+        yield AssetCheckResult(check_name="check1", passed=True, metadata={"foo": "bar"})
 
     instance = DagsterInstance.ephemeral()
     result = materialize(
@@ -408,7 +408,7 @@ def test_multi_asset_with_check_subset():
     def asset_1_and_2(context: AssetExecutionContext):
         if AssetKey("asset1") in context.selected_asset_keys:
             yield Output(None, output_name="one")
-            yield AssetCheckResult(check_name="check1", success=True)
+            yield AssetCheckResult(check_name="check1", passed=True)
         if AssetKey("asset2") in context.selected_asset_keys:
             yield Output(None, output_name="two")
 
@@ -464,11 +464,11 @@ def test_graph_asset():
 
     @op
     def validate_asset(word):
-        return AssetCheckResult(check_name="check1", success=True, metadata={"foo": "bar"})
+        return AssetCheckResult(check_name="check1", passed=True, metadata={"foo": "bar"})
 
     @op
     def non_blocking_validation(word):
-        return AssetCheckResult(check_name="check2", success=True, metadata={"biz": "buz"})
+        return AssetCheckResult(check_name="check2", passed=True, metadata={"biz": "buz"})
 
     @op(ins={"staging_asset": In(Nothing), "check_result": In(Nothing)})
     def promote_asset():
@@ -514,7 +514,7 @@ def test_graph_multi_asset():
 
     @op
     def validate_asset(word):
-        return AssetCheckResult(check_name="check1", success=True, metadata={"foo": "bar"})
+        return AssetCheckResult(check_name="check1", passed=True, metadata={"foo": "bar"})
 
     @op(ins={"staging_asset": In(Nothing), "check_result": In(Nothing)})
     def promote_asset():
@@ -568,7 +568,7 @@ def test_can_subset_no_selection() -> None:
         }
 
         yield Output(value=None, output_name="asset1")
-        yield AssetCheckResult(asset_key="asset1", check_name="check1", success=True)
+        yield AssetCheckResult(asset_key="asset1", check_name="check1", passed=True)
 
     result = materialize([foo])
 
@@ -594,7 +594,7 @@ def test_can_subset() -> None:
         assert context.selected_asset_check_keys == {AssetCheckKey(AssetKey("asset1"), "check1")}
 
         yield Output(value=None, output_name="asset1")
-        yield AssetCheckResult(asset_key="asset1", check_name="check1", success=True)
+        yield AssetCheckResult(asset_key="asset1", check_name="check1", passed=True)
 
     result = materialize([foo], selection=["asset1"])
 
@@ -620,8 +620,8 @@ def test_can_subset_result_for_unselected_check() -> None:
         assert context.selected_asset_check_keys == {AssetCheckKey(AssetKey("asset1"), "check1")}
 
         yield Output(value=None, output_name="asset1")
-        yield AssetCheckResult(asset_key="asset1", check_name="check1", success=True)
-        yield AssetCheckResult(asset_key="asset2", check_name="check2", success=True)
+        yield AssetCheckResult(asset_key="asset1", check_name="check1", passed=True)
+        yield AssetCheckResult(asset_key="asset2", check_name="check2", passed=True)
 
     with pytest.raises(DagsterInvariantViolationError):
         materialize([foo], selection=["asset1"])
@@ -667,7 +667,7 @@ def test_can_subset_select_only_check() -> None:
         assert context.selected_asset_keys == set()
         assert context.selected_asset_check_keys == {AssetCheckKey(AssetKey("asset1"), "check1")}
 
-        yield AssetCheckResult(asset_key="asset1", check_name="check1", success=True)
+        yield AssetCheckResult(asset_key="asset1", check_name="check1", passed=True)
 
     result = materialize(
         [foo],

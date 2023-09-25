@@ -22,17 +22,17 @@ def asset2(): ...
 
 @asset_check(asset=asset1)
 def asset1_check1():
-    return AssetCheckResult(success=True)
+    return AssetCheckResult(passed=True)
 
 
 @asset_check(asset=asset1)
 def asset1_check2():
-    return AssetCheckResult(success=True)
+    return AssetCheckResult(passed=True)
 
 
 @asset_check(asset=asset2)
 def asset2_check1():
-    return AssetCheckResult(success=True)
+    return AssetCheckResult(passed=True)
 
 
 def execute_asset_job_in_process(asset_job: UnresolvedAssetJobDefinition) -> ExecuteInProcessResult:
@@ -177,8 +177,8 @@ def test_include_asset_after_excluding_checks():
 )
 def asset_with_checks():
     yield Output(1)
-    yield AssetCheckResult(success=True, check_name="check1")
-    yield AssetCheckResult(success=True, check_name="check2")
+    yield AssetCheckResult(passed=True, check_name="check1")
+    yield AssetCheckResult(passed=True, check_name="check2")
 
 
 def execute_asset_job_2_in_process(

@@ -819,7 +819,7 @@ class PipesContext:
     def report_asset_check(
         self,
         check_name: str,
-        success: bool,
+        passed: bool,
         severity: PipesAssetCheckSeverity = "ERROR",
         metadata: Optional[Mapping[str, Union[PipesMetadataRawValue, PipesMetadataValue]]] = None,
         asset_key: Optional[str] = None,
@@ -828,7 +828,7 @@ class PipesContext:
             self._data, asset_key, "report_asset_check"
         )
         check_name = _assert_param_type(check_name, str, "report_asset_check", "check_name")
-        success = _assert_param_type(success, bool, "report_asset_check", "success")
+        passed = _assert_param_type(passed, bool, "report_asset_check", "passed")
         metadata = (
             _normalize_param_metadata(metadata, "report_asset_check", "metadata")
             if metadata
@@ -839,7 +839,7 @@ class PipesContext:
             {
                 "asset_key": asset_key,
                 "check_name": check_name,
-                "success": success,
+                "passed": passed,
                 "metadata": metadata,
                 "severity": severity,
             },
