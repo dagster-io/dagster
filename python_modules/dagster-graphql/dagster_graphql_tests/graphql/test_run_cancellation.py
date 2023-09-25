@@ -53,8 +53,18 @@ mutation TerminateRuns($runIds: [String!]!) {
       message
     }
     ... on TerminateRunsResult {
-      runIdsTerminated
-      runIdsFailedToTerminate
+      terminateRunResults {
+        ... on TerminateRunSuccess {
+            __typename
+            run {
+                runId
+            }
+        }
+        ... on RunNotFoundError {
+            __typename
+            runId
+        }
+      }
     }
   }
 }
@@ -154,8 +164,17 @@ class TestQueuedRunTermination(QueuedRunCoordinatorTestSuite):
                 variables={"runIds": [run_id, "nonexistent_id"]},
             )
             assert result.data["terminateRuns"]["__typename"] == "TerminateRunsResult"
-            assert result.data["terminateRuns"]["runIdsTerminated"] == [run_id]
-            assert result.data["terminateRuns"]["runIdsFailedToTerminate"] == ["nonexistent_id"]
+            assert (
+                result.data["terminateRuns"]["terminateRunResults"][0]["__typename"]
+                == "TerminateRunSuccess"
+            )
+            assert (
+                result.data["terminateRuns"]["terminateRunResults"][1]["__typename"]
+                == "RunNotFoundError"
+            )
+            assert (
+                result.data["terminateRuns"]["terminateRunResults"][1]["runId"] == "nonexistent_id"
+            )
 
     def test_force_cancel_queued_run(self, graphql_context: WorkspaceRequestContext):
         selector = infer_pipeline_selector(graphql_context, "infinite_loop_job")

@@ -15,7 +15,7 @@ from dagster._cli.workspace import (
     workspace_target_argument,
 )
 from dagster._cli.workspace.cli_target import WORKSPACE_TARGET_WARNING, ClickArgValue
-from dagster._core.instance import DEFAULT_DB_STATEMENT_TIMEOUT, DEFAULT_POOL_RECYCLE, InstanceRef
+from dagster._core.instance import InstanceRef
 from dagster._core.telemetry import START_DAGSTER_WEBSERVER, log_action
 from dagster._core.telemetry_upload import uploading_logging_thread
 from dagster._core.workspace.context import (
@@ -38,6 +38,9 @@ WEBSERVER_LOGGER_NAME = "dagster-webserver"
 
 DEFAULT_WEBSERVER_HOST = "127.0.0.1"
 DEFAULT_WEBSERVER_PORT = 3000
+
+DEFAULT_DB_STATEMENT_TIMEOUT = 15000  # 15 sec
+DEFAULT_POOL_RECYCLE = 3600  # 1 hr
 
 
 @click.command(

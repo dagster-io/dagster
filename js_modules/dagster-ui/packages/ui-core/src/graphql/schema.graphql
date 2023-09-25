@@ -3324,8 +3324,7 @@ union ScheduleDryRunResult = DryRunInstigationTick | PythonError | ScheduleNotFo
 union TerminateRunsResultOrError = TerminateRunsResult | PythonError
 
 type TerminateRunsResult {
-  runIdsTerminated: [String!]!
-  runIdsFailedToTerminate: [String!]!
+  terminateRunResults: [TerminateRunResult!]!
 }
 
 union AssetWipeMutationResult =

@@ -9,8 +9,6 @@ from dagster._annotations import deprecated
 from dagster._core.definitions.events import AssetKey
 from dagster._core.events import EngineEventData
 from dagster._core.instance import (
-    DEFAULT_DB_STATEMENT_TIMEOUT,
-    DEFAULT_POOL_RECYCLE,
     DagsterInstance,
 )
 from dagster._core.storage.captured_log_manager import CapturedLogManager
@@ -79,7 +77,6 @@ def _force_mark_as_canceled(
 
 def terminate_pipeline_execution(
     graphene_info: "ResolveInfo",
-    instance: DagsterInstance,
     run_id: str,
     terminate_policy: "GrapheneTerminateRunPolicy",
 ) -> Union["GrapheneTerminateRunSuccess", "GrapheneTerminateRunFailure"]:
@@ -92,6 +89,8 @@ def terminate_pipeline_execution(
     )
 
     check.str_param(run_id, "run_id")
+
+    instance = graphene_info.context.instance
 
     record = instance.get_run_record_by_id(run_id)
 
@@ -157,33 +156,24 @@ def terminate_pipeline_execution_for_runs(
     from ...schema.roots.mutation import (
         GrapheneTerminateRunPolicy,
         GrapheneTerminateRunsResult,
-        GrapheneTerminateRunSuccess,
     )
 
     check.sequence_param(run_ids, "run_id", of_type=str)
 
-    run_ids_terminated = []
-    run_ids_failed_to_terminate = []
+    terminate_run_results = []
 
-    with DagsterInstance.from_ref(graphene_info.context.instance.get_ref()) as instance:
-        instance.optimize_for_webserver(DEFAULT_DB_STATEMENT_TIMEOUT, DEFAULT_POOL_RECYCLE)
+    for run_id in run_ids:
+        result = terminate_pipeline_execution(
+            graphene_info,
+            run_id,
+            cast(
+                GrapheneTerminateRunPolicy, GrapheneTerminateRunPolicy.MARK_AS_CANCELED_IMMEDIATELY
+            ),
+        )
 
-        for run_id in run_ids:
-            result = terminate_pipeline_execution(
-                graphene_info,
-                instance,
-                run_id,
-                cast(GrapheneTerminateRunPolicy, GrapheneTerminateRunPolicy.SAFE_TERMINATE),
-            )
+        terminate_run_results.append(result)
 
-            if isinstance(result, GrapheneTerminateRunSuccess):
-                run_ids_terminated.append(run_id)
-            else:
-                run_ids_failed_to_terminate.append(run_id)
-
-    return GrapheneTerminateRunsResult(
-        runIdsTerminated=run_ids_terminated, runIdsFailedToTerminate=run_ids_failed_to_terminate
-    )
+    return GrapheneTerminateRunsResult(terminateRunResults=terminate_run_results)
 
 
 def delete_pipeline_run(

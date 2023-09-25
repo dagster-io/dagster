@@ -4152,8 +4152,7 @@ export type TerminateRunSuccess = TerminatePipelineExecutionSuccess & {
 
 export type TerminateRunsResult = {
   __typename: 'TerminateRunsResult';
-  runIdsFailedToTerminate: Array<Scalars['String']>;
-  runIdsTerminated: Array<Scalars['String']>;
+  terminateRunResults: Array<TerminateRunResult>;
 };
 
 export type TerminateRunsResultOrError = PythonError | TerminateRunsResult;
@@ -12229,12 +12228,10 @@ export const buildTerminateRunsResult = (
   relationshipsToOmit.add('TerminateRunsResult');
   return {
     __typename: 'TerminateRunsResult',
-    runIdsFailedToTerminate:
-      overrides && overrides.hasOwnProperty('runIdsFailedToTerminate')
-        ? overrides.runIdsFailedToTerminate!
+    terminateRunResults:
+      overrides && overrides.hasOwnProperty('terminateRunResults')
+        ? overrides.terminateRunResults!
         : [],
-    runIdsTerminated:
-      overrides && overrides.hasOwnProperty('runIdsTerminated') ? overrides.runIdsTerminated! : [],
   };
 };
 

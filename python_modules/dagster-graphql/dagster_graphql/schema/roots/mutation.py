@@ -253,8 +253,7 @@ class GrapheneTerminateRunResult(graphene.Union):
 class GrapheneTerminateRunsResult(graphene.ObjectType):
     """Indicates the runs that successfully terminated and those that failed to terminate."""
 
-    runIdsTerminated = non_null_list(graphene.String)
-    runIdsFailedToTerminate = non_null_list(graphene.String)
+    terminateRunResults = non_null_list(GrapheneTerminateRunResult)
 
     class Meta:
         name = "TerminateRunsResult"
@@ -468,7 +467,6 @@ class GrapheneTerminateRunMutation(graphene.Mutation):
     ):
         return terminate_pipeline_execution(
             graphene_info,
-            graphene_info.context.instance,
             runId,
             terminatePolicy or GrapheneTerminateRunPolicy.SAFE_TERMINATE,
         )
