@@ -188,7 +188,7 @@ export function localStorageAsyncMemoize<
       db = {version: versionKey} as DBWithVersion;
     }
 
-    const r = (await fn(versionKey, arg, ...rest)) as R;
+    const r = (await fn(localStorageKey, versionKey, arg, ...rest)) as R;
     db[hashKey] = r;
     localStorage.setItem(key, JSON.stringify(db));
     return r;
