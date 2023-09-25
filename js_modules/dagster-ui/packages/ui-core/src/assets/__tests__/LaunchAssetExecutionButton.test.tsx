@@ -325,10 +325,6 @@ describe('LaunchAssetExecutionButton', () => {
       // missing-and-failed only option is available
       expect(screen.getByTestId('missing-only-checkbox')).toBeEnabled();
 
-      // ranges-as-tags option is available
-      const rangesAsTags = screen.getByTestId('ranges-as-tags-true-radio');
-      await waitFor(async () => expect(rangesAsTags).toBeEnabled());
-
       await expectLaunchExecutesMutationAndCloses('Launch 1148-run backfill', launchMock);
     });
   });
@@ -358,7 +354,6 @@ describe('LaunchAssetExecutionButton', () => {
 
       // backfill options for run as tags, missing only are not available
       expect(screen.queryByTestId('missing-only-checkbox')).toBeNull();
-      expect(screen.queryByTestId('ranges-as-tags-true-radio')).toBeNull();
 
       await expectLaunchExecutesMutationAndCloses('Launch backfill', LaunchMutationMock);
     });
@@ -389,7 +384,6 @@ describe('LaunchAssetExecutionButton', () => {
 
       // backfill options for run as tags, missing only are not available
       expect(await screen.queryByTestId('missing-only-checkbox')).toBeNull();
-      expect(await screen.queryByTestId('ranges-as-tags-true-radio')).toBeNull();
 
       await expectLaunchExecutesMutationAndCloses('Launch backfill', LaunchPureAllMutationMock);
     });
