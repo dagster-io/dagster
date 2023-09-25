@@ -2,7 +2,7 @@ import os
 import sys
 
 from dagster import AssetExecutionContext, Config, Definitions, asset
-from dagster._core.ext.subprocess import (
+from dagster._core.pipes.subprocess import (
     ExtSubprocess,
 )
 from pydantic import Field

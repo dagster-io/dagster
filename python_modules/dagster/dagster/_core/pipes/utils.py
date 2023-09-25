@@ -22,11 +22,11 @@ from dagster import (
     OpExecutionContext,
     _check as check,
 )
-from dagster._core.ext.client import (
+from dagster._core.pipes.client import (
     ExtContextInjector,
     ExtMessageReader,
 )
-from dagster._core.ext.context import (
+from dagster._core.pipes.context import (
     ExtMessageHandler,
     ExtOrchestrationContext,
     build_external_execution_context_data,

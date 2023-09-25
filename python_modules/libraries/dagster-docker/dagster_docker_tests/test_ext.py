@@ -3,10 +3,10 @@ import tempfile
 
 import pytest
 from dagster import AssetExecutionContext, asset, materialize
-from dagster._core.ext.utils import (
+from dagster._core.pipes.utils import (
     ExtFileContextInjector,
 )
-from dagster_docker.ext import ExtDocker
+from dagster_docker.pipes import ExtDocker
 from dagster_test.test_project import (
     IS_BUILDKITE,
     find_local_test_image,

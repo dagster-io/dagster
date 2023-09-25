@@ -11,9 +11,9 @@ import dagster._check as check
 from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.errors import DagsterExternalExecutionError
 from dagster._core.execution.context.compute import OpExecutionContext
-from dagster._core.ext.client import ExtClient, ExtContextInjector, ExtMessageReader
-from dagster._core.ext.context import ExtResult
-from dagster._core.ext.utils import (
+from dagster._core.pipes.client import ExtClient, ExtContextInjector, ExtMessageReader
+from dagster._core.pipes.context import ExtResult
+from dagster._core.pipes.utils import (
     ExtBlobStoreMessageReader,
     ext_protocol,
 )
