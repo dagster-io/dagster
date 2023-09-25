@@ -1,12 +1,12 @@
 import dagster._check as check
 import pytest
 from dagster import (
-    AssetExecutionContext,
     AssetKey,
     DagsterExecutionStepNotFoundError,
     DagsterInvalidConfigError,
     DagsterInvariantViolationError,
     Field,
+    OpExecutionContext,
     Out,
     Output,
     ReexecutionOptions,
@@ -377,7 +377,7 @@ def echo(x):
 
 
 @op
-def fail_once(context: AssetExecutionContext, x):
+def fail_once(context: OpExecutionContext, x):
     key = context.op_handle.name
     if context.instance.run_storage.get_cursor_values({key}).get(key):
         return x
