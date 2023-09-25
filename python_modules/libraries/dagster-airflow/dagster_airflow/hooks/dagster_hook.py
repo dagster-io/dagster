@@ -265,7 +265,7 @@ mutation Terminate($runId: String!, $terminatePolicy: TerminateRunPolicy) {
       }
       __typename
     }
-    ... on UnauthorizedError {
+    ... on TerminateRunUnauthorizedError {
       message
       __typename
     }

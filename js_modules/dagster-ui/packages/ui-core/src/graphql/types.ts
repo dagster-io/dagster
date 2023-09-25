@@ -4144,11 +4144,17 @@ export type TerminateRunResult =
   | RunNotFoundError
   | TerminateRunFailure
   | TerminateRunSuccess
-  | UnauthorizedError;
+  | TerminateRunUnauthorizedError;
 
 export type TerminateRunSuccess = TerminatePipelineExecutionSuccess & {
   __typename: 'TerminateRunSuccess';
   run: Run;
+};
+
+export type TerminateRunUnauthorizedError = Error & {
+  __typename: 'TerminateRunUnauthorizedError';
+  message: Scalars['String'];
+  runId: Scalars['String'];
 };
 
 export type TerminateRunsResult = {
@@ -12218,6 +12224,19 @@ export const buildTerminateRunSuccess = (
         : relationshipsToOmit.has('Run')
         ? ({} as Run)
         : buildRun({}, relationshipsToOmit),
+  };
+};
+
+export const buildTerminateRunUnauthorizedError = (
+  overrides?: Partial<TerminateRunUnauthorizedError>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'TerminateRunUnauthorizedError'} & TerminateRunUnauthorizedError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('TerminateRunUnauthorizedError');
+  return {
+    __typename: 'TerminateRunUnauthorizedError',
+    message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'eius',
+    runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'ullam',
   };
 };
 

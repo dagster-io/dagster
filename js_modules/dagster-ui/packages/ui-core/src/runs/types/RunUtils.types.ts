@@ -88,7 +88,7 @@ export type TerminateMutation = {
         __typename: 'TerminateRunSuccess';
         run: {__typename: 'Run'; id: string; canTerminate: boolean};
       }
-    | {__typename: 'UnauthorizedError'; message: string};
+    | {__typename: 'TerminateRunUnauthorizedError'; message: string};
 };
 
 export type LaunchPipelineReexecutionMutationVariables = Types.Exact<{

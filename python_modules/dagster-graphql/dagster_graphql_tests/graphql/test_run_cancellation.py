@@ -64,6 +64,10 @@ mutation TerminateRuns($runIds: [String!]!) {
             __typename
             runId
         }
+        ... on TerminateRunUnauthorizedError {
+            __typename
+            message
+        }
       }
     }
   }
@@ -235,7 +239,26 @@ class TestTerminationReadonly(ReadonlyGraphQLContextTestMatrix):
         assert result.data
 
         # just test existence
-        assert result.data["terminatePipelineExecution"]["__typename"] == "UnauthorizedError"
+        assert (
+            result.data["terminatePipelineExecution"]["__typename"]
+            == "TerminateRunUnauthorizedError"
+        )
+
+    def test_cancel_runs_permission_failure(self, graphql_context: WorkspaceRequestContext):
+        run_id = create_run_for_test(graphql_context.instance).run_id
+        result = execute_dagster_graphql(
+            graphql_context, RUNS_CANCELLATION_QUERY, variables={"runIds": [run_id]}
+        )
+        assert not result.errors
+        assert result.data
+
+        # just test existence
+        assert result.data["terminateRuns"]["__typename"] == "TerminateRunsResult"
+        assert len(result.data["terminateRuns"]["terminateRunResults"]) == 1
+        assert (
+            result.data["terminateRuns"]["terminateRunResults"][0]["__typename"]
+            == "TerminateRunUnauthorizedError"
+        )
 
 
 class TestRunVariantTermination(RunTerminationTestSuite):
