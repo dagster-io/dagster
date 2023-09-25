@@ -1,4 +1,4 @@
-import {gql, useLazyQuery, useMutation} from '@apollo/client';
+import {gql, useLazyQuery} from '@apollo/client';
 import {
   Button,
   Icon,
@@ -17,7 +17,7 @@ import {
   StyledRawCodeMirror,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
-import {Link, useHistory} from 'react-router-dom';
+import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {AppContext} from '../app/AppContext';
@@ -37,12 +37,7 @@ import {DeletionDialog} from './DeletionDialog';
 import {ReexecutionDialog} from './ReexecutionDialog';
 import {doneStatuses, failedStatuses} from './RunStatuses';
 import {RunTags} from './RunTags';
-import {
-  LAUNCH_PIPELINE_REEXECUTION_MUTATION,
-  RunsQueryRefetchContext,
-  getReexecutionVariables,
-  handleLaunchResult,
-} from './RunUtils';
+import {RunsQueryRefetchContext} from './RunUtils';
 import {RunFilterToken} from './RunsFilterInput';
 import {TerminationDialog} from './TerminationDialog';
 import {
@@ -50,11 +45,8 @@ import {
   PipelineEnvironmentQueryVariables,
 } from './types/RunActionsMenu.types';
 import {RunTableRunFragment} from './types/RunTable.types';
-import {
-  LaunchPipelineReexecutionMutation,
-  LaunchPipelineReexecutionMutationVariables,
-} from './types/RunUtils.types';
 import {useJobAvailabilityErrorForRun} from './useJobAvailabilityErrorForRun';
+import {useJobReexecution} from './useJobReExecution';
 
 export const RunActionsMenu: React.FC<{
   run: RunTableRunFragment;
@@ -67,16 +59,9 @@ export const RunActionsMenu: React.FC<{
   >('none');
 
   const {rootServerURI} = React.useContext(AppContext);
-  const history = useHistory();
 
   const copyConfig = useCopyToClipboard();
-
-  const [reexecute] = useMutation<
-    LaunchPipelineReexecutionMutation,
-    LaunchPipelineReexecutionMutationVariables
-  >(LAUNCH_PIPELINE_REEXECUTION_MUTATION, {
-    onCompleted: refetch,
-  });
+  const reexecute = useJobReexecution({onCompleted: refetch});
 
   const [loadEnv, {called, loading, data}] = useLazyQuery<
     PipelineEnvironmentQuery,
@@ -130,6 +115,7 @@ export const RunActionsMenu: React.FC<{
             <Menu>
               <MenuItem
                 tagName="button"
+                style={{minWidth: 200}}
                 text={loading ? 'Loading configuration...' : 'View configuration...'}
                 disabled={!runConfigYaml}
                 icon="open_in_new"
@@ -205,24 +191,7 @@ export const RunActionsMenu: React.FC<{
                     disabled={reexecutionDisabledState.disabled}
                     icon="refresh"
                     onClick={async () => {
-                      if (repoMatch && runConfigYaml) {
-                        const result = await reexecute({
-                          variables: getReexecutionVariables({
-                            run: {...run, runConfigYaml},
-                            style: {type: 'all'},
-                            repositoryLocationName: repoMatch.match.repositoryLocation.name,
-                            repositoryName: repoMatch.match.repository.name,
-                          }),
-                        });
-                        handleLaunchResult(
-                          run.pipelineName,
-                          result.data?.launchPipelineReexecution,
-                          history,
-                          {
-                            behavior: 'open',
-                          },
-                        );
-                      }
+                      await reexecute(run, ReexecutionStrategy.ALL_STEPS);
                     }}
                   />
                 </Tooltip>
