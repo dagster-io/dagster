@@ -577,7 +577,7 @@ class DbtCliResource(ConfigurableResource):
         unique_id = str(uuid.uuid4())[:7]
         path = unique_id
         if context:
-            path = f"{context.op_execution_context.op.name}-{context.run_id[:7]}-{unique_id}"
+            path = f"{context.op.name}-{context.run_id[:7]}-{unique_id}"
 
         return f"target/{path}"
 
@@ -750,8 +750,8 @@ class DbtCliResource(ConfigurableResource):
             selection_args = get_subset_selection_for_context(
                 context=context,
                 manifest=manifest,
-                select=context.op_execution_context.op.tags.get("dagster-dbt/select"),
-                exclude=context.op_execution_context.op.tags.get("dagster-dbt/exclude"),
+                select=context.op.tags.get("dagster-dbt/select"),
+                exclude=context.op.tags.get("dagster-dbt/exclude"),
             )
         else:
             manifest = validate_manifest(manifest) if manifest else {}
@@ -811,7 +811,7 @@ def get_subset_selection_for_context(
 
     # TODO: this should be a property on the context if this is a permanent indicator for
     # determining whether the current execution context is performing a subsetted execution.
-    is_subsetted_execution = len(context.op_execution_context.selected_output_names) != len(
+    is_subsetted_execution = len(context.selected_output_names) != len(
         context.assets_def.node_keys_by_output_name
     )
     if not is_subsetted_execution:
@@ -822,7 +822,7 @@ def get_subset_selection_for_context(
         return default_dbt_selection
 
     selected_dbt_resources = []
-    for output_name in context.op_execution_context.selected_output_names:
+    for output_name in context.selected_output_names:
         dbt_resource_props = dbt_resource_props_by_output_name[output_name]
 
         # Explicitly select a dbt resource by its fully qualified name (FQN).
