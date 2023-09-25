@@ -1301,8 +1301,8 @@ def build_execution_context(
         context_param = compute_fn.get_context_arg()
         context_annotation = context_param.annotation
 
-    # TODO - i dont know how to move this check to Definition time since we don't know if the op is
-    # part of a graph-backed asset until we have the step execution context, i think
+    # It would be nice to do this check at definition time, rather than at run time, but we don't
+    # know if the op is part of an op job or a graph-backed asset until we have the step execution context
     if context_annotation is AssetExecutionContext and not is_sda_step:
         # AssetExecutionContext requires an AssetsDefinition during init, so an op in an op job
         # cannot be annotated with AssetExecutionContext
