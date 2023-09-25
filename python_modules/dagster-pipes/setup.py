@@ -22,7 +22,7 @@ setup(
     author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
     description="Toolkit for Dagster integrations with transform logic outside of Dagster",
-    url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-pipes",
+    url="https://github.com/dagster-io/dagster/tree/master/python_modules/dagster-pipes",
     classifiers=[
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
@@ -31,7 +31,7 @@ setup(
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
-    packages=find_packages(exclude=["dagster_pipes_test*"]),
+    packages=find_packages(exclude=["dagster_pipes_tests*"]),
     extras_require={
         "test": [
             f"dagster{pin}",
@@ -41,5 +41,4 @@ setup(
         ],
     },
     zip_safe=False,
-    entry_points={"console_scripts": ["dagster-graphql = dagster_graphql.cli:main"]},
 )
