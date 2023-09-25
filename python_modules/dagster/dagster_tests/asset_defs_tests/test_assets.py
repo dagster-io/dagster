@@ -2106,7 +2106,7 @@ def test_graph_asset_cannot_use_key_prefix_name_and_key() -> None:
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match=(
-            "Cannot specify a name or key prefix for graph_asset when the key argument is provided"
+            "Cannot specify a name or key prefix for @graph_asset when the key argument is provided"
         ),
     ):
 
@@ -2119,7 +2119,7 @@ def test_graph_asset_cannot_use_key_prefix_name_and_key() -> None:
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match=(
-            "Cannot specify a name or key prefix for graph_asset when the key argument is provided"
+            "Cannot specify a name or key prefix for @graph_asset when the key argument is provided"
         ),
     ):
 
@@ -2132,7 +2132,7 @@ def test_graph_asset_cannot_use_key_prefix_name_and_key() -> None:
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match=(
-            "Cannot specify a name or key prefix for graph_asset when the key argument is provided"
+            "Cannot specify a name or key prefix for @graph_asset when the key argument is provided"
         ),
     ):
 
