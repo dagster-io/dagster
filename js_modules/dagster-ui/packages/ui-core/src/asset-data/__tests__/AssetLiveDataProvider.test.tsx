@@ -16,7 +16,11 @@ import {
   buildAssetNode,
 } from '../../graphql/types';
 import {buildQueryMock, getMockResultFn} from '../../testing/mocking';
-import {AssetLiveDataProvider, useAssetNodeLiveData} from '../AssetLiveDataProvider';
+import {
+  AssetLiveDataProvider,
+  SUBSCRIPTION_IDLE_POLL_RATE,
+  useAssetNodeLiveData,
+} from '../AssetLiveDataProvider';
 
 Object.defineProperty(document, 'visibilityState', {value: 'visible', writable: true});
 Object.defineProperty(document, 'hidden', {value: false, writable: true});
@@ -76,13 +80,16 @@ describe('AssetLiveDataProvider', () => {
   it('provides asset data and uses cache if recently fetched', async () => {
     const assetKeys = [buildAssetKey({path: ['key1']})];
     const mockedQuery = buildMockedQuery(assetKeys);
+    const mockedQuery2 = buildMockedQuery(assetKeys);
 
     const resultFn = getMockResultFn(mockedQuery);
+    const resultFn2 = getMockResultFn(mockedQuery2);
 
     const hookResult = jest.fn();
+    const hookResult2 = jest.fn();
 
     const {rerender} = render(
-      <Test mocks={[mockedQuery]} hooks={[{keys: assetKeys, hookResult}]} />,
+      <Test mocks={[mockedQuery, mockedQuery2]} hooks={[{keys: assetKeys, hookResult}]} />,
     );
 
     // Initially an empty object
@@ -93,21 +100,20 @@ describe('AssetLiveDataProvider', () => {
       jest.runOnlyPendingTimers();
     });
 
-    expect(resultFn).toHaveBeenCalledTimes(1);
-    expect(hookResult.mock.results.length).toEqual(3);
+    expect(resultFn).toHaveBeenCalled();
+    expect(resultFn2).not.toHaveBeenCalled();
 
     // Re-render with the same asset keys and expect the cache to be used this time.
 
-    const assetKeys2 = [buildAssetKey({path: ['key1']})];
-    const mockedQuery2 = buildMockedQuery(assetKeys);
-
-    const resultFn2 = getMockResultFn(mockedQuery);
-    const hookResult2 = jest.fn();
-
-    rerender(<Test mocks={[mockedQuery2]} hooks={[{keys: assetKeys2, hookResult: hookResult2}]} />);
+    rerender(
+      <Test
+        mocks={[mockedQuery, mockedQuery2]}
+        hooks={[{keys: assetKeys, hookResult: hookResult2}]}
+      />,
+    );
 
     // Initially an empty object
-    expect(resultFn2).toHaveBeenCalledTimes(0);
+    expect(resultFn2).not.toHaveBeenCalled();
     expect(hookResult2.mock.results[0]!.value).toEqual(undefined);
     act(() => {
       jest.runOnlyPendingTimers();
@@ -117,15 +123,15 @@ describe('AssetLiveDataProvider', () => {
     expect(resultFn2).not.toHaveBeenCalled();
     expect(hookResult2.mock.results[1]).toEqual(hookResult.mock.results[1]);
 
-    // Commented out due to weird issue where Date.now is not advancing....
-    // act(() => {
-    //   jest.advanceTimersByTime(SUBSCRIPTION_IDLE_POLL_RATE + 1);
-    // });
-    // // Next setInterval fires and we fetch and use the mocked response
-    // act(() => {
-    //   jest.runOnlyPendingTimers();
-    // });
-    // expect(resultFn2).toHaveBeenCalled();
-    // expect(hookResult2.mock.results[2]).toEqual(hookResult.mock.results[1]);
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    // We make a request this time to resultFn2 is called
+    act(() => {
+      jest.advanceTimersByTime(SUBSCRIPTION_IDLE_POLL_RATE + 1);
+    });
+    expect(resultFn2).toHaveBeenCalled();
+    expect(hookResult2.mock.results[2]).toEqual(hookResult.mock.results[1]);
   });
 });

@@ -189,6 +189,7 @@ async function _batchedQueryAssets(
     return;
   }
   isFetching = true;
+  // Use Date.now because it properly advances in jest with fakeTimers /shrug
   const requestTime = Date.now();
   assetKeys.forEach((key) => {
     lastFetchedOrRequested[JSON.stringify(key.path)] = {
@@ -273,8 +274,8 @@ function _determineAssetsToFetch() {
     if (isRequested) {
       continue;
     }
-    const lastFetchTime = lastFetchedOrRequested[key]?.fetched ?? 0;
-    if (Date.now() - lastFetchTime < SUBSCRIPTION_IDLE_POLL_RATE) {
+    const lastFetchTime = lastFetchedOrRequested[key]?.fetched ?? null;
+    if (lastFetchTime !== null && Date.now() - lastFetchTime < SUBSCRIPTION_IDLE_POLL_RATE) {
       continue;
     }
     if (lastFetchTime) {
