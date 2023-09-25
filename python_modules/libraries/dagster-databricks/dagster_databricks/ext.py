@@ -72,7 +72,7 @@ class _ExtDatabricks(ExtClient):
 
         Args:
             task (databricks.sdk.service.jobs.SubmitTask): Specification of the databricks
-                task to run. Environment variables used by dagster-ext will be set under the
+                task to run. Environment variables used by dagster-pipes will be set under the
                 `spark_env_vars` key of the `new_cluster` field (if there is an existing dictionary
                 here, the EXT environment variables will be merged in). Everything else will be
                 passed unaltered under the `tasks` arg to `WorkspaceClient.jobs.submit`.

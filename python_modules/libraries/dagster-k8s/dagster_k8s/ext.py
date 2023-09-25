@@ -42,7 +42,7 @@ def get_pod_name(run_id: str, op_name: str):
     return f"dagster-{run_id[:18]}-{clean_op_name[:20]}-{suffix}"
 
 
-DEFAULT_CONTAINER_NAME = "dagster-ext-execution"
+DEFAULT_CONTAINER_NAME = "dagster-pipes-execution"
 
 
 class K8sPodLogsMessageReader(ExtMessageReader):
