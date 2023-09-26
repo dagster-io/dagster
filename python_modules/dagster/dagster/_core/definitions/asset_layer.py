@@ -508,11 +508,11 @@ class AssetLayer(NamedTuple):
                     )
                     check_key_by_output[node_output_handle] = check_spec.key
 
-            for check_handle in assets_def.asset_check_handles:
+            for check_key in assets_def.asset_check_keys:
                 check_names_by_asset_key = check_names_by_asset_key_by_node_handle.setdefault(
                     node_handle, defaultdict(set)
                 )
-                check_names_by_asset_key[check_handle.asset_key].add(check_handle.name)
+                check_names_by_asset_key[check_key.asset_key].add(check_key.name)
 
         dep_asset_keys_by_node_output_handle = defaultdict(set)
         for asset_key, node_output_handles in dep_node_output_handles_by_asset_key.items():
@@ -559,7 +559,7 @@ class AssetLayer(NamedTuple):
             **{
                 node_handle: assets_def
                 for node_handle, assets_def in assets_defs_by_outer_node_handle.items()
-                if assets_def.asset_check_handles
+                if assets_def.asset_check_keys
             },
         }
 
@@ -828,10 +828,10 @@ def build_asset_selection_job(
     else:
         if asset_selection is not None or asset_check_selection is not None:
             selected_asset_keys = asset_selection or set()
-            selected_asset_check_handles = asset_check_selection
+            selected_asset_check_keys = asset_check_selection
 
             (included_assets, excluded_assets) = _subset_assets_defs(
-                assets, selected_asset_keys, selected_asset_check_handles
+                assets, selected_asset_keys, selected_asset_check_keys
             )
             included_source_assets = _subset_source_assets(source_assets, selected_asset_keys)
 
@@ -897,7 +897,7 @@ def build_asset_selection_job(
 def _subset_assets_defs(
     assets: Iterable["AssetsDefinition"],
     selected_asset_keys: AbstractSet[AssetKey],
-    selected_asset_check_handles: Optional[AbstractSet[AssetCheckHandle]],
+    selected_asset_check_keys: Optional[AbstractSet[AssetCheckKey]],
 ) -> Tuple[Sequence["AssetsDefinition"], Sequence["AssetsDefinition"],]:
     """Given a list of asset key selection queries, generate a set of AssetsDefinition objects
     representing the included/excluded definitions.
@@ -910,18 +910,16 @@ def _subset_assets_defs(
         selected_subset = selected_asset_keys & asset.keys
 
         # if specific checks were selected, only include those
-        if selected_asset_check_handles is not None:
-            selected_check_subset = selected_asset_check_handles & asset.asset_check_handles
+        if selected_asset_check_keys is not None:
+            selected_check_subset = selected_asset_check_keys & asset.asset_check_keys
         # if no checks were selected, filter to checks that target selected assets
         else:
             selected_check_subset = {
-                handle
-                for handle in asset.asset_check_handles
-                if handle.asset_key in selected_subset
+                handle for handle in asset.asset_check_keys if handle.asset_key in selected_subset
             }
 
         # all assets in this def are selected
-        if selected_subset == asset.keys and selected_check_subset == asset.asset_check_handles:
+        if selected_subset == asset.keys and selected_check_subset == asset.asset_check_keys:
             included_assets.add(asset)
         # no assets in this def are selected
         elif len(selected_subset) == 0 and len(selected_check_subset) == 0:
@@ -934,8 +932,8 @@ def _subset_assets_defs(
             excluded_assets.add(
                 asset.subset_for(
                     selected_asset_keys=asset.keys - subset_asset.keys,
-                    selected_asset_check_handles=(
-                        asset.asset_check_handles - subset_asset.asset_check_handles
+                    selected_asset_check_keys=(
+                        asset.asset_check_keys - subset_asset.asset_check_keys
                     ),
                 )
             )

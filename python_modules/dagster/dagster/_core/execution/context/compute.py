@@ -593,9 +593,9 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
 
     @public
     @property
-    def selected_asset_check_handles(self) -> AbstractSet[Tuple[AssetKey, str]]:
+    def selected_asset_check_keys(self) -> AbstractSet[Tuple[AssetKey, str]]:
         if self.has_assets_def:
-            return self.assets_def.check_handles
+            return self.assets_def.check_keys
 
         if self.has_asset_checks_def:
             check.failed("Subset selection is not yet supported within an AssetChecksDefinition")

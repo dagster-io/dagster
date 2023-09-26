@@ -20,7 +20,7 @@ from dagster import (
     multi_asset,
     op,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckHandle
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_selection import AssetChecksForHandles, AssetSelection
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.errors import (
@@ -562,7 +562,7 @@ def test_can_subset_no_selection() -> None:
     )
     def foo(context: AssetExecutionContext):
         assert context.selected_asset_keys == {AssetKey("asset1"), AssetKey("asset2")}
-        assert context.selected_asset_check_handles == {
+        assert context.selected_asset_check_keys == {
             (AssetKey("asset1"), "check1"),
             (AssetKey("asset2"), "check2"),
         }
@@ -591,7 +591,7 @@ def test_can_subset() -> None:
     )
     def foo(context: AssetExecutionContext):
         assert context.selected_asset_keys == {AssetKey("asset1")}
-        assert context.selected_asset_check_handles == {(AssetKey("asset1"), "check1")}
+        assert context.selected_asset_check_keys == {(AssetKey("asset1"), "check1")}
 
         yield Output(value=None, output_name="asset1")
         yield AssetCheckResult(asset_key="asset1", check_name="check1", success=True)
@@ -617,7 +617,7 @@ def test_can_subset_result_for_unselected_check() -> None:
     )
     def foo(context: AssetExecutionContext):
         assert context.selected_asset_keys == {AssetKey("asset1")}
-        assert context.selected_asset_check_handles == {(AssetKey("asset1"), "check1")}
+        assert context.selected_asset_check_keys == {(AssetKey("asset1"), "check1")}
 
         yield Output(value=None, output_name="asset1")
         yield AssetCheckResult(asset_key="asset1", check_name="check1", success=True)
@@ -638,7 +638,7 @@ def test_can_subset_select_only_asset() -> None:
     )
     def foo(context: AssetExecutionContext):
         assert context.selected_asset_keys == {AssetKey("asset1")}
-        assert context.selected_asset_check_handles == set()
+        assert context.selected_asset_check_keys == set()
 
         yield Output(value=None, output_name="asset1")
 
@@ -665,18 +665,18 @@ def test_can_subset_select_only_check() -> None:
     )
     def foo(context: AssetExecutionContext):
         assert context.selected_asset_keys == set()
-        assert context.selected_asset_check_handles == {(AssetKey("asset1"), "check1")}
+        assert context.selected_asset_check_keys == {(AssetKey("asset1"), "check1")}
 
         if context.selected_asset_keys:
             yield Output(value=None, output_name="asset1")
 
-        if context.selected_asset_check_handles:
+        if context.selected_asset_check_keys:
             yield AssetCheckResult(asset_key="asset1", check_name="check1", success=True)
 
     result = materialize(
         [foo],
         selection=AssetChecksForHandles(
-            [AssetCheckHandle(asset_key=AssetKey("asset1"), name="check1")]
+            [AssetCheckKey(asset_key=AssetKey("asset1"), name="check1")]
         ),
     )
 
