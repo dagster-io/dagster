@@ -17,8 +17,8 @@ from dagster._core.pipes.client import (
     PipesParams,
 )
 from dagster._core.pipes.context import (
-    ExtResult,
     PipesMessageHandler,
+    PipesResult,
 )
 from dagster._core.pipes.utils import (
     ExtEnvContextInjector,
@@ -124,7 +124,7 @@ class _ExtK8sPod(PipesClient):
         base_pod_meta: Optional[Mapping[str, Any]] = None,
         base_pod_spec: Optional[Mapping[str, Any]] = None,
         extras: Optional[PipesExtras] = None,
-    ) -> Iterator[ExtResult]:
+    ) -> Iterator[PipesResult]:
         """Publish a kubernetes pod and wait for it to complete, enriched with the ext protocol.
 
         Args:

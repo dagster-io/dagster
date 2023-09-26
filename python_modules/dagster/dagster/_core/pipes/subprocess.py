@@ -12,7 +12,7 @@ from dagster._core.pipes.client import (
     PipesContextInjector,
     PipesMessageReader,
 )
-from dagster._core.pipes.context import ExtResult
+from dagster._core.pipes.context import PipesResult
 from dagster._core.pipes.utils import (
     ExtTempFileContextInjector,
     PipesTempFileMessageReader,
@@ -67,7 +67,7 @@ class _PipesSubprocess(PipesClient):
         extras: Optional[PipesExtras] = None,
         env: Optional[Mapping[str, str]] = None,
         cwd: Optional[str] = None,
-    ) -> Iterator[ExtResult]:
+    ) -> Iterator[PipesResult]:
         with open_pipes_session(
             context=context,
             context_injector=self.context_injector,
