@@ -3,7 +3,7 @@ import sys
 
 from dagster import AssetExecutionContext, Config, Definitions, asset
 from dagster._core.pipes.subprocess import (
-    PipedSubprocess,
+    PipesSubprocess,
 )
 from pydantic import Field
 
@@ -32,13 +32,13 @@ class NumberConfig(Config):
 
 
 @asset
-def number_x(context: AssetExecutionContext, ext: PipedSubprocess, config: NumberConfig) -> None:
+def number_x(context: AssetExecutionContext, ext: PipesSubprocess, config: NumberConfig) -> None:
     extras = {**get_common_extras(context), "multiplier": config.multiplier}
     ext.run(command_for_asset("number_x"), context=context, extras=extras)
 
 
 @asset
-def number_y(context: AssetExecutionContext, ext: PipedSubprocess, config: NumberConfig):
+def number_y(context: AssetExecutionContext, ext: PipesSubprocess, config: NumberConfig):
     ext.run(
         command_for_asset("number_y"),
         context=context,
@@ -48,11 +48,11 @@ def number_y(context: AssetExecutionContext, ext: PipedSubprocess, config: Numbe
 
 
 @asset(deps=[number_x, number_y])
-def number_sum(context: AssetExecutionContext, ext: PipedSubprocess) -> None:
+def number_sum(context: AssetExecutionContext, ext: PipesSubprocess) -> None:
     ext.run(command_for_asset("number_sum"), context=context, extras=get_common_extras(context))
 
 
-ext = PipedSubprocess(
+ext = PipesSubprocess(
     env=get_env(),
 )
 
