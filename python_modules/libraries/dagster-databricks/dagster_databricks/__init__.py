@@ -27,7 +27,7 @@ from .ops import (
 from .pipes import (
     ExtDatabricks as ExtDatabricks,
     ExtDbfsContextInjector as ExtDbfsContextInjector,
-    ExtDbfsMessageReader as ExtDbfsMessageReader,
+    PipesDbfsMessageReader as PipesDbfsMessageReader,
     dbfs_tempdir as dbfs_tempdir,
 )
 from .resources import (

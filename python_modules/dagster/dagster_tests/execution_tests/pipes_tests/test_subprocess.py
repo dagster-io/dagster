@@ -42,11 +42,11 @@ from dagster._core.pipes.subprocess import (
 from dagster._core.pipes.utils import (
     ExtEnvContextInjector,
     ExtTempFileContextInjector,
-    ExtTempFileMessageReader,
+    PipesTempFileMessageReader,
     open_pipes_session,
 )
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
-from dagster_aws.pipes import ExtS3MessageReader
+from dagster_aws.pipes import PipesS3MessageReader
 from moto.server import ThreadedMotoServer
 
 _PYTHON_EXECUTABLE = shutil.which("python")
@@ -150,9 +150,9 @@ def test_ext_subprocess(
     if message_reader_spec == "default":
         message_reader = None
     elif message_reader_spec == "user/file":
-        message_reader = ExtTempFileMessageReader()
+        message_reader = PipesTempFileMessageReader()
     elif message_reader_spec == "user/s3":
-        message_reader = ExtS3MessageReader(
+        message_reader = PipesS3MessageReader(
             bucket=_S3_TEST_BUCKET, client=s3_client, interval=0.001
         )
     else:
@@ -362,7 +362,7 @@ def test_ext_no_client(external_script):
         with open_pipes_session(
             context,
             ExtTempFileContextInjector(),
-            ExtTempFileMessageReader(),
+            PipesTempFileMessageReader(),
             extras=extras,
         ) as pipes_session:
             subprocess.run(cmd, env=pipes_session.get_pipes_env_vars(), check=False)
@@ -399,7 +399,7 @@ def test_ext_no_client_no_yield():
             with open_pipes_session(
                 context,
                 ExtTempFileContextInjector(),
-                ExtTempFileMessageReader(),
+                PipesTempFileMessageReader(),
             ) as pipes_session:
                 cmd = [_PYTHON_EXECUTABLE, external_script]
                 subprocess.run(cmd, env=pipes_session.get_pipes_env_vars(), check=False)

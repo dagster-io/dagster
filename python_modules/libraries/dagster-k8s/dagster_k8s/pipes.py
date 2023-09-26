@@ -11,14 +11,14 @@ from dagster import (
 from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.pipes.client import (
-    ExtMessageReader,
     PipesClient,
     PipesContextInjector,
+    PipesMessageReader,
     PipesParams,
 )
 from dagster._core.pipes.context import (
-    ExtMessageHandler,
     ExtResult,
+    PipesMessageHandler,
 )
 from dagster._core.pipes.utils import (
     ExtEnvContextInjector,
@@ -45,11 +45,11 @@ def get_pod_name(run_id: str, op_name: str):
 DEFAULT_CONTAINER_NAME = "dagster-pipes-execution"
 
 
-class K8sPodLogsMessageReader(ExtMessageReader):
+class K8sPodLogsMessageReader(PipesMessageReader):
     @contextmanager
     def read_messages(
         self,
-        handler: ExtMessageHandler,
+        handler: PipesMessageHandler,
     ) -> Iterator[PipesParams]:
         self._handler = handler
         try:
@@ -96,7 +96,7 @@ class _ExtK8sPod(PipesClient):
         self,
         env: Optional[Mapping[str, str]] = None,
         context_injector: Optional[PipesContextInjector] = None,
-        message_reader: Optional[ExtMessageReader] = None,
+        message_reader: Optional[PipesMessageReader] = None,
     ):
         self.env = check.opt_mapping_param(env, "env", key_type=str, value_type=str)
         self.context_injector = (
@@ -109,7 +109,7 @@ class _ExtK8sPod(PipesClient):
         )
 
         self.message_reader = (
-            check.opt_inst_param(message_reader, "message_reader", ExtMessageReader)
+            check.opt_inst_param(message_reader, "message_reader", PipesMessageReader)
             or K8sPodLogsMessageReader()
         )
 
@@ -149,7 +149,7 @@ class _ExtK8sPod(PipesClient):
                 Extra values to pass along as part of the ext protocol.
             context_injector (Optional[PipesContextInjector]):
                 Override the default ext protocol context injection.
-            message_Reader (Optional[ExtMessageReader]):
+            message_Reader (Optional[PipesMessageReader]):
                 Override the default ext protocol message reader.
         """
         client = DagsterKubernetesClient.production_client()

@@ -8,13 +8,13 @@ from dagster import (
     _check as check,
 )
 from dagster._core.pipes.client import (
-    ExtMessageReader,
     PipesClient,
     PipesContextInjector,
+    PipesMessageReader,
 )
 from dagster._core.pipes.context import (
-    ExtMessageHandler,
     ExtResult,
+    PipesMessageHandler,
 )
 from dagster._core.pipes.utils import (
     ExtEnvContextInjector,
@@ -29,11 +29,11 @@ from dagster_pipes import (
 )
 
 
-class DockerLogsMessageReader(ExtMessageReader):
+class DockerLogsMessageReader(PipesMessageReader):
     @contextmanager
     def read_messages(
         self,
-        handler: ExtMessageHandler,
+        handler: PipesMessageHandler,
     ) -> Iterator[PipesParams]:
         self._handler = handler
         try:
@@ -67,7 +67,7 @@ class _ExtDocker(PipesClient):
         env: Optional[Mapping[str, str]] = None,
         registry: Optional[Mapping[str, str]] = None,
         context_injector: Optional[PipesContextInjector] = None,
-        message_reader: Optional[ExtMessageReader] = None,
+        message_reader: Optional[PipesMessageReader] = None,
     ):
         self.env = check.opt_mapping_param(env, "env", key_type=str, value_type=str)
         self.registry = check.opt_mapping_param(registry, "registry", key_type=str, value_type=str)
@@ -81,7 +81,7 @@ class _ExtDocker(PipesClient):
         )
 
         self.message_reader = (
-            check.opt_inst_param(message_reader, "message_reader", ExtMessageReader)
+            check.opt_inst_param(message_reader, "message_reader", PipesMessageReader)
             or DockerLogsMessageReader()
         )
 
@@ -115,7 +115,7 @@ class _ExtDocker(PipesClient):
                 Extra values to pass along as part of the ext protocol.
             context_injector (Optional[PipesContextInjector]):
                 Override the default ext protocol context injection.
-            message_Reader (Optional[ExtMessageReader]):
+            message_Reader (Optional[PipesMessageReader]):
                 Override the default ext protocol message reader.
         """
         with open_pipes_session(

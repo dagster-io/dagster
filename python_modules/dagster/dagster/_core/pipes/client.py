@@ -11,7 +11,7 @@ from dagster_pipes import (
 from dagster._core.execution.context.compute import OpExecutionContext
 
 if TYPE_CHECKING:
-    from .context import ExtMessageHandler, ExtResult
+    from .context import ExtResult, PipesMessageHandler
 
 
 class PipesClient(ABC):
@@ -30,7 +30,7 @@ class PipesContextInjector(ABC):
     def inject_context(self, context_data: "PipesContextData") -> Iterator[PipesParams]: ...
 
 
-class ExtMessageReader(ABC):
+class PipesMessageReader(ABC):
     @abstractmethod
     @contextmanager
-    def read_messages(self, handler: "ExtMessageHandler") -> Iterator[PipesParams]: ...
+    def read_messages(self, handler: "PipesMessageHandler") -> Iterator[PipesParams]: ...
