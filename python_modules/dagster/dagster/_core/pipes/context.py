@@ -1,7 +1,7 @@
 from contextlib import contextmanager
 from dataclasses import dataclass
 from queue import Queue
-from typing import Any, Iterator, Mapping, Optional, Set, Union
+from typing import Any, Dict, Iterator, Mapping, Optional, Set, Union
 
 from dagster_pipes import (
     DAGSTER_PIPES_ENV_KEYS,
@@ -164,13 +164,13 @@ def _ext_params_as_env_vars(
 
 
 @dataclass
-class ExtOrchestrationContext:
+class PipesSession:
     context_data: PipesContextData
     message_handler: ExtMessageHandler
     context_injector_params: PipesParams
     message_reader_params: PipesParams
 
-    def get_external_process_env_vars(self):
+    def get_piped_process_env_vars(self) -> Dict[str, str]:
         return {
             DAGSTER_PIPES_ENV_KEYS[IS_DAGSTER_PIPES_PROCESS]: encode_env_var(True),
             **_ext_params_as_env_vars(

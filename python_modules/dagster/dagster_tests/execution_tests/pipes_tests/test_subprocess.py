@@ -43,7 +43,7 @@ from dagster._core.pipes.utils import (
     ExtEnvContextInjector,
     ExtTempFileContextInjector,
     ExtTempFileMessageReader,
-    ext_protocol,
+    pipes_protocol,
 )
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 from dagster_aws.pipes import ExtS3MessageReader
@@ -359,14 +359,14 @@ def test_ext_no_client(external_script):
         extras = {"bar": "baz"}
         cmd = [_PYTHON_EXECUTABLE, external_script]
 
-        with ext_protocol(
+        with pipes_protocol(
             context,
             ExtTempFileContextInjector(),
             ExtTempFileMessageReader(),
             extras=extras,
-        ) as ext_context:
-            subprocess.run(cmd, env=ext_context.get_external_process_env_vars(), check=False)
-        yield from ext_context.get_results()
+        ) as pipes_session:
+            subprocess.run(cmd, env=pipes_session.get_piped_process_env_vars(), check=False)
+        yield from pipes_session.get_results()
 
     with instance_for_test() as instance:
         materialize(
@@ -396,19 +396,19 @@ def test_ext_no_client_no_yield():
     @asset
     def foo(context: OpExecutionContext):
         with temp_script(script_fn) as external_script:
-            with ext_protocol(
+            with pipes_protocol(
                 context,
                 ExtTempFileContextInjector(),
                 ExtTempFileMessageReader(),
-            ) as ext_context:
+            ) as pipes_session:
                 cmd = [_PYTHON_EXECUTABLE, external_script]
-                subprocess.run(cmd, env=ext_context.get_external_process_env_vars(), check=False)
+                subprocess.run(cmd, env=pipes_session.get_piped_process_env_vars(), check=False)
 
     with pytest.raises(
         DagsterInvariantViolationError,
         match=(
             r"did not yield or return expected outputs.*Did you forget to `yield from"
-            r" ext_context.get_results\(\)`?"
+            r" pipes_session.get_results\(\)`?"
         ),
     ):
         materialize([foo])
