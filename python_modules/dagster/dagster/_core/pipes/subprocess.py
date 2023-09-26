@@ -73,24 +73,24 @@ class _ExtSubprocess(ExtClient):
             context_injector=self.context_injector,
             message_reader=self.message_reader,
             extras=extras,
-        ) as pipes_invocation:
+        ) as pipes_session:
             process = Popen(
                 command,
                 cwd=cwd or self.cwd,
                 env={
-                    **pipes_invocation.get_piped_process_env_vars(),
+                    **pipes_session.get_piped_process_env_vars(),
                     **self.env,
                     **(env or {}),
                 },
             )
             while process.poll() is None:
-                yield from pipes_invocation.get_results()
+                yield from pipes_session.get_results()
 
             if process.returncode != 0:
                 raise DagsterExternalExecutionError(
                     f"External execution process failed with code {process.returncode}"
                 )
-        yield from pipes_invocation.get_results()
+        yield from pipes_session.get_results()
 
 
 ExtSubprocess = ResourceParam[_ExtSubprocess]

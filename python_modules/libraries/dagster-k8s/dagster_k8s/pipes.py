@@ -159,7 +159,7 @@ class _ExtK8sPod(ExtClient):
             extras=extras,
             context_injector=self.context_injector,
             message_reader=self.message_reader,
-        ) as pipes_invocation:
+        ) as pipes_session:
             namespace = namespace or "default"
             pod_name = get_pod_name(context.run_id, context.op.name)
             pod_body = build_pod_body(
@@ -167,7 +167,7 @@ class _ExtK8sPod(ExtClient):
                 image=image,
                 command=command,
                 env_vars={
-                    **pipes_invocation.get_piped_process_env_vars(),
+                    **pipes_session.get_piped_process_env_vars(),
                     **(self.env or {}),
                     **(env or {}),
                 },
@@ -197,7 +197,7 @@ class _ExtK8sPod(ExtClient):
                     )
             finally:
                 client.core_api.delete_namespaced_pod(pod_name, namespace)
-        return pipes_invocation.get_results()
+        return pipes_session.get_results()
 
 
 def build_pod_body(

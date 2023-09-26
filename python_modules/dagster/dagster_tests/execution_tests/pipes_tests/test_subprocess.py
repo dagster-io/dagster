@@ -364,9 +364,9 @@ def test_ext_no_client(external_script):
             ExtTempFileContextInjector(),
             ExtTempFileMessageReader(),
             extras=extras,
-        ) as pipes_invocation:
-            subprocess.run(cmd, env=pipes_invocation.get_piped_process_env_vars(), check=False)
-        yield from pipes_invocation.get_results()
+        ) as pipes_session:
+            subprocess.run(cmd, env=pipes_session.get_piped_process_env_vars(), check=False)
+        yield from pipes_session.get_results()
 
     with instance_for_test() as instance:
         materialize(
@@ -400,15 +400,15 @@ def test_ext_no_client_no_yield():
                 context,
                 ExtTempFileContextInjector(),
                 ExtTempFileMessageReader(),
-            ) as pipes_invocation:
+            ) as pipes_session:
                 cmd = [_PYTHON_EXECUTABLE, external_script]
-                subprocess.run(cmd, env=pipes_invocation.get_piped_process_env_vars(), check=False)
+                subprocess.run(cmd, env=pipes_session.get_piped_process_env_vars(), check=False)
 
     with pytest.raises(
         DagsterInvariantViolationError,
         match=(
             r"did not yield or return expected outputs.*Did you forget to `yield from"
-            r" pipes_invocation.get_results\(\)`?"
+            r" pipes_session.get_results\(\)`?"
         ),
     ):
         materialize([foo])

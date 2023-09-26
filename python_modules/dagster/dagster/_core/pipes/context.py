@@ -164,7 +164,7 @@ def _ext_params_as_env_vars(
 
 
 @dataclass
-class PipesInvocation:
+class PipesSession:
     context_data: PipedProcessContextData
     message_handler: ExtMessageHandler
     context_injector_params: PipeableParams

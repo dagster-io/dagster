@@ -123,7 +123,7 @@ class _ExtDocker(ExtClient):
             context_injector=self.context_injector,
             message_reader=self.message_reader,
             extras=extras,
-        ) as pipes_invocation:
+        ) as pipes_session:
             client = docker.client.from_env()
             registry = registry or self.registry
             if registry:
@@ -139,7 +139,7 @@ class _ExtDocker(ExtClient):
                     image=image,
                     command=command,
                     env=env,
-                    pipes_protocol_env=pipes_invocation.get_piped_process_env_vars(),
+                    pipes_protocol_env=pipes_session.get_piped_process_env_vars(),
                     container_kwargs=container_kwargs,
                 )
             except docker.errors.ImageNotFound:
@@ -149,7 +149,7 @@ class _ExtDocker(ExtClient):
                     image=image,
                     command=command,
                     env=env,
-                    pipes_protocol_env=pipes_invocation.get_piped_process_env_vars(),
+                    pipes_protocol_env=pipes_session.get_piped_process_env_vars(),
                     container_kwargs=container_kwargs,
                 )
 
@@ -163,7 +163,7 @@ class _ExtDocker(ExtClient):
                     raise DagsterPipesError(f"Container exited with non-zero status code: {result}")
             finally:
                 container.stop()
-        return pipes_invocation.get_results()
+        return pipes_session.get_results()
 
     def _create_container(
         self,

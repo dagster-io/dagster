@@ -174,7 +174,7 @@ def test_use_excute_k8s_job(namespace, cluster_provider):
             ExtEnvContextInjector(),
             reader,
             extras={"storage_root": "/tmp/"},
-        ) as pipes_invocation:
+        ) as pipes_session:
             job_name = "number_y_asset_job"
 
             # stand-in for any means of creating kubernetes work
@@ -191,13 +191,13 @@ def test_use_excute_k8s_job(namespace, cluster_provider):
                     for k, v in {
                         "PYTHONPATH": "/dagster_test/toys/external_execution/",
                         "NUMBER_Y": "2",
-                        **pipes_invocation.get_piped_process_env_vars(),
+                        **pipes_session.get_piped_process_env_vars(),
                     }.items()
                 ],
                 k8s_job_name=job_name,
             )
             reader.consume_pod_logs(core_api, job_name, namespace)
-        yield from pipes_invocation.get_results()
+        yield from pipes_session.get_results()
 
     result = materialize(
         [number_y_job],

@@ -28,7 +28,7 @@ from dagster._core.pipes.client import (
 )
 from dagster._core.pipes.context import (
     ExtMessageHandler,
-    PipesInvocation,
+    PipesSession,
     build_external_execution_context_data,
 )
 from dagster._utils import tail_file
@@ -186,7 +186,7 @@ def extract_message_or_forward_to_stdout(handler: "ExtMessageHandler", log_line:
 
 
 _FAIL_TO_YIELD_ERROR_MESSAGE = (
-    "Did you forget to `yield from pipes_invocation.get_results()`? `get_results` should be called"
+    "Did you forget to `yield from pipes_session.get_results()`? `get_results` should be called"
     " once after the `pipes_protocol` block has exited to yield any remaining buffered results."
 )
 
@@ -197,7 +197,7 @@ def pipes_protocol(
     context_injector: ExtContextInjector,
     message_reader: ExtMessageReader,
     extras: Optional[PipeableExtras] = None,
-) -> Iterator[PipesInvocation]:
+) -> Iterator[PipesSession]:
     """Enter the context managed context injector and message reader that power the EXT protocol and receive the environment variables
     that need to be provided to the external process.
     """
@@ -208,7 +208,7 @@ def pipes_protocol(
     with context_injector.inject_context(
         context_data
     ) as ci_params, message_handler.handle_messages(message_reader) as mr_params:
-        yield PipesInvocation(
+        yield PipesSession(
             context_data=context_data,
             message_handler=message_handler,
             context_injector_params=ci_params,

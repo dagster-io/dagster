@@ -84,12 +84,12 @@ class _ExtDatabricks(ExtClient):
             extras=extras,
             context_injector=self.context_injector,
             message_reader=self.message_reader,
-        ) as pipes_invocation:
+        ) as pipes_session:
             submit_task_dict = task.as_dict()
             submit_task_dict["new_cluster"]["spark_env_vars"] = {
                 **submit_task_dict["new_cluster"].get("spark_env_vars", {}),
                 **(self.env or {}),
-                **pipes_invocation.get_piped_process_env_vars(),
+                **pipes_session.get_piped_process_env_vars(),
             }
             task = jobs.SubmitTask.from_dict(submit_task_dict)
             run_id = self.client.jobs.submit(
@@ -116,9 +116,9 @@ class _ExtDatabricks(ExtClient):
                     raise DagsterExternalExecutionError(
                         f"Error running Databricks job: {run.state.state_message}"
                     )
-                yield from pipes_invocation.get_results()
+                yield from pipes_session.get_results()
                 time.sleep(5)
-        yield from pipes_invocation.get_results()
+        yield from pipes_session.get_results()
 
 
 ExtDatabricks = ResourceParam[_ExtDatabricks]
