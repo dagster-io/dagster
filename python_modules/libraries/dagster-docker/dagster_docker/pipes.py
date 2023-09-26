@@ -18,8 +18,8 @@ from dagster._core.pipes.context import (
 )
 from dagster._core.pipes.utils import (
     ExtEnvContextInjector,
-    ext_protocol,
     extract_message_or_forward_to_stdout,
+    open_pipes_session,
 )
 from dagster_pipes import (
     DagsterPipesError,
@@ -118,12 +118,12 @@ class _ExtDocker(ExtClient):
             message_Reader (Optional[ExtMessageReader]):
                 Override the default ext protocol message reader.
         """
-        with ext_protocol(
+        with open_pipes_session(
             context=context,
             context_injector=self.context_injector,
             message_reader=self.message_reader,
             extras=extras,
-        ) as ext_context:
+        ) as pipes_session:
             client = docker.client.from_env()
             registry = registry or self.registry
             if registry:
@@ -139,7 +139,7 @@ class _ExtDocker(ExtClient):
                     image=image,
                     command=command,
                     env=env,
-                    ext_protocol_env=ext_context.get_external_process_env_vars(),
+                    open_pipes_session_env=pipes_session.get_pipes_env_vars(),
                     container_kwargs=container_kwargs,
                 )
             except docker.errors.ImageNotFound:
@@ -149,7 +149,7 @@ class _ExtDocker(ExtClient):
                     image=image,
                     command=command,
                     env=env,
-                    ext_protocol_env=ext_context.get_external_process_env_vars(),
+                    open_pipes_session_env=pipes_session.get_pipes_env_vars(),
                     container_kwargs=container_kwargs,
                 )
 
@@ -163,7 +163,7 @@ class _ExtDocker(ExtClient):
                     raise DagsterPipesError(f"Container exited with non-zero status code: {result}")
             finally:
                 container.stop()
-        return ext_context.get_results()
+        return pipes_session.get_results()
 
     def _create_container(
         self,
@@ -172,7 +172,7 @@ class _ExtDocker(ExtClient):
         command: Union[str, Sequence[str]],
         env: Optional[Mapping[str, str]],
         container_kwargs: Optional[Mapping[str, Any]],
-        ext_protocol_env: Mapping[str, str],
+        open_pipes_session_env: Mapping[str, str],
     ):
         kwargs = dict(container_kwargs or {})
         kwargs_env = kwargs.pop("environment", {})
@@ -181,7 +181,7 @@ class _ExtDocker(ExtClient):
             command=command,
             detach=True,
             environment={
-                **ext_protocol_env,
+                **open_pipes_session_env,
                 **(self.env or {}),
                 **(env or {}),
                 **kwargs_env,
