@@ -10,12 +10,12 @@ from threading import Event, Thread
 from typing import Iterator, Optional
 
 from dagster_pipes import (
-    EXT_PROTOCOL_VERSION_FIELD,
-    ExtContextData,
-    ExtDefaultContextLoader,
+    PIPES_PROTOCOL_VERSION_FIELD,
+    DefaultPipedProcessContextLoader,
     ExtDefaultMessageWriter,
-    ExtExtras,
-    ExtParams,
+    PipeableExtras,
+    PipeableParams,
+    PipedProcessContextData,
 )
 
 from dagster import (
@@ -42,11 +42,11 @@ class ExtFileContextInjector(ExtContextInjector):
         self._path = check.str_param(path, "path")
 
     @contextmanager
-    def inject_context(self, context_data: "ExtContextData") -> Iterator[ExtParams]:
+    def inject_context(self, context_data: "PipedProcessContextData") -> Iterator[PipeableParams]:
         with open(self._path, "w") as input_stream:
             json.dump(context_data, input_stream)
         try:
-            yield {ExtDefaultContextLoader.FILE_PATH_KEY: self._path}
+            yield {DefaultPipedProcessContextLoader.FILE_PATH_KEY: self._path}
         finally:
             if os.path.exists(self._path):
                 os.remove(self._path)
@@ -54,7 +54,7 @@ class ExtFileContextInjector(ExtContextInjector):
 
 class ExtTempFileContextInjector(ExtContextInjector):
     @contextmanager
-    def inject_context(self, context: "ExtContextData") -> Iterator[ExtParams]:
+    def inject_context(self, context: "PipedProcessContextData") -> Iterator[PipeableParams]:
         with tempfile.TemporaryDirectory() as tempdir:
             with ExtFileContextInjector(
                 os.path.join(tempdir, _CONTEXT_INJECTOR_FILENAME)
@@ -66,9 +66,9 @@ class ExtEnvContextInjector(ExtContextInjector):
     @contextmanager
     def inject_context(
         self,
-        context_data: "ExtContextData",
-    ) -> Iterator[ExtParams]:
-        yield {ExtDefaultContextLoader.DIRECT_KEY: context_data}
+        context_data: "PipedProcessContextData",
+    ) -> Iterator[PipeableParams]:
+        yield {DefaultPipedProcessContextLoader.DIRECT_KEY: context_data}
 
 
 class ExtFileMessageReader(ExtMessageReader):
@@ -79,7 +79,7 @@ class ExtFileMessageReader(ExtMessageReader):
     def read_messages(
         self,
         handler: "ExtMessageHandler",
-    ) -> Iterator[ExtParams]:
+    ) -> Iterator[PipeableParams]:
         is_task_complete = Event()
         thread = None
         try:
@@ -107,7 +107,7 @@ class ExtTempFileMessageReader(ExtMessageReader):
     def read_messages(
         self,
         handler: "ExtMessageHandler",
-    ) -> Iterator[ExtParams]:
+    ) -> Iterator[PipeableParams]:
         with tempfile.TemporaryDirectory() as tempdir:
             with ExtFileMessageReader(
                 os.path.join(tempdir, _MESSAGE_READER_FILENAME)
@@ -127,7 +127,7 @@ class ExtBlobStoreMessageReader(ExtMessageReader):
     def read_messages(
         self,
         handler: "ExtMessageHandler",
-    ) -> Iterator[ExtParams]:
+    ) -> Iterator[PipeableParams]:
         with self.get_params() as params:
             is_task_complete = Event()
             thread = None
@@ -150,13 +150,13 @@ class ExtBlobStoreMessageReader(ExtMessageReader):
 
     @abstractmethod
     @contextmanager
-    def get_params(self) -> Iterator[ExtParams]: ...
+    def get_params(self) -> Iterator[PipeableParams]: ...
 
     @abstractmethod
-    def download_messages_chunk(self, index: int, params: ExtParams) -> Optional[str]: ...
+    def download_messages_chunk(self, index: int, params: PipeableParams) -> Optional[str]: ...
 
     def _reader_thread(
-        self, handler: "ExtMessageHandler", params: ExtParams, is_task_complete: Event
+        self, handler: "ExtMessageHandler", params: PipeableParams, is_task_complete: Event
     ) -> None:
         start_or_last_download = datetime.datetime.now()
         while True:
@@ -178,7 +178,7 @@ def extract_message_or_forward_to_stdout(handler: "ExtMessageHandler", log_line:
     # exceptions as control flow, you love to see it
     try:
         message = json.loads(log_line)
-        if EXT_PROTOCOL_VERSION_FIELD in message.keys():
+        if PIPES_PROTOCOL_VERSION_FIELD in message.keys():
             handler.handle_message(message)
     except Exception:
         # move non-message logs in to stdout for compute log capture
@@ -196,7 +196,7 @@ def ext_protocol(
     context: OpExecutionContext,
     context_injector: ExtContextInjector,
     message_reader: ExtMessageReader,
-    extras: Optional[ExtExtras] = None,
+    extras: Optional[PipeableExtras] = None,
 ) -> Iterator[ExtOrchestrationContext]:
     """Enter the context managed context injector and message reader that power the EXT protocol and receive the environment variables
     that need to be provided to the external process.

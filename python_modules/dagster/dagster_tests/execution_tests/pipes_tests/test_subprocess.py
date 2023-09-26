@@ -75,9 +75,9 @@ def external_script() -> Iterator[str]:
         import time
 
         from dagster_pipes import (
-            ExtContext,
             ExtS3MessageWriter,
-            init_dagster_ext,
+            PipedProcessContext,
+            init_dagster_piped_process,
         )
 
         if os.getenv("MESSAGE_READER_SPEC") == "user/s3":
@@ -90,8 +90,8 @@ def external_script() -> Iterator[str]:
         else:
             message_writer = None  # use default
 
-        init_dagster_ext(message_writer=message_writer)
-        context = ExtContext.get()
+        init_dagster_piped_process(message_writer=message_writer)
+        context = PipedProcessContext.get()
         context.log("hello world")
         time.sleep(0.1)  # sleep to make sure that we encompass multiple intervals for blob store IO
         context.report_asset_materialization(
@@ -198,9 +198,9 @@ def test_ext_subprocess(
 
 def test_ext_multi_asset():
     def script_fn():
-        from dagster_pipes import init_dagster_ext
+        from dagster_pipes import init_dagster_piped_process
 
-        context = init_dagster_ext()
+        context = init_dagster_piped_process()
         context.report_asset_materialization(
             {"foo_meta": "ok"}, data_version="alpha", asset_key="foo"
         )
@@ -227,9 +227,9 @@ def test_ext_multi_asset():
 
 def test_ext_typed_metadata():
     def script_fn():
-        from dagster_pipes import init_dagster_ext
+        from dagster_pipes import init_dagster_piped_process
 
-        context = init_dagster_ext()
+        context = init_dagster_piped_process()
         context.report_asset_materialization(
             metadata={
                 "infer_meta": "bar",
@@ -307,9 +307,9 @@ def test_ext_asset_failed():
 
 def test_ext_asset_invocation():
     def script_fn():
-        from dagster_pipes import init_dagster_ext
+        from dagster_pipes import init_dagster_piped_process
 
-        context = init_dagster_ext()
+        context = init_dagster_piped_process()
         context.log("hello world")
 
     @asset
@@ -327,15 +327,15 @@ PATH_WITH_NONEXISTENT_DIR = "/tmp/does-not-exist/foo"
 def test_ext_no_orchestration():
     def script_fn():
         from dagster_pipes import (
-            ExtContext,
-            init_dagster_ext,
-            is_dagster_ext_process,
+            PipedProcessContext,
+            init_dagster_piped_process,
+            is_dagster_piped_process,
         )
 
-        assert not is_dagster_ext_process()
+        assert not is_dagster_piped_process()
 
-        init_dagster_ext()
-        context = ExtContext.get()
+        init_dagster_piped_process()
+        context = PipedProcessContext.get()
         context.log("hello world")
         context.report_asset_materialization(
             metadata={"bar": context.get_extra("bar")},

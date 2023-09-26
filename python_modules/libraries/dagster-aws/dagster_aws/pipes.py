@@ -7,7 +7,7 @@ import boto3
 import dagster._check as check
 from botocore.exceptions import ClientError
 from dagster._core.pipes.client import (
-    ExtParams,
+    PipeableParams,
 )
 from dagster._core.pipes.utils import ExtBlobStoreMessageReader
 
@@ -20,10 +20,10 @@ class ExtS3MessageReader(ExtBlobStoreMessageReader):
         self.client = client
 
     @contextmanager
-    def get_params(self) -> Iterator[ExtParams]:
+    def get_params(self) -> Iterator[PipeableParams]:
         yield {"bucket": self.bucket, "key_prefix": self.key_prefix}
 
-    def download_messages_chunk(self, index: int, params: ExtParams) -> Optional[str]:
+    def download_messages_chunk(self, index: int, params: PipeableParams) -> Optional[str]:
         key = f"{self.key_prefix}/{index}.json"
         try:
             obj = self.client.get_object(Bucket=self.bucket, Key=key)

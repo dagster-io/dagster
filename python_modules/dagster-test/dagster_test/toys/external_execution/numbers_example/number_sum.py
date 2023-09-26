@@ -1,8 +1,8 @@
-from dagster_pipes import init_dagster_ext
+from dagster_pipes import init_dagster_piped_process
 
 from .util import compute_data_version, load_asset_value, store_asset_value
 
-context = init_dagster_ext()
+context = init_dagster_piped_process()
 storage_root = context.get_extra("storage_root")
 number_y = load_asset_value("number_y", storage_root)
 number_x = load_asset_value("number_x", storage_root)

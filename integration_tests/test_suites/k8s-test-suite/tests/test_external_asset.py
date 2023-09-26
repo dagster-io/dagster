@@ -11,7 +11,7 @@ from dagster._core.pipes.utils import ExtEnvContextInjector, ext_protocol
 from dagster_k8s import execute_k8s_job
 from dagster_k8s.client import DagsterKubernetesClient
 from dagster_k8s.pipes import ExtK8sPod, K8sPodLogsMessageReader
-from dagster_pipes import ExtContextData, ExtDefaultContextLoader
+from dagster_pipes import DefaultPipedProcessContextLoader, PipedProcessContextData
 from dagster_test.test_project import (
     get_test_project_docker_image,
 )
@@ -68,7 +68,7 @@ class ExtConfigMapContextInjector(ExtContextInjector):
     @contextmanager
     def inject_context(
         self,
-        context_data: "ExtContextData",
+        context_data: "PipedProcessContextData",
     ):
         context_config_map_body = kubernetes.client.V1ConfigMap(
             metadata=kubernetes.client.V1ObjectMeta(
@@ -80,7 +80,7 @@ class ExtConfigMapContextInjector(ExtContextInjector):
         )
         self._client.core_api.create_namespaced_config_map(self._namespace, context_config_map_body)
         try:
-            yield {ExtDefaultContextLoader.FILE_PATH_KEY: "/mnt/dagster/context.json"}
+            yield {DefaultPipedProcessContextLoader.FILE_PATH_KEY: "/mnt/dagster/context.json"}
         finally:
             self._client.core_api.delete_namespaced_config_map(self._cm_name, self._namespace)
 

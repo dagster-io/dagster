@@ -1,7 +1,7 @@
 from subprocess import Popen
 from typing import Iterator, Mapping, Optional, Sequence, Union
 
-from dagster_pipes import ExtExtras
+from dagster_pipes import PipeableExtras
 
 from dagster import _check as check
 from dagster._core.definitions.resource_annotation import ResourceParam
@@ -64,7 +64,7 @@ class _ExtSubprocess(ExtClient):
         command: Union[str, Sequence[str]],
         *,
         context: OpExecutionContext,
-        extras: Optional[ExtExtras] = None,
+        extras: Optional[PipeableExtras] = None,
         env: Optional[Mapping[str, str]] = None,
         cwd: Optional[str] = None,
     ) -> Iterator[ExtResult]:

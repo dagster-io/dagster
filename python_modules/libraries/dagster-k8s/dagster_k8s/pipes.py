@@ -14,7 +14,7 @@ from dagster._core.pipes.client import (
     ExtClient,
     ExtContextInjector,
     ExtMessageReader,
-    ExtParams,
+    PipeableParams,
 )
 from dagster._core.pipes.context import (
     ExtMessageHandler,
@@ -27,7 +27,7 @@ from dagster._core.pipes.utils import (
 )
 from dagster_pipes import (
     ExtDefaultMessageWriter,
-    ExtExtras,
+    PipeableExtras,
 )
 
 from dagster_k8s.utils import get_common_labels
@@ -50,7 +50,7 @@ class K8sPodLogsMessageReader(ExtMessageReader):
     def read_messages(
         self,
         handler: ExtMessageHandler,
-    ) -> Iterator[ExtParams]:
+    ) -> Iterator[PipeableParams]:
         self._handler = handler
         try:
             yield {ExtDefaultMessageWriter.STDIO_KEY: ExtDefaultMessageWriter.STDERR}
@@ -123,7 +123,7 @@ class _ExtK8sPod(ExtClient):
         env: Optional[Mapping[str, str]] = None,
         base_pod_meta: Optional[Mapping[str, Any]] = None,
         base_pod_spec: Optional[Mapping[str, Any]] = None,
-        extras: Optional[ExtExtras] = None,
+        extras: Optional[PipeableExtras] = None,
     ) -> Iterator[ExtResult]:
         """Publish a kubernetes pod and wait for it to complete, enriched with the ext protocol.
 
@@ -145,7 +145,7 @@ class _ExtK8sPod(ExtClient):
                 Raw k8s config for the k8s pod's pod spec
                 (https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-v1/#PodSpec).
                 Keys can either snake_case or camelCase.
-            extras (Optional[ExtExtras]):
+            extras (Optional[PipeableExtras]):
                 Extra values to pass along as part of the ext protocol.
             context_injector (Optional[ExtContextInjector]):
                 Override the default ext protocol context injection.
