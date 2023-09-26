@@ -19,6 +19,7 @@ import {
 import {buildQueryMock, getMockResultFn} from '../../testing/mocking';
 import {
   AssetLiveDataProvider,
+  BATCH_SIZE,
   SUBSCRIPTION_IDLE_POLL_RATE,
   _testOnly_resetLastFetchedOrRequested,
   useAssetsLiveData,
@@ -213,11 +214,11 @@ describe('AssetLiveDataProvider', () => {
 
   it('chunks asset requests', async () => {
     const assetKeys = [];
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < 2 * BATCH_SIZE; i++) {
       assetKeys.push(buildAssetKey({path: [`key${i}`]}));
     }
-    const chunk1 = assetKeys.slice(0, 50);
-    const chunk2 = assetKeys.slice(50, 100);
+    const chunk1 = assetKeys.slice(0, BATCH_SIZE);
+    const chunk2 = assetKeys.slice(BATCH_SIZE, 2 * BATCH_SIZE);
 
     const mockedQuery = buildMockedQuery(chunk1);
     const mockedQuery2 = buildMockedQuery(chunk2);
@@ -255,15 +256,15 @@ describe('AssetLiveDataProvider', () => {
     const hookResult = jest.fn();
 
     const assetKeys = [];
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < 2 * BATCH_SIZE; i++) {
       assetKeys.push(buildAssetKey({path: [`key${i}`]}));
     }
-    const chunk1 = assetKeys.slice(0, 50);
-    const chunk2 = assetKeys.slice(50, 100);
+    const chunk1 = assetKeys.slice(0, BATCH_SIZE);
+    const chunk2 = assetKeys.slice(BATCH_SIZE, 2 * BATCH_SIZE);
 
     const hook1Keys = assetKeys.slice(0, 33);
     const hook2Keys = assetKeys.slice(33, 66);
-    const hook3Keys = assetKeys.slice(66, 100);
+    const hook3Keys = assetKeys.slice(66, BATCH_SIZE);
 
     const mockedQuery = buildMockedQuery(chunk1);
     const mockedQuery2 = buildMockedQuery(chunk2);
@@ -314,7 +315,7 @@ describe('AssetLiveDataProvider', () => {
     // which would have made the previously fetched keys elgible for fetching again
     const firstPrioritizedFetchKeys = assetKeys
       .filter((key) => fetch1Keys.indexOf(key) === -1)
-      .slice(0, 50);
+      .slice(0, BATCH_SI);
 
     // Next we fetch all of the keys not fetched in the previous batch with the originally fetched keys
     // at the end of the batch since they were previously fetched already
@@ -360,6 +361,7 @@ describe('AssetLiveDataProvider', () => {
 
     await waitFor(() => {
       expect(resultFn2).toHaveBeenCalled();
+      expect(resultFn3).not.toHaveBeenCalled();
     });
 
     await waitFor(() => {

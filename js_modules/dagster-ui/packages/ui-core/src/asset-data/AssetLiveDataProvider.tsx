@@ -94,10 +94,10 @@ async function _queryAssetKeys(client: ApolloClient<any>, assetKeys: AssetKeyInp
 }
 
 // How many assets to fetch at once
-const BATCH_SIZE = 50;
+export const BATCH_SIZE = 50;
 
 // Milliseconds we wait until sending a batched query
-const BATCHING_INTERVAL = 100;
+const BATCHING_INTERVAL = 250;
 
 export const SUBSCRIPTION_IDLE_POLL_RATE = 30 * 1000;
 // const SUBSCRIPTION_MAX_POLL_RATE = 2 * 1000;
