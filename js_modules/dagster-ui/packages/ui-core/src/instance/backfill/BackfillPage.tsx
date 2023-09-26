@@ -303,7 +303,9 @@ export const BackfillPage = () => {
               <BackfillActionsMenu
                 backfill={backfill}
                 refetch={queryResult.refetch}
-                canCancelRuns={backfill.status === BulkActionStatus.REQUESTED}
+                counts={Object.fromEntries(
+                  backfill.partitionStatusCounts.map((e) => [e.runStatus, e.count]),
+                )}
               />
             ) : null}
           </Box>
@@ -396,6 +398,10 @@ export const BACKFILL_DETAILS_QUERY = gql`
 
     error {
       ...PythonErrorFragment
+    }
+    partitionStatusCounts {
+      runStatus
+      count
     }
     assetBackfillData {
       rootAssetTargetedRanges {

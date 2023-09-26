@@ -61,11 +61,11 @@ export function backfillCanCancelRuns(
 
 export const BackfillActionsMenu = ({
   backfill,
-  canCancelRuns,
+  counts,
   refetch,
 }: {
   backfill: BackfillActionsBackfillFragment;
-  canCancelRuns: boolean;
+  counts: {[runStatus: string]: number} | null;
   refetch: () => void;
 }) => {
   const history = useHistory();
@@ -116,6 +116,7 @@ export const BackfillActionsMenu = ({
   };
 
   const canCancelSubmission = backfillCanCancelSubmission(backfill);
+  const canCancelRuns = backfillCanCancelRuns(backfill, counts);
 
   return (
     <>

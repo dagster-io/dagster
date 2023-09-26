@@ -23,7 +23,7 @@ import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../../workspace/repoAddressAsString';
 import {workspacePathFromAddress, workspacePipelinePath} from '../../workspace/workspacePath';
 
-import {BackfillActionsMenu, backfillCanCancelRuns} from './BackfillActionsMenu';
+import {BackfillActionsMenu} from './BackfillActionsMenu';
 import {BackfillStatusTagForPage} from './BackfillStatusTagForPage';
 import {
   PartitionStatusesForBackfillFragment,
@@ -68,8 +68,7 @@ export const BackfillRow = ({
     },
   );
 
-  const statusUnsupported =
-    backfill.numPartitions === null || backfill.partitionNames === null || backfill.isAssetBackfill;
+  const statusUnsupported = backfill.numPartitions === null || backfill.partitionNames === null;
 
   // Note: We switch queries based on how many partitions there are to display,
   // because the detail is nice for small backfills but breaks for 100k+ partitions.
@@ -157,11 +156,7 @@ export const BackfillRow = ({
         )}
       </td>
       <td>
-        <BackfillActionsMenu
-          backfill={backfill}
-          canCancelRuns={backfillCanCancelRuns(backfill, counts)}
-          refetch={refetch}
-        />
+        <BackfillActionsMenu backfill={backfill} counts={counts} refetch={refetch} />
       </td>
     </tr>
   );
