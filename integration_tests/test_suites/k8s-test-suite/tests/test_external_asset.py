@@ -5,7 +5,7 @@ import kubernetes
 import pytest
 from dagster import AssetExecutionContext, asset, materialize
 from dagster._core.pipes.client import (
-    ExtContextInjector,
+    PipedProcessContextInjector,
 )
 from dagster._core.pipes.utils import ExtEnvContextInjector, open_pipes_session
 from dagster_k8s import execute_k8s_job
@@ -55,7 +55,7 @@ def test_ext_k8s_pod(namespace, cluster_provider):
     assert mats[0].metadata["is_even"].value is True
 
 
-class ExtConfigMapContextInjector(ExtContextInjector):
+class ExtConfigMapContextInjector(PipedProcessContextInjector):
     def __init__(
         self,
         k8s_client: DagsterKubernetesClient,
