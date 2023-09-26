@@ -4,9 +4,9 @@ from queue import Queue
 from typing import Any, Iterator, Mapping, Optional, Set, Union
 
 from dagster_pipes import (
-    DAGSTER_PIPED_ENV_KEYS,
-    IS_DAGSTER_PIPED_PROCESS_ENV_VAR,
-    PIPEABLE_METADATA_TYPE_INFER,
+    DAGSTER_PIPES_ENV_KEYS,
+    IS_DAGSTER_PIPES_PROCESS,
+    PIPES_METADATA_TYPE_INFER,
     PipesContextData,
     PipesDataProvenance,
     PipesExtras,
@@ -64,7 +64,7 @@ class ExtMessageHandler:
     def _resolve_metadata_value(
         self, value: Any, metadata_type: PipesMetadataType
     ) -> MetadataValue:
-        if metadata_type == PIPEABLE_METADATA_TYPE_INFER:
+        if metadata_type == PIPES_METADATA_TYPE_INFER:
             return normalize_metadata_value(value)
         elif metadata_type == "text":
             return MetadataValue.text(value)
@@ -158,8 +158,8 @@ def _ext_params_as_env_vars(
     context_injector_params: PipesParams, message_reader_params: PipesParams
 ) -> Mapping[str, str]:
     return {
-        DAGSTER_PIPED_ENV_KEYS["context"]: encode_env_var(context_injector_params),
-        DAGSTER_PIPED_ENV_KEYS["messages"]: encode_env_var(message_reader_params),
+        DAGSTER_PIPES_ENV_KEYS["context"]: encode_env_var(context_injector_params),
+        DAGSTER_PIPES_ENV_KEYS["messages"]: encode_env_var(message_reader_params),
     }
 
 
@@ -172,7 +172,7 @@ class ExtOrchestrationContext:
 
     def get_external_process_env_vars(self):
         return {
-            DAGSTER_PIPED_ENV_KEYS[IS_DAGSTER_PIPED_PROCESS_ENV_VAR]: encode_env_var(True),
+            DAGSTER_PIPES_ENV_KEYS[IS_DAGSTER_PIPES_PROCESS]: encode_env_var(True),
             **_ext_params_as_env_vars(
                 context_injector_params=self.context_injector_params,
                 message_reader_params=self.message_reader_params,

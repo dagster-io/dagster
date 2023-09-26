@@ -55,10 +55,10 @@ def _param_name_to_env_key(key: str) -> str:
 
 # ##### PARAMETERS
 
-IS_DAGSTER_PIPED_PROCESS_ENV_VAR = "IS_DAGSTER_PIPED_PROCESS"
+IS_DAGSTER_PIPES_PROCESS = "IS_DAGSTER_PIPED_PROCESS"
 
-DAGSTER_PIPED_ENV_KEYS = {
-    k: _param_name_to_env_key(k) for k in (IS_DAGSTER_PIPED_PROCESS_ENV_VAR, "context", "messages")
+DAGSTER_PIPES_ENV_KEYS = {
+    k: _param_name_to_env_key(k) for k in (IS_DAGSTER_PIPES_PROCESS, "context", "messages")
 }
 
 
@@ -74,7 +74,7 @@ class PipesMessage(TypedDict):
     params: Optional[Mapping[str, Any]]
 
 
-# ##### PIPED PROCESS CONTEXT
+###### PIPES CONTEXT
 
 
 class PipesContextData(TypedDict):
@@ -117,7 +117,7 @@ class PipesMetadataValue(TypedDict):
 
 
 # Infer the type from the raw value on the orchestration end
-PIPEABLE_METADATA_TYPE_INFER = "__infer__"
+PIPES_METADATA_TYPE_INFER = "__infer__"
 
 PipesMetadataType = Literal[
     "__infer__",
@@ -308,7 +308,7 @@ def _normalize_param_metadata(
                 )
             new_metadata[key] = cast(PipesMetadataValue, value)
         else:
-            new_metadata[key] = {"raw_value": value, "type": PIPEABLE_METADATA_TYPE_INFER}
+            new_metadata[key] = {"raw_value": value, "type": PIPES_METADATA_TYPE_INFER}
     return new_metadata
 
 
@@ -339,7 +339,7 @@ def _env_var_to_param_name(env_var: str) -> str:
 
 
 def is_dagster_pipes_process() -> bool:
-    return _param_from_env_var(IS_DAGSTER_PIPED_PROCESS_ENV_VAR)
+    return _param_from_env_var(IS_DAGSTER_PIPES_PROCESS)
 
 
 def _emit_orchestration_inactive_warning() -> None:
