@@ -315,7 +315,7 @@ describe('AssetLiveDataProvider', () => {
     // which would have made the previously fetched keys elgible for fetching again
     const firstPrioritizedFetchKeys = assetKeys
       .filter((key) => fetch1Keys.indexOf(key) === -1)
-      .slice(0, BATCH_SI);
+      .slice(0, BATCH_SIZE);
 
     // Next we fetch all of the keys not fetched in the previous batch with the originally fetched keys
     // at the end of the batch since they were previously fetched already
