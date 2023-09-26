@@ -29,11 +29,16 @@ spec:
           command: ["dagster"]
           args: ["instance", "migrate"]
           env:
+            - name: DAGSTER_PG_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "dagster.postgresql.secretName" . | quote }}
+                  key: {{ .Values.global.postgresqlSecretUsernameKey | quote }}
             - name: DAGSTER_PG_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ include "dagster.postgresql.secretName" . | quote }}
-                  key: postgresql-password
+                  key: {{ .Values.global.postgresqlSecretPasswordKey | quote }}
           envFrom:
             - configMapRef:
                 name: {{ template "dagster.fullname" . }}-webserver-env
