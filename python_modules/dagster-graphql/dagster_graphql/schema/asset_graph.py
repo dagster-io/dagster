@@ -151,6 +151,7 @@ class GrapheneAssetDependency(graphene.ObjectType):
 
 
 class GrapheneAssetLatestInfo(graphene.ObjectType):
+    id = graphene.NonNull(graphene.ID)
     assetKey = graphene.NonNull(GrapheneAssetKey)
     latestMaterialization = graphene.Field(GrapheneMaterializationEvent)
     unstartedRunIds = non_null_list(graphene.String)

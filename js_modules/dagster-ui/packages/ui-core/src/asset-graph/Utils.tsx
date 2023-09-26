@@ -169,7 +169,10 @@ export interface LiveData {
   [assetId: GraphId]: LiveDataForNode;
 }
 
-export const buildLiveData = ({assetNodes, assetsLatestInfo}: AssetGraphLiveQuery) => {
+export const buildLiveData = ({
+  assetNodes,
+  assetsLatestInfo,
+}: Pick<AssetGraphLiveQuery, 'assetNodes' | 'assetsLatestInfo'>) => {
   const data: LiveData = {};
 
   for (const liveNode of assetNodes) {
