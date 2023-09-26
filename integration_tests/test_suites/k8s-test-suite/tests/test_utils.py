@@ -37,6 +37,7 @@ def construct_job_manifest(name, cmd, image="busybox", container_kwargs=None):
             template=kubernetes.client.V1PodTemplateSpec(
                 spec=construct_pod_spec(name, cmd, image=image, container_kwargs=container_kwargs)
             ),
+            backoff_limit=0,
         ),
     )
 
