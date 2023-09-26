@@ -13,7 +13,6 @@ from typing import (
     Optional,
     Sequence,
     Set,
-    Tuple,
     Union,
     cast,
 )
@@ -272,10 +271,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         if selected_asset_check_keys is not None:
             self._selected_asset_check_keys = selected_asset_check_keys
         else:
-            self._selected_asset_check_keys = cast(
-                AbstractSet[AssetCheckKey],
-                self._check_specs_by_handle.keys(),
-            )
+            self._selected_asset_check_keys = self._check_specs_by_handle.keys()
 
         if self._partitions_def is None:
             # check if backfill policy is BackfillPolicyType.SINGLE_RUN if asset is not partitioned
@@ -872,18 +868,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         return self._check_specs_by_output_name.values()
 
     @property
-    def asset_check_keys(self) -> AbstractSet[AssetCheckKey]:
-        """Returns the selected asset checks associated by this AssetsDefinition.
-
-        Returns:
-            AbstractSet[Tuple[AssetKey, str]]: The selected asset checks. An asset check is
-                identified by the asset key and the name of the check.
-        """
-        return self._selected_asset_check_keys
-
-    @public
-    @property
-    def check_keys(self) -> AbstractSet[Tuple[AssetKey, str]]:
+    def check_keys(self) -> AbstractSet[AssetCheckKey]:
         """Returns the selected asset checks associated by this AssetsDefinition.
 
         Returns:
@@ -1127,7 +1112,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     def subset_for(
         self,
         selected_asset_keys: AbstractSet[AssetKey],
-        selected_asset_check_keys: AbstractSet[AssetCheckKey],
+        selected_asset_check_keys: Optional[AbstractSet[AssetCheckKey]],
     ) -> "AssetsDefinition":
         """Create a subset of this AssetsDefinition that will only materialize the assets and checks
         in the selected set.
@@ -1145,14 +1130,20 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
         # Set of assets within selected_asset_keys which are outputted by this AssetDefinition
         asset_subselection = selected_asset_keys & self.keys
-        asset_check_subselection = selected_asset_check_keys & self.check_keys
+        if selected_asset_check_keys is None:
+            # filter to checks that target selected asset keys
+            asset_check_subselection = {
+                key for key in self.check_keys if key.asset_key in asset_subselection
+            }
+        else:
+            asset_check_subselection = selected_asset_check_keys & self.check_keys
 
         # Early escape if all assets in AssetsDefinition are selected
         if asset_subselection == self.keys and asset_check_subselection == self.check_keys:
             return self
         elif isinstance(self.node_def, GraphDefinition):  # Node is graph-backed asset
             check.invariant(
-                asset_check_subselection is None,
+                selected_asset_check_keys == self.check_keys,
                 "Subsetting graph-backed assets with checks is not yet supported",
             )
 

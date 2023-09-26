@@ -10,14 +10,13 @@ from typing import (
     Optional,
     Sequence,
     Set,
-    Tuple,
     Union,
     cast,
 )
 
 import dagster._check as check
 from dagster._annotations import deprecated, experimental, public
-from dagster._core.definitions.asset_check_spec import AssetCheckSpec
+from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.data_version import (
@@ -593,7 +592,7 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
 
     @public
     @property
-    def selected_asset_check_keys(self) -> AbstractSet[Tuple[AssetKey, str]]:
+    def selected_asset_check_keys(self) -> AbstractSet[AssetCheckKey]:
         if self.has_assets_def:
             return self.assets_def.check_keys
 
