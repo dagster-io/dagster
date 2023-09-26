@@ -15,7 +15,7 @@ from dagster._core.pipes.client import ExtClient, ExtContextInjector, ExtMessage
 from dagster._core.pipes.context import ExtResult
 from dagster._core.pipes.utils import (
     ExtBlobStoreMessageReader,
-    ext_protocol,
+    pipes_protocol,
 )
 from dagster_pipes import (
     PipeableExtras,
@@ -79,17 +79,17 @@ class _ExtDatabricks(ExtClient):
             submit_args (Optional[Mapping[str, str]]): Additional keyword arguments that will be
                 forwarded as-is to `WorkspaceClient.jobs.submit`.
         """
-        with ext_protocol(
+        with pipes_protocol(
             context=context,
             extras=extras,
             context_injector=self.context_injector,
             message_reader=self.message_reader,
-        ) as ext_context:
+        ) as pipes_invocation:
             submit_task_dict = task.as_dict()
             submit_task_dict["new_cluster"]["spark_env_vars"] = {
                 **submit_task_dict["new_cluster"].get("spark_env_vars", {}),
                 **(self.env or {}),
-                **ext_context.get_external_process_env_vars(),
+                **pipes_invocation.get_piped_process_env_vars(),
             }
             task = jobs.SubmitTask.from_dict(submit_task_dict)
             run_id = self.client.jobs.submit(
@@ -116,9 +116,9 @@ class _ExtDatabricks(ExtClient):
                     raise DagsterExternalExecutionError(
                         f"Error running Databricks job: {run.state.state_message}"
                     )
-                yield from ext_context.get_results()
+                yield from pipes_invocation.get_results()
                 time.sleep(5)
-        yield from ext_context.get_results()
+        yield from pipes_invocation.get_results()
 
 
 ExtDatabricks = ResourceParam[_ExtDatabricks]

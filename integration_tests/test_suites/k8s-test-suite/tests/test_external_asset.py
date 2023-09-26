@@ -7,7 +7,7 @@ from dagster import AssetExecutionContext, asset, materialize
 from dagster._core.pipes.client import (
     ExtContextInjector,
 )
-from dagster._core.pipes.utils import ExtEnvContextInjector, ext_protocol
+from dagster._core.pipes.utils import ExtEnvContextInjector, pipes_protocol
 from dagster_k8s import execute_k8s_job
 from dagster_k8s.client import DagsterKubernetesClient
 from dagster_k8s.pipes import ExtK8sPod, K8sPodLogsMessageReader
@@ -169,12 +169,12 @@ def test_use_excute_k8s_job(namespace, cluster_provider):
     def number_y_job(context: AssetExecutionContext):
         core_api = kubernetes.client.CoreV1Api()
         reader = K8sPodLogsMessageReader()
-        with ext_protocol(
+        with pipes_protocol(
             context,
             ExtEnvContextInjector(),
             reader,
             extras={"storage_root": "/tmp/"},
-        ) as ext_context:
+        ) as pipes_invocation:
             job_name = "number_y_asset_job"
 
             # stand-in for any means of creating kubernetes work
@@ -191,13 +191,13 @@ def test_use_excute_k8s_job(namespace, cluster_provider):
                     for k, v in {
                         "PYTHONPATH": "/dagster_test/toys/external_execution/",
                         "NUMBER_Y": "2",
-                        **ext_context.get_external_process_env_vars(),
+                        **pipes_invocation.get_piped_process_env_vars(),
                     }.items()
                 ],
                 k8s_job_name=job_name,
             )
             reader.consume_pod_logs(core_api, job_name, namespace)
-        yield from ext_context.get_results()
+        yield from pipes_invocation.get_results()
 
     result = materialize(
         [number_y_job],

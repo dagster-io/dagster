@@ -22,8 +22,8 @@ from dagster._core.pipes.context import (
 )
 from dagster._core.pipes.utils import (
     ExtEnvContextInjector,
-    ext_protocol,
     extract_message_or_forward_to_stdout,
+    pipes_protocol,
 )
 from dagster_pipes import (
     ExtDefaultMessageWriter,
@@ -154,12 +154,12 @@ class _ExtK8sPod(ExtClient):
         """
         client = DagsterKubernetesClient.production_client()
 
-        with ext_protocol(
+        with pipes_protocol(
             context=context,
             extras=extras,
             context_injector=self.context_injector,
             message_reader=self.message_reader,
-        ) as ext_context:
+        ) as pipes_invocation:
             namespace = namespace or "default"
             pod_name = get_pod_name(context.run_id, context.op.name)
             pod_body = build_pod_body(
@@ -167,7 +167,7 @@ class _ExtK8sPod(ExtClient):
                 image=image,
                 command=command,
                 env_vars={
-                    **ext_context.get_external_process_env_vars(),
+                    **pipes_invocation.get_piped_process_env_vars(),
                     **(self.env or {}),
                     **(env or {}),
                 },
@@ -197,7 +197,7 @@ class _ExtK8sPod(ExtClient):
                     )
             finally:
                 client.core_api.delete_namespaced_pod(pod_name, namespace)
-        return ext_context.get_results()
+        return pipes_invocation.get_results()
 
 
 def build_pod_body(

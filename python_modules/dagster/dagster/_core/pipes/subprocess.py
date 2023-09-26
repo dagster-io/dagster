@@ -16,7 +16,7 @@ from dagster._core.pipes.context import ExtResult
 from dagster._core.pipes.utils import (
     ExtTempFileContextInjector,
     ExtTempFileMessageReader,
-    ext_protocol,
+    pipes_protocol,
 )
 
 
@@ -68,29 +68,29 @@ class _ExtSubprocess(ExtClient):
         env: Optional[Mapping[str, str]] = None,
         cwd: Optional[str] = None,
     ) -> Iterator[ExtResult]:
-        with ext_protocol(
+        with pipes_protocol(
             context=context,
             context_injector=self.context_injector,
             message_reader=self.message_reader,
             extras=extras,
-        ) as ext_context:
+        ) as pipes_invocation:
             process = Popen(
                 command,
                 cwd=cwd or self.cwd,
                 env={
-                    **ext_context.get_external_process_env_vars(),
+                    **pipes_invocation.get_piped_process_env_vars(),
                     **self.env,
                     **(env or {}),
                 },
             )
             while process.poll() is None:
-                yield from ext_context.get_results()
+                yield from pipes_invocation.get_results()
 
             if process.returncode != 0:
                 raise DagsterExternalExecutionError(
                     f"External execution process failed with code {process.returncode}"
                 )
-        yield from ext_context.get_results()
+        yield from pipes_invocation.get_results()
 
 
 ExtSubprocess = ResourceParam[_ExtSubprocess]
