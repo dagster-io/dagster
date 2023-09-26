@@ -1,4 +1,15 @@
-from typing import Any, Dict, Iterable, Iterator, Mapping, NamedTuple, Optional, Sequence, Set
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterable,
+    Iterator,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Set,
+)
 
 from dagster import _check as check
 from dagster._annotations import experimental, public
@@ -12,6 +23,11 @@ from dagster._core.definitions.resource_requirement import (
     ResourceRequirement,
     merge_resource_defs,
 )
+from dagster._core.errors import DagsterAssetCheckFailedError
+from dagster._core.types.dagster_type import Nothing
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.assets import AssetsDefinition
 
 
 @experimental
@@ -127,3 +143,76 @@ class AssetChecksDefinition(ResourceAddable, RequiresResources):
             specs=self._specs,
             input_output_props=self._input_output_props,
         )
+
+
+@experimental
+def build_asset_with_blocking_check(
+    asset_def: "AssetsDefinition",
+    checks: Sequence[AssetChecksDefinition],
+) -> "AssetsDefinition":
+    from dagster import AssetIn, In, OpExecutionContext, Output, op
+    from dagster._core.definitions.decorators.asset_decorator import graph_asset_no_defaults
+    from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
+
+    check_specs = []
+    for c in checks:
+        check_specs.extend(c.specs)
+
+    check_output_names = [c.get_python_identifier() for c in check_specs]
+
+    check.invariant(len(asset_def.op.output_defs) == 1)
+    asset_out_type = asset_def.op.output_defs[0].dagster_type
+
+    @op(ins={"asset_return_value": In(asset_out_type), "check_evaluations": In(Nothing)})
+    def fan_in_checks_and_asset_return_value(context: OpExecutionContext, asset_return_value: Any):
+        # we pass the asset_return_value through and store it again so that downstream assets can load it.
+        # This is a little silly- we only do this because this op has the asset key in its StepOutputProperties
+        # so the output is written to the right path. We could probably get the asset_def.op to write to the
+        # asset path (and make sure we don't override it here) to avoid the double write.
+        yield Output(asset_return_value)
+
+        for check_spec in check_specs:
+            executions = context.instance.event_log_storage.get_asset_check_executions(
+                asset_key=asset_def.key, check_name=check_spec.name, limit=1
+            )
+            check.invariant(
+                len(executions) == 1, "Expected asset check {check_spec.name} to execute"
+            )
+            execution = executions[0]
+            check.invariant(
+                execution.run_id == context.run_id,
+                "Expected asset check {check_spec.name} to execute in the current run",
+            )
+            if execution.status != AssetCheckExecutionRecordStatus.SUCCEEDED:
+                raise DagsterAssetCheckFailedError()
+
+    # kwargs are the inputs to the asset_def.op that we are wrapping
+    def blocking_asset(**kwargs):
+        asset_return_value = asset_def.op.with_replaced_properties(name="asset_op")(**kwargs)
+        check_evaluations = [check.node_def(asset_return_value) for check in checks]
+
+        return {
+            "result": fan_in_checks_and_asset_return_value(asset_return_value, check_evaluations),
+            **{
+                check_output_name: check_result
+                for check_output_name, check_result in zip(check_output_names, check_evaluations)
+            },
+        }
+
+    return graph_asset_no_defaults(
+        compose_fn=blocking_asset,
+        name=None,
+        key_prefix=None,
+        key=asset_def.key,
+        group_name=asset_def.group_names_by_key.get(asset_def.key),
+        partitions_def=asset_def.partitions_def,
+        check_specs=check_specs,
+        description=asset_def.descriptions_by_key.get(asset_def.key),
+        ins={name: AssetIn(key) for name, key in asset_def.keys_by_input_name.items()},
+        resource_defs=asset_def.resource_defs,
+        metadata=asset_def.metadata_by_key.get(asset_def.key),
+        freshness_policy=asset_def.freshness_policies_by_key.get(asset_def.key),
+        auto_materialize_policy=asset_def.auto_materialize_policies_by_key.get(asset_def.key),
+        backfill_policy=asset_def.backfill_policy,
+        config=None,  # gets config from asset_def.op
+    )

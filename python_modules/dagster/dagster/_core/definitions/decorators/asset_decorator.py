@@ -1061,63 +1061,98 @@ def graph_asset(
             key=key,
         )
     else:
-        ins = ins or {}
-        asset_ins = build_asset_ins(compose_fn, ins or {}, set())
-        out_asset_key, _asset_name = _resolve_key_and_name(
-            key=key,
-            key_prefix=key_prefix,
+        return graph_asset_no_defaults(
+            compose_fn=compose_fn,
             name=name,
-            decorator="@graph_asset",
-            fn=compose_fn,
-        )
-
-        keys_by_input_name = {
-            input_name: asset_key for asset_key, (input_name, _) in asset_ins.items()
-        }
-        partition_mappings = {
-            input_name: asset_in.partition_mapping
-            for input_name, asset_in in ins.items()
-            if asset_in.partition_mapping
-        }
-
-        check_specs_by_output_name = _validate_and_assign_output_names_to_check_specs(
-            check_specs, [out_asset_key]
-        )
-        check_outs_by_output_name: Mapping[str, GraphOut] = {
-            output_name: GraphOut() for output_name in check_specs_by_output_name.keys()
-        }
-
-        combined_outs_by_output_name: Mapping = {
-            "result": GraphOut(),
-            **check_outs_by_output_name,
-        }
-
-        op_graph = graph(
-            name=out_asset_key.to_python_identifier(),
             description=description,
+            ins=ins,
             config=config,
-            ins={input_name: GraphIn() for _, (input_name, _) in asset_ins.items()},
-            out=combined_outs_by_output_name,
-        )(compose_fn)
-        return AssetsDefinition.from_graph(
-            op_graph,
-            keys_by_input_name=keys_by_input_name,
-            keys_by_output_name={"result": out_asset_key},
-            partitions_def=partitions_def,
-            partition_mappings=partition_mappings if partition_mappings else None,
+            key_prefix=key_prefix,
             group_name=group_name,
-            metadata_by_output_name={"result": metadata} if metadata else None,
-            freshness_policies_by_output_name=(
-                {"result": freshness_policy} if freshness_policy else None
-            ),
-            auto_materialize_policies_by_output_name=(
-                {"result": auto_materialize_policy} if auto_materialize_policy else None
-            ),
+            partitions_def=partitions_def,
+            metadata=metadata,
+            freshness_policy=freshness_policy,
+            auto_materialize_policy=auto_materialize_policy,
             backfill_policy=backfill_policy,
-            descriptions_by_output_name={"result": description} if description else None,
             resource_defs=resource_defs,
             check_specs=check_specs,
+            key=key,
         )
+
+
+def graph_asset_no_defaults(
+    *,
+    compose_fn: Callable,
+    name: Optional[str],
+    description: Optional[str],
+    ins: Optional[Mapping[str, AssetIn]],
+    config: Optional[Union[ConfigMapping, Mapping[str, Any]]],
+    key_prefix: Optional[CoercibleToAssetKeyPrefix],
+    group_name: Optional[str],
+    partitions_def: Optional[PartitionsDefinition],
+    metadata: Optional[MetadataUserInput],
+    freshness_policy: Optional[FreshnessPolicy],
+    auto_materialize_policy: Optional[AutoMaterializePolicy],
+    backfill_policy: Optional[BackfillPolicy],
+    resource_defs: Optional[Mapping[str, ResourceDefinition]],
+    check_specs: Optional[Sequence[AssetCheckSpec]],
+    key: Optional[CoercibleToAssetKey],
+) -> AssetsDefinition:
+    ins = ins or {}
+    asset_ins = build_asset_ins(compose_fn, ins or {}, set())
+    out_asset_key, _asset_name = _resolve_key_and_name(
+        key=key,
+        key_prefix=key_prefix,
+        name=name,
+        decorator="@graph_asset",
+        fn=compose_fn,
+    )
+
+    keys_by_input_name = {input_name: asset_key for asset_key, (input_name, _) in asset_ins.items()}
+    partition_mappings = {
+        input_name: asset_in.partition_mapping
+        for input_name, asset_in in ins.items()
+        if asset_in.partition_mapping
+    }
+
+    check_specs_by_output_name = _validate_and_assign_output_names_to_check_specs(
+        check_specs, [out_asset_key]
+    )
+    check_outs_by_output_name: Mapping[str, GraphOut] = {
+        output_name: GraphOut() for output_name in check_specs_by_output_name.keys()
+    }
+
+    combined_outs_by_output_name: Mapping = {
+        "result": GraphOut(),
+        **check_outs_by_output_name,
+    }
+
+    op_graph = graph(
+        name=out_asset_key.to_python_identifier(),
+        description=description,
+        config=config,
+        ins={input_name: GraphIn() for _, (input_name, _) in asset_ins.items()},
+        out=combined_outs_by_output_name,
+    )(compose_fn)
+    return AssetsDefinition.from_graph(
+        op_graph,
+        keys_by_input_name=keys_by_input_name,
+        keys_by_output_name={"result": out_asset_key},
+        partitions_def=partitions_def,
+        partition_mappings=partition_mappings if partition_mappings else None,
+        group_name=group_name,
+        metadata_by_output_name={"result": metadata} if metadata else None,
+        freshness_policies_by_output_name=(
+            {"result": freshness_policy} if freshness_policy else None
+        ),
+        auto_materialize_policies_by_output_name=(
+            {"result": auto_materialize_policy} if auto_materialize_policy else None
+        ),
+        backfill_policy=backfill_policy,
+        descriptions_by_output_name={"result": description} if description else None,
+        resource_defs=resource_defs,
+        check_specs=check_specs,
+    )
 
 
 def graph_multi_asset(
