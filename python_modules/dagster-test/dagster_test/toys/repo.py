@@ -6,7 +6,17 @@ from dagster import ExperimentalWarning
 warnings.filterwarnings("ignore", category=ExperimentalWarning)
 
 import pendulum
-from dagster import AssetMaterialization, Output, graph, load_assets_from_modules, op, repository
+from dagster import (
+    AssetMaterialization,
+    Output,
+    RunRequest,
+    define_asset_job,
+    graph,
+    load_assets_from_modules,
+    op,
+    repository,
+    sensor,
+)
 
 from dagster_test.toys import big_honkin_asset_graph as big_honkin_asset_graph_module
 from dagster_test.toys.asset_sensors import get_asset_sensors_repo
@@ -160,9 +170,17 @@ def long_asset_keys_repository():
     return load_assets_from_modules([long_asset_keys])
 
 
+the_job = define_asset_job("the_job", selection="*")
+
+
+@sensor(job=the_job)
+def big_honkin_sensor():
+    return RunRequest(run_key=None, run_config={}, tags={})
+
+
 @repository
 def big_honkin_assets_repository():
-    return [load_assets_from_modules([big_honkin_asset_graph_module])]
+    return [load_assets_from_modules([big_honkin_asset_graph_module]), big_honkin_sensor]
 
 
 @repository
