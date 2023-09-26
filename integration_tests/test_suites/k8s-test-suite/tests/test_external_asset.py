@@ -10,7 +10,7 @@ from dagster._core.pipes.client import (
 from dagster._core.pipes.utils import PipesEnvContextInjector, open_pipes_session
 from dagster_k8s import execute_k8s_job
 from dagster_k8s.client import DagsterKubernetesClient
-from dagster_k8s.pipes import ExtK8sPod, K8sPodLogsMessageReader
+from dagster_k8s.pipes import PipesK8sClient, PipesK8sPodLogsMessageReader
 from dagster_pipes import DefaultPipesContextLoader, PipesContextData
 from dagster_test.test_project import (
     get_test_project_docker_image,
@@ -18,15 +18,15 @@ from dagster_test.test_project import (
 
 
 @pytest.mark.default
-def test_ext_k8s_pod(namespace, cluster_provider):
+def test_pipes_k8s_client(namespace, cluster_provider):
     docker_image = get_test_project_docker_image()
 
     @asset
     def number_y(
         context: AssetExecutionContext,
-        ext_k8s_pod: ExtK8sPod,
+        pipes_k8s_client: PipesK8sClient,
     ):
-        yield from ext_k8s_pod.run(
+        yield from pipes_k8s_client.run(
             context=context,
             namespace=namespace,
             image=docker_image,
@@ -46,7 +46,7 @@ def test_ext_k8s_pod(namespace, cluster_provider):
 
     result = materialize(
         [number_y],
-        resources={"ext_k8s_pod": ExtK8sPod()},
+        resources={"pipes_k8s_client": PipesK8sClient()},
         raise_on_error=False,
     )
     assert result.success
@@ -55,7 +55,7 @@ def test_ext_k8s_pod(namespace, cluster_provider):
     assert mats[0].metadata["is_even"].value is True
 
 
-class ExtConfigMapContextInjector(PipesContextInjector):
+class PipesConfigMapContextInjector(PipesContextInjector):
     def __init__(
         self,
         k8s_client: DagsterKubernetesClient,
@@ -114,7 +114,7 @@ class ExtConfigMapContextInjector(PipesContextInjector):
 
 
 @pytest.mark.default
-def test_ext_k8s_pod_file_inject(namespace, cluster_provider):
+def test_pipes_k8s_client_file_inject(namespace, cluster_provider):
     # a convoluted test to
     # - vet base_pod_spec works for setting volumes & mounts
     # - preserve file injection via config map code
@@ -122,12 +122,12 @@ def test_ext_k8s_pod_file_inject(namespace, cluster_provider):
     docker_image = get_test_project_docker_image()
     kubernetes.config.load_kube_config(cluster_provider.kubeconfig_file)
     client = DagsterKubernetesClient.production_client()
-    injector = ExtConfigMapContextInjector(client, namespace)
+    injector = PipesConfigMapContextInjector(client, namespace)
 
     @asset
     def number_y(
         context: AssetExecutionContext,
-        ext_k8s_pod: ExtK8sPod,
+        pipes_k8s_client: PipesK8sClient,
     ):
         pod_spec = injector.build_pod_spec(
             image=docker_image,
@@ -138,7 +138,7 @@ def test_ext_k8s_pod_file_inject(namespace, cluster_provider):
             ],
         )
 
-        yield from ext_k8s_pod.run(
+        yield from pipes_k8s_client.run(
             context=context,
             namespace=namespace,
             extras={
@@ -153,7 +153,7 @@ def test_ext_k8s_pod_file_inject(namespace, cluster_provider):
 
     result = materialize(
         [number_y],
-        resources={"ext_k8s_pod": ExtK8sPod(context_injector=injector)},
+        resources={"pipes_k8s_client": PipesK8sClient(context_injector=injector)},
         raise_on_error=False,
     )
     assert result.success
@@ -168,7 +168,7 @@ def test_use_excute_k8s_job(namespace, cluster_provider):
     @asset
     def number_y_job(context: AssetExecutionContext):
         core_api = kubernetes.client.CoreV1Api()
-        reader = K8sPodLogsMessageReader()
+        reader = PipesK8sPodLogsMessageReader()
         with open_pipes_session(
             context,
             PipesEnvContextInjector(),
@@ -201,7 +201,7 @@ def test_use_excute_k8s_job(namespace, cluster_provider):
 
     result = materialize(
         [number_y_job],
-        resources={"ext_k8s_pod": ExtK8sPod()},
+        resources={"pipes_k8s_client": PipesK8sClient()},
         raise_on_error=False,
     )
     assert result.success
