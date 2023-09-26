@@ -1,6 +1,7 @@
 from datetime import datetime
 
 import dagster._check as check
+import pendulum
 from dagster import AssetKey
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.auto_materialize_rule import (
@@ -13,15 +14,101 @@ from dagster._core.definitions.auto_materialize_rule import (
 from dagster._core.definitions.partition import (
     SerializedPartitionsSubset,
 )
+from dagster._core.definitions.run_request import (
+    InstigatorType,
+)
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
+from dagster._core.scheduler.instigation import (
+    TickData,
+    TickStatus,
+)
 from dagster._core.workspace.context import WorkspaceRequestContext
-from dagster._daemon.asset_daemon import CURSOR_KEY
+from dagster._daemon.asset_daemon import (
+    CURSOR_KEY,
+    FIXED_AUTO_MATERIALIZATION_INSTIGATOR_NAME,
+    FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
+    FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
+)
 from dagster_graphql.test.utils import execute_dagster_graphql
 
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
 )
 from dagster_graphql_tests.graphql.repo import static_partitions_def
+
+TICKS_QUERY = """
+query AssetDameonTicksQuery($dayRange: Int, $dayOffset: Int, $statuses: [InstigationTickStatus!], $limit: Int) {
+    autoMaterializeTicks(dayRange: $dayRange, dayOffset: $dayOffset, statuses: $statuses, limit: $limit) {
+        id
+        timestamp
+    }
+}
+"""
+
+
+def _create_tick(instance, status, timestamp):
+    instance.create_tick(
+        TickData(
+            instigator_origin_id=FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
+            instigator_name=FIXED_AUTO_MATERIALIZATION_INSTIGATOR_NAME,
+            instigator_type=InstigatorType.AUTO_MATERIALIZE,
+            status=status,
+            timestamp=timestamp,
+            selector_id=FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
+            run_ids=[],
+        )
+    )
+
+
+class TestAutoMaterializeTicks(ExecutingGraphQLContextTestMatrix):
+    def test_get_tick_range(self, graphql_context):
+        result = execute_dagster_graphql(
+            graphql_context,
+            TICKS_QUERY,
+            variables={"dayRange": None, "dayOffset": None},
+        )
+        assert len(result.data["autoMaterializeTicks"]) == 0
+
+        now = pendulum.now("UTC")
+
+        _create_tick(graphql_context.instance, TickStatus.SUCCESS, now.timestamp())
+
+        _create_tick(
+            graphql_context.instance, TickStatus.SUCCESS, now.subtract(days=1, hours=1).timestamp()
+        )
+
+        _create_tick(
+            graphql_context.instance, TickStatus.SKIPPED, now.subtract(days=2, hours=1).timestamp()
+        )
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            TICKS_QUERY,
+            variables={"dayRange": None, "dayOffset": None},
+        )
+        assert len(result.data["autoMaterializeTicks"]) == 3
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            TICKS_QUERY,
+            variables={"dayRange": 1, "dayOffset": None},
+        )
+        assert len(result.data["autoMaterializeTicks"]) == 1
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            TICKS_QUERY,
+            variables={"dayRange": None, "dayOffset": None, "statuses": ["SUCCESS"]},
+        )
+        assert len(result.data["autoMaterializeTicks"]) == 2
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            TICKS_QUERY,
+            variables={"dayRange": None, "dayOffset": None, "statuses": ["SUCCESS"], "limit": 1},
+        )
+        assert len(result.data["autoMaterializeTicks"]) == 1
+
 
 QUERY = """
 query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: String) {

@@ -3042,6 +3042,13 @@ type Query {
     limit: Int!
     cursor: String
   ): AutoMaterializeAssetEvaluationRecordsOrError
+  autoMaterializeTicks(
+    dayRange: Int
+    dayOffset: Int
+    limit: Int
+    cursor: String
+    statuses: [InstigationTickStatus!]
+  ): [InstigationTick!]!
   assetChecksOrError(assetKey: AssetKeyInput!, checkName: String): AssetChecksOrError!
 }
 

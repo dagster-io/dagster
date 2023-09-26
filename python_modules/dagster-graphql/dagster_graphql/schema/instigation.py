@@ -1,5 +1,4 @@
 import sys
-import warnings
 from typing import Optional, Union
 
 import dagster._check as check
@@ -20,7 +19,6 @@ from dagster._core.scheduler.instigation import (
     InstigatorType,
     ScheduleInstigatorData,
     SensorInstigatorData,
-    TickStatus,
 )
 from dagster._core.storage.dagster_run import DagsterRun, RunsFilter
 from dagster._core.storage.tags import REPOSITORY_LABEL_TAG, TagType, get_tag_type
@@ -34,6 +32,7 @@ from dagster_graphql.schema.asset_key import GrapheneAssetKey
 from ..implementation.fetch_instigators import get_tick_log_events
 from ..implementation.fetch_schedules import get_schedule_next_tick
 from ..implementation.fetch_sensors import get_sensor_next_tick
+from ..implementation.fetch_ticks import get_instigation_ticks
 from ..implementation.loader import RepositoryScopedBatchLoader
 from ..implementation.utils import UserFacingGraphQLError
 from .errors import (
@@ -630,52 +629,18 @@ class GrapheneInstigationState(graphene.ObjectType):
     def resolve_ticks(
         self, graphene_info, dayRange=None, dayOffset=None, limit=None, cursor=None, statuses=None
     ):
-        before = None
-        if dayOffset:
-            before = pendulum.now("UTC").subtract(days=dayOffset).timestamp()
-        elif cursor:
-            parts = cursor.split(":")
-            if parts:
-                try:
-                    before = float(parts[-1])
-                except (ValueError, IndexError):
-                    warnings.warn(f"Invalid cursor for {self.name} ticks: {cursor}")
-
-        after = (
-            pendulum.now("UTC").subtract(days=dayRange + (dayOffset or 0)).timestamp()
-            if dayRange
-            else None
+        return get_instigation_ticks(
+            graphene_info=graphene_info,
+            instigator_type=self._instigator_state.instigator_type,
+            instigator_origin_id=self._instigator_state.instigator_origin_id,
+            selector_id=self._instigator_state.selector_id,
+            batch_loader=self._batch_loader,
+            dayRange=dayRange,
+            dayOffset=dayOffset,
+            limit=limit,
+            cursor=cursor,
+            status_strings=statuses,
         )
-        if statuses:
-            statuses = [TickStatus(status) for status in statuses]
-
-        if self._batch_loader and limit and not cursor and not before and not after:
-            ticks = (
-                self._batch_loader.get_sensor_ticks(
-                    self._instigator_state.instigator_origin_id,
-                    self._instigator_state.selector_id,
-                    limit,
-                )
-                if self._instigator_state.instigator_type == InstigatorType.SENSOR
-                else self._batch_loader.get_schedule_ticks(
-                    self._instigator_state.instigator_origin_id,
-                    self._instigator_state.selector_id,
-                    limit,
-                )
-            )
-            return [GrapheneInstigationTick(graphene_info, tick) for tick in ticks]
-
-        return [
-            GrapheneInstigationTick(graphene_info, tick)
-            for tick in graphene_info.context.instance.get_ticks(
-                self._instigator_state.instigator_origin_id,
-                self._instigator_state.selector_id,
-                before=before,
-                after=after,
-                limit=limit,
-                statuses=statuses,
-            )
-        ]
 
     def resolve_nextTick(self, graphene_info: ResolveInfo):
         # sensor
