@@ -9,13 +9,13 @@ import {
   Menu,
   MenuItem,
   Popover,
-  TextInput,
   MiddleTruncate,
   useViewport,
   MenuDivider,
   Spinner,
   ButtonGroup,
   Tooltip,
+  Suggest,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React from 'react';
@@ -84,7 +84,7 @@ export const AssetGraphExplorerSidebar = React.memo(
       if (!assetGraphData.nodes[id]) {
         try {
           const path = JSON.parse(id);
-          const nextOpsQuery = `${explorerPath.opsQuery} \"${tokenForAssetKey({path})}\"`;
+          const nextOpsQuery = `\"${tokenForAssetKey({path})}\"`;
           onChangeExplorerPath(
             {
               ...explorerPath,
@@ -447,7 +447,7 @@ const Node = ({
     const newQuery = `\"${tokenForAssetKey({path})}\"*`;
     const nextOpsQuery = explorerPath.opsQuery.includes(newQuery)
       ? explorerPath.opsQuery
-      : `${explorerPath.opsQuery} ${newQuery}`;
+      : newQuery;
     onChangeExplorerPath(
       {
         ...explorerPath,
@@ -462,7 +462,7 @@ const Node = ({
     const newQuery = `*\"${tokenForAssetKey({path})}\"`;
     const nextOpsQuery = explorerPath.opsQuery.includes(newQuery)
       ? explorerPath.opsQuery
-      : `${explorerPath.opsQuery} ${newQuery}`;
+      : newQuery;
     onChangeExplorerPath(
       {
         ...explorerPath,
@@ -517,7 +517,7 @@ const Node = ({
               style={{
                 width: '100%',
                 borderRadius: '8px',
-                ...(isSelected ? {background: Colors.LightPurple} : {}),
+                ...(isSelected ? {background: Colors.Blue50} : {}),
               }}
             >
               <div
@@ -591,7 +591,7 @@ const Node = ({
                     shouldReturnFocusOnClose
                   >
                     <ExpandMore style={{cursor: 'pointer'}}>
-                      <Icon name="expand_more" color={Colors.Gray500} />
+                      <Icon name="more_horiz" color={Colors.Gray500} />
                     </ExpandMore>
                   </Popover>
                 </div>
@@ -654,7 +654,7 @@ const BoxWrapper = ({level, children}: {level: number; children: React.ReactNode
         <Box
           padding={{left: 8}}
           margin={{left: 8}}
-          border={{side: 'left', width: 1, color: Colors.KeylineGray}}
+          border={i > 0 ? {side: 'left', width: 1, color: Colors.KeylineGray} : undefined}
         >
           {sofar}
         </Box>
@@ -677,63 +677,32 @@ const SearchFilter = <T,>({
   values: {label: string; value: T}[];
   onSelectValue: (e: React.MouseEvent<any>, value: T) => void;
 }) => {
-  const [searchValue, setSearchValue] = React.useState('');
-  const filteredValues = React.useMemo(() => {
-    if (searchValue) {
-      return values.filter(({label}) => label.toLowerCase().includes(searchValue.toLowerCase()));
-    }
-    return values;
-  }, [searchValue, values]);
-
   const {viewport, containerProps} = useViewport();
   return (
-    <Popover
-      placement="bottom-start"
-      targetTagName="div"
-      content={
-        searchValue ? (
-          <Box
-            style={{
-              width: viewport.width + 'px',
-              borderRadius: '8px',
-              maxHeight: 'min(500px, 50vw)',
-              overflow: 'auto',
-            }}
-          >
-            <Menu>
-              {filteredValues.length ? (
-                filteredValues.map((value) => (
-                  <MenuItem
-                    key={value.label}
-                    onClick={(e) => {
-                      onSelectValue(e, value.value);
-                      setSearchValue('');
-                    }}
-                    text={value.label}
-                  />
-                ))
-              ) : (
-                <Box padding={8}>No results</Box>
-              )}
-            </Menu>
-          </Box>
-        ) : (
-          <div />
-        )
-      }
-    >
-      <div style={{display: 'grid', gridTemplateColumns: '1fr'}}>
-        <TextInput
-          icon="search"
-          value={searchValue}
-          onChange={(e) => {
-            setSearchValue(e.target.value);
-          }}
-          placeholder="Search assets"
-          {...(containerProps as any)}
-        />
-      </div>
-    </Popover>
+    <SuggestWrapper {...containerProps}>
+      <Suggest<(typeof values)[0]>
+        key="asset-graph-explorer-search-bar"
+        inputProps={{placeholder: 'Search', style: {width: `min(100%, ${viewport.width}px)`}}}
+        items={values}
+        inputValueRenderer={(item) => item.label}
+        itemPredicate={(query, item) =>
+          item.label.toLocaleLowerCase().includes(query.toLocaleLowerCase())
+        }
+        menuWidth={viewport.width}
+        popoverProps={{usePortal: false, fill: true}}
+        itemRenderer={(item, itemProps) => (
+          <MenuItem
+            active={itemProps.modifiers.active}
+            onClick={(e) => itemProps.handleClick(e)}
+            key={item.label}
+            text={item.label}
+          />
+        )}
+        noResults={<MenuItem disabled={true} text="No results" />}
+        onItemSelect={(item, e) => onSelectValue(e as any, item.value)}
+        selectedItem={null}
+      />
+    </SuggestWrapper>
   );
 };
 
@@ -741,6 +710,7 @@ const ExpandMore = styled.div``;
 
 const GrayOnHoverBox = styled(Box)`
   border-radius: 8px;
+  cursor: pointer;
   &:hover {
     background: ${Colors.Gray100};
     transition: background 100ms linear;
@@ -766,3 +736,9 @@ const ButtonGroupWrapper = styled.div`
 function nodeId(node: {path: string; id: string} | {id: string}) {
   return 'path' in node ? node.path : node.id;
 }
+
+const SuggestWrapper = styled.div`
+  .bp4-input-group.dagster-suggest-input {
+    width: 100%;
+  }
+`;
