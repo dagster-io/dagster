@@ -75,11 +75,16 @@ spec:
             "{{- template "dagster.dagsterDaemon.daemonCommand" . }}"
           ]
           env:
+            - name: DAGSTER_PG_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "dagster.postgresql.secretName" . | quote }}
+                  key: {{ .Values.global.postgresqlSecretUsernameKey | quote }}
             - name: DAGSTER_PG_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "dagster.postgresql.secretName" $ | quote }}
-                  key: postgresql-password
+                  name: {{ include "dagster.postgresql.secretName" . | quote }}
+                  key: {{ .Values.global.postgresqlSecretPasswordKey | quote }}
             - name: DAGSTER_DAEMON_HEARTBEAT_TOLERANCE
               value: "{{ .Values.dagsterDaemon.heartbeatTolerance }}"
             # This is a list by default, but for backcompat it can be a map. As a map it's written to the daemon-env
