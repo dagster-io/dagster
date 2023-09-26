@@ -205,6 +205,7 @@ describe('AssetLiveDataProvider', () => {
       document.dispatchEvent(new Event('visibilitychange'));
     });
 
+    // Document is now visible so we make the request
     await waitFor(() => {
       expect(resultFn2).toHaveBeenCalled();
     });
