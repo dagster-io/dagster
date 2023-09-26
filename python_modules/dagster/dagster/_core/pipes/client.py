@@ -3,9 +3,9 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING, Iterator, Optional
 
 from dagster_pipes import (
-    ExtContextData,
-    ExtExtras,
-    ExtParams,
+    PipesExtras,
+    PipesParams,
+    PipesProcessContextData,
 )
 
 from dagster._core.execution.context.compute import OpExecutionContext
@@ -20,17 +20,17 @@ class ExtClient(ABC):
         self,
         *,
         context: OpExecutionContext,
-        extras: Optional[ExtExtras] = None,
+        extras: Optional[PipesExtras] = None,
     ) -> Iterator["ExtResult"]: ...
 
 
 class ExtContextInjector(ABC):
     @abstractmethod
     @contextmanager
-    def inject_context(self, context_data: "ExtContextData") -> Iterator[ExtParams]: ...
+    def inject_context(self, context_data: "PipesProcessContextData") -> Iterator[PipesParams]: ...
 
 
 class ExtMessageReader(ABC):
     @abstractmethod
     @contextmanager
-    def read_messages(self, handler: "ExtMessageHandler") -> Iterator[ExtParams]: ...
+    def read_messages(self, handler: "ExtMessageHandler") -> Iterator[PipesParams]: ...

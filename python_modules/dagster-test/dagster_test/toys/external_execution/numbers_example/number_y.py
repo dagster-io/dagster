@@ -1,10 +1,10 @@
 import os
 
-from dagster_pipes import init_dagster_ext
+from dagster_pipes import init_dagster_pipes_process
 
 from .util import compute_data_version, store_asset_value
 
-context = init_dagster_ext()
+context = init_dagster_pipes_process()
 storage_root = context.get_extra("storage_root")
 
 value = int(os.environ["NUMBER_Y"])

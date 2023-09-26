@@ -22,10 +22,10 @@ from dagster._core.pipes.utils import (
     extract_message_or_forward_to_stdout,
 )
 from dagster_pipes import (
-    DagsterExtError,
+    DagsterPipesError,
     ExtDefaultMessageWriter,
-    ExtExtras,
-    ExtParams,
+    PipesExtras,
+    PipesParams,
 )
 
 
@@ -34,7 +34,7 @@ class DockerLogsMessageReader(ExtMessageReader):
     def read_messages(
         self,
         handler: ExtMessageHandler,
-    ) -> Iterator[ExtParams]:
+    ) -> Iterator[PipesParams]:
         self._handler = handler
         try:
             yield {ExtDefaultMessageWriter.STDIO_KEY: ExtDefaultMessageWriter.STDERR}
@@ -94,7 +94,7 @@ class _ExtDocker(ExtClient):
         env: Optional[Mapping[str, str]] = None,
         registry: Optional[Mapping[str, str]] = None,
         container_kwargs: Optional[Mapping[str, Any]] = None,
-        extras: Optional[ExtExtras] = None,
+        extras: Optional[PipesExtras] = None,
     ) -> Iterator[ExtResult]:
         """Create a docker container and run it to completion, enriched with the ext protocol.
 
@@ -111,7 +111,7 @@ class _ExtDocker(ExtClient):
                 with docker client login.
             container_kwargs (Optional[Mapping[str, Any]]:
                 Arguments to be forwarded to docker client containers.create.
-            extras (Optional[ExtExtras]):
+            extras (Optional[PipesExtras]):
                 Extra values to pass along as part of the ext protocol.
             context_injector (Optional[ExtContextInjector]):
                 Override the default ext protocol context injection.
@@ -160,7 +160,7 @@ class _ExtDocker(ExtClient):
 
                 result = container.wait()
                 if result["StatusCode"] != 0:
-                    raise DagsterExtError(f"Container exited with non-zero status code: {result}")
+                    raise DagsterPipesError(f"Container exited with non-zero status code: {result}")
             finally:
                 container.stop()
         return ext_context.get_results()

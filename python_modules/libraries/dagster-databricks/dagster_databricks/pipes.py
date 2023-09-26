@@ -18,9 +18,9 @@ from dagster._core.pipes.utils import (
     ext_protocol,
 )
 from dagster_pipes import (
-    ExtContextData,
-    ExtExtras,
-    ExtParams,
+    PipesExtras,
+    PipesParams,
+    PipesProcessContextData,
 )
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service import files, jobs
@@ -65,7 +65,7 @@ class _ExtDatabricks(ExtClient):
         task: jobs.SubmitTask,
         *,
         context: OpExecutionContext,
-        extras: Optional[ExtExtras] = None,
+        extras: Optional[PipesExtras] = None,
         submit_args: Optional[Mapping[str, str]] = None,
     ) -> Iterator[ExtResult]:
         """Run a Databricks job with the EXT protocol.
@@ -143,7 +143,7 @@ class ExtDbfsContextInjector(ExtContextInjector):
         self.dbfs_client = files.DbfsAPI(client.api_client)
 
     @contextmanager
-    def inject_context(self, context: "ExtContextData") -> Iterator[ExtParams]:
+    def inject_context(self, context: "PipesProcessContextData") -> Iterator[PipesParams]:
         with dbfs_tempdir(self.dbfs_client) as tempdir:
             path = os.path.join(tempdir, _CONTEXT_FILENAME)
             contents = base64.b64encode(json.dumps(context).encode("utf-8")).decode("utf-8")
@@ -157,11 +157,11 @@ class ExtDbfsMessageReader(ExtBlobStoreMessageReader):
         self.dbfs_client = files.DbfsAPI(client.api_client)
 
     @contextmanager
-    def get_params(self) -> Iterator[ExtParams]:
+    def get_params(self) -> Iterator[PipesParams]:
         with dbfs_tempdir(self.dbfs_client) as tempdir:
             yield {"path": tempdir}
 
-    def download_messages_chunk(self, index: int, params: ExtParams) -> Optional[str]:
+    def download_messages_chunk(self, index: int, params: PipesParams) -> Optional[str]:
         message_path = os.path.join(params["path"], f"{index}.json")
         try:
             raw_message = self.dbfs_client.read(message_path)
