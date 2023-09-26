@@ -2,7 +2,7 @@ import memoize from 'lodash/memoize';
 import React from 'react';
 
 import {useFeatureFlags} from '../app/Flags';
-import {asyncMemoize, localStorageAsyncMemoize} from '../app/Util';
+import {asyncMemoize, indexedDBAsyncMemoize} from '../app/Util';
 import {GraphData} from '../asset-graph/Utils';
 import {AssetGraphLayout, LayoutAssetGraphOptions, layoutAssetGraph} from '../asset-graph/layout';
 
@@ -45,13 +45,8 @@ const _assetLayoutCacheKey = (graphData: GraphData) => {
 
 const getFullAssetLayout = memoize(layoutAssetGraph, _assetLayoutCacheKey);
 
-const asyncGetFullAssetLayoutLocalStorage = localStorageAsyncMemoize(
-  (
-    _localStorageKey: string,
-    _versionKey: string,
-    graphData: GraphData,
-    opts: LayoutAssetGraphOptions,
-  ) => {
+const asyncGetFullAssetLayoutLocalStorage = indexedDBAsyncMemoize(
+  (graphData: GraphData, opts: LayoutAssetGraphOptions) => {
     return new Promise<AssetGraphLayout>((resolve) => {
       const worker = new Worker(new URL('../workers/dagre_layout.worker', import.meta.url));
       worker.addEventListener('message', (event) => {
