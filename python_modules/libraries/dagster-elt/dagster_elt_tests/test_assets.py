@@ -4,7 +4,8 @@ import tempfile
 
 from dagster import AssetKey, file_relative_path
 from dagster._core.definitions import build_assets_job
-from dagster_elt import SlingMode, SlingResource, build_sling_asset
+from dagster_elt.sling import SlingMode, SlingResource, build_sling_asset
+from dagster_elt.sling.resources import SlingTargetConnection, SlingSourceConnection
 
 
 def test_build_sling_asset():
@@ -13,18 +14,20 @@ def test_build_sling_asset():
         dbpath = os.path.join(tmpdir_path, "sqlite.db")
 
         sling_resource = SlingResource(
-            source_connection=None,
-            target_connection=f"sqlite://{dbpath}",
-            mode=SlingMode.TRUNCATE,
+            source_connection=SlingSourceConnection(type="file"),
+            target_connection=SlingTargetConnection(
+                type="sqlite", connection_string=f"sqlite://{dbpath}"
+            ),
         )
 
         asset_def = build_sling_asset(
-            key=AssetKey("sling_key"),
-            sling_resource_key="sling_resource",
-            source_table=f"file://{fpath}",
-            dest_table="main.tbl",
+            source_stream=f"file://{fpath}",
+            target_object="main.tbl",
             mode=SlingMode.INCREMENTAL,
             primary_key="SPECIES_CODE",
+            asset_key=AssetKey("sling_key"),
+            sling_resource_key="sling_resource",
+            group_name="etl",
             deps=["foo"],
         )
 

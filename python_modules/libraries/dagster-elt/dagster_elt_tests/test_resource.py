@@ -1,10 +1,10 @@
 from dagster import asset, materialize, file_relative_path
-from dagster_elt import SlingResource, SlingSourceConfig, SlingMode, SlingTarget
+from dagster_elt.sling import SlingResource, SlingMode
 import os
 import tempfile
 import sqlite3
 
-from dagster_elt.resources import SlingTargetConnection, SlingSourceConnection
+from dagster_elt.sling.resources import SlingSourceConnection, SlingTargetConnection
 
 
 def test_simple_resource_connection():
@@ -18,8 +18,9 @@ def test_simple_resource_connection():
                 target_object="main.events",
                 mode=SlingMode.FULL_REFRESH,
             )
+            # Consume the generator by printing to stdout
             for stdout in res:
-                context.log.debug(stdout)
+                context.log.debug(res)
             counts = sqlite3.connect(sqllitepath).execute("SELECT count(1) FROM events").fetchone()
             assert counts[0] == 3
 

@@ -1,4 +1,4 @@
-from typing import List, Iterable, Optional, Union
+from typing import List, Iterable, Optional, Union, Dict, Any
 from dagster import (
     AssetsDefinition,
     asset,
@@ -8,17 +8,20 @@ from dagster import (
     AutoMaterializePolicy,
 )
 from dagster._core.definitions.events import CoercibleToAssetKey
-from . import SlingMode, SlingResource, SlingSourceConfig, SlingTarget
+from dagster_elt.sling.resources import SlingMode, SlingResource
 import re
 
 
 def build_sling_asset(
-    source_table: str,
-    dest_table: str,
+    source_stream: str,
+    target_object: str,
     mode: SlingMode = SlingMode.FULL_REFRESH,
-    sling_resource_key: str = "sling",
     primary_key: Optional[Union[str, List[str]]] = None,
     update_key: Optional[Union[str, List[str]]] = None,
+    source_options: Optional[Dict[str, Any]] = None,
+    target_options: Optional[Dict[str, Any]] = None,
+    asset_key: Optional[CoercibleToAssetKey] = None,
+    sling_resource_key: str = "sling",
     group_name: Optional[str] = None,
     deps: Optional[Iterable[CoercibleToAssetKey]] = None,
     freshness_policy: Optional[FreshnessPolicy] = None,
@@ -35,7 +38,7 @@ def build_sling_asset(
 
     @asset(
         required_resource_keys={sling_resource_key},
-        key=AssetKey([dest_table]),
+        key=AssetKey([target_object]) if not asset_key else asset_key,
         deps=deps,
         compute_kind="sling",
         group_name=group_name,
@@ -44,16 +47,14 @@ def build_sling_asset(
     )
     def sync(context: AssetExecutionContext) -> None:
         sling: SlingResource = getattr(context.resources, sling_resource_key)
-        source_config = SlingSourceConfig(
-            stream=source_table,
+        for stdout_line in sling.sync(
+            source_stream=source_stream,
+            target_object=target_object,
+            mode=mode,
             primary_key=primary_key,
             update_key=update_key,
-        )
-        target_config = SlingTarget(object=dest_table)
-        for stdout_line in sling.sync(
-            source=source_config,
-            target=target_config,
-            mode=mode,
+            source_options=source_options,
+            target_options=target_options,
         ):
             cleaned_line = re.sub(r"\[[0-9;]+[a-zA-Z]", " ", stdout_line)
             trimmed_line = cleaned_line[cleaned_line.find("INF") + 6 :].strip()
