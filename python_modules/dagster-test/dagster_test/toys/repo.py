@@ -202,3 +202,10 @@ def data_versions_repository():
     from . import data_versions
 
     return load_assets_from_modules([data_versions])
+
+
+@repository
+def many_event_logs_multi_asset_repository():
+    from . import many_event_logs_multi_asset
+
+    return load_assets_from_modules([many_event_logs_multi_asset])
