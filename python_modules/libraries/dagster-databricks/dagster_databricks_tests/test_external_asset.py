@@ -16,10 +16,14 @@ IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
 
 def script_fn():
-    from dagster_pipes import ExtDbfsContextLoader, ExtDbfsMessageWriter, init_dagster_ext
+    from dagster_pipes import (
+        DbfsPipesContextLoader,
+        ExtDbfsMessageWriter,
+        init_dagster_pipes,
+    )
 
-    context = init_dagster_ext(
-        context_loader=ExtDbfsContextLoader(), message_writer=ExtDbfsMessageWriter()
+    context = init_dagster_pipes(
+        context_loader=DbfsPipesContextLoader(), message_writer=ExtDbfsMessageWriter()
     )
 
     multiplier = context.get_extra("multiplier")

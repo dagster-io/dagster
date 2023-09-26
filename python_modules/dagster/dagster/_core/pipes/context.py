@@ -4,17 +4,17 @@ from queue import Queue
 from typing import Any, Iterator, Mapping, Optional, Set, Union
 
 from dagster_pipes import (
-    DAGSTER_EXT_ENV_KEYS,
-    EXT_METADATA_TYPE_INFER,
-    IS_DAGSTER_EXT_PROCESS_ENV_VAR,
-    ExtContextData,
-    ExtDataProvenance,
-    ExtExtras,
-    ExtMessage,
-    ExtMetadataType,
-    ExtMetadataValue,
-    ExtParams,
-    ExtTimeWindow,
+    DAGSTER_PIPED_ENV_KEYS,
+    IS_DAGSTER_PIPED_PROCESS_ENV_VAR,
+    PIPEABLE_METADATA_TYPE_INFER,
+    PipesContextData,
+    PipesDataProvenance,
+    PipesExtras,
+    PipesMessage,
+    PipesMetadataType,
+    PipesMetadataValue,
+    PipesParams,
+    PipesTimeWindow,
     encode_env_var,
 )
 from typing_extensions import TypeAlias
@@ -44,7 +44,7 @@ class ExtMessageHandler:
         self._unmaterialized_assets: Set[AssetKey] = set(context.selected_asset_keys)
 
     @contextmanager
-    def handle_messages(self, message_reader: ExtMessageReader) -> Iterator[ExtParams]:
+    def handle_messages(self, message_reader: ExtMessageReader) -> Iterator[PipesParams]:
         with message_reader.read_messages(self) as params:
             yield params
         for key in self._unmaterialized_assets:
@@ -55,14 +55,16 @@ class ExtMessageHandler:
             yield self._result_queue.get()
 
     def _resolve_metadata(
-        self, metadata: Mapping[str, ExtMetadataValue]
+        self, metadata: Mapping[str, PipesMetadataValue]
     ) -> Mapping[str, MetadataValue]:
         return {
             k: self._resolve_metadata_value(v["raw_value"], v["type"]) for k, v in metadata.items()
         }
 
-    def _resolve_metadata_value(self, value: Any, metadata_type: ExtMetadataType) -> MetadataValue:
-        if metadata_type == EXT_METADATA_TYPE_INFER:
+    def _resolve_metadata_value(
+        self, value: Any, metadata_type: PipesMetadataType
+    ) -> MetadataValue:
+        if metadata_type == PIPEABLE_METADATA_TYPE_INFER:
             return normalize_metadata_value(value)
         elif metadata_type == "text":
             return MetadataValue.text(value)
@@ -94,7 +96,7 @@ class ExtMessageHandler:
             check.failed(f"Unexpected metadata type {metadata_type}")
 
     # Type ignores because we currently validate in individual handlers
-    def handle_message(self, message: ExtMessage) -> None:
+    def handle_message(self, message: PipesMessage) -> None:
         if message["method"] == "report_asset_materialization":
             self._handle_report_asset_materialization(**message["params"])  # type: ignore
         elif message["method"] == "report_asset_check":
@@ -105,7 +107,7 @@ class ExtMessageHandler:
     def _handle_report_asset_materialization(
         self,
         asset_key: str,
-        metadata: Optional[Mapping[str, ExtMetadataValue]],
+        metadata: Optional[Mapping[str, PipesMetadataValue]],
         data_version: Optional[str],
     ) -> None:
         check.str_param(asset_key, "asset_key")
@@ -128,7 +130,7 @@ class ExtMessageHandler:
         check_name: str,
         success: bool,
         severity: str,
-        metadata: Mapping[str, ExtMetadataValue],
+        metadata: Mapping[str, PipesMetadataValue],
     ) -> None:
         check.str_param(asset_key, "asset_key")
         check.str_param(check_name, "check_name")
@@ -153,24 +155,24 @@ class ExtMessageHandler:
 
 
 def _ext_params_as_env_vars(
-    context_injector_params: ExtParams, message_reader_params: ExtParams
+    context_injector_params: PipesParams, message_reader_params: PipesParams
 ) -> Mapping[str, str]:
     return {
-        DAGSTER_EXT_ENV_KEYS["context"]: encode_env_var(context_injector_params),
-        DAGSTER_EXT_ENV_KEYS["messages"]: encode_env_var(message_reader_params),
+        DAGSTER_PIPED_ENV_KEYS["context"]: encode_env_var(context_injector_params),
+        DAGSTER_PIPED_ENV_KEYS["messages"]: encode_env_var(message_reader_params),
     }
 
 
 @dataclass
 class ExtOrchestrationContext:
-    context_data: ExtContextData
+    context_data: PipesContextData
     message_handler: ExtMessageHandler
-    context_injector_params: ExtParams
-    message_reader_params: ExtParams
+    context_injector_params: PipesParams
+    message_reader_params: PipesParams
 
     def get_external_process_env_vars(self):
         return {
-            DAGSTER_EXT_ENV_KEYS[IS_DAGSTER_EXT_PROCESS_ENV_VAR]: encode_env_var(True),
+            DAGSTER_PIPED_ENV_KEYS[IS_DAGSTER_PIPED_PROCESS_ENV_VAR]: encode_env_var(True),
             **_ext_params_as_env_vars(
                 context_injector_params=self.context_injector_params,
                 message_reader_params=self.message_reader_params,
@@ -183,8 +185,8 @@ class ExtOrchestrationContext:
 
 def build_external_execution_context_data(
     context: OpExecutionContext,
-    extras: Optional[ExtExtras],
-) -> "ExtContextData":
+    extras: Optional[PipesExtras],
+) -> "PipesContextData":
     asset_keys = (
         [_convert_asset_key(key) for key in sorted(context.selected_asset_keys)]
         if context.has_assets_def
@@ -209,7 +211,7 @@ def build_external_execution_context_data(
     partition_key = context.partition_key if context.has_partition_key else None
     partition_time_window = context.partition_time_window if context.has_partition_key else None
     partition_key_range = context.partition_key_range if context.has_partition_key else None
-    return ExtContextData(
+    return PipesContextData(
         asset_keys=asset_keys,
         code_version_by_asset_key=code_version_by_asset_key,
         provenance_by_asset_key=provenance_by_asset_key,
@@ -233,11 +235,11 @@ def _convert_asset_key(asset_key: AssetKey) -> str:
 
 def _convert_data_provenance(
     provenance: Optional[DataProvenance],
-) -> Optional["ExtDataProvenance"]:
+) -> Optional["PipesDataProvenance"]:
     return (
         None
         if provenance is None
-        else ExtDataProvenance(
+        else PipesDataProvenance(
             code_version=provenance.code_version,
             input_data_versions={
                 _convert_asset_key(k): v.value for k, v in provenance.input_data_versions.items()
@@ -249,8 +251,8 @@ def _convert_data_provenance(
 
 def _convert_time_window(
     time_window: TimeWindow,
-) -> "ExtTimeWindow":
-    return ExtTimeWindow(
+) -> "PipesTimeWindow":
+    return PipesTimeWindow(
         start=time_window.start.isoformat(),
         end=time_window.end.isoformat(),
     )
@@ -258,8 +260,8 @@ def _convert_time_window(
 
 def _convert_partition_key_range(
     partition_key_range: PartitionKeyRange,
-) -> "ExtTimeWindow":
-    return ExtTimeWindow(
+) -> "PipesTimeWindow":
+    return PipesTimeWindow(
         start=partition_key_range.start,
         end=partition_key_range.end,
     )
