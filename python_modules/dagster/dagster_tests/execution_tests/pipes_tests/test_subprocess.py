@@ -37,7 +37,7 @@ from dagster._core.execution.context.compute import AssetExecutionContext, OpExe
 from dagster._core.execution.context.invocation import build_asset_context
 from dagster._core.instance_for_test import instance_for_test
 from dagster._core.pipes.subprocess import (
-    ExtSubprocess,
+    PipesSubprocess,
 )
 from dagster._core.pipes.utils import (
     ExtEnvContextInjector,
@@ -159,7 +159,7 @@ def test_ext_subprocess(
         assert False, "Unreachable"
 
     @asset(check_specs=[AssetCheckSpec(name="foo_check", asset=AssetKey(["foo"]))])
-    def foo(context: AssetExecutionContext, ext: ExtSubprocess):
+    def foo(context: AssetExecutionContext, ext: PipesSubprocess):
         extras = {"bar": "baz"}
         cmd = [_PYTHON_EXECUTABLE, external_script]
         yield from ext.run(
@@ -172,7 +172,7 @@ def test_ext_subprocess(
             },
         )
 
-    resource = ExtSubprocess(context_injector=context_injector, message_reader=message_reader)
+    resource = PipesSubprocess(context_injector=context_injector, message_reader=message_reader)
 
     with instance_for_test() as instance:
         materialize([foo], instance=instance, resources={"ext": resource})
@@ -207,13 +207,13 @@ def test_ext_multi_asset():
         context.report_asset_materialization(data_version="alpha", asset_key="bar")
 
     @multi_asset(specs=[AssetSpec("foo"), AssetSpec("bar")])
-    def foo_bar(context: AssetExecutionContext, ext: ExtSubprocess):
+    def foo_bar(context: AssetExecutionContext, ext: PipesSubprocess):
         with temp_script(script_fn) as script_path:
             cmd = [_PYTHON_EXECUTABLE, script_path]
             yield from ext.run(cmd, context=context)
 
     with instance_for_test() as instance:
-        materialize([foo_bar], instance=instance, resources={"ext": ExtSubprocess()})
+        materialize([foo_bar], instance=instance, resources={"ext": PipesSubprocess()})
         foo_mat = instance.get_latest_materialization_event(AssetKey(["foo"]))
         assert foo_mat and foo_mat.asset_materialization
         assert foo_mat.asset_materialization.metadata["foo_meta"].value == "ok"
@@ -249,7 +249,7 @@ def test_ext_typed_metadata():
         )
 
     @asset
-    def foo(context: AssetExecutionContext, ext: ExtSubprocess):
+    def foo(context: AssetExecutionContext, ext: PipesSubprocess):
         with temp_script(script_fn) as script_path:
             cmd = [_PYTHON_EXECUTABLE, script_path]
             yield from ext.run(cmd, context=context)
@@ -258,7 +258,7 @@ def test_ext_typed_metadata():
         materialize(
             [foo],
             instance=instance,
-            resources={"ext": ExtSubprocess()},
+            resources={"ext": PipesSubprocess()},
         )
         mat = instance.get_latest_materialization_event(foo.key)
         assert mat and mat.asset_materialization
@@ -296,13 +296,13 @@ def test_ext_asset_failed():
         raise Exception("foo")
 
     @asset
-    def foo(context: AssetExecutionContext, ext: ExtSubprocess):
+    def foo(context: AssetExecutionContext, ext: PipesSubprocess):
         with temp_script(script_fn) as script_path:
             cmd = [_PYTHON_EXECUTABLE, script_path]
             yield from ext.run(cmd, context=context)
 
     with pytest.raises(DagsterExternalExecutionError):
-        materialize([foo], resources={"ext": ExtSubprocess()})
+        materialize([foo], resources={"ext": PipesSubprocess()})
 
 
 def test_ext_asset_invocation():
@@ -313,12 +313,12 @@ def test_ext_asset_invocation():
         context.log("hello world")
 
     @asset
-    def foo(context: AssetExecutionContext, ext: ExtSubprocess):
+    def foo(context: AssetExecutionContext, ext: PipesSubprocess):
         with temp_script(script_fn) as script_path:
             cmd = [_PYTHON_EXECUTABLE, script_path]
             ext.run(cmd, context=context)
 
-    foo(context=build_asset_context(), ext=ExtSubprocess())
+    foo(context=build_asset_context(), ext=PipesSubprocess())
 
 
 PATH_WITH_NONEXISTENT_DIR = "/tmp/does-not-exist/foo"

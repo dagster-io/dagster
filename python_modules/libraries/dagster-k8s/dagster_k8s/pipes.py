@@ -11,9 +11,9 @@ from dagster import (
 from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.pipes.client import (
-    ExtClient,
-    ExtContextInjector,
     ExtMessageReader,
+    PipesClient,
+    PipesContextInjector,
     PipesParams,
 )
 from dagster._core.pipes.context import (
@@ -77,7 +77,7 @@ class K8sPodLogsMessageReader(ExtMessageReader):
                 extract_message_or_forward_to_stdout(handler, log_line)
 
 
-class _ExtK8sPod(ExtClient):
+class _ExtK8sPod(PipesClient):
     """An ext protocol compliant resource for launching kubernetes pods.
 
     By default context is injected via environment variables and messages are parsed out of
@@ -88,14 +88,14 @@ class _ExtK8sPod(ExtClient):
 
     Args:
         env (Optional[Mapping[str, str]]): An optional dict of environment variables to pass to the subprocess.
-        context_injector (Optional[ExtContextInjector]): An context injector to use to inject context into the k8s container process. Defaults to ExtEnvContextInjector.
-        message_reader (Optional[ExtContextInjector]): An context injector to use to read messages from the k8s container process. Defaults to K8sPodLogsMessageReader.
+        context_injector (Optional[PipesContextInjector]): An context injector to use to inject context into the k8s container process. Defaults to ExtEnvContextInjector.
+        message_reader (Optional[PipesContextInjector]): An context injector to use to read messages from the k8s container process. Defaults to K8sPodLogsMessageReader.
     """
 
     def __init__(
         self,
         env: Optional[Mapping[str, str]] = None,
-        context_injector: Optional[ExtContextInjector] = None,
+        context_injector: Optional[PipesContextInjector] = None,
         message_reader: Optional[ExtMessageReader] = None,
     ):
         self.env = check.opt_mapping_param(env, "env", key_type=str, value_type=str)
@@ -103,7 +103,7 @@ class _ExtK8sPod(ExtClient):
             check.opt_inst_param(
                 context_injector,
                 "context_injector",
-                ExtContextInjector,
+                PipesContextInjector,
             )
             or ExtEnvContextInjector()
         )
@@ -147,7 +147,7 @@ class _ExtK8sPod(ExtClient):
                 Keys can either snake_case or camelCase.
             extras (Optional[PipesExtras]):
                 Extra values to pass along as part of the ext protocol.
-            context_injector (Optional[ExtContextInjector]):
+            context_injector (Optional[PipesContextInjector]):
                 Override the default ext protocol context injection.
             message_Reader (Optional[ExtMessageReader]):
                 Override the default ext protocol message reader.
