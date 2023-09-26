@@ -32,14 +32,14 @@ from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.execution.context.invocation import BoundOpExecutionContext
 from dagster._core.pipes.client import PipesMessageReader
 
-ExtResult: TypeAlias = Union[MaterializeResult, AssetCheckResult]
+PipesResult: TypeAlias = Union[MaterializeResult, AssetCheckResult]
 
 
 class PipesMessageHandler:
     def __init__(self, context: OpExecutionContext) -> None:
         self._context = context
         # Queue is thread-safe
-        self._result_queue: Queue[ExtResult] = Queue()
+        self._result_queue: Queue[PipesResult] = Queue()
         # Only read by the main thread after all messages are handled, so no need for a lock
         self._unmaterialized_assets: Set[AssetKey] = set(context.selected_asset_keys)
 
@@ -50,7 +50,7 @@ class PipesMessageHandler:
         for key in self._unmaterialized_assets:
             self._result_queue.put(MaterializeResult(asset_key=key))
 
-    def clear_result_queue(self) -> Iterator[ExtResult]:
+    def clear_result_queue(self) -> Iterator[PipesResult]:
         while not self._result_queue.empty():
             yield self._result_queue.get()
 
@@ -179,7 +179,7 @@ class PipesSession:
             ),
         }
 
-    def get_results(self) -> Iterator[ExtResult]:
+    def get_results(self) -> Iterator[PipesResult]:
         yield from self.message_handler.clear_result_queue()
 
 

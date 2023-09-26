@@ -16,7 +16,7 @@ from dagster._core.pipes.client import (
     PipesContextInjector,
     PipesMessageReader,
 )
-from dagster._core.pipes.context import ExtResult
+from dagster._core.pipes.context import PipesResult
 from dagster._core.pipes.utils import (
     PipesBlobStoreMessageReader,
     open_pipes_session,
@@ -71,7 +71,7 @@ class _ExtDatabricks(PipesClient):
         context: OpExecutionContext,
         extras: Optional[PipesExtras] = None,
         submit_args: Optional[Mapping[str, str]] = None,
-    ) -> Iterator[ExtResult]:
+    ) -> Iterator[PipesResult]:
         """Run a Databricks job with the EXT protocol.
 
         Args:

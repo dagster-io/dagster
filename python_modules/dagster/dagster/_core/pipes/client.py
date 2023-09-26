@@ -11,7 +11,7 @@ from dagster_pipes import (
 from dagster._core.execution.context.compute import OpExecutionContext
 
 if TYPE_CHECKING:
-    from .context import ExtResult, PipesMessageHandler
+    from .context import PipesMessageHandler, PipesResult
 
 
 class PipesClient(ABC):
@@ -21,7 +21,7 @@ class PipesClient(ABC):
         *,
         context: OpExecutionContext,
         extras: Optional[PipesExtras] = None,
-    ) -> Iterator["ExtResult"]: ...
+    ) -> Iterator["PipesResult"]: ...
 
 
 class PipesContextInjector(ABC):
