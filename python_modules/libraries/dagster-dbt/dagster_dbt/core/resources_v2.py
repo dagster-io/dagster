@@ -23,7 +23,6 @@ import orjson
 from dagster import (
     AssetCheckResult,
     AssetCheckSeverity,
-    AssetExecutionContext,
     AssetObservation,
     AssetsDefinition,
     ConfigurableResource,
@@ -32,6 +31,7 @@ from dagster import (
 )
 from dagster._annotations import public
 from dagster._core.errors import DagsterInvalidPropertyError
+from dagster._core.execution.context.compute import OpExecutionContext
 from dbt.contracts.results import NodeStatus, TestStatus
 from dbt.node_types import NodeType
 from packaging import version
@@ -574,11 +574,11 @@ class DbtCliResource(ConfigurableResource):
 
         return values
 
-    def _get_unique_target_path(self, *, context: Optional[AssetExecutionContext]) -> Path:
+    def _get_unique_target_path(self, *, context: Optional[OpExecutionContext]) -> Path:
         """Get a unique target path for the dbt CLI invocation.
 
         Args:
-            context (Optional[AssetExecutionContext]): The execution context.
+            context (Optional[OpExecutionContext]): The execution context.
 
         Returns:
             str: A unique target path for the dbt CLI invocation.
@@ -600,7 +600,7 @@ class DbtCliResource(ConfigurableResource):
         raise_on_error: bool = True,
         manifest: Optional[DbtManifestParam] = None,
         dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
-        context: Optional[AssetExecutionContext] = None,
+        context: Optional[OpExecutionContext] = None,
     ) -> DbtCliInvocation:
         """Create a subprocess to execute a dbt CLI command.
 
@@ -614,7 +614,7 @@ class DbtCliResource(ConfigurableResource):
                 nodes to Dagster assets. If an execution context from within `@dbt_assets` is
                 provided to the context argument, then the dagster_dbt_translator provided to
                 `@dbt_assets` will be used.
-            context (Optional[AssetExecutionContext]): The execution context from within `@dbt_assets`.
+            context (Optional[OpExecutionContext]): The execution context from within `@dbt_assets`.
 
         Returns:
             DbtCliInvocation: A invocation instance that can be used to retrieve the output of the
@@ -794,7 +794,7 @@ class DbtCliResource(ConfigurableResource):
 
 
 def get_subset_selection_for_context(
-    context: AssetExecutionContext,
+    context: OpExecutionContext,
     manifest: Mapping[str, Any],
     select: Optional[str],
     exclude: Optional[str],
@@ -804,7 +804,7 @@ def get_subset_selection_for_context(
     See https://docs.getdbt.com/reference/node-selection/syntax#how-does-selection-work.
 
     Args:
-        context (AssetExecutionContext): The execution context for the current execution step.
+        context (OpExecutionContext): The execution context for the current execution step.
         select (Optional[str]): A dbt selection string to select resources to materialize.
         exclude (Optional[str]): A dbt selection string to exclude resources from materializing.
 
