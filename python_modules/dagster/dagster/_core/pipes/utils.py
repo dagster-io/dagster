@@ -187,12 +187,12 @@ def extract_message_or_forward_to_stdout(handler: "ExtMessageHandler", log_line:
 
 _FAIL_TO_YIELD_ERROR_MESSAGE = (
     "Did you forget to `yield from pipes_session.get_results()`? `get_results` should be called"
-    " once after the `pipes_protocol` block has exited to yield any remaining buffered results."
+    " once after the `open_pipes_session` block has exited to yield any remaining buffered results."
 )
 
 
 @contextmanager
-def pipes_protocol(
+def open_pipes_session(
     context: OpExecutionContext,
     context_injector: ExtContextInjector,
     message_reader: ExtMessageReader,

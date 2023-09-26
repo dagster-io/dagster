@@ -16,7 +16,7 @@ from dagster._core.pipes.context import ExtResult
 from dagster._core.pipes.utils import (
     ExtTempFileContextInjector,
     ExtTempFileMessageReader,
-    pipes_protocol,
+    open_pipes_session,
 )
 
 
@@ -68,7 +68,7 @@ class _ExtSubprocess(ExtClient):
         env: Optional[Mapping[str, str]] = None,
         cwd: Optional[str] = None,
     ) -> Iterator[ExtResult]:
-        with pipes_protocol(
+        with open_pipes_session(
             context=context,
             context_injector=self.context_injector,
             message_reader=self.message_reader,
@@ -78,7 +78,7 @@ class _ExtSubprocess(ExtClient):
                 command,
                 cwd=cwd or self.cwd,
                 env={
-                    **pipes_session.get_piped_process_env_vars(),
+                    **pipes_session.get_pipes_env_vars(),
                     **self.env,
                     **(env or {}),
                 },

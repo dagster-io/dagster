@@ -7,7 +7,7 @@ from dagster import AssetExecutionContext, asset, materialize
 from dagster._core.pipes.client import (
     ExtContextInjector,
 )
-from dagster._core.pipes.utils import ExtEnvContextInjector, pipes_protocol
+from dagster._core.pipes.utils import ExtEnvContextInjector, open_pipes_session
 from dagster_k8s import execute_k8s_job
 from dagster_k8s.client import DagsterKubernetesClient
 from dagster_k8s.pipes import ExtK8sPod, K8sPodLogsMessageReader
@@ -169,7 +169,7 @@ def test_use_excute_k8s_job(namespace, cluster_provider):
     def number_y_job(context: AssetExecutionContext):
         core_api = kubernetes.client.CoreV1Api()
         reader = K8sPodLogsMessageReader()
-        with pipes_protocol(
+        with open_pipes_session(
             context,
             ExtEnvContextInjector(),
             reader,
@@ -191,7 +191,7 @@ def test_use_excute_k8s_job(namespace, cluster_provider):
                     for k, v in {
                         "PYTHONPATH": "/dagster_test/toys/external_execution/",
                         "NUMBER_Y": "2",
-                        **pipes_session.get_piped_process_env_vars(),
+                        **pipes_session.get_pipes_env_vars(),
                     }.items()
                 ],
                 k8s_job_name=job_name,

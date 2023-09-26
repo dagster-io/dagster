@@ -23,7 +23,7 @@ from dagster._core.pipes.context import (
 from dagster._core.pipes.utils import (
     ExtEnvContextInjector,
     extract_message_or_forward_to_stdout,
-    pipes_protocol,
+    open_pipes_session,
 )
 from dagster_pipes import (
     ExtDefaultMessageWriter,
@@ -154,7 +154,7 @@ class _ExtK8sPod(ExtClient):
         """
         client = DagsterKubernetesClient.production_client()
 
-        with pipes_protocol(
+        with open_pipes_session(
             context=context,
             extras=extras,
             context_injector=self.context_injector,
@@ -167,7 +167,7 @@ class _ExtK8sPod(ExtClient):
                 image=image,
                 command=command,
                 env_vars={
-                    **pipes_session.get_piped_process_env_vars(),
+                    **pipes_session.get_pipes_env_vars(),
                     **(self.env or {}),
                     **(env or {}),
                 },

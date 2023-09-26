@@ -170,7 +170,7 @@ class PipesSession:
     context_injector_params: PipesParams
     message_reader_params: PipesParams
 
-    def get_piped_process_env_vars(self) -> Dict[str, str]:
+    def get_pipes_env_vars(self) -> Dict[str, str]:
         return {
             DAGSTER_PIPES_ENV_KEYS[IS_DAGSTER_PIPES_PROCESS]: encode_env_var(True),
             **_ext_params_as_env_vars(

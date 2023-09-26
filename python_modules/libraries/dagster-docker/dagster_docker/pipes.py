@@ -19,7 +19,7 @@ from dagster._core.pipes.context import (
 from dagster._core.pipes.utils import (
     ExtEnvContextInjector,
     extract_message_or_forward_to_stdout,
-    pipes_protocol,
+    open_pipes_session,
 )
 from dagster_pipes import (
     DagsterPipesError,
@@ -118,7 +118,7 @@ class _ExtDocker(ExtClient):
             message_Reader (Optional[ExtMessageReader]):
                 Override the default ext protocol message reader.
         """
-        with pipes_protocol(
+        with open_pipes_session(
             context=context,
             context_injector=self.context_injector,
             message_reader=self.message_reader,
@@ -139,7 +139,7 @@ class _ExtDocker(ExtClient):
                     image=image,
                     command=command,
                     env=env,
-                    pipes_protocol_env=pipes_session.get_piped_process_env_vars(),
+                    open_pipes_session_env=pipes_session.get_pipes_env_vars(),
                     container_kwargs=container_kwargs,
                 )
             except docker.errors.ImageNotFound:
@@ -149,7 +149,7 @@ class _ExtDocker(ExtClient):
                     image=image,
                     command=command,
                     env=env,
-                    pipes_protocol_env=pipes_session.get_piped_process_env_vars(),
+                    open_pipes_session_env=pipes_session.get_pipes_env_vars(),
                     container_kwargs=container_kwargs,
                 )
 
@@ -172,7 +172,7 @@ class _ExtDocker(ExtClient):
         command: Union[str, Sequence[str]],
         env: Optional[Mapping[str, str]],
         container_kwargs: Optional[Mapping[str, Any]],
-        pipes_protocol_env: Mapping[str, str],
+        open_pipes_session_env: Mapping[str, str],
     ):
         kwargs = dict(container_kwargs or {})
         kwargs_env = kwargs.pop("environment", {})
@@ -181,7 +181,7 @@ class _ExtDocker(ExtClient):
             command=command,
             detach=True,
             environment={
-                **pipes_protocol_env,
+                **open_pipes_session_env,
                 **(self.env or {}),
                 **(env or {}),
                 **kwargs_env,

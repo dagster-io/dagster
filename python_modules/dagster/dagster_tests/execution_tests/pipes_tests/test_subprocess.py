@@ -43,7 +43,7 @@ from dagster._core.pipes.utils import (
     ExtEnvContextInjector,
     ExtTempFileContextInjector,
     ExtTempFileMessageReader,
-    pipes_protocol,
+    open_pipes_session,
 )
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 from dagster_aws.pipes import ExtS3MessageReader
@@ -359,13 +359,13 @@ def test_ext_no_client(external_script):
         extras = {"bar": "baz"}
         cmd = [_PYTHON_EXECUTABLE, external_script]
 
-        with pipes_protocol(
+        with open_pipes_session(
             context,
             ExtTempFileContextInjector(),
             ExtTempFileMessageReader(),
             extras=extras,
         ) as pipes_session:
-            subprocess.run(cmd, env=pipes_session.get_piped_process_env_vars(), check=False)
+            subprocess.run(cmd, env=pipes_session.get_pipes_env_vars(), check=False)
         yield from pipes_session.get_results()
 
     with instance_for_test() as instance:
@@ -396,13 +396,13 @@ def test_ext_no_client_no_yield():
     @asset
     def foo(context: OpExecutionContext):
         with temp_script(script_fn) as external_script:
-            with pipes_protocol(
+            with open_pipes_session(
                 context,
                 ExtTempFileContextInjector(),
                 ExtTempFileMessageReader(),
             ) as pipes_session:
                 cmd = [_PYTHON_EXECUTABLE, external_script]
-                subprocess.run(cmd, env=pipes_session.get_piped_process_env_vars(), check=False)
+                subprocess.run(cmd, env=pipes_session.get_pipes_env_vars(), check=False)
 
     with pytest.raises(
         DagsterInvariantViolationError,
