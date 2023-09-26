@@ -2,7 +2,7 @@ from typing import Any, Dict, Iterable, Iterator, Mapping, NamedTuple, Optional,
 
 from dagster import _check as check
 from dagster._annotations import experimental, public
-from dagster._core.definitions.asset_check_spec import AssetCheckHandle, AssetCheckSpec
+from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.resource_definition import ResourceDefinition
@@ -16,7 +16,7 @@ from dagster._core.definitions.resource_requirement import (
 
 @experimental
 class AssetChecksDefinitionInputOutputProps(NamedTuple):
-    asset_check_handles_by_output_name: Mapping[str, AssetCheckHandle]
+    asset_check_keys_by_output_name: Mapping[str, AssetCheckKey]
     asset_keys_by_input_name: Mapping[str, AssetKey]
 
 
@@ -45,8 +45,8 @@ class AssetChecksDefinition(ResourceAddable, RequiresResources):
         )
         self._specs_by_handle = {spec.handle: spec for spec in specs}
         self._specs_by_output_name = {
-            output_name: self._specs_by_handle[check_handle]
-            for output_name, check_handle in input_output_props.asset_check_handles_by_output_name.items()
+            output_name: self._specs_by_handle[check_key]
+            for output_name, check_key in input_output_props.asset_check_keys_by_output_name.items()
         }
 
     @public
@@ -100,8 +100,8 @@ class AssetChecksDefinition(ResourceAddable, RequiresResources):
         for source_key, resource_def in self._resource_defs.items():
             yield from resource_def.get_resource_requirements(outer_context=source_key)
 
-    def get_spec_for_check_handle(self, asset_check_handle: AssetCheckHandle) -> AssetCheckSpec:
-        return self._specs_by_handle[asset_check_handle]
+    def get_spec_for_check_key(self, asset_check_key: AssetCheckKey) -> AssetCheckSpec:
+        return self._specs_by_handle[asset_check_key]
 
     @public
     @property

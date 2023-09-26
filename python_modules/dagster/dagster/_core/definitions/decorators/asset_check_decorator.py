@@ -174,7 +174,7 @@ def asset_check(
                 asset_keys_by_input_name={
                     input_tuples_by_asset_key[resolved_asset_key][0]: resolved_asset_key
                 },
-                asset_check_handles_by_output_name={op_def.output_defs[0].name: spec.handle},
+                asset_check_keys_by_output_name={op_def.output_defs[0].name: spec.handle},
             ),
         )
 

@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, AbstractSet, Iterable, Optional
 
 from typing_extensions import Self
 
-from dagster._core.definitions.asset_check_spec import AssetCheckHandle
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 
 if TYPE_CHECKING:
@@ -27,7 +27,7 @@ class IJob(ABC):
         *,
         op_selection: Optional[Iterable[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
-        asset_check_selection: Optional[AbstractSet[AssetCheckHandle]] = None,
+        asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
     ) -> "IJob":
         pass
 
@@ -61,7 +61,7 @@ class InMemoryJob(IJob):
         *,
         op_selection: Optional[Iterable[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
-        asset_check_selection: Optional[AbstractSet[AssetCheckHandle]] = None,
+        asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
     ) -> Self:
         op_selection = set(op_selection) if op_selection else None
         return InMemoryJob(

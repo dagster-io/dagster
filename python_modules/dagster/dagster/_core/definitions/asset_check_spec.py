@@ -29,7 +29,7 @@ class AssetCheckSeverity(Enum):
 
 @experimental
 @whitelist_for_serdes
-class AssetCheckHandle(NamedTuple):
+class AssetCheckKey(NamedTuple):
     """Check names are expected to be unique per-asset. Thus, this combination of asset key and
     check name uniquely identifies an asset check within a deployment.
     """
@@ -38,8 +38,8 @@ class AssetCheckHandle(NamedTuple):
     name: PublicAttr[str]
 
     @staticmethod
-    def from_graphql_input(graphql_input: Mapping[str, Any]) -> "AssetCheckHandle":
-        return AssetCheckHandle(
+    def from_graphql_input(graphql_input: Mapping[str, Any]) -> "AssetCheckKey":
+        return AssetCheckKey(
             asset_key=AssetKey.from_graphql_input(graphql_input["assetKey"]),
             name=graphql_input["name"],
         )
@@ -90,5 +90,5 @@ class AssetCheckSpec(
         return f"{self.asset_key.to_python_identifier()}_{self.name}"
 
     @property
-    def handle(self) -> AssetCheckHandle:
-        return AssetCheckHandle(self.asset_key, self.name)
+    def handle(self) -> AssetCheckKey:
+        return AssetCheckKey(self.asset_key, self.name)
