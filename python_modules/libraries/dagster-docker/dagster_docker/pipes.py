@@ -17,7 +17,7 @@ from dagster._core.pipes.context import (
     PipesResult,
 )
 from dagster._core.pipes.utils import (
-    ExtEnvContextInjector,
+    PipesEnvContextInjector,
     extract_message_or_forward_to_stdout,
     open_pipes_session,
 )
@@ -52,13 +52,13 @@ class DockerLogsMessageReader(PipesMessageReader):
 class _ExtDocker(PipesClient):
     """An ext protocol compliant resource for launching docker containers.
 
-    By default context is injected via environment variables and messages are parsed out of the
-    log stream and other logs are forwarded to stdout of the orchestration process.
+        By default context is injected via environment variables and messages are parsed out of the
+        log stream and other logs are forwarded to stdout of the orchestration process.
 
     Args:
         env (Optional[Mapping[str, str]]): An optional dict of environment variables to pass to the subprocess.
         register (Optional[Mapping[str, str]]): An optional dict of registry credentials to login the docker client.
-        context_injector (Optional[PipesContextInjector]): An context injector to use to inject context into the docker container process. Defaults to ExtEnvContextInjector.
+        context_injector (Optional[PipesContextInjector]): An context injector to use to inject context into the docker container process. Defaults to PipesEnvContextInjector.
         message_reader (Optional[PipesContextInjector]): An context injector to use to read messages from the docker container process. Defaults to DockerLogsMessageReader.
     """
 
@@ -77,7 +77,7 @@ class _ExtDocker(PipesClient):
                 "context_injector",
                 PipesContextInjector,
             )
-            or ExtEnvContextInjector()
+            or PipesEnvContextInjector()
         )
 
         self.message_reader = (

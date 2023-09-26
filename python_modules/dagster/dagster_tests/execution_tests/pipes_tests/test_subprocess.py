@@ -40,8 +40,8 @@ from dagster._core.pipes.subprocess import (
     PipesSubprocess,
 )
 from dagster._core.pipes.utils import (
-    ExtEnvContextInjector,
-    ExtTempFileContextInjector,
+    PipesEnvContextInjector,
+    PipesTempFileContextInjector,
     PipesTempFileMessageReader,
     open_pipes_session,
 )
@@ -141,9 +141,9 @@ def test_ext_subprocess(
     if context_injector_spec == "default":
         context_injector = None
     elif context_injector_spec == "user/file":
-        context_injector = ExtTempFileContextInjector()
+        context_injector = PipesTempFileContextInjector()
     elif context_injector_spec == "user/env":
-        context_injector = ExtEnvContextInjector()
+        context_injector = PipesEnvContextInjector()
     else:
         assert False, "Unreachable"
 
@@ -361,7 +361,7 @@ def test_ext_no_client(external_script):
 
         with open_pipes_session(
             context,
-            ExtTempFileContextInjector(),
+            PipesTempFileContextInjector(),
             PipesTempFileMessageReader(),
             extras=extras,
         ) as pipes_session:
@@ -398,7 +398,7 @@ def test_ext_no_client_no_yield():
         with temp_script(script_fn) as external_script:
             with open_pipes_session(
                 context,
-                ExtTempFileContextInjector(),
+                PipesTempFileContextInjector(),
                 PipesTempFileMessageReader(),
             ) as pipes_session:
                 cmd = [_PYTHON_EXECUTABLE, external_script]

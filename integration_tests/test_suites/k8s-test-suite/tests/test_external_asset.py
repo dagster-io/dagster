@@ -7,7 +7,7 @@ from dagster import AssetExecutionContext, asset, materialize
 from dagster._core.pipes.client import (
     PipesContextInjector,
 )
-from dagster._core.pipes.utils import ExtEnvContextInjector, open_pipes_session
+from dagster._core.pipes.utils import PipesEnvContextInjector, open_pipes_session
 from dagster_k8s import execute_k8s_job
 from dagster_k8s.client import DagsterKubernetesClient
 from dagster_k8s.pipes import ExtK8sPod, K8sPodLogsMessageReader
@@ -171,7 +171,7 @@ def test_use_excute_k8s_job(namespace, cluster_provider):
         reader = K8sPodLogsMessageReader()
         with open_pipes_session(
             context,
-            ExtEnvContextInjector(),
+            PipesEnvContextInjector(),
             reader,
             extras={"storage_root": "/tmp/"},
         ) as pipes_session:

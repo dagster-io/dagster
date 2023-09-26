@@ -37,7 +37,7 @@ _CONTEXT_INJECTOR_FILENAME = "context"
 _MESSAGE_READER_FILENAME = "messages"
 
 
-class ExtFileContextInjector(PipesContextInjector):
+class PipesFileContextInjector(PipesContextInjector):
     def __init__(self, path: str):
         self._path = check.str_param(path, "path")
 
@@ -52,17 +52,17 @@ class ExtFileContextInjector(PipesContextInjector):
                 os.remove(self._path)
 
 
-class ExtTempFileContextInjector(PipesContextInjector):
+class PipesTempFileContextInjector(PipesContextInjector):
     @contextmanager
     def inject_context(self, context: "PipesContextData") -> Iterator[PipesParams]:
         with tempfile.TemporaryDirectory() as tempdir:
-            with ExtFileContextInjector(
+            with PipesFileContextInjector(
                 os.path.join(tempdir, _CONTEXT_INJECTOR_FILENAME)
             ).inject_context(context) as params:
                 yield params
 
 
-class ExtEnvContextInjector(PipesContextInjector):
+class PipesEnvContextInjector(PipesContextInjector):
     @contextmanager
     def inject_context(
         self,
