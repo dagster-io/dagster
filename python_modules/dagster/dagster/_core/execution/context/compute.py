@@ -1737,7 +1737,7 @@ def build_execution_context(
     op            AssetExecutionContext     Error - we cannot init an AssetExecutionContext w/o an AssetsDefinition
     op            OpExecutionContext        OpExecutionContext
     op            None                      OpExecutionContext
-    
+
     For ops in graph-backed assets
     step type     annotation                result
     op            AssetExecutionContext     AssetExecutionContext
@@ -1769,14 +1769,16 @@ def build_execution_context(
             " OpExecutionContext, or left blank."
         )
 
+    op_context = OpExecutionContext(step_context)
+
     if context_annotation is EmptyAnnotation:
         # if no type hint has been given, default to:
         # * AssetExecutionContext for sda steps, not in graph-backed assets
         # * OpExecutionContext for non sda steps
         # * OpExecutionContext for ops in graph-backed assets
         if is_op_in_graph_asset or not is_sda_step:
-            return OpExecutionContext(step_context)
-        return AssetExecutionContext(step_context)
+            return op_context
+        return AssetExecutionContext(op_context)
     if context_annotation is AssetExecutionContext:
-        return AssetExecutionContext(step_context)
-    return OpExecutionContext(step_context)
+        return AssetExecutionContext(op_context)
+    return op_context
