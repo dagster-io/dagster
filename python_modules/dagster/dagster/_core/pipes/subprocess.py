@@ -20,7 +20,7 @@ from dagster._core.pipes.utils import (
 )
 
 
-class _PipedSubprocess(PipesClient):
+class _PipesSubprocess(PipesClient):
     """A pipes client that runs a subprocess with the given command and environment.
 
     By default parameters are injected via environment variables. And then context is passed via
@@ -93,4 +93,4 @@ class _PipedSubprocess(PipesClient):
         yield from pipes_session.get_results()
 
 
-PipedSubprocess = ResourceParam[_PipedSubprocess]
+PipesSubprocess = ResourceParam[_PipesSubprocess]
