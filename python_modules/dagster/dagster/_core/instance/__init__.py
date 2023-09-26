@@ -114,7 +114,7 @@ if TYPE_CHECKING:
     from dagster._core.event_api import (
         AssetRecordsFilter,
         EventHandlerFn,
-        RunStatusEventRecordsFilter,
+        RunStatusChangeEventFilter,
     )
     from dagster._core.events import (
         AssetMaterialization,
@@ -1976,16 +1976,16 @@ class DagsterInstance(DynamicPartitionsStore):
 
     @public
     @traced
-    def get_run_status_event_records(
+    def get_run_status_change_event_records(
         self,
-        records_filter: Union["DagsterEventType", "RunStatusEventRecordsFilter"],
+        records_filter: Union["DagsterEventType", "RunStatusChangeEventFilter"],
         limit: Optional[int] = None,
         ascending: bool = False,
     ) -> Sequence["EventLogRecord"]:
         """Return a list of run_status_event records stored in the event log storage.
 
         Args:
-            records_filter (Optional[Union[DagsterEventType, RunStatusEventRecordsFilter]]): the
+            records_filter (Optional[Union[DagsterEventType, RunStatusChangeEventFilter]]): the
                 filter by which to filter event records.
             limit (Optional[int]): Number of results to get. Defaults to infinite.
             ascending (Optional[bool]): Sort the result in ascending order if True, descending
@@ -1994,7 +1994,9 @@ class DagsterInstance(DynamicPartitionsStore):
         Returns:
             List[EventLogRecord]: List of event log records stored in the event log storage.
         """
-        return self._event_storage.get_run_status_event_records(records_filter, limit, ascending)
+        return self._event_storage.get_run_status_change_event_records(
+            records_filter, limit, ascending
+        )
 
     @public
     @traced

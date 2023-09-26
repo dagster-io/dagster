@@ -414,7 +414,7 @@ from dagster._core.event_api import (
     EventLogRecord as EventLogRecord,
     EventRecordsFilter as EventRecordsFilter,
     RunShardedEventsCursor as RunShardedEventsCursor,
-    RunStatusEventRecordsFilter as RunStatusEventRecordsFilter,
+    RunStatusChangeEventFilter as RunStatusChangeEventFilter,
 )
 from dagster._core.events import (
     DagsterEvent as DagsterEvent,

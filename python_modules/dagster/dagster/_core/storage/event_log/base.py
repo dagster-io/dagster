@@ -21,7 +21,7 @@ from dagster._core.event_api import (
     EventHandlerFn,
     EventLogRecord,
     EventRecordsFilter,
-    RunStatusEventRecordsFilter,
+    RunStatusChangeEventFilter,
 )
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.stats import (
@@ -544,9 +544,9 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_run_status_event_records(
+    def get_run_status_change_event_records(
         self,
-        records_filter: Union[DagsterEventType, RunStatusEventRecordsFilter],
+        records_filter: Union[DagsterEventType, RunStatusChangeEventFilter],
         limit: Optional[int] = None,
         ascending: bool = False,
     ) -> Sequence[EventLogRecord]:

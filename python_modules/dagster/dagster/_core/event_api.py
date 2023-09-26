@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Callable, Mapping, NamedTuple, Optional, Sequence, Union
+from typing import Callable, Literal, Mapping, NamedTuple, Optional, Sequence, Union
 
 from typing_extensions import TypeAlias
 
@@ -7,7 +7,7 @@ import dagster._check as check
 from dagster._annotations import PublicAttr
 from dagster._core.definitions.events import AssetKey, AssetMaterialization, AssetObservation
 from dagster._core.errors import DagsterInvalidInvocationError
-from dagster._core.events import DagsterEventType
+from dagster._core.events import EVENT_TYPE_TO_PIPELINE_RUN_STATUS, DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._serdes import whitelist_for_serdes
 
@@ -22,6 +22,19 @@ class RunShardedEventsCursor(NamedTuple):
 
     id: int
     run_updated_after: datetime
+
+
+RunStatusChangeEventType: TypeAlias = Literal[
+    DagsterEventType.RUN_START,
+    DagsterEventType.RUN_SUCCESS,
+    DagsterEventType.RUN_FAILURE,
+    DagsterEventType.RUN_ENQUEUED,
+    DagsterEventType.RUN_STARTING,
+    DagsterEventType.RUN_CANCELING,
+    DagsterEventType.RUN_CANCELED,
+]
+
+EventCursor: TypeAlias = Union[int, RunShardedEventsCursor]
 
 
 @whitelist_for_serdes
@@ -76,8 +89,8 @@ class EventRecordsFilter(
             ("event_type", DagsterEventType),
             ("asset_key", Optional[AssetKey]),
             ("asset_partitions", Optional[Sequence[str]]),
-            ("after_cursor", Optional[Union[int, RunShardedEventsCursor]]),
-            ("before_cursor", Optional[Union[int, RunShardedEventsCursor]]),
+            ("after_cursor", Optional[EventCursor]),
+            ("before_cursor", Optional[EventCursor]),
             ("after_timestamp", Optional[float]),
             ("before_timestamp", Optional[float]),
             ("storage_ids", Optional[Sequence[int]]),
@@ -94,11 +107,11 @@ class EventRecordsFilter(
         asset_partitions (Optional[List[str]]): Filter parameter such that only asset
             events with a partition value matching one of the provided values.  Only
             valid when the `asset_key` parameter is provided.
-        after_cursor (Optional[Union[int, RunShardedEventsCursor]]): Filter parameter such that only
+        after_cursor (Optional[EventCursor]): Filter parameter such that only
             records with storage_id greater than the provided value are returned. Using a
             run-sharded events cursor will result in a significant performance gain when run against
             a SqliteEventLogStorage implementation (which is run-sharded)
-        before_cursor (Optional[Union[int, RunShardedEventsCursor]]): Filter parameter such that
+        before_cursor (Optional[EventCursor]): Filter parameter such that
             records with storage_id less than the provided value are returned. Using a run-sharded
             events cursor will result in a significant performance gain when run against
             a SqliteEventLogStorage implementation (which is run-sharded)
@@ -113,8 +126,8 @@ class EventRecordsFilter(
         event_type: DagsterEventType,
         asset_key: Optional[AssetKey] = None,
         asset_partitions: Optional[Sequence[str]] = None,
-        after_cursor: Optional[Union[int, RunShardedEventsCursor]] = None,
-        before_cursor: Optional[Union[int, RunShardedEventsCursor]] = None,
+        after_cursor: Optional[EventCursor] = None,
+        before_cursor: Optional[EventCursor] = None,
         after_timestamp: Optional[float] = None,
         before_timestamp: Optional[float] = None,
         storage_ids: Optional[Sequence[int]] = None,
@@ -155,8 +168,8 @@ class AssetRecordsFilter(
         [
             ("asset_key", PublicAttr[Optional[AssetKey]]),
             ("asset_partitions", PublicAttr[Optional[Sequence[str]]]),
-            ("after_cursor", PublicAttr[Optional[Union[int, RunShardedEventsCursor]]]),
-            ("before_cursor", PublicAttr[Optional[Union[int, RunShardedEventsCursor]]]),
+            ("after_cursor", PublicAttr[Optional[EventCursor]]),
+            ("before_cursor", PublicAttr[Optional[EventCursor]]),
             ("after_timestamp", PublicAttr[Optional[float]]),
             ("before_timestamp", PublicAttr[Optional[float]]),
             ("storage_ids", Optional[Sequence[int]]),
@@ -171,11 +184,11 @@ class AssetRecordsFilter(
         asset_partitions (Optional[List[str]]): Filter parameter such that only asset
             events with a partition value matching one of the provided values are returned.  Only
             valid when the `asset_key` parameter is provided.
-        after_cursor (Optional[Union[int, RunShardedEventsCursor]]): Filter parameter such that only
+        after_cursor (Optional[EventCursor]): Filter parameter such that only
             records with storage_id greater than the provided value are returned. Using a
             run-sharded events cursor will result in a significant performance gain when run against
             a SqliteEventLogStorage implementation (which is run-sharded)
-        before_cursor (Optional[Union[int, RunShardedEventsCursor]]): Filter parameter such that
+        before_cursor (Optional[EventCursor]): Filter parameter such that
             records with storage_id less than the provided value are returned. Using a run-sharded
             events cursor will result in a significant performance gain when run against
             a SqliteEventLogStorage implementation (which is run-sharded)
@@ -193,8 +206,8 @@ class AssetRecordsFilter(
         cls,
         asset_key: Optional[AssetKey] = None,
         asset_partitions: Optional[Sequence[str]] = None,
-        after_cursor: Optional[Union[int, RunShardedEventsCursor]] = None,
-        before_cursor: Optional[Union[int, RunShardedEventsCursor]] = None,
+        after_cursor: Optional[EventCursor] = None,
+        before_cursor: Optional[EventCursor] = None,
         after_timestamp: Optional[float] = None,
         before_timestamp: Optional[float] = None,
         storage_ids: Optional[Sequence[int]] = None,
@@ -233,13 +246,13 @@ class AssetRecordsFilter(
 
 
 @whitelist_for_serdes
-class RunStatusEventRecordsFilter(
+class RunStatusChangeEventFilter(
     NamedTuple(
-        "_RunStatusEventRecordsFilter",
+        "_RunStatusChangeEventFilter",
         [
-            ("event_type", PublicAttr[DagsterEventType]),
-            ("after_cursor", PublicAttr[Optional[Union[int, RunShardedEventsCursor]]]),
-            ("before_cursor", PublicAttr[Optional[Union[int, RunShardedEventsCursor]]]),
+            ("event_type", PublicAttr[RunStatusChangeEventType]),
+            ("after_cursor", PublicAttr[Optional[EventCursor]]),
+            ("before_cursor", PublicAttr[Optional[EventCursor]]),
             ("after_timestamp", PublicAttr[Optional[float]]),
             ("before_timestamp", PublicAttr[Optional[float]]),
             ("storage_ids", Optional[Sequence[int]]),
@@ -250,11 +263,11 @@ class RunStatusEventRecordsFilter(
 
     Args:
         event_type (DagsterEventType): Filter argument for dagster event type
-        after_cursor (Optional[Union[int, RunShardedEventsCursor]]): Filter parameter such that only
+        after_cursor (Optional[EventCursor]): Filter parameter such that only
             records with storage_id greater than the provided value are returned. Using a
             run-sharded events cursor will result in a significant performance gain when run against
             the sqlite storage implementation (which is run-sharded).
-        before_cursor (Optional[Union[int, RunShardedEventsCursor]]): Filter parameter such that
+        before_cursor (Optional[EventCursor]): Filter parameter such that
             records with storage_id less than the provided value are returned. Using a run-sharded
             events cursor will result in a significant performance gain when run against the sqlite
             storage implementation (which is run-sharded).
@@ -268,14 +281,17 @@ class RunStatusEventRecordsFilter(
 
     def __new__(
         cls,
-        event_type: DagsterEventType,
-        after_cursor: Optional[Union[int, RunShardedEventsCursor]] = None,
-        before_cursor: Optional[Union[int, RunShardedEventsCursor]] = None,
+        event_type: RunStatusChangeEventType,
+        after_cursor: Optional[EventCursor] = None,
+        before_cursor: Optional[EventCursor] = None,
         after_timestamp: Optional[float] = None,
         before_timestamp: Optional[float] = None,
         storage_ids: Optional[Sequence[int]] = None,
     ):
-        return super(RunStatusEventRecordsFilter, cls).__new__(
+        if event_type not in EVENT_TYPE_TO_PIPELINE_RUN_STATUS:
+            check.failed("Invalid event type for run status change event filter")
+
+        return super(RunStatusChangeEventFilter, cls).__new__(
             cls,
             event_type=check.inst_param(event_type, "event_type", DagsterEventType),
             after_cursor=check.opt_inst_param(

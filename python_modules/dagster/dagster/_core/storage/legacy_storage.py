@@ -36,7 +36,7 @@ from .schedules.base import ScheduleStorage
 
 if TYPE_CHECKING:
     from dagster._core.definitions.run_request import InstigatorType
-    from dagster._core.event_api import AssetRecordsFilter, RunStatusEventRecordsFilter
+    from dagster._core.event_api import AssetRecordsFilter, RunStatusChangeEventFilter
     from dagster._core.events import DagsterEvent, DagsterEventType
     from dagster._core.events.log import EventLogEntry
     from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
@@ -477,13 +477,13 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
             filters, limit, ascending
         )
 
-    def get_run_status_event_records(
+    def get_run_status_change_event_records(
         self,
-        filters: Union["DagsterEventType", "RunStatusEventRecordsFilter"],
+        filters: Union["DagsterEventType", "RunStatusChangeEventFilter"],
         limit: Optional[int] = None,
         ascending: bool = False,
     ) -> Sequence[EventLogRecord]:
-        return self._storage.event_log_storage.get_run_status_event_records(
+        return self._storage.event_log_storage.get_run_status_change_event_records(
             filters, limit, ascending
         )
 

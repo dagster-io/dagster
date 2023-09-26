@@ -38,7 +38,7 @@ from dagster._core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
 )
-from dagster._core.event_api import RunShardedEventsCursor, RunStatusEventRecordsFilter
+from dagster._core.event_api import RunShardedEventsCursor, RunStatusChangeEventFilter
 from dagster._core.events import (
     ASSET_CHECK_EVENTS,
     ASSET_EVENTS,
@@ -1078,9 +1078,9 @@ class SqlEventLogStorage(EventLogStorage):
             ascending=ascending,
         )
 
-    def get_run_status_event_records(
+    def get_run_status_change_event_records(
         self,
-        records_filter: Union[DagsterEventType, RunStatusEventRecordsFilter],
+        records_filter: Union[DagsterEventType, RunStatusChangeEventFilter],
         limit: Optional[int] = None,
         ascending: bool = False,
     ) -> Sequence[EventLogRecord]:
@@ -1095,7 +1095,7 @@ class SqlEventLogStorage(EventLogStorage):
 
         events_filter = (
             records_filter.to_event_records_filter()
-            if isinstance(records_filter, RunStatusEventRecordsFilter)
+            if isinstance(records_filter, RunStatusChangeEventFilter)
             else EventRecordsFilter(event_type)
         )
         return self._get_event_records(events_filter, limit=limit, ascending=ascending)
