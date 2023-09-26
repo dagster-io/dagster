@@ -19,7 +19,10 @@ import {isDocumentVisible, useDocumentVisibility} from '../hooks/useDocumentVisi
 
 const _assetKeyListeners: Record<string, Array<DataForNodeListener>> = {};
 
-export function useAssetNodeLiveData(assetKeys: AssetKeyInput[]) {
+/*
+ * Note: This hook may return partial data since it will fetch assets in chunks/batches.
+ */
+export function useAssetsLiveData(assetKeys: AssetKeyInput[]) {
   const [data, setData] = React.useState<Record<string, LiveDataForNode | null>>({});
 
   const client = useApolloClient();
@@ -112,6 +115,14 @@ const lastFetchedOrRequested: Record<
   string,
   {fetched: number; requested?: undefined} | {requested: number; fetched?: undefined} | null
 > = {};
+
+export const _testOnly_resetLastFetchedOrRequested = () => {
+  if (typeof jest !== 'undefined') {
+    Object.keys(lastFetchedOrRequested).forEach((key) => {
+      delete lastFetchedOrRequested[key];
+    });
+  }
+};
 
 export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) => {
   const [needsImmediateFetch, setNeedsImmediateFetch] = React.useState<boolean>(false);
@@ -270,6 +281,7 @@ function _determineAssetsToFetch() {
       assetsWithoutData.push({path: JSON.parse(key)});
     }
   }
+
   // Prioritize fetching assets for which there is no data in the cache
   return assetsWithoutData.concat(assetsToFetch).slice(0, 50);
 }

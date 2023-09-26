@@ -19,7 +19,7 @@ import styled from 'styled-components';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
-import {useAssetNodeLiveData} from '../asset-data/AssetLiveDataProvider';
+import {useAssetsLiveData} from '../asset-data/AssetLiveDataProvider';
 import {StatusCase, buildAssetNodeStatusContent} from '../asset-graph/AssetNodeStatusContent';
 import {displayNameForAssetKey, toGraphId} from '../asset-graph/Utils';
 import {partitionCountString} from '../assets/AssetNodePartitionCounts';
@@ -223,7 +223,7 @@ function VirtualRow({height, start, group}: RowProps) {
     [group.assets],
   );
 
-  const liveDataByNode = useAssetNodeLiveData(assetKeys);
+  const liveDataByNode = useAssetsLiveData(assetKeys);
 
   const statuses = React.useMemo(() => {
     type assetType = (typeof group)['assets'][0];

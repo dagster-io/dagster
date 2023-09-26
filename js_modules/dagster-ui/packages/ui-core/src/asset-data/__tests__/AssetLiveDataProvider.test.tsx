@@ -10,6 +10,7 @@ import {
 } from '../../asset-graph/types/useLiveDataForAssetKeys.types';
 import {ASSETS_GRAPH_LIVE_QUERY} from '../../asset-graph/useLiveDataForAssetKeys';
 import {
+  AssetKey,
   AssetKeyInput,
   buildAssetKey,
   buildAssetLatestInfo,
@@ -19,7 +20,8 @@ import {buildQueryMock, getMockResultFn} from '../../testing/mocking';
 import {
   AssetLiveDataProvider,
   SUBSCRIPTION_IDLE_POLL_RATE,
-  useAssetNodeLiveData,
+  _testOnly_resetLastFetchedOrRequested,
+  useAssetsLiveData,
 } from '../AssetLiveDataProvider';
 
 Object.defineProperty(document, 'visibilityState', {value: 'visible', writable: true});
@@ -43,9 +45,8 @@ function buildMockedQuery(assetKeys: AssetKeyInput[]) {
   });
 }
 
-beforeEach(() => {
-  jest.resetModules();
-  jest.advanceTimersByTime(100000);
+afterEach(() => {
+  _testOnly_resetLastFetchedOrRequested();
 });
 
 function Test({
@@ -53,21 +54,19 @@ function Test({
   hooks,
 }: {
   mocks: MockedResponse[];
-  hooks: [
-    {
-      keys: AssetKeyInput[];
-      hookResult: (data: ReturnType<typeof useAssetNodeLiveData>) => void;
-    },
-  ];
+  hooks: {
+    keys: AssetKeyInput[];
+    hookResult: (data: ReturnType<typeof useAssetsLiveData>) => void;
+  }[];
 }) {
   function Hook({
     keys,
     hookResult,
   }: {
     keys: AssetKeyInput[];
-    hookResult: (data: ReturnType<typeof useAssetNodeLiveData>) => void;
+    hookResult: (data: ReturnType<typeof useAssetsLiveData>) => void;
   }) {
-    hookResult(useAssetNodeLiveData(keys));
+    hookResult(useAssetsLiveData(keys));
     return <div />;
   }
   return (
@@ -132,7 +131,7 @@ describe('AssetLiveDataProvider', () => {
       await Promise.resolve();
     });
 
-    // We make a request this time to resultFn2 is called
+    // We make a request this time so resultFn2 is called
     act(() => {
       jest.advanceTimersByTime(SUBSCRIPTION_IDLE_POLL_RATE + 1);
     });
@@ -190,7 +189,10 @@ describe('AssetLiveDataProvider', () => {
       await Promise.resolve();
     });
 
-    (document as any).visibilityState = 'hidden';
+    act(() => {
+      (document as any).visibilityState = 'hidden';
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
 
     // Document isn't visible so we don't make a request
     act(() => {
@@ -205,6 +207,162 @@ describe('AssetLiveDataProvider', () => {
 
     await waitFor(() => {
       expect(resultFn2).toHaveBeenCalled();
+    });
+  });
+
+  it('chunks asset requests', async () => {
+    const assetKeys = [];
+    for (let i = 0; i < 100; i++) {
+      assetKeys.push(buildAssetKey({path: [`key${i}`]}));
+    }
+    const chunk1 = assetKeys.slice(0, 50);
+    const chunk2 = assetKeys.slice(50, 100);
+
+    const mockedQuery = buildMockedQuery(chunk1);
+    const mockedQuery2 = buildMockedQuery(chunk2);
+
+    const resultFn = getMockResultFn(mockedQuery);
+    const resultFn2 = getMockResultFn(mockedQuery2);
+
+    const hookResult = jest.fn();
+
+    render(<Test mocks={[mockedQuery, mockedQuery2]} hooks={[{keys: assetKeys, hookResult}]} />);
+
+    // Initially an empty object
+    expect(resultFn).not.toHaveBeenCalled();
+    expect(hookResult.mock.results[0]!.value).toEqual(undefined);
+
+    act(() => {
+      jest.runOnlyPendingTimers();
+    });
+
+    // Only the first batch is sent (No stacking).
+    expect(resultFn).toHaveBeenCalled();
+    expect(resultFn2).not.toHaveBeenCalled();
+
+    act(() => {
+      jest.runOnlyPendingTimers();
+    });
+
+    // Second chunk is fetched
+    await waitFor(() => {
+      expect(resultFn2).toHaveBeenCalled();
+    });
+  });
+
+  it('batches asset requests from separate hooks', async () => {
+    const hookResult = jest.fn();
+
+    const assetKeys = [];
+    for (let i = 0; i < 100; i++) {
+      assetKeys.push(buildAssetKey({path: [`key${i}`]}));
+    }
+    const chunk1 = assetKeys.slice(0, 50);
+    const chunk2 = assetKeys.slice(50, 100);
+
+    const hook1Keys = assetKeys.slice(0, 33);
+    const hook2Keys = assetKeys.slice(33, 66);
+    const hook3Keys = assetKeys.slice(66, 100);
+
+    const mockedQuery = buildMockedQuery(chunk1);
+    const mockedQuery2 = buildMockedQuery(chunk2);
+
+    const resultFn = getMockResultFn(mockedQuery);
+    const resultFn2 = getMockResultFn(mockedQuery2);
+
+    render(
+      <Test
+        mocks={[mockedQuery, mockedQuery2]}
+        hooks={[
+          {keys: hook1Keys, hookResult},
+          {keys: hook2Keys, hookResult},
+          {keys: hook3Keys, hookResult},
+        ]}
+      />,
+    );
+    act(() => {
+      jest.runOnlyPendingTimers();
+    });
+
+    // Only the first batch is sent (No stacking).
+    expect(resultFn).toHaveBeenCalled();
+    expect(resultFn2).not.toHaveBeenCalled();
+
+    await waitFor(() => {
+      expect(resultFn2).toHaveBeenCalled();
+    });
+  });
+
+  it('prioritizes assets which were never fetched over previously fetched assets', async () => {
+    const hookResult = jest.fn();
+    const assetKeys = [];
+    for (let i = 0; i < 60; i++) {
+      assetKeys.push(buildAssetKey({path: [`key${i}`]}));
+    }
+
+    // First we fetch these specific keys
+    const fetch1Keys = [
+      assetKeys[0],
+      assetKeys[2],
+      assetKeys[4],
+      assetKeys[6],
+      assetKeys[8],
+    ] as AssetKey[];
+
+    // Next we fetch all of the keys after waiting SUBSCRIPTION_IDLE_POLL_RATE
+    // which would have made the previously fetched keys elgible for fetching again
+    const firstPrioritizedFetchKeys = assetKeys
+      .filter((key) => fetch1Keys.indexOf(key) === -1)
+      .slice(0, 50);
+
+    // Next we fetch all of the keys not fetched in the previous batch with the originally fetched keys
+    // at the end of the batch since they were previously fetched already
+    const secondPrioritizedFetchKeys = assetKeys.filter(
+      (key) => firstPrioritizedFetchKeys.indexOf(key) === -1 && fetch1Keys.indexOf(key) === -1,
+    );
+
+    secondPrioritizedFetchKeys.push(...fetch1Keys);
+
+    const mockedQuery = buildMockedQuery(fetch1Keys);
+    const mockedQuery2 = buildMockedQuery(firstPrioritizedFetchKeys);
+    const mockedQuery3 = buildMockedQuery(secondPrioritizedFetchKeys);
+
+    const resultFn = getMockResultFn(mockedQuery);
+    const resultFn2 = getMockResultFn(mockedQuery2);
+    const resultFn3 = getMockResultFn(mockedQuery3);
+
+    // First we fetch the keys from fetch1
+    const {rerender} = render(
+      <Test
+        mocks={[mockedQuery, mockedQuery2, mockedQuery3]}
+        hooks={[{keys: fetch1Keys, hookResult}]}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(resultFn).toHaveBeenCalled();
+    });
+    expect(resultFn2).not.toHaveBeenCalled();
+    expect(resultFn3).not.toHaveBeenCalled();
+
+    // Now we request all of the asset keys and see that the first batch excludes the keys from fetch1 since they
+    // were previously fetched.
+    rerender(
+      <Test
+        mocks={[mockedQuery, mockedQuery2, mockedQuery3]}
+        hooks={[{keys: assetKeys, hookResult}]}
+      />,
+    );
+
+    // Advance timers so that the previously fetched keys are eligible for fetching but make sure they're still not prioritized
+    jest.advanceTimersByTime(2 * SUBSCRIPTION_IDLE_POLL_RATE);
+
+    await waitFor(() => {
+      expect(resultFn2).toHaveBeenCalled();
+    });
+
+    await waitFor(() => {
+      expect(resultFn3).toHaveBeenCalled();
     });
   });
 });
