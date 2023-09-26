@@ -25,8 +25,8 @@ from .ops import (
     create_databricks_submit_run_op as create_databricks_submit_run_op,
 )
 from .pipes import (
-    ExtDatabricks as ExtDatabricks,
-    ExtDbfsContextInjector as ExtDbfsContextInjector,
+    PipesDatabricksClient as PipesDatabricksClient,
+    PipesDbfsContextInjector as PipesDbfsContextInjector,
     PipesDbfsMessageReader as PipesDbfsMessageReader,
     dbfs_tempdir as dbfs_tempdir,
 )
