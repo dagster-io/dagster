@@ -1,6 +1,8 @@
 import memoize from 'lodash/memoize';
 import LRU from 'lru-cache';
 
+import {AssetGraphLayout} from '../asset-graph/layout';
+
 import {featureEnabled, FeatureFlag} from './Flags';
 import {timeByParts} from './timeByParts';
 
@@ -148,70 +150,82 @@ export function asyncMemoize<T, R, U extends (arg: T, ...rest: any[]) => Promise
   }) as any;
 }
 
+const INDEX_DB_NAME = 'IndexedDBAsyncMemoizeDB';
+const INDEX_DB_STORE_NAME = 'memoizedValues';
+
+export async function getIndexDBCachedValue<R>(
+  cacheKey: string,
+  versionKey: string,
+  hashKey: string,
+): Promise<R | null> {
+  console.log({cacheKey, versionKey, hashKey});
+  return new Promise((resolve) => {
+    const request = indexedDB.open(INDEX_DB_NAME);
+    request.onerror = () => {
+      resolve(null);
+    };
+    request.onsuccess = () => {
+      const db = request.result;
+      const transaction = db.transaction([INDEX_DB_STORE_NAME], 'readwrite');
+      const store = transaction.objectStore(INDEX_DB_STORE_NAME);
+
+      const key = cacheKey;
+      const requestGet = store.get(key);
+      requestGet.onerror = function () {
+        resolve(null);
+      };
+      requestGet.onsuccess = () => {
+        const cachedData = requestGet.result;
+        if (cachedData && cachedData.version === versionKey && cachedData[hashKey]) {
+          resolve(cachedData[hashKey]);
+        } else {
+          resolve(null);
+        }
+      };
+    };
+
+    request.onupgradeneeded = function () {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(INDEX_DB_STORE_NAME)) {
+        db.createObjectStore(INDEX_DB_STORE_NAME);
+      }
+      resolve(null);
+    };
+  });
+}
+
 export function indexedDBAsyncMemoize<
   T,
   R,
   U extends (cacheKey: string, versionKey: string, arg: T, ...rest: any[]) => Promise<R>,
 >(fn: U, hashFn?: (arg: T, ...rest: any[]) => any): U {
   return (async (cacheKey: string, versionKey: string, arg: T, ...rest: any[]) => {
-    const dbName = 'IndexedDBAsyncMemoizeDB';
-    const storeName = 'memoizedValues';
     const hashKey = hashFn ? hashFn(arg, ...rest) : arg;
 
     return new Promise<R>(async (resolve) => {
-      async function computeAndStoreLayout() {
+      const cachedLayout = await getIndexDBCachedValue<R>(cacheKey, versionKey, hashKey);
+
+      if (!cachedLayout) {
+        console.log('calculating');
         const result = await fn(cacheKey, versionKey, arg, ...rest);
         // Resolve the promise before storing the result in IndexedDB
         resolve(result);
 
-        const request = indexedDB.open(dbName);
+        const request = indexedDB.open(INDEX_DB_NAME);
         request.onsuccess = () => {
           const db = request.result;
-          const transaction = db.transaction([storeName], 'readwrite');
-          const store = transaction.objectStore(storeName);
+          const transaction = db.transaction([INDEX_DB_STORE_NAME], 'readwrite');
+          const store = transaction.objectStore(INDEX_DB_STORE_NAME);
           const key = cacheKey;
           const data = {
             version: versionKey,
             [hashKey]: result,
           };
+          console.log({result});
           store.put(data, key);
         };
-      }
-
-      try {
-        const request = indexedDB.open(dbName);
-        request.onerror = () => {
-          computeAndStoreLayout();
-        };
-        request.onsuccess = () => {
-          const db = request.result;
-          const transaction = db.transaction([storeName], 'readwrite');
-          const store = transaction.objectStore(storeName);
-
-          const key = cacheKey;
-          const requestGet = store.get(key);
-          requestGet.onerror = function () {
-            computeAndStoreLayout();
-          };
-          requestGet.onsuccess = () => {
-            const cachedData = requestGet.result;
-            if (cachedData && cachedData.version === versionKey && cachedData[hashKey]) {
-              resolve(cachedData[hashKey]);
-            } else {
-              computeAndStoreLayout();
-            }
-          };
-        };
-
-        request.onupgradeneeded = function () {
-          const db = request.result;
-          if (!db.objectStoreNames.contains(storeName)) {
-            db.createObjectStore(storeName);
-          }
-          computeAndStoreLayout();
-        };
-      } catch (error) {
-        computeAndStoreLayout();
+      } else {
+        resolve(cachedLayout);
       }
     });
   }) as any;

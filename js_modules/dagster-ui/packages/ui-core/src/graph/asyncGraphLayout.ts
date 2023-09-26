@@ -33,7 +33,7 @@ const asyncGetFullOpLayout = asyncMemoize((ops: ILayoutOp[], opts: LayoutOpGraph
 
 // Asset Graph
 
-const _assetLayoutCacheKey = (graphData: GraphData) => {
+export const _assetLayoutCacheKey = (graphData: GraphData) => {
   // Note: The "show secondary edges" toggle means that we need a cache key that incorporates
   // both the displayed nodes and the displayed edges.
   return JSON.stringify({
@@ -152,7 +152,7 @@ export function useOpLayout(ops: ILayoutOp[], parentOp?: ILayoutOp) {
 
 export function useAssetLayout(
   graphData: GraphData,
-  localStorageKey?: string,
+  indexDBCacheKey?: string,
   fullAssetGraphData?: GraphData,
 ) {
   const [state, dispatch] = React.useReducer(reducer, initialState);
@@ -169,9 +169,9 @@ export function useAssetLayout(
     async function runAsyncLayout() {
       dispatch({type: 'loading'});
       let layout;
-      if (localStorageKey) {
+      if (indexDBCacheKey) {
         layout = await asyncGetFullAssetLayoutIndexDB(
-          localStorageKey,
+          indexDBCacheKey,
           fullDataCacheKey ?? cacheKey,
           graphData,
           opts,
@@ -188,7 +188,7 @@ export function useAssetLayout(
     } else {
       void runAsyncLayout();
     }
-  }, [cacheKey, fullDataCacheKey, graphData, runAsync, flags, localStorageKey]);
+  }, [cacheKey, fullDataCacheKey, graphData, runAsync, flags, indexDBCacheKey]);
 
   return {
     loading: state.loading || !state.layout || state.cacheKey !== cacheKey,

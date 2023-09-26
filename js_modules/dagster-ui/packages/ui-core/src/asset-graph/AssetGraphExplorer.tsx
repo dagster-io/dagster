@@ -18,11 +18,12 @@ import styled from 'styled-components';
 
 import {useFeatureFlags} from '../app/Flags';
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
+import {getIndexDBCachedValue} from '../app/Util';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {LaunchAssetObservationButton} from '../assets/LaunchAssetObservationButton';
 import {AssetKey} from '../assets/types';
 import {DEFAULT_MAX_ZOOM, SVGViewport} from '../graph/SVGViewport';
-import {useAssetLayout} from '../graph/asyncGraphLayout';
+import {_assetLayoutCacheKey, useAssetLayout} from '../graph/asyncGraphLayout';
 import {closestNodeInDirection} from '../graph/common';
 import {
   GraphExplorerOptions,
@@ -149,13 +150,34 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
 }) => {
   const findAssetLocation = useFindAssetLocation();
   const pathname = useHistory().location.pathname;
-  const {layout, loading, async} = useAssetLayout(
-    assetGraphData,
-    // Use the pathname as part of the key so that different deployments don't invalidate each other's cached layout
-    // Remove the slash at the end in the key so that the same layout is used for both `/path` and `/path/`
-    `explorer:${pathname.endsWith('/') ? pathname.slice(0, pathname.length - 1) : pathname}`,
-    fullAssetGraphData,
-  );
+  // Use the pathname as part of the key so that different deployments don't invalidate each other's cached layout
+  const indexDBCacheKey = `explorer:${normalizePathnameForCacheKey(pathname)}`;
+  const {
+    layout: _layout,
+    loading,
+    async,
+  } = useAssetLayout(assetGraphData, indexDBCacheKey, fullAssetGraphData);
+
+  const [cachedLayout, setCachedLayout] = React.useState<AssetGraphLayout | null>(null);
+
+  const layout = cachedLayout ?? _layout;
+
+  React.useEffect(() => {
+    (async () => {
+      if (applyingEmptyDefault) {
+        const fullDataCacheKey = _assetLayoutCacheKey(fullAssetGraphData);
+        const layout = await getIndexDBCachedValue<AssetGraphLayout>(
+          indexDBCacheKey,
+          fullDataCacheKey,
+          fullDataCacheKey,
+        );
+        setCachedLayout(layout);
+      } else {
+        setCachedLayout(null);
+      }
+    })();
+  }, [applyingEmptyDefault, fullAssetGraphData, indexDBCacheKey]);
+
   const viewportEl = React.useRef<SVGViewport>();
   const {flagHorizontalDAGs, flagDAGSidebar} = useFeatureFlags();
 
@@ -314,7 +336,7 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
         <ErrorBoundary region="graph">
           {graphQueryItems.length === 0 ? (
             <EmptyDAGNotice nodeType="asset" isGraph />
-          ) : applyingEmptyDefault ? (
+          ) : applyingEmptyDefault && !cachedLayout ? (
             <LargeDAGNotice nodeType="asset" anchorLeft="40px" />
           ) : Object.keys(assetGraphData.nodes).length === 0 ? (
             <EntirelyFilteredDAGNotice nodeType="asset" />
@@ -602,3 +624,11 @@ const assetKeyTokensInRange = (
 
   return uniq(ledToTarget);
 };
+
+function normalizePathnameForCacheKey(pathname: string) {
+  // Remove the slash at the end in the key so that the same layout is used for both `/path` and `/path/`
+  const name = pathname.endsWith('/') ? pathname.slice(0, pathname.length - 1) : pathname;
+
+  // Remove everything after the ~ since it's the op selection query string
+  return name.split('~')[0];
+}
