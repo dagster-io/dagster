@@ -128,6 +128,7 @@ class PipelineSummary:
         planned = []
         skipped = []
 
+        print(pipeline)
         steps = pipeline["steps"]
         for step in steps:
             if step.get("label"):
