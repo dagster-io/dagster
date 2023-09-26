@@ -20,7 +20,7 @@ def test_simple_resource_connection():
             )
             # Consume the generator by printing to stdout
             for stdout in res:
-                context.log.debug(res)
+                context.log.debug(stdout)
             counts = sqlite3.connect(sqllitepath).execute("SELECT count(1) FROM events").fetchone()
             assert counts[0] == 3
 

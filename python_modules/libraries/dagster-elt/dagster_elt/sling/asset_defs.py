@@ -56,11 +56,10 @@ def build_sling_asset(
             source_options=source_options,
             target_options=target_options,
         ):
-            cleaned_line = re.sub(r"\[[0-9;]+[a-zA-Z]", " ", stdout_line)
-            trimmed_line = cleaned_line[cleaned_line.find("INF") + 6 :].strip()
-            match = re.search(r"(\d+) rows", trimmed_line)
+            match = re.search(r"(\d+) rows", stdout_line)
             if match:
                 context.add_output_metadata({"row_count": int(match.group(1))})
-            context.log.info(trimmed_line)
+                context.log.debug(f"Added metadata: {int(match.group(1))}")
+            context.log.info(stdout_line)
 
     return sync

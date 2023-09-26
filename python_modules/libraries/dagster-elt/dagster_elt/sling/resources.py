@@ -1,5 +1,6 @@
 import contextlib
 import json
+import re
 from enum import Enum
 from subprocess import PIPE, STDOUT, Popen
 from typing import Any, Dict, Generator, List, Optional
@@ -91,27 +92,31 @@ class SlingResource(ConfigurableResource):
     Examples:
         .. code-block:: python
         from dagster import Definitions, asset
-        from dagster_etl import SlingResource
+        from dagster_etl.sling import SlingResource, build_sling_asset
 
-        @asset
-        def sync_asset(sling: SlingResource):
-            res = sling.sync()
-            for stdout in res:
-                context.log.info(stdout)
+        asset_def = build_sling_asset(
+            source_stream="schema.source_table",
+            target_object="warehouse.dest_table",
+            mode=SlingMode.INCREMENTAL,
+            primary_key="event_id",
+        )
+
+        sling_resource = SlingResource(
+            source_connection=SlingSourceConnection(
+                type="postgres",
+                connection_string=EnvVar("POSTGRES_CONNECTION_STRING")),
+            target_connection=SlingTargetConnection(
+                type="snowflake",
+                host=<host>,
+                user=<user>,
+                database=<database>,
+                password=<password>,
+                role=<role>")
+        )
 
         defs = Definitions(
-            assets=[sync_asset],
-            resources={"sling": SlingResource(
-                source=SlingSource(
-                    stream="file:///path/to/file.csv",
-                    primary_key=["SPECIES_CODE"],
-                ),
-                target=SlingTarget(
-                    connection="sqlite:///path/to/sqlite.db",
-                    object="main.tbl",
-                ),
-                mode=SlingMode.TRUNCATE,
-            )}
+            assets=[asset_def],
+            resources={"sling": sling_resource}
         )
     """
 
@@ -127,6 +132,7 @@ class SlingResource(ConfigurableResource):
 
     @contextlib.contextmanager
     def _setup_config(self) -> Generator[None, None, None]:
+        """Uses environment variables to set the Sling source and target connections."""
         sling_source = self.source_connection.dict()
         sling_target = self.target_connection.dict()
         if self.source_connection.connection_string:
@@ -141,18 +147,16 @@ class SlingResource(ConfigurableResource):
         ):
             yield
 
-    def exec_sling_cmd(
-        self, cmd, stdin=None, stdout=PIPE, stderr=STDOUT
-    ) -> Generator[str, None, None]:
-        # copied from
-        # https://github.com/slingdata-io/sling-python/blob/main/sling/__init__.py#L251
-        # fixes issue w/ trying to gather stderr when stderr=STDOUT
+    @staticmethod
+    def _exec_sling_cmd(cmd, stdin=None, stdout=PIPE, stderr=STDOUT) -> Generator[str, None, None]:
+        ansi_escape = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
         with Popen(cmd, shell=True, stdin=stdin, stdout=stdout, stderr=stderr) as proc:
             assert proc.stdout
 
             for line in proc.stdout:
-                fmt_line = str(line.strip(), "utf-8")
-                yield fmt_line
+                fmt_line = str(line, "utf-8")
+                clean_line = ansi_escape.sub("", fmt_line).replace("INF", "")
+                yield clean_line
 
             proc.wait()
             if proc.returncode != 0:
@@ -199,7 +203,7 @@ class SlingResource(ConfigurableResource):
             logger.info("Starting Sling sync with mode: %s", mode)
             cmd = sling_cli._prep_cmd()  # noqa: SLF001
 
-            yield from self.exec_sling_cmd(cmd)
+            yield from self._exec_sling_cmd(cmd)
 
     def sync(
         self,
