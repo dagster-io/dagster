@@ -152,7 +152,8 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
   const {layout, loading, async} = useAssetLayout(
     assetGraphData,
     // Use the pathname as part of the key so that different deployments don't invalidate each other's cached layout
-    `explorer:${pathname}`,
+    // Remove the slash at the end in the key so that the same layout is used for both `/path` and `/path/`
+    `explorer:${pathname.endsWith('/') ? pathname.slice(0, pathname.length - 1) : pathname}`,
     fullAssetGraphData,
   );
   const viewportEl = React.useRef<SVGViewport>();
