@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from .context import ExtMessageHandler, ExtResult
 
 
-class ExtClient(ABC):
+class PipedProcessClient(ABC):
     @abstractmethod
     def run(
         self,
@@ -24,7 +24,7 @@ class ExtClient(ABC):
     ) -> Iterator["ExtResult"]: ...
 
 
-class ExtContextInjector(ABC):
+class PipedProcessContextInjector(ABC):
     @abstractmethod
     @contextmanager
     def inject_context(

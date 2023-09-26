@@ -23,8 +23,8 @@ from dagster import (
     _check as check,
 )
 from dagster._core.pipes.client import (
-    ExtContextInjector,
     ExtMessageReader,
+    PipedProcessContextInjector,
 )
 from dagster._core.pipes.context import (
     ExtMessageHandler,
@@ -37,7 +37,7 @@ _CONTEXT_INJECTOR_FILENAME = "context"
 _MESSAGE_READER_FILENAME = "messages"
 
 
-class ExtFileContextInjector(ExtContextInjector):
+class ExtFileContextInjector(PipedProcessContextInjector):
     def __init__(self, path: str):
         self._path = check.str_param(path, "path")
 
@@ -52,7 +52,7 @@ class ExtFileContextInjector(ExtContextInjector):
                 os.remove(self._path)
 
 
-class ExtTempFileContextInjector(ExtContextInjector):
+class ExtTempFileContextInjector(PipedProcessContextInjector):
     @contextmanager
     def inject_context(self, context: "PipedProcessContextData") -> Iterator[PipeableParams]:
         with tempfile.TemporaryDirectory() as tempdir:
@@ -62,7 +62,7 @@ class ExtTempFileContextInjector(ExtContextInjector):
                 yield params
 
 
-class ExtEnvContextInjector(ExtContextInjector):
+class ExtEnvContextInjector(PipedProcessContextInjector):
     @contextmanager
     def inject_context(
         self,
@@ -194,7 +194,7 @@ _FAIL_TO_YIELD_ERROR_MESSAGE = (
 @contextmanager
 def pipes_protocol(
     context: OpExecutionContext,
-    context_injector: ExtContextInjector,
+    context_injector: PipedProcessContextInjector,
     message_reader: ExtMessageReader,
     extras: Optional[PipeableExtras] = None,
 ) -> Iterator[PipesSession]:
