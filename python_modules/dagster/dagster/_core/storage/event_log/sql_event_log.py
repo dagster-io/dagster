@@ -692,6 +692,7 @@ class SqlEventLogStorage(EventLogStorage):
             self.delete_events_for_run(conn, run_id)
         with self.index_connection() as conn:
             self.delete_events_for_run(conn, run_id)
+        self.free_concurrency_slots_for_run(run_id)
 
     def delete_events_for_run(self, conn: Connection, run_id: str) -> None:
         check.str_param(run_id, "run_id")
