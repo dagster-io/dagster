@@ -384,6 +384,29 @@ def test_long_running_job():
     assert len(mock_client.sleeper.mock_calls) == 1
 
 
+def test_job_succeded_after_failure():
+    mock_client = create_mocked_client()
+
+    job_name = "a_job"
+    namespace = "a_namespace"
+
+    a_job_metadata = V1ObjectMeta(name=job_name)
+
+    a_job_is_launched_list = V1JobList(items=[V1Job(metadata=a_job_metadata)])
+    mock_client.batch_api.list_namespaced_job.side_effect = [a_job_is_launched_list]
+
+    # failed job
+    failed_job = V1Job(metadata=a_job_metadata, status=V1JobStatus(active=1, failed=1, succeeded=0))
+    completed_job = V1Job(
+        metadata=a_job_metadata, status=V1JobStatus(active=0, failed=0, succeeded=1)
+    )
+    mock_client.batch_api.read_namespaced_job_status.side_effect = [failed_job, completed_job]
+
+    mock_client.wait_for_job_success(job_name, namespace)
+
+    assert len(mock_client.batch_api.read_namespaced_job_status.mock_calls) == 2
+
+
 ###
 # retrieve_pod_logs
 ###
