@@ -9,8 +9,8 @@ from dagster._core.errors import DagsterExternalExecutionError
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.pipes.client import (
     ExtMessageReader,
-    PipedProcessClient,
-    PipedProcessContextInjector,
+    PipesClient,
+    PipesContextInjector,
 )
 from dagster._core.pipes.context import ExtResult
 from dagster._core.pipes.utils import (
@@ -20,7 +20,7 @@ from dagster._core.pipes.utils import (
 )
 
 
-class _PipedSubprocess(PipedProcessClient):
+class _PipedSubprocess(PipesClient):
     """A pipes client that runs a subprocess with the given command and environment.
 
     By default parameters are injected via environment variables. And then context is passed via
@@ -29,15 +29,15 @@ class _PipedSubprocess(PipedProcessClient):
     Args:
         env (Optional[Mapping[str, str]]): An optional dict of environment variables to pass to the subprocess.
         cwd (Optional[str]): Working directory in which to launch the subprocess command.
-        context_injector (Optional[PipedProcessContextInjector]): An context injector to use to inject context into the subprocess. Defaults to ExtTempFileContextInjector.
-        message_reader (Optional[PipedProcessContextInjector]): An context injector to use to read messages from  the subprocess. Defaults to ExtTempFileMessageReader.
+        context_injector (Optional[PipesContextInjector]): An context injector to use to inject context into the subprocess. Defaults to ExtTempFileContextInjector.
+        message_reader (Optional[PipesContextInjector]): An context injector to use to read messages from  the subprocess. Defaults to ExtTempFileMessageReader.
     """
 
     def __init__(
         self,
         env: Optional[Mapping[str, str]] = None,
         cwd: Optional[str] = None,
-        context_injector: Optional[PipedProcessContextInjector] = None,
+        context_injector: Optional[PipesContextInjector] = None,
         message_reader: Optional[ExtMessageReader] = None,
     ):
         self.env = check.opt_mapping_param(env, "env", key_type=str, value_type=str)
@@ -46,7 +46,7 @@ class _PipedSubprocess(PipedProcessClient):
             check.opt_inst_param(
                 context_injector,
                 "context_injector",
-                PipedProcessContextInjector,
+                PipesContextInjector,
             )
             or ExtTempFileContextInjector()
         )

@@ -13,8 +13,8 @@ from dagster._core.errors import DagsterExternalExecutionError
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.pipes.client import (
     ExtMessageReader,
-    PipedProcessClient,
-    PipedProcessContextInjector,
+    PipesClient,
+    PipesContextInjector,
 )
 from dagster._core.pipes.context import ExtResult
 from dagster._core.pipes.utils import (
@@ -31,7 +31,7 @@ from databricks.sdk.service import files, jobs
 from pydantic import Field
 
 
-class _ExtDatabricks(PipedProcessClient):
+class _ExtDatabricks(PipesClient):
     """Ext client for databricks.
 
     Args:
@@ -48,7 +48,7 @@ class _ExtDatabricks(PipedProcessClient):
         self,
         client: WorkspaceClient,
         env: Optional[Mapping[str, str]] = None,
-        context_injector: Optional[PipedProcessContextInjector] = None,
+        context_injector: Optional[PipesContextInjector] = None,
         message_reader: Optional[ExtMessageReader] = None,
     ):
         self.client = client
@@ -56,7 +56,7 @@ class _ExtDatabricks(PipedProcessClient):
         self.context_injector = check.opt_inst_param(
             context_injector,
             "context_injector",
-            PipedProcessContextInjector,
+            PipesContextInjector,
         ) or ExtDbfsContextInjector(client=self.client)
         self.message_reader = check.opt_inst_param(
             message_reader,
@@ -141,7 +141,7 @@ def dbfs_tempdir(dbfs_client: files.DbfsAPI) -> Iterator[str]:
         dbfs_client.delete(tempdir, recursive=True)
 
 
-class ExtDbfsContextInjector(PipedProcessContextInjector):
+class ExtDbfsContextInjector(PipesContextInjector):
     def __init__(self, *, client: WorkspaceClient):
         super().__init__()
         self.dbfs_client = files.DbfsAPI(client.api_client)

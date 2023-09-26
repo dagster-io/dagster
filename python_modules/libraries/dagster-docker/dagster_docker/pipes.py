@@ -9,8 +9,8 @@ from dagster import (
 )
 from dagster._core.pipes.client import (
     ExtMessageReader,
-    PipedProcessClient,
-    PipedProcessContextInjector,
+    PipesClient,
+    PipesContextInjector,
 )
 from dagster._core.pipes.context import (
     ExtMessageHandler,
@@ -49,7 +49,7 @@ class DockerLogsMessageReader(ExtMessageReader):
             extract_message_or_forward_to_stdout(handler, log_line)
 
 
-class _ExtDocker(PipedProcessClient):
+class _ExtDocker(PipesClient):
     """An ext protocol compliant resource for launching docker containers.
 
     By default context is injected via environment variables and messages are parsed out of the
@@ -58,15 +58,15 @@ class _ExtDocker(PipedProcessClient):
     Args:
         env (Optional[Mapping[str, str]]): An optional dict of environment variables to pass to the subprocess.
         register (Optional[Mapping[str, str]]): An optional dict of registry credentials to login the docker client.
-        context_injector (Optional[PipedProcessContextInjector]): An context injector to use to inject context into the docker container process. Defaults to ExtEnvContextInjector.
-        message_reader (Optional[PipedProcessContextInjector]): An context injector to use to read messages from the docker container process. Defaults to DockerLogsMessageReader.
+        context_injector (Optional[PipesContextInjector]): An context injector to use to inject context into the docker container process. Defaults to ExtEnvContextInjector.
+        message_reader (Optional[PipesContextInjector]): An context injector to use to read messages from the docker container process. Defaults to DockerLogsMessageReader.
     """
 
     def __init__(
         self,
         env: Optional[Mapping[str, str]] = None,
         registry: Optional[Mapping[str, str]] = None,
-        context_injector: Optional[PipedProcessContextInjector] = None,
+        context_injector: Optional[PipesContextInjector] = None,
         message_reader: Optional[ExtMessageReader] = None,
     ):
         self.env = check.opt_mapping_param(env, "env", key_type=str, value_type=str)
@@ -75,7 +75,7 @@ class _ExtDocker(PipedProcessClient):
             check.opt_inst_param(
                 context_injector,
                 "context_injector",
-                PipedProcessContextInjector,
+                PipesContextInjector,
             )
             or ExtEnvContextInjector()
         )
@@ -113,7 +113,7 @@ class _ExtDocker(PipedProcessClient):
                 Arguments to be forwarded to docker client containers.create.
             extras (Optional[PipesExtras]):
                 Extra values to pass along as part of the ext protocol.
-            context_injector (Optional[PipedProcessContextInjector]):
+            context_injector (Optional[PipesContextInjector]):
                 Override the default ext protocol context injection.
             message_Reader (Optional[ExtMessageReader]):
                 Override the default ext protocol message reader.
