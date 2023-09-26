@@ -19,7 +19,7 @@ from typing import (
 
 import dagster._check as check
 from dagster._annotations import experimental_param, public
-from dagster._core.definitions.asset_check_spec import AssetCheckHandle, AssetCheckSpec
+from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
 from dagster._core.definitions.asset_layer import get_dep_node_handles_of_graph_backed_asset
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPolicyType
@@ -264,7 +264,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             }
 
         self._check_specs_by_handle = {
-            spec.handle: spec for spec in self._check_specs_by_output_name.values()
+            spec.key: spec for spec in self._check_specs_by_output_name.values()
         }
 
         if self._partitions_def is None:
@@ -794,8 +794,8 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     def check_specs_by_output_name(self) -> Mapping[str, AssetCheckSpec]:
         return self._check_specs_by_output_name
 
-    def get_spec_for_check_handle(self, asset_check_handle: AssetCheckHandle) -> AssetCheckSpec:
-        return self._check_specs_by_handle[asset_check_handle]
+    def get_spec_for_check_key(self, asset_check_key: AssetCheckKey) -> AssetCheckSpec:
+        return self._check_specs_by_handle[asset_check_key]
 
     @property
     def keys_by_output_name(self) -> Mapping[str, AssetKey]:

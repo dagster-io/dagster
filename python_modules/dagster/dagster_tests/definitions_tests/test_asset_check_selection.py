@@ -8,7 +8,7 @@ from dagster import (
     asset_check,
     define_asset_job,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckHandle, AssetCheckSpec
+from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
 
@@ -50,10 +50,10 @@ def test_job_with_all_checks_no_materializations():
 
     assert len(result.get_asset_materialization_events()) == 0
     check_evals = result.get_asset_check_evaluations()
-    assert {check_eval.asset_check_handle for check_eval in check_evals} == {
-        AssetCheckHandle(asset1.key, "asset1_check1"),
-        AssetCheckHandle(asset1.key, "asset1_check2"),
-        AssetCheckHandle(asset2.key, "asset2_check1"),
+    assert {check_eval.asset_check_key for check_eval in check_evals} == {
+        AssetCheckKey(asset1.key, "asset1_check1"),
+        AssetCheckKey(asset1.key, "asset1_check2"),
+        AssetCheckKey(asset2.key, "asset2_check1"),
     }
 
 
@@ -64,9 +64,9 @@ def test_job_with_all_checks_for_asset():
 
     assert len(result.get_asset_materialization_events()) == 0
     check_evals = result.get_asset_check_evaluations()
-    assert {check_eval.asset_check_handle for check_eval in check_evals} == {
-        AssetCheckHandle(asset1.key, "asset1_check1"),
-        AssetCheckHandle(asset1.key, "asset1_check2"),
+    assert {check_eval.asset_check_key for check_eval in check_evals} == {
+        AssetCheckKey(asset1.key, "asset1_check1"),
+        AssetCheckKey(asset1.key, "asset1_check2"),
     }
 
 
@@ -77,9 +77,9 @@ def test_job_with_asset_and_all_its_checks():
 
     assert len(result.get_asset_materialization_events()) == 1
     check_evals = result.get_asset_check_evaluations()
-    assert {check_eval.asset_check_handle for check_eval in check_evals} == {
-        AssetCheckHandle(asset1.key, "asset1_check1"),
-        AssetCheckHandle(asset1.key, "asset1_check2"),
+    assert {check_eval.asset_check_key for check_eval in check_evals} == {
+        AssetCheckKey(asset1.key, "asset1_check1"),
+        AssetCheckKey(asset1.key, "asset1_check2"),
     }
 
 
@@ -90,8 +90,8 @@ def test_job_with_single_check():
 
     assert len(result.get_asset_materialization_events()) == 0
     check_evals = result.get_asset_check_evaluations()
-    assert {check_eval.asset_check_handle for check_eval in check_evals} == {
-        AssetCheckHandle(asset1.key, "asset1_check1"),
+    assert {check_eval.asset_check_key for check_eval in check_evals} == {
+        AssetCheckKey(asset1.key, "asset1_check1"),
     }
 
 
@@ -146,9 +146,9 @@ def test_job_with_all_assets_and_all_but_one_check():
 
     assert len(result.get_asset_materialization_events()) == 2
     check_evals = result.get_asset_check_evaluations()
-    assert {check_eval.asset_check_handle for check_eval in check_evals} == {
-        AssetCheckHandle(asset1.key, "asset1_check2"),
-        AssetCheckHandle(asset2.key, "asset2_check1"),
+    assert {check_eval.asset_check_key for check_eval in check_evals} == {
+        AssetCheckKey(asset1.key, "asset1_check2"),
+        AssetCheckKey(asset2.key, "asset2_check1"),
     }
 
 
@@ -163,9 +163,9 @@ def test_include_asset_after_excluding_checks():
 
     assert len(result.get_asset_materialization_events()) == 2
     check_evals = result.get_asset_check_evaluations()
-    assert {check_eval.asset_check_handle for check_eval in check_evals} == {
-        AssetCheckHandle(asset1.key, "asset1_check1"),
-        AssetCheckHandle(asset1.key, "asset1_check2"),
+    assert {check_eval.asset_check_key for check_eval in check_evals} == {
+        AssetCheckKey(asset1.key, "asset1_check1"),
+        AssetCheckKey(asset1.key, "asset1_check2"),
     }
 
 
@@ -197,7 +197,7 @@ def test_checks_on_asset():
 
     assert len(result.get_asset_materialization_events()) == 1
     check_evals = result.get_asset_check_evaluations()
-    assert {check_eval.asset_check_handle for check_eval in check_evals} == {
-        AssetCheckHandle(asset_with_checks.key, "check1"),
-        AssetCheckHandle(asset_with_checks.key, "check2"),
+    assert {check_eval.asset_check_key for check_eval in check_evals} == {
+        AssetCheckKey(asset_with_checks.key, "check1"),
+        AssetCheckKey(asset_with_checks.key, "check2"),
     }
