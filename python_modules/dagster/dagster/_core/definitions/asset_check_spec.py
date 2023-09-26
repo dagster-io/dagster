@@ -28,7 +28,7 @@ class AssetCheckSeverity(Enum):
 
 
 @experimental
-@whitelist_for_serdes
+@whitelist_for_serdes(old_storage_names={"AssetCheckHandle"})
 class AssetCheckKey(NamedTuple):
     """Check names are expected to be unique per-asset. Thus, this combination of asset key and
     check name uniquely identifies an asset check within a deployment.
@@ -90,5 +90,5 @@ class AssetCheckSpec(
         return f"{self.asset_key.to_python_identifier()}_{self.name}"
 
     @property
-    def handle(self) -> AssetCheckKey:
+    def key(self) -> AssetCheckKey:
         return AssetCheckKey(self.asset_key, self.name)

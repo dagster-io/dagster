@@ -264,7 +264,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             }
 
         self._check_specs_by_handle = {
-            spec.handle: spec for spec in self._check_specs_by_output_name.values()
+            spec.key: spec for spec in self._check_specs_by_output_name.values()
         }
 
         if self._partitions_def is None:

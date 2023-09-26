@@ -799,7 +799,7 @@ class JobDefinition(IHasInternalInit):
         all_check_keys_in_checks_defs = set()
         for asset_checks_def in self.asset_layer.asset_checks_defs:
             for spec in asset_checks_def.specs:
-                all_check_keys_in_checks_defs.add(spec.handle)
+                all_check_keys_in_checks_defs.add(spec.key)
 
         non_checks_defs_asset_checks = [
             asset_check

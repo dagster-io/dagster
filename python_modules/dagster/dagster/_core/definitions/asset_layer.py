@@ -502,11 +502,11 @@ class AssetLayer(NamedTuple):
                     node_output_handle = NodeOutputHandle(
                         check.not_none(inner_node_handle), inner_output_def.name
                     )
-                    node_output_handles_by_asset_check_key[check_spec.handle] = node_output_handle
+                    node_output_handles_by_asset_check_key[check_spec.key] = node_output_handle
                     check_names_by_asset_key_by_node_handle[node_handle][check_spec.asset_key].add(
                         check_spec.name
                     )
-                    check_key_by_output[node_output_handle] = check_spec.handle
+                    check_key_by_output[node_output_handle] = check_spec.key
 
         dep_asset_keys_by_node_output_handle = defaultdict(set)
         for asset_key, node_output_handles in dep_node_output_handles_by_asset_key.items():
@@ -522,11 +522,11 @@ class AssetLayer(NamedTuple):
                 node_output_handle = NodeOutputHandle(
                     check.not_none(inner_node_handle), inner_output_def.name
                 )
-                node_output_handles_by_asset_check_key[check_spec.handle] = node_output_handle
+                node_output_handles_by_asset_check_key[check_spec.key] = node_output_handle
                 check_names_by_asset_key_by_node_handle[node_handle][check_spec.asset_key].add(
                     check_spec.name
                 )
-                check_key_by_output[node_output_handle] = check_spec.handle
+                check_key_by_output[node_output_handle] = check_spec.key
 
             for input_name, asset_key in checks_def.asset_keys_by_input_name.items():
                 input_handle = NodeInputHandle(node_handle, input_name)
@@ -824,7 +824,7 @@ def build_asset_selection_job(
             included_checks = [
                 asset_check
                 for asset_check in asset_checks
-                if [spec for spec in asset_check.specs if spec.handle in asset_check_selection]
+                if [spec for spec in asset_check.specs if spec.key in asset_check_selection]
             ]
         else:
             # If assets were selected and checks weren't, then include all checks on the selected assets.

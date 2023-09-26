@@ -709,9 +709,9 @@ class InternalAssetGraph(AssetGraph):
 
         asset_check_keys = set()
         for asset_check in asset_checks:
-            asset_check_keys.update([spec.handle for spec in asset_check.specs])
+            asset_check_keys.update([spec.key for spec in asset_check.specs])
         for asset in assets:
-            asset_check_keys.update([spec.handle for spec in asset.check_specs])
+            asset_check_keys.update([spec.key for spec in asset.check_specs])
         self._asset_check_keys = asset_check_keys
 
     @property

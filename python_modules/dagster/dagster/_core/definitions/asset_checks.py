@@ -43,7 +43,7 @@ class AssetChecksDefinition(ResourceAddable, RequiresResources):
         self._input_output_props = check.inst_param(
             input_output_props, "input_output_props", AssetChecksDefinitionInputOutputProps
         )
-        self._specs_by_handle = {spec.handle: spec for spec in specs}
+        self._specs_by_handle = {spec.key: spec for spec in specs}
         self._specs_by_output_name = {
             output_name: self._specs_by_handle[check_key]
             for output_name, check_key in input_output_props.asset_check_keys_by_output_name.items()
