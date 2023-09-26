@@ -9,10 +9,10 @@ from botocore.exceptions import ClientError
 from dagster._core.pipes.client import (
     PipesParams,
 )
-from dagster._core.pipes.utils import ExtBlobStoreMessageReader
+from dagster._core.pipes.utils import PipesBlobStoreMessageReader
 
 
-class ExtS3MessageReader(ExtBlobStoreMessageReader):
+class PipesS3MessageReader(PipesBlobStoreMessageReader):
     def __init__(self, *, interval: float = 10, bucket: str, client: boto3.client):
         super().__init__(interval=interval)
         self.bucket = check.str_param(bucket, "bucket")

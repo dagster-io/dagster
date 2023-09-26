@@ -23,11 +23,11 @@ from dagster import (
     _check as check,
 )
 from dagster._core.pipes.client import (
-    ExtMessageReader,
     PipesContextInjector,
+    PipesMessageReader,
 )
 from dagster._core.pipes.context import (
-    ExtMessageHandler,
+    PipesMessageHandler,
     PipesSession,
     build_external_execution_context_data,
 )
@@ -71,14 +71,14 @@ class ExtEnvContextInjector(PipesContextInjector):
         yield {DefaultPipesContextLoader.DIRECT_KEY: context_data}
 
 
-class ExtFileMessageReader(ExtMessageReader):
+class PipesFileMessageReader(PipesMessageReader):
     def __init__(self, path: str):
         self._path = check.str_param(path, "path")
 
     @contextmanager
     def read_messages(
         self,
-        handler: "ExtMessageHandler",
+        handler: "PipesMessageHandler",
     ) -> Iterator[PipesParams]:
         is_task_complete = Event()
         thread = None
@@ -96,26 +96,26 @@ class ExtFileMessageReader(ExtMessageReader):
             if thread:
                 thread.join()
 
-    def _reader_thread(self, handler: "ExtMessageHandler", is_resource_complete: Event) -> None:
+    def _reader_thread(self, handler: "PipesMessageHandler", is_resource_complete: Event) -> None:
         for line in tail_file(self._path, lambda: is_resource_complete.is_set()):
             message = json.loads(line)
             handler.handle_message(message)
 
 
-class ExtTempFileMessageReader(ExtMessageReader):
+class PipesTempFileMessageReader(PipesMessageReader):
     @contextmanager
     def read_messages(
         self,
-        handler: "ExtMessageHandler",
+        handler: "PipesMessageHandler",
     ) -> Iterator[PipesParams]:
         with tempfile.TemporaryDirectory() as tempdir:
-            with ExtFileMessageReader(
+            with PipesFileMessageReader(
                 os.path.join(tempdir, _MESSAGE_READER_FILENAME)
             ).read_messages(handler) as params:
                 yield params
 
 
-class ExtBlobStoreMessageReader(ExtMessageReader):
+class PipesBlobStoreMessageReader(PipesMessageReader):
     interval: float
     counter: int
 
@@ -126,7 +126,7 @@ class ExtBlobStoreMessageReader(ExtMessageReader):
     @contextmanager
     def read_messages(
         self,
-        handler: "ExtMessageHandler",
+        handler: "PipesMessageHandler",
     ) -> Iterator[PipesParams]:
         with self.get_params() as params:
             is_task_complete = Event()
@@ -156,7 +156,7 @@ class ExtBlobStoreMessageReader(ExtMessageReader):
     def download_messages_chunk(self, index: int, params: PipesParams) -> Optional[str]: ...
 
     def _reader_thread(
-        self, handler: "ExtMessageHandler", params: PipesParams, is_task_complete: Event
+        self, handler: "PipesMessageHandler", params: PipesParams, is_task_complete: Event
     ) -> None:
         start_or_last_download = datetime.datetime.now()
         while True:
@@ -174,7 +174,7 @@ class ExtBlobStoreMessageReader(ExtMessageReader):
             time.sleep(1)
 
 
-def extract_message_or_forward_to_stdout(handler: "ExtMessageHandler", log_line: str):
+def extract_message_or_forward_to_stdout(handler: "PipesMessageHandler", log_line: str):
     # exceptions as control flow, you love to see it
     try:
         message = json.loads(log_line)
@@ -195,7 +195,7 @@ _FAIL_TO_YIELD_ERROR_MESSAGE = (
 def open_pipes_session(
     context: OpExecutionContext,
     context_injector: PipesContextInjector,
-    message_reader: ExtMessageReader,
+    message_reader: PipesMessageReader,
     extras: Optional[PipesExtras] = None,
 ) -> Iterator[PipesSession]:
     """Enter the context managed context injector and message reader that power the EXT protocol and receive the environment variables
@@ -204,7 +204,7 @@ def open_pipes_session(
     # This will trigger an error if expected outputs are not yielded
     context.set_requires_typed_event_stream(error_message=_FAIL_TO_YIELD_ERROR_MESSAGE)
     context_data = build_external_execution_context_data(context, extras)
-    message_handler = ExtMessageHandler(context)
+    message_handler = PipesMessageHandler(context)
     with context_injector.inject_context(
         context_data
     ) as ci_params, message_handler.handle_messages(message_reader) as mr_params:

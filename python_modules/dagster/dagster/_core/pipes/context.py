@@ -30,12 +30,12 @@ from dagster._core.definitions.result import MaterializeResult
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.execution.context.invocation import BoundOpExecutionContext
-from dagster._core.pipes.client import ExtMessageReader
+from dagster._core.pipes.client import PipesMessageReader
 
 ExtResult: TypeAlias = Union[MaterializeResult, AssetCheckResult]
 
 
-class ExtMessageHandler:
+class PipesMessageHandler:
     def __init__(self, context: OpExecutionContext) -> None:
         self._context = context
         # Queue is thread-safe
@@ -44,7 +44,7 @@ class ExtMessageHandler:
         self._unmaterialized_assets: Set[AssetKey] = set(context.selected_asset_keys)
 
     @contextmanager
-    def handle_messages(self, message_reader: ExtMessageReader) -> Iterator[PipesParams]:
+    def handle_messages(self, message_reader: PipesMessageReader) -> Iterator[PipesParams]:
         with message_reader.read_messages(self) as params:
             yield params
         for key in self._unmaterialized_assets:
@@ -166,7 +166,7 @@ def _ext_params_as_env_vars(
 @dataclass
 class PipesSession:
     context_data: PipesContextData
-    message_handler: ExtMessageHandler
+    message_handler: PipesMessageHandler
     context_injector_params: PipesParams
     message_reader_params: PipesParams
 

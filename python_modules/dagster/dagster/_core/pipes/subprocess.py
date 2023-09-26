@@ -8,14 +8,14 @@ from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.errors import DagsterExternalExecutionError
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.pipes.client import (
-    ExtMessageReader,
     PipesClient,
     PipesContextInjector,
+    PipesMessageReader,
 )
 from dagster._core.pipes.context import ExtResult
 from dagster._core.pipes.utils import (
     ExtTempFileContextInjector,
-    ExtTempFileMessageReader,
+    PipesTempFileMessageReader,
     open_pipes_session,
 )
 
@@ -38,7 +38,7 @@ class _PipesSubprocess(PipesClient):
         env: Optional[Mapping[str, str]] = None,
         cwd: Optional[str] = None,
         context_injector: Optional[PipesContextInjector] = None,
-        message_reader: Optional[ExtMessageReader] = None,
+        message_reader: Optional[PipesMessageReader] = None,
     ):
         self.env = check.opt_mapping_param(env, "env", key_type=str, value_type=str)
         self.cwd = check.opt_str_param(cwd, "cwd")
@@ -54,9 +54,9 @@ class _PipesSubprocess(PipesClient):
             check.opt_inst_param(
                 message_reader,
                 "message_reader",
-                ExtMessageReader,
+                PipesMessageReader,
             )
-            or ExtTempFileMessageReader()
+            or PipesTempFileMessageReader()
         )
 
     def run(

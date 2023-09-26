@@ -12,13 +12,13 @@ from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.errors import DagsterExternalExecutionError
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.pipes.client import (
-    ExtMessageReader,
     PipesClient,
     PipesContextInjector,
+    PipesMessageReader,
 )
 from dagster._core.pipes.context import ExtResult
 from dagster._core.pipes.utils import (
-    ExtBlobStoreMessageReader,
+    PipesBlobStoreMessageReader,
     open_pipes_session,
 )
 from dagster_pipes import (
@@ -49,7 +49,7 @@ class _ExtDatabricks(PipesClient):
         client: WorkspaceClient,
         env: Optional[Mapping[str, str]] = None,
         context_injector: Optional[PipesContextInjector] = None,
-        message_reader: Optional[ExtMessageReader] = None,
+        message_reader: Optional[PipesMessageReader] = None,
     ):
         self.client = client
         self.env = env
@@ -61,8 +61,8 @@ class _ExtDatabricks(PipesClient):
         self.message_reader = check.opt_inst_param(
             message_reader,
             "message_reader",
-            ExtMessageReader,
-        ) or ExtDbfsMessageReader(client=self.client)
+            PipesMessageReader,
+        ) or PipesDbfsMessageReader(client=self.client)
 
     def run(
         self,
@@ -155,7 +155,7 @@ class ExtDbfsContextInjector(PipesContextInjector):
             yield {"path": path}
 
 
-class ExtDbfsMessageReader(ExtBlobStoreMessageReader):
+class PipesDbfsMessageReader(PipesBlobStoreMessageReader):
     def __init__(self, *, interval: int = 10, client: WorkspaceClient):
         super().__init__(interval=interval)
         self.dbfs_client = files.DbfsAPI(client.api_client)
