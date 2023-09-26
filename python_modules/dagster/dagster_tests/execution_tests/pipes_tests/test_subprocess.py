@@ -35,18 +35,18 @@ from dagster._core.definitions.metadata import (
 from dagster._core.errors import DagsterExternalExecutionError, DagsterInvariantViolationError
 from dagster._core.execution.context.compute import AssetExecutionContext, OpExecutionContext
 from dagster._core.execution.context.invocation import build_asset_context
-from dagster._core.ext.subprocess import (
+from dagster._core.instance_for_test import instance_for_test
+from dagster._core.pipes.subprocess import (
     ExtSubprocess,
 )
-from dagster._core.ext.utils import (
+from dagster._core.pipes.utils import (
     ExtEnvContextInjector,
     ExtTempFileContextInjector,
     ExtTempFileMessageReader,
     ext_protocol,
 )
-from dagster._core.instance_for_test import instance_for_test
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
-from dagster_aws.ext import ExtS3MessageReader
+from dagster_aws.pipes import ExtS3MessageReader
 from moto.server import ThreadedMotoServer
 
 _PYTHON_EXECUTABLE = shutil.which("python")

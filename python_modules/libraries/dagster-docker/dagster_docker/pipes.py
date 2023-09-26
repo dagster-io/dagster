@@ -7,16 +7,16 @@ from dagster import (
     ResourceParam,
     _check as check,
 )
-from dagster._core.ext.client import (
+from dagster._core.pipes.client import (
     ExtClient,
     ExtContextInjector,
     ExtMessageReader,
 )
-from dagster._core.ext.context import (
+from dagster._core.pipes.context import (
     ExtMessageHandler,
     ExtResult,
 )
-from dagster._core.ext.utils import (
+from dagster._core.pipes.utils import (
     ExtEnvContextInjector,
     ext_protocol,
     extract_message_or_forward_to_stdout,

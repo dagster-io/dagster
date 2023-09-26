@@ -10,17 +10,17 @@ from dagster import (
 )
 from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.ext.client import (
+from dagster._core.pipes.client import (
     ExtClient,
     ExtContextInjector,
     ExtMessageReader,
     ExtParams,
 )
-from dagster._core.ext.context import (
+from dagster._core.pipes.context import (
     ExtMessageHandler,
     ExtResult,
 )
-from dagster._core.ext.utils import (
+from dagster._core.pipes.utils import (
     ExtEnvContextInjector,
     ext_protocol,
     extract_message_or_forward_to_stdout,

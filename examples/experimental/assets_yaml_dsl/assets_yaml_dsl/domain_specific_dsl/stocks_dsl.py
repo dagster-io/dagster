@@ -12,7 +12,7 @@ except ImportError:
 
 from dagster import AssetKey, AssetsDefinition, asset, file_relative_path, multi_asset
 from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.ext.subprocess import ExtSubprocess
+from dagster._core.pipes.subprocess import ExtSubprocess
 
 
 def load_yaml(relative_path: str) -> Dict[str, Any]:

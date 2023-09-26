@@ -30,7 +30,7 @@ from dagster._core.definitions.result import MaterializeResult
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.execution.context.invocation import BoundOpExecutionContext
-from dagster._core.ext.client import ExtMessageReader
+from dagster._core.pipes.client import ExtMessageReader
 
 ExtResult: TypeAlias = Union[MaterializeResult, AssetCheckResult]
 
