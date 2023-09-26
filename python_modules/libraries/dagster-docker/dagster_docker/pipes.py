@@ -23,7 +23,7 @@ from dagster._core.pipes.utils import (
 )
 from dagster_pipes import (
     DagsterPipesError,
-    ExtDefaultMessageWriter,
+    PipesDefaultMessageWriter,
     PipesExtras,
     PipesParams,
 )
@@ -37,7 +37,7 @@ class DockerLogsMessageReader(PipesMessageReader):
     ) -> Iterator[PipesParams]:
         self._handler = handler
         try:
-            yield {ExtDefaultMessageWriter.STDIO_KEY: ExtDefaultMessageWriter.STDERR}
+            yield {PipesDefaultMessageWriter.STDIO_KEY: PipesDefaultMessageWriter.STDERR}
         finally:
             self._handler = None
 

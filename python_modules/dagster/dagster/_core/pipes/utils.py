@@ -12,8 +12,8 @@ from typing import Iterator, Optional
 from dagster_pipes import (
     PIPES_PROTOCOL_VERSION_FIELD,
     DefaultPipesContextLoader,
-    ExtDefaultMessageWriter,
     PipesContextData,
+    PipesDefaultMessageWriter,
     PipesExtras,
     PipesParams,
 )
@@ -88,7 +88,7 @@ class PipesFileMessageReader(PipesMessageReader):
                 target=self._reader_thread, args=(handler, is_task_complete), daemon=True
             )
             thread.start()
-            yield {ExtDefaultMessageWriter.FILE_PATH_KEY: self._path}
+            yield {PipesDefaultMessageWriter.FILE_PATH_KEY: self._path}
         finally:
             is_task_complete.set()
             if os.path.exists(self._path):

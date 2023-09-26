@@ -75,8 +75,8 @@ def external_script() -> Iterator[str]:
         import time
 
         from dagster_pipes import (
-            ExtS3MessageWriter,
             PipesContext,
+            PipesS3MessageWriter,
             init_dagster_pipes,
         )
 
@@ -86,7 +86,7 @@ def external_script() -> Iterator[str]:
             client = boto3.client(
                 "s3", region_name="us-east-1", endpoint_url="http://localhost:5193"
             )
-            message_writer = ExtS3MessageWriter(client, interval=0.001)
+            message_writer = PipesS3MessageWriter(client, interval=0.001)
         else:
             message_writer = None  # use default
 
