@@ -201,8 +201,9 @@ def build_asset_with_blocking_check(
 
     return graph_asset_no_defaults(
         compose_fn=blocking_asset,
-        name=asset_def.key.path[-1],
-        key_prefix=asset_def.key.path[:-1] if len(asset_def.key.path) > 1 else None,
+        name=None,
+        key_prefix=None,
+        key=asset_def.key,
         group_name=asset_def.group_names_by_key.get(asset_def.key),
         partitions_def=asset_def.partitions_def,
         check_specs=check_specs,
