@@ -148,10 +148,11 @@ export function asyncMemoize<T, R, U extends (arg: T, ...rest: any[]) => Promise
   }) as any;
 }
 
-export function indexedDBAsyncMemoize<T, R, U extends (arg: T, ...rest: any[]) => Promise<R>>(
-  fn: U,
-  hashFn?: (arg: T, ...rest: any[]) => any,
-): U {
+export function indexedDBAsyncMemoize<
+  T,
+  R,
+  U extends (cacheKey: string, versionKey: string, arg: T, ...rest: any[]) => Promise<R>,
+>(fn: U, hashFn?: (arg: T, ...rest: any[]) => any): U {
   return (async (cacheKey: string, versionKey: string, arg: T, ...rest: any[]) => {
     const dbName = 'IndexedDBAsyncMemoizeDB';
     const storeName = 'memoizedValues';
@@ -159,7 +160,7 @@ export function indexedDBAsyncMemoize<T, R, U extends (arg: T, ...rest: any[]) =
 
     return new Promise<R>(async (resolve) => {
       async function computeAndStoreLayout() {
-        const result = await fn(arg, ...rest);
+        const result = await fn(cacheKey, versionKey, arg, ...rest);
         // Resolve the promise before storing the result in IndexedDB
         resolve(result);
 

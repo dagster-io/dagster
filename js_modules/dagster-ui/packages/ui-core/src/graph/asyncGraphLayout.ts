@@ -45,8 +45,8 @@ const _assetLayoutCacheKey = (graphData: GraphData) => {
 
 const getFullAssetLayout = memoize(layoutAssetGraph, _assetLayoutCacheKey);
 
-const asyncGetFullAssetLayoutLocalStorage = indexedDBAsyncMemoize(
-  (graphData: GraphData, opts: LayoutAssetGraphOptions) => {
+const asyncGetFullAssetLayoutIndexDB = indexedDBAsyncMemoize(
+  (_cacheKey, _versionKey, graphData: GraphData, opts: LayoutAssetGraphOptions) => {
     return new Promise<AssetGraphLayout>((resolve) => {
       const worker = new Worker(new URL('../workers/dagre_layout.worker', import.meta.url));
       worker.addEventListener('message', (event) => {
@@ -170,7 +170,7 @@ export function useAssetLayout(
       dispatch({type: 'loading'});
       let layout;
       if (localStorageKey) {
-        layout = await asyncGetFullAssetLayoutLocalStorage(
+        layout = await asyncGetFullAssetLayoutIndexDB(
           localStorageKey,
           fullDataCacheKey ?? cacheKey,
           graphData,
@@ -188,7 +188,7 @@ export function useAssetLayout(
     } else {
       void runAsyncLayout();
     }
-  }, [cacheKey, fullDataCacheKey, graphData, runAsync, flags]);
+  }, [cacheKey, fullDataCacheKey, graphData, runAsync, flags, localStorageKey]);
 
   return {
     loading: state.loading || !state.layout || state.cacheKey !== cacheKey,
