@@ -126,12 +126,12 @@
             "path": "/concepts/partitions-schedules-sensors/partitions",
             "children": [
               {
-                "title": "Partitioned assets",
-                "path": "/concepts/partitions-schedules-sensors/partitioned-assets"
+                "title": "Partitioning assets",
+                "path": "/concepts/partitions-schedules-sensors/partitioning-assets"
               },
               {
-                "title": "Partitioned ops (Advanced)",
-                "path": "/concepts/partitions-schedules-sensors/partitioned-ops"
+                "title": "Partitioning ops (Advanced)",
+                "path": "/concepts/partitions-schedules-sensors/partitioning-ops"
               },
               {
                 "title": "Testing partitions",
