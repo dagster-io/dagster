@@ -41,7 +41,7 @@ class DockerLogsMessageReader(PipesMessageReader):
         finally:
             self._handler = None
 
-    def consume_docker_logs(self, container):
+    def consume_docker_logs(self, container) -> None:
         handler = check.not_none(
             self._handler, "Can only consume logs within context manager scope."
         )
@@ -49,7 +49,7 @@ class DockerLogsMessageReader(PipesMessageReader):
             extract_message_or_forward_to_stdout(handler, log_line)
 
 
-class _ExtDocker(PipesClient):
+class _PipesDockerClient(PipesClient):
     """An ext protocol compliant resource for launching docker containers.
 
         By default context is injected via environment variables and messages are parsed out of the
@@ -190,4 +190,4 @@ class _ExtDocker(PipesClient):
         )
 
 
-ExtDocker = ResourceParam[_ExtDocker]
+PipesDockerClient = ResourceParam[_PipesDockerClient]
