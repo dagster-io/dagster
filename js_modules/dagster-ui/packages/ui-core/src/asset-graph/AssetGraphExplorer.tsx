@@ -585,3 +585,9 @@ const assetKeyTokensInRange = (
 
   return uniq(ledToTarget);
 };
+
+function normalizePathnameForCacheKey(pathname: string) {
+  const _path = pathname.endsWith('/') ? pathname.slice(0, pathname.length - 1) : pathname;
+  // Remove the op query string
+  return _path.split('~')[0];
+}
