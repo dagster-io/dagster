@@ -152,6 +152,7 @@ const WORKSPACE_RESOURCES_QUERY = gql`
         id
         name
         allTopLevelResourceDetails {
+          id
           ...ResourceEntryFragment
         }
       }

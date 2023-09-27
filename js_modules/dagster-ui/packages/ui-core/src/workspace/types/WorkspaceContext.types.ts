@@ -99,8 +99,12 @@ export type RootWorkspaceQuery = {
                     mode: string;
                     pipelineName: string;
                   }>;
-                  assetGroups: Array<{__typename: 'AssetGroup'; groupName: string}>;
-                  allTopLevelResourceDetails: Array<{__typename: 'ResourceDetails'; name: string}>;
+                  assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
+                  allTopLevelResourceDetails: Array<{
+                    __typename: 'ResourceDetails';
+                    id: string;
+                    name: string;
+                  }>;
                   location: {__typename: 'RepositoryLocation'; id: string; name: string};
                   displayMetadata: Array<{
                     __typename: 'RepositoryMetadata';
@@ -189,8 +193,12 @@ export type WorkspaceLocationNodeFragment = {
             mode: string;
             pipelineName: string;
           }>;
-          assetGroups: Array<{__typename: 'AssetGroup'; groupName: string}>;
-          allTopLevelResourceDetails: Array<{__typename: 'ResourceDetails'; name: string}>;
+          assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
+          allTopLevelResourceDetails: Array<{
+            __typename: 'ResourceDetails';
+            id: string;
+            name: string;
+          }>;
           location: {__typename: 'RepositoryLocation'; id: string; name: string};
           displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
         }>;
@@ -261,8 +269,8 @@ export type WorkspaceLocationFragment = {
       mode: string;
       pipelineName: string;
     }>;
-    assetGroups: Array<{__typename: 'AssetGroup'; groupName: string}>;
-    allTopLevelResourceDetails: Array<{__typename: 'ResourceDetails'; name: string}>;
+    assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
+    allTopLevelResourceDetails: Array<{__typename: 'ResourceDetails'; id: string; name: string}>;
     location: {__typename: 'RepositoryLocation'; id: string; name: string};
     displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
   }>;
@@ -314,8 +322,8 @@ export type WorkspaceRepositoryFragment = {
     mode: string;
     pipelineName: string;
   }>;
-  assetGroups: Array<{__typename: 'AssetGroup'; groupName: string}>;
-  allTopLevelResourceDetails: Array<{__typename: 'ResourceDetails'; name: string}>;
+  assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
+  allTopLevelResourceDetails: Array<{__typename: 'ResourceDetails'; id: string; name: string}>;
   location: {__typename: 'RepositoryLocation'; id: string; name: string};
   displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
 };

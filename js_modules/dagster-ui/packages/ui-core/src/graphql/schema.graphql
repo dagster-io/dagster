@@ -2022,11 +2022,13 @@ type Job implements SolidContainer & IPipelineSnapshot {
 }
 
 type AssetGroup {
+  id: String!
   groupName: String!
   assetKeys: [AssetKey!]!
 }
 
 type ResourceDetails {
+  id: String!
   name: String!
   description: String
   configFields: [ConfigTypeField!]!
