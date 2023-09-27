@@ -31,7 +31,7 @@ from databricks.sdk.service import files, jobs
 from pydantic import Field
 
 
-class _ExtDatabricks(PipesClient):
+class _PipesDatabricksClient(PipesClient):
     """Ext client for databricks.
 
     Args:
@@ -57,7 +57,7 @@ class _ExtDatabricks(PipesClient):
             context_injector,
             "context_injector",
             PipesContextInjector,
-        ) or ExtDbfsContextInjector(client=self.client)
+        ) or PipesDbfsContextInjector(client=self.client)
         self.message_reader = check.opt_inst_param(
             message_reader,
             "message_reader",
@@ -125,7 +125,7 @@ class _ExtDatabricks(PipesClient):
         yield from pipes_session.get_results()
 
 
-ExtDatabricks = ResourceParam[_ExtDatabricks]
+PipesDatabricksClient = ResourceParam[_PipesDatabricksClient]
 
 _CONTEXT_FILENAME = "context.json"
 
@@ -141,7 +141,7 @@ def dbfs_tempdir(dbfs_client: files.DbfsAPI) -> Iterator[str]:
         dbfs_client.delete(tempdir, recursive=True)
 
 
-class ExtDbfsContextInjector(PipesContextInjector):
+class PipesDbfsContextInjector(PipesContextInjector):
     def __init__(self, *, client: WorkspaceClient):
         super().__init__()
         self.dbfs_client = files.DbfsAPI(client.api_client)
