@@ -13,6 +13,7 @@ import pickBy from 'lodash/pickBy';
 import uniq from 'lodash/uniq';
 import without from 'lodash/without';
 import React from 'react';
+import {useHistory} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {useFeatureFlags} from '../app/Flags';
@@ -147,7 +148,14 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
   allAssetKeys,
 }) => {
   const findAssetLocation = useFindAssetLocation();
-  const {layout, loading, async} = useAssetLayout(assetGraphData);
+  const pathname = useHistory().location.pathname;
+  const {layout, loading, async} = useAssetLayout(
+    assetGraphData,
+    // Use the pathname as part of the key so that different deployments don't invalidate each other's cached layout
+    // Remove the slash at the end in the key so that the same layout is used for both `/path` and `/path/`
+    `explorer:${pathname.endsWith('/') ? pathname.slice(0, pathname.length - 1) : pathname}`,
+    fullAssetGraphData,
+  );
   const viewportEl = React.useRef<SVGViewport>();
   const {flagHorizontalDAGs, flagDAGSidebar} = useFeatureFlags();
 

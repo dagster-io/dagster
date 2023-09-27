@@ -266,6 +266,7 @@ export type AssetKeyInput = {
 export type AssetLatestInfo = {
   __typename: 'AssetLatestInfo';
   assetKey: AssetKey;
+  id: Scalars['ID'];
   inProgressRunIds: Array<Scalars['String']>;
   latestMaterialization: Maybe<MaterializationEvent>;
   latestRun: Maybe<Run>;
@@ -4784,6 +4785,10 @@ export const buildAssetLatestInfo = (
         : relationshipsToOmit.has('AssetKey')
         ? ({} as AssetKey)
         : buildAssetKey({}, relationshipsToOmit),
+    id:
+      overrides && overrides.hasOwnProperty('id')
+        ? overrides.id!
+        : 'b2af0f98-465f-4081-8979-be6bc1cfd1f3',
     inProgressRunIds:
       overrides && overrides.hasOwnProperty('inProgressRunIds') ? overrides.inProgressRunIds! : [],
     latestMaterialization:

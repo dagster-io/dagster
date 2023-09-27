@@ -24,26 +24,30 @@ def build_dagster_oss_main_steps() -> List[BuildkiteStep]:
             pipeline_name = "internal"
             trigger_branch = branch_name  # build on matching internal release branch
             async_step = True
-        elif _get_setting("INTERNAL_BRANCH"):  # feature branch
+            oss_compat_slim = False
+        else:  # feature branch
             pipeline_name = "oss-internal-compatibility"
             trigger_branch = _get_setting("INTERNAL_BRANCH") or "master"
             async_step = False
+            # Use OSS_COMPAT_SLIM by default unless an internal branch is explicitly specified
+            oss_compat_slim = _get_setting("OSS_COMPAT_SLIM") or not _get_setting("INTERNAL_BRANCH")
 
-            steps.append(
-                build_trigger_step(
-                    pipeline=pipeline_name,
-                    trigger_branch=trigger_branch,
-                    async_step=async_step,
-                    env={
-                        "DAGSTER_BRANCH": branch_name,
-                        "DAGSTER_COMMIT_HASH": commit_hash,
-                        "DAGSTER_UI_ONLY_OSS_CHANGE": (
-                            "1" if not skip_if_no_dagster_ui_changes() else ""
-                        ),
-                        "DAGSTER_CHECKOUT_DEPTH": _get_setting("DAGSTER_CHECKOUT_DEPTH") or "100",
-                    },
-                ),
-            )
+        steps.append(
+            build_trigger_step(
+                pipeline=pipeline_name,
+                trigger_branch=trigger_branch,
+                async_step=async_step,
+                env={
+                    "DAGSTER_BRANCH": branch_name,
+                    "DAGSTER_COMMIT_HASH": commit_hash,
+                    "DAGSTER_UI_ONLY_OSS_CHANGE": (
+                        "1" if not skip_if_no_dagster_ui_changes() else ""
+                    ),
+                    "DAGSTER_CHECKOUT_DEPTH": _get_setting("DAGSTER_CHECKOUT_DEPTH") or "100",
+                    "OSS_COMPAT_SLIM": "1" if oss_compat_slim else "",
+                },
+            ),
+        )
 
     # Full pipeline.
     steps += build_repo_wide_steps()

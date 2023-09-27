@@ -56,6 +56,10 @@ def test_with_asset_checks() -> None:
         )
         assert asset_def.check_specs_by_output_name
 
+        # dbt singular tests are not modeled as Dagster asset checks
+        for check_spec in asset_def.check_specs_by_output_name.values():
+            assert "assert_singular_test_is_not_asset_check" != check_spec.name
+
 
 @pytest.mark.parametrize(
     "dbt_commands",
@@ -93,7 +97,7 @@ def test_asset_check_execution(dbt_commands: List[List[str]]) -> None:
 
     assert (
         AssetCheckResult(
-            success=True,
+            passed=True,
             asset_key=AssetKey(["customers"]),
             check_name="unique_customers_customer_id",
             metadata={
@@ -108,7 +112,7 @@ def test_asset_check_execution(dbt_commands: List[List[str]]) -> None:
     )
     assert (
         AssetCheckResult(
-            success=True,
+            passed=True,
             asset_key=AssetKey(["customers"]),
             check_name="not_null_customers_customer_id",
             metadata={

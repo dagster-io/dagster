@@ -1,7 +1,7 @@
 from typing import Mapping, NamedTuple, Optional
 
 import dagster._check as check
-from dagster._core.definitions.asset_check_spec import AssetCheckHandle, AssetCheckSeverity
+from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSeverity
 from dagster._core.definitions.events import AssetKey, MetadataValue
 from dagster._serdes import whitelist_for_serdes
 
@@ -24,6 +24,10 @@ class AssetCheckEvaluationPlanned(
             asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
             check_name=check.str_param(check_name, "check_name"),
         )
+
+    @property
+    def asset_check_key(self) -> AssetCheckKey:
+        return AssetCheckKey(self.asset_key, self.check_name)
 
 
 @whitelist_for_serdes
@@ -48,14 +52,14 @@ class AssetCheckEvaluationTargetMaterializationData(
         )
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_field_names={"passed": "success"})
 class AssetCheckEvaluation(
     NamedTuple(
         "_AssetCheckEvaluation",
         [
             ("asset_key", AssetKey),
             ("check_name", str),
-            ("success", bool),
+            ("passed", bool),
             ("metadata", Mapping[str, MetadataValue]),
             (
                 "target_materialization_data",
@@ -72,7 +76,7 @@ class AssetCheckEvaluation(
             The asset key that was checked.
         check_name (str):
             The name of the check.
-        success (bool):
+        passed (bool):
             The pass/fail result of the check.
         metadata (Dict[str, MetadataValue]):
             Arbitrary user-provided metadata about the asset.  Keys are displayed string labels, and
@@ -88,7 +92,7 @@ class AssetCheckEvaluation(
         cls,
         asset_key: AssetKey,
         check_name: str,
-        success: bool,
+        passed: bool,
         metadata: Mapping[str, MetadataValue],
         target_materialization_data: Optional[AssetCheckEvaluationTargetMaterializationData] = None,
         severity: AssetCheckSeverity = AssetCheckSeverity.ERROR,
@@ -97,7 +101,7 @@ class AssetCheckEvaluation(
             cls,
             asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
             check_name=check.str_param(check_name, "check_name"),
-            success=check.bool_param(success, "success"),
+            passed=check.bool_param(passed, "passed"),
             metadata=check.dict_param(metadata, "metadata", key_type=str),
             target_materialization_data=check.opt_inst_param(
                 target_materialization_data,
@@ -108,5 +112,5 @@ class AssetCheckEvaluation(
         )
 
     @property
-    def asset_check_handle(self) -> AssetCheckHandle:
-        return AssetCheckHandle(self.asset_key, self.check_name)
+    def asset_check_key(self) -> AssetCheckKey:
+        return AssetCheckKey(self.asset_key, self.check_name)

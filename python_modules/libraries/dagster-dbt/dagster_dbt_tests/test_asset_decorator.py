@@ -11,13 +11,14 @@ from dagster import (
     FreshnessPolicy,
     PartitionsDefinition,
     asset,
-    materialize,
 )
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
-from dagster_dbt import DbtCliResource
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 from dagster_dbt.dbt_manifest import DbtManifestParam
+
+pytest.importorskip("dbt.version", minversion="1.4")
+
 
 manifest_path = Path(__file__).joinpath("..", "sample_manifest.json").resolve()
 manifest = json.loads(manifest_path.read_bytes())
@@ -28,16 +29,6 @@ test_dagster_metadata_manifest_path = (
     .resolve()
 )
 test_dagster_metadata_manifest = json.loads(test_dagster_metadata_manifest_path.read_bytes())
-
-
-def test_materialize(test_project_dir):
-    @dbt_assets(manifest=manifest)
-    def all_dbt_assets(context, dbt: DbtCliResource):
-        yield from dbt.cli(["build"], context=context).stream()
-
-    assert materialize(
-        [all_dbt_assets], resources={"dbt": DbtCliResource(project_dir=test_project_dir)}
-    ).success
 
 
 @pytest.mark.parametrize("manifest", [manifest, manifest_path, os.fspath(manifest_path)])

@@ -32,11 +32,6 @@ export type BackfillStatusesByAssetQuery = {
             error: {__typename: 'PythonError'; message: string; stack: Array<string>};
           }>;
         } | null;
-        partitionStatusCounts: Array<{
-          __typename: 'PartitionStatusCounts';
-          runStatus: Types.RunStatus;
-          count: number;
-        }>;
         assetBackfillData: {
           __typename: 'AssetBackfillData';
           rootAssetTargetedPartitions: Array<string> | null;
@@ -108,11 +103,6 @@ export type PartitionBackfillFragment = {
       error: {__typename: 'PythonError'; message: string; stack: Array<string>};
     }>;
   } | null;
-  partitionStatusCounts: Array<{
-    __typename: 'PartitionStatusCounts';
-    runStatus: Types.RunStatus;
-    count: number;
-  }>;
   assetBackfillData: {
     __typename: 'AssetBackfillData';
     rootAssetTargetedPartitions: Array<string> | null;

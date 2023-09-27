@@ -513,8 +513,12 @@ def do_run(
             elif not selected_keys:
                 assets_in_run.extend(a.to_source_assets())
             else:
-                assets_in_run.append(a.subset_for(asset_keys_set))
-                assets_in_run.extend(a.subset_for(a.keys - selected_keys).to_source_assets())
+                assets_in_run.append(a.subset_for(asset_keys_set, selected_asset_check_keys=None))
+                assets_in_run.extend(
+                    a.subset_for(
+                        a.keys - selected_keys, selected_asset_check_keys=None
+                    ).to_source_assets()
+                )
     materialize_to_memory(
         instance=instance,
         partition_key=partition_key,

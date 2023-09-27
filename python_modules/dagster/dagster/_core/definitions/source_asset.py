@@ -60,7 +60,6 @@ from dagster._utils.warnings import disable_dagster_warnings
 SourceAssetObserveFunction: TypeAlias = Callable[..., Any]
 
 
-@staticmethod
 def wrap_source_asset_observe_fn_in_op_compute_fn(
     source_asset: "SourceAsset",
 ) -> "DecoratedOpFunction":

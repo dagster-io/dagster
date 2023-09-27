@@ -102,7 +102,7 @@ RUNLESS_JOB_NAME = ""
 
 if TYPE_CHECKING:
     from dagster._core.debug import DebugRunPayload
-    from dagster._core.definitions.asset_check_spec import AssetCheckHandle
+    from dagster._core.definitions.asset_check_spec import AssetCheckKey
     from dagster._core.definitions.job_definition import (
         JobDefinition,
     )
@@ -1159,7 +1159,7 @@ class DagsterInstance(DynamicPartitionsStore):
         execution_plan_snapshot: Optional["ExecutionPlanSnapshot"],
         parent_job_snapshot: Optional["JobSnapshot"],
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
-        asset_check_selection: Optional[AbstractSet["AssetCheckHandle"]] = None,
+        asset_check_selection: Optional[AbstractSet["AssetCheckKey"]] = None,
         op_selection: Optional[Sequence[str]] = None,
         external_job_origin: Optional["ExternalJobOrigin"] = None,
         job_code_origin: Optional[JobPythonOrigin] = None,
@@ -1338,12 +1338,12 @@ class DagsterInstance(DynamicPartitionsStore):
                         )
                         self.report_dagster_event(event, dagster_run.run_id, logging.DEBUG)
 
-                    if check.not_none(output.properties).asset_check_handle:
-                        asset_check_handle = check.not_none(
-                            check.not_none(output.properties).asset_check_handle
+                    if check.not_none(output.properties).asset_check_key:
+                        asset_check_key = check.not_none(
+                            check.not_none(output.properties).asset_check_key
                         )
-                        target_asset_key = asset_check_handle.asset_key
-                        check_name = asset_check_handle.name
+                        target_asset_key = asset_check_key.asset_key
+                        check_name = asset_check_key.name
 
                         event = DagsterEvent(
                             event_type_value=DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED.value,
@@ -1356,6 +1356,7 @@ class DagsterInstance(DynamicPartitionsStore):
                                 target_asset_key,
                                 check_name=check_name,
                             ),
+                            step_key=step.key,
                         )
                         self.report_dagster_event(event, dagster_run.run_id, logging.DEBUG)
 
@@ -1374,13 +1375,13 @@ class DagsterInstance(DynamicPartitionsStore):
         job_snapshot: Optional["JobSnapshot"],
         parent_job_snapshot: Optional["JobSnapshot"],
         asset_selection: Optional[AbstractSet[AssetKey]],
-        asset_check_selection: Optional[AbstractSet["AssetCheckHandle"]],
+        asset_check_selection: Optional[AbstractSet["AssetCheckKey"]],
         resolved_op_selection: Optional[AbstractSet[str]],
         op_selection: Optional[Sequence[str]],
         external_job_origin: Optional["ExternalJobOrigin"],
         job_code_origin: Optional[JobPythonOrigin],
     ) -> DagsterRun:
-        from dagster._core.definitions.asset_check_spec import AssetCheckHandle
+        from dagster._core.definitions.asset_check_spec import AssetCheckKey
         from dagster._core.definitions.utils import validate_tags
         from dagster._core.host_representation.origin import ExternalJobOrigin
         from dagster._core.snap import ExecutionPlanSnapshot, JobSnapshot
@@ -1456,9 +1457,7 @@ class DagsterInstance(DynamicPartitionsStore):
         check.opt_set_param(resolved_op_selection, "resolved_op_selection", of_type=str)
         check.opt_sequence_param(op_selection, "op_selection", of_type=str)
         check.opt_set_param(asset_selection, "asset_selection", of_type=AssetKey)
-        check.opt_set_param(
-            asset_check_selection, "asset_check_selection", of_type=AssetCheckHandle
-        )
+        check.opt_set_param(asset_check_selection, "asset_check_selection", of_type=AssetCheckKey)
 
         if asset_selection is not None or asset_check_selection is not None:
             check.invariant(
@@ -2008,9 +2007,14 @@ class DagsterInstance(DynamicPartitionsStore):
 
     @traced
     def get_materialized_partitions(
-        self, asset_key: AssetKey, after_cursor: Optional[int] = None
+        self,
+        asset_key: AssetKey,
+        before_cursor: Optional[int] = None,
+        after_cursor: Optional[int] = None,
     ) -> Set[str]:
-        return self._event_storage.get_materialized_partitions(asset_key, after_cursor)
+        return self._event_storage.get_materialized_partitions(
+            asset_key, before_cursor=before_cursor, after_cursor=after_cursor
+        )
 
     @traced
     def get_latest_storage_id_by_partition(

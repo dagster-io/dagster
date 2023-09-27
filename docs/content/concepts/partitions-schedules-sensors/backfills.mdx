@@ -33,44 +33,36 @@ width={1737}
 height={335}
 />
 
-#### Single-run backfills
+#### Backfill policies and single-run backfills (Experimental)
 
 By default, if you launch a backfill that covers N partitions, Dagster will launch N separate runs - one for each partition. This works well when your code is single threaded, because it avoids overwhelming it with large amounts of data. However, if you're using a parallel-processing engine like Spark and Snowflake, you often don't need Dagster to help with parallelism, so splitting up the backfill into multiple runs just adds extra overhead.
 
 Dagster supports backfills that execute as a single run that covers a range of partitions. For example, this allows you to execute the backfill as a single Snowflake query. After it completes, Dagster will track that all those partitions have been filled.
 
-For this to work, your code needs to be written in a way that allows it to operate on partition ranges, instead of just single partitions.
+To get this behavior, you need to do two things:
 
-If your code uses any of the `partition_key`, `asset_partition_key`, `asset_partition_key_for_output`, or `asset_partition_key_for_input` context methods or properties, you'll need to update it to use methods or properties like `asset_partitions_time_window`, `asset_partition_key_range`, `asset_partition_keys`, `asset_partitions_time_window_for_output`, `asset_partition_key_range_output`, `asset_partitions_time_window_for_input`, or `asset_partition_key_range_for_input` instead.
+- Set the `backfill_policy` on your asset to <PyObject object="BackfillPolicy" method="single_run" />.
+- Write your code so that it operates on partition ranges, instead of just single partitions. This means that, if your code uses the `partition_key` context property, you'll need to update it to instead use one of the [`partition_time_window`](/\_apidocs/execution#dagster.OpExecutionContext.partition_time_window), [`partition_key_range`](/\_apidocs/execution#dagster.OpExecutionContext.partition_key_range), or [`partition_keys`](/\_apidocs/execution#dagster.OpExecutionContext.partition_keys) properties. Which one to use depends on whether it's most convenient for you to operate on start / end datetime objects, start / end partition keys, or a list of partition keys.
 
 ```python file=/concepts/partitions_schedules_sensors/backfills/single_run_backfill_asset.py startafter=start_marker endbefore=end_marker
-from dagster import AssetKey, DailyPartitionsDefinition, asset
+from dagster import AssetKey, BackfillPolicy, DailyPartitionsDefinition, asset
 
 
 @asset(
     partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
+    backfill_policy=BackfillPolicy.single_run(),
     deps=[AssetKey("raw_events")],
 )
 def events(context):
-    (
-        input_start_datetime,
-        input_end_datetime,
-    ) = context.asset_partitions_time_window_for_input("raw_events")
-    input_data = read_data_in_datetime_range(input_start_datetime, input_end_datetime)
+    start_datetime, end_datetime = context.partition_time_window
+
+    input_data = read_data_in_datetime_range(start_datetime, end_datetime)
     output_data = compute_events_from_raw_events(input_data)
 
-    (
-        output_start_datetime,
-        output_end_datetime,
-    ) = context.asset_partitions_time_window_for_output()
-    return overwrite_data_in_datetime_range(
-        output_start_datetime,
-        output_end_datetime,
-        output_data,
-    )
+    overwrite_data_in_datetime_range(start_datetime, end_datetime, output_data)
 ```
 
-Alternatively, if you are using an I/O manager to handle saving and loading your data, you'll need to ensure the I/O manager is also using these methods. If you're using any of the built-in database I/O managers, like [Snowflake](/integrations/snowflake), [BigQuery](/integrations/bigquery), or [DuckDB](/\_apidocs/libraries/dagster-duckdb), you'll have this out-of-the-box.
+If you are using an I/O manager to handle saving and loading your data, you'll need to ensure the I/O manager is also using these methods. If you're using any of the built-in database I/O managers, like [Snowflake](/integrations/snowflake), [BigQuery](/integrations/bigquery), or [DuckDB](/\_apidocs/libraries/dagster-duckdb), you'll have this out-of-the-box.
 
 ```python file=/concepts/partitions_schedules_sensors/backfills/single_run_backfill_io_manager.py startafter=start_marker endbefore=end_marker
 from dagster import IOManager

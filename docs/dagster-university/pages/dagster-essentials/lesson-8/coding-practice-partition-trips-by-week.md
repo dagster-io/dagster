@@ -12,11 +12,13 @@ To practice what you’ve learned, update `weekly_update_job` and `trips_by_week
 
 ## Check your work
 
-The asset you built should look similar to the code contained in the **View answer** toggle. Click to open it.
+The updated asset and job should look similar to the following code. Click **View answer** to view it.
 
-**In `assets/metrics.py`**:
+**If there are differences**, compare what you wrote to the code below and change them, as they will be used as-is in future lessons.
 
-```python
+### In assets/metrics.py:
+
+```python {% obfuscated="true" %}
 # assets/metrics.py
 from ..partitions import weekly_partition
 
@@ -67,9 +69,9 @@ def trips_by_week(context, database: DuckDBResource):
         aggregate.to_csv(constants.TRIPS_BY_WEEK_FILE_PATH, index=False)
 ```
 
-**In `jobs/__init__.py`**:
+### In `jobs/__init__.py`:
 
-```python
+```python {% obfuscated="true" %}
 # jobs/__init__.py
 from dagster import define_asset_job, AssetSelection
 from ..partitions import weekly_partition
@@ -82,5 +84,3 @@ weekly_update_job = define_asset_job(
   selection=trips_by_week,
 )
 ```
-
-**If there are differences**, compare what you wrote to the asset above and change them, as this asset will be used as-is in future lessons.

@@ -29,7 +29,10 @@ export const AssetNodeLineageGraph: React.FC<{
 
   const [highlighted, setHighlighted] = React.useState<string | null>(null);
 
-  const {layout, loading} = useAssetLayout(assetGraphData);
+  const basePath = useHistory().location.pathname;
+  // Use the pathname as part of the key so that different deployments don't invalidate each other's cached layout
+  // and so that different assets dont invalidate each others layout
+  const {layout, loading} = useAssetLayout(assetGraphData, `node-lineage:${basePath}`);
   const viewportEl = React.useRef<SVGViewport>();
   const history = useHistory();
 

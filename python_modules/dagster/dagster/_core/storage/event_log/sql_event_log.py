@@ -692,6 +692,7 @@ class SqlEventLogStorage(EventLogStorage):
             self.delete_events_for_run(conn, run_id)
         with self.index_connection() as conn:
             self.delete_events_for_run(conn, run_id)
+        self.free_concurrency_slots_for_run(run_id)
 
     def delete_events_for_run(self, conn: Connection, run_id: str) -> None:
         check.str_param(run_id, "run_id")
@@ -1643,7 +1644,10 @@ class SqlEventLogStorage(EventLogStorage):
             )
 
     def get_materialized_partitions(
-        self, asset_key: AssetKey, after_cursor: Optional[int] = None
+        self,
+        asset_key: AssetKey,
+        before_cursor: Optional[int] = None,
+        after_cursor: Optional[int] = None,
     ) -> Set[str]:
         query = (
             db_select(
@@ -1668,6 +1672,8 @@ class SqlEventLogStorage(EventLogStorage):
 
         if after_cursor:
             query = query.where(SqlEventLogStorageTable.c.id > after_cursor)
+        if before_cursor:
+            query = query.where(SqlEventLogStorageTable.c.id < before_cursor)
 
         with self.index_connection() as conn:
             results = conn.execute(query).fetchall()
@@ -1675,7 +1681,10 @@ class SqlEventLogStorage(EventLogStorage):
         return set([cast(str, row[0]) for row in results])
 
     def get_materialization_count_by_partition(
-        self, asset_keys: Sequence[AssetKey], after_cursor: Optional[int] = None
+        self,
+        asset_keys: Sequence[AssetKey],
+        after_cursor: Optional[int] = None,
+        before_cursor: Optional[int] = None,
     ) -> Mapping[AssetKey, Mapping[str, int]]:
         check.sequence_param(asset_keys, "asset_keys", AssetKey)
 
@@ -1930,7 +1939,9 @@ class SqlEventLogStorage(EventLogStorage):
                 " instance migrate`."
             )
 
-    def _fetch_partition_keys_for_partition_def(self, partitions_def_name: str) -> Sequence[str]:
+    def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
+        """Get the list of partition keys for a partition definition."""
+        self._check_partitions_table()
         columns = [
             DynamicPartitionsTable.c.partitions_def_name,
             DynamicPartitionsTable.c.partition,
@@ -1945,14 +1956,22 @@ class SqlEventLogStorage(EventLogStorage):
 
         return [cast(str, row[1]) for row in rows]
 
-    def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
-        """Get the list of partition keys for a partition definition."""
-        self._check_partitions_table()
-        return self._fetch_partition_keys_for_partition_def(partitions_def_name)
-
     def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
         self._check_partitions_table()
-        return partition_key in self._fetch_partition_keys_for_partition_def(partitions_def_name)
+        query = (
+            db_select([DynamicPartitionsTable.c.partition])
+            .where(
+                db.and_(
+                    DynamicPartitionsTable.c.partitions_def_name == partitions_def_name,
+                    DynamicPartitionsTable.c.partition == partition_key,
+                )
+            )
+            .limit(1)
+        )
+        with self.index_connection() as conn:
+            results = conn.execute(query).fetchall()
+
+        return len(results) > 0
 
     def add_dynamic_partitions(
         self, partitions_def_name: str, partition_keys: Sequence[str]
@@ -2533,7 +2552,7 @@ class SqlEventLogStorage(EventLogStorage):
                     run_id=event.run_id,
                     execution_status=(
                         AssetCheckExecutionRecordStatus.SUCCEEDED.value
-                        if evaluation.success
+                        if evaluation.passed
                         else AssetCheckExecutionRecordStatus.FAILED.value
                     ),
                     evaluation_event=serialize_value(event),
@@ -2565,7 +2584,7 @@ class SqlEventLogStorage(EventLogStorage):
                 .values(
                     execution_status=(
                         AssetCheckExecutionRecordStatus.SUCCEEDED.value
-                        if evaluation.success
+                        if evaluation.passed
                         else AssetCheckExecutionRecordStatus.FAILED.value
                     ),
                     evaluation_event=serialize_value(event),

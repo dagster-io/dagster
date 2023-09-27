@@ -518,11 +518,24 @@ def is_asset_check_from_dbt_resource_props(dbt_resource_props: Mapping[str, Any]
     return dbt_resource_props["meta"].get("dagster", {}).get("asset_check", False)
 
 
+def is_generic_test_on_attached_node_from_dbt_resource_props(
+    unique_id: str, dbt_resource_props: Mapping[str, Any]
+) -> bool:
+    attached_node_unique_id = dbt_resource_props.get("attached_node")
+    is_generic_test = bool(attached_node_unique_id)
+
+    return is_generic_test and attached_node_unique_id == unique_id
+
+
 def default_asset_check_fn(
-    asset_key: AssetKey, dbt_resource_props: Mapping[str, Any]
+    asset_key: AssetKey, unique_id: str, dbt_resource_props: Mapping[str, Any]
 ) -> Optional[AssetCheckSpec]:
     is_asset_check = is_asset_check_from_dbt_resource_props(dbt_resource_props)
-    if not is_asset_check:
+    is_generic_test_on_attached_node = is_generic_test_on_attached_node_from_dbt_resource_props(
+        unique_id, dbt_resource_props
+    )
+
+    if not all([is_asset_check, is_generic_test_on_attached_node]):
         return None
 
     return AssetCheckSpec(
@@ -698,7 +711,7 @@ def get_asset_deps(
 
             for test_unique_id in test_unique_ids:
                 test_resource_props = manifest["nodes"][test_unique_id]
-                check_spec = default_asset_check_fn(asset_key, test_resource_props)
+                check_spec = default_asset_check_fn(asset_key, unique_id, test_resource_props)
 
                 if check_spec:
                     check_specs.append(check_spec)

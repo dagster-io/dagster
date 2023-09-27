@@ -9,7 +9,7 @@ import pendulum
 
 import dagster._check as check
 from dagster._core.definitions import ScheduleEvaluationContext
-from dagster._core.definitions.asset_check_spec import AssetCheckHandle
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
@@ -263,7 +263,7 @@ def get_external_pipeline_subset_result(
     job_name: str,
     op_selection: Optional[Sequence[str]],
     asset_selection: Optional[AbstractSet[AssetKey]],
-    asset_check_selection: Optional[AbstractSet[AssetCheckHandle]],
+    asset_check_selection: Optional[AbstractSet[AssetCheckKey]],
 ):
     try:
         definition = repo_def.get_maybe_subset_job_def(
