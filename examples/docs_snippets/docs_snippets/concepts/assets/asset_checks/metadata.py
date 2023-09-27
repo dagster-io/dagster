@@ -14,7 +14,7 @@ def orders_id_has_no_nulls():
     orders_df = pd.read_csv("orders.csv")
     num_null_order_ids = orders_df["order_id"].isna().sum()
     return AssetCheckResult(
-        success=bool(num_null_order_ids == 0),
+        passed=bool(num_null_order_ids == 0),
         metadata={
             "num_null_order_ids": int(num_null_order_ids),
         },

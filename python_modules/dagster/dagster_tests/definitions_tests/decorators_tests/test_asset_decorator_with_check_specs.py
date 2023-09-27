@@ -218,7 +218,7 @@ def test_asset_check_fails_downstream_still_executes():
     check_eval = check_evals[0]
     assert check_eval.asset_key == AssetKey("asset1")
     assert check_eval.check_name == "check1"
-    assert not check_eval.success
+    assert not check_eval.passed
 
 
 def test_error_severity_skip_downstream():
