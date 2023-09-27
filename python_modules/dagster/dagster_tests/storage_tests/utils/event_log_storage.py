@@ -1367,7 +1367,7 @@ class TestEventLogStorage:
             }
 
     def test_get_event_records_sqlite(self, storage):
-        if not self.is_sqlite(storage):
+        if not isinstance(storage, SqlEventLogStorage):
             pytest.skip()
 
         asset_key = AssetKey(["path", "to", "asset_one"])
