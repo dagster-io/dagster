@@ -335,5 +335,5 @@ function fetchData(client: ApolloClient<any>) {
 }
 
 function getAllAssetKeysWithListeners(): AssetKeyInput[] {
-  return Object.keys(_assetKeyListeners).map((key) => JSON.parse(key));
+  return Object.keys(_assetKeyListeners).map((key) => ({path: JSON.parse(key)}));
 }
