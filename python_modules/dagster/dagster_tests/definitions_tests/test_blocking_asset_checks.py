@@ -64,9 +64,9 @@ def test_check_pass():
     check_evals = result.get_asset_check_evaluations()
     assert len(check_evals) == 2
     check_evals_by_name = {check_eval.check_name: check_eval for check_eval in check_evals}
-    assert check_evals_by_name["pass_check"].success
+    assert check_evals_by_name["pass_check"].passed
     assert check_evals_by_name["pass_check"].asset_key == AssetKey(["my_asset"])
-    assert check_evals_by_name["fail_check_if_tagged"].success
+    assert check_evals_by_name["fail_check_if_tagged"].passed
     assert check_evals_by_name["fail_check_if_tagged"].asset_key == AssetKey(["my_asset"])
 
     # downstream asset materializes
@@ -88,9 +88,9 @@ def test_check_fail_and_block():
     check_evals = result.get_asset_check_evaluations()
     assert len(check_evals) == 2
     check_evals_by_name = {check_eval.check_name: check_eval for check_eval in check_evals}
-    assert check_evals_by_name["pass_check"].success
+    assert check_evals_by_name["pass_check"].passed
     assert check_evals_by_name["pass_check"].asset_key == AssetKey(["my_asset"])
-    assert not check_evals_by_name["fail_check_if_tagged"].success
+    assert not check_evals_by_name["fail_check_if_tagged"].passed
     assert check_evals_by_name["fail_check_if_tagged"].asset_key == AssetKey(["my_asset"])
 
     # downstream asset should not have been materialized
@@ -134,7 +134,7 @@ def test_check_pass_with_inputs():
     check_evals = result.get_asset_check_evaluations()
     assert len(check_evals) == 1
     check_evals_by_name = {check_eval.check_name: check_eval for check_eval in check_evals}
-    assert check_evals_by_name["fail_check_if_tagged_2"].success
+    assert check_evals_by_name["fail_check_if_tagged_2"].passed
     assert check_evals_by_name["fail_check_if_tagged_2"].asset_key == AssetKey(
         ["my_asset_with_managed_input"]
     )
@@ -158,7 +158,7 @@ def test_check_fail_and_block_with_inputs():
     check_evals = result.get_asset_check_evaluations()
     assert len(check_evals) == 1
     check_evals_by_name = {check_eval.check_name: check_eval for check_eval in check_evals}
-    assert not check_evals_by_name["fail_check_if_tagged_2"].success
+    assert not check_evals_by_name["fail_check_if_tagged_2"].passed
     assert check_evals_by_name["fail_check_if_tagged_2"].asset_key == AssetKey(
         ["my_asset_with_managed_input"]
     )
