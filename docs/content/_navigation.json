@@ -130,8 +130,8 @@
                 "path": "/concepts/partitions-schedules-sensors/partitioned-assets"
               },
               {
-                "title": "Partitioned op jobs (Advanced)",
-                "path": "/concepts/partitions-schedules-sensors/partitioned-op-jobs"
+                "title": "Partitioned ops (Advanced)",
+                "path": "/concepts/partitions-schedules-sensors/partitioned-ops"
               },
               {
                 "title": "Testing partitions",

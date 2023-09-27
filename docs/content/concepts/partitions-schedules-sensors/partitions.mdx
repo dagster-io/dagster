@@ -25,18 +25,14 @@ Using partitions provides the following benefits:
 
 ## Uses
 
+Partitions are supported for both Software-defined Assets and ops, but how each concept is used is unique. Refer to the following documentation for more info:
+
+- [Partitioned assets](/concepts/partitions-schedules-sensors/partitioned-assets)
+- [Partitioned ops](/concepts/partitions-schedules-sensors/partitioned-ops) (Advanced)
+- [Testing partitions](/concepts/partitions-schedules-sensors/testing-partitions)
+
 With partitions, you can:
 
-- View runs by partition in the Dagster UI
+- View runs by partition in the [Dagster UI](/concepts/webserver/ui)
 - Define a [schedule](/concepts/partitions-schedules-sensors/schedules) that fills in a partition each time it runs. For example, a job might run each day and process the data that arrived during the previous day.
 - Launch [backfills](/concepts/partitions-schedules-sensors/backfills), which are sets of runs that each process a different partition. For example, after making a code change, you might want to run your job on all partitions instead of just one.
-
----
-
-## Implementation
-
-Partitions are supported for both Software-defined Assets and op jobs, but the implementation for each concept is unique. Refer to the following documentation for more info:
-
-- [Partitioned assets and jobs](/concepts/partitions-schedules-sensors/partitioned-assets)
-- [Partitioned op jobs](/concepts/partitions-schedules-sensors/partitioned-op-jobs) (Advanced)
-- [Testing partitions](/concepts/partitions-schedules-sensors/testing-partitions)
