@@ -343,7 +343,7 @@ To view and materialize assets in the UI, you can point the underlying webserver
 dagster dev -m module_with_assets
 ```
 
-If you want the UI to show both assets and [jobs](/concepts/ops-jobs-graphs/jobs) that target the assets, you can place the assets and jobs together inside a <PyObject object="Definitions" /> object. For example:
+If you want the UI to show both assets and [jobs](/concepts/assets/asset-jobs) that target the assets, you can place the assets and jobs together inside a <PyObject object="Definitions" /> object. For example:
 
 ```python
 defs = Definitions(
@@ -425,7 +425,7 @@ In the UI, you can launch runs that materialize assets by:
 
 ## Building jobs that materialize assets
 
-Jobs that target assets can materialize a fixed selection of assets each time they run and be placed on schedules and sensors. Refer to the [Jobs documentation](/concepts/ops-jobs-graphs/jobs#from-software-defined-assets) for more info and examples.
+Jobs that target assets can materialize a fixed selection of assets each time they run and be placed on schedules and sensors. Refer to the [Asset jobs documentation](/concepts/assets/asset-jobs) for more info and examples.
 
 ---
 

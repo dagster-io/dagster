@@ -79,12 +79,16 @@
             "path": "/concepts/assets/software-defined-assets"
           },
           {
+            "title": "Graph-backed Assets",
+            "path": "/concepts/assets/graph-backed-assets"
+          },
+          {
             "title": "Multi-assets",
             "path": "/concepts/assets/multi-assets"
           },
           {
-            "title": "Graph-backed Assets",
-            "path": "/concepts/assets/graph-backed-assets"
+            "title": "Asset jobs",
+            "path": "/concepts/assets/asset-jobs"
           },
           {
             "title": "Asset observations",
@@ -238,17 +242,22 @@
           },
           {
             "title": "Jobs",
+            "path": "/concepts/ops-jobs-graphs/jobs",
             "children": [
               {
-                "title": "Jobs",
-                "path": "/concepts/ops-jobs-graphs/jobs"
+                "title": "Asset jobs",
+                "path": "/concepts/assets/asset-jobs"
+              },
+              {
+                "title": "Op jobs",
+                "path": "/concepts/ops-jobs-graphs/op-jobs"
               },
               {
                 "title": "Job execution",
                 "path": "/concepts/ops-jobs-graphs/job-execution"
               },
               {
-                "title": "Metadata & tags",
+                "title": "Job metadata & tags",
                 "path": "/concepts/ops-jobs-graphs/metadata-tags"
               }
             ]
