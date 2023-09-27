@@ -17,7 +17,7 @@ Backfills are common when setting up a pipeline for the first time. The assets y
 
 To launch backfills for a partitioned asset, click the **Materialize** button on either the [**Asset details**](/concepts/partitions-schedules-sensors/partitions#materializing-partitioned-assets) or the **Global asset lineage** page. The backfill modal will display.
 
-Backfills can also be launched for a selection of differently partitioned assets as long as the roots share the same partitioning.
+Backfills can also be launched for a selection of partitioned assets as long as the most upstream assets share the same partitioning. For example: All partitions use a `DailyPartitionsDefinition`.
 
 <Image
 alt="backfills-launch-modal"
