@@ -118,7 +118,6 @@ export const AssetView = ({assetKey}: Props) => {
         upstream={upstream}
         downstream={downstream}
         dependsOnSelf={node ? nodeDependsOnSelf(node) : false}
-        liveDataByNode={liveDataByNode}
       />
     );
   };
@@ -487,11 +486,7 @@ const AssetViewPageHeaderTags: React.FC<{
       )}
       {definition && definition.autoMaterializePolicy && <AutomaterializeDaemonStatusTag />}
       {definition && definition.freshnessPolicy && (
-        <OverdueTag
-          liveData={liveData}
-          policy={definition.freshnessPolicy}
-          assetKey={definition.assetKey}
-        />
+        <OverdueTag policy={definition.freshnessPolicy} assetKey={definition.assetKey} />
       )}
       {definition && (
         <StaleReasonsTags

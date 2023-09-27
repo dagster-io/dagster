@@ -4,15 +4,13 @@ import {useHistory} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {AssetNode} from '../asset-graph/AssetNode';
-import {LiveData, toGraphId} from '../asset-graph/Utils';
 import {AssetNodeForGraphQueryFragment} from '../asset-graph/types/useAssetGraphData.types';
 
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 
 export const AssetNodeList: React.FC<{
   items: AssetNodeForGraphQueryFragment[] | null;
-  liveDataByNode: LiveData;
-}> = ({items, liveDataByNode}) => {
+}> = ({items}) => {
   const history = useHistory();
 
   if (items === null) {
@@ -33,11 +31,7 @@ export const AssetNodeList: React.FC<{
             history.push(assetDetailsPathForKey(asset.assetKey, {view: 'definition'}));
           }}
         >
-          <AssetNode
-            definition={asset}
-            selected={false}
-            liveData={liveDataByNode[toGraphId(asset.assetKey)]}
-          />
+          <AssetNode definition={asset} selected={false} />
         </AssetNodeWrapper>
       ))}
     </Container>

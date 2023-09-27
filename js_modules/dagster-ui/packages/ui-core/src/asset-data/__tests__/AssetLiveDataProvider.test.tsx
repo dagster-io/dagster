@@ -4,49 +4,22 @@ import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import {render, act, waitFor} from '@testing-library/react';
 import React from 'react';
 
-import {
-  AssetGraphLiveQuery,
-  AssetGraphLiveQueryVariables,
-} from '../../asset-graph/types/useLiveDataForAssetKeys.types';
-import {ASSETS_GRAPH_LIVE_QUERY} from '../../asset-graph/useLiveDataForAssetKeys';
-import {
-  AssetKey,
-  AssetKeyInput,
-  buildAssetKey,
-  buildAssetLatestInfo,
-  buildAssetNode,
-} from '../../graphql/types';
-import {buildQueryMock, getMockResultFn} from '../../testing/mocking';
+import {AssetKey, AssetKeyInput, buildAssetKey} from '../../graphql/types';
+import {getMockResultFn} from '../../testing/mocking';
 import {
   AssetLiveDataProvider,
   SUBSCRIPTION_IDLE_POLL_RATE,
-  _testOnly_resetLastFetchedOrRequested,
+  _resetLastFetchedOrRequested,
   useAssetsLiveData,
 } from '../AssetLiveDataProvider';
+
+import {buildMockedAssetGraphLiveQuery} from './util';
 
 Object.defineProperty(document, 'visibilityState', {value: 'visible', writable: true});
 Object.defineProperty(document, 'hidden', {value: false, writable: true});
 
-function buildMockedQuery(assetKeys: AssetKeyInput[]) {
-  return buildQueryMock<AssetGraphLiveQuery, AssetGraphLiveQueryVariables>({
-    query: ASSETS_GRAPH_LIVE_QUERY,
-    variables: {
-      // strip __typename
-      assetKeys: assetKeys.map((assetKey) => ({path: assetKey.path})),
-    },
-    data: {
-      assetNodes: assetKeys.map((assetKey) =>
-        buildAssetNode({assetKey: buildAssetKey(assetKey), id: JSON.stringify(assetKey)}),
-      ),
-      assetsLatestInfo: assetKeys.map((assetKey) =>
-        buildAssetLatestInfo({assetKey: buildAssetKey(assetKey), id: JSON.stringify(assetKey)}),
-      ),
-    },
-  });
-}
-
 afterEach(() => {
-  _testOnly_resetLastFetchedOrRequested();
+  _resetLastFetchedOrRequested();
 });
 
 function Test({
@@ -56,7 +29,7 @@ function Test({
   mocks: MockedResponse[];
   hooks: {
     keys: AssetKeyInput[];
-    hookResult: (data: ReturnType<typeof useAssetsLiveData>) => void;
+    hookResult: (data: ReturnType<typeof useAssetsLiveData>['liveDataByNode']) => void;
   }[];
 }) {
   function Hook({
@@ -64,9 +37,9 @@ function Test({
     hookResult,
   }: {
     keys: AssetKeyInput[];
-    hookResult: (data: ReturnType<typeof useAssetsLiveData>) => void;
+    hookResult: (data: ReturnType<typeof useAssetsLiveData>['liveDataByNode']) => void;
   }) {
-    hookResult(useAssetsLiveData(keys));
+    hookResult(useAssetsLiveData(keys).liveDataByNode);
     return <div />;
   }
   return (
@@ -83,8 +56,8 @@ function Test({
 describe('AssetLiveDataProvider', () => {
   it('provides asset data and uses cache if recently fetched', async () => {
     const assetKeys = [buildAssetKey({path: ['key1']})];
-    const mockedQuery = buildMockedQuery(assetKeys);
-    const mockedQuery2 = buildMockedQuery(assetKeys);
+    const mockedQuery = buildMockedAssetGraphLiveQuery(assetKeys);
+    const mockedQuery2 = buildMockedAssetGraphLiveQuery(assetKeys);
 
     const resultFn = getMockResultFn(mockedQuery);
     const resultFn2 = getMockResultFn(mockedQuery2);
@@ -98,13 +71,16 @@ describe('AssetLiveDataProvider', () => {
 
     // Initially an empty object
     expect(resultFn).toHaveBeenCalledTimes(0);
-    expect(hookResult.mock.results[0]!.value).toEqual(undefined);
+    expect(hookResult.mock.calls[0]!.value).toEqual(undefined);
 
     act(() => {
       jest.runOnlyPendingTimers();
     });
 
     expect(resultFn).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(hookResult.mock.calls[1]!.value).not.toEqual({});
+    });
     expect(resultFn2).not.toHaveBeenCalled();
 
     // Re-render with the same asset keys and expect the cache to be used this time.
@@ -118,14 +94,14 @@ describe('AssetLiveDataProvider', () => {
 
     // Initially an empty object
     expect(resultFn2).not.toHaveBeenCalled();
-    expect(hookResult2.mock.results[0]!.value).toEqual(undefined);
+    expect(hookResult2.mock.calls[0][0]).toEqual({});
     act(() => {
       jest.runOnlyPendingTimers();
     });
 
     // Not called because we use the cache instead
     expect(resultFn2).not.toHaveBeenCalled();
-    expect(hookResult2.mock.results[1]).toEqual(hookResult.mock.results[1]);
+    expect(hookResult2.mock.calls[1]).toEqual(hookResult.mock.calls[1]);
 
     await act(async () => {
       await Promise.resolve();
@@ -136,13 +112,13 @@ describe('AssetLiveDataProvider', () => {
       jest.advanceTimersByTime(SUBSCRIPTION_IDLE_POLL_RATE + 1);
     });
     expect(resultFn2).toHaveBeenCalled();
-    expect(hookResult2.mock.results[2]).toEqual(hookResult.mock.results[1]);
+    expect(hookResult2.mock.calls[1]).toEqual(hookResult.mock.calls[1]);
   });
 
   it('obeys document visibility', async () => {
     const assetKeys = [buildAssetKey({path: ['key1']})];
-    const mockedQuery = buildMockedQuery(assetKeys);
-    const mockedQuery2 = buildMockedQuery(assetKeys);
+    const mockedQuery = buildMockedAssetGraphLiveQuery(assetKeys);
+    const mockedQuery2 = buildMockedAssetGraphLiveQuery(assetKeys);
 
     const resultFn = getMockResultFn(mockedQuery);
     const resultFn2 = getMockResultFn(mockedQuery2);
@@ -156,7 +132,7 @@ describe('AssetLiveDataProvider', () => {
 
     // Initially an empty object
     expect(resultFn).toHaveBeenCalledTimes(0);
-    expect(hookResult.mock.results[0]!.value).toEqual(undefined);
+    expect(hookResult.mock.calls[0]!.value).toEqual(undefined);
 
     act(() => {
       jest.runOnlyPendingTimers();
@@ -176,14 +152,14 @@ describe('AssetLiveDataProvider', () => {
 
     // Initially an empty object
     expect(resultFn2).not.toHaveBeenCalled();
-    expect(hookResult2.mock.results[0]!.value).toEqual(undefined);
+    expect(hookResult2.mock.calls[0]!.value).toEqual(undefined);
     act(() => {
       jest.runOnlyPendingTimers();
     });
 
     // Not called because we use the cache instead
     expect(resultFn2).not.toHaveBeenCalled();
-    expect(hookResult2.mock.results[1]).toEqual(hookResult.mock.results[1]);
+    expect(hookResult2.mock.calls[1]).toEqual(hookResult.mock.calls[1]);
 
     await act(async () => {
       await Promise.resolve();
@@ -219,8 +195,8 @@ describe('AssetLiveDataProvider', () => {
     const chunk1 = assetKeys.slice(0, 50);
     const chunk2 = assetKeys.slice(50, 100);
 
-    const mockedQuery = buildMockedQuery(chunk1);
-    const mockedQuery2 = buildMockedQuery(chunk2);
+    const mockedQuery = buildMockedAssetGraphLiveQuery(chunk1);
+    const mockedQuery2 = buildMockedAssetGraphLiveQuery(chunk2);
 
     const resultFn = getMockResultFn(mockedQuery);
     const resultFn2 = getMockResultFn(mockedQuery2);
@@ -231,7 +207,7 @@ describe('AssetLiveDataProvider', () => {
 
     // Initially an empty object
     expect(resultFn).not.toHaveBeenCalled();
-    expect(hookResult.mock.results[0]!.value).toEqual(undefined);
+    expect(hookResult.mock.calls[0][0]).toEqual({});
 
     act(() => {
       jest.runOnlyPendingTimers();
@@ -265,8 +241,8 @@ describe('AssetLiveDataProvider', () => {
     const hook2Keys = assetKeys.slice(33, 66);
     const hook3Keys = assetKeys.slice(66, 100);
 
-    const mockedQuery = buildMockedQuery(chunk1);
-    const mockedQuery2 = buildMockedQuery(chunk2);
+    const mockedQuery = buildMockedAssetGraphLiveQuery(chunk1);
+    const mockedQuery2 = buildMockedAssetGraphLiveQuery(chunk2);
 
     const resultFn = getMockResultFn(mockedQuery);
     const resultFn2 = getMockResultFn(mockedQuery2);
@@ -324,9 +300,9 @@ describe('AssetLiveDataProvider', () => {
 
     secondPrioritizedFetchKeys.push(...fetch1Keys);
 
-    const mockedQuery = buildMockedQuery(fetch1Keys);
-    const mockedQuery2 = buildMockedQuery(firstPrioritizedFetchKeys);
-    const mockedQuery3 = buildMockedQuery(secondPrioritizedFetchKeys);
+    const mockedQuery = buildMockedAssetGraphLiveQuery(fetch1Keys);
+    const mockedQuery2 = buildMockedAssetGraphLiveQuery(firstPrioritizedFetchKeys);
+    const mockedQuery3 = buildMockedAssetGraphLiveQuery(secondPrioritizedFetchKeys);
 
     const resultFn = getMockResultFn(mockedQuery);
     const resultFn2 = getMockResultFn(mockedQuery2);
@@ -342,6 +318,9 @@ describe('AssetLiveDataProvider', () => {
 
     await waitFor(() => {
       expect(resultFn).toHaveBeenCalled();
+    });
+    await waitFor(() => {
+      expect(hookResult.mock.calls[1]!.value).not.toEqual({});
     });
     expect(resultFn2).not.toHaveBeenCalled();
     expect(resultFn3).not.toHaveBeenCalled();

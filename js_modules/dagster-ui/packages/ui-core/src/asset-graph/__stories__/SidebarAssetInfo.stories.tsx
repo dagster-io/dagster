@@ -19,7 +19,6 @@ import {
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
 import {SIDEBAR_ASSET_QUERY, SidebarAssetInfo} from '../SidebarAssetInfo';
 import {GraphNode} from '../Utils';
-import {LiveDataForNodeMaterializedWithChecks} from '../__fixtures__/AssetNode.fixtures';
 import {SidebarAssetQuery} from '../types/SidebarAssetInfo.types';
 
 // eslint-disable-next-line import/no-default-export
@@ -252,7 +251,7 @@ const TestContainer: React.FC<{
 export const AssetWithMaterializations = () => {
   return (
     <TestContainer>
-      <SidebarAssetInfo graphNode={buildGraphNodeMock({})} liveData={undefined} />
+      <SidebarAssetInfo graphNode={buildGraphNodeMock({})} />
     </TestContainer>
   );
 };
@@ -284,7 +283,7 @@ export const AssetWithPolicies = () => {
         }),
       ]}
     >
-      <SidebarAssetInfo graphNode={buildGraphNodeMock({})} liveData={undefined} />
+      <SidebarAssetInfo graphNode={buildGraphNodeMock({})} />
     </TestContainer>
   );
 };
@@ -292,10 +291,7 @@ export const AssetWithPolicies = () => {
 export const AssetWithGraphName = () => {
   return (
     <TestContainer>
-      <SidebarAssetInfo
-        graphNode={buildGraphNodeMock({graphName: 'op_graph'})}
-        liveData={undefined}
-      />
+      <SidebarAssetInfo graphNode={buildGraphNodeMock({graphName: 'op_graph'})} />
     </TestContainer>
   );
 };
@@ -303,10 +299,7 @@ export const AssetWithGraphName = () => {
 export const AssetWithAssetChecks = () => {
   return (
     <TestContainer>
-      <SidebarAssetInfo
-        graphNode={buildGraphNodeMock({})}
-        liveData={LiveDataForNodeMaterializedWithChecks}
-      />
+      <SidebarAssetInfo graphNode={buildGraphNodeMock({})} />
     </TestContainer>
   );
 };
@@ -314,10 +307,7 @@ export const AssetWithAssetChecks = () => {
 export const AssetWithDifferentOpName = () => {
   return (
     <TestContainer>
-      <SidebarAssetInfo
-        graphNode={buildGraphNodeMock({opNames: ['not_asset_name']})}
-        liveData={undefined}
-      />
+      <SidebarAssetInfo graphNode={buildGraphNodeMock({opNames: ['not_asset_name']})} />
     </TestContainer>
   );
 };
@@ -325,10 +315,7 @@ export const AssetWithDifferentOpName = () => {
 export const ObservableSourceAsset = () => {
   return (
     <TestContainer>
-      <SidebarAssetInfo
-        graphNode={buildGraphNodeMock({isObservable: true, isSource: true})}
-        liveData={undefined}
-      />
+      <SidebarAssetInfo graphNode={buildGraphNodeMock({isObservable: true, isSource: true})} />
     </TestContainer>
   );
 };
