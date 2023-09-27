@@ -964,8 +964,8 @@ def test_partitions_multi_asset_sensor_context():
         assert sensor_data.run_requests[0].tags["dagster/partition"] == "2022-08-01"
         assert (
             ctx.cursor
-            == '{"AssetKey([\'daily_partitions_asset\'])": ["2022-08-01", 3, {}],'
-            ' "AssetKey([\'daily_partitions_asset_2\'])": ["2022-08-01", 4, {}]}'
+            == '{"AssetKey([\'daily_partitions_asset\'])": ["2022-08-01", 4, {}],'
+            ' "AssetKey([\'daily_partitions_asset_2\'])": ["2022-08-01", 5, {}]}'
         )
 
 
