@@ -36,7 +36,7 @@ from dagster._core.host_representation.external_data import (
     ExternalSensorData,
     ExternalTargetData,
     ExternalTimeWindowPartitionsDefinitionData,
-    external_asset_graph_from_defs,
+    external_asset_nodes_from_defs,
     external_multi_partitions_definition_from_def,
     external_time_window_partitions_definition_from_def,
 )
@@ -50,7 +50,7 @@ def test_single_asset_job():
         return 1
 
     assets_job = build_assets_job("assets_job", [asset1])
-    external_asset_nodes = external_asset_graph_from_defs([assets_job], source_assets_by_key={})
+    external_asset_nodes = external_asset_nodes_from_defs([assets_job], source_assets_by_key={})
 
     assert external_asset_nodes == [
         ExternalAssetNode(
@@ -75,7 +75,7 @@ def test_asset_with_default_backfill_policy():
         return 1
 
     assets_job = build_assets_job("assets_job", [asset1])
-    external_asset_nodes = external_asset_graph_from_defs([assets_job], source_assets_by_key={})
+    external_asset_nodes = external_asset_nodes_from_defs([assets_job], source_assets_by_key={})
 
     assert external_asset_nodes == [
         ExternalAssetNode(
@@ -101,7 +101,7 @@ def test_asset_with_single_run_backfill_policy():
         return 1
 
     assets_job = build_assets_job("assets_job", [asset1])
-    external_asset_nodes = external_asset_graph_from_defs([assets_job], source_assets_by_key={})
+    external_asset_nodes = external_asset_nodes_from_defs([assets_job], source_assets_by_key={})
 
     assert external_asset_nodes == [
         ExternalAssetNode(
@@ -145,7 +145,7 @@ def test_asset_with_multi_run_backfill_policy():
         return 1
 
     assets_job = build_assets_job("assets_job", [asset1])
-    external_asset_nodes = external_asset_graph_from_defs([assets_job], source_assets_by_key={})
+    external_asset_nodes = external_asset_nodes_from_defs([assets_job], source_assets_by_key={})
 
     assert external_asset_nodes == [
         ExternalAssetNode(
@@ -182,7 +182,7 @@ def test_asset_with_group_name():
         return 1
 
     assets_job = build_assets_job("assets_job", [asset1])
-    external_asset_nodes = external_asset_graph_from_defs([assets_job], source_assets_by_key={})
+    external_asset_nodes = external_asset_nodes_from_defs([assets_job], source_assets_by_key={})
 
     assert external_asset_nodes[0].group_name == "group1"
 
@@ -193,7 +193,7 @@ def test_asset_missing_group_name():
         return 1
 
     assets_job = build_assets_job("assets_job", [asset1])
-    external_asset_nodes = external_asset_graph_from_defs([assets_job], source_assets_by_key={})
+    external_asset_nodes = external_asset_nodes_from_defs([assets_job], source_assets_by_key={})
 
     assert external_asset_nodes[0].group_name == DEFAULT_GROUP_NAME
 
@@ -222,7 +222,7 @@ def test_two_asset_job():
         assert asset1 == 1
 
     assets_job = build_assets_job("assets_job", [asset1, asset2])
-    external_asset_nodes = external_asset_graph_from_defs([assets_job], source_assets_by_key={})
+    external_asset_nodes = external_asset_nodes_from_defs([assets_job], source_assets_by_key={})
 
     assert external_asset_nodes == [
         ExternalAssetNode(
@@ -262,7 +262,7 @@ def test_input_name_matches_output_name():
         pass
 
     assets_job = build_assets_job("assets_job", [something], source_assets=[not_result])
-    external_asset_nodes = external_asset_graph_from_defs([assets_job], source_assets_by_key={})
+    external_asset_nodes = external_asset_nodes_from_defs([assets_job], source_assets_by_key={})
 
     assert external_asset_nodes == [
         ExternalAssetNode(
@@ -313,7 +313,7 @@ def test_assets_excluded_from_subset_not_in_job():
         asset_graph=AssetGraph.from_assets(all_assets)
     )
 
-    external_asset_nodes = external_asset_graph_from_defs([as_job, cs_job], source_assets_by_key={})
+    external_asset_nodes = external_asset_nodes_from_defs([as_job, cs_job], source_assets_by_key={})
 
     assert (
         ExternalAssetNode(
@@ -363,7 +363,7 @@ def test_two_downstream_assets_job():
         assert asset1 == 1
 
     assets_job = build_assets_job("assets_job", [asset1, asset2_a, asset2_b])
-    external_asset_nodes = external_asset_graph_from_defs([assets_job], source_assets_by_key={})
+    external_asset_nodes = external_asset_nodes_from_defs([assets_job], source_assets_by_key={})
 
     assert external_asset_nodes == [
         ExternalAssetNode(
@@ -422,7 +422,7 @@ def test_cross_job_asset_dependency():
 
     assets_job1 = build_assets_job("assets_job1", [asset1])
     assets_job2 = build_assets_job("assets_job2", [asset2], source_assets=[asset1])
-    external_asset_nodes = external_asset_graph_from_defs(
+    external_asset_nodes = external_asset_nodes_from_defs(
         [assets_job1, assets_job2], source_assets_by_key={}
     )
 
@@ -464,7 +464,7 @@ def test_same_asset_in_multiple_jobs():
     job1 = build_assets_job("job1", [asset1])
     job2 = build_assets_job("job2", [asset1])
 
-    external_asset_nodes = external_asset_graph_from_defs([job1, job2], source_assets_by_key={})
+    external_asset_nodes = external_asset_nodes_from_defs([job1, job2], source_assets_by_key={})
 
     assert external_asset_nodes == [
         ExternalAssetNode(
@@ -496,7 +496,7 @@ def test_basic_multi_asset():
 
     assets_job = build_assets_job("assets_job", [assets])
 
-    external_asset_nodes = external_asset_graph_from_defs([assets_job], source_assets_by_key={})
+    external_asset_nodes = external_asset_nodes_from_defs([assets_job], source_assets_by_key={})
 
     atomic_execution_unit_id = assets.unique_id
 
@@ -549,7 +549,7 @@ def test_inter_op_dependency():
     )
     all_assets_job = build_assets_job("assets_job", [in1, in2, assets, downstream])
 
-    external_asset_nodes = external_asset_graph_from_defs(
+    external_asset_nodes = external_asset_nodes_from_defs(
         [subset_job, all_assets_job], source_assets_by_key={}
     )
     # sort so that test is deterministic
@@ -684,7 +684,7 @@ def test_source_asset_with_op():
 
     assets_job = build_assets_job("assets_job", [bar], source_assets=[foo])
 
-    external_asset_nodes = external_asset_graph_from_defs([assets_job], source_assets_by_key={})
+    external_asset_nodes = external_asset_nodes_from_defs([assets_job], source_assets_by_key={})
     assert external_asset_nodes == [
         ExternalAssetNode(
             asset_key=AssetKey("foo"),
@@ -714,7 +714,7 @@ def test_unused_source_asset():
     foo = SourceAsset(key=AssetKey("foo"), description="abc")
     bar = SourceAsset(key=AssetKey("bar"), description="def")
 
-    external_asset_nodes = external_asset_graph_from_defs(
+    external_asset_nodes = external_asset_nodes_from_defs(
         [], source_assets_by_key={AssetKey("foo"): foo, AssetKey("bar"): bar}
     )
     assert external_asset_nodes == [
@@ -748,7 +748,7 @@ def test_used_source_asset():
 
     job1 = build_assets_job("job1", [foo], source_assets=[bar])
 
-    external_asset_nodes = external_asset_graph_from_defs(
+    external_asset_nodes = external_asset_nodes_from_defs(
         [job1], source_assets_by_key={AssetKey("bar"): bar}
     )
     assert external_asset_nodes == [
@@ -811,7 +811,7 @@ def test_graph_output_metadata_and_description():
 
     assets_job = build_assets_job("assets_job", [zero, three_asset])
 
-    external_asset_nodes = external_asset_graph_from_defs([assets_job], source_assets_by_key={})
+    external_asset_nodes = external_asset_nodes_from_defs([assets_job], source_assets_by_key={})
 
     # sort so that test is deterministic
     sorted_nodes = sorted(
@@ -923,7 +923,7 @@ def test_nasty_nested_graph_asset():
 
     assets_job = build_assets_job("assets_job", [zero, eight_and_five, thirteen_and_six, twenty])
 
-    external_asset_nodes = external_asset_graph_from_defs([assets_job], source_assets_by_key={})
+    external_asset_nodes = external_asset_nodes_from_defs([assets_job], source_assets_by_key={})
     # sort so that test is deterministic
     sorted_nodes = sorted(
         [
@@ -1010,7 +1010,7 @@ def test_deps_resolve_group():
         del asset1
 
     assets_job = build_assets_job("assets_job", [asset1, asset2])
-    external_asset_nodes = external_asset_graph_from_defs([assets_job], source_assets_by_key={})
+    external_asset_nodes = external_asset_nodes_from_defs([assets_job], source_assets_by_key={})
 
     assert external_asset_nodes == [
         ExternalAssetNode(
@@ -1139,7 +1139,7 @@ def test_graph_asset_description():
 
     assets_job = build_assets_job("assets_job", [foo])
 
-    external_asset_nodes = external_asset_graph_from_defs([assets_job], source_assets_by_key={})
+    external_asset_nodes = external_asset_nodes_from_defs([assets_job], source_assets_by_key={})
     assert external_asset_nodes[0].op_description == "bar"
 
 
@@ -1163,7 +1163,7 @@ def test_graph_multi_asset_description():
 
     external_asset_nodes = {
         asset_node.asset_key: asset_node
-        for asset_node in external_asset_graph_from_defs([assets_job], source_assets_by_key={})
+        for asset_node in external_asset_nodes_from_defs([assets_job], source_assets_by_key={})
     }
     assert external_asset_nodes[AssetKey("asset1")].op_description == "bar"
     assert external_asset_nodes[AssetKey("asset2")].op_description == "baz"
@@ -1191,7 +1191,7 @@ def test_unexecutable_external_asset_node() -> None:
     asset_one = create_unexecutable_observable_assets_def([AssetSpec("asset_one")])
 
     assets_job = build_assets_job("assets_job", [asset_one])
-    external_asset_nodes = external_asset_graph_from_defs([assets_job], source_assets_by_key={})
+    external_asset_nodes = external_asset_nodes_from_defs([assets_job], source_assets_by_key={})
 
     assert len(external_asset_nodes) == 1
     assert next(iter(external_asset_nodes)).is_executable is False
