@@ -201,10 +201,6 @@
                 "path": "/concepts/ops-jobs-graphs/ops"
               },
               {
-                "title": "Op jobs",
-                "path": "/concepts/ops-jobs-graphs/jobs"
-              },
-              {
                 "title": "Op events",
                 "path": "/concepts/ops-jobs-graphs/op-events"
               },
@@ -231,14 +227,23 @@
             ]
           },
           {
-            "title": "Job execution, metadata, & tags",
+            "title": "Jobs",
+            "path": "/concepts/ops-jobs-graphs/jobs",
             "children": [
+              {
+                "title": "Asset jobs",
+                "path": "/concepts/assets/asset-jobs"
+              },
+              {
+                "title": "Op jobs",
+                "path": "/concepts/assets/op-jobs"
+              },
               {
                 "title": "Job execution",
                 "path": "/concepts/ops-jobs-graphs/job-execution"
               },
               {
-                "title": "Metadata & tags",
+                "title": "Job metadata & tags",
                 "path": "/concepts/ops-jobs-graphs/metadata-tags"
               }
             ]
