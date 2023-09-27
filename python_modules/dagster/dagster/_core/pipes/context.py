@@ -28,7 +28,10 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataValue, normalize_metadata_value
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.result import MaterializeResult
-from dagster._core.definitions.time_window_partitions import TimeWindow
+from dagster._core.definitions.time_window_partitions import (
+    TimeWindow,
+    has_one_dimension_time_window_partitioning,
+)
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.execution.context.invocation import BoundOpExecutionContext
 from dagster._core.pipes.client import PipesMessageReader
@@ -266,8 +269,15 @@ def build_external_execution_context_data(
         else None
     )
     partition_key = context.partition_key if context.has_partition_key else None
-    partition_time_window = context.partition_time_window if context.has_partition_key else None
     partition_key_range = context.partition_key_range if context.has_partition_key else None
+    partition_time_window = (
+        context.partition_time_window
+        if context.has_partition_key
+        and has_one_dimension_time_window_partitioning(
+            context.get_step_execution_context().partitions_def
+        )
+        else None
+    )
     return PipesContextData(
         asset_keys=asset_keys,
         code_version_by_asset_key=code_version_by_asset_key,

@@ -1813,14 +1813,13 @@ def fetch_flattened_time_window_ranges(
 
 
 def has_one_dimension_time_window_partitioning(
-    partitions_def: PartitionsDefinition,
+    partitions_def: Optional[PartitionsDefinition],
 ) -> bool:
     from .multi_dimensional_partitions import MultiPartitionsDefinition
 
     if isinstance(partitions_def, TimeWindowPartitionsDefinition):
         return True
-
-    if isinstance(partitions_def, MultiPartitionsDefinition):
+    elif isinstance(partitions_def, MultiPartitionsDefinition):
         time_window_dims = [
             dim
             for dim in partitions_def.partitions_defs
