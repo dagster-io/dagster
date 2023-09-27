@@ -5,6 +5,7 @@ from typing import List
 
 import pytest
 from dagster import AssetCheckResult, AssetExecutionContext, AssetKey, materialize
+from dagster._check import CheckError
 from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.asset_defs import load_assets_from_dbt_manifest
@@ -19,10 +20,14 @@ test_asset_checks_dbt_project_dir = (
 no_asset_checks_manifest_path = test_asset_checks_dbt_project_dir.joinpath(
     "manifest_no_asset_checks.json"
 ).resolve()
+invalid_asset_checks_manifest_path = test_asset_checks_dbt_project_dir.joinpath(
+    "manifest_invalid_asset_checks.json"
+).resolve()
 asset_checks_manifest_path = test_asset_checks_dbt_project_dir.joinpath(
     "manifest_with_asset_checks.json"
 ).resolve()
 manifest_no_asset_checks_json = json.loads(no_asset_checks_manifest_path.read_bytes())
+invalid_asset_checks_json = json.loads(invalid_asset_checks_manifest_path.read_bytes())
 manifest_asset_checks_json = json.loads(asset_checks_manifest_path.read_bytes())
 
 
@@ -41,6 +46,12 @@ def test_with_asset_checks() -> None:
             for unique_id in manifest_no_asset_checks_json["nodes"].keys()
         )
         assert not asset_def.check_specs_by_output_name
+
+    # dbt tests are present, but only some are modeled as Dagster asset checks
+    with pytest.raises(CheckError):
+
+        @dbt_assets(manifest=invalid_asset_checks_json)
+        def my_dbt_assets_invalid_checks(): ...
 
     @dbt_assets(manifest=manifest_asset_checks_json)
     def my_dbt_assets_with_checks(): ...
