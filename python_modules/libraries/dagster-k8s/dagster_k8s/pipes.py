@@ -26,7 +26,7 @@ from dagster._core.pipes.utils import (
     open_pipes_session,
 )
 from dagster_pipes import (
-    ExtDefaultMessageWriter,
+    PipesDefaultMessageWriter,
     PipesExtras,
 )
 
@@ -53,7 +53,7 @@ class PipesK8sPodLogsMessageReader(PipesMessageReader):
     ) -> Iterator[PipesParams]:
         self._handler = handler
         try:
-            yield {ExtDefaultMessageWriter.STDIO_KEY: ExtDefaultMessageWriter.STDERR}
+            yield {PipesDefaultMessageWriter.STDIO_KEY: PipesDefaultMessageWriter.STDERR}
         finally:
             self._handler = None
 

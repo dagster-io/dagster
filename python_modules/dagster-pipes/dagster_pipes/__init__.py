@@ -368,16 +368,16 @@ class PipesContextLoader(ABC):
     def load_context(self, params: PipesParams) -> Iterator[PipesContextData]: ...
 
 
-T_MessageChannel = TypeVar("T_MessageChannel", bound="ExtMessageWriterChannel")
+T_MessageChannel = TypeVar("T_MessageChannel", bound="PipesMessageWriterChannel")
 
 
-class ExtMessageWriter(ABC, Generic[T_MessageChannel]):
+class PipesMessageWriter(ABC, Generic[T_MessageChannel]):
     @abstractmethod
     @contextmanager
     def open(self, params: PipesParams) -> Iterator[T_MessageChannel]: ...
 
 
-class ExtMessageWriterChannel(ABC, Generic[T_MessageChannel]):
+class PipesMessageWriterChannel(ABC, Generic[T_MessageChannel]):
     @abstractmethod
     def write_message(self, message: PipesMessage) -> None: ...
 
@@ -391,11 +391,11 @@ class PipesParamsLoader(ABC):
 
 
 T_BlobStoreMessageWriterChannel = TypeVar(
-    "T_BlobStoreMessageWriterChannel", bound="ExtBlobStoreMessageWriterChannel"
+    "T_BlobStoreMessageWriterChannel", bound="PipesBlobStoreMessageWriterChannel"
 )
 
 
-class ExtBlobStoreMessageWriter(ExtMessageWriter[T_BlobStoreMessageWriterChannel]):
+class PipesBlobStoreMessageWriter(PipesMessageWriter[T_BlobStoreMessageWriterChannel]):
     def __init__(self, *, interval: float = 10):
         self.interval = interval
 
@@ -409,7 +409,7 @@ class ExtBlobStoreMessageWriter(ExtMessageWriter[T_BlobStoreMessageWriterChannel
     def make_channel(self, params: PipesParams) -> T_BlobStoreMessageWriterChannel: ...
 
 
-class ExtBlobStoreMessageWriterChannel(ExtMessageWriterChannel):
+class PipesBlobStoreMessageWriterChannel(PipesMessageWriterChannel):
     def __init__(self, *, interval: float = 10):
         self._interval = interval
         self._lock = Lock()
@@ -457,7 +457,7 @@ class ExtBlobStoreMessageWriterChannel(ExtMessageWriterChannel):
             time.sleep(1)
 
 
-class ExtBufferedFilesystemMessageWriterChannel(ExtBlobStoreMessageWriterChannel):
+class PipesBufferedFilesystemMessageWriterChannel(PipesBlobStoreMessageWriterChannel):
     def __init__(self, path: str, *, interval: float = 10):
         super().__init__(interval=interval)
         self._path = path
@@ -494,23 +494,23 @@ class DefaultPipesContextLoader(PipesContextLoader):
             )
 
 
-class ExtDefaultMessageWriter(ExtMessageWriter):
+class PipesDefaultMessageWriter(PipesMessageWriter):
     FILE_PATH_KEY = "path"
     STDIO_KEY = "stdio"
     STDERR = "stderr"
     STDOUT = "stdout"
 
     @contextmanager
-    def open(self, params: PipesParams) -> Iterator[ExtMessageWriterChannel]:
+    def open(self, params: PipesParams) -> Iterator[PipesMessageWriterChannel]:
         if self.FILE_PATH_KEY in params:
             path = _assert_env_param_type(params, self.FILE_PATH_KEY, str, self.__class__)
-            yield ExtFileMessageWriterChannel(path)
+            yield PipesFileMessageWriterChannel(path)
         elif self.STDIO_KEY in params:
             stream = _assert_env_param_type(params, self.STDIO_KEY, str, self.__class__)
             if stream == self.STDERR:
-                yield ExtStreamMessageWriterChannel(sys.stderr)
+                yield PipesStreamMessageWriterChannel(sys.stderr)
             elif stream == self.STDOUT:
-                yield ExtStreamMessageWriterChannel(sys.stdout)
+                yield PipesStreamMessageWriterChannel(sys.stdout)
             else:
                 raise DagsterPipesError(
                     f'Invalid value for key "std", expected "{self.STDERR}" or "{self.STDOUT}" but'
@@ -523,7 +523,7 @@ class ExtDefaultMessageWriter(ExtMessageWriter):
             )
 
 
-class ExtFileMessageWriterChannel(ExtMessageWriterChannel):
+class PipesFileMessageWriterChannel(PipesMessageWriterChannel):
     def __init__(self, path: str):
         self._path = path
 
@@ -532,7 +532,7 @@ class ExtFileMessageWriterChannel(ExtMessageWriterChannel):
             f.write(json.dumps(message) + "\n")
 
 
-class ExtStreamMessageWriterChannel(ExtMessageWriterChannel):
+class PipesStreamMessageWriterChannel(PipesMessageWriterChannel):
     def __init__(self, stream: TextIO):
         self._stream = stream
 
@@ -553,7 +553,7 @@ class EnvVarPipesParamsLoader(PipesParamsLoader):
 # ########################
 
 
-class ExtS3MessageWriter(ExtBlobStoreMessageWriter):
+class PipesS3MessageWriter(PipesBlobStoreMessageWriter):
     # client is a boto3.client("s3") object
     def __init__(self, client: Any, *, interval: float = 10):
         super().__init__(interval=interval)
@@ -564,10 +564,10 @@ class ExtS3MessageWriter(ExtBlobStoreMessageWriter):
     def make_channel(
         self,
         params: PipesParams,
-    ) -> "ExtS3MessageChannel":
+    ) -> "PipesS3MessageChannel":
         bucket = _assert_env_param_type(params, "bucket", str, self.__class__)
         key_prefix = _assert_opt_env_param_type(params, "key_prefix", str, self.__class__)
-        return ExtS3MessageChannel(
+        return PipesS3MessageChannel(
             client=self._client,
             bucket=bucket,
             key_prefix=key_prefix,
@@ -575,7 +575,7 @@ class ExtS3MessageWriter(ExtBlobStoreMessageWriter):
         )
 
 
-class ExtS3MessageChannel(ExtBlobStoreMessageWriterChannel):
+class PipesS3MessageChannel(PipesBlobStoreMessageWriterChannel):
     # client is a boto3.client("s3") object
     def __init__(
         self, client: Any, bucket: str, key_prefix: Optional[str], *, interval: float = 10
@@ -608,13 +608,13 @@ class DbfsPipesContextLoader(PipesContextLoader):
             yield json.load(f)
 
 
-class ExtDbfsMessageWriter(ExtBlobStoreMessageWriter):
+class PipesDbfsMessageWriter(PipesBlobStoreMessageWriter):
     def make_channel(
         self,
         params: PipesParams,
-    ) -> "ExtBufferedFilesystemMessageWriterChannel":
+    ) -> "PipesBufferedFilesystemMessageWriterChannel":
         unmounted_path = _assert_env_param_type(params, "path", str, self.__class__)
-        return ExtBufferedFilesystemMessageWriterChannel(
+        return PipesBufferedFilesystemMessageWriterChannel(
             path=os.path.join("/dbfs", unmounted_path.lstrip("/")),
             interval=self.interval,
         )
@@ -628,7 +628,7 @@ class ExtDbfsMessageWriter(ExtBlobStoreMessageWriter):
 def init_dagster_pipes(
     *,
     context_loader: Optional[PipesContextLoader] = None,
-    message_writer: Optional[ExtMessageWriter] = None,
+    message_writer: Optional[PipesMessageWriter] = None,
     params_loader: Optional[PipesParamsLoader] = None,
 ) -> "PipesContext":
     if PipesContext.is_initialized():
@@ -639,7 +639,7 @@ def init_dagster_pipes(
         context_params = params_loader.load_context_params()
         messages_params = params_loader.load_messages_params()
         context_loader = context_loader or DefaultPipesContextLoader()
-        message_writer = message_writer or ExtDefaultMessageWriter()
+        message_writer = message_writer or PipesDefaultMessageWriter()
         stack = ExitStack()
         context_data = stack.enter_context(context_loader.load_context(context_params))
         message_channel = stack.enter_context(message_writer.open(messages_params))
@@ -674,7 +674,7 @@ class PipesContext:
     def __init__(
         self,
         data: PipesContextData,
-        message_channel: ExtMessageWriterChannel,
+        message_channel: PipesMessageWriterChannel,
     ) -> None:
         self._data = data
         self._message_channel = message_channel
