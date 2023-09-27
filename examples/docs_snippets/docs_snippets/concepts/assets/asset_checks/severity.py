@@ -17,7 +17,7 @@ def my_check():
     is_serious = ...
     return AssetCheckResult(
         success=False,
-        severity=AssetCheckSeverity.ERROR if is_serious else AssetCheckSeverity.WARNING,
+        passed=AssetCheckSeverity.ERROR if is_serious else AssetCheckSeverity.WARNING,
     )
 
 

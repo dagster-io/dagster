@@ -14,7 +14,7 @@ def orders(context):
     # check it
     num_null_order_ids = orders_df["order_id"].isna().sum()
     yield AssetCheckResult(
-        success=bool(num_null_order_ids == 0),
+        passed=bool(num_null_order_ids == 0),
     )
 
 
