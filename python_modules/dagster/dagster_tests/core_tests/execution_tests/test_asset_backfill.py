@@ -43,7 +43,7 @@ from dagster._core.execution.asset_backfill import (
     execute_asset_backfill_iteration_inner,
     get_canceling_asset_backfill_iteration_data,
 )
-from dagster._core.host_representation.external_data import external_asset_graph_from_defs
+from dagster._core.host_representation.external_data import external_asset_nodes_from_defs
 from dagster._core.storage.dagster_run import RunsFilter
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
@@ -657,7 +657,7 @@ def external_asset_graph_from_assets_by_repo_name(
     for repo_name, assets in assets_by_repo_name.items():
         repo = Definitions(assets=assets).get_repository_def()
 
-        external_asset_nodes = external_asset_graph_from_defs(
+        external_asset_nodes = external_asset_nodes_from_defs(
             repo.get_all_jobs(), source_assets_by_key=repo.source_assets_by_key
         )
         repo_handle = MagicMock(repository_name=repo_name)

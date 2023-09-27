@@ -13,8 +13,8 @@ from dagster._core.pipes.client import (
     PipesMessageReader,
 )
 from dagster._core.pipes.context import (
+    PipesExecutionResult,
     PipesMessageHandler,
-    PipesResult,
 )
 from dagster._core.pipes.utils import (
     PipesEnvContextInjector,
@@ -95,7 +95,7 @@ class _PipesDockerClient(PipesClient):
         registry: Optional[Mapping[str, str]] = None,
         container_kwargs: Optional[Mapping[str, Any]] = None,
         extras: Optional[PipesExtras] = None,
-    ) -> Iterator[PipesResult]:
+    ) -> Iterator[PipesExecutionResult]:
         """Create a docker container and run it to completion, enriched with the ext protocol.
 
         Args:

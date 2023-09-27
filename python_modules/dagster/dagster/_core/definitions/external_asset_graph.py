@@ -42,7 +42,7 @@ class ExternalAssetGraph(AssetGraph):
         freshness_policies_by_key: Mapping[AssetKey, Optional[FreshnessPolicy]],
         auto_materialize_policies_by_key: Mapping[AssetKey, Optional[AutoMaterializePolicy]],
         backfill_policies_by_key: Mapping[AssetKey, Optional[BackfillPolicy]],
-        required_multi_asset_sets_by_key: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]],
+        required_multi_asset_sets_by_key: Mapping[AssetKey, AbstractSet[AssetKey]],
         repo_handles_by_key: Mapping[AssetKey, RepositoryHandle],
         job_names_by_key: Mapping[AssetKey, Sequence[str]],
         code_versions_by_key: Mapping[AssetKey, Optional[str]],
