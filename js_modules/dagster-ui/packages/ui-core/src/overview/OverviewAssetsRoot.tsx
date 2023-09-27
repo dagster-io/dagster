@@ -223,7 +223,7 @@ function VirtualRow({height, start, group}: RowProps) {
     [group.assets],
   );
 
-  const liveDataByNode = useAssetsLiveData(assetKeys);
+  const {liveDataByNode} = useAssetsLiveData(assetKeys);
 
   const statuses = React.useMemo(() => {
     type assetType = (typeof group)['assets'][0];

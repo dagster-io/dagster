@@ -20,7 +20,7 @@ import {buildQueryMock, getMockResultFn} from '../../testing/mocking';
 import {
   AssetLiveDataProvider,
   SUBSCRIPTION_IDLE_POLL_RATE,
-  _testOnly_resetLastFetchedOrRequested,
+  _resetLastFetchedOrRequested,
   useAssetsLiveData,
 } from '../AssetLiveDataProvider';
 
@@ -46,7 +46,7 @@ function buildMockedQuery(assetKeys: AssetKeyInput[]) {
 }
 
 afterEach(() => {
-  _testOnly_resetLastFetchedOrRequested();
+  _resetLastFetchedOrRequested();
 });
 
 function Test({

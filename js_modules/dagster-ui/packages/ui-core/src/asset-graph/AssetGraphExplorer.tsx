@@ -8,6 +8,7 @@ import {
   Button,
   Icon,
   Tooltip,
+  RefreshableCountdown,
 } from '@dagster-io/ui-components';
 import pickBy from 'lodash/pickBy';
 import uniq from 'lodash/uniq';
@@ -17,7 +18,7 @@ import {useHistory} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {useFeatureFlags} from '../app/Flags';
-import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
+import {useAssetsLiveData} from '../asset-data/AssetLiveDataProvider';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {LaunchAssetObservationButton} from '../assets/LaunchAssetObservationButton';
 import {AssetKey} from '../assets/types';
@@ -53,7 +54,6 @@ import {AssetGraphLayout} from './layout';
 import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
 import {AssetGraphFetchScope, AssetGraphQueryItem, useAssetGraphData} from './useAssetGraphData';
 import {AssetLocation, useFindAssetLocation} from './useFindAssetLocation';
-import {useLiveDataForAssetKeys} from './useLiveDataForAssetKeys';
 
 type AssetNode = AssetNodeForGraphQueryFragment;
 
@@ -83,7 +83,7 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
     applyingEmptyDefault,
   } = useAssetGraphData(props.explorerPath.opsQuery, props.fetchOptions);
 
-  const {liveDataByNode, liveDataRefreshState} = useLiveDataForAssetKeys(graphAssetKeys);
+  const {liveDataByNode, refresh, refreshing} = useAssetsLiveData(graphAssetKeys);
 
   return (
     <Loading allowStaleData queryResult={fetchResult}>
@@ -111,7 +111,8 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
             allAssetKeys={allAssetKeys}
             graphQueryItems={graphQueryItems}
             applyingEmptyDefault={applyingEmptyDefault}
-            liveDataRefreshState={liveDataRefreshState}
+            refresh={refresh}
+            refreshing={refreshing}
             liveDataByNode={liveDataByNode}
             {...props}
           />
@@ -127,7 +128,8 @@ type WithDataProps = {
   fullAssetGraphData: GraphData;
   graphQueryItems: AssetGraphQueryItem[];
   liveDataByNode: LiveData;
-  liveDataRefreshState: QueryRefreshState;
+  refresh: () => void;
+  refreshing: boolean;
   applyingEmptyDefault: boolean;
 } & Props;
 
@@ -137,7 +139,8 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
   explorerPath,
   onChangeExplorerPath,
   onNavigateToSourceAssetNode: onNavigateToSourceAssetNode,
-  liveDataRefreshState,
+  refresh,
+  refreshing,
   liveDataByNode,
   assetGraphData,
   fullAssetGraphData,
@@ -436,8 +439,9 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
 
           <Box style={{position: 'absolute', right: 12, top: 8}}>
             <Box flex={{alignItems: 'center', gap: 12}}>
-              <QueryRefreshCountdown
-                refreshState={liveDataRefreshState}
+              <RefreshableCountdown
+                onRefresh={refresh}
+                refreshing={refreshing}
                 dataDescription="materializations"
               />
               <LaunchAssetObservationButton
