@@ -238,6 +238,7 @@ class GrapheneInstigationTick(graphene.ObjectType):
     logKey = graphene.List(graphene.NonNull(graphene.String))
     logEvents = graphene.Field(graphene.NonNull(GrapheneInstigationEventConnection))
     dynamicPartitionsRequestResults = non_null_list(GrapheneDynamicPartitionsRequestResult)
+    endTimestamp = graphene.Field(graphene.Float)
 
     class Meta:
         name = "InstigationTick"
@@ -255,6 +256,7 @@ class GrapheneInstigationTick(graphene.ObjectType):
             originRunIds=tick.origin_run_ids,
             cursor=tick.cursor,
             logKey=tick.log_key,
+            endTimestamp=tick.end_timestamp,
         )
 
     def resolve_id(self, _):

@@ -6,6 +6,7 @@ from typing import (
     Dict,
     List,
     Optional,
+    Sequence,
     Tuple,
     Type,
 )
@@ -103,6 +104,9 @@ class AutoMaterializeLaunchContext:
 
     def add_run_info(self, run_id=None):
         self._tick = self._tick.with_run_info(run_id)
+
+    def set_run_requests(self, run_requests: Sequence[RunRequest]):
+        self._tick = self._tick.with_run_requests(run_requests)
 
     def update_state(self, status: TickStatus, **kwargs: object):
         self._tick = self._tick.with_status(status=status, **kwargs)
@@ -277,6 +281,8 @@ class AssetDaemon(IntervalDaemon):
                         pipeline_and_execution_plan_cache,
                     )
                 )
+
+            tick_context.set_run_requests(run_requests=run_requests)
 
             # Now submit all runs to the queue
             for submit_job_input in submit_job_inputs:
