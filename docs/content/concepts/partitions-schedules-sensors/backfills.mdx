@@ -37,7 +37,7 @@ height={335}
 
 ### Launching single-run backfills using backfill policies <Experimental />
 
-By default, if you launch a backfill that covers `N` partitions, Dagster will launch `N` separate runs, one for each partition. This works well when code is single-threaded, as it avoids overwhelming it with large amounts of data.
+By default, if you launch a backfill that covers `N` partitions, Dagster will launch `N` separate runs, one for each partition. This approach can help avoid overwhelming Dagster or resources with large amounts of data. However, if you're using a parallel-processing engine like Spark and Snowflake, you often don't need Dagster to help with parallelism, so splitting up the backfill into multiple runs just adds extra overhead.
 
 Dagster supports backfills that execute as a single run that covers a range of partitions, such as executing a backfill as a single Snowflake query. After the run completes, Dagster will track that all the partitions have been filled.
 
