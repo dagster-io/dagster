@@ -5,6 +5,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {COMMON_COLLATOR} from '../app/Util';
+import {useAssetsLiveData} from '../asset-data/AssetLiveDataProvider';
 import {ASSET_NODE_CONFIG_FRAGMENT} from '../assets/AssetConfig';
 import {AssetDefinedInMultipleReposNotice} from '../assets/AssetDefinedInMultipleReposNotice';
 import {
@@ -34,21 +35,16 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
-import {
-  LiveDataForNode,
-  displayNameForAssetKey,
-  GraphNode,
-  nodeDependsOnSelf,
-  stepKeyForAsset,
-} from './Utils';
+import {displayNameForAssetKey, GraphNode, nodeDependsOnSelf, stepKeyForAsset} from './Utils';
 import {SidebarAssetQuery, SidebarAssetQueryVariables} from './types/SidebarAssetInfo.types';
 import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
 
 export const SidebarAssetInfo: React.FC<{
   graphNode: GraphNode;
-  liveData?: LiveDataForNode;
-}> = ({graphNode, liveData}) => {
+}> = ({graphNode}) => {
   const {assetKey, definition} = graphNode;
+  const {liveDataByNode} = useAssetsLiveData(React.useMemo(() => [assetKey], [assetKey]));
+  const liveData = liveDataByNode[JSON.stringify(assetKey.path)];
   const partitionHealthRefreshHint = healthRefreshHintFromLiveData(liveData);
   const partitionHealthData = usePartitionHealthData(
     [assetKey],

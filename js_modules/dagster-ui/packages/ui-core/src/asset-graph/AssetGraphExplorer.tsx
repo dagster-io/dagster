@@ -8,7 +8,6 @@ import {
   Button,
   Icon,
   Tooltip,
-  RefreshableCountdown,
 } from '@dagster-io/ui-components';
 import pickBy from 'lodash/pickBy';
 import uniq from 'lodash/uniq';
@@ -18,13 +17,12 @@ import {useHistory} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {useFeatureFlags} from '../app/Flags';
-import {useAssetsLiveData} from '../asset-data/AssetLiveDataProvider';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {LaunchAssetObservationButton} from '../assets/LaunchAssetObservationButton';
 import {AssetKey} from '../assets/types';
 import {DEFAULT_MAX_ZOOM, SVGViewport} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
-import {closestNodeInDirection} from '../graph/common';
+import {closestNodeInDirection, isNodeOffscreen} from '../graph/common';
 import {
   GraphExplorerOptions,
   OptionsOverlay,
@@ -49,7 +47,7 @@ import {AssetGroupNode} from './AssetGroupNode';
 import {AssetNode, AssetNodeMinimal} from './AssetNode';
 import {AssetNodeLink} from './ForeignNode';
 import {SidebarAssetInfo} from './SidebarAssetInfo';
-import {GraphData, graphHasCycles, LiveData, GraphNode, tokenForAssetKey} from './Utils';
+import {GraphData, graphHasCycles, GraphNode, tokenForAssetKey} from './Utils';
 import {AssetGraphLayout} from './layout';
 import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
 import {AssetGraphFetchScope, AssetGraphQueryItem, useAssetGraphData} from './useAssetGraphData';
@@ -78,12 +76,9 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
     assetGraphData,
     fullAssetGraphData,
     graphQueryItems,
-    graphAssetKeys,
     allAssetKeys,
     applyingEmptyDefault,
   } = useAssetGraphData(props.explorerPath.opsQuery, props.fetchOptions);
-
-  const {liveDataByNode, refresh, refreshing} = useAssetsLiveData(graphAssetKeys);
 
   return (
     <Loading allowStaleData queryResult={fetchResult}>
@@ -111,9 +106,6 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
             allAssetKeys={allAssetKeys}
             graphQueryItems={graphQueryItems}
             applyingEmptyDefault={applyingEmptyDefault}
-            refresh={refresh}
-            refreshing={refreshing}
-            liveDataByNode={liveDataByNode}
             {...props}
           />
         );
@@ -127,9 +119,6 @@ type WithDataProps = {
   assetGraphData: GraphData;
   fullAssetGraphData: GraphData;
   graphQueryItems: AssetGraphQueryItem[];
-  liveDataByNode: LiveData;
-  refresh: () => void;
-  refreshing: boolean;
   applyingEmptyDefault: boolean;
 } & Props;
 
@@ -139,9 +128,6 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
   explorerPath,
   onChangeExplorerPath,
   onNavigateToSourceAssetNode: onNavigateToSourceAssetNode,
-  refresh,
-  refreshing,
-  liveDataByNode,
   assetGraphData,
   fullAssetGraphData,
   graphQueryItems,
@@ -341,9 +327,10 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
               maxZoom={DEFAULT_MAX_ZOOM}
               maxAutocenterZoom={1.0}
             >
-              {({scale}) => (
+              {({scale}, viewportRect) => (
                 <SVGContainer width={layout.width} height={layout.height}>
                   <AssetEdges
+                    viewportRect={viewportRect}
                     highlighted={highlighted}
                     edges={layout.edges}
                     strokeWidth={allowGroupsOnlyZoomLevel ? Math.max(4, 3 / scale) : 4}
@@ -355,6 +342,7 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
                   />
 
                   {Object.values(layout.groups)
+                    .filter((node) => !isNodeOffscreen(node.bounds, viewportRect))
                     .sort((a, b) => a.id.length - b.id.length)
                     .map((group) => (
                       <foreignObject
@@ -376,43 +364,43 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
                       </foreignObject>
                     ))}
 
-                  {Object.values(layout.nodes).map(({id, bounds}) => {
-                    const graphNode = assetGraphData.nodes[id]!;
-                    const path = JSON.parse(id);
-                    if (allowGroupsOnlyZoomLevel && scale < GROUPS_ONLY_SCALE) {
-                      return;
-                    }
-                    return (
-                      <foreignObject
-                        {...bounds}
-                        key={id}
-                        onMouseEnter={() => setHighlighted(id)}
-                        onMouseLeave={() => setHighlighted(null)}
-                        onClick={(e) => onSelectNode(e, {path}, graphNode)}
-                        onDoubleClick={(e) => {
-                          viewportEl.current?.zoomToSVGBox(bounds, true, 1.2);
-                          e.stopPropagation();
-                        }}
-                        style={{overflow: 'visible'}}
-                      >
-                        {!graphNode ? (
-                          <AssetNodeLink assetKey={{path}} />
-                        ) : scale < MINIMAL_SCALE ? (
-                          <AssetNodeMinimal
-                            definition={graphNode.definition}
-                            liveData={liveDataByNode[graphNode.id]}
-                            selected={selectedGraphNodes.includes(graphNode)}
-                          />
-                        ) : (
-                          <AssetNode
-                            definition={graphNode.definition}
-                            liveData={liveDataByNode[graphNode.id]}
-                            selected={selectedGraphNodes.includes(graphNode)}
-                          />
-                        )}
-                      </foreignObject>
-                    );
-                  })}
+                  {Object.values(layout.nodes)
+                    .filter((node) => !isNodeOffscreen(node.bounds, viewportRect))
+                    .map(({id, bounds}) => {
+                      const graphNode = assetGraphData.nodes[id]!;
+                      const path = JSON.parse(id);
+                      if (allowGroupsOnlyZoomLevel && scale < GROUPS_ONLY_SCALE) {
+                        return;
+                      }
+                      return (
+                        <foreignObject
+                          {...bounds}
+                          key={id}
+                          onMouseEnter={() => setHighlighted(id)}
+                          onMouseLeave={() => setHighlighted(null)}
+                          onClick={(e) => onSelectNode(e, {path}, graphNode)}
+                          onDoubleClick={(e) => {
+                            viewportEl.current?.zoomToSVGBox(bounds, true, 1.2);
+                            e.stopPropagation();
+                          }}
+                          style={{overflow: 'visible'}}
+                        >
+                          {!graphNode ? (
+                            <AssetNodeLink assetKey={{path}} />
+                          ) : scale < MINIMAL_SCALE ? (
+                            <AssetNodeMinimal
+                              definition={graphNode.definition}
+                              selected={selectedGraphNodes.includes(graphNode)}
+                            />
+                          ) : (
+                            <AssetNode
+                              definition={graphNode.definition}
+                              selected={selectedGraphNodes.includes(graphNode)}
+                            />
+                          )}
+                        </foreignObject>
+                      );
+                    })}
                 </SVGContainer>
               )}
             </SVGViewport>
@@ -439,11 +427,6 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
 
           <Box style={{position: 'absolute', right: 12, top: 8}}>
             <Box flex={{alignItems: 'center', gap: 12}}>
-              <RefreshableCountdown
-                onRefresh={refresh}
-                refreshing={refreshing}
-                dataDescription="materializations"
-              />
               <LaunchAssetObservationButton
                 preferredJobName={explorerPath.pipelineName}
                 scope={
@@ -454,7 +437,6 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
               />
               <LaunchAssetExecutionButton
                 preferredJobName={explorerPath.pipelineName}
-                liveDataForStale={liveDataByNode}
                 scope={
                   selectedDefinitions.length
                     ? {selected: selectedDefinitions}
@@ -492,10 +474,7 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
           <RightInfoPanel>
             <RightInfoPanelContent>
               <ErrorBoundary region="asset sidebar" resetErrorOnChange={[selectedGraphNodes[0].id]}>
-                <SidebarAssetInfo
-                  graphNode={selectedGraphNodes[0]}
-                  liveData={liveDataByNode[selectedGraphNodes[0].id]}
-                />
+                <SidebarAssetInfo graphNode={selectedGraphNodes[0]} />
               </ErrorBoundary>
             </RightInfoPanelContent>
           </RightInfoPanel>

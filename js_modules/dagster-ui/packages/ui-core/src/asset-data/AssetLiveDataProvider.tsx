@@ -18,9 +18,6 @@ const _assetKeyListeners: Record<string, Array<DataForNodeListener>> = {};
 let providerListener = (_key: string, _data: LiveDataForNode) => {};
 const _cache: Record<string, LiveDataForNode> = {};
 
-/*
- * Note: This hook may return partial data since it will fetch assets in chunks/batches.
- */
 export function useAssetsLiveData(assetKeys: AssetKeyInput[]) {
   const [data, setData] = React.useState<Record<string, LiveDataForNode>>({});
   const [isRefreshing, setIsRefreshing] = React.useState(false);

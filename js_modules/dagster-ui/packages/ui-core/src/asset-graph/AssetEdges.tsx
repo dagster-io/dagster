@@ -9,13 +9,20 @@ export const AssetEdges: React.FC<{
   highlighted: string | null;
   strokeWidth?: number;
   baseColor?: string;
-}> = ({edges, highlighted, strokeWidth = 4, baseColor = Colors.KeylineGray}) => {
+  viewportRect: {top: number; left: number; right: number; bottom: number};
+}> = ({edges, highlighted, strokeWidth = 4, baseColor = Colors.KeylineGray, viewportRect}) => {
   // Note: we render the highlighted edges twice, but it's so that the first item with
   // all the edges in it can remain memoized.
   return (
     <React.Fragment>
-      <AssetEdgeSet color={baseColor} edges={edges} strokeWidth={strokeWidth} />
       <AssetEdgeSet
+        color={baseColor}
+        edges={edges}
+        strokeWidth={strokeWidth}
+        viewportRect={viewportRect}
+      />
+      <AssetEdgeSet
+        viewportRect={viewportRect}
         color={Colors.Blue500}
         edges={edges.filter(({fromId, toId}) => highlighted === fromId || highlighted === toId)}
         strokeWidth={strokeWidth}
@@ -28,7 +35,8 @@ const AssetEdgeSet: React.FC<{
   edges: AssetLayoutEdge[];
   color: string;
   strokeWidth: number;
-}> = React.memo(({edges, color, strokeWidth}) => (
+  viewportRect: {top: number; left: number; right: number; bottom: number};
+}> = React.memo(({edges, color, strokeWidth, viewportRect}) => (
   <>
     <defs>
       <marker
@@ -43,15 +51,33 @@ const AssetEdgeSet: React.FC<{
         <path d="M 0 0 L 8 5 L 0 10 z" fill={color} />
       </marker>
     </defs>
-    {edges.map((edge, idx) => (
-      <path
-        key={idx}
-        d={buildSVGPath({source: edge.from, target: edge.to})}
-        stroke={color}
-        strokeWidth={strokeWidth}
-        fill="none"
-        markerEnd={`url(#arrow${btoa(color)})`}
-      />
-    ))}
+    {edges
+      .filter(
+        (edge) =>
+          doesViewportContainPoint(edge.from, viewportRect) ||
+          doesViewportContainPoint(edge.to, viewportRect),
+      )
+      .map((edge, idx) => (
+        <path
+          key={idx}
+          d={buildSVGPath({source: edge.from, target: edge.to})}
+          stroke={color}
+          strokeWidth={strokeWidth}
+          fill="none"
+          markerEnd={`url(#arrow${btoa(color)})`}
+        />
+      ))}
   </>
 ));
+
+function doesViewportContainPoint(
+  point: {x: number; y: number},
+  viewportRect: {top: number; left: number; right: number; bottom: number},
+) {
+  return (
+    point.x >= viewportRect.left &&
+    point.x <= viewportRect.right &&
+    point.y >= viewportRect.top &&
+    point.y <= viewportRect.bottom
+  );
+}
