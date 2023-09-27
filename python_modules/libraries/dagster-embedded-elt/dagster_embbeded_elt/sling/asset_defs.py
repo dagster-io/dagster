@@ -1,4 +1,4 @@
-from typing import List, Iterable, Optional, Union, Dict, Any
+from typing import List, Iterable, Optional, Union, Dict, Any, Sequence
 from dagster import (
     AssetsDefinition,
     asset,
@@ -36,9 +36,11 @@ def build_sling_asset(
     if update_key is not None and not isinstance(update_key, list):
         update_key = [update_key]
 
+    asset_key = target_object if not asset_key else asset_key
+
     @asset(
         required_resource_keys={sling_resource_key},
-        key=AssetKey([target_object]) if not asset_key else asset_key,
+        key=asset_key,
         deps=deps,
         compute_kind="sling",
         group_name=group_name,

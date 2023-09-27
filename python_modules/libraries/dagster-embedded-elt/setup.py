@@ -22,7 +22,7 @@ setup(
     author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
     description="Package for performing ETL/ELT tasks with Dagster.",
-    url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-elt",
+    url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-embedded-elt",
     classifiers=[
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
@@ -31,13 +31,8 @@ setup(
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
-    packages=find_packages(exclude=["dagster_elt_tests*"]),
-    install_requires=[f"dagster{pin}", f"sling<=1.0.20"],
+    packages=find_packages(exclude=["dagster_embedded_elt_tests*"]),
+    install_requires=[f"dagster{pin}", f"sling>=1.0.20"],
     zip_safe=False,
-    entry_points={
-        "console_scripts": [
-            "dagster-elt= dagster_elt.cli:main",
-        ]
-    },
     extras_require={},
 )
