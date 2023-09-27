@@ -12,14 +12,13 @@ from dagster import (
 )
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.storage.db_io_manager import DbTypeHandler, TablePartitionDimension, TableSlice
-from deltalake import DeltaTable
+from deltalake import DeltaTable, write_deltalake
 from deltalake.schema import (
     Field as DeltaField,
     PrimitiveType,
     Schema,
 )
 from deltalake.table import FilterLiteralType, _filters_to_expression
-from deltalake.writer import write_deltalake
 
 from .io_manager import DELTA_DATE_FORMAT, DELTA_DATETIME_FORMAT, TableConnection
 

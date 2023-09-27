@@ -15,9 +15,9 @@ TablePartitionDimension(
 @pytest.fixture
 def test_schema() -> Schema:
     fields = [
-        Field(name="string_col", ty=PrimitiveType("string")),  # type: ignore
-        Field(name="date_col", ty=PrimitiveType("date")),  # type: ignore
-        Field(name="timestamp_col", ty=PrimitiveType("timestamp")),  # type: ignore
+        Field(name="string_col", type=PrimitiveType("string")),
+        Field(name="date_col", type=PrimitiveType("date")),
+        Field(name="timestamp_col", type=PrimitiveType("timestamp")),
     ]
     return Schema(fields=fields)
 
