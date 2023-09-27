@@ -32,6 +32,7 @@ from dagster._core.definitions.metadata import (
     TextMetadataValue,
     UrlMetadataValue,
 )
+from dagster._core.definitions.partition import DynamicPartitionsDefinition
 from dagster._core.errors import DagsterExternalExecutionError, DagsterInvariantViolationError
 from dagster._core.execution.context.compute import AssetExecutionContext, OpExecutionContext
 from dagster._core.execution.context.invocation import build_asset_context
@@ -229,6 +230,29 @@ def test_ext_multi_asset():
         assert bar_mat and bar_mat.asset_materialization
         assert bar_mat.asset_materialization.tags
         assert bar_mat.asset_materialization.tags[DATA_VERSION_TAG] == "alpha"
+
+
+def test_ext_dynamic_partitions():
+    def script_fn():
+        pass
+
+    @asset(partitions_def=DynamicPartitionsDefinition(name="blah"))
+    def foo(context: AssetExecutionContext, pipes_subprocess_client: PipesSubprocessClient):
+        with temp_script(script_fn) as script_path:
+            cmd = [_PYTHON_EXECUTABLE, script_path]
+            yield from pipes_subprocess_client.run(cmd, context=context)
+
+    with instance_for_test() as instance:
+        instance.add_dynamic_partitions("blah", ["bar"])
+        materialize(
+            [foo],
+            instance=instance,
+            resources={"pipes_subprocess_client": PipesSubprocessClient()},
+            partition_key="bar",
+        )
+        foo_mat = instance.get_latest_materialization_event(AssetKey(["foo"]))
+        assert foo_mat and foo_mat.asset_materialization
+        assert foo_mat.asset_materialization.partition == "bar"
 
 
 def test_ext_typed_metadata():
