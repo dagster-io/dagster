@@ -81,6 +81,7 @@ from dagster._core.storage.event_log.migration import (
 from dagster._core.storage.event_log.schema import SqlEventLogStorageTable
 from dagster._core.storage.event_log.sqlite.sqlite_event_log import SqliteEventLogStorage
 from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
+from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._core.test_utils import create_run_for_test, instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import make_new_run_id
@@ -1501,7 +1502,7 @@ class TestEventLogStorage:
             # check that events were double-written to the index shard
             with storage.index_connection() as conn:
                 run_status_change_events = conn.execute(
-                    db.select([SqlEventLogStorageTable.c.id]).where(
+                    db_select([SqlEventLogStorageTable.c.id]).where(
                         SqlEventLogStorageTable.c.dagster_event_type.in_(
                             [
                                 event_type.value
