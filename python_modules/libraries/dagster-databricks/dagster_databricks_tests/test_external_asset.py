@@ -8,7 +8,7 @@ from typing import Any, Callable, Iterator
 import pytest
 from dagster import AssetExecutionContext, asset, materialize
 from dagster._core.errors import DagsterExternalExecutionError
-from dagster_databricks import PipesDatabricksClient, dbfs_tempdir
+from dagster_databricks.pipes import PipesDatabricksClient, dbfs_tempdir
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service import files, jobs
 
@@ -29,7 +29,7 @@ def script_fn():
     multiplier = context.get_extra("multiplier")
     value = 2 * multiplier
 
-    context.log(f"{context.asset_key}: {2} * {multiplier} = {value}")
+    context.log.info(f"{context.asset_key}: {2} * {multiplier} = {value}")
     context.report_asset_materialization(
         metadata={"value": value},
         data_version="alpha",

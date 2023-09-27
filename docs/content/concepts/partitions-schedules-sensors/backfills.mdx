@@ -80,7 +80,7 @@ class MyIOManager(IOManager):
 
 ### Partitioned Job Backfills
 
-You can launch and monitor backfills of a job using the [Partitions tab](/concepts/partitions-schedules-sensors/partitions#dagster-ui-partitions-tab).
+You can launch and monitor backfills of a job using the [Partitions tab](/concepts/partitions-schedules-sensors/partitioning-ops#partitions-in-the-dagster-ui).
 
 To launch a backfill, click the "Launch backfill" button at the top center of the Partitions tab. This opens the "Launch backfill" modal, which lets you select the set of partitions to launch the backfill over. A run will be launched for each partition.
 
@@ -109,6 +109,8 @@ height={2414}
 You can also launch backfills using the [`backfill`](/\_apidocs/cli#dagster-pipeline-backfill) CLI.
 
 For example, let's say we created a partitioned job named `do_stuff_partitioned` that contains date partitions. Having defined the partitioned job, we can run the command `dagster job backfill` to execute the backfill.
+
+Having done so, we can run the command `dagster job backfill` to execute the backfill.
 
 ```bash
 $ dagster job backfill -p do_stuff_partitioned
