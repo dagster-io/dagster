@@ -1659,6 +1659,13 @@ def external_asset_graph_from_defs(
             )
         )
 
+    defined = set()
+    for node in asset_nodes:
+        if node.asset_key in defined:
+            check.failed(f"Produced multiple ExternalAssetNodes for key {node.asset_key}")
+        else:
+            defined.add(node.asset_key)
+
     return asset_nodes
 
 

@@ -166,6 +166,19 @@
         "path": "/concepts/webserver/ui"
       },
       {
+        "title": "Logging",
+        "children": [
+          {
+            "title": "Loggers",
+            "path": "/concepts/logging/loggers"
+          },
+          {
+            "title": "Python logging",
+            "path": "/concepts/logging/python-logging"
+          }
+        ]
+      },
+      {
         "title": "Testing",
         "path": "/concepts/testing"
       },
@@ -240,17 +253,8 @@
             "path": "/concepts/types"
           },
           {
-            "title": "Logging",
-            "children": [
-              {
-                "title": "Loggers",
-                "path": "/concepts/logging/loggers"
-              },
-              {
-                "title": "Python logging",
-                "path": "/concepts/logging/python-logging"
-              }
-            ]
+            "title": "Custom loggers",
+            "path": "/concepts/logging/custom-loggers"
           },
           {
             "title": "GraphQL",

@@ -13,6 +13,7 @@ So far when writing assets, you’ve orchestrated computations in a database and
 Having all of your assets in one file becomes difficult to manage. Let’s separate the assets by their purpose and put these analysis-focused assets in a different file than the assets that ingest data.
 
 1. In the `assets` directory, navigate to and open the `metrics.py` file.
+
 2. At the top of the `assets/metrics.py` file, add the following imports:
 
    ```python
@@ -121,7 +122,9 @@ In this section, you’ll create an asset that depends on `manhattan_stats`, loa
    4. Saves the visualization as a PNG.
 
 2. In the UI, click **Reload Definitions** to allow Dagster to detect the new asset.
+
 3. In the asset graph, select the `manhattan_map` asset and click **Materialize selected**.
+
 4. Open the file at `data/outputs/manhattan_map.png` to confirm the materialization worked correctly. The file should look like the following:
 
    ![The materialized map of Manhattan showing taxi trips by zones](/images/dagster-essentials/lesson-4/materialized-map.png)

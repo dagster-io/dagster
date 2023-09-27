@@ -108,6 +108,7 @@ export const SingleAssetQueryMaterializedWithLatestRun: MockedResponse<AssetGrap
       ],
       assetsLatestInfo: [
         {
+          id: 'test.py.repo.["good_asset"]',
           assetKey: {
             path: ['good_asset'],
             __typename: 'AssetKey',
@@ -165,6 +166,7 @@ export const SingleAssetQueryMaterializedStaleAndLate: MockedResponse<AssetGraph
       ],
       assetsLatestInfo: [
         {
+          id: 'test.py.repo.["late_asset"]',
           assetKey: {
             path: ['late_asset'],
             __typename: 'AssetKey',
@@ -226,6 +228,7 @@ export const SingleAssetQueryLastRunFailed: MockedResponse<AssetGraphLiveQuery> 
       ],
       assetsLatestInfo: [
         {
+          id: 'test.py.repo.["run_failing_asset"]',
           assetKey: {
             path: ['run_failing_asset'],
             __typename: 'AssetKey',

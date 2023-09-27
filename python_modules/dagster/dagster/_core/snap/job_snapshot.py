@@ -21,7 +21,7 @@ from dagster._config import (
     Shape,
     get_builtin_scalar_by_name,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckHandle
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.job_definition import (
     JobDefinition,
@@ -419,7 +419,7 @@ class JobLineageSnapshot(
             ("op_selection", Optional[Sequence[str]]),
             ("resolved_op_selection", Optional[AbstractSet[str]]),
             ("asset_selection", Optional[AbstractSet[AssetKey]]),
-            ("asset_check_selection", Optional[AbstractSet[AssetCheckHandle]]),
+            ("asset_check_selection", Optional[AbstractSet[AssetCheckKey]]),
         ],
     )
 ):
@@ -429,7 +429,7 @@ class JobLineageSnapshot(
         op_selection: Optional[Sequence[str]] = None,
         resolved_op_selection: Optional[AbstractSet[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
-        asset_check_selection: Optional[AbstractSet[AssetCheckHandle]] = None,
+        asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
     ):
         check.opt_set_param(resolved_op_selection, "resolved_op_selection", of_type=str)
         return super(JobLineageSnapshot, cls).__new__(

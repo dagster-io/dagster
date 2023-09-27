@@ -199,6 +199,7 @@ def asset(
             execute in the decorated function after materializing the asset.
         non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Deprecated, use deps instead.
             Set of asset keys that are upstream dependencies, but do not pass an input to the asset.
+        key (Optional[CoeercibleToAssetKey]): The key for this asset. If provided, cannot specify key_prefix or name.
 
     Examples:
         .. code-block:: python
@@ -254,6 +255,35 @@ def asset(
     return inner
 
 
+def _resolve_key_and_name(
+    *,
+    key: Optional[CoercibleToAssetKey],
+    key_prefix: Optional[CoercibleToAssetKeyPrefix],
+    name: Optional[str],
+    decorator: str,
+    fn: Callable[..., Any],
+) -> Tuple[AssetKey, str]:
+    if (name or key_prefix) and key:
+        raise DagsterInvalidDefinitionError(
+            f"Cannot specify a name or key prefix for {decorator} when the key"
+            " argument is provided."
+        )
+    key_prefix_list = [key_prefix] if isinstance(key_prefix, str) else key_prefix
+    key = AssetKey.from_coercible(key) if key else None
+    assigned_name = name or fn.__name__
+    return (
+        (
+            # the filter here appears unnecessary per typing, but this exists
+            # historically so keeping it here to be conservative in case users
+            # can get Nones into the key_prefix_list somehow
+            AssetKey(list(filter(None, [*(key_prefix_list or []), assigned_name])))
+            if not key
+            else key
+        ),
+        assigned_name,
+    )
+
+
 class _Asset:
     def __init__(
         self,
@@ -283,9 +313,6 @@ class _Asset:
         check_specs: Optional[Sequence[AssetCheckSpec]] = None,
     ):
         self.name = name
-
-        if isinstance(key_prefix, str):
-            key_prefix = [key_prefix]
         self.key_prefix = key_prefix
         self.ins = ins or {}
         self.deps = deps or []
@@ -310,14 +337,7 @@ class _Asset:
         self.backfill_policy = backfill_policy
         self.code_version = code_version
         self.check_specs = check_specs
-
-        if (name or key_prefix) and key:
-            raise DagsterInvalidDefinitionError(
-                "Cannot specify a name or key prefix for an asset when the key argument is"
-                " provided."
-            )
-
-        self.key = AssetKey.from_coercible(key) if key is not None else None
+        self.key = key
 
     def __call__(self, fn: Callable) -> AssetsDefinition:
         from dagster._config.pythonic_config import (
@@ -326,15 +346,17 @@ class _Asset:
         from dagster._core.execution.build_resources import wrap_resources_for_execution
 
         validate_resource_annotated_function(fn)
-        asset_name = self.name or fn.__name__
 
         asset_ins = build_asset_ins(fn, self.ins or {}, {dep.asset_key for dep in self.deps})
 
-        out_asset_key = (
-            AssetKey(list(filter(None, [*(self.key_prefix or []), asset_name])))
-            if not self.key
-            else self.key
+        out_asset_key, asset_name = _resolve_key_and_name(
+            key=self.key,
+            key_prefix=self.key_prefix,
+            name=self.name,
+            fn=fn,
+            decorator="@asset",
         )
+
         with disable_dagster_warnings():
             arg_resource_keys = {arg.name for arg in get_resource_args(fn)}
 
@@ -454,6 +476,7 @@ class _Asset:
             metadata_by_key={out_asset_key: self.metadata} if self.metadata else None,
             descriptions_by_key=None,  # not supported for now
             check_specs_by_output_name=check_specs_by_output_name,
+            selected_asset_check_keys=None,  # no subselection in decorator
         )
 
 
@@ -826,6 +849,7 @@ def multi_asset(
             descriptions_by_key=None,  # not supported for now
             metadata_by_key=metadata_by_key,
             check_specs_by_output_name=check_specs_by_output_name,
+            selected_asset_check_keys=None,  # no subselection in decorator
         )
 
     return inner
@@ -939,6 +963,7 @@ def graph_asset(
     backfill_policy: Optional[BackfillPolicy] = ...,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = ...,
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
+    key: Optional[CoercibleToAssetKey] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]: ...
 
 
@@ -958,6 +983,7 @@ def graph_asset(
     backfill_policy: Optional[BackfillPolicy] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
+    key: Optional[CoercibleToAssetKey] = None,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Creates a software-defined asset that's computed using a graph of ops.
 
@@ -1001,6 +1027,7 @@ def graph_asset(
         auto_materialize_policy (Optional[AutoMaterializePolicy]): The AutoMaterializePolicy to use
             for this asset.
         backfill_policy (Optional[BackfillPolicy]): The BackfillPolicy to use for this asset.
+        key (Optional[CoeercibleToAssetKey]): The key for this asset. If provided, cannot specify key_prefix or name.
 
     Examples:
         .. code-block:: python
@@ -1033,61 +1060,101 @@ def graph_asset(
             backfill_policy=backfill_policy,
             resource_defs=resource_defs,
             check_specs=check_specs,
+            key=key,
         )
     else:
-        key_prefix = [key_prefix] if isinstance(key_prefix, str) else key_prefix
-        ins = ins or {}
-        asset_name = name or compose_fn.__name__
-        asset_ins = build_asset_ins(compose_fn, ins or {}, set())
-        out_asset_key = AssetKey(list(filter(None, [*(key_prefix or []), asset_name])))
-
-        keys_by_input_name = {
-            input_name: asset_key for asset_key, (input_name, _) in asset_ins.items()
-        }
-        partition_mappings = {
-            input_name: asset_in.partition_mapping
-            for input_name, asset_in in ins.items()
-            if asset_in.partition_mapping
-        }
-
-        check_specs_by_output_name = _validate_and_assign_output_names_to_check_specs(
-            check_specs, [out_asset_key]
-        )
-        check_outs_by_output_name: Mapping[str, GraphOut] = {
-            output_name: GraphOut() for output_name in check_specs_by_output_name.keys()
-        }
-
-        combined_outs_by_output_name: Mapping = {
-            "result": GraphOut(),
-            **check_outs_by_output_name,
-        }
-
-        op_graph = graph(
-            name=out_asset_key.to_python_identifier(),
+        return graph_asset_no_defaults(
+            compose_fn=compose_fn,
+            name=name,
             description=description,
+            ins=ins,
             config=config,
-            ins={input_name: GraphIn() for _, (input_name, _) in asset_ins.items()},
-            out=combined_outs_by_output_name,
-        )(compose_fn)
-        return AssetsDefinition.from_graph(
-            op_graph,
-            keys_by_input_name=keys_by_input_name,
-            keys_by_output_name={"result": out_asset_key},
-            partitions_def=partitions_def,
-            partition_mappings=partition_mappings if partition_mappings else None,
+            key_prefix=key_prefix,
             group_name=group_name,
-            metadata_by_output_name={"result": metadata} if metadata else None,
-            freshness_policies_by_output_name=(
-                {"result": freshness_policy} if freshness_policy else None
-            ),
-            auto_materialize_policies_by_output_name=(
-                {"result": auto_materialize_policy} if auto_materialize_policy else None
-            ),
+            partitions_def=partitions_def,
+            metadata=metadata,
+            freshness_policy=freshness_policy,
+            auto_materialize_policy=auto_materialize_policy,
             backfill_policy=backfill_policy,
-            descriptions_by_output_name={"result": description} if description else None,
             resource_defs=resource_defs,
             check_specs=check_specs,
+            key=key,
         )
+
+
+def graph_asset_no_defaults(
+    *,
+    compose_fn: Callable,
+    name: Optional[str],
+    description: Optional[str],
+    ins: Optional[Mapping[str, AssetIn]],
+    config: Optional[Union[ConfigMapping, Mapping[str, Any]]],
+    key_prefix: Optional[CoercibleToAssetKeyPrefix],
+    group_name: Optional[str],
+    partitions_def: Optional[PartitionsDefinition],
+    metadata: Optional[MetadataUserInput],
+    freshness_policy: Optional[FreshnessPolicy],
+    auto_materialize_policy: Optional[AutoMaterializePolicy],
+    backfill_policy: Optional[BackfillPolicy],
+    resource_defs: Optional[Mapping[str, ResourceDefinition]],
+    check_specs: Optional[Sequence[AssetCheckSpec]],
+    key: Optional[CoercibleToAssetKey],
+) -> AssetsDefinition:
+    ins = ins or {}
+    asset_ins = build_asset_ins(compose_fn, ins or {}, set())
+    out_asset_key, _asset_name = _resolve_key_and_name(
+        key=key,
+        key_prefix=key_prefix,
+        name=name,
+        decorator="@graph_asset",
+        fn=compose_fn,
+    )
+
+    keys_by_input_name = {input_name: asset_key for asset_key, (input_name, _) in asset_ins.items()}
+    partition_mappings = {
+        input_name: asset_in.partition_mapping
+        for input_name, asset_in in ins.items()
+        if asset_in.partition_mapping
+    }
+
+    check_specs_by_output_name = _validate_and_assign_output_names_to_check_specs(
+        check_specs, [out_asset_key]
+    )
+    check_outs_by_output_name: Mapping[str, GraphOut] = {
+        output_name: GraphOut() for output_name in check_specs_by_output_name.keys()
+    }
+
+    combined_outs_by_output_name: Mapping = {
+        "result": GraphOut(),
+        **check_outs_by_output_name,
+    }
+
+    op_graph = graph(
+        name=out_asset_key.to_python_identifier(),
+        description=description,
+        config=config,
+        ins={input_name: GraphIn() for _, (input_name, _) in asset_ins.items()},
+        out=combined_outs_by_output_name,
+    )(compose_fn)
+    return AssetsDefinition.from_graph(
+        op_graph,
+        keys_by_input_name=keys_by_input_name,
+        keys_by_output_name={"result": out_asset_key},
+        partitions_def=partitions_def,
+        partition_mappings=partition_mappings if partition_mappings else None,
+        group_name=group_name,
+        metadata_by_output_name={"result": metadata} if metadata else None,
+        freshness_policies_by_output_name=(
+            {"result": freshness_policy} if freshness_policy else None
+        ),
+        auto_materialize_policies_by_output_name=(
+            {"result": auto_materialize_policy} if auto_materialize_policy else None
+        ),
+        backfill_policy=backfill_policy,
+        descriptions_by_output_name={"result": description} if description else None,
+        resource_defs=resource_defs,
+        check_specs=check_specs,
+    )
 
 
 def graph_multi_asset(

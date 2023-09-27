@@ -3,10 +3,11 @@ import {Button, Icon, Menu, MenuItem, Popover, Tooltip} from '@dagster-io/ui-com
 import * as React from 'react';
 
 import {usePermissionsForLocation} from '../app/Permissions';
+import {ReexecutionStrategy} from '../graphql/types';
 import {canRunAllSteps, canRunFromFailure} from '../runs/RunActionButtons';
 import {RUN_FRAGMENT} from '../runs/RunFragments';
 import {RunTimeFragment} from '../runs/types/RunUtils.types';
-import {useJobReExecution} from '../runs/useJobReExecution';
+import {useJobReexecution} from '../runs/useJobReExecution';
 import {MenuLink} from '../ui/MenuLink';
 import {RepoAddress} from '../workspace/types';
 import {workspacePipelinePath} from '../workspace/workspacePath';
@@ -43,13 +44,13 @@ export const JobMenu = (props: Props) => {
     }
   }, [lastRun, fetchHasExecutionPlan]);
 
-  const onLaunch = useJobReExecution(run);
+  const onReexecute = useJobReexecution();
 
   const reExecuteAllItem = (
     <MenuItem
       icon="replay"
       text="Re-execute latest run"
-      onClick={() => onLaunch({type: 'all'})}
+      onClick={() => (run ? onReexecute(run, ReexecutionStrategy.ALL_STEPS) : undefined)}
       disabled={!canLaunchPipelineReexecution || !run || !canRunAllSteps(run)}
     />
   );
@@ -58,7 +59,7 @@ export const JobMenu = (props: Props) => {
     <MenuItem
       icon="sync_problem"
       text="Re-execute latest run from failure"
-      onClick={() => onLaunch({type: 'from-failure'})}
+      onClick={() => (run ? onReexecute(run, ReexecutionStrategy.FROM_FAILURE) : undefined)}
       disabled={!canLaunchPipelineReexecution || !run || !canRunFromFailure(run)}
     />
   );

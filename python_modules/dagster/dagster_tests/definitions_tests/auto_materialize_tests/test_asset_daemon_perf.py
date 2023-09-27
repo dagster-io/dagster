@@ -176,7 +176,9 @@ class InstanceSnapshot(NamedTuple):
                                 )
 
                             selected_keys = selection.resolve(asset_graph)
-                            sampled_multi_asset = multi_asset.subset_for(selected_keys)
+                            sampled_multi_asset = multi_asset.subset_for(
+                                selected_keys, selected_asset_check_keys=None
+                            )
                             sampled_roots = [ra for ra in roots if ra.key in selected_keys]
                             to_materialize = [*sampled_roots, sampled_multi_asset]
                         else:

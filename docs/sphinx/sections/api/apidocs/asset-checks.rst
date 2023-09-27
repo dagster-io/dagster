@@ -12,3 +12,5 @@ Dagster allows you to define and execute checks on your software-defined assets.
 .. autoclass:: AssetCheckSpec
 
 .. autoclass:: AssetCheckSeverity
+
+.. autoclass:: AssetCheckKey

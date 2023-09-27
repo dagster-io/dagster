@@ -7,6 +7,7 @@ COPY build_cache/ /
 
 RUN pip install \
     -e dagster \
+    -e dagster-pipes \
     -e dagster-postgres \
     -e dagster-celery[flower,redis,kubernetes] \
     -e dagster-aws \

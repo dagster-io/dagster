@@ -7,6 +7,7 @@ COPY build_cache/ /
 
 RUN pip install \
     -e dagster \
+    -e dagster-pipes \
     -e dagster-graphql \
     -e dagster-postgres \
     -e dagster-k8s \

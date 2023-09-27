@@ -3961,6 +3961,8 @@ class TestEventLogStorage:
         storage.get_concurrency_run_ids() == {one, two}
         storage.free_concurrency_slots_for_run(one)
         storage.get_concurrency_run_ids() == {two}
+        storage.delete_events(run_id=two)
+        storage.get_concurrency_run_ids() == {}
 
     def test_threaded_concurrency(self, storage):
         if not storage.supports_global_concurrency_limits:

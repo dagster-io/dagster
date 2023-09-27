@@ -13,7 +13,7 @@ except ImportError:
     from yaml import Loader
 
 from dagster import AssetKey, asset
-from dagster._core.ext.subprocess import ExtSubprocess
+from dagster._core.pipes.subprocess import PipesSubprocess
 
 
 def load_yaml(relative_path) -> Dict[str, Any]:
@@ -39,7 +39,7 @@ def from_asset_entries(asset_entries: Dict[str, Any]) -> List[AssetsDefinition]:
         @asset(key=asset_key, deps=deps, description=description, group_name=group_name)
         def _assets_def(
             context: AssetExecutionContext,
-            subprocess_resource: ExtSubprocess,
+            subprocess_resource: PipesSubprocess,
         ) -> None:
             # instead of querying a dummy client, do your real data processing here
 
