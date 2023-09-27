@@ -486,7 +486,7 @@ const Node = ({
         }}
         selectNode={selectNode}
       />
-      <Box ref={elementRef} onClick={selectThisNode}>
+      <Box ref={elementRef} onClick={selectThisNode} padding={{left: 8}}>
         <BoxWrapper level={level}>
           <Box padding={{right: 12}} flex={{direction: 'row', gap: 2, alignItems: 'center'}}>
             {!isAssetNode ||
@@ -560,7 +560,7 @@ const Node = ({
                           }}
                         />
                         {upstream.length || downstream.length ? <MenuDivider /> : null}
-                        {upstream.length > 1 ? (
+                        {upstream.length ? (
                           <MenuItem
                             text={`View parents (${upstream.length})`}
                             icon="list"
@@ -654,7 +654,8 @@ const BoxWrapper = ({level, children}: {level: number; children: React.ReactNode
         <Box
           padding={{left: 8}}
           margin={{left: 8}}
-          border={i > 0 ? {side: 'left', width: 1, color: Colors.KeylineGray} : undefined}
+          border={{side: 'left', width: 1, color: Colors.KeylineGray}}
+          style={{position: 'relative'}}
         >
           {sofar}
         </Box>
