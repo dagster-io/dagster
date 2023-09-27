@@ -169,7 +169,10 @@ export interface LiveData {
   [assetId: GraphId]: LiveDataForNode;
 }
 
-export const buildLiveData = ({assetNodes, assetsLatestInfo}: AssetGraphLiveQuery) => {
+export const buildLiveData = ({
+  assetNodes,
+  assetsLatestInfo,
+}: Pick<AssetGraphLiveQuery, 'assetNodes' | 'assetsLatestInfo'>) => {
   const data: LiveData = {};
 
   for (const liveNode of assetNodes) {
@@ -240,3 +243,21 @@ export const itemWithAssetKey = (key: {path: string[]}) => {
   const token = tokenForAssetKey(key);
   return (asset: {assetKey: {path: string[]}}) => tokenForAssetKey(asset.assetKey) === token;
 };
+
+export function walkTreeUpwards(
+  nodeId: string,
+  graphData: GraphData,
+  callback: (nodeId: string) => void,
+) {
+  // TODO
+  console.log({nodeId, graphData, callback});
+}
+
+export function walkTreeDownwards(
+  nodeId: string,
+  graphData: GraphData,
+  callback: (nodeId: string) => void,
+) {
+  // TODO
+  console.log({nodeId, graphData, callback});
+}

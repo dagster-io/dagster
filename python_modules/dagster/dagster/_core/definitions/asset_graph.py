@@ -24,7 +24,7 @@ import toposort
 
 import dagster._check as check
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
-from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvariantViolationError
+from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.selector.subset_selector import (
     DependencyGraph,
@@ -33,6 +33,7 @@ from dagster._core.selector.subset_selector import (
 )
 from dagster._utils.cached_method import cached_method
 
+from .asset_check_spec import AssetCheckKey
 from .asset_checks import AssetChecksDefinition
 from .assets import AssetsDefinition
 from .backfill_policy import BackfillPolicy
@@ -75,7 +76,7 @@ class AssetGraph:
         freshness_policies_by_key: Mapping[AssetKey, Optional[FreshnessPolicy]],
         auto_materialize_policies_by_key: Mapping[AssetKey, Optional[AutoMaterializePolicy]],
         backfill_policies_by_key: Mapping[AssetKey, Optional[BackfillPolicy]],
-        required_multi_asset_sets_by_key: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]],
+        required_multi_asset_sets_by_key: Mapping[AssetKey, AbstractSet[AssetKey]],
         code_versions_by_key: Mapping[AssetKey, Optional[str]],
         is_observable_by_key: Mapping[AssetKey, bool],
         auto_observe_interval_minutes_by_key: Mapping[AssetKey, Optional[float]],
@@ -488,10 +489,6 @@ class AssetGraph:
 
     def get_required_multi_asset_keys(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
         """For a given asset_key, return the set of asset keys that must be materialized at the same time."""
-        if self._required_multi_asset_sets_by_key is None:
-            raise DagsterInvariantViolationError(
-                "Required neighbor information not set when creating this AssetGraph"
-            )
         if asset_key in self._required_multi_asset_sets_by_key:
             return self._required_multi_asset_sets_by_key[asset_key]
         return set()
@@ -680,7 +677,7 @@ class InternalAssetGraph(AssetGraph):
         freshness_policies_by_key: Mapping[AssetKey, Optional[FreshnessPolicy]],
         auto_materialize_policies_by_key: Mapping[AssetKey, Optional[AutoMaterializePolicy]],
         backfill_policies_by_key: Mapping[AssetKey, Optional[BackfillPolicy]],
-        required_multi_asset_sets_by_key: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]],
+        required_multi_asset_sets_by_key: Mapping[AssetKey, AbstractSet[AssetKey]],
         assets: Sequence[AssetsDefinition],
         source_assets: Sequence[SourceAsset],
         asset_checks: Sequence[AssetChecksDefinition],
@@ -705,6 +702,17 @@ class InternalAssetGraph(AssetGraph):
         self._assets = assets
         self._source_assets = source_assets
         self._asset_checks = asset_checks
+
+        asset_check_keys = set()
+        for asset_check in asset_checks:
+            asset_check_keys.update([spec.key for spec in asset_check.specs])
+        for asset in assets:
+            asset_check_keys.update([spec.key for spec in asset.check_specs])
+        self._asset_check_keys = asset_check_keys
+
+    @property
+    def asset_check_keys(self) -> AbstractSet[AssetCheckKey]:
+        return self._asset_check_keys
 
     @property
     def assets(self) -> Sequence[AssetsDefinition]:

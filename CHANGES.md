@@ -1,5 +1,96 @@
 # Changelog
 
+# 1.4.17 / 0.20.17 (libraries)
+
+### New
+
+- [dagster-dbt] `DbtCliResource` now enforces that the current installed version of `dbt-core` is at least version `1.4.0`.
+- [dagster-dbt] `DbtCliResource` now properly respects `DBT_TARGET_PATH` if it is set by the user. Artifacts from dbt invocations using `DbtCliResource` will now be placed in unique subdirectories of `DBT_TARGET_PATH`.
+
+### Bugfixes
+
+- When executing a backfill that targets a range of time partitions in a single run, the `partition_time_window` attribute on `OpExecutionContext` and `AssetExecutionContext` now returns the time range, instead of raising an error.
+- Fixed an issue where the asset backfill page raised a GraphQL error for backfills that targeted different partitions per-asset.
+- Fixed `job_name` property on the result object of `build_hook_context`.
+
+### Experimental
+
+- `AssetSpec` has been added as a new way to declare the assets produced by `@multi_asset`.
+- `AssetDep` type allows you to specify upstream dependencies with partition mappings when using the `deps` parameter of `@asset`  and  `AssetSpec`.
+- [dagster-ext] `report_asset_check` method added to `ExtContext`.
+- [dagster-ext] ext clients now must use `yield from` to forward reported materializations and asset check results to Dagster. Results reported from ext that are not yielded will raise an error.
+
+### Documentation
+
+- The [Dagster UI](https://docs.dagster.io/concepts/webserver/ui) documentation got an overhaul! We’ve updated all our screenshots and added a number of previously undocumented pages/features, including:
+    - The Overview page, aka the Factory Floor
+    - Job run compute logs
+    - Global asset lineage
+    - Overview > Resources
+- The [Resources](https://docs.dagster.io/concepts/resources) documentation has been updated to include additional context about using resources, as well as when to use `os.getenv()` versus Dagster’s `EnvVar`.
+- Information about custom loggers has been moved from the Loggers documentation to its own page, [Custom loggers](https://docs.dagster.io/concepts/logging/custom-loggers).
+
+
+# 1.4.16 / 0.20.16 (libraries)
+
+### New
+
+- [ui] When using the search input within Overview pages, if the viewer’s code locations have not yet fully loaded into the app, a loading spinner will now appear to indicate that search results are pending.
+
+### Bugfixes
+
+- Fixed an asset backfill bug that caused occasionally caused duplicate runs to be kicked off in response to manual runs upstream.
+- Fixed an issue where launching a run from the Launchpad that included many assets would sometimes raise an exception when trying to create the tags for the run.
+- [ui] Fixed a bug where clicking to view a job from a run could lead to an empty page in situations where the viewer’s code locations had not yet loaded in the app.
+
+### Deprecations
+
+- Deprecated `ExpectationResult`. This will be made irrelevant by upcoming data quality features.
+
+### Community Contributions
+
+- Enabled chunked backfill runs to target more than one asset, thanks @ruizh22!
+
+### Experimental
+
+- Users can now emit arbitrary asset materializations, observations, and asset check evaluations from sensors via `SensorResult`.
+
+# 1.4.15 / 0.20.15 (libraries)
+
+### New
+
+- The `deps` parameter for `@asset` and `@multi_asset` now supports directly passing `@multi_asset` definitions. If an `@multi_asset` is passed to `deps`, dependencies will be created on every asset produced by the `@multi_asset`.
+- Added an optional data migration to convert storage ids to use 64-bit integers instead of 32-bit integers.  This will incur some downtime, but may be required for instances that are handling a large number of events.  This migration can be invoked using `dagster instance migrate --bigint-migration`.
+- [ui] Dagster now allows you to run asset checks individually.
+- [ui] The run list and run details page now show the asset checks targeted by each run.
+- [ui] In the runs list, runs launched by schedules or sensors will now have tags that link directly to those schedules or sensors.
+- [ui] Clicking the "N assets" tag on a run allows you to navigate to the filtered asset graph as well as view the full list of asset keys.
+- [ui] Schedules, sensors, and observable source assets now appear on the resource “Uses” page.
+- [dagster-dbt] The `DbtCliResource` now validates at definition time that its `project_dir` and `profiles_dir` arguments are directories that respectively contain a `dbt_project.yml` and `profiles.yml`.
+- [dagster-databricks] You can now configure a `policy_id` for new clusters when using the `databricks_pyspark_step_launcher` (thanks @zyd14!)
+- [ui] Added an experimental sidebar to the Asset lineage graph to aid in navigating large graphs. You can enable this feature under user settings.
+
+### Bugfixes
+
+- Fixed an issue where the `dagster-webserver` command was not indicating which port it was using in the command-line output.
+- Fixed an issue with the quickstart_gcp example wasn’t setting GCP credentials properly when setting up its IOManager.
+- Fixed an issue where the process output for Dagster run and step containers would repeat each log message twice in JSON format when the process finished.
+- [ui] Fixed an issue where the config editor failed to load when materializing certain assets.
+- [auto-materialize] Previously, rematerializing an old partition of an asset which depended on a prior partition of itself would result in a chain of materializations to propagate that change all the way through to the most recent partition of this asset. To prevent these “slow-motion backfills”, this behavior has been updated such that these updates are no longer propagated.
+
+### Experimental
+
+- `MaterializeResult` has been added as a new return type to be used in `@asset` / `@multi_asset` materialization functions
+- [ui] The auto-materialize page now properly indicates that the feature is experimental and links to our documentation.
+
+### Documentation
+
+- The Concepts category page got a small facelift, to bring it line with how the side navigation is organized.
+
+### Dagster Cloud
+
+- Previously, when importing a dbt project in Cloud, naming the code location “dagster” would cause build failures. This is now disabled and an error is now surfaced.
+
 # 1.4.14 / 0.20.14 (libraries)
 
 ### New

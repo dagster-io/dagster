@@ -40,18 +40,12 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
   liveData,
   stepKey,
 }) => {
-  const {
-    materializations,
-    observations,
-    loadedPartitionKeys,
-    loading,
-    refetch,
-    xAxis,
-  } = useRecentAssetEvents(
-    asset.assetKey,
-    {},
-    {assetHasDefinedPartitions: !!asset.partitionDefinition},
-  );
+  const {materializations, observations, loadedPartitionKeys, loading, refetch, xAxis} =
+    useRecentAssetEvents(
+      asset.assetKey,
+      {},
+      {assetHasDefinedPartitions: !!asset.partitionDefinition},
+    );
 
   const grouped = useGroupedEvents(xAxis, materializations, observations, loadedPartitionKeys);
   const displayedEvent = isSourceAsset ? observations[0] : materializations[0];
@@ -98,7 +92,7 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
             <Icon name="open_in_new" color={Colors.Link} />
           </Box>
           <Box margin={{horizontal: 24}} flex={{gap: 12, alignItems: 'flex-start'}}>
-            <Body style={{flex: 1}}>
+            <Body style={{flex: 1, marginBottom: 12}}>
               {automaterializePolicyDescription(asset.autoMaterializePolicy)}
             </Body>
             <AutomaterializePolicyTag policy={asset.autoMaterializePolicy} />
@@ -172,7 +166,7 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
             </Link>
           </Box>
 
-          {liveData.assetChecks.map((check) => (
+          {liveData.assetChecks.slice(0, 10).map((check) => (
             <Box
               key={check.name}
               border={{side: 'top', width: 1, color: Colors.KeylineGray}}
@@ -191,6 +185,16 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
               />
             </Box>
           ))}
+          {liveData.assetChecks.length > 10 && (
+            <Box
+              padding={{vertical: 12, right: 12, left: 24}}
+              border={{side: 'top', width: 1, color: Colors.KeylineGray}}
+            >
+              <Link to={assetDetailsPathForKey(asset.assetKey, {view: 'checks'})}>
+                View {liveData.assetChecks.length - 10} more…
+              </Link>
+            </Box>
+          )}
         </SidebarSection>
       )}
     </>

@@ -43,6 +43,7 @@ setup(
         "requests",
         "rich",
         "typer>=0.9.0",
+        "packaging",
     ],
     extras_require={
         "test": [

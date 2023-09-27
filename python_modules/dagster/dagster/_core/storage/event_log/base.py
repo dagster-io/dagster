@@ -374,6 +374,15 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         """Remove asset index history from event log for given asset_key."""
 
     @abstractmethod
+    def get_materialized_partitions(
+        self,
+        asset_key: AssetKey,
+        before_cursor: Optional[int] = None,
+        after_cursor: Optional[int] = None,
+    ) -> Set[str]:
+        pass
+
+    @abstractmethod
     def get_materialization_count_by_partition(
         self, asset_keys: Sequence[AssetKey], after_cursor: Optional[int] = None
     ) -> Mapping[AssetKey, Mapping[str, int]]:

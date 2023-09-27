@@ -56,9 +56,8 @@ export const AssetTable: React.FC<Props> = ({
   const groupedByDisplayKey = groupBy(assets, (a) => JSON.stringify(displayPathForAsset(a)));
   const displayKeys = Object.keys(groupedByDisplayKey).sort();
 
-  const [{checkedIds: checkedDisplayKeys}, {onToggleFactory, onToggleAll}] = useSelectionReducer(
-    displayKeys,
-  );
+  const [{checkedIds: checkedDisplayKeys}, {onToggleFactory, onToggleAll}] =
+    useSelectionReducer(displayKeys);
 
   const checkedAssets: Asset[] = [];
   displayKeys.forEach((displayKey) => {

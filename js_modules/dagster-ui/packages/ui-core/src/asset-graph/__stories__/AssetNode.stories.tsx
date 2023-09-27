@@ -14,7 +14,7 @@ export default {
 };
 
 export const LiveStates = () => {
-  const caseWithLiveData = (scenario: typeof Mocks.AssetNodeScenariosBase[0]) => {
+  const caseWithLiveData = (scenario: (typeof Mocks.AssetNodeScenariosBase)[0]) => {
     const dimensions = getAssetNodeDimensions(scenario.definition);
     return (
       <Box flex={{direction: 'column', gap: 8, alignItems: 'flex-start'}}>

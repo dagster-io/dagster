@@ -148,6 +148,75 @@ export function asyncMemoize<T, R, U extends (arg: T, ...rest: any[]) => Promise
   }) as any;
 }
 
+export function indexedDBAsyncMemoize<
+  T,
+  R,
+  U extends (cacheKey: string, versionKey: string, arg: T, ...rest: any[]) => Promise<R>,
+>(fn: U, hashFn?: (arg: T, ...rest: any[]) => any): U {
+  return (async (cacheKey: string, versionKey: string, arg: T, ...rest: any[]) => {
+    const dbName = 'IndexedDBAsyncMemoizeDB';
+    const storeName = 'memoizedValues';
+    const hashKey = hashFn ? hashFn(arg, ...rest) : arg;
+
+    return new Promise<R>(async (resolve) => {
+      async function computeAndStoreLayout() {
+        const result = await fn(cacheKey, versionKey, arg, ...rest);
+        // Resolve the promise before storing the result in IndexedDB
+        resolve(result);
+
+        const request = indexedDB.open(dbName);
+        request.onsuccess = () => {
+          const db = request.result;
+          const transaction = db.transaction([storeName], 'readwrite');
+          const store = transaction.objectStore(storeName);
+          const key = cacheKey;
+          const data = {
+            version: versionKey,
+            [hashKey]: result,
+          };
+          store.put(data, key);
+        };
+      }
+
+      try {
+        const request = indexedDB.open(dbName);
+        request.onerror = () => {
+          computeAndStoreLayout();
+        };
+        request.onsuccess = () => {
+          const db = request.result;
+          const transaction = db.transaction([storeName], 'readwrite');
+          const store = transaction.objectStore(storeName);
+
+          const key = cacheKey;
+          const requestGet = store.get(key);
+          requestGet.onerror = function () {
+            computeAndStoreLayout();
+          };
+          requestGet.onsuccess = () => {
+            const cachedData = requestGet.result;
+            if (cachedData && cachedData.version === versionKey && cachedData[hashKey]) {
+              resolve(cachedData[hashKey]);
+            } else {
+              computeAndStoreLayout();
+            }
+          };
+        };
+
+        request.onupgradeneeded = function () {
+          const db = request.result;
+          if (!db.objectStoreNames.contains(storeName)) {
+            db.createObjectStore(storeName);
+          }
+          computeAndStoreLayout();
+        };
+      } catch (error) {
+        computeAndStoreLayout();
+      }
+    });
+  }) as any;
+}
+
 // Simple memoization function for methods that take a single object argument.
 // Returns a memoized copy of the provided function which retrieves the result
 // from a cache after the first invocation with a given object.
@@ -200,10 +269,10 @@ export function colorHash(str: string) {
 // const textMetadata = metadataEntries.filter(gqlTypePredicate('TextMetadataEntry'));
 //
 // `textMetadata` will be of type `TextMetadataEntry[]`.
-export const gqlTypePredicate = <T extends string>(typename: T) => <N extends {__typename: string}>(
-  node: N,
-): node is Extract<N, {__typename: T}> => {
-  return node.__typename === typename;
-};
+export const gqlTypePredicate =
+  <T extends string>(typename: T) =>
+  <N extends {__typename: string}>(node: N): node is Extract<N, {__typename: T}> => {
+    return node.__typename === typename;
+  };
 
 export const COMMON_COLLATOR = new Intl.Collator(navigator.language, {sensitivity: 'base'});

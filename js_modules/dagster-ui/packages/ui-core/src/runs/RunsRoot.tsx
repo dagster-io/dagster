@@ -163,7 +163,7 @@ export const RunsRoot = () => {
       {currentTab === 'queued' && canSeeConfig ? (
         <Box
           flex={{direction: 'column', gap: 8}}
-          padding={{horizontal: 24, vertical: 16}}
+          padding={{left: 24, right: 12, vertical: 16}}
           border="bottom"
         >
           <Alert

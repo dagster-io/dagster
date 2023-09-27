@@ -55,32 +55,33 @@ const buildRepo = ({
   });
 };
 
-export const buildWorkspaceQueryWithNoSchedulesOrSensors = (): MockedResponse<RootWorkspaceQuery> => {
-  return {
-    request: {
-      query: ROOT_WORKSPACE_QUERY,
-      variables: {},
-    },
-    result: {
-      data: {
-        __typename: 'Query',
-        workspaceOrError: buildWorkspace({
-          locationEntries: [
-            buildWorkspaceLocationEntry({
-              id: 'ipsum-entry',
-              name: 'ipsum-entry',
-              locationOrLoadError: buildRepositoryLocation({
-                id: 'ipsum',
-                name: 'ipsum',
-                repositories: [buildRepo({name: 'lorem'})],
-              }),
-            }),
-          ],
-        }),
+export const buildWorkspaceQueryWithNoSchedulesOrSensors =
+  (): MockedResponse<RootWorkspaceQuery> => {
+    return {
+      request: {
+        query: ROOT_WORKSPACE_QUERY,
+        variables: {},
       },
-    },
+      result: {
+        data: {
+          __typename: 'Query',
+          workspaceOrError: buildWorkspace({
+            locationEntries: [
+              buildWorkspaceLocationEntry({
+                id: 'ipsum-entry',
+                name: 'ipsum-entry',
+                locationOrLoadError: buildRepositoryLocation({
+                  id: 'ipsum',
+                  name: 'ipsum',
+                  repositories: [buildRepo({name: 'lorem'})],
+                }),
+              }),
+            ],
+          }),
+        },
+      },
+    };
   };
-};
 
 export const buildWorkspaceQueryWithScheduleAndSensor = ({
   schedule,

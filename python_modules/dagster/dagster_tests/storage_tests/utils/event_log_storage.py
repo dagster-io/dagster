@@ -280,6 +280,18 @@ def _synthesize_events(
     return events, result
 
 
+def _store_materialization_events(storage, ops_fn, instance, run_id):
+    events, _ = _synthesize_events(lambda: ops_fn(), instance=instance, run_id=run_id)
+    for event in events:
+        storage.store_event(event)
+    last_materialization = storage.get_event_records(
+        EventRecordsFilter(event_type=DagsterEventType.ASSET_MATERIALIZATION),
+        limit=1,
+        ascending=False,
+    )[0]
+    return last_materialization.storage_id + 1
+
+
 def _fetch_all_events(configured_storage, run_id=None):
     with configured_storage.run_connection(run_id=run_id) as conn:
         res = conn.execute(db.text("SELECT event from event_logs"))
@@ -1907,6 +1919,113 @@ class TestEventLogStorage:
                 '["b", "y"]',
                 '["b", "z"]',
             ]
+
+    def test_get_materialized_partitions(self, storage, instance):
+        a = AssetKey("no_materializations_asset")
+        b = AssetKey("no_partitions_asset")
+        c = AssetKey("two_partitions_asset")
+        d = AssetKey("one_partition_asset")
+
+        @op
+        def materialize():
+            yield AssetMaterialization(b)
+            yield AssetMaterialization(c, partition="a")
+            yield AssetMaterialization(c, partition="b")
+            yield AssetObservation(a, partition="a")
+            yield Output(None)
+
+        @op
+        def materialize_two():
+            yield AssetMaterialization(d, partition="x")
+            yield AssetMaterialization(c, partition="a")
+            yield Output(None)
+
+        @op
+        def materialize_three():
+            yield AssetMaterialization(c, partition="c")
+            yield Output(None)
+
+        with instance_for_test() as created_instance:
+            if not storage.has_instance:
+                storage.register_instance(created_instance)
+
+            run_id_1 = make_new_run_id()
+            run_id_2 = make_new_run_id()
+            run_id_3 = make_new_run_id()
+            run_id_4 = make_new_run_id()
+
+            with create_and_delete_test_runs(instance, [run_id_1, run_id_2, run_id_3]):
+                cursor_run1 = _store_materialization_events(
+                    storage, materialize, created_instance, run_id_1
+                )
+                assert storage.get_materialized_partitions(a) == set()
+                assert storage.get_materialized_partitions(b) == set()
+                assert storage.get_materialized_partitions(c) == {"a", "b"}
+
+                cursor_run2 = _store_materialization_events(
+                    storage, materialize_two, created_instance, run_id_2
+                )
+                _store_materialization_events(
+                    storage, materialize_three, created_instance, run_id_3
+                )
+
+                # test that the cursoring logic works
+                assert storage.get_materialized_partitions(a) == set()
+                assert storage.get_materialized_partitions(b) == set()
+                assert storage.get_materialized_partitions(c) == {"a", "b", "c"}
+                assert storage.get_materialized_partitions(d) == {"x"}
+                assert storage.get_materialized_partitions(a, before_cursor=cursor_run1) == set()
+                assert storage.get_materialized_partitions(b, before_cursor=cursor_run1) == set()
+                assert storage.get_materialized_partitions(c, before_cursor=cursor_run1) == {
+                    "a",
+                    "b",
+                }
+                assert storage.get_materialized_partitions(d, before_cursor=cursor_run1) == set()
+                assert storage.get_materialized_partitions(a, after_cursor=cursor_run1) == set()
+                assert storage.get_materialized_partitions(b, after_cursor=cursor_run1) == set()
+                assert storage.get_materialized_partitions(c, after_cursor=cursor_run1) == {
+                    "a",
+                    "c",
+                }
+                assert storage.get_materialized_partitions(d, after_cursor=cursor_run1) == {"x"}
+                assert (
+                    storage.get_materialized_partitions(
+                        a, before_cursor=cursor_run2, after_cursor=cursor_run1
+                    )
+                    == set()
+                )
+                assert (
+                    storage.get_materialized_partitions(
+                        b, before_cursor=cursor_run2, after_cursor=cursor_run1
+                    )
+                    == set()
+                )
+                assert storage.get_materialized_partitions(
+                    c, before_cursor=cursor_run2, after_cursor=cursor_run1
+                ) == {"a"}
+                assert storage.get_materialized_partitions(
+                    d, before_cursor=cursor_run2, after_cursor=cursor_run1
+                ) == {"x"}
+                assert storage.get_materialized_partitions(a, after_cursor=9999999999) == set()
+                assert storage.get_materialized_partitions(b, after_cursor=9999999999) == set()
+                assert storage.get_materialized_partitions(c, after_cursor=9999999999) == set()
+                assert storage.get_materialized_partitions(d, after_cursor=9999999999) == set()
+
+                # wipe asset, make sure we respect that
+                if self.can_wipe():
+                    storage.wipe_asset(c)
+                    assert storage.get_materialized_partitions(c) == set()
+
+                    _store_materialization_events(
+                        storage, materialize_two, created_instance, run_id_4
+                    )
+
+                    assert storage.get_materialized_partitions(c) == {"a"}
+                    assert storage.get_materialized_partitions(d) == {"x"}
+
+                    # make sure adding an after_cursor doesn't mess with the wiped events
+                    assert storage.get_materialized_partitions(c, after_cursor=9999999999) == set()
+                    assert storage.get_materialized_partitions(d, after_cursor=9999999999) == set()
 
     def test_get_materialization_count_by_partition(self, storage, instance):
         a = AssetKey("no_materializations_asset")
@@ -3842,6 +3961,8 @@ class TestEventLogStorage:
         storage.get_concurrency_run_ids() == {one, two}
         storage.free_concurrency_slots_for_run(one)
         storage.get_concurrency_run_ids() == {two}
+        storage.delete_events(run_id=two)
+        storage.get_concurrency_run_ids() == {}
 
     def test_threaded_concurrency(self, storage):
         if not storage.supports_global_concurrency_limits:

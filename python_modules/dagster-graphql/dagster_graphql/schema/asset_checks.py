@@ -7,7 +7,7 @@ from dagster._core.definitions.asset_check_evaluation import (
     AssetCheckEvaluation,
     AssetCheckEvaluationTargetMaterializationData,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckHandle, AssetCheckSeverity
+from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSeverity
 from dagster._core.host_representation.external_data import ExternalAssetCheck
 from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,
@@ -205,5 +205,5 @@ class GrapheneAssetCheckHandle(graphene.ObjectType):
     class Meta:
         name = "AssetCheckhandle"
 
-    def __init__(self, handle: AssetCheckHandle):
+    def __init__(self, handle: AssetCheckKey):
         super().__init__(name=handle.name, assetKey=GrapheneAssetKey(path=handle.asset_key.path))

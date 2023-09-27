@@ -5,17 +5,16 @@ from dagster import (
     load_assets_from_package_module,
 )
 from dagster_airbyte import AirbyteResource
-from dagster_dbt import DbtCliClientResource
 
 from . import assets
 from .db_io_manager import DbIOManager
-from .utils.constants import AIRBYTE_CONFIG, DBT_CONFIG, POSTGRES_CONFIG
+from .utils.constants import AIRBYTE_CONFIG, POSTGRES_CONFIG, dbt_resource
 
 defs = Definitions(
     assets=load_assets_from_package_module(assets),
     resources={
         "airbyte": AirbyteResource(**AIRBYTE_CONFIG),
-        "dbt": DbtCliClientResource(**DBT_CONFIG),
+        "dbt": dbt_resource,
         "db_io_manager": DbIOManager(**POSTGRES_CONFIG),
     },
     schedules=[

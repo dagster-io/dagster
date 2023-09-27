@@ -3,10 +3,10 @@ import tempfile
 
 import pytest
 from dagster import AssetExecutionContext, asset, materialize
-from dagster._core.ext.utils import (
-    ExtFileContextInjector,
+from dagster._core.pipes.utils import (
+    PipesFileContextInjector,
 )
-from dagster_docker.ext import ExtDocker
+from dagster_docker.pipes import PipesDockerClient
 from dagster_test.test_project import (
     IS_BUILDKITE,
     find_local_test_image,
@@ -29,9 +29,9 @@ def test_default():
     @asset
     def number_x(
         context: AssetExecutionContext,
-        ext_docker: ExtDocker,
+        pipes_docker_client: PipesDockerClient,
     ):
-        ext_docker.run(
+        yield from pipes_docker_client.run(
             image=docker_image,
             command=[
                 "python",
@@ -45,7 +45,7 @@ def test_default():
 
     result = materialize(
         [number_x],
-        resources={"ext_docker": ExtDocker(**ext_config)},
+        resources={"pipes_docker_client": PipesDockerClient(**ext_config)},
         raise_on_error=False,
     )
     assert result.success
@@ -69,7 +69,7 @@ def test_file_io():
         @asset
         def number_x(
             context: AssetExecutionContext,
-            ext_docker: ExtDocker,
+            pipes_docker_client: PipesDockerClient,
         ):
             instance_storage = context.instance.storage_directory()
             host_storage = os.path.join(instance_storage, "number_example")
@@ -88,7 +88,7 @@ def test_file_io():
                 },
             }
 
-            ext_docker.run(
+            yield from pipes_docker_client.run(
                 image=docker_image,
                 command=[
                     "python",
@@ -107,8 +107,8 @@ def test_file_io():
         result = materialize(
             [number_x],
             resources={
-                "ext_docker": ExtDocker(
-                    context_injector=ExtFileContextInjector(os.path.join(tempdir, "context"))
+                "pipes_docker_client": PipesDockerClient(
+                    context_injector=PipesFileContextInjector(os.path.join(tempdir, "context")),
                 )
             },
             raise_on_error=False,

@@ -440,9 +440,13 @@ const AssetCheckEvaluationContent: React.FC<{
   });
 
   return (
-    <DefaultContent message="" eventType={eventType}>
+    <DefaultContent
+      message=""
+      eventType={eventType}
+      eventIntent={success ? Intent.SUCCESS : Intent.DANGER}
+    >
       <div>
-        <div>
+        <div style={{color: success ? 'inherit' : Colors.Red500}}>
           Check <MetadataEntryLink to={checkLink}>{checkName}</MetadataEntryLink>
           {` ${success ? 'succeeded' : 'failed'} for materialization of `}
           <MetadataEntryLink to={matLink}>{displayNameForAssetKey(assetKey)}</MetadataEntryLink>.

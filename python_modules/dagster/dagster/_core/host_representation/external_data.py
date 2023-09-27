@@ -1338,7 +1338,7 @@ def external_repository_data_from_def(
         job_refs = None
 
     resource_datas = repository_def.get_top_level_resources()
-    asset_graph = external_asset_graph_from_defs(
+    asset_graph = external_asset_nodes_from_defs(
         jobs,
         source_assets_by_key=repository_def.source_assets_by_key,
     )
@@ -1459,7 +1459,7 @@ def external_asset_checks_from_defs(
     return [ExternalAssetCheck.from_spec(spec) for spec in check_specs]
 
 
-def external_asset_graph_from_defs(
+def external_asset_nodes_from_defs(
     job_defs: Sequence[JobDefinition],
     source_assets_by_key: Mapping[AssetKey, SourceAsset],
 ) -> Sequence[ExternalAssetNode]:
@@ -1658,6 +1658,13 @@ def external_asset_graph_from_defs(
                 required_top_level_resources=required_top_level_resources,
             )
         )
+
+    defined = set()
+    for node in asset_nodes:
+        if node.asset_key in defined:
+            check.failed(f"Produced multiple ExternalAssetNodes for key {node.asset_key}")
+        else:
+            defined.add(node.asset_key)
 
     return asset_nodes
 

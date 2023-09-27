@@ -8,6 +8,7 @@ import {
   Tooltip,
   Suggest,
   ExternalAnchorButton,
+  Button,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
@@ -45,10 +46,15 @@ interface ILogsToolbarProps {
   children?: React.ReactNode;
 }
 
+interface WithExpandCollapseProps extends ILogsToolbarProps {
+  isSectionExpanded: boolean;
+  toggleExpanded: () => void;
+}
+
 const logQueryToString = (logQuery: LogFilterValue[]) =>
   logQuery.map(({token, value}) => (token ? `${token}:${value}` : value)).join(' ');
 
-export const LogsToolbar: React.FC<ILogsToolbarProps> = (props) => {
+export const LogsToolbar: React.FC<ILogsToolbarProps | WithExpandCollapseProps> = (props) => {
   const {
     steps,
     metadata,
@@ -62,6 +68,13 @@ export const LogsToolbar: React.FC<ILogsToolbarProps> = (props) => {
     computeLogUrl,
     children,
   } = props;
+  let isSectionExpanded;
+  let toggleExpanded;
+
+  if ('isSectionExpanded' in props) {
+    isSectionExpanded = props.isSectionExpanded;
+    toggleExpanded = props.toggleExpanded;
+  }
 
   const activeItems = React.useMemo(() => new Set([logType]), [logType]);
 
@@ -95,6 +108,14 @@ export const LogsToolbar: React.FC<ILogsToolbarProps> = (props) => {
         />
       )}
       {children}
+      {toggleExpanded ? (
+        <Tooltip content={isSectionExpanded ? 'Collapse' : 'Expand'}>
+          <Button
+            icon={<Icon name={isSectionExpanded ? 'collapse_arrows' : 'expand_arrows'} />}
+            onClick={toggleExpanded}
+          />
+        </Tooltip>
+      ) : null}
     </OptionsContainer>
   );
 };

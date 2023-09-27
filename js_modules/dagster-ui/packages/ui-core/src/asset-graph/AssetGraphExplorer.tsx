@@ -5,11 +5,15 @@ import {
   NonIdealState,
   SplitPanelContainer,
   ErrorBoundary,
+  Button,
+  Icon,
+  Tooltip,
 } from '@dagster-io/ui-components';
 import pickBy from 'lodash/pickBy';
 import uniq from 'lodash/uniq';
 import without from 'lodash/without';
 import React from 'react';
+import {useHistory} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {useFeatureFlags} from '../app/Flags';
@@ -17,7 +21,7 @@ import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {LaunchAssetObservationButton} from '../assets/LaunchAssetObservationButton';
 import {AssetKey} from '../assets/types';
-import {SVGViewport} from '../graph/SVGViewport';
+import {DEFAULT_MAX_ZOOM, SVGViewport} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
 import {closestNodeInDirection} from '../graph/common';
 import {
@@ -38,6 +42,7 @@ import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {Loading} from '../ui/Loading';
 
 import {AssetEdges} from './AssetEdges';
+import {AssetGraphExplorerSidebar} from './AssetGraphExplorerSidebar';
 import {AssetGraphJobSidebar} from './AssetGraphJobSidebar';
 import {AssetGroupNode} from './AssetGroupNode';
 import {AssetNode, AssetNodeMinimal} from './AssetNode';
@@ -71,6 +76,7 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
   const {
     fetchResult,
     assetGraphData,
+    fullAssetGraphData,
     graphQueryItems,
     graphAssetKeys,
     allAssetKeys,
@@ -82,7 +88,7 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
   return (
     <Loading allowStaleData queryResult={fetchResult}>
       {() => {
-        if (!assetGraphData || !allAssetKeys) {
+        if (!assetGraphData || !allAssetKeys || !fullAssetGraphData) {
           return <NonIdealState icon="error" title="Query Error" />;
         }
 
@@ -101,6 +107,7 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
           <AssetGraphExplorerWithData
             key={props.explorerPath.pipelineName}
             assetGraphData={assetGraphData}
+            fullAssetGraphData={fullAssetGraphData}
             allAssetKeys={allAssetKeys}
             graphQueryItems={graphQueryItems}
             applyingEmptyDefault={applyingEmptyDefault}
@@ -117,6 +124,7 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
 type WithDataProps = {
   allAssetKeys: AssetKey[];
   assetGraphData: GraphData;
+  fullAssetGraphData: GraphData;
   graphQueryItems: AssetGraphQueryItem[];
   liveDataByNode: LiveData;
   liveDataRefreshState: QueryRefreshState;
@@ -132,15 +140,24 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
   liveDataRefreshState,
   liveDataByNode,
   assetGraphData,
+  fullAssetGraphData,
   graphQueryItems,
   applyingEmptyDefault,
   fetchOptions,
   fetchOptionFilters,
+  allAssetKeys,
 }) => {
   const findAssetLocation = useFindAssetLocation();
-  const {layout, loading, async} = useAssetLayout(assetGraphData);
+  const pathname = useHistory().location.pathname;
+  const {layout, loading, async} = useAssetLayout(
+    assetGraphData,
+    // Use the pathname as part of the key so that different deployments don't invalidate each other's cached layout
+    // Remove the slash at the end in the key so that the same layout is used for both `/path` and `/path/`
+    `explorer:${pathname.endsWith('/') ? pathname.slice(0, pathname.length - 1) : pathname}`,
+    fullAssetGraphData,
+  );
   const viewportEl = React.useRef<SVGViewport>();
-  const {flagHorizontalDAGs} = useFeatureFlags();
+  const {flagHorizontalDAGs, flagDAGSidebar} = useFeatureFlags();
 
   const [highlighted, setHighlighted] = React.useState<string | null>(null);
 
@@ -195,9 +212,8 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
         }
 
         const existing = explorerPath.opNames[0]!.split(',');
-        nextOpsNameSelection = (existing.includes(token)
-          ? without(existing, token)
-          : uniq([...existing, ...tokensToAdd])
+        nextOpsNameSelection = (
+          existing.includes(token) ? without(existing, token) : uniq([...existing, ...tokensToAdd])
         ).join(',');
       }
 
@@ -240,7 +256,10 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
     // focus on the selected node. (If selection was specified in the URL).
     // Don't animate this change.
     if (lastSelectedNode) {
-      // viewportEl.current.zoomToSVGBox(layout.nodes[lastSelectedNode.id].bounds, false);
+      const layoutNode = layout.nodes[lastSelectedNode.id];
+      if (layoutNode) {
+        viewportEl.current.zoomToSVGBox(layoutNode.bounds, false);
+      }
       viewportEl.current.focus();
     } else {
       viewportEl.current.autocenter(false);
@@ -262,17 +281,32 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
     const layoutWithoutExternalLinks = {...layout, nodes: pickBy(layout.nodes, hasDefinition)};
 
     const nextId = closestNodeInDirection(layoutWithoutExternalLinks, lastSelectedNode.id, dir);
-    const node = nextId && assetGraphData.nodes[nextId];
-    if (node && viewportEl.current) {
-      onSelectNode(e, node.assetKey, node);
-      viewportEl.current.zoomToSVGBox(layout.nodes[nextId]!.bounds, true);
-    }
+    selectNodeById(e, nextId);
   };
+
+  const selectNodeById = React.useCallback(
+    (e: React.MouseEvent<any> | React.KeyboardEvent<any>, nodeId?: string) => {
+      if (!nodeId) {
+        return;
+      }
+      const node = assetGraphData.nodes[nodeId];
+      if (node) {
+        onSelectNode(e, node.assetKey, node);
+        if (layout && viewportEl.current) {
+          viewportEl.current.zoomToSVGBox(layout.nodes[nodeId]!.bounds, true);
+        }
+      }
+    },
+    [assetGraphData.nodes, layout, onSelectNode],
+  );
 
   const allowGroupsOnlyZoomLevel = !!(layout && Object.keys(layout.groups).length);
 
-  return (
+  const [showSidebar, setShowSidebar] = React.useState(true);
+
+  const explorer = (
     <SplitPanelContainer
+      key="explorer"
       identifier="explorer"
       firstInitialPercent={70}
       firstMinSize={400}
@@ -281,7 +315,7 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
           {graphQueryItems.length === 0 ? (
             <EmptyDAGNotice nodeType="asset" isGraph />
           ) : applyingEmptyDefault ? (
-            <LargeDAGNotice nodeType="asset" anchorLeft={fetchOptionFilters ? '300px' : '40px'} />
+            <LargeDAGNotice nodeType="asset" anchorLeft="40px" />
           ) : Object.keys(assetGraphData.nodes).length === 0 ? (
             <EntirelyFilteredDAGNotice nodeType="asset" />
           ) : undefined}
@@ -301,7 +335,7 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
                 viewportEl.current?.autocenter(true);
                 e.stopPropagation();
               }}
-              maxZoom={1.2}
+              maxZoom={DEFAULT_MAX_ZOOM}
               maxAutocenterZoom={1.0}
             >
               {({scale}) => (
@@ -400,10 +434,7 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
             </OptionsOverlay>
           )}
 
-          <Box
-            flex={{direction: 'column', alignItems: 'flex-end', gap: 8}}
-            style={{position: 'absolute', right: 12, top: 8}}
-          >
+          <Box style={{position: 'absolute', right: 12, top: 8}}>
             <Box flex={{alignItems: 'center', gap: 12}}>
               <QueryRefreshCountdown
                 refreshState={liveDataRefreshState}
@@ -429,6 +460,16 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
             </Box>
           </Box>
           <QueryOverlay>
+            {showSidebar || !flagDAGSidebar ? null : (
+              <Tooltip content="Show sidebar">
+                <Button
+                  icon={<Icon name="panel_show_left" />}
+                  onClick={() => {
+                    setShowSidebar(true);
+                  }}
+                />
+              </Tooltip>
+            )}
             {fetchOptionFilters}
 
             <GraphQueryInput
@@ -466,6 +507,35 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
       }
     />
   );
+
+  if (showSidebar && flagDAGSidebar) {
+    return (
+      <SplitPanelContainer
+        key="explorer-wrapper"
+        identifier="explorer-wrapper"
+        firstMinSize={300}
+        firstInitialPercent={0}
+        first={
+          showSidebar ? (
+            <AssetGraphExplorerSidebar
+              allAssetKeys={allAssetKeys}
+              assetGraphData={assetGraphData}
+              fullAssetGraphData={fullAssetGraphData}
+              lastSelectedNode={lastSelectedNode}
+              selectNode={selectNodeById}
+              explorerPath={explorerPath}
+              onChangeExplorerPath={onChangeExplorerPath}
+              hideSidebar={() => {
+                setShowSidebar(false);
+              }}
+            />
+          ) : null
+        }
+        second={explorer}
+      />
+    );
+  }
+  return explorer;
 };
 
 const SVGContainer = styled.svg`

@@ -16,7 +16,7 @@ from dagster import (
     materialize,
     op,
 )
-from dagster._core.execution.context.compute import OpExecutionContext
+from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster_dbt import dbt_assets
 from dagster_dbt.asset_utils import build_dbt_asset_selection
 from dagster_dbt.core.resources_v2 import (
@@ -127,9 +127,27 @@ def test_dbt_cli_get_artifact() -> None:
         dbt_cli_invocation_2.get_artifact("sources.json")
 
     # Artifacts are stored in separate paths by manipulating DBT_TARGET_PATH.
+    # By default, they are stored in the `target` directory of the DBT project.
+    assert dbt_cli_invocation_1.target_path.parent == Path(TEST_PROJECT_DIR, "target")
+
     # As a result, their contents should be different, and newer artifacts
     # should not overwrite older ones.
     assert manifest_json_1 != manifest_json_2
+
+
+@pytest.mark.parametrize("target_path", [Path("tmp"), Path("/tmp")])
+def test_dbt_cli_target_path(monkeypatch: pytest.MonkeyPatch, target_path: Path) -> None:
+    dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR)
+    expected_target_path = (
+        target_path if target_path.is_absolute() else Path(TEST_PROJECT_DIR).joinpath(target_path)
+    )
+
+    monkeypatch.setenv("DBT_TARGET_PATH", os.fspath(target_path))
+
+    dbt_cli_invocation = dbt.cli(["compile"]).wait()
+
+    assert dbt_cli_invocation.target_path.parent == expected_target_path
+    assert dbt_cli_invocation.get_artifact("manifest.json")
 
 
 def test_dbt_profile_configuration() -> None:
@@ -209,7 +227,7 @@ def test_dbt_with_partial_parse() -> None:
 
 def test_dbt_cli_debug_execution() -> None:
     @dbt_assets(manifest=manifest)
-    def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         yield from dbt.cli(["--debug", "run"], context=context).stream()
 
     result = materialize(
@@ -230,7 +248,7 @@ def test_dbt_cli_subsetted_execution() -> None:
     )
 
     @dbt_assets(manifest=manifest, select=dbt_select)
-    def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         dbt_cli_invocation = dbt.cli(["run"], context=context)
 
         assert dbt_cli_invocation.process.args == ["dbt", "run", "--select", dbt_select]
@@ -253,7 +271,7 @@ def test_dbt_cli_asset_selection() -> None:
     ]
 
     @dbt_assets(manifest=manifest)
-    def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         dbt_cli_invocation = dbt.cli(["run"], context=context)
 
         dbt_cli_args: List[str] = list(dbt_cli_invocation.process.args)  # type: ignore
@@ -283,7 +301,7 @@ def test_dbt_cli_asset_selection() -> None:
 @pytest.mark.parametrize("exclude", [None, "fqn:dagster_dbt_test_project.subdir.least_caloric"])
 def test_dbt_cli_default_selection(exclude: Optional[str]) -> None:
     @dbt_assets(manifest=manifest, exclude=exclude)
-    def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         dbt_cli_invocation = dbt.cli(["run"], context=context)
 
         expected_args = ["dbt", "run", "--select", "fqn:*"]
@@ -422,6 +440,7 @@ def test_dbt_tests_to_events(is_asset_check: bool) -> None:
                 },
                 "name": "test.a",
                 "meta": {"dagster": {"asset_check": is_asset_check}},
+                "attached_node": "model.a" if is_asset_check else None,
             },
         },
         "sources": {},

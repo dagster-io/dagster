@@ -9,7 +9,7 @@ import {AssetGroupNode} from '../asset-graph/AssetGroupNode';
 import {AssetNodeMinimal, AssetNode} from '../asset-graph/AssetNode';
 import {AssetNodeLink} from '../asset-graph/ForeignNode';
 import {GraphData, LiveData, toGraphId} from '../asset-graph/Utils';
-import {SVGViewport} from '../graph/SVGViewport';
+import {DEFAULT_MAX_ZOOM, SVGViewport} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
 import {AssetKeyInput} from '../graphql/types';
 import {getJSONForKey} from '../hooks/useStateWithStorage';
@@ -29,7 +29,10 @@ export const AssetNodeLineageGraph: React.FC<{
 
   const [highlighted, setHighlighted] = React.useState<string | null>(null);
 
-  const {layout, loading} = useAssetLayout(assetGraphData);
+  const basePath = useHistory().location.pathname;
+  // Use the pathname as part of the key so that different deployments don't invalidate each other's cached layout
+  // and so that different assets dont invalidate each others layout
+  const {layout, loading} = useAssetLayout(assetGraphData, `node-lineage:${basePath}`);
   const viewportEl = React.useRef<SVGViewport>();
   const history = useHistory();
 
@@ -64,8 +67,8 @@ export const AssetNodeLineageGraph: React.FC<{
         viewportEl.current?.autocenter(true);
         e.stopPropagation();
       }}
-      maxZoom={1.2}
-      maxAutocenterZoom={1.2}
+      maxZoom={DEFAULT_MAX_ZOOM}
+      maxAutocenterZoom={DEFAULT_MAX_ZOOM}
     >
       {({scale}) => (
         <SVGContainer width={layout.width} height={layout.height}>

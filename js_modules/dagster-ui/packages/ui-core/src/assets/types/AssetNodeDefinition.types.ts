@@ -10,14 +10,21 @@ export type AssetNodeDefinitionFragment = {
   opNames: Array<string>;
   opVersion: string | null;
   jobNames: Array<string>;
+  isSource: boolean;
+  isExecutable: boolean;
   hasMaterializePermission: boolean;
   computeKind: string | null;
   isPartitioned: boolean;
   isObservable: boolean;
-  isSource: boolean;
   autoMaterializePolicy: {
     __typename: 'AutoMaterializePolicy';
     policyType: Types.AutoMaterializePolicyType;
+    rules: Array<{
+      __typename: 'AutoMaterializeRule';
+      className: string;
+      description: string;
+      decisionType: Types.AutoMaterializeDecisionType;
+    }>;
   } | null;
   freshnessPolicy: {
     __typename: 'FreshnessPolicy';

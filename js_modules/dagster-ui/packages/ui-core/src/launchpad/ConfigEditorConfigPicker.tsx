@@ -334,8 +334,8 @@ interface ConfigEditorConfigGeneratorPickerProps {
   onSelect: (configGenerator: ConfigGenerator) => void;
 }
 
-const ConfigEditorConfigGeneratorPicker: React.FC<ConfigEditorConfigGeneratorPickerProps> = React.memo(
-  (props) => {
+const ConfigEditorConfigGeneratorPicker: React.FC<ConfigEditorConfigGeneratorPickerProps> =
+  React.memo((props) => {
     const {configGenerators, label, onSelect} = props;
     const button = React.useRef<HTMLButtonElement>(null);
 
@@ -411,8 +411,7 @@ const ConfigEditorConfigGeneratorPicker: React.FC<ConfigEditorConfigGeneratorPic
         </ShortcutHandler>
       </div>
     );
-  },
-);
+  });
 
 export const SortButton = styled.button`
   border: 0;

@@ -18,7 +18,7 @@ export const ExecutionStateDot = styled.div<{state: IStepState}>`
       [IStepState.PREPARING]: Colors.Red500,
       [IStepState.RETRY_REQUESTED]: Colors.Red500,
       [IStepState.UNKNOWN]: Colors.Red500,
-    }[state])};
+    })[state]};
   &:hover {
     background: ${({state}) =>
       ({
@@ -29,6 +29,6 @@ export const ExecutionStateDot = styled.div<{state: IStepState}>`
         [IStepState.PREPARING]: Colors.Red500,
         [IStepState.RETRY_REQUESTED]: Colors.Red500,
         [IStepState.UNKNOWN]: Colors.Red500,
-      }[state])};
+      })[state]};
   }
 `;

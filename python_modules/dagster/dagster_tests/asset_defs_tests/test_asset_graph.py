@@ -31,7 +31,7 @@ from dagster._core.definitions.partition import PartitionsDefinition, Partitions
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partition_mapping import UpstreamPartitionsResult
 from dagster._core.definitions.source_asset import SourceAsset
-from dagster._core.host_representation.external_data import external_asset_graph_from_defs
+from dagster._core.host_representation.external_data import external_asset_nodes_from_defs
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.test_utils import instance_for_test
 from dagster._seven.compat.pendulum import create_pendulum_time
@@ -42,7 +42,7 @@ def to_external_asset_graph(assets) -> AssetGraph:
     def repo():
         return assets
 
-    external_asset_nodes = external_asset_graph_from_defs(
+    external_asset_nodes = external_asset_nodes_from_defs(
         repo.get_all_jobs(), source_assets_by_key={}
     )
     return ExternalAssetGraph.from_repository_handles_and_external_asset_nodes(

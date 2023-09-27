@@ -175,7 +175,7 @@ def _filter_expected_output_defs(
     )
     materialize_results = [x for x in result_tuple if isinstance(x, MaterializeResult)]
     remove_outputs = [
-        r.get_spec_python_identifier(x.asset_key or context.asset_key)
+        r.get_spec_python_identifier(asset_key=x.asset_key or context.asset_key)
         for x in materialize_results
         for r in x.check_results or []
     ]
@@ -267,6 +267,20 @@ def validate_and_coerce_op_result_to_iterator(
             f" {type(result)}. {context.op_def.node_type_str.capitalize()} is explicitly defined to"
             " return no results."
         )
+    # `requires_typed_event_stream` is a mode where we require users to return/yield exactly the
+    # results that will be registered in the instance, without additional fancy inference (like
+    # wrapping `None` in an `Output`). We therefore skip any return-specific validation for this
+    # mode and treat returned values as if they were yielded.
+    elif output_defs and context.requires_typed_event_stream:
+        # If nothing was returned, treat it as an empty tuple instead of a `(None,)`.
+        # This is important for delivering the correct error message when an output is missing.
+        if result is None:
+            result_tuple = tuple()
+        elif not isinstance(result, tuple) or is_named_tuple_instance(result):
+            result_tuple = (result,)
+        else:
+            result_tuple = result
+        yield from result_tuple
     elif output_defs:
         for position, output_def, element in _zip_and_iterate_op_result(
             result, context, output_defs
