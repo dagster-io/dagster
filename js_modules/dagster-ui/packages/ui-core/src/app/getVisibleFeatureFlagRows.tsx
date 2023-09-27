@@ -53,4 +53,8 @@ export const getVisibleFeatureFlagRows = () => [
     ),
     flagType: FeatureFlag.flagDAGSidebar,
   },
+  {
+    key: 'Disable Asset Graph caching',
+    flagType: FeatureFlag.flagDisableDAGCache,
+  },
 ];

@@ -37,7 +37,7 @@ import {
   LargeDAGNotice,
   LoadingNotice,
 } from '../pipelines/GraphNotices';
-import {ExplorerPath} from '../pipelines/PipelinePathUtils';
+import {ExplorerPath, normalizePathnameForCacheKey} from '../pipelines/PipelinePathUtils';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {Loading} from '../ui/Loading';
 
@@ -153,7 +153,7 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
     assetGraphData,
     // Use the pathname as part of the key so that different deployments don't invalidate each other's cached layout
     // Remove the slash at the end in the key so that the same layout is used for both `/path` and `/path/`
-    `explorer:${pathname.endsWith('/') ? pathname.slice(0, pathname.length - 1) : pathname}`,
+    `explorer:${normalizePathnameForCacheKey(pathname)}`,
     fullAssetGraphData,
   );
   const viewportEl = React.useRef<SVGViewport>();
