@@ -190,7 +190,7 @@ export function useAssetLayout(
     } else {
       void runAsyncLayout();
     }
-  }, [cacheKey, fullDataCacheKey, graphData, runAsync, flags, indexDBKey]);
+  }, [cacheKey, fullDataCacheKey, graphData, runAsync, flags, indexDBKey, flagDisableDAGCache]);
 
   return {
     loading: state.loading || !state.layout || state.cacheKey !== cacheKey,
