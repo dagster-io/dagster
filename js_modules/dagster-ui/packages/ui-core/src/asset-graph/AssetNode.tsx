@@ -34,7 +34,7 @@ export const AssetNode: React.FC<{
       <AssetTopTags definition={definition} liveData={liveData} />
       <AssetNodeContainer $selected={selected}>
         <AssetNodeBox $selected={selected} $isSource={isSource}>
-          <Name $isSource={isSource}>
+          <AssetName $isSource={isSource}>
             <span style={{marginTop: 1}}>
               <Icon name={isSource ? 'source_asset' : 'asset'} />
             </span>
@@ -48,14 +48,14 @@ export const AssetNode: React.FC<{
               })}
             </div>
             <div style={{flex: 1}} />
-          </Name>
+          </AssetName>
           <Box style={{padding: '6px 8px'}} flex={{direction: 'column', gap: 4}} border="top">
             {definition.description ? (
-              <Description $color={Colors.Gray800}>
+              <AssetDescription $color={Colors.Gray800}>
                 {markdownToPlaintext(definition.description).split('\n')[0]}
-              </Description>
+              </AssetDescription>
             ) : (
-              <Description $color={Colors.Gray400}>No description</Description>
+              <AssetDescription $color={Colors.Gray400}>No description</AssetDescription>
             )}
             {definition.isPartitioned && !definition.isSource && (
               <PartitionCountTags definition={definition} liveData={liveData} />
@@ -343,7 +343,7 @@ const NameTooltipStyleSource = JSON.stringify({
   border: `1px solid ${Colors.Gray200}`,
 });
 
-const Name = styled.div<{$isSource: boolean}>`
+export const AssetName = styled.div<{$isSource: boolean}>`
   ${NameCSS};
   display: flex;
   gap: 4px;
@@ -385,7 +385,7 @@ const MinimalAssetNodeBox = styled.div<{
   }
 `;
 
-const MinimalName = styled(Name)`
+const MinimalName = styled(AssetName)`
   font-weight: 600;
   white-space: nowrap;
   position: absolute;
@@ -395,7 +395,7 @@ const MinimalName = styled(Name)`
   transform: translate(-50%, -50%);
 `;
 
-const Description = styled.div<{$color: string}>`
+export const AssetDescription = styled.div<{$color: string}>`
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
