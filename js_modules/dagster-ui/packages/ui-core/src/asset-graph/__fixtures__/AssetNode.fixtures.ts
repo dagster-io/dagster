@@ -94,6 +94,7 @@ export const LiveDataForNodeRunStartedNotMaterializing: LiveDataForNode = {
   assetChecks: [],
   freshnessInfo: null,
   partitionStats: null,
+  opNames: [],
 };
 
 export const LiveDataForNodeRunStartedMaterializing: LiveDataForNode = {
@@ -109,6 +110,7 @@ export const LiveDataForNodeRunStartedMaterializing: LiveDataForNode = {
   assetChecks: [],
   freshnessInfo: null,
   partitionStats: null,
+  opNames: [],
 };
 
 export const LiveDataForNodeRunFailed: LiveDataForNode = {
@@ -129,6 +131,7 @@ export const LiveDataForNodeRunFailed: LiveDataForNode = {
   assetChecks: [],
   freshnessInfo: null,
   partitionStats: null,
+  opNames: [],
 };
 
 export const LiveDataForNodeNeverMaterialized: LiveDataForNode = {
@@ -144,6 +147,7 @@ export const LiveDataForNodeNeverMaterialized: LiveDataForNode = {
   assetChecks: [],
   freshnessInfo: null,
   partitionStats: null,
+  opNames: [],
 };
 
 export const LiveDataForNodeMaterialized: LiveDataForNode = {
@@ -163,6 +167,7 @@ export const LiveDataForNodeMaterialized: LiveDataForNode = {
   assetChecks: [],
   freshnessInfo: null,
   partitionStats: null,
+  opNames: [],
 };
 
 export const LiveDataForNodeMaterializedWithChecks: LiveDataForNode = {
@@ -233,6 +238,7 @@ export const LiveDataForNodeMaterializedWithChecks: LiveDataForNode = {
   ],
   freshnessInfo: null,
   partitionStats: null,
+  opNames: [],
 };
 
 export const LiveDataForNodeMaterializedWithChecksOk: LiveDataForNode = {
@@ -259,6 +265,7 @@ export const LiveDataForNodeMaterializedAndStale: LiveDataForNode = {
   assetChecks: [],
   freshnessInfo: null,
   partitionStats: null,
+  opNames: [],
 };
 
 export const LiveDataForNodeMaterializedAndStaleAndOverdue: LiveDataForNode = {
@@ -281,6 +288,7 @@ export const LiveDataForNodeMaterializedAndStaleAndOverdue: LiveDataForNode = {
     currentMinutesLate: 12,
   },
   partitionStats: null,
+  opNames: [],
 };
 
 export const LiveDataForNodeMaterializedAndStaleAndFresh: LiveDataForNode = {
@@ -303,6 +311,7 @@ export const LiveDataForNodeMaterializedAndStaleAndFresh: LiveDataForNode = {
     currentMinutesLate: 0,
   },
   partitionStats: null,
+  opNames: [],
 };
 
 export const LiveDataForNodeMaterializedAndFresh: LiveDataForNode = {
@@ -325,6 +334,7 @@ export const LiveDataForNodeMaterializedAndFresh: LiveDataForNode = {
     currentMinutesLate: 0,
   },
   partitionStats: null,
+  opNames: [],
 };
 
 export const LiveDataForNodeMaterializedAndOverdue: LiveDataForNode = {
@@ -347,6 +357,7 @@ export const LiveDataForNodeMaterializedAndOverdue: LiveDataForNode = {
     currentMinutesLate: 12,
   },
   partitionStats: null,
+  opNames: [],
 };
 
 export const LiveDataForNodeFailedAndOverdue: LiveDataForNode = {
@@ -370,6 +381,7 @@ export const LiveDataForNodeFailedAndOverdue: LiveDataForNode = {
     currentMinutesLate: 12,
   },
   partitionStats: null,
+  opNames: [],
 };
 
 export const LiveDataForNodeSourceNeverObserved: LiveDataForNode = {
@@ -386,6 +398,7 @@ export const LiveDataForNodeSourceNeverObserved: LiveDataForNode = {
   freshnessInfo: null,
 
   partitionStats: null,
+  opNames: [],
 };
 
 export const LiveDataForNodeSourceObservationRunning: LiveDataForNode = {
@@ -401,6 +414,7 @@ export const LiveDataForNodeSourceObservationRunning: LiveDataForNode = {
   assetChecks: [],
   freshnessInfo: null,
   partitionStats: null,
+  opNames: [],
 };
 export const LiveDataForNodeSourceObservedUpToDate: LiveDataForNode = {
   stepKey: 'source_asset',
@@ -412,6 +426,7 @@ export const LiveDataForNodeSourceObservedUpToDate: LiveDataForNode = {
     __typename: 'ObservationEvent',
     runId: 'ABCDEF',
     timestamp: TIMESTAMP,
+    opNames: [],
   },
   runWhichFailedToMaterialize: null,
   staleStatus: StaleStatus.FRESH,
@@ -444,6 +459,7 @@ export const LiveDataForNodePartitionedSomeMissing: LiveDataForNode = {
     numPartitions: 1500,
     numFailed: 0,
   },
+  opNames: [],
 };
 
 export const LiveDataForNodePartitionedSomeFailed: LiveDataForNode = {
@@ -468,6 +484,7 @@ export const LiveDataForNodePartitionedSomeFailed: LiveDataForNode = {
     numPartitions: 1500,
     numFailed: 849,
   },
+  opNames: [],
 };
 
 export const LiveDataForNodePartitionedNoneMissing: LiveDataForNode = {
@@ -492,6 +509,7 @@ export const LiveDataForNodePartitionedNoneMissing: LiveDataForNode = {
     numPartitions: 1500,
     numFailed: 0,
   },
+  opNames: [],
 };
 
 export const LiveDataForNodePartitionedNeverMaterialized: LiveDataForNode = {
@@ -512,6 +530,7 @@ export const LiveDataForNodePartitionedNeverMaterialized: LiveDataForNode = {
     numPartitions: 1500,
     numFailed: 0,
   },
+  opNames: [],
 };
 
 export const LiveDataForNodePartitionedMaterializing: LiveDataForNode = {
@@ -532,6 +551,7 @@ export const LiveDataForNodePartitionedMaterializing: LiveDataForNode = {
     numPartitions: 1500,
     numFailed: 0,
   },
+  opNames: [],
 };
 
 export const LiveDataForNodePartitionedStale: LiveDataForNode = {
@@ -556,6 +576,7 @@ export const LiveDataForNodePartitionedStale: LiveDataForNode = {
     numPartitions: 1500,
     numFailed: 0,
   },
+  opNames: [],
 };
 
 export const LiveDataForNodePartitionedOverdue: LiveDataForNode = {
@@ -583,6 +604,7 @@ export const LiveDataForNodePartitionedOverdue: LiveDataForNode = {
     numPartitions: 1500,
     numFailed: 0,
   },
+  opNames: [],
 };
 
 export const LiveDataForNodePartitionedFresh: LiveDataForNode = {
@@ -610,6 +632,7 @@ export const LiveDataForNodePartitionedFresh: LiveDataForNode = {
     numPartitions: 1500,
     numFailed: 0,
   },
+  opNames: [],
 };
 
 export const LiveDataForNodePartitionedLatestRunFailed: LiveDataForNode = {
@@ -635,6 +658,7 @@ export const LiveDataForNodePartitionedLatestRunFailed: LiveDataForNode = {
     numPartitions: 1500,
     numFailed: 1,
   },
+  opNames: [],
 };
 
 export const AssetNodeScenariosBase = [
