@@ -93,4 +93,4 @@ class _PipesSubprocess(PipesClient):
         yield from pipes_session.get_results()
 
 
-PipesSubprocess = ResourceParam[_PipesSubprocess]
+PipesSubprocessClient = ResourceParam[_PipesSubprocess]
