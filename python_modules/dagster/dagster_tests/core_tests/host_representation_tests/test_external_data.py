@@ -421,7 +421,9 @@ def test_cross_job_asset_dependency():
         assert asset1 == 1
 
     assets_job1 = build_assets_job("assets_job1", [asset1])
-    assets_job2 = build_assets_job("assets_job2", [asset2], source_assets=[asset1])
+    assets_job2 = build_assets_job(
+        "assets_job2", [asset2], resolved_source_assets=asset1.to_source_assets()
+    )
     external_asset_nodes = external_asset_graph_from_defs(
         [assets_job1, assets_job2], source_assets_by_key={}
     )

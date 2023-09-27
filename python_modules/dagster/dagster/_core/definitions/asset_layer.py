@@ -845,12 +845,17 @@ def build_asset_selection_job(
             )
 
     if len(included_assets) or len(included_checks) > 0:
+        resolved_source_assets: List[SourceAsset] = []
+        for asset in excluded_assets:
+            resolved_source_assets += asset.to_source_assets()
+
         asset_job = build_assets_job(
             name=name,
             assets=included_assets,
             asset_checks=included_checks,
             config=config,
-            source_assets=[*source_assets, *excluded_assets],
+            source_assets=[*source_assets],
+            resolved_source_assets=resolved_source_assets,
             resource_defs=resource_defs,
             executor_def=executor_def,
             partitions_def=partitions_def,

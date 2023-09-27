@@ -315,9 +315,7 @@ def test_missing_io_manager():
 
 
 def test_source_op_asset():
-    @asset(io_manager_key="special_io_manager")
-    def source1():
-        pass
+    source1 = SourceAsset(AssetKey("source1"), io_manager_key="special_io_manager")
 
     @asset
     def asset1(source1):
