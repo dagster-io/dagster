@@ -31,6 +31,11 @@ from dagster._core.errors import (
     RunStatusSensorExecutionError,
     user_code_error_boundary,
 )
+from dagster._core.event_api import (
+    EventLogCursor,
+    RunStatusChangeEventFilter,
+    RunStatusChangeEventType,
+)
 from dagster._core.events import PIPELINE_RUN_STATUS_TO_EVENT_TYPE, DagsterEvent, DagsterEventType
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
@@ -85,14 +90,15 @@ RunFailureSensorEvaluationFn: TypeAlias = Union[
 class RunStatusSensorCursor(
     NamedTuple(
         "_RunStatusSensorCursor",
-        [("record_id", int), ("update_timestamp", str)],
+        [("record_id", int), ("update_timestamp", str), ("from_index_shard", bool)],
     )
 ):
-    def __new__(cls, record_id, update_timestamp):
+    def __new__(cls, record_id, update_timestamp, from_index_shard=False):
         return super(RunStatusSensorCursor, cls).__new__(
             cls,
             record_id=check.int_param(record_id, "record_id"),
             update_timestamp=check.str_param(update_timestamp, "update_timestamp"),
+            from_index_shard=check.bool_param(from_index_shard, "from_index_shard"),
         )
 
     @staticmethod
@@ -547,8 +553,6 @@ class RunStatusSensorDefinition(SensorDefinition):
             JobSelector,
             RepositorySelector,
         )
-        from dagster._core.event_api import RunShardedEventsCursor
-        from dagster._core.storage.event_log.base import EventRecordsFilter
 
         check.str_param(name, "name")
         check.inst_param(run_status, "run_status", DagsterRunStatus)
@@ -585,7 +589,9 @@ class RunStatusSensorDefinition(SensorDefinition):
         self._run_status_sensor_fn = check.callable_param(
             run_status_sensor_fn, "run_status_sensor_fn"
         )
-        event_type = PIPELINE_RUN_STATUS_TO_EVENT_TYPE[run_status]
+        event_type: RunStatusChangeEventType = cast(
+            RunStatusChangeEventType, PIPELINE_RUN_STATUS_TO_EVENT_TYPE[run_status]
+        )
 
         # split monitored_jobs into external repos, external jobs, and jobs in the current repo
         other_repos = (
@@ -611,45 +617,45 @@ class RunStatusSensorDefinition(SensorDefinition):
             # * it's the first time starting the sensor
             # * or, the cursor isn't in valid format (backcompt)
             if context.cursor is None or not RunStatusSensorCursor.is_valid(context.cursor):
-                most_recent_event_records = list(
-                    context.instance.get_event_records(
-                        EventRecordsFilter(event_type=event_type), ascending=False, limit=1
-                    )
-                )
+                most_recent_event_records = context.instance.get_run_status_change_event_records(
+                    event_type, ascending=False, limit=1
+                ).records
                 most_recent_event_id = (
                     most_recent_event_records[0].storage_id
                     if len(most_recent_event_records) == 1
                     else -1
                 )
-
                 new_cursor = RunStatusSensorCursor(
                     update_timestamp=pendulum.now("UTC").isoformat(),
                     record_id=most_recent_event_id,
+                    from_index_shard=True,
                 )
                 context.update_cursor(new_cursor.to_json())
                 yield SkipReason(f"Initiating {name}. Set cursor to {new_cursor}")
                 return
 
-            record_id, update_timestamp = RunStatusSensorCursor.from_json(context.cursor)
+            cursor_obj = RunStatusSensorCursor.from_json(context.cursor)
+            if cursor_obj.from_index_shard:
+                # because this cursor obj is from the index shard, we can use the record id as an
+                # event log cursor.
+                event_log_cursor = EventLogCursor.from_storage_id(cursor_obj.record_id).to_string()
+                after_timestamp = None
+            else:
+                # the cursor object is not from the index shard, so the record id is locally scoped
+                # to the run shard that produced it.
+                event_log_cursor = None
+                after_timestamp = cast(
+                    datetime, pendulum.parse(cursor_obj.update_timestamp)
+                ).timestamp()
 
-            # Fetch events after the cursor id
-            # * we move the cursor forward to the latest visited event's id to avoid revisits
-            # * when the daemon is down, bc we persist the cursor info, we can go back to where we
-            #   left and backfill alerts for the qualified events (up to 5 at a time) during the downtime
-            # Note: this is a cross-run query which requires extra handling in sqlite, see details in SqliteEventLogStorage.
-            event_records = context.instance.get_event_records(
-                EventRecordsFilter(
-                    after_cursor=RunShardedEventsCursor(
-                        id=record_id,
-                        run_updated_after=cast(datetime, pendulum.parse(update_timestamp)),
-                    ),
-                    event_type=event_type,
-                ),
+            event_record_result = context.instance.get_run_status_change_event_records(
+                RunStatusChangeEventFilter(event_type, after_timestamp=after_timestamp),
+                cursor=event_log_cursor,
                 ascending=True,
                 limit=5,
             )
 
-            for event_record in event_records:
+            for event_record in event_record_result.records:
                 event_log_entry = event_record.event_log_entry
                 storage_id = event_record.storage_id
 
@@ -669,6 +675,9 @@ class RunStatusSensorDefinition(SensorDefinition):
                         RunStatusSensorCursor(
                             record_id=storage_id,
                             update_timestamp=approximate_update_timestamp.isoformat(),
+                            # all records fetched using get_run_status_change_event_records come
+                            # from events mirrored to the index shard
+                            from_index_shard=True,
                         ).to_json()
                     )
                     continue
@@ -725,7 +734,11 @@ class RunStatusSensorDefinition(SensorDefinition):
                     # the run in question doesn't match any of the criteria for we advance the cursor and move on
                     context.update_cursor(
                         RunStatusSensorCursor(
-                            record_id=storage_id, update_timestamp=update_timestamp.isoformat()
+                            record_id=storage_id,
+                            update_timestamp=update_timestamp.isoformat(),
+                            # all records fetched using get_run_status_change_event_records come
+                            # from events mirrored to the index shard
+                            from_index_shard=True,
                         ).to_json()
                     )
                     continue
@@ -764,6 +777,9 @@ class RunStatusSensorDefinition(SensorDefinition):
                                 RunStatusSensorCursor(
                                     record_id=storage_id,
                                     update_timestamp=update_timestamp.isoformat(),
+                                    # all records fetched using get_run_status_change_event_records
+                                    # come from events mirrored to the index shard
+                                    from_index_shard=True,
                                 ).to_json()
                             )
 
@@ -791,7 +807,11 @@ class RunStatusSensorDefinition(SensorDefinition):
 
                 context.update_cursor(
                     RunStatusSensorCursor(
-                        record_id=storage_id, update_timestamp=update_timestamp.isoformat()
+                        record_id=storage_id,
+                        update_timestamp=update_timestamp.isoformat(),
+                        # all records fetched using get_run_status_change_event_records
+                        # come from events mirrored to the index shard
+                        from_index_shard=True,
                     ).to_json()
                 )
 
