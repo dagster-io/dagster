@@ -1,4 +1,4 @@
-from typing import Sequence
+from typing import List, Sequence
 
 from dagster import _check as check
 from dagster._core.definitions.asset_spec import (
@@ -10,9 +10,10 @@ from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.decorators.asset_decorator import asset, multi_asset
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.execution.context.compute import AssetExecutionContext
 
 
-def external_assets_def_from_specs(specs: Sequence[AssetSpec]) -> AssetsDefinition:
+def external_assets_from_specs(specs: Sequence[AssetSpec]) -> List[AssetsDefinition]:
     """Create an external assets definition from a sequence of asset specs.
 
     An external asset is an asset that is not materialized by Dagster, but is tracked in the
@@ -77,7 +78,7 @@ def external_assets_def_from_specs(specs: Sequence[AssetSpec]) -> AssetsDefiniti
     Args:
             specs (Sequence[AssetSpec]): The specs for the assets.
     """
-    new_specs = []
+    assets_defs = []
     for spec in specs:
         check.invariant(
             spec.auto_materialize_policy is None,
@@ -92,33 +93,36 @@ def external_assets_def_from_specs(specs: Sequence[AssetSpec]) -> AssetsDefiniti
             "skippable must be False since it is ignored and False is the default",
         )
 
-        new_specs.append(
-            AssetSpec(
-                key=spec.key,
-                description=spec.description,
-                group_name=spec.group_name,
-                metadata={
-                    **(spec.metadata or {}),
-                    **{
-                        SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: (
-                            AssetExecutionType.UNEXECUTABLE.value
-                        )
+        @multi_asset(
+            specs=[
+                AssetSpec(
+                    key=spec.key,
+                    description=spec.description,
+                    group_name=spec.group_name,
+                    metadata={
+                        **(spec.metadata or {}),
+                        **{
+                            SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: (
+                                AssetExecutionType.UNEXECUTABLE.value
+                            )
+                        },
                     },
-                },
-                deps=spec.deps,
+                    deps=spec.deps,
+                )
+            ]
+        )
+        def _external_assets_def(context: AssetExecutionContext) -> None:
+            raise DagsterInvariantViolationError(
+                "You have attempted to execute an unexecutable asset"
+                f" {context.asset_key.to_user_string}."
             )
-        )
 
-    @multi_asset(specs=new_specs)
-    def _external_assets_def() -> None:
-        raise DagsterInvariantViolationError(
-            f"You have attempted to execute an unexecutable asset {[spec.key for spec in specs]}"
-        )
+        assets_defs.append(_external_assets_def)
 
-    return _external_assets_def
+    return assets_defs
 
 
-def create_external_assets_def_from_source_asset(source_asset: SourceAsset) -> AssetsDefinition:
+def create_external_asset_from_source_asset(source_asset: SourceAsset) -> AssetsDefinition:
     check.invariant(
         source_asset.observe_fn is None,
         "Observable source assets not supported yet: observe_fn should be None",
