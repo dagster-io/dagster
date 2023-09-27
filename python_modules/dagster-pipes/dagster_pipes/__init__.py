@@ -137,14 +137,6 @@ PipesMetadataType = Literal[
     "null",
 ]
 
-PipesLogLevel = Literal[
-    "CRITICAL",
-    "ERROR",
-    "WARNING",
-    "INFO",
-    "DEBUG",
-]
-
 # ########################
 # ##### UTIL
 # ########################
@@ -321,19 +313,6 @@ def _normalize_param_metadata(
     return new_metadata
 
 
-# _LOG_LEVELS = frozenset(PipesLogLevel.__annotations__.keys())
-# # copied from Dagster core
-# _LOG_LEVEL_ALIASES: Mapping[str, str] = {
-#     "FATAL", "CRITICAL",
-#     "WARN": "WARNING",
-# }
-
-# def _normalize_log_level(level: str) -> str:
-#     upcased_level = level.upper()
-#     normalized_level = _LOG_LEVEL_ALIASES.get(upcased_level, upcased_level)
-#     return _assert_param_value(level, _LOG_LEVELS, "log", "level")
-
-
 def _param_from_env_var(key: str) -> Any:
     raw_value = os.environ.get(_param_name_to_env_var(key))
     return decode_env_var(raw_value) if raw_value is not None else None
@@ -379,7 +358,7 @@ def _get_mock() -> "MagicMock":
     return MagicMock()
 
 
-class PipesLogger(logging.Logger):
+class _PipesLogger(logging.Logger):
     def __init__(self, context: "PipesContext") -> None:
         super().__init__(name="dagster-pipes")
         self.addHandler(_PipesLoggerHandler(context))
@@ -717,7 +696,7 @@ class PipesContext:
     ) -> None:
         self._data = data
         self._message_channel = message_channel
-        self._logger = PipesLogger(self)
+        self._logger = _PipesLogger(self)
         self._materialized_assets: set[str] = set()
 
     def _write_message(self, method: str, params: Optional[Mapping[str, Any]] = None) -> None:
@@ -888,9 +867,3 @@ class PipesContext:
     @property
     def log(self) -> logging.Logger:
         return self._logger
-
-    # def log(self, message: str, level: str = "info") -> None:
-    #     message = _assert_param_type(message, str, "log", "message")
-    #     normalized_level = _normalize_log_level(_assert_param_type(level, str, "log", "level"))
-    #     _assert_param_value(normalized_level, _LOG_LEVELS, "log", "level")
-    #     self._write_message("log", {"message": message, "level": level})
