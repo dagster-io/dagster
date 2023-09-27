@@ -1187,8 +1187,8 @@ def test_external_time_window_valid_partition_key():
     )
 
 
-def test_unexecutable_external_asset_node() -> None:
-    asset_one = external_assets_from_specs([AssetSpec("asset_one")])
+def test_external_assets_def_to_external_asset_graph() -> None:
+    asset_one = next(iter(external_assets_from_specs([AssetSpec("asset_one")])))
 
     assets_job = build_assets_job("assets_job", [asset_one])
     external_asset_nodes = external_asset_graph_from_defs([assets_job], source_assets_by_key={})
@@ -1197,7 +1197,7 @@ def test_unexecutable_external_asset_node() -> None:
     assert next(iter(external_asset_nodes)).is_executable is False
 
 
-def test_historical_external_asset_node() -> None:
+def test_historical_external_asset_node_that_models_underlying_external_assets_def() -> None:
     assert not ExternalAssetNode(
         asset_key=AssetKey("asset_one"),
         dependencies=[],
