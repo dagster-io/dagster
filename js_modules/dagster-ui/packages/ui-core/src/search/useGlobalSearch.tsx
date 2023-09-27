@@ -246,6 +246,7 @@ export const SEARCH_PRIMARY_QUERY = gql`
                   id
                   name
                   assetGroups {
+                    id
                     groupName
                   }
                   pipelines {
