@@ -23,7 +23,7 @@ from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
 
 
-def test_observable_asset_basic_creation() -> None:
+def test_external_asset_basic_creation() -> None:
     assets_def = next(
         iter(
             external_assets_from_specs(
