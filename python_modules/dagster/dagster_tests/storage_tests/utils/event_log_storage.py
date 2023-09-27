@@ -4052,7 +4052,7 @@ class TestEventLogStorage:
                     event_specific_data=AssetCheckEvaluation(
                         asset_key=AssetKey(["my_asset"]),
                         check_name="my_check",
-                        success=True,
+                        passed=True,
                         metadata={},
                         target_materialization_data=AssetCheckEvaluationTargetMaterializationData(
                             storage_id=42, run_id="bizbuz", timestamp=3.3

@@ -284,7 +284,7 @@ def test_asset_check_evaluation() -> None:
                 AssetCheckEvaluation(
                     asset_key=AssetKey("asset_one"),
                     check_name="check_one",
-                    success=True,
+                    passed=True,
                     metadata={},
                 )
             ]

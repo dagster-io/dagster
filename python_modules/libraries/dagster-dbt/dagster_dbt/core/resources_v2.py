@@ -158,7 +158,7 @@ class DbtCliEventMessage:
                 )
 
                 yield AssetCheckResult(
-                    success=is_test_successful,
+                    passed=is_test_successful,
                     asset_key=attached_node_asset_key,
                     check_name=event_node_info["node_name"],
                     metadata=metadata,

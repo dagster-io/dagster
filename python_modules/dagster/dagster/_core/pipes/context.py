@@ -128,13 +128,13 @@ class PipesMessageHandler:
         self,
         asset_key: str,
         check_name: str,
-        success: bool,
+        passed: bool,
         severity: str,
         metadata: Mapping[str, PipesMetadataValue],
     ) -> None:
         check.str_param(asset_key, "asset_key")
         check.str_param(check_name, "check_name")
-        check.bool_param(success, "success")
+        check.bool_param(passed, "passed")
         check.literal_param(severity, "severity", [x.value for x in AssetCheckSeverity])
         metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
         resolved_asset_key = AssetKey.from_user_string(asset_key)
@@ -143,7 +143,7 @@ class PipesMessageHandler:
         result = AssetCheckResult(
             asset_key=resolved_asset_key,
             check_name=check_name,
-            success=success,
+            passed=passed,
             severity=resolved_severity,
             metadata=resolved_metadata,
         )

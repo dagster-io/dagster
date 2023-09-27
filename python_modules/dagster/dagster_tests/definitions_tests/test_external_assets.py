@@ -23,18 +23,19 @@ from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
 
 
-def external_asset_from_spec(spec: AssetSpec) -> AssetsDefinition:
-    return next(iter(external_assets_from_specs(specs=[spec])))
-
-
 def test_external_asset_basic_creation() -> None:
-    assets_def = external_asset_from_spec(
-        AssetSpec(
-            key="external_asset_one",
-            # will work once https://github.com/dagster-io/dagster/pull/16755 merges
-            # description="desc",
-            metadata={"user_metadata": "value"},
-            group_name="a_group",
+    assets_def = next(
+        iter(
+            external_assets_from_specs(
+                specs=[
+                    AssetSpec(
+                        key="external_asset_one",
+                        description="desc",
+                        metadata={"user_metadata": "value"},
+                        group_name="a_group",
+                    )
+                ]
+            )
         )
     )
     assert isinstance(assets_def, AssetsDefinition)
@@ -46,6 +47,7 @@ def test_external_asset_basic_creation() -> None:
     # assert assets_def.descriptions_by_key[expected_key] == "desc"
     assert assets_def.metadata_by_key[expected_key]["user_metadata"] == "value"
     assert assets_def.group_names_by_key[expected_key] == "a_group"
+    assert assets_def.descriptions_by_key[expected_key] == "desc"
     assert assets_def.is_asset_executable(expected_key) is False
 
 
@@ -71,10 +73,16 @@ def test_normal_asset_materializeable() -> None:
 
 def test_external_asset_creation_with_deps() -> None:
     asset_two = AssetSpec("external_asset_two")
-    assets_def = external_asset_from_spec(
-        AssetSpec(
-            "external_asset_one",
-            deps=[asset_two.key],  # todo remove key when asset deps accepts it
+    assets_def = next(
+        iter(
+            external_assets_from_specs(
+                [
+                    AssetSpec(
+                        "external_asset_one",
+                        deps=[asset_two.key],  # todo remove key when asset deps accepts it
+                    )
+                ]
+            )
         )
     )
     assert isinstance(assets_def, AssetsDefinition)

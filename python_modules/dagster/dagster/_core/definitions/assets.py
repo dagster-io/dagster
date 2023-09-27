@@ -218,6 +218,8 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 output_def.metadata,
                 self._metadata_by_key.get(asset_key, {}),
             )
+            # We construct description from three sources of truth here. This
+            # highly unfortunate. See commentary in @multi_asset's call to dagster_internal_init.
             description = (
                 self._descriptions_by_key.get(asset_key, output_def.description)
                 or node_def.description

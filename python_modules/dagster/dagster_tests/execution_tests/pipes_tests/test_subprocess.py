@@ -100,7 +100,7 @@ def external_script() -> Iterator[str]:
         )
         context.report_asset_check(
             "foo_check",
-            success=True,
+            passed=True,
             severity="WARN",
             metadata={
                 "meta_1": 1,
