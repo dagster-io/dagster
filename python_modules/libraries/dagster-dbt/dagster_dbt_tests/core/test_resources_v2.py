@@ -440,6 +440,7 @@ def test_dbt_tests_to_events(is_asset_check: bool) -> None:
                 },
                 "name": "test.a",
                 "meta": {"dagster": {"asset_check": is_asset_check}},
+                "attached_node": "model.a" if is_asset_check else None,
             },
         },
         "sources": {},
