@@ -575,6 +575,24 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         self._is_external_input_asset_version_info_loaded = False
         self._data_version_cache: Dict[AssetKey, "DataVersion"] = {}
 
+        self._requires_typed_event_stream = False
+        self._typed_event_stream_error_message = None
+
+    # In this mode no conversion is done on returned values and missing but expected outputs are not
+    # allowed.
+    @property
+    def requires_typed_event_stream(self) -> bool:
+        return self._requires_typed_event_stream
+
+    @property
+    def typed_event_stream_error_message(self) -> Optional[str]:
+        return self._typed_event_stream_error_message
+
+    # Error message will be appended to the default error message.
+    def set_requires_typed_event_stream(self, *, error_message: Optional[str] = None):
+        self._requires_typed_event_stream = True
+        self._typed_event_stream_error_message = error_message
+
     @property
     def step(self) -> ExecutionStep:
         return self._step
@@ -879,6 +897,11 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
     def op_config(self) -> Any:
         op_config = self.resolved_run_config.ops.get(str(self.node_handle))
         return op_config.config if op_config else None
+
+    @property
+    def is_op_in_graph(self) -> bool:
+        """Whether this step corresponds to an op within a graph (either @graph, or @graph_asset)."""
+        return self.step.node_handle.parent is not None
 
     @property
     def is_sda_step(self) -> bool:

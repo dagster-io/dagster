@@ -9,11 +9,13 @@ from typing import Any, Callable, Iterator
 
 import boto3
 import pytest
+from dagster._core.definitions.asset_check_spec import AssetCheckSpec
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.data_version import (
     DATA_VERSION_IS_USER_PROVIDED_TAG,
     DATA_VERSION_TAG,
 )
-from dagster._core.definitions.decorators.asset_decorator import asset
+from dagster._core.definitions.decorators.asset_decorator import asset, multi_asset
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.metadata import (
@@ -30,20 +32,21 @@ from dagster._core.definitions.metadata import (
     TextMetadataValue,
     UrlMetadataValue,
 )
-from dagster._core.errors import DagsterExternalExecutionError
-from dagster._core.execution.context.compute import AssetExecutionContext
+from dagster._core.errors import DagsterExternalExecutionError, DagsterInvariantViolationError
+from dagster._core.execution.context.compute import AssetExecutionContext, OpExecutionContext
 from dagster._core.execution.context.invocation import build_asset_context
-from dagster._core.ext.subprocess import (
-    ExtSubprocess,
-)
-from dagster._core.ext.utils import (
-    ExtEnvContextInjector,
-    ExtTempFileContextInjector,
-    ExtTempFileMessageReader,
-    ext_protocol,
-)
 from dagster._core.instance_for_test import instance_for_test
-from dagster_aws.ext import ExtS3MessageReader
+from dagster._core.pipes.subprocess import (
+    PipesSubprocessClient,
+)
+from dagster._core.pipes.utils import (
+    PipesEnvContextInjector,
+    PipesTempFileContextInjector,
+    PipesTempFileMessageReader,
+    open_pipes_session,
+)
+from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
+from dagster_aws.pipes import PipesS3MessageReader
 from moto.server import ThreadedMotoServer
 
 _PYTHON_EXECUTABLE = shutil.which("python")
@@ -71,10 +74,10 @@ def external_script() -> Iterator[str]:
         import os
         import time
 
-        from dagster_ext import (
-            ExtContext,
-            ExtS3MessageWriter,
-            init_dagster_ext,
+        from dagster_pipes import (
+            PipesContext,
+            PipesS3MessageWriter,
+            init_dagster_pipes,
         )
 
         if os.getenv("MESSAGE_READER_SPEC") == "user/s3":
@@ -83,17 +86,26 @@ def external_script() -> Iterator[str]:
             client = boto3.client(
                 "s3", region_name="us-east-1", endpoint_url="http://localhost:5193"
             )
-            message_writer = ExtS3MessageWriter(client, interval=0.001)
+            message_writer = PipesS3MessageWriter(client, interval=0.001)
         else:
             message_writer = None  # use default
 
-        init_dagster_ext(message_writer=message_writer)
-        context = ExtContext.get()
+        init_dagster_pipes(message_writer=message_writer)
+        context = PipesContext.get()
         context.log("hello world")
         time.sleep(0.1)  # sleep to make sure that we encompass multiple intervals for blob store IO
         context.report_asset_materialization(
             metadata={"bar": {"raw_value": context.get_extra("bar"), "type": "md"}},
             data_version="alpha",
+        )
+        context.report_asset_check(
+            "foo_check",
+            success=True,
+            severity="WARN",
+            metadata={
+                "meta_1": 1,
+                "meta_2": {"raw_value": "foo", "type": "text"},
+            },
         )
 
     with temp_script(script_fn) as script_path:
@@ -129,28 +141,28 @@ def test_ext_subprocess(
     if context_injector_spec == "default":
         context_injector = None
     elif context_injector_spec == "user/file":
-        context_injector = ExtTempFileContextInjector()
+        context_injector = PipesTempFileContextInjector()
     elif context_injector_spec == "user/env":
-        context_injector = ExtEnvContextInjector()
+        context_injector = PipesEnvContextInjector()
     else:
         assert False, "Unreachable"
 
     if message_reader_spec == "default":
         message_reader = None
     elif message_reader_spec == "user/file":
-        message_reader = ExtTempFileMessageReader()
+        message_reader = PipesTempFileMessageReader()
     elif message_reader_spec == "user/s3":
-        message_reader = ExtS3MessageReader(
+        message_reader = PipesS3MessageReader(
             bucket=_S3_TEST_BUCKET, client=s3_client, interval=0.001
         )
     else:
         assert False, "Unreachable"
 
-    @asset
-    def foo(context: AssetExecutionContext, ext: ExtSubprocess):
+    @asset(check_specs=[AssetCheckSpec(name="foo_check", asset=AssetKey(["foo"]))])
+    def foo(context: AssetExecutionContext, ext: PipesSubprocessClient):
         extras = {"bar": "baz"}
         cmd = [_PYTHON_EXECUTABLE, external_script]
-        ext.run(
+        yield from ext.run(
             cmd,
             context=context,
             extras=extras,
@@ -160,14 +172,12 @@ def test_ext_subprocess(
             },
         )
 
-    resource = ExtSubprocess(context_injector=context_injector, message_reader=message_reader)
+    resource = PipesSubprocessClient(
+        context_injector=context_injector, message_reader=message_reader
+    )
 
     with instance_for_test() as instance:
-        materialize(
-            [foo],
-            instance=instance,
-            resources={"ext": resource},
-        )
+        materialize([foo], instance=instance, resources={"ext": resource})
         mat = instance.get_latest_materialization_event(foo.key)
         assert mat and mat.asset_materialization
         assert isinstance(mat.asset_materialization.metadata["bar"], MarkdownMetadataValue)
@@ -179,12 +189,53 @@ def test_ext_subprocess(
         captured = capsys.readouterr()
         assert re.search(r"dagster - INFO - [^\n]+ - hello world\n", captured.err, re.MULTILINE)
 
+        asset_check_executions = instance.event_log_storage.get_asset_check_executions(
+            asset_key=foo.key,
+            check_name="foo_check",
+            limit=1,
+        )
+        assert len(asset_check_executions) == 1
+        assert asset_check_executions[0].status == AssetCheckExecutionRecordStatus.SUCCEEDED
+
+
+def test_ext_multi_asset():
+    def script_fn():
+        from dagster_pipes import init_dagster_pipes
+
+        context = init_dagster_pipes()
+        context.report_asset_materialization(
+            {"foo_meta": "ok"}, data_version="alpha", asset_key="foo"
+        )
+        context.report_asset_materialization(data_version="alpha", asset_key="bar")
+
+    @multi_asset(specs=[AssetSpec("foo"), AssetSpec("bar")])
+    def foo_bar(context: AssetExecutionContext, pipes_subprocess_client: PipesSubprocessClient):
+        with temp_script(script_fn) as script_path:
+            cmd = [_PYTHON_EXECUTABLE, script_path]
+            yield from pipes_subprocess_client.run(cmd, context=context)
+
+    with instance_for_test() as instance:
+        materialize(
+            [foo_bar],
+            instance=instance,
+            resources={"pipes_subprocess_client": PipesSubprocessClient()},
+        )
+        foo_mat = instance.get_latest_materialization_event(AssetKey(["foo"]))
+        assert foo_mat and foo_mat.asset_materialization
+        assert foo_mat.asset_materialization.metadata["foo_meta"].value == "ok"
+        assert foo_mat.asset_materialization.tags
+        assert foo_mat.asset_materialization.tags[DATA_VERSION_TAG] == "alpha"
+        bar_mat = instance.get_latest_materialization_event(AssetKey(["foo"]))
+        assert bar_mat and bar_mat.asset_materialization
+        assert bar_mat.asset_materialization.tags
+        assert bar_mat.asset_materialization.tags[DATA_VERSION_TAG] == "alpha"
+
 
 def test_ext_typed_metadata():
     def script_fn():
-        from dagster_ext import init_dagster_ext
+        from dagster_pipes import init_dagster_pipes
 
-        context = init_dagster_ext()
+        context = init_dagster_pipes()
         context.report_asset_materialization(
             metadata={
                 "infer_meta": "bar",
@@ -204,16 +255,16 @@ def test_ext_typed_metadata():
         )
 
     @asset
-    def foo(context: AssetExecutionContext, ext: ExtSubprocess):
+    def foo(context: AssetExecutionContext, pipes_subprocess_client: PipesSubprocessClient):
         with temp_script(script_fn) as script_path:
             cmd = [_PYTHON_EXECUTABLE, script_path]
-            ext.run(cmd, context=context)
+            yield from pipes_subprocess_client.run(cmd, context=context)
 
     with instance_for_test() as instance:
         materialize(
             [foo],
             instance=instance,
-            resources={"ext": ExtSubprocess()},
+            resources={"pipes_subprocess_client": PipesSubprocessClient()},
         )
         mat = instance.get_latest_materialization_event(foo.key)
         assert mat and mat.asset_materialization
@@ -251,29 +302,29 @@ def test_ext_asset_failed():
         raise Exception("foo")
 
     @asset
-    def foo(context: AssetExecutionContext, ext: ExtSubprocess):
+    def foo(context: AssetExecutionContext, pipes_subprocess_client: PipesSubprocessClient):
         with temp_script(script_fn) as script_path:
             cmd = [_PYTHON_EXECUTABLE, script_path]
-            ext.run(cmd, context=context)
+            yield from pipes_subprocess_client.run(cmd, context=context)
 
     with pytest.raises(DagsterExternalExecutionError):
-        materialize([foo], resources={"ext": ExtSubprocess()})
+        materialize([foo], resources={"pipes_subprocess_client": PipesSubprocessClient()})
 
 
 def test_ext_asset_invocation():
     def script_fn():
-        from dagster_ext import init_dagster_ext
+        from dagster_pipes import init_dagster_pipes
 
-        context = init_dagster_ext()
+        context = init_dagster_pipes()
         context.log("hello world")
 
     @asset
-    def foo(context: AssetExecutionContext, ext: ExtSubprocess):
+    def foo(context: AssetExecutionContext, pipes_subprocess_client: PipesSubprocessClient):
         with temp_script(script_fn) as script_path:
             cmd = [_PYTHON_EXECUTABLE, script_path]
-            ext.run(cmd, context=context)
+            pipes_subprocess_client.run(cmd, context=context)
 
-    foo(context=build_asset_context(), ext=ExtSubprocess())
+    foo(context=build_asset_context(), pipes_subprocess_client=PipesSubprocessClient())
 
 
 PATH_WITH_NONEXISTENT_DIR = "/tmp/does-not-exist/foo"
@@ -281,16 +332,16 @@ PATH_WITH_NONEXISTENT_DIR = "/tmp/does-not-exist/foo"
 
 def test_ext_no_orchestration():
     def script_fn():
-        from dagster_ext import (
-            ExtContext,
-            init_dagster_ext,
-            is_dagster_ext_process,
+        from dagster_pipes import (
+            PipesContext,
+            init_dagster_pipes,
+            is_dagster_pipes_process,
         )
 
-        assert not is_dagster_ext_process()
+        assert not is_dagster_pipes_process()
 
-        init_dagster_ext()
-        context = ExtContext.get()
+        init_dagster_pipes()
+        context = PipesContext.get()
         context.log("hello world")
         context.report_asset_materialization(
             metadata={"bar": context.get_extra("bar")},
@@ -309,18 +360,19 @@ def test_ext_no_orchestration():
 
 
 def test_ext_no_client(external_script):
-    @asset
+    @asset(check_specs=[AssetCheckSpec(name="foo_check", asset=AssetKey(["subproc_run"]))])
     def subproc_run(context: AssetExecutionContext):
         extras = {"bar": "baz"}
         cmd = [_PYTHON_EXECUTABLE, external_script]
 
-        with ext_protocol(
+        with open_pipes_session(
             context,
-            ExtTempFileContextInjector(),
-            ExtTempFileMessageReader(),
+            PipesTempFileContextInjector(),
+            PipesTempFileMessageReader(),
             extras=extras,
-        ) as ext_context:
-            subprocess.run(cmd, env=ext_context.get_external_process_env_vars(), check=False)
+        ) as pipes_session:
+            subprocess.run(cmd, env=pipes_session.get_pipes_env_vars(), check=False)
+        yield from pipes_session.get_results()
 
     with instance_for_test() as instance:
         materialize(
@@ -333,3 +385,36 @@ def test_ext_no_client(external_script):
         assert mat.asset_materialization.tags
         assert mat.asset_materialization.tags[DATA_VERSION_TAG] == "alpha"
         assert mat.asset_materialization.tags[DATA_VERSION_IS_USER_PROVIDED_TAG]
+
+        asset_check_executions = instance.event_log_storage.get_asset_check_executions(
+            asset_key=subproc_run.key,
+            check_name="foo_check",
+            limit=1,
+        )
+        assert len(asset_check_executions) == 1
+        assert asset_check_executions[0].status == AssetCheckExecutionRecordStatus.SUCCEEDED
+
+
+def test_ext_no_client_no_yield():
+    def script_fn():
+        pass
+
+    @asset
+    def foo(context: OpExecutionContext):
+        with temp_script(script_fn) as external_script:
+            with open_pipes_session(
+                context,
+                PipesTempFileContextInjector(),
+                PipesTempFileMessageReader(),
+            ) as pipes_session:
+                cmd = [_PYTHON_EXECUTABLE, external_script]
+                subprocess.run(cmd, env=pipes_session.get_pipes_env_vars(), check=False)
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match=(
+            r"did not yield or return expected outputs.*Did you forget to `yield from"
+            r" pipes_session.get_results\(\)`?"
+        ),
+    ):
+        materialize([foo])

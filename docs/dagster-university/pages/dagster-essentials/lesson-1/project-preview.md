@@ -4,6 +4,8 @@ module: 'dagster_essentials'
 lesson: '1'
 ---
 
+# Project preview
+
 In this course, we will focus on asset-aware orchestrators and how they make data pipelines easier to manage. You’ll use Dagster, an open-source orchestrator, to build a sample data pipeline.
 
 Using data from [NYC OpenData,](https://opendata.cityofnewyork.us/) you’ll build a data pipeline that:

@@ -10,23 +10,24 @@ from dagster import (
 )
 from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.ext.client import (
-    ExtClient,
-    ExtContextInjector,
-    ExtMessageReader,
-    ExtParams,
+from dagster._core.pipes.client import (
+    PipesClient,
+    PipesContextInjector,
+    PipesMessageReader,
+    PipesParams,
 )
-from dagster._core.ext.context import (
-    ExtMessageHandler,
+from dagster._core.pipes.context import (
+    PipesMessageHandler,
+    PipesResult,
 )
-from dagster._core.ext.utils import (
-    ExtEnvContextInjector,
-    ext_protocol,
+from dagster._core.pipes.utils import (
+    PipesEnvContextInjector,
     extract_message_or_forward_to_stdout,
+    open_pipes_session,
 )
-from dagster_ext import (
-    ExtDefaultMessageWriter,
-    ExtExtras,
+from dagster_pipes import (
+    PipesDefaultMessageWriter,
+    PipesExtras,
 )
 
 from dagster_k8s.utils import get_common_labels
@@ -41,18 +42,18 @@ def get_pod_name(run_id: str, op_name: str):
     return f"dagster-{run_id[:18]}-{clean_op_name[:20]}-{suffix}"
 
 
-DEFAULT_CONTAINER_NAME = "dagster-ext-execution"
+DEFAULT_CONTAINER_NAME = "dagster-pipes-execution"
 
 
-class K8sPodLogsMessageReader(ExtMessageReader):
+class PipesK8sPodLogsMessageReader(PipesMessageReader):
     @contextmanager
     def read_messages(
         self,
-        handler: ExtMessageHandler,
-    ) -> Iterator[ExtParams]:
+        handler: PipesMessageHandler,
+    ) -> Iterator[PipesParams]:
         self._handler = handler
         try:
-            yield {ExtDefaultMessageWriter.STDIO_KEY: ExtDefaultMessageWriter.STDERR}
+            yield {PipesDefaultMessageWriter.STDIO_KEY: PipesDefaultMessageWriter.STDERR}
         finally:
             self._handler = None
 
@@ -76,7 +77,7 @@ class K8sPodLogsMessageReader(ExtMessageReader):
                 extract_message_or_forward_to_stdout(handler, log_line)
 
 
-class _ExtK8sPod(ExtClient):
+class _PipesK8sClient(PipesClient):
     """An ext protocol compliant resource for launching kubernetes pods.
 
     By default context is injected via environment variables and messages are parsed out of
@@ -87,29 +88,29 @@ class _ExtK8sPod(ExtClient):
 
     Args:
         env (Optional[Mapping[str, str]]): An optional dict of environment variables to pass to the subprocess.
-        context_injector (Optional[ExtContextInjector]): An context injector to use to inject context into the k8s container process. Defaults to ExtEnvContextInjector.
-        message_reader (Optional[ExtContextInjector]): An context injector to use to read messages from the k8s container process. Defaults to K8sPodLogsMessageReader.
+        context_injector (Optional[PipesContextInjector]): An context injector to use to inject context into the k8s container process. Defaults to PipesEnvContextInjector.
+        message_reader (Optional[PipesContextInjector]): An context injector to use to read messages from the k8s container process. Defaults to PipesK8sPodLogsMessageReader.
     """
 
     def __init__(
         self,
         env: Optional[Mapping[str, str]] = None,
-        context_injector: Optional[ExtContextInjector] = None,
-        message_reader: Optional[ExtMessageReader] = None,
+        context_injector: Optional[PipesContextInjector] = None,
+        message_reader: Optional[PipesMessageReader] = None,
     ):
         self.env = check.opt_mapping_param(env, "env", key_type=str, value_type=str)
         self.context_injector = (
             check.opt_inst_param(
                 context_injector,
                 "context_injector",
-                ExtContextInjector,
+                PipesContextInjector,
             )
-            or ExtEnvContextInjector()
+            or PipesEnvContextInjector()
         )
 
         self.message_reader = (
-            check.opt_inst_param(message_reader, "message_reader", ExtMessageReader)
-            or K8sPodLogsMessageReader()
+            check.opt_inst_param(message_reader, "message_reader", PipesMessageReader)
+            or PipesK8sPodLogsMessageReader()
         )
 
     def run(
@@ -122,8 +123,8 @@ class _ExtK8sPod(ExtClient):
         env: Optional[Mapping[str, str]] = None,
         base_pod_meta: Optional[Mapping[str, Any]] = None,
         base_pod_spec: Optional[Mapping[str, Any]] = None,
-        extras: Optional[ExtExtras] = None,
-    ) -> None:
+        extras: Optional[PipesExtras] = None,
+    ) -> Iterator[PipesResult]:
         """Publish a kubernetes pod and wait for it to complete, enriched with the ext protocol.
 
         Args:
@@ -144,21 +145,21 @@ class _ExtK8sPod(ExtClient):
                 Raw k8s config for the k8s pod's pod spec
                 (https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-v1/#PodSpec).
                 Keys can either snake_case or camelCase.
-            extras (Optional[ExtExtras]):
+            extras (Optional[PipesExtras]):
                 Extra values to pass along as part of the ext protocol.
-            context_injector (Optional[ExtContextInjector]):
+            context_injector (Optional[PipesContextInjector]):
                 Override the default ext protocol context injection.
-            message_Reader (Optional[ExtMessageReader]):
+            message_Reader (Optional[PipesMessageReader]):
                 Override the default ext protocol message reader.
         """
         client = DagsterKubernetesClient.production_client()
 
-        with ext_protocol(
+        with open_pipes_session(
             context=context,
             extras=extras,
             context_injector=self.context_injector,
             message_reader=self.message_reader,
-        ) as ext_context:
+        ) as pipes_session:
             namespace = namespace or "default"
             pod_name = get_pod_name(context.run_id, context.op.name)
             pod_body = build_pod_body(
@@ -166,7 +167,7 @@ class _ExtK8sPod(ExtClient):
                 image=image,
                 command=command,
                 env_vars={
-                    **ext_context.get_external_process_env_vars(),
+                    **pipes_session.get_pipes_env_vars(),
                     **(self.env or {}),
                     **(env or {}),
                 },
@@ -176,7 +177,7 @@ class _ExtK8sPod(ExtClient):
             client.core_api.create_namespaced_pod(namespace, pod_body)
             try:
                 # if were doing direct pod reading, wait for pod to start and then stream logs out
-                if isinstance(self.message_reader, K8sPodLogsMessageReader):
+                if isinstance(self.message_reader, PipesK8sPodLogsMessageReader):
                     client.wait_for_pod(
                         pod_name,
                         namespace,
@@ -196,6 +197,7 @@ class _ExtK8sPod(ExtClient):
                     )
             finally:
                 client.core_api.delete_namespaced_pod(pod_name, namespace)
+        return pipes_session.get_results()
 
 
 def build_pod_body(
@@ -254,4 +256,4 @@ def build_pod_body(
     )
 
 
-ExtK8sPod = ResourceParam[_ExtK8sPod]
+PipesK8sClient = ResourceParam[_PipesK8sClient]

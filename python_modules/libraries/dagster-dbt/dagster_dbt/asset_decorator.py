@@ -341,7 +341,7 @@ def get_dbt_multi_asset_args(
         ]
         for test_unique_id in test_unique_ids:
             test_resource_props = manifest["nodes"][test_unique_id]
-            check_spec = default_asset_check_fn(asset_key, test_resource_props)
+            check_spec = default_asset_check_fn(asset_key, unique_id, test_resource_props)
 
             if check_spec:
                 check_specs.append(check_spec)

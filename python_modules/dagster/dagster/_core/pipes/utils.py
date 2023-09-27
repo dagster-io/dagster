@@ -9,25 +9,26 @@ from contextlib import contextmanager
 from threading import Event, Thread
 from typing import Iterator, Optional
 
-from dagster_ext import (
-    ExtContextData,
-    ExtDefaultContextLoader,
-    ExtDefaultMessageWriter,
-    ExtExtras,
-    ExtParams,
+from dagster_pipes import (
+    PIPES_PROTOCOL_VERSION_FIELD,
+    DefaultPipesContextLoader,
+    PipesContextData,
+    PipesDefaultMessageWriter,
+    PipesExtras,
+    PipesParams,
 )
 
 from dagster import (
     OpExecutionContext,
     _check as check,
 )
-from dagster._core.ext.client import (
-    ExtContextInjector,
-    ExtMessageReader,
+from dagster._core.pipes.client import (
+    PipesContextInjector,
+    PipesMessageReader,
 )
-from dagster._core.ext.context import (
-    ExtMessageHandler,
-    ExtOrchestrationContext,
+from dagster._core.pipes.context import (
+    PipesMessageHandler,
+    PipesSession,
     build_external_execution_context_data,
 )
 from dagster._utils import tail_file
@@ -36,49 +37,49 @@ _CONTEXT_INJECTOR_FILENAME = "context"
 _MESSAGE_READER_FILENAME = "messages"
 
 
-class ExtFileContextInjector(ExtContextInjector):
+class PipesFileContextInjector(PipesContextInjector):
     def __init__(self, path: str):
         self._path = check.str_param(path, "path")
 
     @contextmanager
-    def inject_context(self, context_data: "ExtContextData") -> Iterator[ExtParams]:
+    def inject_context(self, context_data: "PipesContextData") -> Iterator[PipesParams]:
         with open(self._path, "w") as input_stream:
             json.dump(context_data, input_stream)
         try:
-            yield {ExtDefaultContextLoader.FILE_PATH_KEY: self._path}
+            yield {DefaultPipesContextLoader.FILE_PATH_KEY: self._path}
         finally:
             if os.path.exists(self._path):
                 os.remove(self._path)
 
 
-class ExtTempFileContextInjector(ExtContextInjector):
+class PipesTempFileContextInjector(PipesContextInjector):
     @contextmanager
-    def inject_context(self, context: "ExtContextData") -> Iterator[ExtParams]:
+    def inject_context(self, context: "PipesContextData") -> Iterator[PipesParams]:
         with tempfile.TemporaryDirectory() as tempdir:
-            with ExtFileContextInjector(
+            with PipesFileContextInjector(
                 os.path.join(tempdir, _CONTEXT_INJECTOR_FILENAME)
             ).inject_context(context) as params:
                 yield params
 
 
-class ExtEnvContextInjector(ExtContextInjector):
+class PipesEnvContextInjector(PipesContextInjector):
     @contextmanager
     def inject_context(
         self,
-        context_data: "ExtContextData",
-    ) -> Iterator[ExtParams]:
-        yield {ExtDefaultContextLoader.DIRECT_KEY: context_data}
+        context_data: "PipesContextData",
+    ) -> Iterator[PipesParams]:
+        yield {DefaultPipesContextLoader.DIRECT_KEY: context_data}
 
 
-class ExtFileMessageReader(ExtMessageReader):
+class PipesFileMessageReader(PipesMessageReader):
     def __init__(self, path: str):
         self._path = check.str_param(path, "path")
 
     @contextmanager
     def read_messages(
         self,
-        handler: "ExtMessageHandler",
-    ) -> Iterator[ExtParams]:
+        handler: "PipesMessageHandler",
+    ) -> Iterator[PipesParams]:
         is_task_complete = Event()
         thread = None
         try:
@@ -87,7 +88,7 @@ class ExtFileMessageReader(ExtMessageReader):
                 target=self._reader_thread, args=(handler, is_task_complete), daemon=True
             )
             thread.start()
-            yield {ExtDefaultMessageWriter.FILE_PATH_KEY: self._path}
+            yield {PipesDefaultMessageWriter.FILE_PATH_KEY: self._path}
         finally:
             is_task_complete.set()
             if os.path.exists(self._path):
@@ -95,26 +96,26 @@ class ExtFileMessageReader(ExtMessageReader):
             if thread:
                 thread.join()
 
-    def _reader_thread(self, handler: "ExtMessageHandler", is_resource_complete: Event) -> None:
+    def _reader_thread(self, handler: "PipesMessageHandler", is_resource_complete: Event) -> None:
         for line in tail_file(self._path, lambda: is_resource_complete.is_set()):
             message = json.loads(line)
             handler.handle_message(message)
 
 
-class ExtTempFileMessageReader(ExtMessageReader):
+class PipesTempFileMessageReader(PipesMessageReader):
     @contextmanager
     def read_messages(
         self,
-        handler: "ExtMessageHandler",
-    ) -> Iterator[ExtParams]:
+        handler: "PipesMessageHandler",
+    ) -> Iterator[PipesParams]:
         with tempfile.TemporaryDirectory() as tempdir:
-            with ExtFileMessageReader(
+            with PipesFileMessageReader(
                 os.path.join(tempdir, _MESSAGE_READER_FILENAME)
             ).read_messages(handler) as params:
                 yield params
 
 
-class ExtBlobStoreMessageReader(ExtMessageReader):
+class PipesBlobStoreMessageReader(PipesMessageReader):
     interval: float
     counter: int
 
@@ -125,8 +126,8 @@ class ExtBlobStoreMessageReader(ExtMessageReader):
     @contextmanager
     def read_messages(
         self,
-        handler: "ExtMessageHandler",
-    ) -> Iterator[ExtParams]:
+        handler: "PipesMessageHandler",
+    ) -> Iterator[PipesParams]:
         with self.get_params() as params:
             is_task_complete = Event()
             thread = None
@@ -149,13 +150,13 @@ class ExtBlobStoreMessageReader(ExtMessageReader):
 
     @abstractmethod
     @contextmanager
-    def get_params(self) -> Iterator[ExtParams]: ...
+    def get_params(self) -> Iterator[PipesParams]: ...
 
     @abstractmethod
-    def download_messages_chunk(self, index: int, params: ExtParams) -> Optional[str]: ...
+    def download_messages_chunk(self, index: int, params: PipesParams) -> Optional[str]: ...
 
     def _reader_thread(
-        self, handler: "ExtMessageHandler", params: ExtParams, is_task_complete: Event
+        self, handler: "PipesMessageHandler", params: PipesParams, is_task_complete: Event
     ) -> None:
         start_or_last_download = datetime.datetime.now()
         while True:
@@ -173,36 +174,41 @@ class ExtBlobStoreMessageReader(ExtMessageReader):
             time.sleep(1)
 
 
-def extract_message_or_forward_to_stdout(handler: "ExtMessageHandler", log_line: str):
+def extract_message_or_forward_to_stdout(handler: "PipesMessageHandler", log_line: str):
     # exceptions as control flow, you love to see it
     try:
         message = json.loads(log_line)
-        # need better message check
-        if message.keys() == {"method", "params"}:
+        if PIPES_PROTOCOL_VERSION_FIELD in message.keys():
             handler.handle_message(message)
     except Exception:
         # move non-message logs in to stdout for compute log capture
         sys.stdout.writelines((log_line, "\n"))
 
 
+_FAIL_TO_YIELD_ERROR_MESSAGE = (
+    "Did you forget to `yield from pipes_session.get_results()`? `get_results` should be called"
+    " once after the `open_pipes_session` block has exited to yield any remaining buffered results."
+)
+
+
 @contextmanager
-def ext_protocol(
+def open_pipes_session(
     context: OpExecutionContext,
-    context_injector: ExtContextInjector,
-    message_reader: ExtMessageReader,
-    extras: Optional[ExtExtras] = None,
-) -> Iterator[ExtOrchestrationContext]:
+    context_injector: PipesContextInjector,
+    message_reader: PipesMessageReader,
+    extras: Optional[PipesExtras] = None,
+) -> Iterator[PipesSession]:
     """Enter the context managed context injector and message reader that power the EXT protocol and receive the environment variables
     that need to be provided to the external process.
     """
+    # This will trigger an error if expected outputs are not yielded
+    context.set_requires_typed_event_stream(error_message=_FAIL_TO_YIELD_ERROR_MESSAGE)
     context_data = build_external_execution_context_data(context, extras)
-    message_handler = ExtMessageHandler(context)
+    message_handler = PipesMessageHandler(context)
     with context_injector.inject_context(
-        context_data,
-    ) as ci_params, message_reader.read_messages(
-        message_handler,
-    ) as mr_params:
-        yield ExtOrchestrationContext(
+        context_data
+    ) as ci_params, message_handler.handle_messages(message_reader) as mr_params:
+        yield PipesSession(
             context_data=context_data,
             message_handler=message_handler,
             context_injector_params=ci_params,

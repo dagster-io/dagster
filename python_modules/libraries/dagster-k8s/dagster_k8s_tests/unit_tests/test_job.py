@@ -641,22 +641,31 @@ def test_construct_dagster_k8s_job_with_labels():
         "foo_label_key": "bar_label_value",
     }
 
+    user_defined_labels = {
+        "user_label_key": "user_label_value",
+    }
+
     cfg = DagsterK8sJobConfig(
         job_image="test/foo:latest",
         dagster_home="/opt/dagster/dagster_home",
         instance_config_map="test",
         labels=job_config_labels,
     )
+
     job1 = construct_dagster_k8s_job(
         cfg,
         [],
         "job123",
+        user_defined_k8s_config=UserDefinedDagsterK8sConfig(
+            pod_template_spec_metadata={"labels": user_defined_labels},
+        ),
         labels={
             "dagster/job": "some_job",
             "dagster/op": "some_op",
             "dagster/run-id": "some_run_id",
         },
     ).to_dict()
+
     expected_labels1 = dict(
         **common_labels,
         **job_config_labels,
@@ -667,8 +676,13 @@ def test_construct_dagster_k8s_job_with_labels():
         },
     )
 
+    expected_template_labels1 = {
+        **expected_labels1,
+        **user_defined_labels,
+    }
+
     assert job1["metadata"]["labels"] == expected_labels1
-    assert job1["spec"]["template"]["metadata"]["labels"] == expected_labels1
+    assert job1["spec"]["template"]["metadata"]["labels"] == expected_template_labels1
 
     job2 = construct_dagster_k8s_job(
         cfg,
@@ -692,6 +706,39 @@ def test_construct_dagster_k8s_job_with_labels():
     )
     assert job2["metadata"]["labels"] == expected_labels2
     assert job2["spec"]["template"]["metadata"]["labels"] == expected_labels2
+
+
+def test_construct_dagster_k8s_job_with_label_precedence():
+    job_labels = {
+        "a": "job a",
+        "b": "job b",
+    }
+
+    user_labels = {
+        "a": "user a",
+    }
+
+    cfg = DagsterK8sJobConfig(
+        job_image="test/foo:latest",
+        dagster_home="/opt/dagster/dagster_home",
+        instance_config_map="test",
+        labels=job_labels,
+    )
+
+    job = construct_dagster_k8s_job(
+        cfg,
+        [],
+        "job123",
+        user_defined_k8s_config=UserDefinedDagsterK8sConfig(
+            pod_template_spec_metadata={"labels": user_labels},
+        ),
+    ).to_dict()
+
+    assert job["metadata"]["labels"]["a"] == "job a"
+    assert job["metadata"]["labels"]["b"] == "job b"
+
+    assert job["spec"]["template"]["metadata"]["labels"]["a"] == "user a"
+    assert job["spec"]["template"]["metadata"]["labels"]["b"] == "job b"
 
 
 def test_sanitize_labels():

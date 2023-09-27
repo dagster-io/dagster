@@ -469,6 +469,8 @@ def get_stats_from_external_repo(external_repo: "ExternalRepository") -> Mapping
     num_assets_in_repo = len(external_asset_nodes)
     external_resources = external_repo.get_external_resources()
 
+    num_checks = len(external_repo.external_repository_data.external_asset_checks or [])
+
     num_partitioned_assets_in_repo = 0
     num_multi_partitioned_assets_in_repo = 0
     num_dynamic_partitioned_assets_in_repo = 0
@@ -554,6 +556,7 @@ def get_stats_from_external_repo(external_repo: "ExternalRepository") -> Mapping
         "num_dbt_assets_in_repo": str(num_dbt_assets_in_repo),
         "num_assets_with_code_versions_in_repo": str(num_assets_with_code_versions_in_repo),
         "num_asset_reconciliation_sensors_in_repo": str(num_asset_reconciliation_sensors_in_repo),
+        "num_asset_checks": str(num_checks),
     }
 
 

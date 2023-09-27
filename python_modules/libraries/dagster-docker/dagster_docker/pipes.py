@@ -7,40 +7,41 @@ from dagster import (
     ResourceParam,
     _check as check,
 )
-from dagster._core.ext.client import (
-    ExtClient,
-    ExtContextInjector,
-    ExtMessageReader,
+from dagster._core.pipes.client import (
+    PipesClient,
+    PipesContextInjector,
+    PipesMessageReader,
 )
-from dagster._core.ext.context import (
-    ExtMessageHandler,
+from dagster._core.pipes.context import (
+    PipesMessageHandler,
+    PipesResult,
 )
-from dagster._core.ext.utils import (
-    ExtEnvContextInjector,
-    ext_protocol,
+from dagster._core.pipes.utils import (
+    PipesEnvContextInjector,
     extract_message_or_forward_to_stdout,
+    open_pipes_session,
 )
-from dagster_ext import (
-    DagsterExtError,
-    ExtDefaultMessageWriter,
-    ExtExtras,
-    ExtParams,
+from dagster_pipes import (
+    DagsterPipesError,
+    PipesDefaultMessageWriter,
+    PipesExtras,
+    PipesParams,
 )
 
 
-class DockerLogsMessageReader(ExtMessageReader):
+class DockerLogsMessageReader(PipesMessageReader):
     @contextmanager
     def read_messages(
         self,
-        handler: ExtMessageHandler,
-    ) -> Iterator[ExtParams]:
+        handler: PipesMessageHandler,
+    ) -> Iterator[PipesParams]:
         self._handler = handler
         try:
-            yield {ExtDefaultMessageWriter.STDIO_KEY: ExtDefaultMessageWriter.STDERR}
+            yield {PipesDefaultMessageWriter.STDIO_KEY: PipesDefaultMessageWriter.STDERR}
         finally:
             self._handler = None
 
-    def consume_docker_logs(self, container):
+    def consume_docker_logs(self, container) -> None:
         handler = check.not_none(
             self._handler, "Can only consume logs within context manager scope."
         )
@@ -48,25 +49,25 @@ class DockerLogsMessageReader(ExtMessageReader):
             extract_message_or_forward_to_stdout(handler, log_line)
 
 
-class _ExtDocker(ExtClient):
+class _PipesDockerClient(PipesClient):
     """An ext protocol compliant resource for launching docker containers.
 
-    By default context is injected via environment variables and messages are parsed out of the
-    log stream and other logs are forwarded to stdout of the orchestration process.
+        By default context is injected via environment variables and messages are parsed out of the
+        log stream and other logs are forwarded to stdout of the orchestration process.
 
     Args:
         env (Optional[Mapping[str, str]]): An optional dict of environment variables to pass to the subprocess.
         register (Optional[Mapping[str, str]]): An optional dict of registry credentials to login the docker client.
-        context_injector (Optional[ExtContextInjector]): An context injector to use to inject context into the docker container process. Defaults to ExtEnvContextInjector.
-        message_reader (Optional[ExtContextInjector]): An context injector to use to read messages from the docker container process. Defaults to DockerLogsMessageReader.
+        context_injector (Optional[PipesContextInjector]): An context injector to use to inject context into the docker container process. Defaults to PipesEnvContextInjector.
+        message_reader (Optional[PipesContextInjector]): An context injector to use to read messages from the docker container process. Defaults to DockerLogsMessageReader.
     """
 
     def __init__(
         self,
         env: Optional[Mapping[str, str]] = None,
         registry: Optional[Mapping[str, str]] = None,
-        context_injector: Optional[ExtContextInjector] = None,
-        message_reader: Optional[ExtMessageReader] = None,
+        context_injector: Optional[PipesContextInjector] = None,
+        message_reader: Optional[PipesMessageReader] = None,
     ):
         self.env = check.opt_mapping_param(env, "env", key_type=str, value_type=str)
         self.registry = check.opt_mapping_param(registry, "registry", key_type=str, value_type=str)
@@ -74,13 +75,13 @@ class _ExtDocker(ExtClient):
             check.opt_inst_param(
                 context_injector,
                 "context_injector",
-                ExtContextInjector,
+                PipesContextInjector,
             )
-            or ExtEnvContextInjector()
+            or PipesEnvContextInjector()
         )
 
         self.message_reader = (
-            check.opt_inst_param(message_reader, "message_reader", ExtMessageReader)
+            check.opt_inst_param(message_reader, "message_reader", PipesMessageReader)
             or DockerLogsMessageReader()
         )
 
@@ -93,8 +94,8 @@ class _ExtDocker(ExtClient):
         env: Optional[Mapping[str, str]] = None,
         registry: Optional[Mapping[str, str]] = None,
         container_kwargs: Optional[Mapping[str, Any]] = None,
-        extras: Optional[ExtExtras] = None,
-    ) -> None:
+        extras: Optional[PipesExtras] = None,
+    ) -> Iterator[PipesResult]:
         """Create a docker container and run it to completion, enriched with the ext protocol.
 
         Args:
@@ -110,19 +111,19 @@ class _ExtDocker(ExtClient):
                 with docker client login.
             container_kwargs (Optional[Mapping[str, Any]]:
                 Arguments to be forwarded to docker client containers.create.
-            extras (Optional[ExtExtras]):
+            extras (Optional[PipesExtras]):
                 Extra values to pass along as part of the ext protocol.
-            context_injector (Optional[ExtContextInjector]):
+            context_injector (Optional[PipesContextInjector]):
                 Override the default ext protocol context injection.
-            message_Reader (Optional[ExtMessageReader]):
+            message_Reader (Optional[PipesMessageReader]):
                 Override the default ext protocol message reader.
         """
-        with ext_protocol(
+        with open_pipes_session(
             context=context,
             context_injector=self.context_injector,
             message_reader=self.message_reader,
             extras=extras,
-        ) as ext_context:
+        ) as pipes_session:
             client = docker.client.from_env()
             registry = registry or self.registry
             if registry:
@@ -138,7 +139,7 @@ class _ExtDocker(ExtClient):
                     image=image,
                     command=command,
                     env=env,
-                    ext_protocol_env=ext_context.get_external_process_env_vars(),
+                    open_pipes_session_env=pipes_session.get_pipes_env_vars(),
                     container_kwargs=container_kwargs,
                 )
             except docker.errors.ImageNotFound:
@@ -148,7 +149,7 @@ class _ExtDocker(ExtClient):
                     image=image,
                     command=command,
                     env=env,
-                    ext_protocol_env=ext_context.get_external_process_env_vars(),
+                    open_pipes_session_env=pipes_session.get_pipes_env_vars(),
                     container_kwargs=container_kwargs,
                 )
 
@@ -159,9 +160,10 @@ class _ExtDocker(ExtClient):
 
                 result = container.wait()
                 if result["StatusCode"] != 0:
-                    raise DagsterExtError(f"Container exited with non-zero status code: {result}")
+                    raise DagsterPipesError(f"Container exited with non-zero status code: {result}")
             finally:
                 container.stop()
+        return pipes_session.get_results()
 
     def _create_container(
         self,
@@ -170,7 +172,7 @@ class _ExtDocker(ExtClient):
         command: Union[str, Sequence[str]],
         env: Optional[Mapping[str, str]],
         container_kwargs: Optional[Mapping[str, Any]],
-        ext_protocol_env: Mapping[str, str],
+        open_pipes_session_env: Mapping[str, str],
     ):
         kwargs = dict(container_kwargs or {})
         kwargs_env = kwargs.pop("environment", {})
@@ -179,7 +181,7 @@ class _ExtDocker(ExtClient):
             command=command,
             detach=True,
             environment={
-                **ext_protocol_env,
+                **open_pipes_session_env,
                 **(self.env or {}),
                 **(env or {}),
                 **kwargs_env,
@@ -188,4 +190,4 @@ class _ExtDocker(ExtClient):
         )
 
 
-ExtDocker = ResourceParam[_ExtDocker]
+PipesDockerClient = ResourceParam[_PipesDockerClient]

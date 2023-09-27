@@ -17,6 +17,7 @@ from dagster import (
     SourceAsset,
     StaticPartitionsDefinition,
     asset,
+    asset_check,
     define_asset_job,
     io_manager,
     observable_source_asset,
@@ -331,6 +332,23 @@ def test_get_stats_from_external_repo_code_versions():
     )
     stats = get_stats_from_external_repo(external_repo)
     assert stats["num_assets_with_code_versions_in_repo"] == "1"
+
+
+def test_get_stats_from_external_repo_code_checks():
+    @asset
+    def my_asset(): ...
+
+    @asset_check(asset=my_asset)
+    def my_check(): ...
+
+    external_repo = ExternalRepository(
+        external_repository_data_from_def(
+            Definitions(assets=[my_asset], asset_checks=[my_check]).get_repository_def()
+        ),
+        repository_handle=MagicMock(spec=RepositoryHandle),
+    )
+    stats = get_stats_from_external_repo(external_repo)
+    assert stats["num_asset_checks"] == "1"
 
 
 def test_get_stats_from_external_repo_dbt():

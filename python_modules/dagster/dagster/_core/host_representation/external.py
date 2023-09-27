@@ -16,7 +16,7 @@ from typing import (
 
 import dagster._check as check
 from dagster._config.snap import ConfigFieldSnap, ConfigSchemaSnapshot
-from dagster._core.definitions.asset_check_spec import AssetCheckHandle
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import (
     MetadataValue,
@@ -387,7 +387,7 @@ class ExternalJob(RepresentedJob):
         )
 
     @property
-    def asset_check_selection(self) -> Optional[AbstractSet[AssetCheckHandle]]:
+    def asset_check_selection(self) -> Optional[AbstractSet[AssetCheckKey]]:
         return (
             self._job_index.job_snapshot.lineage_snapshot.asset_check_selection
             if self._job_index.job_snapshot.lineage_snapshot
