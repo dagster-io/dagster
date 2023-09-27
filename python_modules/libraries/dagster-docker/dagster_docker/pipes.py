@@ -122,7 +122,7 @@ class _PipesDockerClient(PipesClient):
                 Extra values to pass along as part of the ext protocol.
             context_injector (Optional[PipesContextInjector]):
                 Override the default ext protocol context injection.
-            message_Reader (Optional[PipesMessageReader]):
+            message_reader (Optional[PipesMessageReader]):
                 Override the default ext protocol message reader.
 
         Yields:
