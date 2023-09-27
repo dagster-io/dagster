@@ -581,7 +581,7 @@ def _attempt_resolve_cycles(
             ret.append(assets_def)
         else:
             for asset_keys in color_mapping.values():
-                ret.append(assets_def.subset_for(asset_keys))
+                ret.append(assets_def.subset_for(asset_keys, selected_asset_check_keys=None))
 
     return ret
 
