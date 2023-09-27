@@ -21,7 +21,7 @@ from dagster._core.pipes.context import (
     PipesResult,
 )
 from dagster._core.pipes.utils import (
-    ExtEnvContextInjector,
+    PipesEnvContextInjector,
     extract_message_or_forward_to_stdout,
     open_pipes_session,
 )
@@ -88,7 +88,7 @@ class _ExtK8sPod(PipesClient):
 
     Args:
         env (Optional[Mapping[str, str]]): An optional dict of environment variables to pass to the subprocess.
-        context_injector (Optional[PipesContextInjector]): An context injector to use to inject context into the k8s container process. Defaults to ExtEnvContextInjector.
+        context_injector (Optional[PipesContextInjector]): An context injector to use to inject context into the k8s container process. Defaults to PipesEnvContextInjector.
         message_reader (Optional[PipesContextInjector]): An context injector to use to read messages from the k8s container process. Defaults to K8sPodLogsMessageReader.
     """
 
@@ -105,7 +105,7 @@ class _ExtK8sPod(PipesClient):
                 "context_injector",
                 PipesContextInjector,
             )
-            or ExtEnvContextInjector()
+            or PipesEnvContextInjector()
         )
 
         self.message_reader = (

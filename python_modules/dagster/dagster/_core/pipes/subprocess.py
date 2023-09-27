@@ -14,7 +14,7 @@ from dagster._core.pipes.client import (
 )
 from dagster._core.pipes.context import PipesResult
 from dagster._core.pipes.utils import (
-    ExtTempFileContextInjector,
+    PipesTempFileContextInjector,
     PipesTempFileMessageReader,
     open_pipes_session,
 )
@@ -29,8 +29,8 @@ class _PipesSubprocess(PipesClient):
     Args:
         env (Optional[Mapping[str, str]]): An optional dict of environment variables to pass to the subprocess.
         cwd (Optional[str]): Working directory in which to launch the subprocess command.
-        context_injector (Optional[PipesContextInjector]): An context injector to use to inject context into the subprocess. Defaults to ExtTempFileContextInjector.
-        message_reader (Optional[PipesContextInjector]): An context injector to use to read messages from  the subprocess. Defaults to ExtTempFileMessageReader.
+        context_injector (Optional[PipesContextInjector]): An context injector to use to inject context into the subprocess. Defaults to PipesTempFileContextInjector.
+        message_reader (Optional[PipesContextInjector]): An context injector to use to read messages from  the subprocess. Defaults to PipesTempFileMessageReader.
     """
 
     def __init__(
@@ -48,7 +48,7 @@ class _PipesSubprocess(PipesClient):
                 "context_injector",
                 PipesContextInjector,
             )
-            or ExtTempFileContextInjector()
+            or PipesTempFileContextInjector()
         )
         self.message_reader = (
             check.opt_inst_param(
