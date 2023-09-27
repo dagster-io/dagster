@@ -685,7 +685,7 @@ class PipesContext:
     def get(cls) -> "PipesContext":
         if cls._instance is None:
             raise Exception(
-                "ExtContext has not been initialized. You must call `init_dagster_ext()`."
+                "ExtContext has not been initialized. You must call `init_dagster_pipes()`."
             )
         return cls._instance
 
