@@ -75,7 +75,7 @@ class PipesMessageHandler:
         elif metadata_type == "notebook":
             return MetadataValue.notebook(value)
         elif metadata_type == "json":
-        return MetadataValue.json(value)
+            return MetadataValue.json(value)
         elif metadata_type == "md":
             return MetadataValue.md(value)
         elif metadata_type == "float":
