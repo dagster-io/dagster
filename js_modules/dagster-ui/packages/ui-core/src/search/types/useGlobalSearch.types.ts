@@ -48,7 +48,11 @@ export type SearchPrimaryQuery = {
                     name: string;
                     pipelineName: string;
                   }>;
-                  allTopLevelResourceDetails: Array<{__typename: 'ResourceDetails'; name: string}>;
+                  allTopLevelResourceDetails: Array<{
+                    __typename: 'ResourceDetails';
+                    id: string;
+                    name: string;
+                  }>;
                 }>;
               }
             | null;

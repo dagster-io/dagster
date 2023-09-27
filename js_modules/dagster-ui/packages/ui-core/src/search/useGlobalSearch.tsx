@@ -268,6 +268,7 @@ export const SEARCH_PRIMARY_QUERY = gql`
                     pipelineName
                   }
                   allTopLevelResourceDetails {
+                    id
                     name
                   }
                 }
