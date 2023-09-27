@@ -15,7 +15,7 @@ Backfills are common when setting up a pipeline for the first time. The assets y
 
 ## Launching backfills for partitioned assets
 
-To launch backfills for a partitioned asset, click the **Materialize** button on either the [**Asset details**](/concepts/partitions-schedules-sensors/partitions#materializing-partitioned-assets) or the **Global asset lineage** page. The backfill modal will display.
+To launch backfills for a partitioned asset, click the **Materialize** button on either the [**Asset details**](/concepts/partitions-schedules-sensors/partitioning-assets) or the **Global asset lineage** page. The backfill modal will display.
 
 Backfills can also be launched for a selection of partitioned assets as long as the most upstream assets share the same partitioning. For example: All partitions use a `DailyPartitionsDefinition`.
 
@@ -92,7 +92,7 @@ class MyIOManager(IOManager):
 
 ## Launching backfills for partitioned jobs
 
-To launch and monitor backfills for a job, use the [**Partitions** tab](/concepts/partitions-schedules-sensors/partitions#dagster-ui-partitions-tab) in the job's **Details** page:
+To launch and monitor backfills for a job, use the [**Partitions** tab](/concepts/webserver/ui#partitions-tab) in the job's **Details** page:
 
 1. Click the **Launch backfill** button in the **Partitions** tab. This opens the **Launch backfill** modal.
 2. Select the partitions to backfill. A run will be launched for each partition.
