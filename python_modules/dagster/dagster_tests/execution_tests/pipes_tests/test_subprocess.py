@@ -92,7 +92,7 @@ def external_script() -> Iterator[str]:
 
         init_dagster_pipes(message_writer=message_writer)
         context = PipesContext.get()
-        context.log("hello world")
+        context.log.info("hello world")
         time.sleep(0.1)  # sleep to make sure that we encompass multiple intervals for blob store IO
         context.report_asset_materialization(
             metadata={"bar": {"raw_value": context.get_extra("bar"), "type": "md"}},

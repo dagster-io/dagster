@@ -29,7 +29,7 @@ def script_fn():
     multiplier = context.get_extra("multiplier")
     value = 2 * multiplier
 
-    context.log(f"{context.asset_key}: {2} * {multiplier} = {value}")
+    context.log.info(f"{context.asset_key}: {2} * {multiplier} = {value}")
     context.report_asset_materialization(
         metadata={"value": value},
         data_version="alpha",
