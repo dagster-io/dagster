@@ -9,5 +9,5 @@ number_x = load_asset_value("number_x", storage_root)
 value = number_x + number_y
 store_asset_value("number_sum", storage_root, value)
 
-context.log(f"{context.asset_key}: {number_x} + {number_y} = {value}")
+context.log.info(f"{context.asset_key}: {number_x} + {number_y} = {value}")
 context.report_asset_materialization(data_version=compute_data_version(value))

@@ -20,6 +20,7 @@ from dagster_pipes import (
 from typing_extensions import TypeAlias
 
 import dagster._check as check
+from dagster._annotations import experimental, public
 from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.data_version import DataProvenance, DataVersion
@@ -35,7 +36,14 @@ from dagster._core.pipes.client import PipesMessageReader
 PipesExecutionResult: TypeAlias = Union[MaterializeResult, AssetCheckResult]
 
 
+@experimental
 class PipesMessageHandler:
+    """Class to process :py:obj:`PipesMessage` objects received from a pipes process.
+
+    Args:
+        context (OpExecutionContext): The context for the executing op/asset.
+    """
+
     def __init__(self, context: OpExecutionContext) -> None:
         self._context = context
         # Queue is thread-safe
@@ -128,13 +136,13 @@ class PipesMessageHandler:
         self,
         asset_key: str,
         check_name: str,
-        success: bool,
+        passed: bool,
         severity: str,
         metadata: Mapping[str, PipesMetadataValue],
     ) -> None:
         check.str_param(asset_key, "asset_key")
         check.str_param(check_name, "check_name")
-        check.bool_param(success, "success")
+        check.bool_param(passed, "passed")
         check.literal_param(severity, "severity", [x.value for x in AssetCheckSeverity])
         metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
         resolved_asset_key = AssetKey.from_user_string(asset_key)
@@ -143,7 +151,7 @@ class PipesMessageHandler:
         result = AssetCheckResult(
             asset_key=resolved_asset_key,
             check_name=check_name,
-            success=success,
+            passed=passed,
             severity=resolved_severity,
             metadata=resolved_metadata,
         )
@@ -163,14 +171,54 @@ def _ext_params_as_env_vars(
     }
 
 
+@experimental
 @dataclass
 class PipesSession:
+    """Object representing a pipes session.
+
+    A pipes session is defined by a pair of :py:class:`PipesContextInjector` and
+    :py:class:`PipesMessageReader` objects. At the opening of the session, the context injector
+    writes context data to an externally accessible location, and the message reader starts
+    monitoring an externally accessible location. These locations are encoded in parameters stored
+    on a `PipesSession` object.
+
+    During the session, an external process should be started and the parameters injected into its
+    environment. The typical way to do this is to call :py:meth:`PipesSession.get_pipes_env_vars`
+    and pass the result as environment variables.
+
+    During execution, results (e.g. asset materializations) are reported by the external process and
+    buffered on the `PipesSession` object. The buffer can periodically be cleared and yielded to
+    Dagster machinery by calling `yield from PipesSession.get_results()`.
+
+    When the external process exits, the session can be closed. Closing consists of handling any
+    unprocessed messages written by the external process and cleaning up any resources used for
+    context injection and message reading.
+
+    Args:
+        context_data (PipesContextData): The context for the executing op/asset.
+        message_handler (PipesMessageHandler): The message handler to use for processing messages
+        context_injector_params (PipesParams): Parameters yielded by the context injector,
+            indicating the location from which the external process should load context data.
+        message_reader_params (PipesParams): Parameters yielded by the message reader, indicating
+            the location to which the external process should write messages.
+    """
+
     context_data: PipesContextData
     message_handler: PipesMessageHandler
     context_injector_params: PipesParams
     message_reader_params: PipesParams
 
+    @public
     def get_pipes_env_vars(self) -> Dict[str, str]:
+        """Encode context injector and message reader params as environment variables.
+
+        Passing environment variables is the typical way to expose the pipes I/O parameters
+        to a pipes process.
+
+        Returns:
+            Mapping[str, str]: Environment variables to pass to the external process. The values are
+                base-64-encoded and compressed with gzip.
+        """
         return {
             DAGSTER_PIPES_ENV_KEYS[IS_DAGSTER_PIPES_PROCESS]: encode_env_var(True),
             **_ext_params_as_env_vars(
@@ -179,7 +227,16 @@ class PipesSession:
             ),
         }
 
+    @public
     def get_results(self) -> Iterator[PipesExecutionResult]:
+        """Iterator over buffered :py:class:`PipesExecutionResult` objects received from the
+        external process.
+
+        When this is called it clears the results buffer.
+
+        Yields:
+            ExtResult: Result reported by external process.
+        """
         yield from self.message_handler.clear_result_queue()
 
 

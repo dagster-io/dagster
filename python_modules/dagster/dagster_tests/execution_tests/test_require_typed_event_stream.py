@@ -117,7 +117,7 @@ def test_requires_typed_event_stream_asset():
     def asset_succeeds_check_separate_yield(context: OpExecutionContext):
         context.set_requires_typed_event_stream(error_message=EXTRA_ERROR_MESSAGE)
         yield MaterializeResult()
-        yield AssetCheckResult(success=True)
+        yield AssetCheckResult(passed=True)
 
     assert materialize([asset_succeeds_check_separate_yield])
 
@@ -128,7 +128,7 @@ def test_requires_typed_event_stream_asset():
     )
     def asset_succeeds_check_separate_return(context: OpExecutionContext):
         context.set_requires_typed_event_stream(error_message=EXTRA_ERROR_MESSAGE)
-        return MaterializeResult(), AssetCheckResult(success=True)
+        return MaterializeResult(), AssetCheckResult(passed=True)
 
     assert materialize([asset_succeeds_check_separate_return])
 
@@ -139,7 +139,7 @@ def test_requires_typed_event_stream_asset():
     )
     def asset_succeeds_check_embedded_yield(context: OpExecutionContext):
         context.set_requires_typed_event_stream(error_message=EXTRA_ERROR_MESSAGE)
-        yield MaterializeResult(check_results=[AssetCheckResult(success=True)])
+        yield MaterializeResult(check_results=[AssetCheckResult(passed=True)])
 
     assert materialize([asset_succeeds_check_embedded_yield])
 
@@ -150,7 +150,7 @@ def test_requires_typed_event_stream_asset():
     )
     def asset_succeeds_check_embedded_return(context: OpExecutionContext):
         context.set_requires_typed_event_stream(error_message=EXTRA_ERROR_MESSAGE)
-        return MaterializeResult(check_results=[AssetCheckResult(success=True)])
+        return MaterializeResult(check_results=[AssetCheckResult(passed=True)])
 
     assert materialize([asset_succeeds_check_embedded_return])
 

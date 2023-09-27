@@ -97,7 +97,7 @@ def test_asset_check_execution(dbt_commands: List[List[str]]) -> None:
 
     assert (
         AssetCheckResult(
-            success=True,
+            passed=True,
             asset_key=AssetKey(["customers"]),
             check_name="unique_customers_customer_id",
             metadata={
@@ -112,7 +112,7 @@ def test_asset_check_execution(dbt_commands: List[List[str]]) -> None:
     )
     assert (
         AssetCheckResult(
-            success=True,
+            passed=True,
             asset_key=AssetKey(["customers"]),
             check_name="not_null_customers_customer_id",
             metadata={

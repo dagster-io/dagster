@@ -8,6 +8,7 @@ from dagster import (
     OpExecutionContext,
     _check as check,
 )
+from dagster._annotations import experimental
 from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.pipes.client import (
@@ -45,7 +46,10 @@ def get_pod_name(run_id: str, op_name: str):
 DEFAULT_CONTAINER_NAME = "dagster-pipes-execution"
 
 
+@experimental
 class PipesK8sPodLogsMessageReader(PipesMessageReader):
+    """Message reader that reads messages from kubernetes pod logs."""
+
     @contextmanager
     def read_messages(
         self,
@@ -77,19 +81,23 @@ class PipesK8sPodLogsMessageReader(PipesMessageReader):
                 extract_message_or_forward_to_stdout(handler, log_line)
 
 
+@experimental
 class _PipesK8sClient(PipesClient):
-    """An ext protocol compliant resource for launching kubernetes pods.
+    """A pipes client for launching kubernetes pods.
 
     By default context is injected via environment variables and messages are parsed out of
     the pod logs, with other logs forwarded to stdout of the orchestration process.
 
     The first container within the containers list of the pod spec is expected (or set) to be
-    the container prepared for ext protocol communication.
+    the container prepared for pipes protocol communication.
 
     Args:
-        env (Optional[Mapping[str, str]]): An optional dict of environment variables to pass to the subprocess.
-        context_injector (Optional[PipesContextInjector]): An context injector to use to inject context into the k8s container process. Defaults to PipesEnvContextInjector.
-        message_reader (Optional[PipesContextInjector]): An context injector to use to read messages from the k8s container process. Defaults to PipesK8sPodLogsMessageReader.
+        env (Optional[Mapping[str, str]]): An optional dict of environment variables to pass to the
+            subprocess.
+        context_injector (Optional[PipesContextInjector]): A context injector to use to inject
+            context into the k8s container process. Defaults to :py:class:`PipesEnvContextInjector`.
+        message_reader (Optional[PipesMessageReader]): A message reader to use to read messages
+            from the k8s container process. Defaults to :py:class:`PipesK8sPodLogsMessageReader`.
     """
 
     def __init__(
@@ -151,6 +159,9 @@ class _PipesK8sClient(PipesClient):
                 Override the default ext protocol context injection.
             message_Reader (Optional[PipesMessageReader]):
                 Override the default ext protocol message reader.
+
+        Yields:
+            PipesExecutionResult: Results reported by the external process.
         """
         client = DagsterKubernetesClient.production_client()
 

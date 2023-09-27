@@ -2552,7 +2552,7 @@ class SqlEventLogStorage(EventLogStorage):
                     run_id=event.run_id,
                     execution_status=(
                         AssetCheckExecutionRecordStatus.SUCCEEDED.value
-                        if evaluation.success
+                        if evaluation.passed
                         else AssetCheckExecutionRecordStatus.FAILED.value
                     ),
                     evaluation_event=serialize_value(event),
@@ -2584,7 +2584,7 @@ class SqlEventLogStorage(EventLogStorage):
                 .values(
                     execution_status=(
                         AssetCheckExecutionRecordStatus.SUCCEEDED.value
-                        if evaluation.success
+                        if evaluation.passed
                         else AssetCheckExecutionRecordStatus.FAILED.value
                     ),
                     evaluation_event=serialize_value(event),

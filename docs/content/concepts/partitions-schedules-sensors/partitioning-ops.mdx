@@ -1,0 +1,251 @@
+---
+title: Partitioning ops | Dagster
+description: Partitioned ops enable launching backfills, where each partition processes a subset of data.
+---
+
+# Partitioning ops
+
+<Note>
+  This page is specific to <strong>ops</strong>. Looking for Software-defined
+  Assets? Refer to the{" "}
+  <a href="/concepts/partitions-schedules-sensors/partitioning-assets">
+    Partitioned assets
+  </a>{" "}
+  documentation.
+</Note>
+
+When defining a job that uses [ops](/concepts/ops-jobs-graphs/ops), you can partition it by supplying <PyObject object="PartitionedConfig" /> object as its config.
+
+In this guide, we'll demonstrate to use partitions with ops and [jobs](/concepts/ops-jobs-graphs/jobs).
+
+---
+
+## Prerequisites
+
+Before continuing, you should be familiar with:
+
+- [Ops](/concepts/ops-jobs-graphs/ops)
+- [Jobs](/concepts/ops-jobs-graphs/jobs)
+- [Run configuration](/concepts/configuration/config-schema)
+
+---
+
+## Relevant APIs
+
+| Name                                                       | Description                                                                                         |
+| ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| <PyObject object="PartitionedConfig" />                    | Determines a set of partitions and how to generate run config for a partition.                      |
+| <PyObject object="daily_partitioned_config" decorator />   | Decorator for constructing partitioned config where each partition is a date.                       |
+| <PyObject object="hourly_partitioned_config" decorator />  | Decorator for constructing partitioned config where each partition is an hour of a date.            |
+| <PyObject object="weekly_partitioned_config" decorator />  | Decorator for constructing partitioned config where each partition is a week.                       |
+| <PyObject object="monthly_partitioned_config" decorator /> | Decorator for constructing partitioned config where each partition is a month.                      |
+| <PyObject object="static_partitioned_config" decorator />  | Decorator for constructing partitioned config for a static set of partition keys.                   |
+| <PyObject object="dynamic_partitioned_config" decorator /> | Decorator for constructing partitioned config for a set of partition keys that can grow over time.  |
+| <PyObject object="build_schedule_from_partitioned_job" />  | A function that constructs a schedule whose interval matches the partitioning of a partitioned job. |
+
+---
+
+## Defining jobs with time partitions
+
+The most common kind of partitioned job is a time-partitioned job - each partition is a time window, and each run for a partition processes data within that time window.
+
+- [Non-partitioned job with date config](#non-partitioned-job-with-date-config)
+- [Date-partitioned job](#date-partitioned-job)
+
+### Non-partitioned job with date config
+
+Before we dive in, let's look at a non-partitioned job that computes some data for a given date:
+
+```python file=/concepts/partitions_schedules_sensors/date_config_job.py
+from dagster import Config, job, op
+
+
+class ProcessDateConfig(Config):
+    date: str
+
+
+@op
+def process_data_for_date(context, config: ProcessDateConfig):
+    date = config.date
+    context.log.info(f"processing data for {date}")
+
+
+@job
+def do_stuff():
+    process_data_for_date()
+```
+
+It takes, as config, a string `date`. This piece of config defines which date to compute data for. For example, if you wanted to compute for `May 5th, 2020`, you would execute the graph with the following config:
+
+```python file=/concepts/partitions_schedules_sensors/config.yaml
+graph:
+  process_data_for_date:
+    config:
+      date: "2020-05-05"
+```
+
+### Date-partitioned job
+
+With the job above, it's possible to supply any value for the `date` param. This means if you wanted to launch a backfill, Dagster wouldn't know what values to run it on. You can instead build a partitioned job that operates on a defined set of dates.
+
+First, define the <PyObject object="PartitionedConfig"/>. In this case, because each partition is a date, you can use the <PyObject object="daily_partitioned_config" decorator /> decorator. This decorator defines the full set of partitions - every date between the start date and the current date, as well as how to determine the run config for a given partition.
+
+```python file=/concepts/partitions_schedules_sensors/partitioned_job.py startafter=start_partitioned_config endbefore=end_partitioned_config
+from dagster import daily_partitioned_config
+from datetime import datetime
+
+
+@daily_partitioned_config(start_date=datetime(2020, 1, 1))
+def my_partitioned_config(start: datetime, _end: datetime):
+    return {
+        "ops": {
+            "process_data_for_date": {"config": {"date": start.strftime("%Y-%m-%d")}}
+        }
+    }
+```
+
+Then you can build a job that uses the `PartitionedConfig` by supplying it to the `config` argument when you construct the job:
+
+```python file=/concepts/partitions_schedules_sensors/partitioned_job.py startafter=start_partitioned_job endbefore=end_partitioned_job
+@job(config=my_partitioned_config)
+def do_stuff_partitioned():
+    process_data_for_date()
+```
+
+---
+
+## Defining jobs with static partitions
+
+Not all jobs are partitioned by time. For example, the following example shows a partitioned job where the partitions are continents:
+
+```python file=/concepts/partitions_schedules_sensors/static_partitioned_job.py
+from dagster import Config, job, op, static_partitioned_config
+
+CONTINENTS = [
+    "Africa",
+    "Antarctica",
+    "Asia",
+    "Europe",
+    "North America",
+    "Oceania",
+    "South America",
+]
+
+
+@static_partitioned_config(partition_keys=CONTINENTS)
+def continent_config(partition_key: str):
+    return {"ops": {"continent_op": {"config": {"continent_name": partition_key}}}}
+
+
+class ContinentOpConfig(Config):
+    continent_name: str
+
+
+@op
+def continent_op(context, config: ContinentOpConfig):
+    context.log.info(config.continent_name)
+
+
+@job(config=continent_config)
+def continent_job():
+    continent_op()
+```
+
+---
+
+## Creating schedules from partitioned jobs
+
+Running a partitioned job on a schedule is a common use case. For example, if your job has a partition for each date, you likely want to run that job every day, on the partition for that day.
+
+The <PyObject object="build_schedule_from_partitioned_job"/> function allows you to construct a schedule from a date partitioned job. It creates a schedule with an interval which matches the spacing of your partition. If you wanted to create a schedule for `do_stuff_partitioned` job defined above, you could write:
+
+```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_marker endbefore=end_marker
+from dagster import build_schedule_from_partitioned_job, job
+
+
+@job(config=my_partitioned_config)
+def do_stuff_partitioned():
+    ...
+
+
+do_stuff_partitioned_schedule = build_schedule_from_partitioned_job(
+    do_stuff_partitioned,
+)
+```
+
+Schedules can also be made from static partitioned jobs. If you wanted to make a schedule for the `continent_job` above that runs each partition, you could write:
+
+```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_static_partition endbefore=end_static_partition
+from dagster import schedule, RunRequest
+
+
+@schedule(cron_schedule="0 0 * * *", job=continent_job)
+def continent_schedule():
+    for c in CONTINENTS:
+        yield RunRequest(run_key=c, partition_key=c)
+```
+
+Or a schedule that will run a subselection of the partition:
+
+```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_single_partition endbefore=end_single_partition
+@schedule(cron_schedule="0 0 * * *", job=continent_job)
+def antarctica_schedule():
+    return RunRequest(partition_key="Antarctica")
+```
+
+Refer to the [Schedules documentation](/concepts/partitions-schedules-sensors/schedules#schedules-from-partitioned-assets-and-jobs) for more info about constructing both schedule types.
+
+---
+
+## Partitions in the Dagster UI
+
+In the UI, you can view runs by partition in the **Partitions tab** of a **Job** page:
+
+<Image
+alt="Partitions Tab"
+src="/images/concepts/partitions-schedules-sensors/partitions/partitioned-job.png"
+width={2662}
+height={1618}
+/>
+
+In the **Run Matrix**, each column corresponds to one of the partitions in the job. The time listed corresponds to the start time of the partition. Each row corresponds to one of the steps in the job. You can click on an individual box to navigate to logs and run information for the step.
+
+You can view and use partitions in the UI Launchpad tab for a job. In the top bar, you can select from the list of all available partitions. Within the config editor, the config for the selected partition will be populated.
+
+In the screenshot below, we select the `2020-01-02` partition, and we can see that the run config for the partition has been populated in the editor.
+
+<Image
+alt="Partitions in the Dagster UI Launchpad"
+src="/images/concepts/partitions-schedules-sensors/partitions/launchpad.png"
+width={2662}
+height={1618}
+/>
+
+In addition to the <PyObject object="daily_partitioned_config" decorator /> decorator, Dagster also provides <PyObject object="monthly_partitioned_config" decorator />, <PyObject object="weekly_partitioned_config" decorator />, <PyObject object="hourly_partitioned_config" decorator />. See the API docs for each of these decorators for more information on how partitions are built based on different `start_date`, `minute_offset`, `hour_offset`, and `day_offset` inputs.
+
+---
+
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    href="/concepts/partitions-schedules-sensors/partitions"
+    title="Partitions"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/concepts/partitions-schedules-sensors/partitioning-assets"
+    title="Partitioned assets"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/concepts/partitions-schedules-sensors/testing-partitions"
+    title="Testing partitioned config and jobs"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/concepts/ops-jobs-graphs/ops"
+    title="Ops"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/concepts/ops-jobs-graphs/jobs"
+    title="Jobs"
+  ></ArticleListItem>
+</ArticleList>

@@ -97,6 +97,10 @@
           {
             "title": "Auto-materializing assets",
             "path": "/concepts/assets/asset-auto-execution"
+          },
+          {
+            "title": "Asset checks (Experimental)",
+            "path": "/concepts/assets/asset-checks"
           }
         ]
       },
@@ -123,7 +127,21 @@
         "children": [
           {
             "title": "Partitions",
-            "path": "/concepts/partitions-schedules-sensors/partitions"
+            "path": "/concepts/partitions-schedules-sensors/partitions",
+            "children": [
+              {
+                "title": "Partitioning assets",
+                "path": "/concepts/partitions-schedules-sensors/partitioning-assets"
+              },
+              {
+                "title": "Partitioning ops (Advanced)",
+                "path": "/concepts/partitions-schedules-sensors/partitioning-ops"
+              },
+              {
+                "title": "Testing partitions",
+                "path": "/concepts/partitions-schedules-sensors/testing-partitions"
+              }
+            ]
           },
           {
             "title": "Backfills",

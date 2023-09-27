@@ -2,10 +2,13 @@ from unittest.mock import MagicMock
 
 import pytest
 from dagster_pipes import (
+    PIPES_PROTOCOL_VERSION,
+    PIPES_PROTOCOL_VERSION_FIELD,
     DagsterPipesError,
     PipesContext,
     PipesContextData,
     PipesDataProvenance,
+    PipesMessage,
     PipesPartitionKeyRange,
     PipesTimeWindow,
 )
@@ -182,3 +185,37 @@ def test_report_twice_materialized():
     with pytest.raises(DagsterPipesError, match="already been materialized"):
         context.report_asset_materialization(asset_key="foo")
         context.report_asset_materialization(asset_key="foo")
+
+
+def _make_pipes_message(method, params):
+    return PipesMessage(
+        {
+            PIPES_PROTOCOL_VERSION_FIELD: PIPES_PROTOCOL_VERSION,
+            "method": method,
+            "params": params,
+        }
+    )
+
+
+def test_log():
+    context = _make_external_execution_context(asset_keys=["foo"])
+    context.log.critical("foo")
+    context._message_channel.write_message.assert_called_with(  # noqa: SLF001
+        _make_pipes_message(method="log", params={"level": "CRITICAL", "message": "foo"})
+    )
+    context.log.error("foo")
+    context._message_channel.write_message.assert_called_with(  # noqa: SLF001
+        _make_pipes_message(method="log", params={"level": "ERROR", "message": "foo"})
+    )
+    context.log.warning("foo")
+    context._message_channel.write_message.assert_called_with(  # noqa: SLF001
+        _make_pipes_message(method="log", params={"level": "WARNING", "message": "foo"})
+    )
+    context.log.info("foo")
+    context._message_channel.write_message.assert_called_with(  # noqa: SLF001
+        _make_pipes_message(method="log", params={"level": "INFO", "message": "foo"})
+    )
+    context.log.debug("foo")
+    context._message_channel.write_message.assert_called_with(  # noqa: SLF001
+        _make_pipes_message(method="log", params={"level": "DEBUG", "message": "foo"})
+    )

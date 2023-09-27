@@ -473,6 +473,25 @@ from dagster._core.instance import DagsterInstance as DagsterInstance
 from dagster._core.instance_for_test import instance_for_test as instance_for_test
 from dagster._core.launcher.default_run_launcher import DefaultRunLauncher as DefaultRunLauncher
 from dagster._core.log_manager import DagsterLogManager as DagsterLogManager
+from dagster._core.pipes.client import (
+    PipesClient as PipesClient,
+    PipesContextInjector as PipesContextInjector,
+    PipesMessageReader as PipesMessageReader,
+)
+from dagster._core.pipes.context import (
+    PipesMessageHandler as PipesMessageHandler,
+    PipesSession as PipesSession,
+)
+from dagster._core.pipes.subprocess import PipesSubprocessClient as PipesSubprocessClient
+from dagster._core.pipes.utils import (
+    PipesBlobStoreMessageReader as PipesBlobStoreMessageReader,
+    PipesEnvContextInjector as PipesEnvContextInjector,
+    PipesFileContextInjector as PipesFileContextInjector,
+    PipesFileMessageReader as PipesFileMessageReader,
+    PipesTempFileContextInjector as PipesTempFileContextInjector,
+    PipesTempFileMessageReader as PipesTempFileMessageReader,
+    open_pipes_session as open_pipes_session,
+)
 from dagster._core.run_coordinator.queued_run_coordinator import (
     QueuedRunCoordinator as QueuedRunCoordinator,
     SubmitRunContext as SubmitRunContext,
