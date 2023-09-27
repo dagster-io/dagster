@@ -236,19 +236,6 @@ class GrapheneTerminateRunFailure(graphene.ObjectType):
         name = "TerminateRunFailure"
 
 
-class GrapheneTerminateRunUnauthorizedError(graphene.ObjectType):
-    class Meta:
-        interfaces = (GrapheneError,)
-        name = "TerminateRunUnauthorizedError"
-
-    run_id = graphene.NonNull(graphene.String)
-
-    def __init__(self, run_id, message):
-        super().__init__()
-        self.run_id = check.str_param(run_id, "run_id")
-        self.message = message
-
-
 class GrapheneTerminateRunResult(graphene.Union):
     """The output from a run termination."""
 
@@ -257,7 +244,6 @@ class GrapheneTerminateRunResult(graphene.Union):
             GrapheneTerminateRunSuccess,
             GrapheneTerminateRunFailure,
             GrapheneRunNotFoundError,
-            GrapheneTerminateRunUnauthorizedError,
             GraphenePythonError,
         )
         name = "TerminateRunResult"
@@ -276,10 +262,7 @@ class GrapheneTerminateRunsResultOrError(graphene.Union):
     """The output from runs termination."""
 
     class Meta:
-        types = (
-            GrapheneTerminateRunsResult,
-            GraphenePythonError,
-        )
+        types = (GrapheneTerminateRunsResult, GraphenePythonError)
         name = "TerminateRunsResultOrError"
 
 

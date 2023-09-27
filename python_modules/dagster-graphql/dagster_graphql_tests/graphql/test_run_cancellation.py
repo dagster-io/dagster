@@ -64,13 +64,22 @@ mutation TerminateRuns($runIds: [String!]!) {
             __typename
             runId
         }
-        ... on TerminateRunUnauthorizedError {
+        ... on TerminateRunFailure {
             __typename
+            run {
+                runId
+            }
             message
         }
       }
     }
   }
+}
+"""
+
+BULK_TERMINATION_PERMISSIONS_QUERY = """
+query canBulkTerminate {
+    canBulkTerminate
 }
 """
 
@@ -239,10 +248,8 @@ class TestTerminationReadonly(ReadonlyGraphQLContextTestMatrix):
         assert result.data
 
         # just test existence
-        assert (
-            result.data["terminatePipelineExecution"]["__typename"]
-            == "TerminateRunUnauthorizedError"
-        )
+        assert result.data["terminatePipelineExecution"]["__typename"] == "TerminateRunFailure"
+        assert "do not have permission" in result.data["terminatePipelineExecution"]["message"]
 
     def test_cancel_runs_permission_failure(self, graphql_context: WorkspaceRequestContext):
         run_id = create_run_for_test(graphql_context.instance).run_id
@@ -257,8 +264,19 @@ class TestTerminationReadonly(ReadonlyGraphQLContextTestMatrix):
         assert len(result.data["terminateRuns"]["terminateRunResults"]) == 1
         assert (
             result.data["terminateRuns"]["terminateRunResults"][0]["__typename"]
-            == "TerminateRunUnauthorizedError"
+            == "TerminateRunFailure"
         )
+        assert (
+            "do not have permission"
+            in result.data["terminateRuns"]["terminateRunResults"][0]["message"]
+        )
+
+    def test_no_bulk_terminate_permission(self, graphql_context: WorkspaceRequestContext):
+        result = execute_dagster_graphql(graphql_context, BULK_TERMINATION_PERMISSIONS_QUERY)
+        assert not result.errors
+        assert result.data
+
+        assert result.data["canBulkTerminate"] is False
 
 
 class TestRunVariantTermination(RunTerminationTestSuite):
@@ -487,3 +505,10 @@ class TestRunVariantTermination(RunTerminationTestSuite):
                 variables={"runId": run_id},
             )
             assert result.data["terminatePipelineExecution"]["run"]["runId"] == run_id
+
+    def test_has_bulk_terminate_permission(self, graphql_context: WorkspaceRequestContext):
+        result = execute_dagster_graphql(graphql_context, BULK_TERMINATION_PERMISSIONS_QUERY)
+        assert not result.errors
+        assert result.data
+
+        assert result.data["canBulkTerminate"] is True

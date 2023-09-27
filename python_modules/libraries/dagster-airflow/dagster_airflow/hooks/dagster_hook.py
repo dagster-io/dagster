@@ -265,10 +265,6 @@ mutation Terminate($runId: String!, $terminatePolicy: TerminateRunPolicy) {
       }
       __typename
     }
-    ... on TerminateRunUnauthorizedError {
-      message
-      __typename
-    }
     ...PythonErrorFragment
   }
 }

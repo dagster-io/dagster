@@ -1491,13 +1491,7 @@ union TerminateRunResult =
     TerminateRunSuccess
   | TerminateRunFailure
   | RunNotFoundError
-  | TerminateRunUnauthorizedError
   | PythonError
-
-type TerminateRunUnauthorizedError implements Error {
-  message: String!
-  runId: String!
-}
 
 type TerminateRunSuccess implements TerminatePipelineExecutionSuccess {
   run: Run!
@@ -3036,6 +3030,7 @@ type Query {
     limit: Int
   ): PartitionBackfillsOrError!
   permissions: [Permission!]!
+  canBulkTerminate: Boolean!
   assetsLatestInfo(assetKeys: [AssetKeyInput!]!): [AssetLatestInfo!]!
   logsForRun(runId: ID!, afterCursor: String, limit: Int): EventConnectionOrError!
   capturedLogsMetadata(logKey: [String!]!): CapturedLogsMetadata!

@@ -25,7 +25,7 @@ if TYPE_CHECKING:
         GrapheneTerminateRunPolicy,
     )
 
-from ..utils import UserFacingGraphQLError, assert_permission, assert_permission_for_location
+from ..utils import assert_permission, assert_permission_for_location
 from .backfill import (
     cancel_partition_backfill as cancel_partition_backfill,
     create_and_launch_partition_backfill as create_and_launch_partition_backfill,
@@ -83,7 +83,6 @@ def terminate_pipeline_execution(
         GrapheneTerminateRunFailure,
         GrapheneTerminateRunPolicy,
         GrapheneTerminateRunSuccess,
-        GrapheneTerminateRunUnauthorizedError,
     )
 
     check.str_param(run_id, "run_id")
@@ -96,27 +95,28 @@ def terminate_pipeline_execution(
         terminate_policy == GrapheneTerminateRunPolicy.MARK_AS_CANCELED_IMMEDIATELY
     )
 
-    try:
-        if not record:
-            assert_permission(graphene_info, Permissions.TERMINATE_PIPELINE_EXECUTION)
-            return GrapheneRunNotFoundError(run_id)
+    if not record:
+        return GrapheneRunNotFoundError(run_id)
 
-        run = record.dagster_run
-        graphene_run = GrapheneRun(record)
+    run = record.dagster_run
+    graphene_run = GrapheneRun(record)
 
-        location_name = run.external_job_origin.location_name if run.external_job_origin else None
+    location_name = run.external_job_origin.location_name if run.external_job_origin else None
 
-        if location_name:
-            assert_permission_for_location(
-                graphene_info, Permissions.TERMINATE_PIPELINE_EXECUTION, location_name
+    if location_name:
+        if not graphene_info.context.has_permission_for_location(
+            Permissions.TERMINATE_PIPELINE_EXECUTION, location_name
+        ):
+            return GrapheneTerminateRunFailure(
+                run=graphene_run,
+                message="You do not have permission to terminate this run",
             )
-        else:
-            assert_permission(graphene_info, Permissions.TERMINATE_PIPELINE_EXECUTION)
-
-    except UserFacingGraphQLError as e:
-        return GrapheneTerminateRunUnauthorizedError(
-            run_id=run_id, message=e.error.message if e.error.message else "Authorization failed"
-        )
+    else:
+        if not graphene_info.context.has_permission(Permissions.TERMINATE_PIPELINE_EXECUTION):
+            return GrapheneTerminateRunFailure(
+                run=graphene_run,
+                message="You do not have permission to terminate this run",
+            )
 
     can_cancel_run = run.status in CANCELABLE_RUN_STATUSES
 
