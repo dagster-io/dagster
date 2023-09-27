@@ -152,7 +152,7 @@ export function useOpLayout(ops: ILayoutOp[], parentOp?: ILayoutOp) {
 
 export function useAssetLayout(
   graphData: GraphData,
-  localStorageKey?: string,
+  indexDBKey?: string,
   fullAssetGraphData?: GraphData,
 ) {
   const [state, dispatch] = React.useReducer(reducer, initialState);
@@ -163,15 +163,17 @@ export function useAssetLayout(
   const nodeCount = Object.keys(graphData.nodes).length;
   const runAsync = nodeCount >= ASYNC_LAYOUT_SOLID_COUNT;
 
+  const {flagDisableDAGCache} = useFeatureFlags();
+
   React.useEffect(() => {
     const opts = {horizontalDAGs: flags.flagHorizontalDAGs};
 
     async function runAsyncLayout() {
       dispatch({type: 'loading'});
       let layout;
-      if (localStorageKey) {
+      if (indexDBKey && !flagDisableDAGCache) {
         layout = await asyncGetFullAssetLayoutIndexDB(
-          localStorageKey,
+          indexDBKey,
           fullDataCacheKey ?? cacheKey,
           graphData,
           opts,
@@ -188,7 +190,7 @@ export function useAssetLayout(
     } else {
       void runAsyncLayout();
     }
-  }, [cacheKey, fullDataCacheKey, graphData, runAsync, flags, localStorageKey]);
+  }, [cacheKey, fullDataCacheKey, graphData, runAsync, flags, indexDBKey]);
 
   return {
     loading: state.loading || !state.layout || state.cacheKey !== cacheKey,
