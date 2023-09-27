@@ -19,12 +19,15 @@ def my_graph():
     goodbye(hello())
 
 
-my_job = my_graph.to_job(name="my_job")
+# Changing the job name here and pressing "Reload" causes the UI to immediately update with the change
+my_job = my_graph.to_job(name="JOB_NAME")
 
 my_step_isolated_job = my_graph.to_job(
     name="my_step_isolated_job",
     executor_def=docker_executor,
-    resource_defs={"io_manager": FilesystemIOManager(base_dir="/tmp/io_manager_storage")},
+    resource_defs={
+        "io_manager": FilesystemIOManager(base_dir="/tmp/io_manager_storage")
+    },
 )
 
 

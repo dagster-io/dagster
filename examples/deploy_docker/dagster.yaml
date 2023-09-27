@@ -19,6 +19,8 @@ run_launcher:
       volumes: # Make docker client accessible to any launched containers as well
         - /var/run/docker.sock:/var/run/docker.sock
         - /tmp/io_manager_storage:/tmp/io_manager_storage
+        # Note: needs to be an absolute folder location
+        - /Users/dgibson/dagster/examples/deploy_docker/repo.py:/opt/dagster/app/repo.py
 
 run_storage:
   module: dagster_postgres.run_storage

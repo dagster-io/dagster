@@ -31,6 +31,9 @@ services:
       DAGSTER_POSTGRES_PASSWORD: "postgres_password"
       DAGSTER_POSTGRES_DB: "postgres_db"
       DAGSTER_CURRENT_IMAGE: "docker_example_user_code_image"
+    volumes:
+      # Note: needs to be an absolute folder location
+      - /Users/dgibson/dagster/examples/deploy_docker/repo.py:/opt/dagster/app/repo.py
     networks:
       - docker_example_network
 
