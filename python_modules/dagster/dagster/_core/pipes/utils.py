@@ -335,7 +335,7 @@ def open_pipes_session(
     .. code-block:: python
 
         import subprocess
-        from dagster import ext_protocol
+        from dagster import open_pipes_session
 
         extras = {"foo": "bar"}
 
