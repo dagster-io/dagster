@@ -15,8 +15,13 @@ import {isDocumentVisible, useDocumentVisibility} from '../hooks/useDocumentVisi
 import {useDidLaunchEvent} from '../runs/RunUtils';
 
 const _assetKeyListeners: Record<string, Array<DataForNodeListener>> = {};
-let providerListener = (_key: string, _data: LiveDataForNode) => {};
+let providerListener = (_key: string, _data?: LiveDataForNode) => {};
 const _cache: Record<string, LiveDataForNode> = {};
+
+export function useAssetLiveData(assetKey: AssetKeyInput) {
+  const {liveDataByNode} = useAssetsLiveData(React.useMemo(() => [assetKey], [assetKey]));
+  return liveDataByNode[JSON.stringify(assetKey.path)];
+}
 
 export function useAssetsLiveData(assetKeys: AssetKeyInput[]) {
   const [data, setData] = React.useState<Record<string, LiveDataForNode>>({});
@@ -26,9 +31,15 @@ export function useAssetsLiveData(assetKeys: AssetKeyInput[]) {
     React.useContext(AssetLiveDataContext);
 
   React.useEffect(() => {
-    const setDataSingle = (stringKey: string, assetData: LiveDataForNode) => {
+    const setDataSingle = (stringKey: string, assetData?: LiveDataForNode) => {
       setData((data) => {
-        return {...data, [stringKey]: assetData};
+        const copy = {...data};
+        if (!assetData) {
+          delete copy[stringKey];
+        } else {
+          copy[stringKey] = assetData;
+        }
+        return copy;
       });
     };
     assetKeys.forEach((key) => {
@@ -97,7 +108,7 @@ const BATCHING_INTERVAL = 250;
 export const SUBSCRIPTION_IDLE_POLL_RATE = 30 * 1000;
 const SUBSCRIPTION_MAX_POLL_RATE = 2 * 1000;
 
-type DataForNodeListener = (stringKey: string, data: LiveDataForNode) => void;
+type DataForNodeListener = (stringKey: string, data?: LiveDataForNode) => void;
 
 const AssetLiveDataContext = React.createContext<{
   setNeedsImmediateFetch: () => void;
@@ -161,9 +172,15 @@ export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) =
   }, [client, needsImmediateFetch]);
 
   React.useEffect(() => {
-    providerListener = (key, data) => {
-      setCache((cache) => {
-        return {...cache, [key]: data};
+    providerListener = (stringKey, assetData) => {
+      setCache((data) => {
+        const copy = {...data};
+        if (!assetData) {
+          delete copy[stringKey];
+        } else {
+          copy[stringKey] = assetData;
+        }
+        return copy;
       });
     };
   }, []);
@@ -333,4 +350,23 @@ function fetchData(client: ApolloClient<any>) {
 
 function getAllAssetKeysWithListeners(): AssetKeyInput[] {
   return Object.keys(_assetKeyListeners).map((key) => ({path: JSON.parse(key)}));
+}
+
+export function _setCacheEntryForTest(assetKey: AssetKeyInput, data?: LiveDataForNode) {
+  if (process.env.STORYBOOK || typeof jest !== 'undefined') {
+    const stringKey = JSON.stringify(assetKey.path);
+    if (data) {
+      _cache[stringKey] = data;
+    } else {
+      delete _cache[stringKey];
+    }
+    const listeners = _assetKeyListeners[stringKey];
+    providerListener(stringKey, data);
+    if (!listeners) {
+      return;
+    }
+    listeners.forEach((listener) => {
+      listener(stringKey, data);
+    });
+  }
 }

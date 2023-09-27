@@ -4,19 +4,8 @@ import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import {render, act, waitFor} from '@testing-library/react';
 import React from 'react';
 
-import {
-  AssetGraphLiveQuery,
-  AssetGraphLiveQueryVariables,
-} from '../../asset-graph/types/useLiveDataForAssetKeys.types';
-import {ASSETS_GRAPH_LIVE_QUERY} from '../../asset-graph/useLiveDataForAssetKeys';
-import {
-  AssetKey,
-  AssetKeyInput,
-  buildAssetKey,
-  buildAssetLatestInfo,
-  buildAssetNode,
-} from '../../graphql/types';
-import {buildQueryMock, getMockResultFn} from '../../testing/mocking';
+import {AssetKey, AssetKeyInput, buildAssetKey} from '../../graphql/types';
+import {getMockResultFn} from '../../testing/mocking';
 import {
   AssetLiveDataProvider,
   SUBSCRIPTION_IDLE_POLL_RATE,
@@ -24,26 +13,10 @@ import {
   useAssetsLiveData,
 } from '../AssetLiveDataProvider';
 
+import {buildMockedAssetGraphLiveQuery} from './util';
+
 Object.defineProperty(document, 'visibilityState', {value: 'visible', writable: true});
 Object.defineProperty(document, 'hidden', {value: false, writable: true});
-
-function buildMockedQuery(assetKeys: AssetKeyInput[]) {
-  return buildQueryMock<AssetGraphLiveQuery, AssetGraphLiveQueryVariables>({
-    query: ASSETS_GRAPH_LIVE_QUERY,
-    variables: {
-      // strip __typename
-      assetKeys: assetKeys.map((assetKey) => ({path: assetKey.path})),
-    },
-    data: {
-      assetNodes: assetKeys.map((assetKey) =>
-        buildAssetNode({assetKey: buildAssetKey(assetKey), id: JSON.stringify(assetKey)}),
-      ),
-      assetsLatestInfo: assetKeys.map((assetKey) =>
-        buildAssetLatestInfo({assetKey: buildAssetKey(assetKey), id: JSON.stringify(assetKey)}),
-      ),
-    },
-  });
-}
 
 afterEach(() => {
   _resetLastFetchedOrRequested();
@@ -83,8 +56,8 @@ function Test({
 describe('AssetLiveDataProvider', () => {
   it('provides asset data and uses cache if recently fetched', async () => {
     const assetKeys = [buildAssetKey({path: ['key1']})];
-    const mockedQuery = buildMockedQuery(assetKeys);
-    const mockedQuery2 = buildMockedQuery(assetKeys);
+    const mockedQuery = buildMockedAssetGraphLiveQuery(assetKeys);
+    const mockedQuery2 = buildMockedAssetGraphLiveQuery(assetKeys);
 
     const resultFn = getMockResultFn(mockedQuery);
     const resultFn2 = getMockResultFn(mockedQuery2);
@@ -141,8 +114,8 @@ describe('AssetLiveDataProvider', () => {
 
   it('obeys document visibility', async () => {
     const assetKeys = [buildAssetKey({path: ['key1']})];
-    const mockedQuery = buildMockedQuery(assetKeys);
-    const mockedQuery2 = buildMockedQuery(assetKeys);
+    const mockedQuery = buildMockedAssetGraphLiveQuery(assetKeys);
+    const mockedQuery2 = buildMockedAssetGraphLiveQuery(assetKeys);
 
     const resultFn = getMockResultFn(mockedQuery);
     const resultFn2 = getMockResultFn(mockedQuery2);
@@ -219,8 +192,8 @@ describe('AssetLiveDataProvider', () => {
     const chunk1 = assetKeys.slice(0, 50);
     const chunk2 = assetKeys.slice(50, 100);
 
-    const mockedQuery = buildMockedQuery(chunk1);
-    const mockedQuery2 = buildMockedQuery(chunk2);
+    const mockedQuery = buildMockedAssetGraphLiveQuery(chunk1);
+    const mockedQuery2 = buildMockedAssetGraphLiveQuery(chunk2);
 
     const resultFn = getMockResultFn(mockedQuery);
     const resultFn2 = getMockResultFn(mockedQuery2);
@@ -265,8 +238,8 @@ describe('AssetLiveDataProvider', () => {
     const hook2Keys = assetKeys.slice(33, 66);
     const hook3Keys = assetKeys.slice(66, 100);
 
-    const mockedQuery = buildMockedQuery(chunk1);
-    const mockedQuery2 = buildMockedQuery(chunk2);
+    const mockedQuery = buildMockedAssetGraphLiveQuery(chunk1);
+    const mockedQuery2 = buildMockedAssetGraphLiveQuery(chunk2);
 
     const resultFn = getMockResultFn(mockedQuery);
     const resultFn2 = getMockResultFn(mockedQuery2);
@@ -324,9 +297,9 @@ describe('AssetLiveDataProvider', () => {
 
     secondPrioritizedFetchKeys.push(...fetch1Keys);
 
-    const mockedQuery = buildMockedQuery(fetch1Keys);
-    const mockedQuery2 = buildMockedQuery(firstPrioritizedFetchKeys);
-    const mockedQuery3 = buildMockedQuery(secondPrioritizedFetchKeys);
+    const mockedQuery = buildMockedAssetGraphLiveQuery(fetch1Keys);
+    const mockedQuery2 = buildMockedAssetGraphLiveQuery(firstPrioritizedFetchKeys);
+    const mockedQuery3 = buildMockedAssetGraphLiveQuery(secondPrioritizedFetchKeys);
 
     const resultFn = getMockResultFn(mockedQuery);
     const resultFn2 = getMockResultFn(mockedQuery2);

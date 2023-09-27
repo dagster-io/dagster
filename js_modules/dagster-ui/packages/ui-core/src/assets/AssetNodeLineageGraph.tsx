@@ -8,7 +8,7 @@ import {MINIMAL_SCALE} from '../asset-graph/AssetGraphExplorer';
 import {AssetGroupNode} from '../asset-graph/AssetGroupNode';
 import {AssetNodeMinimal, AssetNode} from '../asset-graph/AssetNode';
 import {AssetNodeLink} from '../asset-graph/ForeignNode';
-import {GraphData, LiveData, toGraphId} from '../asset-graph/Utils';
+import {GraphData, toGraphId} from '../asset-graph/Utils';
 import {DEFAULT_MAX_ZOOM, SVGViewport} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
 import {AssetKeyInput} from '../graphql/types';
@@ -22,9 +22,8 @@ const LINEAGE_GRAPH_ZOOM_LEVEL = 'lineageGraphZoomLevel';
 export const AssetNodeLineageGraph: React.FC<{
   assetKey: AssetKeyInput;
   assetGraphData: GraphData;
-  liveDataByNode: LiveData;
   params: AssetViewParams;
-}> = ({assetKey, assetGraphData, liveDataByNode, params}) => {
+}> = ({assetKey, assetGraphData, params}) => {
   const assetGraphId = toGraphId(assetKey);
 
   const [highlighted, setHighlighted] = React.useState<string | null>(null);
@@ -70,10 +69,10 @@ export const AssetNodeLineageGraph: React.FC<{
       maxZoom={DEFAULT_MAX_ZOOM}
       maxAutocenterZoom={DEFAULT_MAX_ZOOM}
     >
-      {({scale}) => (
+      {({scale}, viewportRect) => (
         <SVGContainer width={layout.width} height={layout.height}>
           {viewportEl.current && <SVGSaveZoomLevel scale={scale} />}
-          <AssetEdges highlighted={highlighted} edges={layout.edges} />
+          <AssetEdges highlighted={highlighted} edges={layout.edges} viewportRect={viewportRect} />
 
           {Object.values(layout.groups)
             .sort((a, b) => a.id.length - b.id.length)
@@ -105,13 +104,11 @@ export const AssetNodeLineageGraph: React.FC<{
                 ) : scale < MINIMAL_SCALE ? (
                   <AssetNodeMinimal
                     definition={graphNode.definition}
-                    liveData={liveDataByNode[graphNode.id]}
                     selected={graphNode.id === assetGraphId}
                   />
                 ) : (
                   <AssetNode
                     definition={graphNode.definition}
-                    liveData={liveDataByNode[graphNode.id]}
                     selected={graphNode.id === assetGraphId}
                   />
                 )}

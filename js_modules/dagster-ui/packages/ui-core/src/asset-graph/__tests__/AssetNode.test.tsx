@@ -20,11 +20,7 @@ describe('AssetNode', () => {
     it(`renders ${scenario.expectedText.join(',')} when ${scenario.title}`, async () => {
       render(
         <MemoryRouter>
-          <AssetNode
-            definition={scenario.definition}
-            liveData={scenario.liveData}
-            selected={false}
-          />
+          <AssetNode definition={scenario.definition} selected={false} />
         </MemoryRouter>,
       );
 

@@ -5,7 +5,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {COMMON_COLLATOR} from '../app/Util';
-import {useAssetsLiveData} from '../asset-data/AssetLiveDataProvider';
+import {useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
 import {ASSET_NODE_CONFIG_FRAGMENT} from '../assets/AssetConfig';
 import {AssetDefinedInMultipleReposNotice} from '../assets/AssetDefinedInMultipleReposNotice';
 import {
@@ -43,8 +43,7 @@ export const SidebarAssetInfo: React.FC<{
   graphNode: GraphNode;
 }> = ({graphNode}) => {
   const {assetKey, definition} = graphNode;
-  const {liveDataByNode} = useAssetsLiveData(React.useMemo(() => [assetKey], [assetKey]));
-  const liveData = liveDataByNode[JSON.stringify(assetKey.path)];
+  const liveData = useAssetLiveData(assetKey);
   const partitionHealthRefreshHint = healthRefreshHintFromLiveData(liveData);
   const partitionHealthData = usePartitionHealthData(
     [assetKey],

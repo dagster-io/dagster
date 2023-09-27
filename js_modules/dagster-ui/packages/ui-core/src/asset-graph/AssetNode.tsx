@@ -7,7 +7,7 @@ import {Link} from 'react-router-dom';
 import styled, {CSSObject} from 'styled-components';
 
 import {withMiddleTruncation} from '../app/Util';
-import {useAssetsLiveData} from '../asset-data/AssetLiveDataProvider';
+import {useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
 import {PartitionCountTags} from '../assets/AssetNodePartitionCounts';
 import {StaleReasonsTags} from '../assets/Stale';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
@@ -28,10 +28,7 @@ export const AssetNode: React.FC<{
   const displayName = definition.assetKey.path[definition.assetKey.path.length - 1]!;
   const isSource = definition.isSource;
 
-  const {liveDataByNode} = useAssetsLiveData(
-    React.useMemo(() => [definition.assetKey], [definition]),
-  );
-  const liveData = liveDataByNode[JSON.stringify(definition.assetKey.path)];
+  const liveData = useAssetLiveData(definition.assetKey);
   return (
     <AssetInsetForHoverEffect>
       <AssetTopTags definition={definition} liveData={liveData} />
@@ -213,10 +210,7 @@ export const AssetNodeMinimal: React.FC<{
   definition: AssetNodeFragment;
 }> = ({selected, definition}) => {
   const {isSource, assetKey} = definition;
-  const {liveDataByNode} = useAssetsLiveData(
-    React.useMemo(() => [definition.assetKey], [definition]),
-  );
-  const liveData = liveDataByNode[JSON.stringify(assetKey.path)];
+  const liveData = useAssetLiveData(assetKey);
   const {border, background} = buildAssetNodeStatusContent({assetKey, definition, liveData});
   const displayName = assetKey.path[assetKey.path.length - 1]!;
 
