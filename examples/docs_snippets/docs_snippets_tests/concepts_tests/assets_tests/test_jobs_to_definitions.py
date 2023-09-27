@@ -1,4 +1,4 @@
-cdfrom docs_snippets.concepts.assets.jobs_to_definitions import defs
+from docs_snippets.concepts.assets.jobs_to_definitions import defs
 
 
 def test_build_job_doc_snippet():
