@@ -44,7 +44,7 @@ def orders_id_has_no_nulls():
     orders_df = pd.read_csv("orders.csv")
     num_null_order_ids = orders_df["order_id"].isna().sum()
     return AssetCheckResult(
-        success=bool(num_null_order_ids == 0),
+        passed=bool(num_null_order_ids == 0),
     )
 
 
@@ -84,7 +84,7 @@ def orders(context):
     # check it
     num_null_order_ids = orders_df["order_id"].isna().sum()
     yield AssetCheckResult(
-        success=bool(num_null_order_ids == 0),
+        passed=bool(num_null_order_ids == 0),
     )
 
 
@@ -114,8 +114,8 @@ def my_asset():
 def my_check():
     is_serious = ...
     return AssetCheckResult(
-        success=False,
-        severity=AssetCheckSeverity.ERROR if is_serious else AssetCheckSeverity.WARNING,
+        passed=False,
+        severity=AssetCheckSeverity.ERROR if is_serious else AssetCheckSeverity.WARN,
     )
 
 
@@ -143,7 +143,7 @@ def orders_id_has_no_nulls():
     orders_df = pd.read_csv("orders.csv")
     num_null_order_ids = orders_df["order_id"].isna().sum()
     return AssetCheckResult(
-        success=bool(num_null_order_ids == 0),
+        passed=bool(num_null_order_ids == 0),
         metadata={
             "num_null_order_ids": int(num_null_order_ids),
         },
