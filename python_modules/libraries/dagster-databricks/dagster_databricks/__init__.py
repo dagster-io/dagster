@@ -28,7 +28,6 @@ from .pipes import (
     PipesDatabricksClient as PipesDatabricksClient,
     PipesDbfsContextInjector as PipesDbfsContextInjector,
     PipesDbfsMessageReader as PipesDbfsMessageReader,
-    dbfs_tempdir as dbfs_tempdir,
 )
 from .resources import (
     DatabricksClientResource as DatabricksClientResource,
