@@ -45,7 +45,7 @@ def get_pod_name(run_id: str, op_name: str):
 DEFAULT_CONTAINER_NAME = "dagster-pipes-execution"
 
 
-class K8sPodLogsMessageReader(PipesMessageReader):
+class PipesK8sPodLogsMessageReader(PipesMessageReader):
     @contextmanager
     def read_messages(
         self,
@@ -77,7 +77,7 @@ class K8sPodLogsMessageReader(PipesMessageReader):
                 extract_message_or_forward_to_stdout(handler, log_line)
 
 
-class _ExtK8sPod(PipesClient):
+class _PipesK8sClient(PipesClient):
     """An ext protocol compliant resource for launching kubernetes pods.
 
     By default context is injected via environment variables and messages are parsed out of
@@ -89,7 +89,7 @@ class _ExtK8sPod(PipesClient):
     Args:
         env (Optional[Mapping[str, str]]): An optional dict of environment variables to pass to the subprocess.
         context_injector (Optional[PipesContextInjector]): An context injector to use to inject context into the k8s container process. Defaults to PipesEnvContextInjector.
-        message_reader (Optional[PipesContextInjector]): An context injector to use to read messages from the k8s container process. Defaults to K8sPodLogsMessageReader.
+        message_reader (Optional[PipesContextInjector]): An context injector to use to read messages from the k8s container process. Defaults to PipesK8sPodLogsMessageReader.
     """
 
     def __init__(
@@ -110,7 +110,7 @@ class _ExtK8sPod(PipesClient):
 
         self.message_reader = (
             check.opt_inst_param(message_reader, "message_reader", PipesMessageReader)
-            or K8sPodLogsMessageReader()
+            or PipesK8sPodLogsMessageReader()
         )
 
     def run(
@@ -177,7 +177,7 @@ class _ExtK8sPod(PipesClient):
             client.core_api.create_namespaced_pod(namespace, pod_body)
             try:
                 # if were doing direct pod reading, wait for pod to start and then stream logs out
-                if isinstance(self.message_reader, K8sPodLogsMessageReader):
+                if isinstance(self.message_reader, PipesK8sPodLogsMessageReader):
                     client.wait_for_pod(
                         pod_name,
                         namespace,
@@ -256,4 +256,4 @@ def build_pod_body(
     )
 
 
-ExtK8sPod = ResourceParam[_ExtK8sPod]
+PipesK8sClient = ResourceParam[_PipesK8sClient]
