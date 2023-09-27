@@ -24,6 +24,12 @@ export function explorerPathToString(path: ExplorerPath) {
   return `${root}/${path.opNames.map(encodeURIComponent).join('/')}`;
 }
 
+export function normalizePathnameForCacheKey(pathname: string) {
+  const _path = pathname.endsWith('/') ? pathname.slice(0, pathname.length - 1) : pathname;
+  // Remove the op query string
+  return _path.split('~')[0];
+}
+
 export function explorerPathFromString(path: string): ExplorerPath {
   const rootAndOps = path.split('/');
   const root = rootAndOps[0]!;
