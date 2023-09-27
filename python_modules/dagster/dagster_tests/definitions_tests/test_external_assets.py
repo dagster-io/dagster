@@ -15,11 +15,11 @@ from dagster import (
     asset,
 )
 from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._core.definitions.observable_asset import (
+from dagster._core.definitions.external_asset import (
     create_external_asset_from_source_asset,
     external_assets_from_specs,
 )
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
 
 
@@ -27,11 +27,11 @@ def external_asset_from_spec(spec: AssetSpec) -> AssetsDefinition:
     return next(iter(external_assets_from_specs(specs=[spec])))
 
 
-def test_observable_asset_basic_creation() -> None:
+def test_external_asset_basic_creation() -> None:
     assets_def = external_asset_from_spec(
         AssetSpec(
-            key="observable_asset_one",
-            # multi-asset does not support description lol
+            key="external_asset_one",
+            # will work once https://github.com/dagster-io/dagster/pull/16755 merges
             # description="desc",
             metadata={"user_metadata": "value"},
             group_name="a_group",
@@ -39,16 +39,17 @@ def test_observable_asset_basic_creation() -> None:
     )
     assert isinstance(assets_def, AssetsDefinition)
 
-    expected_key = AssetKey(["observable_asset_one"])
+    expected_key = AssetKey(["external_asset_one"])
 
     assert assets_def.key == expected_key
+    # will work once https://github.com/dagster-io/dagster/pull/16755 merges
     # assert assets_def.descriptions_by_key[expected_key] == "desc"
     assert assets_def.metadata_by_key[expected_key]["user_metadata"] == "value"
     assert assets_def.group_names_by_key[expected_key] == "a_group"
     assert assets_def.is_asset_executable(expected_key) is False
 
 
-def test_invalid_observable_asset_creation() -> None:
+def test_invalid_external_asset_creation() -> None:
     invalid_specs = [
         AssetSpec("invalid_asset1", auto_materialize_policy=AutoMaterializePolicy.eager()),
         AssetSpec("invalid_asset2", code_version="ksjdfljs"),
@@ -68,21 +69,21 @@ def test_normal_asset_materializeable() -> None:
     assert an_asset.is_asset_executable(AssetKey(["an_asset"])) is True
 
 
-def test_observable_asset_creation_with_deps() -> None:
-    asset_two = AssetSpec("observable_asset_two")
+def test_external_asset_creation_with_deps() -> None:
+    asset_two = AssetSpec("external_asset_two")
     assets_def = external_asset_from_spec(
         AssetSpec(
-            "observable_asset_one",
+            "external_asset_one",
             deps=[asset_two.key],  # todo remove key when asset deps accepts it
         )
     )
     assert isinstance(assets_def, AssetsDefinition)
 
-    expected_key = AssetKey(["observable_asset_one"])
+    expected_key = AssetKey(["external_asset_one"])
 
     assert assets_def.key == expected_key
     assert assets_def.asset_deps[expected_key] == {
-        AssetKey(["observable_asset_two"]),
+        AssetKey(["external_asset_two"]),
     }
 
 
