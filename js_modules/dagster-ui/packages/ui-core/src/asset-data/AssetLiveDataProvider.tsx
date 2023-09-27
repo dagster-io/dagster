@@ -25,7 +25,8 @@ export function useAssetsLiveData(assetKeys: AssetKeyInput[]) {
   const [data, setData] = React.useState<Record<string, LiveDataForNode>>({});
   const [isRefreshing, setIsRefreshing] = React.useState(false);
 
-  const setNeedsImmediateFetch = React.useContext(AssetLiveDataContext).setNeedsImmediateFetch;
+  const {setNeedsImmediateFetch, onSubscribed, onUnsubscribed} =
+    React.useContext(AssetLiveDataContext);
 
   React.useEffect(() => {
     const setDataSingle = (stringKey: string, assetData: LiveDataForNode) => {
@@ -36,12 +37,14 @@ export function useAssetsLiveData(assetKeys: AssetKeyInput[]) {
     assetKeys.forEach((key) => {
       _subscribeToAssetKey(key, setDataSingle, setNeedsImmediateFetch);
     });
+    onSubscribed();
     return () => {
       assetKeys.forEach((key) => {
         _unsubscribeToAssetKey(key, setDataSingle);
       });
+      onUnsubscribed();
     };
-  }, [assetKeys, setNeedsImmediateFetch]);
+  }, [assetKeys, onSubscribed, onUnsubscribed, setNeedsImmediateFetch]);
 
   return {
     liveDataByNode: data,
