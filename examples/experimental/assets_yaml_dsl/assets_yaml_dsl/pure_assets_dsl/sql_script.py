@@ -16,4 +16,4 @@ if __name__ == "__main__":
     client = SomeSqlClient()
     client.query(sql)
     context.report_asset_materialization(metadata={"sql": sql})
-    context.log(f"Ran {sql}")
+    context.log.info(f"Ran {sql}")
