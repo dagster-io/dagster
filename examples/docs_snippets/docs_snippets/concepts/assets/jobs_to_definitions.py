@@ -6,7 +6,7 @@ def number_asset():
     return [1, 2, 3]
 
 
-number_asset = define_asset_job(name="number_asset_job", selection="number_asset")
+number_asset_job = define_asset_job(name="number_asset_job", selection="number_asset")
 
 defs = Definitions(
     assets=[number_asset],
