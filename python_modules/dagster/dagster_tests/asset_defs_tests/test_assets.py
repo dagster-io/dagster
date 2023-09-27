@@ -1718,7 +1718,7 @@ def test_return_materialization_with_asset_checks():
         def ret_checks(context: AssetExecutionContext):
             return MaterializeResult(
                 check_results=[
-                    AssetCheckResult(check_name="foo_check", metadata={"one": 1}, success=True)
+                    AssetCheckResult(check_name="foo_check", metadata={"one": 1}, passed=True)
                 ]
             )
 
