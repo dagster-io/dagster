@@ -707,14 +707,14 @@ export const AssetNodeScenariosBase = [
     title: 'Materialized and Stale',
     liveData: LiveDataForNodeMaterializedAndStale,
     definition: AssetNodeFragmentBasic,
-    expectedText: ['Code version', 'Feb'],
+    expectedText: ['Upstream code version', 'Feb'],
   },
 
   {
     title: 'Materialized and Stale and Overdue',
     liveData: LiveDataForNodeMaterializedAndStaleAndOverdue,
     definition: AssetNodeFragmentBasic,
-    expectedText: ['Code version', 'Overdue', 'Feb'],
+    expectedText: ['Upstream code version', 'Overdue', 'Feb'],
   },
 
   {
@@ -771,8 +771,8 @@ export const AssetNodeScenariosSource = [
     definition: {
       ...AssetNodeFragmentSource,
       isObservable: false,
-      id: '["source_asset_not_observable"]',
-      assetKey: buildAssetKey({path: ['source_asset_not_observable']}),
+      id: '["source_asset_no"]',
+      assetKey: buildAssetKey({path: ['source_asset_no']}),
     },
     expectedText: [],
   },
@@ -784,8 +784,8 @@ export const AssetNodeScenariosSource = [
       ...AssetNodeFragmentSource,
       isObservable: false,
       description: null,
-      id: '["source_asset_not_observable_no_description"]',
-      assetKey: buildAssetKey({path: ['source_asset_not_observable_no_description']}),
+      id: '["source_asset_nono"]',
+      assetKey: buildAssetKey({path: ['source_asset_nono']}),
     },
     expectedText: [],
   },
