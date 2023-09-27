@@ -29,7 +29,7 @@ function Test({
   mocks: MockedResponse[];
   hooks: {
     keys: AssetKeyInput[];
-    hookResult: (data: ReturnType<typeof useAssetsLiveData>) => void;
+    hookResult: (data: ReturnType<typeof useAssetsLiveData>['liveDataByNode']) => void;
   }[];
 }) {
   function Hook({
@@ -37,9 +37,9 @@ function Test({
     hookResult,
   }: {
     keys: AssetKeyInput[];
-    hookResult: (data: ReturnType<typeof useAssetsLiveData>) => void;
+    hookResult: (data: ReturnType<typeof useAssetsLiveData>['liveDataByNode']) => void;
   }) {
-    hookResult(useAssetsLiveData(keys));
+    hookResult(useAssetsLiveData(keys).liveDataByNode);
     return <div />;
   }
   return (
@@ -71,13 +71,16 @@ describe('AssetLiveDataProvider', () => {
 
     // Initially an empty object
     expect(resultFn).toHaveBeenCalledTimes(0);
-    expect(hookResult.mock.results[0]!.value).toEqual(undefined);
+    expect(hookResult.mock.calls[0]!.value).toEqual(undefined);
 
     act(() => {
       jest.runOnlyPendingTimers();
     });
 
     expect(resultFn).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(hookResult.mock.calls[1]!.value).not.toEqual({});
+    });
     expect(resultFn2).not.toHaveBeenCalled();
 
     // Re-render with the same asset keys and expect the cache to be used this time.
@@ -91,14 +94,14 @@ describe('AssetLiveDataProvider', () => {
 
     // Initially an empty object
     expect(resultFn2).not.toHaveBeenCalled();
-    expect(hookResult2.mock.results[0]!.value).toEqual(undefined);
+    expect(hookResult2.mock.calls[0][0]).toEqual({});
     act(() => {
       jest.runOnlyPendingTimers();
     });
 
     // Not called because we use the cache instead
     expect(resultFn2).not.toHaveBeenCalled();
-    expect(hookResult2.mock.results[1]).toEqual(hookResult.mock.results[1]);
+    expect(hookResult2.mock.calls[1]).toEqual(hookResult.mock.calls[1]);
 
     await act(async () => {
       await Promise.resolve();
@@ -109,7 +112,7 @@ describe('AssetLiveDataProvider', () => {
       jest.advanceTimersByTime(SUBSCRIPTION_IDLE_POLL_RATE + 1);
     });
     expect(resultFn2).toHaveBeenCalled();
-    expect(hookResult2.mock.results[2]).toEqual(hookResult.mock.results[1]);
+    expect(hookResult2.mock.calls[1]).toEqual(hookResult.mock.calls[1]);
   });
 
   it('obeys document visibility', async () => {
@@ -129,7 +132,7 @@ describe('AssetLiveDataProvider', () => {
 
     // Initially an empty object
     expect(resultFn).toHaveBeenCalledTimes(0);
-    expect(hookResult.mock.results[0]!.value).toEqual(undefined);
+    expect(hookResult.mock.calls[0]!.value).toEqual(undefined);
 
     act(() => {
       jest.runOnlyPendingTimers();
@@ -149,14 +152,14 @@ describe('AssetLiveDataProvider', () => {
 
     // Initially an empty object
     expect(resultFn2).not.toHaveBeenCalled();
-    expect(hookResult2.mock.results[0]!.value).toEqual(undefined);
+    expect(hookResult2.mock.calls[0]!.value).toEqual(undefined);
     act(() => {
       jest.runOnlyPendingTimers();
     });
 
     // Not called because we use the cache instead
     expect(resultFn2).not.toHaveBeenCalled();
-    expect(hookResult2.mock.results[1]).toEqual(hookResult.mock.results[1]);
+    expect(hookResult2.mock.calls[1]).toEqual(hookResult.mock.calls[1]);
 
     await act(async () => {
       await Promise.resolve();
@@ -204,7 +207,7 @@ describe('AssetLiveDataProvider', () => {
 
     // Initially an empty object
     expect(resultFn).not.toHaveBeenCalled();
-    expect(hookResult.mock.results[0]!.value).toEqual(undefined);
+    expect(hookResult.mock.calls[0][0]).toEqual({});
 
     act(() => {
       jest.runOnlyPendingTimers();
@@ -315,6 +318,9 @@ describe('AssetLiveDataProvider', () => {
 
     await waitFor(() => {
       expect(resultFn).toHaveBeenCalled();
+    });
+    await waitFor(() => {
+      expect(hookResult.mock.calls[1]!.value).not.toEqual({});
     });
     expect(resultFn2).not.toHaveBeenCalled();
     expect(resultFn3).not.toHaveBeenCalled();
