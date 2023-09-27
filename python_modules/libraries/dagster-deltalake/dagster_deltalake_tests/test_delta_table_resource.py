@@ -4,7 +4,7 @@ import pandas as pd
 from dagster import asset, materialize
 from dagster_deltalake import DeltaTableResource
 from dagster_deltalake.config import LocalConfig
-from deltalake.writer import write_deltalake
+from deltalake import write_deltalake
 
 
 def test_resource(tmp_path):
