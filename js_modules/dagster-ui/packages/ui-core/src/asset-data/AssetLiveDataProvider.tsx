@@ -20,7 +20,7 @@ const _cache: Record<string, LiveDataForNode> = {};
 
 export function useAssetLiveData(assetKey: AssetKeyInput) {
   const {liveDataByNode} = useAssetsLiveData(React.useMemo(() => [assetKey], [assetKey]));
-  return liveDataByNode[JSON.stringify(assetKey.path)];
+  return liveDataByNode[tokenForAssetKey(assetKey)];
 }
 
 export function useAssetsLiveData(assetKeys: AssetKeyInput[]) {
@@ -63,7 +63,7 @@ export function useAssetsLiveData(assetKeys: AssetKeyInput[]) {
     }, [setNeedsImmediateFetch, assetKeys]),
     refreshing: React.useMemo(() => {
       for (const key of assetKeys) {
-        const stringKey = JSON.stringify(key.path);
+        const stringKey = tokenForAssetKey(key);
         if (!lastFetchedOrRequested[stringKey]?.fetched) {
           return true;
         }
@@ -88,11 +88,11 @@ async function _queryAssetKeys(client: ApolloClient<any>, assetKeys: AssetKeyInp
   const nodesByKey: Record<string, AssetNodeLiveFragment> = {};
   const liveDataByKey: Record<string, LiveDataForNode> = {};
   data.assetNodes.forEach((assetNode) => {
-    const id = JSON.stringify(assetNode.assetKey.path);
+    const id = tokenForAssetKey(assetNode.assetKey);
     nodesByKey[id] = assetNode;
   });
   data.assetsLatestInfo.forEach((assetLatestInfo) => {
-    const id = JSON.stringify(assetLatestInfo.assetKey.path);
+    const id = tokenForAssetKey(assetLatestInfo.assetKey);
     liveDataByKey[id] = buildLiveDataForNode(nodesByKey[id]!, assetLatestInfo);
   });
   Object.assign(_cache, liveDataByKey);
@@ -127,7 +127,7 @@ const lastFetchedOrRequested: Record<
 > = {};
 
 export const _resetLastFetchedOrRequested = (keys?: AssetKeyInput[]) => {
-  (keys?.map((key) => JSON.stringify(key.path)) ?? Object.keys(lastFetchedOrRequested)).forEach(
+  (keys?.map((key) => tokenForAssetKey(key)) ?? Object.keys(lastFetchedOrRequested)).forEach(
     (key) => {
       delete lastFetchedOrRequested[key];
     },
@@ -193,7 +193,7 @@ export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) =
   React.useEffect(() => {
     const assetKeyTokens = new Set(allObservedKeys.map(tokenForAssetKey));
     const dataForObservedKeys = allObservedKeys
-      .map((key) => cache[JSON.stringify(key.path)])
+      .map((key) => cache[tokenForAssetKey(key)])
       .filter((n) => n) as LiveDataForNode[];
 
     const assetStepKeys = new Set(dataForObservedKeys.flatMap((n) => n.opNames));
@@ -259,14 +259,14 @@ async function _batchedQueryAssets(
   // Use Date.now because it properly advances in jest with fakeTimers /shrug
   const requestTime = Date.now();
   assetKeys.forEach((key) => {
-    lastFetchedOrRequested[JSON.stringify(key.path)] = {
+    lastFetchedOrRequested[tokenForAssetKey(key)] = {
       requested: requestTime,
     };
   });
   const data = await _queryAssetKeys(client, assetKeys);
   const fetchedTime = Date.now();
   assetKeys.forEach((key) => {
-    lastFetchedOrRequested[JSON.stringify(key.path)] = {
+    lastFetchedOrRequested[tokenForAssetKey(key)] = {
       fetched: fetchedTime,
     };
   });
@@ -283,7 +283,7 @@ function _subscribeToAssetKey(
   setData: DataForNodeListener,
   setNeedsImmediateFetch: () => void,
 ) {
-  const stringKey = JSON.stringify(assetKey.path);
+  const stringKey = tokenForAssetKey(assetKey);
   _assetKeyListeners[stringKey] = _assetKeyListeners[stringKey] || [];
   _assetKeyListeners[stringKey]!.push(setData);
   const cachedData = _cache[stringKey];
@@ -295,7 +295,7 @@ function _subscribeToAssetKey(
 }
 
 function _unsubscribeToAssetKey(assetKey: AssetKeyInput, setData: DataForNodeListener) {
-  const stringKey = JSON.stringify(assetKey.path);
+  const stringKey = tokenForAssetKey(assetKey);
   const listeners = _assetKeyListeners[stringKey];
   if (!listeners) {
     return;
@@ -323,9 +323,9 @@ function _determineAssetsToFetch() {
       continue;
     }
     if (lastFetchTime && isDocumentVisible()) {
-      assetsToFetch.push({path: JSON.parse(key)});
+      assetsToFetch.push({path: key.split('/')});
     } else {
-      assetsWithoutData.push({path: JSON.parse(key)});
+      assetsWithoutData.push({path: key.split('/')});
     }
   }
 
@@ -349,12 +349,12 @@ function fetchData(client: ApolloClient<any>) {
 }
 
 function getAllAssetKeysWithListeners(): AssetKeyInput[] {
-  return Object.keys(_assetKeyListeners).map((key) => ({path: JSON.parse(key)}));
+  return Object.keys(_assetKeyListeners).map((key) => ({path: key.split('/')}));
 }
 
 export function _setCacheEntryForTest(assetKey: AssetKeyInput, data?: LiveDataForNode) {
   if (process.env.STORYBOOK || typeof jest !== 'undefined') {
-    const stringKey = JSON.stringify(assetKey.path);
+    const stringKey = tokenForAssetKey(assetKey);
     if (data) {
       _cache[stringKey] = data;
     } else {
