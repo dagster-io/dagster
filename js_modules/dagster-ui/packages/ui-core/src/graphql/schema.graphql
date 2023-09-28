@@ -1491,7 +1491,6 @@ union TerminateRunResult =
     TerminateRunSuccess
   | TerminateRunFailure
   | RunNotFoundError
-  | UnauthorizedError
   | PythonError
 
 type TerminateRunSuccess implements TerminatePipelineExecutionSuccess {
@@ -3031,6 +3030,7 @@ type Query {
     limit: Int
   ): PartitionBackfillsOrError!
   permissions: [Permission!]!
+  canBulkTerminate: Boolean!
   assetsLatestInfo(assetKeys: [AssetKeyInput!]!): [AssetLatestInfo!]!
   logsForRun(runId: ID!, afterCursor: String, limit: Int): EventConnectionOrError!
   capturedLogsMetadata(logKey: [String!]!): CapturedLogsMetadata!
@@ -3278,6 +3278,10 @@ type Mutation {
     terminatePolicy: TerminateRunPolicy
   ): TerminateRunResult!
   terminateRun(runId: String!, terminatePolicy: TerminateRunPolicy): TerminateRunResult!
+  terminateRuns(
+    runIds: [String!]!
+    terminatePolicy: TerminateRunPolicy
+  ): TerminateRunsResultOrError!
   deletePipelineRun(runId: String!): DeletePipelineRunResult!
   deleteRun(runId: String!): DeletePipelineRunResult!
   reloadRepositoryLocation(repositoryLocationName: String!): ReloadRepositoryLocationMutationResult!
@@ -3319,6 +3323,12 @@ enum ReexecutionStrategy {
 union SensorDryRunResult = PythonError | SensorNotFoundError | DryRunInstigationTick
 
 union ScheduleDryRunResult = DryRunInstigationTick | PythonError | ScheduleNotFoundError
+
+union TerminateRunsResultOrError = TerminateRunsResult | PythonError
+
+type TerminateRunsResult {
+  terminateRunResults: [TerminateRunResult!]!
+}
 
 union AssetWipeMutationResult =
     AssetNotFoundError

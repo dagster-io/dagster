@@ -236,9 +236,6 @@ export const TERMINATE_MUTATION = gql`
           canTerminate
         }
       }
-      ... on UnauthorizedError {
-        message
-      }
       ...PythonErrorFragment
     }
   }
