@@ -46,6 +46,7 @@ import scikitlearn from './optag-images/scikitlearn.svg';
 import scipy from './optag-images/scipy.svg';
 import segment from './optag-images/segment.svg';
 import slack from './optag-images/slack.svg';
+import sling from './optag-images/sling.svg';
 import snowflake from './optag-images/snowflake.svg';
 import sql from './optag-images/sql.svg';
 import stitch from './optag-images/stitch.svg';
@@ -89,6 +90,11 @@ export const KNOWN_TAGS = {
     color: '#655CFC',
     icon: airbyte,
     content: 'Airbyte',
+  },
+  sling: {
+    color: '#2176EA',
+    icon: sling,
+    content: 'Sling',
   },
   snowflake: {
     color: '#29B5E8',
