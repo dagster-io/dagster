@@ -100,7 +100,7 @@ async function _queryAssetKeys(client: ApolloClient<any>, assetKeys: AssetKeyInp
 }
 
 // How many assets to fetch at once
-export const BATCH_SIZE = 50;
+export const BATCH_SIZE = 10;
 
 // Milliseconds we wait until sending a batched query
 const BATCHING_INTERVAL = 250;
@@ -312,7 +312,10 @@ function _determineAssetsToFetch() {
   const assetsToFetch: AssetKeyInput[] = [];
   const assetsWithoutData: AssetKeyInput[] = [];
   const allKeys = Object.keys(_assetKeyListeners);
-  while (allKeys.length && (assetsToFetch.length < BATCH_SIZE || assetsWithoutData.length < 50)) {
+  while (
+    allKeys.length &&
+    (assetsToFetch.length < BATCH_SIZE || assetsWithoutData.length < BATCH_SIZE)
+  ) {
     const key = allKeys.shift()!;
     const isRequested = !!lastFetchedOrRequested[key]?.requested;
     if (isRequested) {
@@ -330,7 +333,7 @@ function _determineAssetsToFetch() {
   }
 
   // Prioritize fetching assets for which there is no data in the cache
-  return assetsWithoutData.concat(assetsToFetch).slice(0, 50);
+  return assetsWithoutData.concat(assetsToFetch).slice(0, BATCH_SIZE);
 }
 
 function fetchData(client: ApolloClient<any>) {
