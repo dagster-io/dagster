@@ -1,10 +1,9 @@
 from dagster import asset, materialize, file_relative_path
-from dagster_elt.sling import SlingResource, SlingMode
+from dagster_embedded_elt.sling import SlingResource, SlingMode
 import os
 import tempfile
 import sqlite3
-
-from dagster_elt.sling.resources import SlingSourceConnection, SlingTargetConnection
+from dagster_embedded_elt.sling.resources import SlingSourceConnection, SlingTargetConnection
 
 
 def test_simple_resource_connection():

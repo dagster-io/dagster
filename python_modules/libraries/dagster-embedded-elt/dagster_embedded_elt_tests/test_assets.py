@@ -2,10 +2,10 @@ import os
 import sqlite3
 import tempfile
 
-from dagster import AssetKey, file_relative_path
+from dagster import AssetKey, file_relative_path, AssetSpec
 from dagster._core.definitions import build_assets_job
-from dagster_elt.sling import SlingMode, SlingResource, build_sling_asset
-from dagster_elt.sling.resources import SlingTargetConnection, SlingSourceConnection
+from dagster_embedded_elt.sling import SlingMode, SlingResource, build_sling_asset
+from dagster_embedded_elt.sling.resources import SlingTargetConnection, SlingSourceConnection
 
 
 def test_build_sling_asset():
@@ -20,15 +20,19 @@ def test_build_sling_asset():
             ),
         )
 
+        asset_spec = AssetSpec(
+            key=["main", "tbl"],
+            group_name="etl",
+            description="ETL Test",
+            deps=["foo"],
+        )
         asset_def = build_sling_asset(
+            asset_spec=asset_spec,
             source_stream=f"file://{fpath}",
             target_object="main.tbl",
             mode=SlingMode.INCREMENTAL,
             primary_key="SPECIES_CODE",
-            asset_key=AssetKey("sling_key"),
             sling_resource_key="sling_resource",
-            group_name="etl",
-            deps=["foo"],
         )
 
         sling_job = build_assets_job(

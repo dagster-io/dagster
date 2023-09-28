@@ -1,18 +1,16 @@
-from typing import List, Iterable, Optional, Union, Dict, Any, Sequence
+from typing import List, Optional, Union, Dict, Any
 from dagster import (
     AssetsDefinition,
-    asset,
-    AssetKey,
     AssetExecutionContext,
-    FreshnessPolicy,
-    AutoMaterializePolicy,
+    AssetSpec,
+    multi_asset,
 )
-from dagster._core.definitions.events import CoercibleToAssetKey
-from dagster_elt.sling.resources import SlingMode, SlingResource
+from dagster_embedded_elt.sling.resources import SlingMode, SlingResource
 import re
 
 
 def build_sling_asset(
+    asset_spec: AssetSpec,
     source_stream: str,
     target_object: str,
     mode: SlingMode = SlingMode.FULL_REFRESH,
@@ -20,12 +18,7 @@ def build_sling_asset(
     update_key: Optional[Union[str, List[str]]] = None,
     source_options: Optional[Dict[str, Any]] = None,
     target_options: Optional[Dict[str, Any]] = None,
-    asset_key: Optional[CoercibleToAssetKey] = None,
     sling_resource_key: str = "sling",
-    group_name: Optional[str] = None,
-    deps: Optional[Iterable[CoercibleToAssetKey]] = None,
-    freshness_policy: Optional[FreshnessPolicy] = None,
-    auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
 ) -> AssetsDefinition:
     """Factory which builds an asset definition that syncs the given source table to the given
     destination table.
@@ -36,16 +29,8 @@ def build_sling_asset(
     if update_key is not None and not isinstance(update_key, list):
         update_key = [update_key]
 
-    asset_key = target_object if not asset_key else asset_key
-
-    @asset(
-        required_resource_keys={sling_resource_key},
-        key=asset_key,
-        deps=deps,
-        compute_kind="sling",
-        group_name=group_name,
-        freshness_policy=freshness_policy,
-        auto_materialize_policy=auto_materialize_policy,
+    @multi_asset(
+        compute_kind="sling", specs=[asset_spec], required_resource_keys={sling_resource_key}
     )
     def sync(context: AssetExecutionContext) -> None:
         sling: SlingResource = getattr(context.resources, sling_resource_key)
