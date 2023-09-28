@@ -358,8 +358,8 @@ export const AssetGraphExplorerSidebar = React.memo(
                           selectNode(e, id);
                         }}
                         selectThisNode={(e) => {
-                          selectNode(e, node.id);
                           setSelectedNode(node);
+                          selectNode(e, node.id);
                         }}
                         explorerPath={explorerPath}
                         onChangeExplorerPath={onChangeExplorerPath}
