@@ -193,7 +193,7 @@ export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) =
   React.useEffect(() => {
     const assetKeyTokens = new Set(allObservedKeys.map(tokenForAssetKey));
     const dataForObservedKeys = allObservedKeys
-      .map((key) => cache[tokenForAssetKey(key)])
+      .map((key) => cache[JSON.stringify(key.path)])
       .filter((n) => n) as LiveDataForNode[];
 
     const assetStepKeys = new Set(dataForObservedKeys.flatMap((n) => n.opNames));
