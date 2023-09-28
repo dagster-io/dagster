@@ -216,6 +216,30 @@ class AutoMaterializeRule(ABC):
         ...
 
     @abstractmethod
+    def evaluate_net_new(self, context: RuleEvaluationContext): ...
+
+    @public
+    def evaluate_for_asset_full(
+        self, context: RuleEvaluationContext
+    ) -> Tuple[RuleEvaluationResults, RuleEvaluationResults]:
+        """This is a dumb name for the function, but the purpose is allow a hook for the framework
+        to simultaneously get:
+        - the net-new evaluation results for this rule
+        - the previous evaluation results for this rule which are still valid
+        I think the best structure here would probably be to have separate hooks for materialize
+        and skip rules. Materialize rules would only implement a function to get the net-new
+        materialization evaluations (and let the framework handle resurrecting the old ones).
+        Skip rules would be able to decide how to handle old evaluations. For example, the
+        materialize_on_parent_missing rule should probably always re-evaluate its logic if there
+        are net new candidates, but nothing new is happening in "materialize rule" realm, and none
+        of the parents have been updated since last tick, you can just return your previous rule
+        evaluations (all the same parents will still be missing)
+        """
+        return self.evaluate_for_asset(context), self.get_previous_evaluation_results(context)
+
+    def get_previous_evaluation_results(self, context: RuleEvaluationContext): ...
+
+    @abstractmethod
     def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
         """The core evaluation function for the rule. This function takes in a context object and
         returns a mapping from evaluated rules to the set of asset partitions that the rule applies
@@ -299,14 +323,30 @@ class AutoMaterializeRule(ABC):
         return hash(hash(type(self)) + super().__hash__())
 
 
-@whitelist_for_serdes
-class MaterializeOnRequiredForFreshnessRule(
-    AutoMaterializeRule, NamedTuple("_MaterializeOnRequiredForFreshnessRule", [])
-):
+class AutoMaterializeMaterializeRule(AutoMaterializeRule):
     @property
     def decision_type(self) -> AutoMaterializeDecisionType:
         return AutoMaterializeDecisionType.MATERIALIZE
 
+
+class AutoMaterializeSkipRule(AutoMaterializeRule):
+    @property
+    def decision_type(self) -> AutoMaterializeDecisionType:
+        return AutoMaterializeDecisionType.SKIP
+
+    def should_reevaluate(self, context: RuleEvaluationContext) -> bool:
+        return len(context.new_candidates) > 0
+
+    def evaluate(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
+        if not self.should_reevaluate(context):
+            return self.get_previous_evaluation_results(context)
+        return self.evaluate_for_asset(context)
+
+
+@whitelist_for_serdes
+class MaterializeOnRequiredForFreshnessRule(
+    AutoMaterializeMaterializeRule, NamedTuple("_MaterializeOnRequiredForFreshnessRule", [])
+):
     @property
     def description(self) -> str:
         return "required to meet this or downstream asset's freshness policy"
@@ -325,12 +365,8 @@ class MaterializeOnRequiredForFreshnessRule(
 
 @whitelist_for_serdes
 class MaterializeOnParentUpdatedRule(
-    AutoMaterializeRule, NamedTuple("_MaterializeOnParentUpdatedRule", [])
+    AutoMaterializeMaterializeRule, NamedTuple("_MaterializeOnParentUpdatedRule", [])
 ):
-    @property
-    def decision_type(self) -> AutoMaterializeDecisionType:
-        return AutoMaterializeDecisionType.MATERIALIZE
-
     @property
     def description(self) -> str:
         return "upstream data has changed since latest materialization"
@@ -398,11 +434,9 @@ class MaterializeOnParentUpdatedRule(
 
 
 @whitelist_for_serdes
-class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMissingRule", [])):
-    @property
-    def decision_type(self) -> AutoMaterializeDecisionType:
-        return AutoMaterializeDecisionType.MATERIALIZE
-
+class MaterializeOnMissingRule(
+    AutoMaterializeMaterializeRule, NamedTuple("_MaterializeOnMissingRule", [])
+):
     @property
     def description(self) -> str:
         return "materialization is missing"
@@ -434,11 +468,9 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
 
 
 @whitelist_for_serdes
-class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOutdatedRule", [])):
-    @property
-    def decision_type(self) -> AutoMaterializeDecisionType:
-        return AutoMaterializeDecisionType.SKIP
-
+class SkipOnParentOutdatedRule(
+    AutoMaterializeSkipRule, NamedTuple("_SkipOnParentOutdatedRule", [])
+):
     @property
     def description(self) -> str:
         return "waiting on upstream data to be up to date"
@@ -467,11 +499,7 @@ class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOut
 
 
 @whitelist_for_serdes
-class SkipOnParentMissingRule(AutoMaterializeRule, NamedTuple("_SkipOnParentMissingRule", [])):
-    @property
-    def decision_type(self) -> AutoMaterializeDecisionType:
-        return AutoMaterializeDecisionType.SKIP
-
+class SkipOnParentMissingRule(AutoMaterializeSkipRule, NamedTuple("_SkipOnParentMissingRule", [])):
     @property
     def description(self) -> str:
         return "waiting on upstream data to be present"
@@ -509,7 +537,7 @@ class SkipOnParentMissingRule(AutoMaterializeRule, NamedTuple("_SkipOnParentMiss
 
 @whitelist_for_serdes
 class SkipOnNotAllParentsUpdatedRule(
-    AutoMaterializeRule,
+    AutoMaterializeSkipRule,
     NamedTuple(
         "_SkipOnNotAllParentsUpdatedRule", [("require_update_for_all_parent_partitions", bool)]
     ),
@@ -525,10 +553,6 @@ class SkipOnNotAllParentsUpdatedRule(
             least one upstream partition in each upstream asset to be materialized since the downstream
             asset's last materialization in order to update it. Defaults to false.
     """
-
-    @property
-    def decision_type(self) -> AutoMaterializeDecisionType:
-        return AutoMaterializeDecisionType.SKIP
 
     @property
     def description(self) -> str:
