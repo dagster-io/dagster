@@ -72,7 +72,12 @@ export const AssetNodeLineageGraph: React.FC<{
       {({scale}, viewportRect) => (
         <SVGContainer width={layout.width} height={layout.height}>
           {viewportEl.current && <SVGSaveZoomLevel scale={scale} />}
-          <AssetEdges highlighted={highlighted} edges={layout.edges} viewportRect={viewportRect} />
+          <AssetEdges
+            selected={null}
+            highlighted={highlighted}
+            edges={layout.edges}
+            viewportRect={viewportRect}
+          />
 
           {Object.values(layout.groups)
             .sort((a, b) => a.id.length - b.id.length)
