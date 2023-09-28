@@ -2,6 +2,7 @@ import {Box, Colors, FontFamily, IconWrapper} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
+import sling from './optag-images/sling.svg'
 import airbyte from './optag-images/airbyte.svg';
 import airflow from './optag-images/airflow.svg';
 import aws from './optag-images/aws.svg';
@@ -89,6 +90,11 @@ export const KNOWN_TAGS = {
     color: '#655CFC',
     icon: airbyte,
     content: 'Airbyte',
+  },
+  sling: {
+    color: '#2176EA',
+    icon: sling,
+    content: 'Sling',
   },
   snowflake: {
     color: '#29B5E8',
