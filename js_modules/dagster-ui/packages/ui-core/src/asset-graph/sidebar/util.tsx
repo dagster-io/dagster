@@ -51,6 +51,8 @@ export function StatusCaseDot({statusCase}: {statusCase: StatusCase}) {
   }, [statusCase]);
 
   switch (type) {
+    case 'loading':
+      return <div />;
     case 'missing':
       return (
         <Tooltip content="Missing" position="top">
