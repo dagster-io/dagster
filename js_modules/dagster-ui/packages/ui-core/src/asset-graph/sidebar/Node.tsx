@@ -22,7 +22,7 @@ import {
 import {useMaterializationAction} from '../../assets/LaunchAssetExecutionButton';
 import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
 import {VirtualizedItemListForDialog} from '../../ui/VirtualizedItemListForDialog';
-import {buildAssetNodeStatusContent} from '../AssetNodeStatusContent';
+import {buildAssetNodeStatusContent, StatusCase} from '../AssetNodeStatusContent';
 import {GraphData, GraphNode, tokenForAssetKey} from '../Utils';
 
 import {FolderNodeNonAssetType, StatusCaseDot, getDisplayName} from './util';
@@ -354,7 +354,7 @@ const GrayOnHoverBox = styled(Box)`
 function StatusDot({node}: {node: GraphNode}) {
   const liveData = useAssetLiveData(node.assetKey);
   if (!liveData) {
-    return <div />;
+    return <StatusCaseDot statusCase={StatusCase.LOADING} />;
   }
   const status = buildAssetNodeStatusContent({
     assetKey: node.assetKey,

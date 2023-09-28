@@ -1,5 +1,6 @@
 import {Colors, Spinner, Tooltip} from '@dagster-io/ui-components';
 import React from 'react';
+import styled, {keyframes} from 'styled-components';
 
 import {StatusCase} from '../AssetNodeStatusContent';
 import {GraphNode} from '../Utils';
@@ -52,15 +53,23 @@ export function StatusCaseDot({statusCase}: {statusCase: StatusCase}) {
 
   switch (type) {
     case 'loading':
-      return <div />;
+      return (
+        <LoadingDot
+          style={{
+            width: '10px',
+            height: '10px',
+            borderRadius: '50%',
+          }}
+        />
+      );
     case 'missing':
       return (
         <Tooltip content="Missing" position="top">
           <div
             style={{
-              backgroundColor: Colors.Gray200,
-              width: '10px',
-              height: '10px',
+              width: '12px',
+              height: '12px',
+              border: `2px solid ${Colors.Gray500}`,
               borderRadius: '50%',
             }}
           />
@@ -94,3 +103,21 @@ export function StatusCaseDot({statusCase}: {statusCase: StatusCase}) {
       );
   }
 }
+
+const pulse = keyframes`
+  from {
+    background-color: ${Colors.Gray100}
+  }
+
+  50% {
+    background-color: ${Colors.Gray300}
+  }
+
+  to {
+    background-color: ${Colors.Gray100}
+  }
+`;
+
+const LoadingDot = styled.div`
+  animation: ${pulse} 1s ease-out infinite;
+`;
