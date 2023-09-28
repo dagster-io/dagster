@@ -122,13 +122,6 @@ class SlingResource(ConfigurableResource):
     source_connection: SlingSourceConnection
     target_connection: SlingTargetConnection
 
-    def _get_env_config(self) -> Dict[str, Any]:
-        return {
-            "connections": {
-                "sling_source": repr(self.source_connection.dict()),
-            }
-        }
-
     @contextlib.contextmanager
     def _setup_config(self) -> Generator[None, None, None]:
         """Uses environment variables to set the Sling source and target connections."""
@@ -282,3 +275,4 @@ class SlingResource(ConfigurableResource):
             source_options=source_options,
             target_options=target_options,
         )
+

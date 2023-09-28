@@ -23,8 +23,47 @@ def build_sling_asset(
     target_options: Optional[Dict[str, Any]] = None,
     sling_resource_key: str = "sling",
 ) -> AssetsDefinition:
-    """Factory which builds an asset definition that syncs the given source table to the given
-    destination table.
+    """Asset Factory for using Sling to sync data from a source stream to a target object.
+
+    Args:
+        asset_spec (AssetSpec): The AssetSpec to use to materialize this asset.
+        source_stream (str): The source stream to sync from. This can be a table, a query, or a path.
+        target_object (str): The target object to sync to. This can be a table, or a path.
+        mode (SlingMode, optional): The sync mode to use when syncing. Defaults to SlingMode.FULL_REFRESH.
+        primary_key (Optional[Union[str, List[str]]], optional): The optional primary key to use when syncing.
+        update_key (Optional[Union[str, List[str]]], optional): The optional update key to use when syncing.
+        source_options (Optional[Dict[str, Any]], optional): Any optional Sling source options to use when syncing.
+        target_options (Optional[Dict[str, Any]], optional): Any optional target options to use when syncing.
+        sling_resource_key (str, optional): The resource key for the SlingResource. Defaults to "sling".
+
+    Examples:
+        Creating a Sling asset that syncs from a file to a table:
+
+        .. code-block:: python
+
+            asset_spec = AssetSpec(key=["main", "dest_tbl"])
+            asset_def = build_sling_asset(
+                    asset_spec=asset_spec,
+                    source_stream="file:///tmp/test.csv",
+                    target_object="main.dest_table",
+                    mode=SlingMode.INCREMENTAL,
+                    primary_key="id"
+            )
+
+        Creating a Sling asset that syncs from a table to a file with a full refresh:
+
+        .. code-block:: python
+
+            asset_spec = AssetSpec(key="test.csv")
+            asset_def = build_sling_asset(
+                    asset_spec=asset_spec,
+                    source_stream="main.dest_table",
+                    table_object="file:///tmp/test.csv",
+                    mode=SlingMode.FULL_REFRESH
+                    primary_key="id"
+            )
+
+
     """
     if primary_key is not None and not isinstance(primary_key, list):
         primary_key = [primary_key]
