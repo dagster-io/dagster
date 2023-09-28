@@ -840,6 +840,7 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
     # circular dep
     from dagster._utils.typing_api import is_typing_type
 
+    from ..definitions.result import MaterializeResult
     from .primitive_mapping import (
         is_supported_runtime_python_builtin,
         remap_python_builtin_for_runtime,
@@ -871,6 +872,8 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
         dynamic_out_annotation = get_args(dagster_type)[0]
         type_args = get_args(dynamic_out_annotation)
         dagster_type = type_args[0] if len(type_args) == 1 else Any
+    elif dagster_type == MaterializeResult:
+        dagster_type = Nothing
 
     # Then, check to see if it is part of python's typing library
     if is_typing_type(dagster_type):
