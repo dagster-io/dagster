@@ -312,10 +312,7 @@ function _determineAssetsToFetch() {
   const assetsToFetch: AssetKeyInput[] = [];
   const assetsWithoutData: AssetKeyInput[] = [];
   const allKeys = Object.keys(_assetKeyListeners);
-  while (
-    allKeys.length &&
-    (assetsToFetch.length < BATCH_SIZE || assetsWithoutData.length < BATCH_SIZE)
-  ) {
+  while (allKeys.length && assetsWithoutData.length < BATCH_SIZE) {
     const key = allKeys.shift()!;
     const isRequested = !!lastFetchedOrRequested[key]?.requested;
     if (isRequested) {
