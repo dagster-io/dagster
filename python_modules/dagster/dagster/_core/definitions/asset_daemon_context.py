@@ -93,10 +93,13 @@ class AssetDaemonContext:
         target_asset_keys: Optional[AbstractSet[AssetKey]],
         respect_materialization_data_versions: bool,
         logger: logging.Logger,
+        evaluation_time: Optional[datetime.datetime] = None,
     ):
         from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
-        self._instance_queryer = CachingInstanceQueryer(instance, asset_graph, logger=logger)
+        self._instance_queryer = CachingInstanceQueryer(
+            instance, asset_graph, evaluation_time=evaluation_time, logger=logger
+        )
         self._data_time_resolver = CachingDataTimeResolver(self.instance_queryer)
         self._cursor = cursor
         self._target_asset_keys = target_asset_keys or {

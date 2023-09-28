@@ -2751,11 +2751,16 @@ class DagsterInstance(DynamicPartitionsStore):
         from dagster._core.definitions.run_request import InstigatorType
 
         retention_settings = self.get_settings("retention")
-        tick_settings = (
-            retention_settings.get("schedule")
-            if instigator_type == InstigatorType.SCHEDULE
-            else retention_settings.get("sensor")
-        )
+
+        if instigator_type == InstigatorType.SCHEDULE:
+            tick_settings = retention_settings.get("schedule")
+        elif instigator_type == InstigatorType.SENSOR:
+            tick_settings = retention_settings.get("sensor")
+        elif instigator_type == InstigatorType.AUTO_MATERIALIZE:
+            tick_settings = retention_settings.get("auto_materialize")
+        else:
+            raise Exception(f"Unexpected instigator type {instigator_type}")
+
         default_tick_settings = get_default_tick_retention_settings(instigator_type)
         return get_tick_retention_settings(tick_settings, default_tick_settings)
 

@@ -37,6 +37,7 @@ if TYPE_CHECKING:
 class InstigatorType(Enum):
     SCHEDULE = "SCHEDULE"
     SENSOR = "SENSOR"
+    AUTO_MATERIALIZE = "AUTO_MATERIALIZE"
 
 
 @whitelist_for_serdes
