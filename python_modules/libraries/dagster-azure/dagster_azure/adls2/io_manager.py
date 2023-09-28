@@ -63,7 +63,7 @@ class PickledObjectADLS2IOManager(UPathIOManager):
             file_client.delete_file(lease=lease, recursive=True)
 
     def make_directory(self, path: UPath) -> None:
-        # It is not necessary to create directories in S3
+        # It is not necessary to create directories in adls
         return None
     
     def path_exists(self, path: UPath) -> bool:
