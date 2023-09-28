@@ -13,6 +13,7 @@ import React from 'react';
 import styled from 'styled-components';
 
 import {showSharedToaster} from '../../app/DomUtils';
+import {useAssetLiveData} from '../../asset-data/AssetLiveDataProvider';
 import {
   AssetKeysDialog,
   AssetKeysDialogEmptyState,
@@ -21,9 +22,10 @@ import {
 import {useMaterializationAction} from '../../assets/LaunchAssetExecutionButton';
 import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
 import {VirtualizedItemListForDialog} from '../../ui/VirtualizedItemListForDialog';
+import {buildAssetNodeStatusContent, StatusCase} from '../AssetNodeStatusContent';
 import {GraphData, GraphNode, tokenForAssetKey} from '../Utils';
 
-import {FolderNodeNonAssetType, getDisplayName} from './util';
+import {FolderNodeNonAssetType, StatusCaseDot, getDisplayName} from './util';
 
 export const Node = ({
   graphData,
@@ -107,6 +109,7 @@ export const Node = ({
       {launchpadElement}
       <UpstreamDownstreamDialog
         title="Parent assets"
+        graphData={graphData}
         assetKeys={upstream}
         isOpen={showParents}
         setIsOpen={setShowParents}
@@ -120,6 +123,7 @@ export const Node = ({
               <div
                 onClick={(e) => {
                   e.stopPropagation();
+                  console.log('toggling open');
                   toggleOpen();
                 }}
                 style={{cursor: 'pointer'}}
@@ -149,11 +153,12 @@ export const Node = ({
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns:
-                    isGroupNode || isLocationNode ? 'auto minmax(0, 1fr)' : 'minmax(0, 1fr)',
+                  gridTemplateColumns: 'auto minmax(0, 1fr)',
                   gap: '6px',
+                  alignItems: 'center',
                 }}
               >
+                {isAssetNode ? <StatusDot node={node} /> : null}
                 {isGroupNode ? <Icon name="asset_group" /> : null}
                 {isLocationNode ? <Icon name="folder_open" /> : null}
                 <MiddleTruncate text={displayName} />
@@ -232,12 +237,14 @@ export const Node = ({
 
 const UpstreamDownstreamDialog = ({
   title,
+  graphData,
   assetKeys,
   isOpen,
   setIsOpen,
   selectNode,
 }: {
   title: string;
+  graphData: GraphData;
   assetKeys: string[];
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
@@ -281,10 +288,16 @@ const UpstreamDownstreamDialog = ({
               itemBorders={false}
               renderItem={(assetId) => {
                 const path = JSON.parse(assetId);
+                const node = graphData.nodes[assetId];
                 return (
                   <MenuItem
                     icon="asset"
-                    text={path[path.length - 1]}
+                    text={
+                      <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+                        {node ? <StatusDot node={node} /> : null}
+                        <span>{path[path.length - 1]}</span>
+                      </Box>
+                    }
                     key={assetId}
                     onClick={(e) => {
                       selectNode(e, assetId);
@@ -338,3 +351,17 @@ const GrayOnHoverBox = styled(Box)`
     visibility: hidden;
   }
 `;
+
+function StatusDot({node}: {node: GraphNode}) {
+  const liveData = useAssetLiveData(node.assetKey);
+  if (!liveData) {
+    return <StatusCaseDot statusCase={StatusCase.LOADING} />;
+  }
+  const status = buildAssetNodeStatusContent({
+    assetKey: node.assetKey,
+    definition: node.definition,
+    liveData,
+    expanded: true,
+  });
+  return <StatusCaseDot statusCase={status.case} />;
+}

@@ -59,7 +59,9 @@ export const AssetGraphExplorerSidebar = React.memo(
       if (!assetGraphData.nodes[id]) {
         try {
           const path = JSON.parse(id);
-          const nextOpsQuery = `\"${tokenForAssetKey({path})}\"`;
+          const nextOpsQuery = explorerPath.opsQuery.trim()
+            ? `\"${tokenForAssetKey({path})}\"`
+            : '*';
           onChangeExplorerPath(
             {
               ...explorerPath,
@@ -267,7 +269,10 @@ export const AssetGraphExplorerSidebar = React.memo(
 
     React.useLayoutEffect(() => {
       if (indexOfLastSelectedNode !== -1) {
-        rowVirtualizer.scrollToIndex(indexOfLastSelectedNode);
+        rowVirtualizer.scrollToIndex(indexOfLastSelectedNode, {
+          align: 'center',
+          smoothScroll: true,
+        });
       }
     }, [indexOfLastSelectedNode, rowVirtualizer]);
 
@@ -338,7 +343,6 @@ export const AssetGraphExplorerSidebar = React.memo(
                             : selectedNode?.id === node.id
                         }
                         toggleOpen={() => {
-                          setSelectedNode(node);
                           setOpenNodes((nodes) => {
                             const openNodes = new Set(nodes);
                             const isOpen = openNodes.has(nodePathKey(node));

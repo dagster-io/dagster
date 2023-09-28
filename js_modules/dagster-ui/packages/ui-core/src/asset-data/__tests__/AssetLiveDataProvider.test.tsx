@@ -11,6 +11,7 @@ import {
   SUBSCRIPTION_IDLE_POLL_RATE,
   _resetLastFetchedOrRequested,
   useAssetsLiveData,
+  BATCH_SIZE,
 } from '../AssetLiveDataProvider';
 
 import {buildMockedAssetGraphLiveQuery} from './util';
@@ -189,11 +190,11 @@ describe('AssetLiveDataProvider', () => {
 
   it('chunks asset requests', async () => {
     const assetKeys = [];
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < 2 * BATCH_SIZE; i++) {
       assetKeys.push(buildAssetKey({path: [`key${i}`]}));
     }
-    const chunk1 = assetKeys.slice(0, 50);
-    const chunk2 = assetKeys.slice(50, 100);
+    const chunk1 = assetKeys.slice(0, BATCH_SIZE);
+    const chunk2 = assetKeys.slice(BATCH_SIZE, 2 * BATCH_SIZE);
 
     const mockedQuery = buildMockedAssetGraphLiveQuery(chunk1);
     const mockedQuery2 = buildMockedAssetGraphLiveQuery(chunk2);
@@ -234,12 +235,15 @@ describe('AssetLiveDataProvider', () => {
     for (let i = 0; i < 100; i++) {
       assetKeys.push(buildAssetKey({path: [`key${i}`]}));
     }
-    const chunk1 = assetKeys.slice(0, 50);
-    const chunk2 = assetKeys.slice(50, 100);
+    const chunk1 = assetKeys.slice(0, BATCH_SIZE);
+    const chunk2 = assetKeys.slice(BATCH_SIZE, 2 * BATCH_SIZE);
 
-    const hook1Keys = assetKeys.slice(0, 33);
-    const hook2Keys = assetKeys.slice(33, 66);
-    const hook3Keys = assetKeys.slice(66, 100);
+    const hook1Keys = assetKeys.slice(0, Math.floor((2 / 3) * BATCH_SIZE));
+    const hook2Keys = assetKeys.slice(
+      Math.floor((2 / 3) * BATCH_SIZE),
+      Math.floor((4 / 3) * BATCH_SIZE),
+    );
+    const hook3Keys = assetKeys.slice(Math.floor((4 / 3) * BATCH_SIZE), 2 * BATCH_SIZE);
 
     const mockedQuery = buildMockedAssetGraphLiveQuery(chunk1);
     const mockedQuery2 = buildMockedAssetGraphLiveQuery(chunk2);
@@ -273,24 +277,18 @@ describe('AssetLiveDataProvider', () => {
   it('prioritizes assets which were never fetched over previously fetched assets', async () => {
     const hookResult = jest.fn();
     const assetKeys = [];
-    for (let i = 0; i < 60; i++) {
+    for (let i = 0; i < 2 * BATCH_SIZE; i++) {
       assetKeys.push(buildAssetKey({path: [`key${i}`]}));
     }
 
     // First we fetch these specific keys
-    const fetch1Keys = [
-      assetKeys[0],
-      assetKeys[2],
-      assetKeys[4],
-      assetKeys[6],
-      assetKeys[8],
-    ] as AssetKey[];
+    const fetch1Keys = [assetKeys[0], assetKeys[2]] as AssetKey[];
 
     // Next we fetch all of the keys after waiting SUBSCRIPTION_IDLE_POLL_RATE
     // which would have made the previously fetched keys elgible for fetching again
     const firstPrioritizedFetchKeys = assetKeys
       .filter((key) => fetch1Keys.indexOf(key) === -1)
-      .slice(0, 50);
+      .slice(0, BATCH_SIZE);
 
     // Next we fetch all of the keys not fetched in the previous batch with the originally fetched keys
     // at the end of the batch since they were previously fetched already
@@ -309,7 +307,7 @@ describe('AssetLiveDataProvider', () => {
     const resultFn3 = getMockResultFn(mockedQuery3);
 
     // First we fetch the keys from fetch1
-    const {rerender} = render(
+    const {unmount} = render(
       <Test
         mocks={[mockedQuery, mockedQuery2, mockedQuery3]}
         hooks={[{keys: fetch1Keys, hookResult}]}
@@ -325,17 +323,23 @@ describe('AssetLiveDataProvider', () => {
     expect(resultFn2).not.toHaveBeenCalled();
     expect(resultFn3).not.toHaveBeenCalled();
 
+    act(() => {
+      unmount();
+    });
+
+    act(() => {
+      // Advance timers so that the previously fetched keys are eligible for fetching but make sure they're still not prioritized
+      jest.advanceTimersByTime(2 * SUBSCRIPTION_IDLE_POLL_RATE);
+    });
+
     // Now we request all of the asset keys and see that the first batch excludes the keys from fetch1 since they
     // were previously fetched.
-    rerender(
+    render(
       <Test
         mocks={[mockedQuery, mockedQuery2, mockedQuery3]}
         hooks={[{keys: assetKeys, hookResult}]}
       />,
     );
-
-    // Advance timers so that the previously fetched keys are eligible for fetching but make sure they're still not prioritized
-    jest.advanceTimersByTime(2 * SUBSCRIPTION_IDLE_POLL_RATE);
 
     await waitFor(() => {
       expect(resultFn2).toHaveBeenCalled();
