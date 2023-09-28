@@ -32,6 +32,11 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_k8s_tests*"]),
-    install_requires=[f"dagster{pin}", "kubernetes"],
+    install_requires=[
+        f"dagster{pin}",
+        "kubernetes",
+        # exclude a google-auth release that added an overly restrictive urllib3 pin that confuses dependency resolvers
+        "google-auth!=2.23.1",
+    ],
     zip_safe=False,
 )
