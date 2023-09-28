@@ -1,5 +1,6 @@
+from contextlib import contextmanager
 from subprocess import Popen
-from typing import Iterator, Mapping, Optional, Sequence, Union
+from typing import Iterator, Mapping, Optional, Sequence, Tuple, Union
 
 from dagster_pipes import PipesExtras
 
@@ -10,10 +11,11 @@ from dagster._core.errors import DagsterPipesExecutionError
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.pipes.client import (
     PipesClient,
+    PipesClientInvocation,
     PipesContextInjector,
     PipesMessageReader,
 )
-from dagster._core.pipes.context import PipesExecutionResult
+from dagster._core.pipes.context import PipesExecutionResult, PipesSession
 from dagster._core.pipes.utils import (
     PipesTempFileContextInjector,
     PipesTempFileMessageReader,
@@ -73,7 +75,7 @@ class _PipesSubprocess(PipesClient):
         extras: Optional[PipesExtras] = None,
         env: Optional[Mapping[str, str]] = None,
         cwd: Optional[str] = None,
-    ) -> Iterator[PipesExecutionResult]:
+    ) -> Tuple[PipesExecutionResult, ...]:
         """Run a subprocess with in a pipes session.
 
         Args:
@@ -86,29 +88,57 @@ class _PipesSubprocess(PipesClient):
         Yields:
             PipesExecutionResult: Results reported by the subprocess.
         """
-        with open_pipes_session(
+        with self.open(
+            command=command, context=context, extras=extras, env=env, cwd=cwd
+        ) as invocation:
+            return tuple(invocation.stream())
+
+    @public
+    @contextmanager
+    def open(
+        self,
+        command: Union[str, Sequence[str]],
+        *,
+        context: OpExecutionContext,
+        extras: Optional[PipesExtras] = None,
+        env: Optional[Mapping[str, str]] = None,
+        cwd: Optional[str] = None,
+    ) -> Iterator["PipesSubprocessInvocation"]:
+        cm = open_pipes_session(
             context=context,
             context_injector=self.context_injector,
             message_reader=self.message_reader,
             extras=extras,
-        ) as pipes_session:
-            process = Popen(
-                command,
-                cwd=cwd or self.cwd,
-                env={
-                    **pipes_session.get_pipes_env_vars(),
-                    **self.env,
-                    **(env or {}),
-                },
-            )
-            while process.poll() is None:
-                yield from pipes_session.get_results()
+        )
+        pipes_session = cm.__enter__()
+        pipes_session.set_manager(cm)
+        process = Popen(
+            command,
+            cwd=cwd or self.cwd,
+            env={
+                **pipes_session.get_pipes_env_vars(),
+                **(self.env or {}),
+                **(env or {}),
+            },
+        )
+        yield PipesSubprocessInvocation(process=process, session=pipes_session)
 
-            if process.returncode != 0:
-                raise DagsterPipesExecutionError(
-                    f"External execution process failed with code {process.returncode}"
-                )
-        yield from pipes_session.get_results()
+
+class PipesSubprocessInvocation(PipesClientInvocation):
+    def __init__(self, *, session: PipesSession, process: Popen):
+        super().__init__(session=session)
+        self.process = process
+
+    def stream(self) -> Iterator[PipesExecutionResult]:
+        while self.process.poll() is None:
+            yield from self.session.get_results()
+        self.session.close()
+        yield from self.session.get_results()
+
+        if self.process.returncode != 0:
+            raise DagsterPipesExecutionError(
+                f"External execution process failed with code {self.process.returncode}"
+            )
 
 
 PipesSubprocessClient = ResourceParam[_PipesSubprocess]

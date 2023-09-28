@@ -1,7 +1,7 @@
 from contextlib import contextmanager
 from dataclasses import dataclass
 from queue import Queue
-from typing import Any, Dict, Iterator, Mapping, Optional, Set, Union
+from typing import Any, ContextManager, Dict, Iterator, Mapping, Optional, Set, Union
 
 from dagster_pipes import (
     DAGSTER_PIPES_ENV_KEYS,
@@ -241,6 +241,17 @@ class PipesSession:
             ExtResult: Result reported by external process.
         """
         yield from self.message_handler.clear_result_queue()
+
+    # Necessary workaround for client streaming to work. We cannot guarantee that all results
+    # from an external process are available until the `open_pipes_session` context manager has
+    # `__exit__`ed. There are cases where it's not feasible to use a `with` block, because
+    # we would need to yield all the results before the `with` block exits. Therefore we use this
+    # manual `__exit__` scheme as a workaround.
+    def set_manager(self, cm: "ContextManager[PipesSession]") -> None:
+        self._cm = cm
+
+    def close(self) -> None:
+        self._cm.__exit__(None, None, None)
 
 
 def build_external_execution_context_data(

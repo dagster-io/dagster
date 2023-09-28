@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Iterator, Optional
+from typing import TYPE_CHECKING, Iterator, Optional, Tuple
 
 from dagster_pipes import (
     PipesContextData,
@@ -12,7 +12,7 @@ from dagster._annotations import experimental, public
 from dagster._core.execution.context.compute import OpExecutionContext
 
 if TYPE_CHECKING:
-    from .context import PipesExecutionResult, PipesMessageHandler
+    from .context import PipesExecutionResult, PipesMessageHandler, PipesSession
 
 
 @experimental
@@ -29,12 +29,45 @@ class PipesClient(ABC):
         *,
         context: OpExecutionContext,
         extras: Optional[PipesExtras] = None,
-    ) -> Iterator["PipesExecutionResult"]:
-        """Run a command in the external environment.
+    ) -> Tuple["PipesExecutionResult", ...]:
+        """Syncronously run an external process and return its results as a tuple.
 
         Args:
             context (OpExecutionContext): The context from the executing op/asset.
             extras (Optional[PipesExtras]): Arbitrary data to pass to the external environment.
+
+        Returns:
+            Tuple[PipesExecutionResult, ...]: Results reported by the external process.
+        """
+
+    @public
+    @abstractmethod
+    @contextmanager
+    def open(
+        self,
+        *,
+        context: OpExecutionContext,
+        extras: Optional[PipesExtras] = None,
+    ) -> Iterator["PipesClientInvocation"]:
+        """Run an external process and yield an invocation object representing the running process.
+
+        Args:
+            context (OpExecutionContext): The context from the executing op/asset.
+            extras (Optional[PipesExtras]): Arbitrary data to pass to the external environment.
+
+        Yields:
+            PipesClientInvocation: An invocation object that can be used to stream results from the
+                external process.
+        """
+
+
+class PipesClientInvocation:
+    def __init__(self, *, session: "PipesSession"):
+        self.session = session
+
+    @abstractmethod
+    def stream() -> Iterator["PipesExecutionResult"]:
+        """Iterate over results streamed from the external process.
 
         Yields:
             PipesExecutionResult: Results reported by the external process.
