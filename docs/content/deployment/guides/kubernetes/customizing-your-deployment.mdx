@@ -249,7 +249,7 @@ postgresql:
     port: 5432
 ```
 
-Supplying `.Values.postgresql.postgresqlPassword` will create a Kubernetes Secret with key `postgresql-password`, containing the encoded password. This secret is used to supply the Dagster infrastructure with an environment variable that's used when creating the storages for the Dagster instance.
+Supplying `.Values.postgresql.postgresqlUsername` and `.Values.postgresql.postgresqlPassword` will create a Kubernetes Secret with keys `postgresql-username` and `postgresql-password`, containing the encoded credentials. This secret is used to supply the Dagster infrastructure with environment variables that are used when creating the storages for the Dagster instance.
 
 If you use a secrets manager like [Vault](https://www.hashicorp.com/products/vault/kubernetes), it may be convenient to manage this Secret outside of the Dagster Helm chart. In this case, the generation of this Secret within the chart should be disabled, and `.Values.global.postgresqlSecretName` should be set to the name of the externally managed Secret.
 
@@ -258,6 +258,15 @@ global:
   postgresqlSecretName: "dagster-postgresql-secret"
 
 generatePostgresqlPasswordSecret: false
+```
+
+For situations where a database credential secret is created with keys other than `postgresql-username` and `postgresql-password`, these can be customized via the settings `global.postgresqlSecretUsernameKey` and `global.postgresqlSecretPasswordKey`. For example, the following configuration is compatible with the [Vault Database Secrets Backend](https://developer.hashicorp.com/vault/docs/secrets/databases):
+
+```yaml
+global:
+  postgresqlSecretName: dagster-postgresql-secret
+  postgresqlSecretUsernameKey: username
+  postgresqlSecretPasswordKey: password
 ```
 
 ---
