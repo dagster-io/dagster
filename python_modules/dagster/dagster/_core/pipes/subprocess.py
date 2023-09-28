@@ -6,7 +6,7 @@ from dagster_pipes import PipesExtras
 from dagster import _check as check
 from dagster._annotations import experimental, public
 from dagster._core.definitions.resource_annotation import ResourceParam
-from dagster._core.errors import DagsterExternalExecutionError
+from dagster._core.errors import DagsterPipesExecutionError
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.pipes.client import (
     PipesClient,
@@ -105,7 +105,7 @@ class _PipesSubprocess(PipesClient):
                 yield from pipes_session.get_results()
 
             if process.returncode != 0:
-                raise DagsterExternalExecutionError(
+                raise DagsterPipesExecutionError(
                     f"External execution process failed with code {process.returncode}"
                 )
         yield from pipes_session.get_results()
