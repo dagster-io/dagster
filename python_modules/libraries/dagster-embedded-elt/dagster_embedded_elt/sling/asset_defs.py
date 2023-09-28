@@ -3,6 +3,7 @@ from dagster import (
     AssetsDefinition,
     AssetExecutionContext,
     AssetSpec,
+    MaterializeResult,
     multi_asset,
 )
 from dagster_embedded_elt.sling.resources import SlingMode, SlingResource
@@ -45,8 +46,13 @@ def build_sling_asset(
         ):
             match = re.search(r"(\d+) rows", stdout_line)
             if match:
-                context.add_output_metadata({"row_count": int(match.group(1))})
-                context.log.debug(f"Added metadata: {int(match.group(1))}")
+                last_row_count_observed = int(match.group(1))
             context.log.info(stdout_line)
+
+        return MaterializeResult(
+            metadata=(
+                {} if last_row_count_observed is None else {"row_count": last_row_count_observed}
+            )
+        )
 
     return sync

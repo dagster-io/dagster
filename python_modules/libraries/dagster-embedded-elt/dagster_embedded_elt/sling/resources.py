@@ -168,7 +168,7 @@ class SlingResource(ConfigurableResource):
         target_object: str,
         mode: SlingMode = SlingMode.FULL_REFRESH,
         primary_key: Optional[List[str]] = None,
-        update_key: Optional[str] = None,
+        update_key: Optional[List[str]] = None,
         source_options: Optional[Dict[str, Any]] = None,
         target_options: Optional[Dict[str, Any]] = None,
     ) -> Generator[str, None, None]:
@@ -211,7 +211,7 @@ class SlingResource(ConfigurableResource):
         target_object: str,
         mode: SlingMode,
         primary_key: Optional[List[str]] = None,
-        update_key: Optional[str] = None,
+        update_key: Optional[List[str]] = None,
         source_options: Optional[Dict[str, Any]] = None,
         target_options: Optional[Dict[str, Any]] = None,
     ) -> Generator[str, None, None]:
