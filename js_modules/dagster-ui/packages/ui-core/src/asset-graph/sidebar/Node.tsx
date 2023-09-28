@@ -27,8 +27,6 @@ import {GraphData, GraphNode, tokenForAssetKey} from '../Utils';
 
 import {FolderNodeNonAssetType, StatusCaseDot, getDisplayName} from './util';
 
-import {getDisplayName} from './util';
-
 export const Node = ({
   graphData,
   node,
