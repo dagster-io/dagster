@@ -127,6 +127,7 @@ class RuleEvaluationContext(NamedTuple):
     will_materialize_mapping: Mapping[AssetKey, AbstractSet[AssetKeyPartitionKey]]
     expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]]
     candidates: AbstractSet[AssetKeyPartitionKey]
+    new_candidates: AbstractSet[AssetKeyPartitionKey]
     daemon_context: "AssetDaemonContext"
 
     @property
@@ -215,29 +216,28 @@ class AutoMaterializeRule(ABC):
         """
         ...
 
-    @abstractmethod
-    def evaluate_net_new(self, context: RuleEvaluationContext): ...
-
-    @public
-    def evaluate_for_asset_full(
+    def get_previous_evaluation_results(
         self, context: RuleEvaluationContext
-    ) -> Tuple[RuleEvaluationResults, RuleEvaluationResults]:
-        """This is a dumb name for the function, but the purpose is allow a hook for the framework
-        to simultaneously get:
-        - the net-new evaluation results for this rule
-        - the previous evaluation results for this rule which are still valid
-        I think the best structure here would probably be to have separate hooks for materialize
-        and skip rules. Materialize rules would only implement a function to get the net-new
-        materialization evaluations (and let the framework handle resurrecting the old ones).
-        Skip rules would be able to decide how to handle old evaluations. For example, the
-        materialize_on_parent_missing rule should probably always re-evaluate its logic if there
-        are net new candidates, but nothing new is happening in "materialize rule" realm, and none
-        of the parents have been updated since last tick, you can just return your previous rule
-        evaluations (all the same parents will still be missing)
-        """
-        return self.evaluate_for_asset(context), self.get_previous_evaluation_results(context)
+    ) -> RuleEvaluationResults:
+        """Return the previous evaluation results for this rule, if any."""
 
-    def get_previous_evaluation_results(self, context: RuleEvaluationContext): ...
+        # this line ensures that if a materialize rule is "handled" (i.e. a materialization was
+        # kicked off after it was discovered, or the asset was discarded), then we don't resurrect
+        # the previous evaluation results
+        if context.cursor.is_unhandled(context.asset_key):
+            return []
+
+        # here, we query the instance for the last recorded evaluation record
+        previous_evaluation_record = context.instance_queryer.get_previous_asset_evaluation_record(
+            asset_key=context.asset_key
+        )
+        if previous_evaluation_record is None:
+            return []
+
+        return previous_evaluation_record.evaluation.get_rule_evaluation_results(
+            rule_snapshot=self.to_snapshot(),
+            asset_graph=context.asset_graph,
+        )
 
     @abstractmethod
     def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
@@ -328,19 +328,14 @@ class AutoMaterializeMaterializeRule(AutoMaterializeRule):
     def decision_type(self) -> AutoMaterializeDecisionType:
         return AutoMaterializeDecisionType.MATERIALIZE
 
+    @abstractmethod
+    def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResults: ...
+
 
 class AutoMaterializeSkipRule(AutoMaterializeRule):
     @property
     def decision_type(self) -> AutoMaterializeDecisionType:
         return AutoMaterializeDecisionType.SKIP
-
-    def should_reevaluate(self, context: RuleEvaluationContext) -> bool:
-        return len(context.new_candidates) > 0
-
-    def evaluate(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
-        if not self.should_reevaluate(context):
-            return self.get_previous_evaluation_results(context)
-        return self.evaluate_for_asset(context)
 
 
 @whitelist_for_serdes
@@ -722,6 +717,37 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
                 num_discarded=num_discarded,
                 rule_snapshots=auto_materialize_policy.rule_snapshots,
             )
+
+    def get_rule_evaluation_results(
+        self, rule_snapshot: AutoMaterializeRuleSnapshot, asset_graph: AssetGraph
+    ) -> RuleEvaluationResults:
+        results = []
+        partitions_def = asset_graph.get_partitions_def(self.asset_key)
+        for (
+            rule_evaluation,
+            serialized_subset,
+        ) in self.partition_subsets_by_condition:
+            # filter for the same rule
+            if rule_evaluation.rule_snapshot != rule_snapshot:
+                continue
+            if serialized_subset is None:
+                if partitions_def is None:
+                    results.append(
+                        (rule_evaluation.evaluation_data, {AssetKeyPartitionKey(self.asset_key)})
+                    )
+            elif serialized_subset.can_deserialize(partitions_def) and partitions_def is not None:
+                results.append(
+                    (
+                        rule_evaluation.evaluation_data,
+                        {
+                            AssetKeyPartitionKey(self.asset_key, partition_key)
+                            for partition_key in serialized_subset.deserialize(
+                                partitions_def=partitions_def
+                            ).get_partition_keys()
+                        },
+                    )
+                )
+        return results
 
 
 # BACKCOMPAT GRAVEYARD

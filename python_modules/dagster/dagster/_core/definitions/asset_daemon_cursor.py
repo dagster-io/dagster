@@ -10,6 +10,7 @@ from typing import (
     Mapping,
     NamedTuple,
     Optional,
+    Union,
     Sequence,
     Set,
     cast,
@@ -21,6 +22,8 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
 )
+
+from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 
 from .asset_graph import AssetGraph
 from .partition import (
@@ -56,9 +59,15 @@ class AssetDaemonCursor(NamedTuple):
     handled_root_partitions_by_asset_key: Mapping[AssetKey, PartitionsSubset]
     evaluation_id: int
     last_observe_request_timestamp_by_asset_key: Mapping[AssetKey, float]
+    unhandled_asset_graph_subset: Optional[AssetGraphSubset]
 
     def was_previously_handled(self, asset_key: AssetKey) -> bool:
         return asset_key in self.handled_root_asset_keys
+
+    def is_unhandled(self, asset: Union[AssetKey, AssetKeyPartitionKey]) -> bool:
+        if self.unhandled_asset_graph_subset is None:
+            return False
+        return asset in self.unhandled_asset_graph_subset
 
     def get_unhandled_partitions(
         self,
@@ -89,6 +98,7 @@ class AssetDaemonCursor(NamedTuple):
         asset_graph: AssetGraph,
         newly_observe_requested_asset_keys: Sequence[AssetKey],
         observe_request_timestamp: float,
+        unhandled_graph_subset: AssetGraphSubset,
     ) -> "AssetDaemonCursor":
         """Returns a cursor that represents this cursor plus the updates that have happened within the
         tick.
@@ -152,6 +162,7 @@ class AssetDaemonCursor(NamedTuple):
             handled_root_partitions_by_asset_key=result_handled_root_partitions_by_asset_key,
             evaluation_id=evaluation_id,
             last_observe_request_timestamp_by_asset_key=result_last_observe_request_timestamp_by_asset_key,
+            unhandled_asset_graph_subset=unhandled_graph_subset,
         )
 
     @classmethod
@@ -162,6 +173,7 @@ class AssetDaemonCursor(NamedTuple):
             handled_root_asset_keys=set(),
             evaluation_id=0,
             last_observe_request_timestamp_by_asset_key={},
+            unhandled_asset_graph_subset=None,
         )
 
     @classmethod
@@ -178,6 +190,7 @@ class AssetDaemonCursor(NamedTuple):
 
             evaluation_id = data[3] if len(data) == 4 else 0
             serialized_last_observe_request_timestamp_by_asset_key = {}
+            serialized_unhandled_asset_graph_subset = None
         else:
             latest_storage_id = data["latest_storage_id"]
             serialized_handled_root_asset_keys = data["handled_root_asset_keys"]
@@ -188,6 +201,7 @@ class AssetDaemonCursor(NamedTuple):
             serialized_last_observe_request_timestamp_by_asset_key = data.get(
                 "last_observe_request_timestamp_by_asset_key", {}
             )
+            serialized_unhandled_asset_graph_subset = data.get("unhandled_asset_graph_subset")
 
         handled_root_partitions_by_asset_key = {}
         for (
@@ -232,6 +246,13 @@ class AssetDaemonCursor(NamedTuple):
                 AssetKey.from_user_string(key_str): timestamp
                 for key_str, timestamp in serialized_last_observe_request_timestamp_by_asset_key.items()
             },
+            unhandled_asset_graph_subset=(
+                AssetGraphSubset.from_storage_dict(
+                    serialized_unhandled_asset_graph_subset, asset_graph
+                )
+                if serialized_unhandled_asset_graph_subset
+                else AssetGraphSubset(asset_graph)
+            ),
         )
 
     @classmethod
