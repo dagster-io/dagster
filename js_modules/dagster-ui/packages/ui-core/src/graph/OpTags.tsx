@@ -2,7 +2,6 @@ import {Box, Colors, FontFamily, IconWrapper} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
-import sling from './optag-images/sling.svg'
 import airbyte from './optag-images/airbyte.svg';
 import airflow from './optag-images/airflow.svg';
 import aws from './optag-images/aws.svg';
@@ -47,6 +46,7 @@ import scikitlearn from './optag-images/scikitlearn.svg';
 import scipy from './optag-images/scipy.svg';
 import segment from './optag-images/segment.svg';
 import slack from './optag-images/slack.svg';
+import sling from './optag-images/sling.svg';
 import snowflake from './optag-images/snowflake.svg';
 import sql from './optag-images/sql.svg';
 import stitch from './optag-images/stitch.svg';
