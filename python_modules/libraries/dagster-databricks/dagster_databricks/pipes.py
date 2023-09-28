@@ -10,7 +10,7 @@ from typing import Iterator, Mapping, Optional
 import dagster._check as check
 from dagster._annotations import experimental
 from dagster._core.definitions.resource_annotation import ResourceParam
-from dagster._core.errors import DagsterExternalExecutionError
+from dagster._core.errors import DagsterPipesExecutionError
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.pipes.client import (
     PipesClient,
@@ -126,11 +126,11 @@ class _PipesDatabricksClient(PipesClient):
                     if run.state.result_state == jobs.RunResultState.SUCCESS:
                         break
                     else:
-                        raise DagsterExternalExecutionError(
+                        raise DagsterPipesExecutionError(
                             f"Error running Databricks job: {run.state.state_message}"
                         )
                 elif run.state.life_cycle_state == jobs.RunLifeCycleState.INTERNAL_ERROR:
-                    raise DagsterExternalExecutionError(
+                    raise DagsterPipesExecutionError(
                         f"Error running Databricks job: {run.state.state_message}"
                     )
                 yield from pipes_session.get_results()

@@ -33,7 +33,7 @@ from dagster._core.definitions.metadata import (
     UrlMetadataValue,
 )
 from dagster._core.definitions.partition import DynamicPartitionsDefinition
-from dagster._core.errors import DagsterExternalExecutionError, DagsterInvariantViolationError
+from dagster._core.errors import DagsterInvariantViolationError, DagsterPipesExecutionError
 from dagster._core.execution.context.compute import AssetExecutionContext, OpExecutionContext
 from dagster._core.execution.context.invocation import build_asset_context
 from dagster._core.instance_for_test import instance_for_test
@@ -331,7 +331,7 @@ def test_ext_asset_failed():
             cmd = [_PYTHON_EXECUTABLE, script_path]
             yield from pipes_subprocess_client.run(cmd, context=context)
 
-    with pytest.raises(DagsterExternalExecutionError):
+    with pytest.raises(DagsterPipesExecutionError):
         materialize([foo], resources={"pipes_subprocess_client": PipesSubprocessClient()})
 
 
