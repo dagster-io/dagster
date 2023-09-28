@@ -46,7 +46,7 @@ const _assetLayoutCacheKey = (graphData: GraphData) => {
 const getFullAssetLayout = memoize(layoutAssetGraph, _assetLayoutCacheKey);
 
 const asyncGetFullAssetLayoutIndexDB = indexedDBAsyncMemoize(
-  (_cacheKey, _versionKey, graphData: GraphData, opts: LayoutAssetGraphOptions) => {
+  (graphData: GraphData, opts: LayoutAssetGraphOptions) => {
     return new Promise<AssetGraphLayout>((resolve) => {
       const worker = new Worker(new URL('../workers/dagre_layout.worker', import.meta.url));
       worker.addEventListener('message', (event) => {
@@ -150,16 +150,11 @@ export function useOpLayout(ops: ILayoutOp[], parentOp?: ILayoutOp) {
   };
 }
 
-export function useAssetLayout(
-  graphData: GraphData,
-  indexDBKey?: string,
-  fullAssetGraphData?: GraphData,
-) {
+export function useAssetLayout(graphData: GraphData) {
   const [state, dispatch] = React.useReducer(reducer, initialState);
   const flags = useFeatureFlags();
 
   const cacheKey = _assetLayoutCacheKey(graphData);
-  const fullDataCacheKey = fullAssetGraphData ? _assetLayoutCacheKey(fullAssetGraphData) : null;
   const nodeCount = Object.keys(graphData.nodes).length;
   const runAsync = nodeCount >= ASYNC_LAYOUT_SOLID_COUNT;
 
@@ -171,13 +166,8 @@ export function useAssetLayout(
     async function runAsyncLayout() {
       dispatch({type: 'loading'});
       let layout;
-      if (indexDBKey && !flagDisableDAGCache) {
-        layout = await asyncGetFullAssetLayoutIndexDB(
-          indexDBKey,
-          fullDataCacheKey ?? cacheKey,
-          graphData,
-          opts,
-        );
+      if (!flagDisableDAGCache) {
+        layout = await asyncGetFullAssetLayoutIndexDB(graphData, opts);
       } else {
         layout = await asyncGetFullAssetLayout(graphData, opts);
       }
@@ -190,7 +180,7 @@ export function useAssetLayout(
     } else {
       void runAsyncLayout();
     }
-  }, [cacheKey, fullDataCacheKey, graphData, runAsync, flags, indexDBKey, flagDisableDAGCache]);
+  }, [cacheKey, graphData, runAsync, flags, flagDisableDAGCache]);
 
   return {
     loading: state.loading || !state.layout || state.cacheKey !== cacheKey,
