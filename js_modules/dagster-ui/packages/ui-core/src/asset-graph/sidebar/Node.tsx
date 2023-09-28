@@ -1,10 +1,6 @@
 import {
   Box,
-  Button,
   Colors,
-  Dialog,
-  DialogBody,
-  DialogFooter,
   Icon,
   Menu,
   MenuItem,
@@ -17,8 +13,14 @@ import React from 'react';
 import styled from 'styled-components';
 
 import {showSharedToaster} from '../../app/DomUtils';
+import {
+  AssetKeysDialog,
+  AssetKeysDialogEmptyState,
+  AssetKeysDialogHeader,
+} from '../../assets/AutoMaterializePolicyPage/AssetKeysDialog';
 import {useMaterializationAction} from '../../assets/LaunchAssetExecutionButton';
 import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
+import {VirtualizedItemListForDialog} from '../../ui/VirtualizedItemListForDialog';
 import {GraphData, GraphNode, tokenForAssetKey} from '../Utils';
 
 import {FolderNodeNonAssetType, getDisplayName} from './util';
@@ -105,11 +107,9 @@ export const Node = ({
       {launchpadElement}
       <UpstreamDownstreamDialog
         title="Parent assets"
-        assets={upstream}
+        assetKeys={upstream}
         isOpen={showParents}
-        close={() => {
-          setShowParents(false);
-        }}
+        setIsOpen={setShowParents}
         selectNode={selectNode}
       />
       <Box ref={elementRef} onClick={selectThisNode} padding={{left: 8}}>
@@ -232,43 +232,72 @@ export const Node = ({
 
 const UpstreamDownstreamDialog = ({
   title,
-  assets,
+  assetKeys,
   isOpen,
-  close,
+  setIsOpen,
   selectNode,
 }: {
   title: string;
-  assets: string[];
+  assetKeys: string[];
   isOpen: boolean;
-  close: () => void;
+  setIsOpen: (isOpen: boolean) => void;
   selectNode: (e: React.MouseEvent<any> | React.KeyboardEvent<any>, nodeId: string) => void;
 }) => {
+  const [queryString, setQueryString] = React.useState('');
+
+  const filteredAssetKeys = React.useMemo(() => {
+    return assetKeys.filter((assetKey) => {
+      const path = JSON.parse(assetKey);
+      return path[path.length - 1].toLowerCase().includes(queryString.toLowerCase());
+    });
+  }, [assetKeys, queryString]);
   return (
-    <Dialog isOpen={isOpen} onClose={close} title={title}>
-      <DialogBody>
-        <Menu>
-          {assets.map((assetId) => {
-            const path = JSON.parse(assetId);
-            return (
-              <MenuItem
-                icon="asset"
-                text={path[path.length - 1]}
-                key={assetId}
-                onClick={(e) => {
-                  selectNode(e, assetId);
-                  close();
-                }}
-              />
-            );
-          })}
-        </Menu>
-      </DialogBody>
-      <DialogFooter topBorder>
-        <Button onClick={close} intent="primary">
-          Close
-        </Button>
-      </DialogFooter>
-    </Dialog>
+    <AssetKeysDialog
+      isOpen={isOpen}
+      setIsOpen={setIsOpen}
+      header={
+        <AssetKeysDialogHeader
+          title={title}
+          showSearch={assetKeys.length > 0}
+          placeholder="Filter by asset key…"
+          queryString={queryString}
+          setQueryString={setQueryString}
+        />
+      }
+      content={
+        queryString && !filteredAssetKeys.length ? (
+          <AssetKeysDialogEmptyState
+            title="No matching asset keys"
+            description={
+              <>
+                No matching asset keys for <strong>{queryString}</strong>
+              </>
+            }
+          />
+        ) : (
+          <Menu>
+            <VirtualizedItemListForDialog
+              items={filteredAssetKeys}
+              itemBorders={false}
+              renderItem={(assetId) => {
+                const path = JSON.parse(assetId);
+                return (
+                  <MenuItem
+                    icon="asset"
+                    text={path[path.length - 1]}
+                    key={assetId}
+                    onClick={(e) => {
+                      selectNode(e, assetId);
+                      setIsOpen(false);
+                    }}
+                  />
+                );
+              }}
+            />
+          </Menu>
+        )
+      }
+    />
   );
 };
 

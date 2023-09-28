@@ -11,7 +11,7 @@ import {GraphData, GraphNode, tokenForAssetKey} from '../Utils';
 import {SearchFilter} from '../sidebar/SearchFilter';
 
 import {Node} from './Node';
-import {FolderNodeType, TreeNodeType, getDisplayName, nodeId} from './util';
+import {FolderNodeType, TreeNodeType, getDisplayName, nodePathKey} from './util';
 
 const COLLATOR = new Intl.Collator(navigator.language, {sensitivity: 'base', numeric: true});
 
@@ -245,7 +245,7 @@ export const AssetGraphExplorerSidebar = React.memo(
       viewType,
       // eslint-disable-next-line react-hooks/exhaustive-deps
       lastSelectedNode &&
-        renderedNodes.findIndex((node) => nodeId(lastSelectedNode) === nodeId(node)),
+        renderedNodes.findIndex((node) => nodePathKey(lastSelectedNode) === nodePathKey(node)),
     ]);
 
     const indexOfLastSelectedNode = React.useMemo(
@@ -258,7 +258,7 @@ export const AssetGraphExplorerSidebar = React.memo(
             ? renderedNodes.findIndex((node) => 'path' in node && node.path === selectedNode.path)
             : -1;
         } else {
-          return renderedNodes.findIndex((node) => nodeId(node) === nodeId(selectedNode));
+          return renderedNodes.findIndex((node) => nodePathKey(node) === nodePathKey(selectedNode));
         }
       },
       // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -328,7 +328,7 @@ export const AssetGraphExplorerSidebar = React.memo(
                     {row ? (
                       <Node
                         viewType={viewType}
-                        isOpen={openNodes.has(nodeId(node))}
+                        isOpen={openNodes.has(nodePathKey(node))}
                         graphData={graphData}
                         node={row}
                         level={node.level}
@@ -341,11 +341,11 @@ export const AssetGraphExplorerSidebar = React.memo(
                           setSelectedNode(node);
                           setOpenNodes((nodes) => {
                             const openNodes = new Set(nodes);
-                            const isOpen = openNodes.has(nodeId(node));
+                            const isOpen = openNodes.has(nodePathKey(node));
                             if (isOpen) {
-                              openNodes.delete(nodeId(node));
+                              openNodes.delete(nodePathKey(node));
                             } else {
-                              openNodes.add(nodeId(node));
+                              openNodes.add(nodePathKey(node));
                             }
                             return openNodes;
                           });
