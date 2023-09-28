@@ -5,16 +5,11 @@ description: A Dagster schedule submits job runs at a fixed interval.
 
 # Schedules
 
-A schedule is a Dagster definition that is used to execute a [job](/concepts/ops-jobs-graphs/jobs) at a fixed interval. Each time at which a schedule is evaluated is called a tick. The schedule definition can generate run configuration for the job on each tick.
+Schedules are the most traditional way to keep your data up-to-date. Schedules define a fixed time interval to run your pipeline, such as daily, hourly, or Monday at 9:00 AM.
 
-Each schedule:
+A schedule is a Dagster definition that is used to execute a [job](/concepts/ops-jobs-graphs/jobs) at a fixed interval, such as daily, hourly, or Monday at 9:00 AM. Each time at which a schedule is evaluated is called a tick. The schedule definition can generate run configuration for the job on each tick.
 
-- Targets a single job
-- Optionally defines a function that returns either:
-  - One or more <PyObject object="RunRequest"/> objects. Each run request launches a run.
-  - An optional <PyObject object="SkipReason"/>, which specifies a message which describes why no runs were requested
-
-Dagster includes a scheduler, which runs as part of the dagster-daemon process. Once you have defined a schedule, see the [dagster-daemon](/deployment/dagster-daemon) page for instructions on how to run the daemon in order to execute your schedules.
+Dagster includes a scheduler, which is a process that periodically checks for schedules that need to be evaluated. When a schedule is evaluated, the scheduler submits a run for the job.
 
 ---
 
@@ -22,10 +17,9 @@ Dagster includes a scheduler, which runs as part of the dagster-daemon process. 
 
 Using schedules provides the following benefits:
 
-- **A**: Run only the data that’s needed and gain granular control over slices. For example, storing recent orders in hot storage and older orders in cheaper, cold storage.
-- **B**: Divide large datasets into smaller, more manageable parts to speed up queries.
-
----
+- **Automation**: Schedules allow you to automate the execution of your pipelines.
+- **Observablity**: Schedules provide a way to view the history of runs for a job and ticks for a schedule in the UI. It makes it easy to see when a job was last run and what the run's status was.
+- **Parameterization**: Schedules can be customized to run with different run config and tags each time they execute. For example, you might want to run a job with a different date each time it executes.
 
 ## Uses
 
@@ -37,10 +31,19 @@ Schedules are supported for both Software-defined Assets and ops, but how each c
 
 With schedules, you can:
 
-- foo
-- bar
+- View details of a schedule, such as tick history and run history, in the [Dagster UI](/concepts/webserver/ui#schedules).
+- View all schedules defined in your Dagster deployment in the [Dagster UI](/concepts/webserver/ui#all-schedules).
+- Adjust schedule execution times, timezone, and conditions. For example, you might want to skip a run if the data hasn't changed since the last time the schedule ran.
+- Paramterize run configuration and tags for a run. For example, you might want to run a job with a different configuration each time it executes.
 
 <!-- # WIP (old "Schedules" page content)
+
+Each schedule:
+
+- Targets a single job
+- Optionally defines a function that returns either:
+  - One or more <PyObject object="RunRequest"/> objects. Each run request launches a run.
+  - An optional <PyObject object="SkipReason"/>, which specifies a message which describes why no runs were requested
 
 ---
 

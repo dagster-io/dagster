@@ -113,11 +113,11 @@
         "path": "/concepts/partitions-schedules-sensors/schedules",
         "children": [
           {
-            "title": "Scheduleing assets",
+            "title": "Scheduling assets",
             "path": "/concepts/partitions-schedules-sensors/scheduling-assets"
           },
           {
-            "title": "Scheduleing ops (Advanced)",
+            "title": "Scheduling ops (Advanced)",
             "path": "/concepts/partitions-schedules-sensors/scheduling-ops"
           },
           {
