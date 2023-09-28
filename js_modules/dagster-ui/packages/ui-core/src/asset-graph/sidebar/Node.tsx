@@ -19,9 +19,9 @@ import styled from 'styled-components';
 import {showSharedToaster} from '../../app/DomUtils';
 import {useMaterializationAction} from '../../assets/LaunchAssetExecutionButton';
 import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
-import {tokenForAssetKey} from '../Utils';
+import {GraphData, GraphNode, tokenForAssetKey} from '../Utils';
 
-import {getDisplayName} from './util';
+import {FolderNodeNonAssetType, getDisplayName} from './util';
 
 export const Node = ({
   graphData,

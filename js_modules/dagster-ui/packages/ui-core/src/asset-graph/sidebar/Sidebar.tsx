@@ -11,17 +11,9 @@ import {GraphData, GraphNode, tokenForAssetKey} from '../Utils';
 import {SearchFilter} from '../sidebar/SearchFilter';
 
 import {Node} from './Node';
-import {getDisplayName, nodeId} from './util';
+import {FolderNodeType, TreeNodeType, getDisplayName, nodeId} from './util';
 
 const COLLATOR = new Intl.Collator(navigator.language, {sensitivity: 'base', numeric: true});
-
-type FolderNodeNonAssetType =
-  | {groupName: string; id: string; level: number}
-  | {locationName: string; id: string; level: number};
-
-type FolderNodeType = FolderNodeNonAssetType | {path: string; id: string; level: number};
-
-type TreeNodeType = {level: number; id: string; path: string};
 
 export const AssetGraphExplorerSidebar = React.memo(
   ({
