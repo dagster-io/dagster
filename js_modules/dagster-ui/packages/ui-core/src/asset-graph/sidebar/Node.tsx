@@ -21,6 +21,8 @@ import {useMaterializationAction} from '../../assets/LaunchAssetExecutionButton'
 import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
 import {tokenForAssetKey} from '../Utils';
 
+import {getDisplayName} from './util';
+
 export const Node = ({
   graphData,
   node,
