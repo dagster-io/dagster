@@ -635,9 +635,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             if len(partitions) == 0:
                 raise DagsterInvalidInvocationError("Must provide at least one partition in list")
 
-        materialization_count_by_partition = self.instance.get_materialization_count_by_partition(
-            [asset_key]
-        ).get(asset_key, {})
+        materialized_partitions = self.instance.get_materialized_partitions(asset_key)
         if not partitions:
             if asset_key not in self._monitored_asset_keys:
                 raise DagsterInvariantViolationError(
@@ -652,9 +650,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
                 )
             partitions = partitions_def.get_partition_keys(dynamic_partitions_store=self.instance)
 
-        return all(
-            [materialization_count_by_partition.get(partition, 0) != 0 for partition in partitions]
-        )
+        return all([partition in materialized_partitions for partition in partitions])
 
     def _get_asset(self, asset_key: AssetKey, fn_name: str) -> AssetsDefinition:
         from dagster._core.definitions.repository_definition import RepositoryDefinition
