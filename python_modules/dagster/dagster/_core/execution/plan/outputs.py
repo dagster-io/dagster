@@ -18,7 +18,7 @@ from .handle import UnresolvedStepHandle
 from .objects import TypeCheckData
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_field_names={"asset_check_key": "asset_check_handle"})
 class StepOutputProperties(
     NamedTuple(
         "_StepOutputProperties",
