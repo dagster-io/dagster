@@ -142,7 +142,9 @@ class DbtCliEventMessage:
             test_resource_props = manifest["nodes"][unique_id]
             metadata = {"unique_id": unique_id, "status": node_status}
 
-            is_asset_check = is_asset_check_from_dbt_resource_props(test_resource_props)
+            is_asset_check = is_asset_check_from_dbt_resource_props(
+                dagster_dbt_translator.settings, test_resource_props
+            )
             attached_node_unique_id = test_resource_props.get("attached_node")
             is_generic_test = bool(attached_node_unique_id)
 
