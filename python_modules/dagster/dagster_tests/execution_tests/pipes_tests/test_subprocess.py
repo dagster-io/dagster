@@ -5,7 +5,7 @@ import subprocess
 import textwrap
 from contextlib import contextmanager
 from tempfile import NamedTemporaryFile
-from typing import Any, Callable, Iterator
+from typing import Any, Callable, Iterator, Mapping
 
 import boto3
 import pytest
@@ -124,6 +124,7 @@ def s3_client() -> Iterator[boto3.client]:
     server.stop()
 
 
+@pytest.mark.parametrize("execution_mode", ["sync", "stream"])
 @pytest.mark.parametrize(
     ("context_injector_spec", "message_reader_spec"),
     [
@@ -136,8 +137,14 @@ def s3_client() -> Iterator[boto3.client]:
         ("user/env", "user/file"),
     ],
 )
-def test_ext_subprocess(
-    capsys, tmpdir, external_script, s3_client, context_injector_spec, message_reader_spec
+def test_ext_subprocess_client(
+    capsys,
+    tmpdir,
+    external_script,
+    s3_client,
+    execution_mode,
+    context_injector_spec,
+    message_reader_spec,
 ):
     if context_injector_spec == "default":
         context_injector = None
@@ -159,12 +166,11 @@ def test_ext_subprocess(
     else:
         assert False, "Unreachable"
 
-    @asset(check_specs=[AssetCheckSpec(name="foo_check", asset=AssetKey(["foo"]))])
-    def foo(context: AssetExecutionContext, ext: PipesSubprocessClient):
+    def get_exec_kwargs(context: OpExecutionContext) -> Mapping[str, Any]:
         extras = {"bar": "baz"}
         cmd = [_PYTHON_EXECUTABLE, external_script]
-        yield from ext.run(
-            cmd,
+        return dict(
+            command=cmd,
             context=context,
             extras=extras,
             env={
@@ -172,6 +178,19 @@ def test_ext_subprocess(
                 "MESSAGE_READER_SPEC": message_reader_spec,
             },
         )
+
+    if execution_mode == "sync":
+
+        @asset(check_specs=[AssetCheckSpec(name="foo_check", asset=AssetKey(["foo"]))])
+        def foo(context: AssetExecutionContext, ext: PipesSubprocessClient):
+            return ext.run(**get_exec_kwargs(context))
+
+    elif execution_mode == "stream":
+
+        @asset(check_specs=[AssetCheckSpec(name="foo_check", asset=AssetKey(["foo"]))])
+        def foo(context: AssetExecutionContext, ext: PipesSubprocessClient):
+            with ext.open(**get_exec_kwargs(context)) as invocation:
+                yield from invocation.stream()
 
     resource = PipesSubprocessClient(
         context_injector=context_injector, message_reader=message_reader
@@ -197,6 +216,30 @@ def test_ext_subprocess(
         )
         assert len(asset_check_executions) == 1
         assert asset_check_executions[0].status == AssetCheckExecutionRecordStatus.SUCCEEDED
+
+
+def test_ext_subprocess_client_no_yield_no_return():
+    def script_fn():
+        from dagster_pipes import init_dagster_pipes
+
+        context = init_dagster_pipes()
+        context.report_asset_materialization()
+
+    @asset
+    def foo(context: OpExecutionContext, client: PipesSubprocessClient):
+        with temp_script(script_fn) as external_script:
+            cmd = [_PYTHON_EXECUTABLE, external_script]
+            client.run(command=cmd, context=context)
+
+    client = PipesSubprocessClient()
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match=(
+            r"did not yield or return expected outputs.*Did you forget to `yield from"
+            r" pipes_session.get_results\(\)`?"
+        ),
+    ):
+        materialize([foo], resources={"client": client})
 
 
 def test_ext_multi_asset():
