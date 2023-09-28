@@ -7,7 +7,7 @@ from typing import Any, Callable, Iterator
 
 import pytest
 from dagster import AssetExecutionContext, asset, materialize
-from dagster._core.errors import DagsterExternalExecutionError
+from dagster._core.errors import DagsterPipesExecutionError
 from dagster_databricks.pipes import PipesDatabricksClient, dbfs_tempdir
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service import files, jobs
@@ -113,7 +113,7 @@ def test_nonexistent_entry_point(client: WorkspaceClient):
         task = _make_submit_task("/fake/fake")
         pipes_databricks_client.run(task=task, context=context)
 
-    with pytest.raises(DagsterExternalExecutionError, match=r"Cannot read the python file"):
+    with pytest.raises(DagsterPipesExecutionError, match=r"Cannot read the python file"):
         materialize(
             [fake],
             resources={"pipes_databricks_client": PipesDatabricksClient(client)},
