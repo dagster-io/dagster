@@ -582,10 +582,10 @@ class PipesS3MessageWriter(PipesBlobStoreMessageWriter):
     def make_channel(
         self,
         params: PipesParams,
-    ) -> "PipesS3MessageChannel":
+    ) -> "PipesS3MessageWriterChannel":
         bucket = _assert_env_param_type(params, "bucket", str, self.__class__)
         key_prefix = _assert_opt_env_param_type(params, "key_prefix", str, self.__class__)
-        return PipesS3MessageChannel(
+        return PipesS3MessageWriterChannel(
             client=self._client,
             bucket=bucket,
             key_prefix=key_prefix,
@@ -593,7 +593,7 @@ class PipesS3MessageWriter(PipesBlobStoreMessageWriter):
         )
 
 
-class PipesS3MessageChannel(PipesBlobStoreMessageWriterChannel):
+class PipesS3MessageWriterChannel(PipesBlobStoreMessageWriterChannel):
     # client is a boto3.client("s3") object
     def __init__(
         self, client: Any, bucket: str, key_prefix: Optional[str], *, interval: float = 10
