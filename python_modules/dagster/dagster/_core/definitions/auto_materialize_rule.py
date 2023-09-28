@@ -216,7 +216,7 @@ class AutoMaterializeRule(ABC):
         """
         ...
 
-    def get_previous_evaluation_results(
+    def _get_previous_evaluation_results(
         self, context: RuleEvaluationContext
     ) -> RuleEvaluationResults:
         """Return the previous evaluation results for this rule, if any."""
@@ -239,13 +239,43 @@ class AutoMaterializeRule(ABC):
             asset_graph=context.asset_graph,
         )
 
-    @abstractmethod
-    def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
-        """The core evaluation function for the rule. This function takes in a context object and
-        returns a mapping from evaluated rules to the set of asset partitions that the rule applies
-        to.
+    def _merged_results(
+        self,
+        context: RuleEvaluationContext,
+        new_results: RuleEvaluationResults,
+    ) -> Tuple[AbstractSet[AssetKeyPartitionKey], RuleEvaluationResults]:
+        """Merge the new results of an evaluation with any previous results which are still valid,
+        along with the set of asset partitions which have new evaluations.
         """
-        ...
+        new_asset_partitions = set().union(*[v for _, v in new_results])
+
+        previous_results_filtered = [
+            (
+                evaluation_data,
+                {
+                    ap
+                    for ap in asset_partitions
+                    # only include asset partitions that are still unhandled from a previous tick
+                    # and which do not have new evaluation data
+                    if ap in context.cursor.unhandled_asset_graph_subset
+                    and ap not in new_asset_partitions
+                },
+            )
+            for evaluation_data, asset_partitions in self._get_previous_evaluation_results(context)
+        ]
+        return new_asset_partitions, [*previous_results_filtered, *new_results]
+
+    @abstractmethod
+    def evaluate_for_asset_inner(self, context: RuleEvaluationContext) -> RuleEvaluationResults: ...
+
+    def evaluate_for_asset(
+        self, context: RuleEvaluationContext
+    ) -> Tuple[AbstractSet[AssetKeyPartitionKey], RuleEvaluationResults]:
+        """The core evaluation function for the rule. This function takes in a context object and
+        returns the set of asset partitions which have new evaluations, alongside the total set of
+        evaluations that currently apply to the asset.
+        """
+        return self._merged_results(context, self.evaluate_for_asset_inner(context))
 
     @public
     @staticmethod
@@ -323,30 +353,19 @@ class AutoMaterializeRule(ABC):
         return hash(hash(type(self)) + super().__hash__())
 
 
-class AutoMaterializeMaterializeRule(AutoMaterializeRule):
-    @property
-    def decision_type(self) -> AutoMaterializeDecisionType:
-        return AutoMaterializeDecisionType.MATERIALIZE
-
-    @abstractmethod
-    def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResults: ...
-
-
-class AutoMaterializeSkipRule(AutoMaterializeRule):
-    @property
-    def decision_type(self) -> AutoMaterializeDecisionType:
-        return AutoMaterializeDecisionType.SKIP
-
-
 @whitelist_for_serdes
 class MaterializeOnRequiredForFreshnessRule(
-    AutoMaterializeMaterializeRule, NamedTuple("_MaterializeOnRequiredForFreshnessRule", [])
+    AutoMaterializeRule, NamedTuple("_MaterializeOnRequiredForFreshnessRule", [])
 ):
     @property
     def description(self) -> str:
         return "required to meet this or downstream asset's freshness policy"
 
-    def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
+    @property
+    def decision_type(self) -> AutoMaterializeDecisionType:
+        return AutoMaterializeDecisionType.MATERIALIZE
+
+    def evaluate_for_asset_inner(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
         freshness_conditions = freshness_evaluation_results_for_asset_key(
             asset_key=context.asset_key,
             data_time_resolver=context.data_time_resolver,
@@ -360,13 +379,17 @@ class MaterializeOnRequiredForFreshnessRule(
 
 @whitelist_for_serdes
 class MaterializeOnParentUpdatedRule(
-    AutoMaterializeMaterializeRule, NamedTuple("_MaterializeOnParentUpdatedRule", [])
+    AutoMaterializeRule, NamedTuple("_MaterializeOnParentUpdatedRule", [])
 ):
     @property
     def description(self) -> str:
         return "upstream data has changed since latest materialization"
 
-    def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
+    @property
+    def decision_type(self) -> AutoMaterializeDecisionType:
+        return AutoMaterializeDecisionType.MATERIALIZE
+
+    def evaluate_for_asset_inner(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
         """Evaluates the set of asset partitions of this asset whose parents have been updated,
         or will update on this tick.
         """
@@ -429,14 +452,16 @@ class MaterializeOnParentUpdatedRule(
 
 
 @whitelist_for_serdes
-class MaterializeOnMissingRule(
-    AutoMaterializeMaterializeRule, NamedTuple("_MaterializeOnMissingRule", [])
-):
+class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMissingRule", [])):
     @property
     def description(self) -> str:
         return "materialization is missing"
 
-    def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
+    @property
+    def decision_type(self) -> AutoMaterializeDecisionType:
+        return AutoMaterializeDecisionType.MATERIALIZE
+
+    def evaluate_for_asset_inner(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
         """Evaluates the set of asset partitions for this asset which are missing and were not
         previously discarded. Currently only applies to root asset partitions and asset partitions
         with updated parents.
@@ -463,15 +488,18 @@ class MaterializeOnMissingRule(
 
 
 @whitelist_for_serdes
-class SkipOnParentOutdatedRule(
-    AutoMaterializeSkipRule, NamedTuple("_SkipOnParentOutdatedRule", [])
-):
+class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOutdatedRule", [])):
     @property
     def description(self) -> str:
         return "waiting on upstream data to be up to date"
 
-    def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
+    @property
+    def decision_type(self) -> AutoMaterializeDecisionType:
+        return AutoMaterializeDecisionType.SKIP
+
+    def evaluate_for_asset_inner(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
         asset_partitions_by_waiting_on_asset_keys = defaultdict(set)
+
         for candidate in context.candidates:
             outdated_ancestors = set()
             # find the root cause of why this asset partition's parents are outdated (if any)
@@ -494,12 +522,16 @@ class SkipOnParentOutdatedRule(
 
 
 @whitelist_for_serdes
-class SkipOnParentMissingRule(AutoMaterializeSkipRule, NamedTuple("_SkipOnParentMissingRule", [])):
+class SkipOnParentMissingRule(AutoMaterializeRule, NamedTuple("_SkipOnParentMissingRule", [])):
     @property
     def description(self) -> str:
         return "waiting on upstream data to be present"
 
-    def evaluate_for_asset(
+    @property
+    def decision_type(self) -> AutoMaterializeDecisionType:
+        return AutoMaterializeDecisionType.SKIP
+
+    def evaluate_for_asset_inner(
         self,
         context: RuleEvaluationContext,
     ) -> RuleEvaluationResults:
@@ -532,7 +564,7 @@ class SkipOnParentMissingRule(AutoMaterializeSkipRule, NamedTuple("_SkipOnParent
 
 @whitelist_for_serdes
 class SkipOnNotAllParentsUpdatedRule(
-    AutoMaterializeSkipRule,
+    AutoMaterializeRule,
     NamedTuple(
         "_SkipOnNotAllParentsUpdatedRule", [("require_update_for_all_parent_partitions", bool)]
     ),
@@ -556,7 +588,11 @@ class SkipOnNotAllParentsUpdatedRule(
         else:
             return "waiting until all upstream partitions are updated"
 
-    def evaluate_for_asset(
+    @property
+    def decision_type(self) -> AutoMaterializeDecisionType:
+        return AutoMaterializeDecisionType.SKIP
+
+    def evaluate_for_asset_inner(
         self,
         context: RuleEvaluationContext,
     ) -> RuleEvaluationResults:
@@ -630,7 +666,7 @@ class DiscardOnMaxMaterializationsExceededRule(
     def description(self) -> str:
         return f"exceeds {self.limit} materialization(s) per minute"
 
-    def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
+    def evaluate_for_asset_inner(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
         # the set of asset partitions which exceed the limit
         rate_limited_asset_partitions = set(
             sorted(

@@ -339,10 +339,10 @@ class AssetDaemonContext:
             rule_snapshot = materialize_rule.to_snapshot()
 
             self._logger.debug(f"Evaluating materialize rule: {rule_snapshot}")
-            new_candidates_for_rule = set()
-            for evaluation_data, asset_partitions in materialize_rule.evaluate_for_asset(
+            new_candidates_for_rule, rule_evaluation_results = materialize_rule.evaluate_for_asset(
                 materialize_context
-            ):
+            )
+            for evaluation_data, asset_partitions in rule_evaluation_results:
                 all_results.append(
                     (
                         AutoMaterializeRuleEvaluation(
@@ -351,29 +351,8 @@ class AssetDaemonContext:
                         asset_partitions,
                     )
                 )
-                self._logger.debug(f"Rule returned {len(asset_partitions)} net-new partitions")
+                self._logger.debug(f"Rule returned {len(asset_partitions)} partitions")
                 to_materialize.update(asset_partitions)
-                new_candidates_for_rule.update(asset_partitions)
-
-            for (
-                evaluation_data,
-                asset_partitions,
-            ) in materialize_rule.get_previous_evaluation_results(materialize_context):
-                filtered_partitions = {
-                    ap
-                    for ap in asset_partitions
-                    if ap in self.cursor.unhandled_asset_graph_subset
-                    and ap not in new_candidates_for_rule
-                }
-                all_results.append(
-                    (
-                        AutoMaterializeRuleEvaluation(
-                            rule_snapshot=rule_snapshot, evaluation_data=evaluation_data
-                        ),
-                        filtered_partitions,
-                    )
-                )
-                self._logger.debug(f"Rule returned {len(filtered_partitions)} old partitions")
 
             new_candidates.update(new_candidates_for_rule)
 
@@ -409,7 +388,8 @@ class AssetDaemonContext:
         for skip_rule in auto_materialize_policy.skip_rules:
             rule_snapshot = skip_rule.to_snapshot()
             self._logger.debug(f"Evaluating skip rule: {rule_snapshot}")
-            for evaluation_data, asset_partitions in skip_rule.evaluate_for_asset(skip_context):
+            _, rule_evaluation_results = skip_rule.evaluate_for_asset(skip_context)
+            for evaluation_data, asset_partitions in rule_evaluation_results:
                 all_results.append(
                     (
                         AutoMaterializeRuleEvaluation(
@@ -432,9 +412,10 @@ class AssetDaemonContext:
 
             self._logger.debug(f"Evaluating discard rule: {rule_snapshot}")
 
-            for evaluation_data, asset_partitions in rule.evaluate_for_asset(
+            _, rule_evaluation_results = rule.evaluate_for_asset(
                 skip_context._replace(candidates=to_materialize)
-            ):
+            )
+            for evaluation_data, asset_partitions in rule_evaluation_results:
                 all_results.append(
                     (
                         AutoMaterializeRuleEvaluation(
