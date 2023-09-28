@@ -436,7 +436,7 @@ class GrapheneQuery(graphene.ObjectType):
 
     canBulkTerminate = graphene.Field(
         graphene.NonNull(graphene.Boolean),
-        description="Returns whether the user has editor permissions for the deployment",
+        description="Returns whether the user has permission to terminate runs in the deployment",
     )
 
     assetsLatestInfo = graphene.Field(
