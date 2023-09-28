@@ -37,17 +37,18 @@ from dagster_graphql_tests.graphql.graphql_context_test_suite import (
 from dagster_graphql_tests.graphql.repo import static_partitions_def
 
 TICKS_QUERY = """
-query AssetDameonTicksQuery($dayRange: Int, $dayOffset: Int, $statuses: [InstigationTickStatus!], $limit: Int) {
-    autoMaterializeTicks(dayRange: $dayRange, dayOffset: $dayOffset, statuses: $statuses, limit: $limit) {
+query AssetDameonTicksQuery($dayRange: Int, $dayOffset: Int, $statuses: [InstigationTickStatus!], $limit: Int, $cursor: String) {
+    autoMaterializeTicks(dayRange: $dayRange, dayOffset: $dayOffset, statuses: $statuses, limit: $limit, cursor: $cursor) {
         id
         timestamp
+        status
     }
 }
 """
 
 
 def _create_tick(instance, status, timestamp):
-    instance.create_tick(
+    return instance.create_tick(
         TickData(
             instigator_origin_id=FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
             instigator_name=FIXED_AUTO_MATERIALIZATION_INSTIGATOR_NAME,
@@ -71,9 +72,9 @@ class TestAutoMaterializeTicks(ExecutingGraphQLContextTestMatrix):
 
         now = pendulum.now("UTC")
 
-        _create_tick(graphql_context.instance, TickStatus.SUCCESS, now.timestamp())
+        success_1 = _create_tick(graphql_context.instance, TickStatus.SUCCESS, now.timestamp())
 
-        _create_tick(
+        success_2 = _create_tick(
             graphql_context.instance, TickStatus.SUCCESS, now.subtract(days=1, hours=1).timestamp()
         )
 
@@ -107,7 +108,26 @@ class TestAutoMaterializeTicks(ExecutingGraphQLContextTestMatrix):
             TICKS_QUERY,
             variables={"dayRange": None, "dayOffset": None, "statuses": ["SUCCESS"], "limit": 1},
         )
-        assert len(result.data["autoMaterializeTicks"]) == 1
+        ticks = result.data["autoMaterializeTicks"]
+        assert len(ticks) == 1
+        assert ticks[0]["timestamp"] == success_1.timestamp
+
+        cursor = ticks[0]["id"]
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            TICKS_QUERY,
+            variables={
+                "dayRange": None,
+                "dayOffset": None,
+                "statuses": ["SUCCESS"],
+                "limit": 1,
+                "cursor": cursor,
+            },
+        )
+        ticks = result.data["autoMaterializeTicks"]
+        assert len(ticks) == 1
+        assert ticks[0]["timestamp"] == success_2.timestamp
 
 
 QUERY = """

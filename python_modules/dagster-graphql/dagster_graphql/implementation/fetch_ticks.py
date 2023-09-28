@@ -45,19 +45,21 @@ def get_instigation_ticks(
     statuses = [TickStatus(status) for status in status_strings] if status_strings else None
 
     if batch_loader and limit and not cursor and not before and not after:
-        ticks = (
-            batch_loader.get_sensor_ticks(
+        if instigator_type == InstigatorType.SENSOR:
+            ticks = batch_loader.get_sensor_ticks(
                 instigator_origin_id,
                 selector_id,
                 limit,
             )
-            if instigator_type == InstigatorType.SENSOR
-            else batch_loader.get_schedule_ticks(
+        elif instigator_type == InstigatorType.SCHEDULE:
+            ticks = batch_loader.get_schedule_ticks(
                 instigator_origin_id,
                 selector_id,
                 limit,
             )
-        )
+        else:
+            raise Exception(f"Unexpected instigator type {instigator_type}")
+
         return [GrapheneInstigationTick(graphene_info, tick) for tick in ticks]
 
     return [
