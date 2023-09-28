@@ -269,7 +269,9 @@ export const AssetGraphExplorerSidebar = React.memo(
 
     React.useLayoutEffect(() => {
       if (indexOfLastSelectedNode !== -1) {
-        rowVirtualizer.scrollToIndex(indexOfLastSelectedNode);
+        rowVirtualizer.scrollToIndex(indexOfLastSelectedNode, {
+          align: 'center',
+        });
       }
     }, [indexOfLastSelectedNode, rowVirtualizer]);
 
