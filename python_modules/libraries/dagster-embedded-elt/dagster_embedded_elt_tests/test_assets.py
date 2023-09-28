@@ -2,10 +2,10 @@ import os
 import sqlite3
 import tempfile
 
-from dagster import AssetKey, file_relative_path, AssetSpec
+from dagster import AssetSpec, file_relative_path
 from dagster._core.definitions import build_assets_job
 from dagster_embedded_elt.sling import SlingMode, SlingResource, build_sling_asset
-from dagster_embedded_elt.sling.resources import SlingTargetConnection, SlingSourceConnection
+from dagster_embedded_elt.sling.resources import SlingSourceConnection, SlingTargetConnection
 
 
 def test_build_sling_asset():

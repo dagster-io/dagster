@@ -1,13 +1,15 @@
-from typing import List, Optional, Union, Dict, Any
+import re
+from typing import Any, Dict, List, Optional, Union
+
 from dagster import (
-    AssetsDefinition,
     AssetExecutionContext,
+    AssetsDefinition,
     AssetSpec,
     MaterializeResult,
     multi_asset,
 )
+
 from dagster_embedded_elt.sling.resources import SlingMode, SlingResource
-import re
 
 
 def build_sling_asset(
@@ -33,7 +35,7 @@ def build_sling_asset(
     @multi_asset(
         compute_kind="sling", specs=[asset_spec], required_resource_keys={sling_resource_key}
     )
-    def sync(context: AssetExecutionContext) -> None:
+    def sync(context: AssetExecutionContext) -> MaterializeResult:
         sling: SlingResource = getattr(context.resources, sling_resource_key)
         for stdout_line in sling.sync(
             source_stream=source_stream,

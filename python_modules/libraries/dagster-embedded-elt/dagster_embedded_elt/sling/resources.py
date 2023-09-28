@@ -5,11 +5,10 @@ from enum import Enum
 from subprocess import PIPE, STDOUT, Popen
 from typing import Any, Dict, Generator, List, Optional
 
-from pydantic import Field
-from sling import Sling  # type: ignore
-
 from dagster import ConfigurableResource, PermissiveConfig, get_dagster_logger
 from dagster._utils.env import environ
+from pydantic import Field
+from sling import Sling  # type: ignore
 
 logger = get_dagster_logger()
 
@@ -215,8 +214,7 @@ class SlingResource(ConfigurableResource):
         source_options: Optional[Dict[str, Any]] = None,
         target_options: Optional[Dict[str, Any]] = None,
     ) -> Generator[str, None, None]:
-        """
-        Initiate a Sling Sync between a source stream and a target object.
+        """Initiate a Sling Sync between a source stream and a target object.
 
         Args:
             source_stream (str):  The source stream to read from. For database sources, the source stream can be either

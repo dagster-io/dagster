@@ -1,8 +1,9 @@
-from dagster import asset, materialize, file_relative_path
-from dagster_embedded_elt.sling import SlingResource, SlingMode
 import os
-import tempfile
 import sqlite3
+import tempfile
+
+from dagster import asset, file_relative_path, materialize
+from dagster_embedded_elt.sling import SlingMode, SlingResource
 from dagster_embedded_elt.sling.resources import SlingSourceConnection, SlingTargetConnection
 
 

@@ -1,4 +1,4 @@
-from typing import Mapping, Any, NamedTuple
+from typing import Any, Mapping, NamedTuple
 
 
 class SlingOutput(
