@@ -271,6 +271,7 @@ export const AssetGraphExplorerSidebar = React.memo(
       if (indexOfLastSelectedNode !== -1) {
         rowVirtualizer.scrollToIndex(indexOfLastSelectedNode, {
           align: 'center',
+          smoothScroll: true,
         });
       }
     }, [indexOfLastSelectedNode, rowVirtualizer]);
@@ -342,7 +343,6 @@ export const AssetGraphExplorerSidebar = React.memo(
                             : selectedNode?.id === node.id
                         }
                         toggleOpen={() => {
-                          setSelectedNode(node);
                           setOpenNodes((nodes) => {
                             const openNodes = new Set(nodes);
                             const isOpen = openNodes.has(nodePathKey(node));

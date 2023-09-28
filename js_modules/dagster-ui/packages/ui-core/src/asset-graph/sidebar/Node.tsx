@@ -123,6 +123,7 @@ export const Node = ({
               <div
                 onClick={(e) => {
                   e.stopPropagation();
+                  console.log('toggling open');
                   toggleOpen();
                 }}
                 style={{cursor: 'pointer'}}
