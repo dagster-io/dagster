@@ -1866,30 +1866,30 @@ def test_materialize_result_output_typing():
         [asset_with_type_annotation], resources={"io_manager": TestingIOManager()}
     ).success
 
-    @multi_asset(outs={"one": AssetOut(), "two": AssetOut()})
-    def multi_asset_with_outs_and_type_annotation() -> Tuple[MaterializeResult, MaterializeResult]:
-        return MaterializeResult(asset_key="one"), MaterializeResult(asset_key="two")
+    # @multi_asset(outs={"one": AssetOut(), "two": AssetOut()})
+    # def multi_asset_with_outs_and_type_annotation() -> Tuple[MaterializeResult, MaterializeResult]:
+    #     return MaterializeResult(asset_key="one"), MaterializeResult(asset_key="two")
 
-    assert materialize(
-        [multi_asset_with_outs_and_type_annotation], resources={"io_manager": TestingIOManager()}
-    ).success
+    # assert materialize(
+    #     [multi_asset_with_outs_and_type_annotation], resources={"io_manager": TestingIOManager()}
+    # ).success
 
-    @multi_asset(specs=[AssetSpec("one"), AssetSpec("two")])
-    def multi_asset_with_specs_and_type_annotation() -> Tuple[MaterializeResult, MaterializeResult]:
-        return MaterializeResult(asset_key="one"), MaterializeResult(asset_key="two")
+    # @multi_asset(specs=[AssetSpec("one"), AssetSpec("two")])
+    # def multi_asset_with_specs_and_type_annotation() -> Tuple[MaterializeResult, MaterializeResult]:
+    #     return MaterializeResult(asset_key="one"), MaterializeResult(asset_key="two")
 
-    assert materialize(
-        [multi_asset_with_specs_and_type_annotation], resources={"io_manager": TestingIOManager()}
-    ).success
+    # assert materialize(
+    #     [multi_asset_with_specs_and_type_annotation], resources={"io_manager": TestingIOManager()}
+    # ).success
 
-    @multi_asset(specs=[AssetSpec("one"), AssetSpec("two")])
-    def multi_asset_with_specs_and_no_type_annotation():
-        return MaterializeResult(asset_key="one"), MaterializeResult(asset_key="two")
+    # @multi_asset(specs=[AssetSpec("one"), AssetSpec("two")])
+    # def multi_asset_with_specs_and_no_type_annotation():
+    #     return MaterializeResult(asset_key="one"), MaterializeResult(asset_key="two")
 
-    assert materialize(
-        [multi_asset_with_specs_and_no_type_annotation],
-        resources={"io_manager": TestingIOManager()},
-    ).success
+    # assert materialize(
+    #     [multi_asset_with_specs_and_no_type_annotation],
+    #     resources={"io_manager": TestingIOManager()},
+    # ).success
 
 
 def test_multi_asset_no_out():

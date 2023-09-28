@@ -704,6 +704,8 @@ def _store_output(
             yield from ()
 
         handle_output_gen = _no_op()
+
+    
     # output_manager.handle_output is either a generator function, or a normal function with or
     # without a return value. In the case that handle_output is a normal function, we need to
     # catch errors should they be raised before a return value. We can do this by wrapping
