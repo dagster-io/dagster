@@ -1612,6 +1612,9 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
 
         if (
             serialized_partitions_def_class_name
+            # note: all TimeWindowPartitionsDefinition subclasses will get serialized as raw
+            # TimeWindowPartitionsDefinitions, so this class name check will not always pass,
+            # hence the unique id check above
             and serialized_partitions_def_class_name != partitions_def.__class__.__name__
         ):
             return False
