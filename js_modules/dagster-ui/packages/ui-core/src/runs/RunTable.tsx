@@ -543,7 +543,7 @@ function ActionBar({top, bottom}: {top: React.ReactNode; bottom?: React.ReactNod
           margin={{top: 12}}
           padding={{left: 24, right: 12, top: 8}}
           border="top"
-          flex={{gap: 8}}
+          flex={{gap: 8, wrap: 'wrap'}}
         >
           {bottom}
         </Box>
