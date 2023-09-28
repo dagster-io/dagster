@@ -1,44 +1,19 @@
-import {
-  Box,
-  Button,
-  Colors,
-  Dialog,
-  DialogBody,
-  DialogFooter,
-  Icon,
-  Menu,
-  MenuItem,
-  Popover,
-  MiddleTruncate,
-  useViewport,
-  MenuDivider,
-  Spinner,
-  ButtonGroup,
-  Tooltip,
-  Suggest,
-} from '@dagster-io/ui-components';
+import {Box, Button, Colors, Icon, ButtonGroup, Tooltip} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React from 'react';
 import styled from 'styled-components';
 
-import {showSharedToaster} from '../app/DomUtils';
-import {useMaterializationAction} from '../assets/LaunchAssetExecutionButton';
-import {AssetKey} from '../assets/types';
-import {ExplorerPath} from '../pipelines/PipelinePathUtils';
-import {Container, Inner, Row} from '../ui/VirtualizedTable';
-import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
+import {AssetKey} from '../../assets/types';
+import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
+import {Container, Inner, Row} from '../../ui/VirtualizedTable';
+import {buildRepoPathForHuman} from '../../workspace/buildRepoAddress';
+import {GraphData, GraphNode, tokenForAssetKey} from '../Utils';
+import {SearchFilter} from '../sidebar/SearchFilter';
 
-import {GraphData, GraphNode, tokenForAssetKey} from './Utils';
+import {Node} from './Node';
+import {FolderNodeType, TreeNodeType, getDisplayName, nodePathKey} from './util';
 
 const COLLATOR = new Intl.Collator(navigator.language, {sensitivity: 'base', numeric: true});
-
-type FolderNodeNonAssetType =
-  | {groupName: string; id: string; level: number}
-  | {locationName: string; id: string; level: number};
-
-type FolderNodeType = FolderNodeNonAssetType | {path: string; id: string; level: number};
-
-type TreeNodeType = {level: number; id: string; path: string};
 
 export const AssetGraphExplorerSidebar = React.memo(
   ({
@@ -270,7 +245,7 @@ export const AssetGraphExplorerSidebar = React.memo(
       viewType,
       // eslint-disable-next-line react-hooks/exhaustive-deps
       lastSelectedNode &&
-        renderedNodes.findIndex((node) => nodeId(lastSelectedNode) === nodeId(node)),
+        renderedNodes.findIndex((node) => nodePathKey(lastSelectedNode) === nodePathKey(node)),
     ]);
 
     const indexOfLastSelectedNode = React.useMemo(
@@ -283,7 +258,7 @@ export const AssetGraphExplorerSidebar = React.memo(
             ? renderedNodes.findIndex((node) => 'path' in node && node.path === selectedNode.path)
             : -1;
         } else {
-          return renderedNodes.findIndex((node) => nodeId(node) === nodeId(selectedNode));
+          return renderedNodes.findIndex((node) => nodePathKey(node) === nodePathKey(selectedNode));
         }
       },
       // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -353,7 +328,7 @@ export const AssetGraphExplorerSidebar = React.memo(
                     {row ? (
                       <Node
                         viewType={viewType}
-                        isOpen={openNodes.has(nodeId(node))}
+                        isOpen={openNodes.has(nodePathKey(node))}
                         graphData={graphData}
                         node={row}
                         level={node.level}
@@ -366,11 +341,11 @@ export const AssetGraphExplorerSidebar = React.memo(
                           setSelectedNode(node);
                           setOpenNodes((nodes) => {
                             const openNodes = new Set(nodes);
-                            const isOpen = openNodes.has(nodeId(node));
+                            const isOpen = openNodes.has(nodePathKey(node));
                             if (isOpen) {
-                              openNodes.delete(nodeId(node));
+                              openNodes.delete(nodePathKey(node));
                             } else {
-                              openNodes.add(nodeId(node));
+                              openNodes.add(nodePathKey(node));
                             }
                             return openNodes;
                           });
@@ -397,333 +372,6 @@ export const AssetGraphExplorerSidebar = React.memo(
   },
 );
 
-const Node = ({
-  graphData,
-  node,
-  level,
-  toggleOpen,
-  selectNode,
-  isOpen,
-  isSelected,
-  selectThisNode,
-  explorerPath,
-  onChangeExplorerPath,
-  viewType,
-}: {
-  graphData: GraphData;
-  node: GraphNode | FolderNodeNonAssetType;
-  level: number;
-  toggleOpen: () => void;
-  selectThisNode: (e: React.MouseEvent<any> | React.KeyboardEvent<any>) => void;
-  selectNode: (e: React.MouseEvent<any> | React.KeyboardEvent<any>, nodeId: string) => void;
-  isOpen: boolean;
-  isSelected: boolean;
-  explorerPath: ExplorerPath;
-  onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
-  viewType: 'tree' | 'folder';
-}) => {
-  const isGroupNode = 'groupName' in node;
-  const isLocationNode = 'locationName' in node;
-  const isAssetNode = !isGroupNode && !isLocationNode;
-
-  const displayName = React.useMemo(() => {
-    if (isAssetNode) {
-      return getDisplayName(node);
-    } else if (isGroupNode) {
-      return node.groupName;
-    } else {
-      return node.locationName;
-    }
-  }, [isAssetNode, isGroupNode, node]);
-
-  const upstream = Object.keys(graphData.upstream[node.id] ?? {});
-  const downstream = Object.keys(graphData.downstream[node.id] ?? {});
-  const elementRef = React.useRef<HTMLDivElement | null>(null);
-
-  const [showParents, setShowParents] = React.useState(false);
-
-  function showDownstreamGraph() {
-    const path = JSON.parse(node.id);
-    const newQuery = `\"${tokenForAssetKey({path})}\"*`;
-    const nextOpsQuery = explorerPath.opsQuery.includes(newQuery)
-      ? explorerPath.opsQuery
-      : newQuery;
-    onChangeExplorerPath(
-      {
-        ...explorerPath,
-        opsQuery: nextOpsQuery,
-      },
-      'push',
-    );
-  }
-
-  function showUpstreamGraph() {
-    const path = JSON.parse(node.id);
-    const newQuery = `*\"${tokenForAssetKey({path})}\"`;
-    const nextOpsQuery = explorerPath.opsQuery.includes(newQuery)
-      ? explorerPath.opsQuery
-      : newQuery;
-    onChangeExplorerPath(
-      {
-        ...explorerPath,
-        opsQuery: nextOpsQuery,
-      },
-      'push',
-    );
-  }
-
-  const {onClick, loading, launchpadElement} = useMaterializationAction();
-
-  return (
-    <>
-      {launchpadElement}
-      <UpstreamDownstreamDialog
-        title="Parent assets"
-        assets={upstream}
-        isOpen={showParents}
-        close={() => {
-          setShowParents(false);
-        }}
-        selectNode={selectNode}
-      />
-      <Box ref={elementRef} onClick={selectThisNode} padding={{left: 8}}>
-        <BoxWrapper level={level}>
-          <Box padding={{right: 12}} flex={{direction: 'row', gap: 2, alignItems: 'center'}}>
-            {!isAssetNode ||
-            (viewType === 'tree' && downstream.filter((id) => graphData.nodes[id]).length) ? (
-              <div
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleOpen();
-                }}
-                style={{cursor: 'pointer'}}
-              >
-                <Icon
-                  name="arrow_drop_down"
-                  style={{transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)'}}
-                />
-              </div>
-            ) : null}
-            <GrayOnHoverBox
-              flex={{
-                direction: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 6,
-                grow: 1,
-                shrink: 1,
-              }}
-              padding={{horizontal: 8, vertical: 5 as any}}
-              style={{
-                width: '100%',
-                borderRadius: '8px',
-                ...(isSelected ? {background: Colors.Blue50} : {}),
-              }}
-            >
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns:
-                    isGroupNode || isLocationNode ? 'auto minmax(0, 1fr)' : 'minmax(0, 1fr)',
-                  gap: '6px',
-                }}
-              >
-                {isGroupNode ? <Icon name="asset_group" /> : null}
-                {isLocationNode ? <Icon name="folder_open" /> : null}
-                <MiddleTruncate text={displayName} />
-              </div>
-              {isAssetNode ? (
-                <div
-                  onClick={(e) => {
-                    // stop propagation outside of the popover to prevent parent onClick from being selected
-                    e.stopPropagation();
-                  }}
-                >
-                  <Popover
-                    content={
-                      <Menu>
-                        <MenuItem
-                          icon="materialization"
-                          text={
-                            <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-                              <span>Materialize</span>
-                              {loading ? <Spinner purpose="body-text" /> : null}
-                            </Box>
-                          }
-                          onClick={async (e) => {
-                            await showSharedToaster({
-                              intent: 'primary',
-                              message: 'Initiating materialization',
-                              icon: 'materialization',
-                            });
-                            onClick([node.assetKey], e, false);
-                          }}
-                        />
-                        {upstream.length || downstream.length ? <MenuDivider /> : null}
-                        {upstream.length ? (
-                          <MenuItem
-                            text={`View parents (${upstream.length})`}
-                            icon="list"
-                            onClick={() => {
-                              setShowParents(true);
-                            }}
-                          />
-                        ) : null}
-                        {upstream.length ? (
-                          <MenuItem
-                            text="Show upstream graph"
-                            icon="arrow_back"
-                            onClick={showUpstreamGraph}
-                          />
-                        ) : null}
-                        {downstream.length ? (
-                          <MenuItem
-                            text="Show downstream graph"
-                            icon="arrow_forward"
-                            onClick={showDownstreamGraph}
-                          />
-                        ) : null}
-                      </Menu>
-                    }
-                    hoverOpenDelay={100}
-                    hoverCloseDelay={100}
-                    placement="right"
-                    shouldReturnFocusOnClose
-                  >
-                    <ExpandMore style={{cursor: 'pointer'}}>
-                      <Icon name="more_horiz" color={Colors.Gray500} />
-                    </ExpandMore>
-                  </Popover>
-                </div>
-              ) : null}
-            </GrayOnHoverBox>
-          </Box>
-        </BoxWrapper>
-      </Box>
-    </>
-  );
-};
-
-const UpstreamDownstreamDialog = ({
-  title,
-  assets,
-  isOpen,
-  close,
-  selectNode,
-}: {
-  title: string;
-  assets: string[];
-  isOpen: boolean;
-  close: () => void;
-  selectNode: (e: React.MouseEvent<any> | React.KeyboardEvent<any>, nodeId: string) => void;
-}) => {
-  return (
-    <Dialog isOpen={isOpen} onClose={close} title={title}>
-      <DialogBody>
-        <Menu>
-          {assets.map((assetId) => {
-            const path = JSON.parse(assetId);
-            return (
-              <MenuItem
-                icon="asset"
-                text={path[path.length - 1]}
-                key={assetId}
-                onClick={(e) => {
-                  selectNode(e, assetId);
-                  close();
-                }}
-              />
-            );
-          })}
-        </Menu>
-      </DialogBody>
-      <DialogFooter topBorder>
-        <Button onClick={close} intent="primary">
-          Close
-        </Button>
-      </DialogFooter>
-    </Dialog>
-  );
-};
-
-const BoxWrapper = ({level, children}: {level: number; children: React.ReactNode}) => {
-  const wrapper = React.useMemo(() => {
-    let sofar = children;
-    for (let i = 0; i < level; i++) {
-      sofar = (
-        <Box
-          padding={{left: 8}}
-          margin={{left: 8}}
-          border={{side: 'left', width: 1, color: Colors.KeylineGray}}
-          style={{position: 'relative'}}
-        >
-          {sofar}
-        </Box>
-      );
-    }
-    return sofar;
-  }, [level, children]);
-
-  return <>{wrapper}</>;
-};
-
-function getDisplayName(node: GraphNode) {
-  return node.assetKey.path[node.assetKey.path.length - 1]!;
-}
-
-const SearchFilter = <T,>({
-  values,
-  onSelectValue,
-}: {
-  values: {label: string; value: T}[];
-  onSelectValue: (e: React.MouseEvent<any>, value: T) => void;
-}) => {
-  const {viewport, containerProps} = useViewport();
-  return (
-    <SuggestWrapper {...containerProps}>
-      <Suggest<(typeof values)[0]>
-        key="asset-graph-explorer-search-bar"
-        inputProps={{placeholder: 'Search', style: {width: `min(100%, ${viewport.width}px)`}}}
-        items={values}
-        inputValueRenderer={(item) => item.label}
-        itemPredicate={(query, item) =>
-          item.label.toLocaleLowerCase().includes(query.toLocaleLowerCase())
-        }
-        menuWidth={viewport.width}
-        popoverProps={{usePortal: false, fill: true}}
-        itemRenderer={(item, itemProps) => (
-          <MenuItem
-            active={itemProps.modifiers.active}
-            onClick={(e) => itemProps.handleClick(e)}
-            key={item.label}
-            text={item.label}
-          />
-        )}
-        noResults={<MenuItem disabled={true} text="No results" />}
-        onItemSelect={(item, e) => onSelectValue(e as any, item.value)}
-        selectedItem={null}
-      />
-    </SuggestWrapper>
-  );
-};
-
-const ExpandMore = styled.div``;
-
-const GrayOnHoverBox = styled(Box)`
-  border-radius: 8px;
-  cursor: pointer;
-  &:hover {
-    background: ${Colors.Gray100};
-    transition: background 100ms linear;
-    ${ExpandMore} {
-      visibility: visible;
-    }
-  }
-  ${ExpandMore} {
-    visibility: hidden;
-  }
-`;
-
 const ButtonGroupWrapper = styled.div`
   > * {
     display: grid;
@@ -731,15 +379,5 @@ const ButtonGroupWrapper = styled.div`
     > * {
       place-content: center;
     }
-  }
-`;
-
-function nodeId(node: {path: string; id: string} | {id: string}) {
-  return 'path' in node ? node.path : node.id;
-}
-
-const SuggestWrapper = styled.div`
-  .bp4-input-group.dagster-suggest-input {
-    width: 100%;
   }
 `;
