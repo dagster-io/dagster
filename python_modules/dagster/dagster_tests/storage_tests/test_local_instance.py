@@ -156,7 +156,7 @@ def test_get_run_by_id():
             global MOCK_HAS_RUN_CALLED  # noqa: PLW0603
             if not self._run_storage.has_run(run_id) and not MOCK_HAS_RUN_CALLED:
                 self._run_storage.add_run(DagsterRun(job_name="foo_job", run_id=run_id))
-                MOCK_HAS_RUN_CALLED = True  # noqa: PLW0603
+                MOCK_HAS_RUN_CALLED = True
                 return False
             elif self._run_storage.has_run(run_id) and MOCK_HAS_RUN_CALLED:
                 MOCK_HAS_RUN_CALLED = False

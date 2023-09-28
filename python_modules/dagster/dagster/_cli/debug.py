@@ -54,9 +54,7 @@ def export_command(run_id, output_file):
         run = instance.get_run_by_id(run_id)
         if run is None:
             raise click.UsageError(
-                "Could not find run with run_id '{}'.\n{}".format(
-                    run_id, _recent_failed_runs_text(instance)
-                )
+                f"Could not find run with run_id '{run_id}'.\n{_recent_failed_runs_text(instance)}"
             )
 
         export_run(instance, run, output_file)

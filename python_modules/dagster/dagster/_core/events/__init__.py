@@ -742,6 +742,15 @@ class DagsterEvent(
         return cast(AssetMaterializationPlannedData, self.event_specific_data)
 
     @property
+    def asset_check_planned_data(self) -> "AssetCheckEvaluationPlanned":
+        _assert_type(
+            "asset_check_planned",
+            DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED,
+            self.event_type,
+        )
+        return cast(AssetCheckEvaluationPlanned, self.event_specific_data)
+
+    @property
     def step_expectation_result_data(self) -> "StepExpectationResultData":
         _assert_type(
             "step_expectation_result_data",
@@ -756,6 +765,13 @@ class DagsterEvent(
             "step_materialization_data", DagsterEventType.ASSET_MATERIALIZATION, self.event_type
         )
         return cast(StepMaterializationData, self.event_specific_data).materialization
+
+    @property
+    def asset_check_evaluation_data(self) -> AssetCheckEvaluation:
+        _assert_type(
+            "asset_check_evaluation", DagsterEventType.ASSET_CHECK_EVALUATION, self.event_type
+        )
+        return cast(AssetCheckEvaluation, self.event_specific_data)
 
     @property
     def job_failure_data(self) -> "JobFailureData":
@@ -896,9 +912,7 @@ class DagsterEvent(
         return DagsterEvent.from_step(
             event_type=DagsterEventType.STEP_START,
             step_context=step_context,
-            message='Started execution of step "{step_key}".'.format(
-                step_key=step_context.step.key
-            ),
+            message=f'Started execution of step "{step_context.step.key}".',
         )
 
     @staticmethod
@@ -930,9 +944,7 @@ class DagsterEvent(
         return DagsterEvent.from_step(
             event_type=DagsterEventType.STEP_SKIPPED,
             step_context=step_context,
-            message='Skipped execution of step "{step_key}".'.format(
-                step_key=step_context.step.key
-            ),
+            message=f'Skipped execution of step "{step_context.step.key}".',
         )
 
     @staticmethod
@@ -1203,17 +1215,13 @@ class DagsterEvent(
         step_context: IStepContext, object_store_operation_result: "ObjectStoreOperation"
     ) -> "DagsterEvent":
         object_store_name = (
-            "{object_store_name} ".format(
-                object_store_name=object_store_operation_result.object_store_name
-            )
+            f"{object_store_operation_result.object_store_name} "
             if object_store_operation_result.object_store_name
             else ""
         )
 
         serialization_strategy_modifier = (
-            " using {serialization_strategy_name}".format(
-                serialization_strategy_name=object_store_operation_result.serialization_strategy_name
-            )
+            f" using {object_store_operation_result.serialization_strategy_name}"
             if object_store_operation_result.serialization_strategy_name
             else ""
         )
@@ -1225,24 +1233,16 @@ class DagsterEvent(
             == ObjectStoreOperationType.SET_OBJECT
         ):
             message = (
-                "Stored intermediate object for output {value_name} in "
-                "{object_store_name}object store{serialization_strategy_modifier}."
-            ).format(
-                value_name=value_name,
-                object_store_name=object_store_name,
-                serialization_strategy_modifier=serialization_strategy_modifier,
+                f"Stored intermediate object for output {value_name} in "
+                f"{object_store_name}object store{serialization_strategy_modifier}."
             )
         elif (
             ObjectStoreOperationType(object_store_operation_result.op)
             == ObjectStoreOperationType.GET_OBJECT
         ):
             message = (
-                "Retrieved intermediate object for input {value_name} in "
-                "{object_store_name}object store{serialization_strategy_modifier}."
-            ).format(
-                value_name=value_name,
-                object_store_name=object_store_name,
-                serialization_strategy_modifier=serialization_strategy_modifier,
+                f"Retrieved intermediate object for input {value_name} in "
+                f"{object_store_name}object store{serialization_strategy_modifier}."
             )
         elif (
             ObjectStoreOperationType(object_store_operation_result.op)
@@ -1383,9 +1383,9 @@ class DagsterEvent(
             step_kind_value=step_context.step.kind.value,
             logging_tags=step_context.event_tags,
             message=(
-                'Skipped the execution of hook "{hook_name}". It did not meet its triggering '
-                'condition during the execution of "{solid_name}".'
-            ).format(hook_name=hook_def.name, solid_name=step_context.op.name),
+                f'Skipped the execution of hook "{hook_def.name}". It did not meet its triggering '
+                f'condition during the execution of "{step_context.op.name}".'
+            ),
         )
 
         step_context.log.log_dagster_event(

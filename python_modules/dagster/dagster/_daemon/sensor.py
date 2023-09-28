@@ -630,11 +630,7 @@ def _submit_run_request(
     try:
         logger.info(f"Launching run for {external_sensor.name}")
         instance.submit_run(run.run_id, workspace_process_context.create_request_context())
-        logger.info(
-            "Completed launch of run {run_id} for {sensor_name}".format(
-                run_id=run.run_id, sensor_name=external_sensor.name
-            )
-        )
+        logger.info(f"Completed launch of run {run.run_id} for {external_sensor.name}")
     except Exception:
         error_info = serializable_error_info_from_exc_info(sys.exc_info())
         logger.error(f"Run {run.run_id} created successfully but failed to launch: {error_info}")
@@ -682,6 +678,9 @@ def _evaluate_sensor(
         context.add_log_info(sensor_runtime_data.captured_log_key)
 
     assert isinstance(sensor_runtime_data, SensorExecutionData)
+
+    for asset_event in sensor_runtime_data.asset_events:
+        instance.report_runless_asset_event(asset_event)
 
     if sensor_runtime_data.dynamic_partitions_requests:
         for request in sensor_runtime_data.dynamic_partitions_requests:

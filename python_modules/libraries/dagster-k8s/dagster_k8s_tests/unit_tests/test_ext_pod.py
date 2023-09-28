@@ -1,6 +1,6 @@
 import pytest
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster_k8s.external_resource import build_pod_body
+from dagster_k8s.ext import build_pod_body
 
 
 def test_pod_building():
@@ -138,14 +138,14 @@ def test_pod_building():
                     "volume_mounts": [
                         {
                             "mountPath": "/mnt/dagster/",
-                            "name": "dagster-ext-context",
+                            "name": "dagster-pipes-context",
                         }
                     ],
                 }
             ],
             "volumes": [
                 {
-                    "name": "dagster-ext-context",
+                    "name": "dagster-pipes-context",
                     "configMap": {
                         "name": "cm",
                     },

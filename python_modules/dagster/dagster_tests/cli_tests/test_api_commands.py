@@ -20,18 +20,10 @@ def runner_execute_run(runner, cli_args):
     if result.exit_code != 0:
         # CliRunner captures stdout so printing it out here
         raise Exception(
-            (
-                "dagster runner_execute_run commands with cli_args {cli_args} "
-                'returned exit_code {exit_code} with stdout:\n"{stdout}"'
-                '\n exception: "\n{exception}"'
-                '\n and result as string: "{result}"'
-            ).format(
-                cli_args=cli_args,
-                exit_code=result.exit_code,
-                stdout=result.stdout,
-                exception=result.exception,
-                result=result,
-            )
+            f"dagster runner_execute_run commands with cli_args {cli_args} "
+            f'returned exit_code {result.exit_code} with stdout:\n"{result.stdout}"'
+            f'\n exception: "\n{result.exception}"'
+            f'\n and result as string: "{result}"'
         )
     return result
 
@@ -289,18 +281,10 @@ def runner_execute_step(runner, cli_args, env=None):
     if result.exit_code != 0:
         # CliRunner captures stdout so printing it out here
         raise Exception(
-            (
-                "dagster runner_execute_step commands with cli_args {cli_args} "
-                'returned exit_code {exit_code} with stdout:\n"{stdout}"'
-                '\n exception: "\n{exception}"'
-                '\n and result as string: "{result}"'
-            ).format(
-                cli_args=cli_args,
-                exit_code=result.exit_code,
-                stdout=result.stdout,
-                exception=result.exception,
-                result=result,
-            )
+            f"dagster runner_execute_step commands with cli_args {cli_args} "
+            f'returned exit_code {result.exit_code} with stdout:\n"{result.stdout}"'
+            f'\n exception: "\n{result.exception}"'
+            f'\n and result as string: "{result}"'
         )
     return result
 

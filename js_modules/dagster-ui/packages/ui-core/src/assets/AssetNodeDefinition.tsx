@@ -287,7 +287,7 @@ const DescriptionAnnotations: React.FC<{
   assetNode: AssetNodeDefinitionFragment;
   repoAddress: RepoAddress;
 }> = ({assetNode, repoAddress}) => (
-  <Box flex={{alignItems: 'baseline', gap: 16, wrap: 'wrap'}} style={{lineHeight: 0}}>
+  <Box flex={{alignItems: 'center', gap: 16, wrap: 'wrap'}} style={{lineHeight: 0}}>
     {assetNode.jobNames
       .filter((jobName) => !isHiddenAssetGroupJob(jobName))
       .map((jobName) => (
@@ -301,9 +301,11 @@ const DescriptionAnnotations: React.FC<{
         </Mono>
       ))}
     <UnderlyingOpsOrGraph assetNode={assetNode} repoAddress={repoAddress} />
-    {assetNode.isSource && (
-      <Caption style={{lineHeight: '16px', marginTop: 2}}>Source Asset</Caption>
-    )}
+    {assetNode.isSource ? (
+      <Caption style={{lineHeight: '16px'}}>Source Asset</Caption>
+    ) : !assetNode.isExecutable ? (
+      <Caption style={{lineHeight: '16px'}}>Non-executable Asset</Caption>
+    ) : undefined}
   </Box>
 );
 
@@ -315,8 +317,15 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
     opNames
     opVersion
     jobNames
+    isSource
+    isExecutable
     autoMaterializePolicy {
       policyType
+      rules {
+        className
+        description
+        decisionType
+      }
     }
     freshnessPolicy {
       maximumLagMinutes

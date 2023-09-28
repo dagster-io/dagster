@@ -31,25 +31,23 @@ class LateBoundTypesForResourceTypeChecking:
 
     @staticmethod
     def get_resource_rep_type() -> Type:
-        return LateBoundTypesForResourceTypeChecking._ResourceDep  # noqa: SLF001
+        return LateBoundTypesForResourceTypeChecking._ResourceDep
 
     @staticmethod
     def get_resource_type() -> Type:
-        return LateBoundTypesForResourceTypeChecking._Resource  # noqa: SLF001
+        return LateBoundTypesForResourceTypeChecking._Resource
 
     @staticmethod
     def get_partial_resource_type(base: Type) -> Type:
-        return LateBoundTypesForResourceTypeChecking._PartialResource[base]  # noqa: SLF001
+        return LateBoundTypesForResourceTypeChecking._PartialResource[base]
 
     @staticmethod
     def set_actual_types_for_type_checking(
         resource_dep_type: Type, resource_type: Type, partial_resource_type: Type
     ) -> None:
-        LateBoundTypesForResourceTypeChecking._ResourceDep = resource_dep_type  # noqa: SLF001
-        LateBoundTypesForResourceTypeChecking._Resource = resource_type  # noqa: SLF001
-        LateBoundTypesForResourceTypeChecking._PartialResource = (  # noqa: SLF001
-            partial_resource_type
-        )
+        LateBoundTypesForResourceTypeChecking._ResourceDep = resource_dep_type
+        LateBoundTypesForResourceTypeChecking._Resource = resource_type
+        LateBoundTypesForResourceTypeChecking._PartialResource = partial_resource_type
 
 
 @dataclass_transform(kw_only_default=True, field_specifiers=(Field,))

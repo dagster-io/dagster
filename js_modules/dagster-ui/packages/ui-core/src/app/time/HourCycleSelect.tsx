@@ -73,7 +73,7 @@ export const HourCycleSelect: React.FC = () => {
   ];
 
   return (
-    <Select<typeof items[0]>
+    <Select<(typeof items)[0]>
       popoverProps={{
         position: 'bottom-left',
         modifiers: {offset: {enabled: true, offset: '-12px, 8px'}},

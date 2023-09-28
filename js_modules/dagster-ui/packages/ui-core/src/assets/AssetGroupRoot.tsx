@@ -65,7 +65,7 @@ export const AssetGroupRoot: React.FC<{repoAddress: RepoAddress; tab: 'lineage' 
   const onNavigateToSourceAssetNode = React.useCallback(
     (node: AssetLocation) => {
       if (node.groupName && node.repoAddress) {
-        history.replace(
+        history.push(
           workspacePathFromAddress(
             node.repoAddress,
             `/asset-groups/${node.groupName}/lineage/${node.assetKey.path

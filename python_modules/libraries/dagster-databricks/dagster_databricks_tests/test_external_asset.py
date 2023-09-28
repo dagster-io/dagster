@@ -16,7 +16,7 @@ IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
 
 def script_fn():
-    from dagster_ext import ExtDbfsContextLoader, ExtDbfsMessageWriter, init_dagster_ext
+    from dagster_pipes import ExtDbfsContextLoader, ExtDbfsMessageWriter, init_dagster_ext
 
     context = init_dagster_ext(
         context_loader=ExtDbfsContextLoader(), message_writer=ExtDbfsMessageWriter()
@@ -26,8 +26,10 @@ def script_fn():
     value = 2 * multiplier
 
     context.log(f"{context.asset_key}: {2} * {multiplier} = {value}")
-    context.report_asset_metadata("value", value)
-    context.report_asset_data_version("alpha")
+    context.report_asset_materialization(
+        metadata={"value": value},
+        data_version="alpha",
+    )
 
 
 @contextmanager

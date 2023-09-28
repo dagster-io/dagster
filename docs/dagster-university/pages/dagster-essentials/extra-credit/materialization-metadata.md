@@ -20,6 +20,7 @@ To add metadata to an asset, you need to do two things:
 Let’s add metadata to the `taxi_trips_file` asset to demonstrate further. This will add the count of records to the asset’s materialization metadata.
 
 1. Navigate to and open `assets/trips.py`.
+
 2. Locate the `taxi_trips_file` asset. At this point in the course, the asset should look like this:
 
    ```python
@@ -103,7 +104,8 @@ Next, let’s view the metadata in the Dagster UI. This is a good way to survey 
 2. Click **Reload definitions.**
 3. When the definitions are finished loading, select the `taxi_trips_file` asset and materialization all its partitions.
 
-After the asset has finished materializing, you’ll be able to view the plots associated with the asset:  
+After the asset has finished materializing, you’ll be able to view the plots associated with the asset:
+
 ![Rendered metadata plots for the taxi_trips_file asset in the Dagster UI](/images/dagster-essentials/extra-credit/ui-rendered-metadata-plots.png)
 
 The X-axis of the plot is each partition, labeled with the month. The Y-axis is the number of records for that partition.

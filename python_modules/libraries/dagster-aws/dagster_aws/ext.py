@@ -13,7 +13,7 @@ from dagster._core.ext.utils import ExtBlobStoreMessageReader
 
 
 class ExtS3MessageReader(ExtBlobStoreMessageReader):
-    def __init__(self, *, interval: int = 10, bucket: str, client: boto3.client):
+    def __init__(self, *, interval: float = 10, bucket: str, client: boto3.client):
         super().__init__(interval=interval)
         self.bucket = check.str_param(bucket, "bucket")
         self.key_prefix = "".join(random.choices(string.ascii_letters, k=30))

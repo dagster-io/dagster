@@ -191,9 +191,7 @@ def main():
                 wandb.log(metrics)
 
                 # Print Loss
-                print(
-                    "Iteration: {0} Loss: {1:.2f} Accuracy: {2:.2f}".format(count, loss, accuracy)
-                )
+                print(f"Iteration: {count} Loss: {loss:.2f} Accuracy: {accuracy:.2f}")
     torch.save(model.state_dict(), os.path.join(wandb.run.dir, "model.pt"))
 
 

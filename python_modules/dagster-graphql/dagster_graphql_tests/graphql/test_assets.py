@@ -220,6 +220,15 @@ GET_ASSET_NODES_FROM_KEYS = """
     }
 """
 
+GET_ASSET_IS_EXECUTABLE = """
+    query AssetNodeQuery($pipelineSelector: PipelineSelector!, $assetKeys: [AssetKeyInput!]) {
+        assetNodes(pipeline: $pipelineSelector, assetKeys: $assetKeys) {
+            id
+            isExecutable
+        }
+    }
+"""
+
 
 GET_ASSET_PARTITIONS = """
     query AssetNodeQuery($pipelineSelector: PipelineSelector!) {
@@ -864,6 +873,28 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert len(result.data["assetNodes"]) == 2
         asset_node = result.data["assetNodes"][0]
         assert asset_node["id"] == 'test.test_repo.["asset_one"]'
+
+    def test_asset_node_is_executable(self, graphql_context: WorkspaceRequestContext):
+        selector = infer_pipeline_selector(graphql_context, "executable_test_job")
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_IS_EXECUTABLE,
+            variables={
+                "pipelineSelector": selector,
+                "assetKeys": [
+                    {"path": ["executable_asset"]},
+                    {"path": ["unexecutable_asset"]},
+                ],
+            },
+        )
+        assert result.data
+        assert result.data["assetNodes"]
+
+        assert len(result.data["assetNodes"]) == 2
+        exec_asset_node = result.data["assetNodes"][0]
+        assert exec_asset_node["isExecutable"] is True
+        unexec_asset_node = result.data["assetNodes"][1]
+        assert unexec_asset_node["isExecutable"] is False
 
     def test_asset_partitions_in_pipeline(self, graphql_context: WorkspaceRequestContext):
         selector = infer_pipeline_selector(graphql_context, "two_assets_job")
@@ -2406,11 +2437,11 @@ class TestCrossRepoAssetDependedBy(AllRepositoryGraphQLContextTestMatrix):
             CROSS_REPO_ASSET_GRAPH,
         )
         asset_nodes = result.data["assetNodes"]
-        derived_asset = [
+        derived_asset = next(
             node
             for node in asset_nodes
             if node["id"] == 'cross_asset_repos.upstream_assets_repository.["derived_asset"]'
-        ][0]
+        )
         dependent_asset_keys = [
             {"path": ["downstream_asset1"]},
             {"path": ["downstream_asset2"]},
@@ -2427,9 +2458,9 @@ class TestCrossRepoAssetDependedBy(AllRepositoryGraphQLContextTestMatrix):
             CROSS_REPO_ASSET_GRAPH,
         )
         asset_nodes = result.data["assetNodes"]
-        always_source_asset = [node for node in asset_nodes if "always_source_asset" in node["id"]][
-            0
-        ]
+        always_source_asset = next(
+            node for node in asset_nodes if "always_source_asset" in node["id"]
+        )
         dependent_asset_keys = [
             {"path": ["downstream_asset1"]},
             {"path": ["downstream_asset2"]},

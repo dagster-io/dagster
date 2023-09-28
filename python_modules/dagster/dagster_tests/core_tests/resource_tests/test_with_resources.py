@@ -56,7 +56,7 @@ def test_assets_direct():
     assert transformed_asset.node_def.output_defs[0].io_manager_key == "io_manager"
 
     assert build_assets_job("the_job", [transformed_asset]).execute_in_process().success
-    assert list(in_mem.values.values())[0] == 5
+    assert next(iter(in_mem.values.values())) == 5
 
 
 def test_asset_requires_io_manager_key():
@@ -77,7 +77,7 @@ def test_asset_requires_io_manager_key():
     assert isinstance(transformed_asset, AssetsDefinition)
 
     assert build_assets_job("the_job", [transformed_asset]).execute_in_process().success
-    assert list(in_mem.values.values())[0] == 5
+    assert next(iter(in_mem.values.values())) == 5
 
 
 def test_assets_direct_resource_conflicts():

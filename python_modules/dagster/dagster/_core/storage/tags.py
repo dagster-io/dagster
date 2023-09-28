@@ -21,9 +21,7 @@ get_multidimensional_partition_tag = (
 )
 get_dimension_from_partition_tag = lambda tag: tag[len(MULTIDIMENSIONAL_PARTITION_PREFIX) :]
 
-ASSET_PARTITION_RANGE_START_TAG = "{prefix}asset_partition_range_start".format(
-    prefix=SYSTEM_TAG_PREFIX
-)
+ASSET_PARTITION_RANGE_START_TAG = f"{SYSTEM_TAG_PREFIX}asset_partition_range_start"
 
 ASSET_PARTITION_RANGE_END_TAG = f"{SYSTEM_TAG_PREFIX}asset_partition_range_end"
 

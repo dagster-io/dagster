@@ -730,7 +730,7 @@ def test_cross_code_location_run_status_sensor(executor: Optional[ThreadPoolExec
 
             instance.submit_run(dagster_run.run_id, workspace_context.create_request_context())
             wait_for_all_runs_to_finish(instance)
-            dagster_run = list(instance.get_runs())[0]
+            dagster_run = next(iter(instance.get_runs()))
             assert dagster_run.status == DagsterRunStatus.SUCCESS
             freeze_datetime = freeze_datetime.add(seconds=60)
 
@@ -827,7 +827,7 @@ def test_cross_code_location_job_selector_on_defs_run_status_sensor(
 
             instance.submit_run(dagster_run.run_id, workspace_context.create_request_context())
             wait_for_all_runs_to_finish(instance)
-            dagster_run = list(instance.get_runs())[0]
+            dagster_run = next(iter(instance.get_runs()))
             assert dagster_run.status == DagsterRunStatus.SUCCESS
             freeze_datetime = freeze_datetime.add(seconds=60)
 
@@ -874,7 +874,7 @@ def test_cross_code_location_job_selector_on_defs_run_status_sensor(
 
             instance.submit_run(dagster_run.run_id, workspace_context.create_request_context())
             wait_for_all_runs_to_finish(instance)
-            dagster_run = list(instance.get_runs())[0]
+            dagster_run = next(iter(instance.get_runs()))
             assert dagster_run.status == DagsterRunStatus.SUCCESS
             freeze_datetime = freeze_datetime.add(seconds=60)
 

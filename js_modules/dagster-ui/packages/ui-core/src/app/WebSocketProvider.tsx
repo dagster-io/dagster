@@ -146,7 +146,7 @@ export const WebSocketStatus: React.FC = (props) => (
         [WebSocket.CLOSING]: (
           <Circle style={{background: Colors.Gray400}} title="Closing..." {...props} />
         ),
-      }[status] || <Circle style={{background: Colors.Gray400}} title="Disconnected" {...props} />)
+      })[status] || <Circle style={{background: Colors.Gray400}} title="Disconnected" {...props} />
     }
   </WebSocketContext.Consumer>
 );

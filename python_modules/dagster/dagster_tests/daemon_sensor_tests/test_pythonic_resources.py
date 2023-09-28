@@ -114,7 +114,7 @@ is_in_cm = False
 @contextmanager
 def my_cm_resource(_) -> Iterator[str]:
     global is_in_cm  # noqa: PLW0603
-    is_in_cm = True  # noqa: PLW0603
+    is_in_cm = True
     yield "foo"
     is_in_cm = False
 

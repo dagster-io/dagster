@@ -28,8 +28,7 @@ manifest_asset_checks_json = json.loads(asset_checks_manifest_path.read_bytes())
 
 def test_with_asset_checks() -> None:
     @dbt_assets(manifest=manifest_no_asset_checks_json)
-    def my_dbt_assets_no_checks():
-        ...
+    def my_dbt_assets_no_checks(): ...
 
     [load_my_dbt_assets_no_checks] = load_assets_from_dbt_manifest(
         manifest=manifest_no_asset_checks_json
@@ -44,8 +43,7 @@ def test_with_asset_checks() -> None:
         assert not asset_def.check_specs_by_output_name
 
     @dbt_assets(manifest=manifest_asset_checks_json)
-    def my_dbt_assets_with_checks():
-        ...
+    def my_dbt_assets_with_checks(): ...
 
     [load_my_dbt_assets_with_checks] = load_assets_from_dbt_manifest(
         manifest=manifest_asset_checks_json

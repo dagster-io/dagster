@@ -39,7 +39,6 @@ from dagster import multi_asset, AssetOut
 
 @multi_asset(outs={"training_data": AssetOut(), "test_data": AssetOut()})
 def training_test_data(hackernews_stories):
-    hackernews_stories = hackernews_stories
     X = hackernews_stories.title
     y = hackernews_stories.descendants
     # Split the dataset to reserve 20% of records as the test set

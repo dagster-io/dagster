@@ -1,4 +1,5 @@
-from abc import ABC, abstractmethod
+from abc import ABC, ABCMeta, abstractmethod
+from inspect import _empty as EmptyAnnotation
 from typing import (
     AbstractSet,
     Any,
@@ -9,10 +10,9 @@ from typing import (
     Optional,
     Sequence,
     Set,
+    Union,
     cast,
 )
-
-from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import deprecated, experimental, public
@@ -23,6 +23,7 @@ from dagster._core.definitions.data_version import (
     DataVersion,
     extract_data_provenance_from_entry,
 )
+from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 from dagster._core.definitions.dependency import Node, NodeHandle
 from dagster._core.definitions.events import (
     AssetKey,
@@ -38,6 +39,7 @@ from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.step_launcher import StepLauncher
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.errors import (
+    DagsterInvalidDefinitionError,
     DagsterInvalidPropertyError,
     DagsterInvariantViolationError,
 )
@@ -46,11 +48,19 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._utils.forked_pdb import ForkedPdb
+from dagster._utils.warnings import (
+    deprecation_warning,
+)
 
 from .system import StepExecutionContext
 
 
-class AbstractComputeExecutionContext(ABC):
+# This metaclass has to exist for OpExecutionContext to have a metaclass
+class AbstractComputeMetaclass(ABCMeta):
+    pass
+
+
+class AbstractComputeExecutionContext(ABC, metaclass=AbstractComputeMetaclass):
     """Base class for op context implemented by OpExecutionContext and DagstermillExecutionContext."""
 
     @abstractmethod
@@ -97,7 +107,25 @@ class AbstractComputeExecutionContext(ABC):
         """The parsed config specific to this op."""
 
 
-class OpExecutionContext(AbstractComputeExecutionContext):
+class OpExecutionContextMetaClass(AbstractComputeMetaclass):
+    def __instancecheck__(cls, instance) -> bool:
+        # This makes isinstance(context, OpExecutionContext) throw a deprecation warning when
+        # context is an AssetExecutionContext. This metaclass can be deleted once AssetExecutionContext
+        # has been split into it's own class in 1.7.0
+        if type(instance) is AssetExecutionContext and cls is not AssetExecutionContext:
+            deprecation_warning(
+                subject="AssetExecutionContext",
+                additional_warn_text=(
+                    "Starting in version 1.7.0 AssetExecutionContext will no longer be a subclass"
+                    " of OpExecutionContext."
+                ),
+                breaking_version="1.7.0",
+                stacklevel=1,
+            )
+        return super().__instancecheck__(instance)
+
+
+class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionContextMetaClass):
     """The ``context`` object that can be made available as the first argument to the function
     used for computing an op or asset.
 
@@ -504,7 +532,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
             )
         # pass in the output name to handle the case when a multi_asset has a single AssetOut
         return self.asset_key_for_output(
-            output_name=list(self.assets_def.keys_by_output_name.keys())[0]
+            output_name=next(iter(self.assets_def.keys_by_output_name.keys()))
         )
 
     @public
@@ -1222,9 +1250,76 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         )
         return asset_checks_def.spec
 
+    # In this mode no conversion is done on returned values and missing but expected outputs are not
+    # allowed.
+    @property
+    def requires_typed_event_stream(self) -> bool:
+        return self._step_execution_context.requires_typed_event_stream
 
-# actually forking the object type for assets is tricky for users in the cases of:
-#  * manually constructing ops to make AssetsDefinitions
-#  * having ops in a graph that form a graph backed asset
-# so we have a single type that users can call by their preferred name where appropriate
-AssetExecutionContext: TypeAlias = OpExecutionContext
+    @property
+    def typed_event_stream_error_message(self) -> Optional[str]:
+        return self._step_execution_context.typed_event_stream_error_message
+
+    def set_requires_typed_event_stream(self, *, error_message: Optional[str] = None) -> None:
+        self._step_execution_context.set_requires_typed_event_stream(error_message=error_message)
+
+
+class AssetExecutionContext(OpExecutionContext):
+    def __init__(self, step_execution_context: StepExecutionContext):
+        super().__init__(step_execution_context=step_execution_context)
+
+
+def build_execution_context(
+    step_context: StepExecutionContext,
+) -> Union[OpExecutionContext, AssetExecutionContext]:
+    """Get the correct context based on the type of step (op or asset) and the user provided context
+    type annotation. Follows these rules.
+
+    step type     annotation                result
+    asset         AssetExecutionContext     AssetExecutionContext
+    asset         OpExecutionContext        OpExecutionContext
+    asset         None                      AssetExecutionContext
+    op            AssetExecutionContext     Error - we cannot init an AssetExecutionContext w/o an AssetsDefinition
+    op            OpExecutionContext        OpExecutionContext
+    op            None                      OpExecutionContext
+    For ops in graph-backed assets
+    step type     annotation                result
+    op            AssetExecutionContext     AssetExecutionContext
+    op            OpExecutionContext        OpExecutionContext
+    op            None                      OpExecutionContext
+    """
+    is_sda_step = step_context.is_sda_step
+    is_op_in_graph_asset = is_sda_step and step_context.is_op_in_graph
+    context_annotation = EmptyAnnotation
+    compute_fn = step_context.op_def._compute_fn  # noqa: SLF001
+    compute_fn = (
+        compute_fn
+        if isinstance(compute_fn, DecoratedOpFunction)
+        else DecoratedOpFunction(compute_fn)
+    )
+    if compute_fn.has_context_arg():
+        context_param = compute_fn.get_context_arg()
+        context_annotation = context_param.annotation
+
+    # It would be nice to do this check at definition time, rather than at run time, but we don't
+    # know if the op is part of an op job or a graph-backed asset until we have the step execution context
+    if context_annotation is AssetExecutionContext and not is_sda_step:
+        # AssetExecutionContext requires an AssetsDefinition during init, so an op in an op job
+        # cannot be annotated with AssetExecutionContext
+        raise DagsterInvalidDefinitionError(
+            "Cannot annotate @op `context` parameter with type AssetExecutionContext unless the"
+            " op is part of a graph-backed asset. `context` must be annotated with"
+            " OpExecutionContext, or left blank."
+        )
+
+    if context_annotation is EmptyAnnotation:
+        # if no type hint has been given, default to:
+        # * AssetExecutionContext for sda steps, not in graph-backed assets
+        # * OpExecutionContext for non sda steps
+        # * OpExecutionContext for ops in graph-backed assets
+        if is_op_in_graph_asset or not is_sda_step:
+            return OpExecutionContext(step_context)
+        return AssetExecutionContext(step_context)
+    if context_annotation is AssetExecutionContext:
+        return AssetExecutionContext(step_context)
+    return OpExecutionContext(step_context)

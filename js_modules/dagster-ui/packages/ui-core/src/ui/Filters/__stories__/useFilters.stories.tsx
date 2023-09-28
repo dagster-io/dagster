@@ -86,12 +86,10 @@ const TestComponent: React.FC = () => {
     icon: 'date',
   });
 
-  const filters = React.useMemo(() => [userFilter, deploymentFilter, timeRangeFilter, testFilter], [
-    userFilter,
-    deploymentFilter,
-    timeRangeFilter,
-    testFilter,
-  ]);
+  const filters = React.useMemo(
+    () => [userFilter, deploymentFilter, timeRangeFilter, testFilter],
+    [userFilter, deploymentFilter, timeRangeFilter, testFilter],
+  );
 
   const {button, activeFiltersJsx} = useFilters({filters});
 

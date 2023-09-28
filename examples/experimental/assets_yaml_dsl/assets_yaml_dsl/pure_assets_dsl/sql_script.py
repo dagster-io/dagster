@@ -1,6 +1,6 @@
 import sys
 
-from dagster_ext import init_dagster_ext
+from dagster_pipes import init_dagster_ext
 
 
 class SomeSqlClient:
@@ -15,5 +15,5 @@ if __name__ == "__main__":
 
     client = SomeSqlClient()
     client.query(sql)
-    context.report_asset_metadata("sql", sql)
+    context.report_asset_materialization(metadata={"sql": sql})
     context.log(f"Ran {sql}")

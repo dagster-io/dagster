@@ -33,6 +33,7 @@ import {CheckAllBox} from '../ui/CheckAllBox';
 import {useFilters} from '../ui/Filters';
 import {useCodeLocationFilter} from '../ui/Filters/useCodeLocationFilter';
 import {useInstigationStatusFilter} from '../ui/Filters/useInstigationStatusFilter';
+import {SearchInputSpinner} from '../ui/SearchInputSpinner';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
@@ -55,7 +56,7 @@ export const OverviewSchedulesRoot = () => {
   useTrackPageView();
   useDocumentTitle('Overview | Schedules');
 
-  const {allRepos, visibleRepos} = React.useContext(WorkspaceContext);
+  const {allRepos, visibleRepos, loading: workspaceLoading} = React.useContext(WorkspaceContext);
   const repoCount = allRepos.length;
   const [searchValue, setSearchValue] = useQueryPersistedState<string>({
     queryKey: 'search',
@@ -65,10 +66,10 @@ export const OverviewSchedulesRoot = () => {
   const codeLocationFilter = useCodeLocationFilter();
   const runningStateFilter = useInstigationStatusFilter();
 
-  const filters = React.useMemo(() => [codeLocationFilter, runningStateFilter], [
-    codeLocationFilter,
-    runningStateFilter,
-  ]);
+  const filters = React.useMemo(
+    () => [codeLocationFilter, runningStateFilter],
+    [codeLocationFilter, runningStateFilter],
+  );
   const {button: filterButton, activeFiltersJsx} = useFilters({filters});
 
   const queryResultOverview = useQuery<OverviewSchedulesQuery, OverviewSchedulesQueryVariables>(
@@ -245,6 +246,8 @@ export const OverviewSchedulesRoot = () => {
     );
   };
 
+  const showSearchSpinner = (workspaceLoading && !repoCount) || (loading && !data);
+
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
       <PageHeader
@@ -260,6 +263,11 @@ export const OverviewSchedulesRoot = () => {
           <TextInput
             icon="search"
             value={searchValue}
+            rightElement={
+              showSearchSpinner ? (
+                <SearchInputSpinner tooltipContent="Loading schedules…" />
+              ) : undefined
+            }
             onChange={(e) => {
               setSearchValue(e.target.value);
               onToggleAll(false);

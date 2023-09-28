@@ -164,7 +164,7 @@ def pipeline_selector_from_graphql(data: Mapping[str, Any]) -> JobSubsetSelector
                 AssetCheckHandle.from_graphql_input(asset_check)
                 for asset_check in asset_check_selection
             ]
-            if asset_check_selection
+            if asset_check_selection is not None
             else None
         ),
     )

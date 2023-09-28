@@ -140,8 +140,7 @@ class _Op:
 
 
 @overload
-def op(compute_fn: Callable[..., Any]) -> "OpDefinition":
-    ...
+def op(compute_fn: Callable[..., Any]) -> "OpDefinition": ...
 
 
 @overload
@@ -157,8 +156,7 @@ def op(
     version: Optional[str] = ...,
     retry_policy: Optional[RetryPolicy] = ...,
     code_version: Optional[str] = ...,
-) -> _Op:
-    ...
+) -> _Op: ...
 
 
 @deprecated_param(
@@ -285,6 +283,11 @@ class DecoratedOpFunction(NamedTuple):
     @lru_cache(maxsize=1)
     def has_context_arg(self) -> bool:
         return is_context_provided(get_function_params(self.decorated_fn))
+
+    def get_context_arg(self) -> Parameter:
+        if self.has_context_arg():
+            return get_function_params(self.decorated_fn)[0]
+        check.failed("Requested context arg on function that does not have one")
 
     @lru_cache(maxsize=1)
     def _get_function_params(self) -> Sequence[Parameter]:

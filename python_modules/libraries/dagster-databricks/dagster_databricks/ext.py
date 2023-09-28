@@ -12,11 +12,12 @@ from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.errors import DagsterExternalExecutionError
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.ext.client import ExtClient, ExtContextInjector, ExtMessageReader
+from dagster._core.ext.context import ExtResult
 from dagster._core.ext.utils import (
     ExtBlobStoreMessageReader,
     ext_protocol,
 )
-from dagster_ext import (
+from dagster_pipes import (
     ExtContextData,
     ExtExtras,
     ExtParams,
@@ -66,12 +67,12 @@ class _ExtDatabricks(ExtClient):
         context: OpExecutionContext,
         extras: Optional[ExtExtras] = None,
         submit_args: Optional[Mapping[str, str]] = None,
-    ) -> None:
+    ) -> Iterator[ExtResult]:
         """Run a Databricks job with the EXT protocol.
 
         Args:
             task (databricks.sdk.service.jobs.SubmitTask): Specification of the databricks
-                task to run. Environment variables used by dagster-ext will be set under the
+                task to run. Environment variables used by dagster-pipes will be set under the
                 `spark_env_vars` key of the `new_cluster` field (if there is an existing dictionary
                 here, the EXT environment variables will be merged in). Everything else will be
                 passed unaltered under the `tasks` arg to `WorkspaceClient.jobs.submit`.
@@ -106,7 +107,7 @@ class _ExtDatabricks(ExtClient):
                     jobs.RunLifeCycleState.SKIPPED,
                 ):
                     if run.state.result_state == jobs.RunResultState.SUCCESS:
-                        return
+                        break
                     else:
                         raise DagsterExternalExecutionError(
                             f"Error running Databricks job: {run.state.state_message}"
@@ -115,7 +116,9 @@ class _ExtDatabricks(ExtClient):
                     raise DagsterExternalExecutionError(
                         f"Error running Databricks job: {run.state.state_message}"
                     )
+                yield from ext_context.get_results()
                 time.sleep(5)
+        yield from ext_context.get_results()
 
 
 ExtDatabricks = ResourceParam[_ExtDatabricks]

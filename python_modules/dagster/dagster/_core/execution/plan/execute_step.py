@@ -492,11 +492,7 @@ def core_dagster_event_sequence_for_step(
             elif isinstance(user_event, ExpectationResult):
                 yield DagsterEvent.step_expectation_result(step_context, user_event)
             else:
-                check.failed(
-                    "Unexpected event {event}, should have been caught earlier".format(
-                        event=user_event
-                    )
-                )
+                check.failed(f"Unexpected event {user_event}, should have been caught earlier")
 
     yield DagsterEvent.step_success_event(
         step_context, StepSuccessData(duration_ms=timer_result.millis)

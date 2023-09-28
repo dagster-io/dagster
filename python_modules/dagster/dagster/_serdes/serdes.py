@@ -193,8 +193,7 @@ T_Scalar = TypeVar("T_Scalar", bound=Union[str, int, float, bool, None])
 
 
 @overload
-def whitelist_for_serdes(__cls: T_Type) -> T_Type:
-    ...
+def whitelist_for_serdes(__cls: T_Type) -> T_Type: ...
 
 
 @overload
@@ -208,8 +207,7 @@ def whitelist_for_serdes(
     old_fields: Optional[Mapping[str, JsonSerializableValue]] = ...,
     skip_when_empty_fields: Optional[AbstractSet[str]] = ...,
     field_serializers: Optional[Mapping[str, Type["FieldSerializer"]]] = None,
-) -> Callable[[T_Type], T_Type]:
-    ...
+) -> Callable[[T_Type], T_Type]: ...
 
 
 def whitelist_for_serdes(
@@ -372,7 +370,7 @@ class UnpackContext:
             for inner in obj:
                 self.clear_ignored_unknown_values(inner)
         elif isinstance(obj, dict):
-            for k, v in obj.items():
+            for v in obj.values():
                 self.clear_ignored_unknown_values(v)
 
         return obj
@@ -563,8 +561,7 @@ class FieldSerializer(Serializer):
         __unpacked_value: UnpackedValue,
         whitelist_map: WhitelistMap,
         context: UnpackContext,
-    ) -> PackableValue:
-        ...
+    ) -> PackableValue: ...
 
     @abstractmethod
     def pack(
@@ -572,8 +569,7 @@ class FieldSerializer(Serializer):
         __unpacked_value: Any,
         whitelist_map: WhitelistMap,
         descent_path: str,
-    ) -> JsonSerializableValue:
-        ...
+    ) -> JsonSerializableValue: ...
 
 
 class SetToSequenceFieldSerializer(FieldSerializer):
@@ -615,8 +611,7 @@ def pack_value(
     val: T_Scalar,
     whitelist_map: WhitelistMap = ...,
     descent_path: Optional[str] = ...,
-) -> T_Scalar:
-    ...
+) -> T_Scalar: ...
 
 
 @overload
@@ -626,8 +621,7 @@ def pack_value(
     ],
     whitelist_map: WhitelistMap = ...,
     descent_path: Optional[str] = ...,
-) -> Mapping[str, JsonSerializableValue]:
-    ...
+) -> Mapping[str, JsonSerializableValue]: ...
 
 
 @overload
@@ -635,8 +629,7 @@ def pack_value(
     val: Sequence[PackableValue],
     whitelist_map: WhitelistMap = ...,
     descent_path: Optional[str] = ...,
-) -> Sequence[JsonSerializableValue]:
-    ...
+) -> Sequence[JsonSerializableValue]: ...
 
 
 def pack_value(
@@ -743,8 +736,7 @@ def deserialize_value(
     val: str,
     as_type: Tuple[Type[T_PackableValue], Type[U_PackableValue]],
     whitelist_map: WhitelistMap = ...,
-) -> Union[T_PackableValue, U_PackableValue]:
-    ...
+) -> Union[T_PackableValue, U_PackableValue]: ...
 
 
 @overload
@@ -752,8 +744,7 @@ def deserialize_value(
     val: str,
     as_type: Type[T_PackableValue],
     whitelist_map: WhitelistMap = ...,
-) -> T_PackableValue:
-    ...
+) -> T_PackableValue: ...
 
 
 @overload
@@ -761,8 +752,7 @@ def deserialize_value(
     val: str,
     as_type: None = ...,
     whitelist_map: WhitelistMap = ...,
-) -> PackableValue:
-    ...
+) -> PackableValue: ...
 
 
 def deserialize_value(
@@ -854,8 +844,7 @@ def unpack_value(
     as_type: Tuple[Type[T_PackableValue], Type[U_PackableValue]],
     whitelist_map: WhitelistMap = ...,
     context: Optional[UnpackContext] = ...,
-) -> Union[T_PackableValue, U_PackableValue]:
-    ...
+) -> Union[T_PackableValue, U_PackableValue]: ...
 
 
 @overload
@@ -864,8 +853,7 @@ def unpack_value(
     as_type: Type[T_PackableValue],
     whitelist_map: WhitelistMap = ...,
     context: Optional[UnpackContext] = ...,
-) -> T_PackableValue:
-    ...
+) -> T_PackableValue: ...
 
 
 @overload
@@ -874,8 +862,7 @@ def unpack_value(
     as_type: None = ...,
     whitelist_map: WhitelistMap = ...,
     context: Optional[UnpackContext] = ...,
-) -> PackableValue:
-    ...
+) -> PackableValue: ...
 
 
 def unpack_value(
@@ -955,8 +942,8 @@ def _check_serdes_tuple_class_invariants(klass: Type[NamedTuple]) -> None:
                 "in the named tuple that are not present as parameters to the "
                 "to the __new__ method. In order for "
                 "both serdes serialization and pickling to work, "
-                "these must match. Missing: {missing_fields}"
-            ).format(missing_fields=repr(list(klass._fields[index:])))
+                f"these must match. Missing: {list(klass._fields[index:])!r}"
+            )
 
             raise SerdesUsageError(_with_header(error_msg))
 
@@ -964,9 +951,9 @@ def _check_serdes_tuple_class_invariants(klass: Type[NamedTuple]) -> None:
         if value_param.name != field:
             error_msg = (
                 "Params to __new__ must match the order of field declaration in the namedtuple. "
-                'Declared field number {one_based_index} in the namedtuple is "{field_name}". '
-                'Parameter {one_based_index} in __new__ method is "{param_name}".'
-            ).format(one_based_index=index + 1, field_name=field, param_name=value_param.name)
+                f'Declared field number {index + 1} in the namedtuple is "{field}". '
+                f'Parameter {index + 1} in __new__ method is "{value_param.name}".'
+            )
             raise SerdesUsageError(_with_header(error_msg))
 
     if len(value_params) > len(klass._fields):

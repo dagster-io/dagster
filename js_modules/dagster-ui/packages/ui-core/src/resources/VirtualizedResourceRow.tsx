@@ -29,9 +29,16 @@ export const VirtualizedResourceRow = (props: ResourceRowProps) => {
     parentResources,
     jobsOpsUsing,
     assetKeysUsing,
+    schedulesUsing,
+    sensorsUsing,
   } = props;
   const resourceTypeSuccinct = succinctType(resourceType);
-  const uses = parentResources.length + jobsOpsUsing.length + assetKeysUsing.length;
+  const uses =
+    parentResources.length +
+    jobsOpsUsing.length +
+    assetKeysUsing.length +
+    schedulesUsing.length +
+    sensorsUsing.length;
 
   return (
     <Row $height={height} $start={start}>

@@ -174,10 +174,13 @@ const BackfillRunStatus = ({
   counts: {[status: string]: number};
 }) => {
   const history = useHistory();
-  const partitionCounts = Object.entries(counts).reduce((partitionCounts, [runStatus, count]) => {
-    partitionCounts[runStatus] = (partitionCounts[runStatus] || 0) + count;
-    return partitionCounts;
-  }, {} as {[status: string]: number});
+  const partitionCounts = Object.entries(counts).reduce(
+    (partitionCounts, [runStatus, count]) => {
+      partitionCounts[runStatus] = (partitionCounts[runStatus] || 0) + count;
+      return partitionCounts;
+    },
+    {} as {[status: string]: number},
+  );
 
   const health: PartitionStatusHealthSourceOps = React.useMemo(
     () => ({

@@ -60,11 +60,15 @@ const borderSettingToCSS = (border: BorderSide | BorderSetting) => {
       `;
     case 'top-and-bottom':
       return css`
-        box-shadow: inset 0 ${width}px ${color}, inset 0 -${width}px ${color};
+        box-shadow:
+          inset 0 ${width}px ${color},
+          inset 0 -${width}px ${color};
       `;
     case 'left-and-right':
       return css`
-        box-shadow: inset ${width}px 0 ${color}, inset -${width}px 0 ${color};
+        box-shadow:
+          inset ${width}px 0 ${color},
+          inset -${width}px 0 ${color};
       `;
     case 'top':
       return css`

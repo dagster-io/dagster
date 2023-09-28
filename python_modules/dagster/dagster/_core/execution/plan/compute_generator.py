@@ -2,9 +2,10 @@ import inspect
 from functools import wraps
 from typing import (
     Any,
+    AsyncIterator,
+    Awaitable,
     Callable,
     Dict,
-    Generator,
     Iterator,
     Mapping,
     Optional,
@@ -27,6 +28,7 @@ from dagster._core.definitions import (
     OutputDefinition,
 )
 from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
+from dagster._core.definitions.input import InputDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.errors import DagsterInvariantViolationError
@@ -41,7 +43,9 @@ class NoAnnotationSentinel:
     pass
 
 
-def create_op_compute_wrapper(op_def: OpDefinition):
+def create_op_compute_wrapper(
+    op_def: OpDefinition,
+) -> Callable[[OpExecutionContext, Mapping[str, InputDefinition]], Any]:
     compute_fn = cast(DecoratedOpFunction, op_def.compute_fn)
     fn = compute_fn.decorated_fn
     input_defs = op_def.input_defs
@@ -57,7 +61,10 @@ def create_op_compute_wrapper(op_def: OpDefinition):
     ]
 
     @wraps(fn)
-    def compute(context: OpExecutionContext, input_defs) -> Generator[Output, None, None]:
+    def compute(
+        context: OpExecutionContext,
+        input_defs: Mapping[str, InputDefinition],
+    ) -> Union[Iterator[Output], AsyncIterator[Output]]:
         kwargs = {}
         for input_name in input_names:
             kwargs[input_name] = input_defs[input_name]
@@ -91,7 +98,9 @@ def create_op_compute_wrapper(op_def: OpDefinition):
     return compute
 
 
-async def _coerce_async_op_to_async_gen(awaitable, context, output_defs):
+async def _coerce_async_op_to_async_gen(
+    awaitable: Awaitable[Any], context: OpExecutionContext, output_defs: Sequence[OutputDefinition]
+) -> AsyncIterator[Any]:
     result = await awaitable
     for event in validate_and_coerce_op_result_to_iterator(result, context, output_defs):
         yield event
@@ -166,7 +175,7 @@ def _filter_expected_output_defs(
     )
     materialize_results = [x for x in result_tuple if isinstance(x, MaterializeResult)]
     remove_outputs = [
-        r.get_spec_python_identifier(x.asset_key or context.asset_key)
+        r.get_spec_python_identifier(asset_key=x.asset_key or context.asset_key)
         for x in materialize_results
         for r in x.check_results or []
     ]
@@ -234,7 +243,7 @@ def _check_output_object_name(
 
 def validate_and_coerce_op_result_to_iterator(
     result: Any, context: OpExecutionContext, output_defs: Sequence[OutputDefinition]
-) -> Generator[Any, None, None]:
+) -> Iterator[Any]:
     if inspect.isgenerator(result):
         # this happens when a user explicitly returns a generator in the op
         for event in result:
@@ -258,6 +267,20 @@ def validate_and_coerce_op_result_to_iterator(
             f" {type(result)}. {context.op_def.node_type_str.capitalize()} is explicitly defined to"
             " return no results."
         )
+    # `requires_typed_event_stream` is a mode where we require users to return/yield exactly the
+    # results that will be registered in the instance, without additional fancy inference (like
+    # wrapping `None` in an `Output`). We therefore skip any return-specific validation for this
+    # mode and treat returned values as if they were yielded.
+    elif output_defs and context.requires_typed_event_stream:
+        # If nothing was returned, treat it as an empty tuple instead of a `(None,)`.
+        # This is important for delivering the correct error message when an output is missing.
+        if result is None:
+            result_tuple = tuple()
+        elif not isinstance(result, tuple) or is_named_tuple_instance(result):
+            result_tuple = (result,)
+        else:
+            result_tuple = result
+        yield from result_tuple
     elif output_defs:
         for position, output_def, element in _zip_and_iterate_op_result(
             result, context, output_defs

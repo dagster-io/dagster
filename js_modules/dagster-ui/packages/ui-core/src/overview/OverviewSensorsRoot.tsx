@@ -33,6 +33,7 @@ import {CheckAllBox} from '../ui/CheckAllBox';
 import {useFilters} from '../ui/Filters';
 import {useCodeLocationFilter} from '../ui/Filters/useCodeLocationFilter';
 import {useInstigationStatusFilter} from '../ui/Filters/useInstigationStatusFilter';
+import {SearchInputSpinner} from '../ui/SearchInputSpinner';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
@@ -55,7 +56,7 @@ export const OverviewSensorsRoot = () => {
   useTrackPageView();
   useDocumentTitle('Overview | Sensors');
 
-  const {allRepos, visibleRepos} = React.useContext(WorkspaceContext);
+  const {allRepos, visibleRepos, loading: workspaceLoading} = React.useContext(WorkspaceContext);
   const repoCount = allRepos.length;
   const [searchValue, setSearchValue] = useQueryPersistedState<string>({
     queryKey: 'search',
@@ -65,10 +66,10 @@ export const OverviewSensorsRoot = () => {
   const codeLocationFilter = useCodeLocationFilter();
   const runningStateFilter = useInstigationStatusFilter();
 
-  const filters = React.useMemo(() => [codeLocationFilter, runningStateFilter], [
-    codeLocationFilter,
-    runningStateFilter,
-  ]);
+  const filters = React.useMemo(
+    () => [codeLocationFilter, runningStateFilter],
+    [codeLocationFilter, runningStateFilter],
+  );
   const {button: filterButton, activeFiltersJsx} = useFilters({filters});
 
   const queryResultOverview = useQuery<OverviewSensorsQuery, OverviewSensorsQueryVariables>(
@@ -143,9 +144,8 @@ export const OverviewSensorsRoot = () => {
     );
   }, [allPermissionedSensors]);
 
-  const [{checkedIds: checkedKeys}, {onToggleFactory, onToggleAll}] = useSelectionReducer(
-    allPermissionedSensorKeys,
-  );
+  const [{checkedIds: checkedKeys}, {onToggleFactory, onToggleAll}] =
+    useSelectionReducer(allPermissionedSensorKeys);
 
   // Filter to find keys that are visible given any text search.
   const permissionedKeysOnScreen = React.useMemo(() => {
@@ -245,6 +245,8 @@ export const OverviewSensorsRoot = () => {
     );
   };
 
+  const showSearchSpinner = (workspaceLoading && !repoCount) || (loading && !data);
+
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
       <PageHeader
@@ -266,6 +268,11 @@ export const OverviewSensorsRoot = () => {
           <TextInput
             icon="search"
             value={searchValue}
+            rightElement={
+              showSearchSpinner ? (
+                <SearchInputSpinner tooltipContent="Loading sensors…" />
+              ) : undefined
+            }
             onChange={(e) => setSearchValue(e.target.value)}
             placeholder="Filter by sensor name…"
             style={{width: '340px'}}

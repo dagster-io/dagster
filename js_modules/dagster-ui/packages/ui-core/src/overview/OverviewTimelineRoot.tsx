@@ -91,10 +91,10 @@ export const OverviewTimelineRoot = ({Header, TabButton}: Props) => {
     return new Set(flat);
   }, [visibleRepos, searchValue]);
 
-  const visibleJobs = React.useMemo(() => jobs.filter(({key}) => visibleJobKeys.has(key)), [
-    jobs,
-    visibleJobKeys,
-  ]);
+  const visibleJobs = React.useMemo(
+    () => jobs.filter(({key}) => visibleJobKeys.has(key)),
+    [jobs, visibleJobKeys],
+  );
 
   return (
     <>

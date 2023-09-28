@@ -20,6 +20,7 @@ export type AssetCatalogTableQuery = {
             opNames: Array<string>;
             isSource: boolean;
             isObservable: boolean;
+            isExecutable: boolean;
             computeKind: string | null;
             hasMaterializePermission: boolean;
             description: string | null;
@@ -58,6 +59,7 @@ export type AssetCatalogGroupTableQuery = {
     opNames: Array<string>;
     isSource: boolean;
     isObservable: boolean;
+    isExecutable: boolean;
     computeKind: string | null;
     hasMaterializePermission: boolean;
     description: string | null;
@@ -79,6 +81,7 @@ export type AssetCatalogGroupTableNodeFragment = {
   opNames: Array<string>;
   isSource: boolean;
   isObservable: boolean;
+  isExecutable: boolean;
   computeKind: string | null;
   hasMaterializePermission: boolean;
   description: string | null;

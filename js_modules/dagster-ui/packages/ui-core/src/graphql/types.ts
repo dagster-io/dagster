@@ -325,6 +325,7 @@ export type AssetNode = {
   hasAssetChecks: Scalars['Boolean'];
   hasMaterializePermission: Scalars['Boolean'];
   id: Scalars['ID'];
+  isExecutable: Scalars['Boolean'];
   isObservable: Scalars['Boolean'];
   isPartitioned: Scalars['Boolean'];
   isSource: Scalars['Boolean'];
@@ -3202,6 +3203,8 @@ export type ResourceDetails = {
   nestedResources: Array<NestedResourceEntry>;
   parentResources: Array<NestedResourceEntry>;
   resourceType: Scalars['String'];
+  schedulesUsing: Array<Scalars['String']>;
+  sensorsUsing: Array<Scalars['String']>;
 };
 
 export type ResourceDetailsList = {
@@ -4961,6 +4964,8 @@ export const buildAssetNode = (
       overrides && overrides.hasOwnProperty('id')
         ? overrides.id!
         : '006fc1b6-3c6e-432d-ac6a-c1c16c0c05b9',
+    isExecutable:
+      overrides && overrides.hasOwnProperty('isExecutable') ? overrides.isExecutable! : false,
     isObservable:
       overrides && overrides.hasOwnProperty('isObservable') ? overrides.isObservable! : false,
     isPartitioned:
@@ -10279,6 +10284,10 @@ export const buildResourceDetails = (
       overrides && overrides.hasOwnProperty('parentResources') ? overrides.parentResources! : [],
     resourceType:
       overrides && overrides.hasOwnProperty('resourceType') ? overrides.resourceType! : 'sed',
+    schedulesUsing:
+      overrides && overrides.hasOwnProperty('schedulesUsing') ? overrides.schedulesUsing! : [],
+    sensorsUsing:
+      overrides && overrides.hasOwnProperty('sensorsUsing') ? overrides.sensorsUsing! : [],
   };
 };
 

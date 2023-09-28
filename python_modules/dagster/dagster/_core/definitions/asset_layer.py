@@ -27,7 +27,10 @@ from dagster._core.definitions.metadata import (
 )
 from dagster._core.selector.subset_selector import AssetSelectionData
 
-from ..errors import DagsterInvalidSubsetError
+from ..errors import (
+    DagsterInvalidSubsetError,
+    DagsterInvariantViolationError,
+)
 from .config import ConfigMapping
 from .dependency import NodeHandle, NodeInputHandle, NodeOutput, NodeOutputHandle
 from .events import AssetKey
@@ -606,6 +609,15 @@ class AssetLayer(NamedTuple):
     def assets_def_for_node(self, node_handle: NodeHandle) -> Optional["AssetsDefinition"]:
         return self.assets_defs_by_node_handle.get(node_handle)
 
+    def asset_key_for_node(self, node_handle: NodeHandle) -> AssetKey:
+        assets_def = self.assets_def_for_node(node_handle)
+        if not assets_def or len(assets_def.keys_by_output_name.keys()) > 1:
+            raise DagsterInvariantViolationError(
+                "Cannot call `asset_key_for_node` in a multi_asset with more than one asset."
+                " Multiple asset keys defined."
+            )
+        return next(iter(assets_def.keys_by_output_name.values()))
+
     def asset_check_specs_for_node(self, node_handle: NodeHandle) -> Sequence[AssetCheckSpec]:
         assets_def_for_node = self.assets_def_for_node(node_handle)
         checks_def_for_node = self.asset_checks_def_for_node(node_handle)
@@ -785,16 +797,13 @@ def build_asset_selection_job(
     tags: Optional[Mapping[str, Any]] = None,
     metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     asset_selection: Optional[AbstractSet[AssetKey]] = None,
+    asset_check_selection: Optional[AbstractSet[AssetCheckHandle]] = None,
     asset_selection_data: Optional[AssetSelectionData] = None,
     hooks: Optional[AbstractSet[HookDefinition]] = None,
 ) -> "JobDefinition":
     from dagster._core.definitions.assets_job import (
         build_assets_job,
         build_source_asset_observation_job,
-    )
-
-    asset_check_selection = (
-        asset_selection_data.asset_check_selection if asset_selection_data else None
     )
 
     if asset_selection is None and asset_check_selection is None:

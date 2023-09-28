@@ -58,13 +58,7 @@ def mysql_url_from_config(config_value: MySqlStorageConfig) -> str:
 def get_conn_string(
     username: str, password: str, hostname: str, db_name: str, port: Union[int, str] = "3306"
 ) -> str:
-    return "mysql+mysqlconnector://{username}:{password}@{hostname}:{port}/{db_name}".format(
-        username=username,
-        password=urlquote(password),
-        hostname=hostname,
-        db_name=db_name,
-        port=port,
-    )
+    return f"mysql+mysqlconnector://{username}:{urlquote(password)}@{hostname}:{port}/{db_name}"
 
 
 def parse_mysql_version(version: str) -> Tuple[int, ...]:
