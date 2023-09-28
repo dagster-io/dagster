@@ -59,7 +59,9 @@ export const AssetGraphExplorerSidebar = React.memo(
       if (!assetGraphData.nodes[id]) {
         try {
           const path = JSON.parse(id);
-          const nextOpsQuery = `\"${tokenForAssetKey({path})}\"`;
+          const nextOpsQuery = explorerPath.opsQuery.trim()
+            ? `\"${tokenForAssetKey({path})}\"`
+            : '*';
           onChangeExplorerPath(
             {
               ...explorerPath,
