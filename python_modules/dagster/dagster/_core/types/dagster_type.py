@@ -873,6 +873,9 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
         type_args = get_args(dynamic_out_annotation)
         dagster_type = type_args[0] if len(type_args) == 1 else Any
     elif dagster_type == MaterializeResult:
+        # convert MaterializeResult type annotation to Nothing until returning
+        # scalar values via MaterializeResult is supported
+        # https://github.com/dagster-io/dagster/issues/16887
         dagster_type = Nothing
 
     # Then, check to see if it is part of python's typing library
