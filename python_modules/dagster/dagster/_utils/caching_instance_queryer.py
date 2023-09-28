@@ -45,9 +45,9 @@ from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
+    from dagster._core.scheduler.instigation import AutoMaterializeAssetEvaluationRecord
     from dagster._core.storage.event_log import EventLogRecord
     from dagster._core.storage.event_log.base import AssetRecord
-    from dagster._core.scheduler.instigation import AutoMaterializeAssetEvaluationRecord
 
 
 class CachingInstanceQueryer(DynamicPartitionsStore):

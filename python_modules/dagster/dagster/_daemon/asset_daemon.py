@@ -145,6 +145,7 @@ class AutoMaterializeLaunchContext:
 
 class AssetDaemon(IntervalDaemon):
     def __init__(self, interval_seconds: int):
+        interval_seconds = 5
         super().__init__(interval_seconds=interval_seconds)
 
     @classmethod

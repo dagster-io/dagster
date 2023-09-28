@@ -220,11 +220,10 @@ class AutoMaterializeRule(ABC):
         self, context: RuleEvaluationContext
     ) -> RuleEvaluationResults:
         """Return the previous evaluation results for this rule, if any."""
-
         # this line ensures that if a materialize rule is "handled" (i.e. a materialization was
         # kicked off after it was discovered, or the asset was discarded), then we don't resurrect
         # the previous evaluation results
-        if context.cursor.is_unhandled(context.asset_key):
+        if context.asset_key in context.daemon_context.unhandled_asset_graph_subset:
             return []
 
         # here, we query the instance for the last recorded evaluation record
@@ -257,7 +256,7 @@ class AutoMaterializeRule(ABC):
                     for ap in asset_partitions
                     # only include asset partitions that are still unhandled from a previous tick
                     # and which do not have new evaluation data
-                    if ap in context.cursor.unhandled_asset_graph_subset
+                    if ap in context.daemon_context.unhandled_asset_graph_subset
                     and ap not in new_asset_partitions
                 },
             )

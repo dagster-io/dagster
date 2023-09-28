@@ -1,4 +1,5 @@
 import datetime
+import functools
 import itertools
 import logging
 from collections import defaultdict
@@ -21,6 +22,7 @@ from typing import (
 import pendulum
 
 import dagster._check as check
+from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
@@ -41,7 +43,6 @@ from .auto_materialize_rule import (
     DiscardOnMaxMaterializationsExceededRule,
     RuleEvaluationContext,
 )
-from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from .backfill_policy import BackfillPolicy, BackfillPolicyType
 from .freshness_based_auto_materialize import get_expected_data_time_for_asset_key
 from .partition import (
@@ -446,6 +447,18 @@ class AssetDaemonContext:
             to_discard,
         )
 
+    @functools.cached_property
+    def unhandled_asset_graph_subset(self) -> AssetGraphSubset:
+        return (
+            AssetGraphSubset.from_storage_dict(
+                self.cursor.serialized_unhandled_asset_graph_subset,
+                self.asset_graph,
+                allow_partial=True,
+            )
+            if self.cursor.serialized_unhandled_asset_graph_subset
+            else AssetGraphSubset(self.asset_graph)
+        )
+
     def get_auto_materialize_asset_evaluations(
         self,
     ) -> Tuple[
@@ -457,9 +470,7 @@ class AssetDaemonContext:
         """Returns a mapping from asset key to the AutoMaterializeAssetEvaluation for that key, as
         well as a set of all asset partitions that should be materialized this tick.
         """
-        unhandled_graph_subset = self.cursor.unhandled_asset_graph_subset or AssetGraphSubset(
-            self.asset_graph
-        )
+        unhandled_graph_subset = self.unhandled_asset_graph_subset
         evaluations_by_key: Dict[AssetKey, AutoMaterializeAssetEvaluation] = {}
         will_materialize_mapping: Dict[AssetKey, AbstractSet[AssetKeyPartitionKey]] = defaultdict(
             set
@@ -620,7 +631,8 @@ class AssetDaemonContext:
                     for asset_key in cast(Sequence[AssetKey], run_request.asset_selection)
                 ],
                 observe_request_timestamp=observe_request_timestamp,
-                unhandled_graph_subset=unhandled_graph_subset,
+                unhandled_asset_graph_subset=unhandled_graph_subset,
+                instance_queryer=self.instance_queryer,
             ),
             # only record evaluations where something happened
             [
