@@ -224,7 +224,7 @@ class SlingResource(ConfigurableResource):
                 s3://my_bucket/my_folder/file.csv
             target_object (str): The target object to write into. For database targets, the target object is a table
                 name, e.g. TABLE1, SCHEMA1.TABLE2. For file targets, the target object is a path or an url to a file.
-            mode (SlideMode): The Sling mode to use when syncing, i.e. incremental, full-refresh
+            mode (SlingMode): The Sling mode to use when syncing, i.e. incremental, full-refresh
                 See the Sling docs for more information: https://docs.slingdata.io/sling-cli/running-tasks#modes.
             primary_key (str): For incremental syncs, a primary key is used during merge statements to update
                 existing rows.
