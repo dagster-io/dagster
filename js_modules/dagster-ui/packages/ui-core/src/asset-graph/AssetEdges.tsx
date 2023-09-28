@@ -6,11 +6,19 @@ import {AssetLayoutEdge} from './layout';
 
 export const AssetEdges: React.FC<{
   edges: AssetLayoutEdge[];
+  selected: string[] | null;
   highlighted: string | null;
   strokeWidth?: number;
   baseColor?: string;
   viewportRect: {top: number; left: number; right: number; bottom: number};
-}> = ({edges, highlighted, strokeWidth = 4, baseColor = Colors.KeylineGray, viewportRect}) => {
+}> = ({
+  edges,
+  selected,
+  highlighted,
+  strokeWidth = 4,
+  baseColor = Colors.KeylineGray,
+  viewportRect,
+}) => {
   // Note: we render the highlighted edges twice, but it's so that the first item with
   // all the edges in it can remain memoized.
 
@@ -29,12 +37,16 @@ export const AssetEdges: React.FC<{
         viewportRect={viewportRect}
       />
       <AssetEdgeSet
-        viewportRect={viewportRect}
         color={Colors.Blue500}
-        edges={intersectedEdges.filter(
-          ({fromId, toId}) => highlighted === fromId || highlighted === toId,
+        edges={edges.filter(
+          ({fromId, toId}) =>
+            selected?.includes(fromId) ||
+            selected?.includes(toId) ||
+            highlighted === fromId ||
+            highlighted === toId,
         )}
         strokeWidth={strokeWidth}
+        viewportRect={viewportRect}
       />
     </React.Fragment>
   );

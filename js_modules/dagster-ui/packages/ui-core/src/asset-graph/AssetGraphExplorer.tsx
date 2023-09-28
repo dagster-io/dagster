@@ -331,6 +331,7 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
                 <SVGContainer width={layout.width} height={layout.height}>
                   <AssetEdges
                     viewportRect={viewportRect}
+                    selected={selectedGraphNodes.map((n) => n.id)}
                     highlighted={highlighted}
                     edges={layout.edges}
                     strokeWidth={allowGroupsOnlyZoomLevel ? Math.max(4, 3 / scale) : 4}
