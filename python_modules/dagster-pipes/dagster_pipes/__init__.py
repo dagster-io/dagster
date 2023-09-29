@@ -19,7 +19,6 @@ from typing import (
     ClassVar,
     Dict,
     Generic,
-    Iterable,
     Iterator,
     Literal,
     Mapping,
@@ -197,14 +196,6 @@ def _assert_defined_partition_property(value: Optional[_T], key: str) -> _T:
     )
 
 
-# This should only be called under the precondition that the current steps targets assets.
-def _assert_single_partition(data: PipesContextData, key: str) -> None:
-    partition_key_range = data["partition_key_range"]
-    assert partition_key_range is not None
-    if partition_key_range["start"] != partition_key_range["end"]:
-        raise DagsterPipesError(f"`{key}` is undefined. Current step targets multiple partitions.")
-
-
 def _assert_defined_extra(extras: PipesExtras, key: str) -> Any:
     if key not in extras:
         raise DagsterPipesError(f"Extra `{key}` is undefined. Extras must be provided by user.")
@@ -249,37 +240,6 @@ def _assert_opt_env_param_type(
         raise DagsterPipesError(
             f"Invalid type for parameter `{key}` passed from orchestration side to"
             f" `{cls.__name__}`. Expected `Optional[{expected_type}]`, got `{type(value)}`."
-        )
-    return value
-
-
-def _assert_param_value(value: _T, expected_values: Iterable[_T], method: str, param: str) -> _T:
-    if value not in expected_values:
-        raise DagsterPipesError(
-            f"Invalid value for parameter `{param}` of `{method}`. Expected one of"
-            f" `{expected_values}`, got `{value}`."
-        )
-    return value
-
-
-def _assert_opt_param_value(
-    value: _T, expected_values: Sequence[_T], method: str, param: str
-) -> _T:
-    if value is not None and value not in expected_values:
-        raise DagsterPipesError(
-            f"Invalid value for parameter `{param}` of `{method}`. Expected one of"
-            f" `{expected_values}`, got `{value}`."
-        )
-    return value
-
-
-def _assert_param_json_serializable(value: _T, method: str, param: str) -> _T:
-    try:
-        json.dumps(value)
-    except (TypeError, OverflowError):
-        raise DagsterPipesError(
-            f"Invalid type for parameter `{param}` of `{method}`. Expected a JSON-serializable"
-            f" type, got `{type(value)}`."
         )
     return value
 
