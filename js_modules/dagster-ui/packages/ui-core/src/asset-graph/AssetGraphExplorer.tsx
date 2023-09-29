@@ -311,100 +311,102 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
           {loading || !layout ? (
             <LoadingNotice async={async} nodeType="asset" />
           ) : (
-            <SVGViewport
-              ref={(r) => (viewportEl.current = r || undefined)}
-              defaultZoom={flagHorizontalDAGs ? 'zoom-to-fit-width' : 'zoom-to-fit'}
-              interactor={SVGViewport.Interactors.PanAndZoom}
-              graphWidth={layout.width}
-              graphHeight={layout.height}
-              graphHasNoMinimumZoom={allowGroupsOnlyZoomLevel}
-              onClick={onClickBackground}
-              onArrowKeyDown={onArrowKeyDown}
-              onDoubleClick={(e) => {
-                viewportEl.current?.autocenter(true);
-                e.stopPropagation();
-              }}
-              maxZoom={DEFAULT_MAX_ZOOM}
-              maxAutocenterZoom={1.0}
-            >
-              {({scale}, viewportRect) => (
-                <SVGContainer width={layout.width} height={layout.height}>
-                  <AssetEdges
-                    viewportRect={viewportRect}
-                    selected={selectedGraphNodes.map((n) => n.id)}
-                    highlighted={highlighted}
-                    edges={layout.edges}
-                    strokeWidth={allowGroupsOnlyZoomLevel ? Math.max(4, 3 / scale) : 4}
-                    baseColor={
-                      allowGroupsOnlyZoomLevel && scale < GROUPS_ONLY_SCALE
-                        ? Colors.Gray400
-                        : Colors.KeylineGray
-                    }
-                  />
-
-                  {Object.values(layout.groups)
-                    .filter((node) => !isNodeOffscreen(node.bounds, viewportRect))
-                    .sort((a, b) => a.id.length - b.id.length)
-                    .map((group) => (
-                      <foreignObject
-                        key={group.id}
-                        {...group.bounds}
-                        onDoubleClick={(e) => {
-                          if (!viewportEl.current) {
-                            return;
-                          }
-                          const targetScale = viewportEl.current.scaleForSVGBounds(
-                            group.bounds.width,
-                            group.bounds.height,
-                          );
-                          viewportEl.current.zoomToSVGBox(group.bounds, true, targetScale * 0.9);
-                          e.stopPropagation();
-                        }}
-                      >
-                        <AssetGroupNode group={group} scale={scale} />
-                      </foreignObject>
-                    ))}
-
-                  {Object.values(layout.nodes)
-                    .filter((node) => !isNodeOffscreen(node.bounds, viewportRect))
-                    .map(({id, bounds}) => {
-                      const graphNode = assetGraphData.nodes[id]!;
-                      const path = JSON.parse(id);
-                      if (allowGroupsOnlyZoomLevel && scale < GROUPS_ONLY_SCALE) {
-                        return;
+            <div style={{cursor: 'grab'}}>
+              <SVGViewport
+                ref={(r) => (viewportEl.current = r || undefined)}
+                defaultZoom={flagHorizontalDAGs ? 'zoom-to-fit-width' : 'zoom-to-fit'}
+                interactor={SVGViewport.Interactors.PanAndZoom}
+                graphWidth={layout.width}
+                graphHeight={layout.height}
+                graphHasNoMinimumZoom={allowGroupsOnlyZoomLevel}
+                onClick={onClickBackground}
+                onArrowKeyDown={onArrowKeyDown}
+                onDoubleClick={(e) => {
+                  viewportEl.current?.autocenter(true);
+                  e.stopPropagation();
+                }}
+                maxZoom={DEFAULT_MAX_ZOOM}
+                maxAutocenterZoom={1.0}
+              >
+                {({scale}, viewportRect) => (
+                  <SVGContainer width={layout.width} height={layout.height}>
+                    <AssetEdges
+                      viewportRect={viewportRect}
+                      selected={selectedGraphNodes.map((n) => n.id)}
+                      highlighted={highlighted}
+                      edges={layout.edges}
+                      strokeWidth={allowGroupsOnlyZoomLevel ? Math.max(4, 3 / scale) : 4}
+                      baseColor={
+                        allowGroupsOnlyZoomLevel && scale < GROUPS_ONLY_SCALE
+                          ? Colors.Gray400
+                          : Colors.KeylineGray
                       }
-                      return (
+                    />
+
+                    {Object.values(layout.groups)
+                      .filter((node) => !isNodeOffscreen(node.bounds, viewportRect))
+                      .sort((a, b) => a.id.length - b.id.length)
+                      .map((group) => (
                         <foreignObject
-                          {...bounds}
-                          key={id}
-                          onMouseEnter={() => setHighlighted(id)}
-                          onMouseLeave={() => setHighlighted(null)}
-                          onClick={(e) => onSelectNode(e, {path}, graphNode)}
+                          key={group.id}
+                          {...group.bounds}
                           onDoubleClick={(e) => {
-                            viewportEl.current?.zoomToSVGBox(bounds, true, 1.2);
+                            if (!viewportEl.current) {
+                              return;
+                            }
+                            const targetScale = viewportEl.current.scaleForSVGBounds(
+                              group.bounds.width,
+                              group.bounds.height,
+                            );
+                            viewportEl.current.zoomToSVGBox(group.bounds, true, targetScale * 0.9);
                             e.stopPropagation();
                           }}
-                          style={{overflow: 'visible'}}
                         >
-                          {!graphNode ? (
-                            <AssetNodeLink assetKey={{path}} />
-                          ) : scale < MINIMAL_SCALE ? (
-                            <AssetNodeMinimal
-                              definition={graphNode.definition}
-                              selected={selectedGraphNodes.includes(graphNode)}
-                            />
-                          ) : (
-                            <AssetNode
-                              definition={graphNode.definition}
-                              selected={selectedGraphNodes.includes(graphNode)}
-                            />
-                          )}
+                          <AssetGroupNode group={group} scale={scale} />
                         </foreignObject>
-                      );
-                    })}
-                </SVGContainer>
-              )}
-            </SVGViewport>
+                      ))}
+
+                    {Object.values(layout.nodes)
+                      .filter((node) => !isNodeOffscreen(node.bounds, viewportRect))
+                      .map(({id, bounds}) => {
+                        const graphNode = assetGraphData.nodes[id]!;
+                        const path = JSON.parse(id);
+                        if (allowGroupsOnlyZoomLevel && scale < GROUPS_ONLY_SCALE) {
+                          return;
+                        }
+                        return (
+                          <foreignObject
+                            {...bounds}
+                            key={id}
+                            onMouseEnter={() => setHighlighted(id)}
+                            onMouseLeave={() => setHighlighted(null)}
+                            onClick={(e) => onSelectNode(e, {path}, graphNode)}
+                            onDoubleClick={(e) => {
+                              viewportEl.current?.zoomToSVGBox(bounds, true, 1.2);
+                              e.stopPropagation();
+                            }}
+                            style={{overflow: 'visible'}}
+                          >
+                            {!graphNode ? (
+                              <AssetNodeLink assetKey={{path}} />
+                            ) : scale < MINIMAL_SCALE ? (
+                              <AssetNodeMinimal
+                                definition={graphNode.definition}
+                                selected={selectedGraphNodes.includes(graphNode)}
+                              />
+                            ) : (
+                              <AssetNode
+                                definition={graphNode.definition}
+                                selected={selectedGraphNodes.includes(graphNode)}
+                              />
+                            )}
+                          </foreignObject>
+                        );
+                      })}
+                  </SVGContainer>
+                )}
+              </SVGViewport>
+            </div>
           )}
           {setOptions && (
             <OptionsOverlay>

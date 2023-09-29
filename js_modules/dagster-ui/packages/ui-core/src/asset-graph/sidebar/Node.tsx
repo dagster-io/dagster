@@ -50,7 +50,7 @@ export const Node = ({
   isSelected: boolean;
   explorerPath: ExplorerPath;
   onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
-  viewType: 'tree' | 'folder';
+  viewType: 'tree' | 'group';
 }) => {
   const isGroupNode = 'groupName' in node;
   const isLocationNode = 'locationName' in node;
