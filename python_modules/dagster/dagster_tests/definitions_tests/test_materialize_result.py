@@ -354,6 +354,16 @@ def test_materialize_result_with_partitions():
     assert len(mats) == 1, mats
     assert mats[0].metadata["key"].text == "red"
 
+
+@pytest.mark.skip(
+    "Direct invocation causes errors, unskip these tests once direct invocation path is fixed."
+    " https://github.com/dagster-io/dagster/issues/16921"
+)
+def test_materialize_result_with_partitions_direct_invocation():
+    @asset(partitions_def=StaticPartitionsDefinition(["red", "blue", "yellow"]))
+    def partitioned_asset(context: AssetExecutionContext) -> MaterializeResult:
+        return MaterializeResult(metadata={"key": context.partition_key})
+
     context = build_op_context(partition_key="red")
 
     res = partitioned_asset(context)
