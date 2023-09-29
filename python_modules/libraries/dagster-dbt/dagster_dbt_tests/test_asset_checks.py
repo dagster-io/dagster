@@ -9,6 +9,7 @@ from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.asset_defs import load_assets_from_dbt_manifest
 from dagster_dbt.core.resources_v2 import DbtCliResource
+from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 
 pytest.importorskip("dbt.version", minversion="1.4")
 
@@ -45,12 +46,24 @@ def test_with_asset_checks() -> None:
     @dbt_assets(manifest=manifest_asset_checks_json)
     def my_dbt_assets_with_checks(): ...
 
+    @dbt_assets(
+        manifest=manifest_no_asset_checks_json,
+        dagster_dbt_translator=DagsterDbtTranslator(
+            settings=DagsterDbtTranslatorSettings(enable_asset_checks=True)
+        ),
+    )
+    def my_dbt_assets_with_checks_from_translator(): ...
+
     [load_my_dbt_assets_with_checks] = load_assets_from_dbt_manifest(
         manifest=manifest_asset_checks_json
     )
 
     # dbt tests are present, and are modeled as Dagster asset checks
-    for asset_def in [my_dbt_assets_with_checks, load_my_dbt_assets_with_checks]:
+    for asset_def in [
+        my_dbt_assets_with_checks,
+        my_dbt_assets_with_checks_from_translator,
+        load_my_dbt_assets_with_checks,
+    ]:
         assert any(
             unique_id.startswith("test") for unique_id in manifest_asset_checks_json["nodes"].keys()
         )
@@ -59,6 +72,43 @@ def test_with_asset_checks() -> None:
         # dbt singular tests are not modeled as Dagster asset checks
         for check_spec in asset_def.check_specs_by_output_name.values():
             assert "assert_singular_test_is_not_asset_check" != check_spec.name
+
+
+def test_enable_asset_checks_with_custom_translator() -> None:
+    class CustomDagsterDbtTranslatorWithInitNoSuper(DagsterDbtTranslator):
+        def __init__(self, test_arg: str):
+            self.test_arg = test_arg
+
+    class CustomDagsterDbtTranslatorWithInitWithSuper(DagsterDbtTranslator):
+        def __init__(self, test_arg: str):
+            self.test_arg = test_arg
+
+            super().__init__()
+
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator): ...
+
+    class CustomDagsterDbtTranslatorWithPassThrough(DagsterDbtTranslator):
+        def __init__(self, test_arg: str, *args, **kwargs):
+            self.test_arg = test_arg
+
+            super().__init__(*args, **kwargs)
+
+    no_pass_through_no_super_translator = CustomDagsterDbtTranslatorWithInitNoSuper("test")
+    assert not no_pass_through_no_super_translator.settings.enable_asset_checks
+
+    no_pass_through_with_super_translator = CustomDagsterDbtTranslatorWithInitWithSuper("test")
+    assert not no_pass_through_with_super_translator.settings.enable_asset_checks
+
+    custom_translator = CustomDagsterDbtTranslator(
+        settings=DagsterDbtTranslatorSettings(enable_asset_checks=True)
+    )
+    assert custom_translator.settings.enable_asset_checks
+
+    pass_through_translator = CustomDagsterDbtTranslatorWithPassThrough(
+        "test",
+        settings=DagsterDbtTranslatorSettings(enable_asset_checks=True),
+    )
+    assert pass_through_translator.settings.enable_asset_checks
 
 
 @pytest.mark.parametrize(
