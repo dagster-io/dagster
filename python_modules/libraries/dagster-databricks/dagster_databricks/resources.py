@@ -68,13 +68,15 @@ class DatabricksClientResource(ConfigurableResource, IAttachDifferentObjectToOpC
     def has_credentials(cls, values: dict):
         token = values.get("token")
         oauth_credentials = values.get("oauth_credentials")
-        azure_credentials = values.get("azure_oauth_credentials")
+        azure_credentials = values.get("azure_credentials")
         present = [True for v in [token, oauth_credentials, azure_credentials] if v is not None]
-        if len(present) != 1:
+        if len(present) > 1:
             raise ValueError(
-                "Must provide one of token or oauth_credentials or azure_oauth_credentials, not"
+                "Must provide one of token or oauth_credentials or azure_credentials, not"
                 " multiple"
             )
+        elif not len(present):
+            raise ValueError("Must provide one of token or oauth_credentials or azure_credentials")
         return values
 
     @classmethod
