@@ -3,7 +3,7 @@ import shutil
 from typing import Any, Dict, List
 
 import yaml
-from dagster import AssetsDefinition
+from dagster import AssetsDefinition, MaterializeResult
 from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster._utils import file_relative_path
 
@@ -40,15 +40,15 @@ def from_asset_entries(asset_entries: Dict[str, Any]) -> List[AssetsDefinition]:
         def _assets_def(
             context: AssetExecutionContext,
             pipes_subprocess_client: PipesSubprocessClient,
-        ):
+        ) -> MaterializeResult:
             # instead of querying a dummy client, do your real data processing here
 
             python_executable = shutil.which("python")
             assert python_executable is not None
-            pipes_subprocess_client.run(
+            return pipes_subprocess_client.run(
                 command=[python_executable, file_relative_path(__file__, "sql_script.py"), sql],
                 context=context,
-            ).get_results()
+            ).get_materialize_result()
 
         assets_defs.append(_assets_def)
 

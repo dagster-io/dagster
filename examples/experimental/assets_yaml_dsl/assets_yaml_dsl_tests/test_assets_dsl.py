@@ -3,8 +3,8 @@ from typing import List
 import yaml
 from assets_yaml_dsl.pure_assets_dsl.assets_dsl import from_asset_entries
 from dagster import AssetsDefinition
+from dagster._core.definitions import materialize
 from dagster._core.definitions.events import AssetKey
-from dagster._core.execution.context.invocation import build_asset_context
 from dagster._core.pipes.subprocess import PipesSubprocessClient
 
 
@@ -69,7 +69,10 @@ assets:
     assert assets_defs
     assert len(assets_defs) == 1
     assets_def = assets_defs[0]
-    assets_def(context=build_asset_context(), pipes_subprocess_client=PipesSubprocessClient())
+
+    materialize(
+        assets=[assets_def], resources=dict(pipes_subprocess_client=PipesSubprocessClient())
+    )
 
 
 def test_basic_group() -> None:
