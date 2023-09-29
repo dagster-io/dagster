@@ -600,7 +600,7 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
         style={Object.assign({}, SVGViewportStyles, {
           backgroundPosition: `${x}px ${y}px`,
           backgroundSize: `${dotsize}px`,
-          ...(isClickHeld ? {cursor: 'grabbing'} : {}),
+          cursor: isClickHeld ? 'grabbing' : 'grab',
         })}
         onMouseDown={(e) => interactor.onMouseDown(this, e)}
         onDoubleClick={this.onDoubleClick}
@@ -635,7 +635,6 @@ const SVGViewportStyles: React.CSSProperties = {
   userSelect: 'none',
   outline: 'none',
   background: `url("data:image/svg+xml;utf8,<svg width='30px' height='30px' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'><circle fill='rgba(236, 236, 236, 1)' cx='5' cy='5' r='5' /></svg>") repeat`,
-  cursor: 'grab',
 };
 
 const ZoomSliderContainer = styled.div`
