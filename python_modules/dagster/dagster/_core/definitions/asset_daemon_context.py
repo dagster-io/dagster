@@ -449,7 +449,7 @@ class AssetDaemonContext:
 
     @functools.cached_property
     def unhandled_asset_graph_subset(self) -> AssetGraphSubset:
-        return (
+        subset = (
             AssetGraphSubset.from_storage_dict(
                 self.cursor.serialized_unhandled_asset_graph_subset,
                 self.asset_graph,
@@ -458,6 +458,16 @@ class AssetDaemonContext:
             if self.cursor.serialized_unhandled_asset_graph_subset
             else AssetGraphSubset(self.asset_graph)
         )
+        # factor out any asset partitions which have been materialized since last tick
+        for asset_key in self.asset_graph.all_asset_keys:
+            new_asset_partitions = self.instance_queryer.get_asset_partitions_updated_after_cursor(
+                asset_key=asset_key,
+                asset_partitions=None,
+                after_cursor=self.latest_storage_id,
+                respect_materialization_data_versions=False,
+            )
+            subset -= new_asset_partitions
+        return subset
 
     def get_auto_materialize_asset_evaluations(
         self,
@@ -470,7 +480,7 @@ class AssetDaemonContext:
         """Returns a mapping from asset key to the AutoMaterializeAssetEvaluation for that key, as
         well as a set of all asset partitions that should be materialized this tick.
         """
-        unhandled_graph_subset = self.unhandled_asset_graph_subset
+        unhandled_asset_graph_subset = self.unhandled_asset_graph_subset
         evaluations_by_key: Dict[AssetKey, AutoMaterializeAssetEvaluation] = {}
         will_materialize_mapping: Dict[AssetKey, AbstractSet[AssetKeyPartitionKey]] = defaultdict(
             set
@@ -504,7 +514,7 @@ class AssetDaemonContext:
             # if an asset partition is skipped, then we want to keep track of it in our "unhandled"
             # set, which will cause us to pull this tick's evaluation into the next tick to re-evaluate
             # all of those unhandled materialization reasons and see if we can now proceed
-            unhandled_graph_subset |= to_skip_for_asset
+            unhandled_asset_graph_subset |= to_skip_for_asset
             # similarly, if an asset partition is requested to be materialized this tick, or discarded
             # this means that we should no longer consider it to be unhandled -- we kicked off a run
             # to solve the materialize rule issues that we brought up (or decided we shouldn't), so
@@ -529,7 +539,7 @@ class AssetDaemonContext:
                 f" skipped, {evaluation.num_discarded} discarded"
             )
 
-            unhandled_graph_subset -= to_discard_for_asset | to_materialize_for_asset
+            unhandled_asset_graph_subset -= to_discard_for_asset | to_materialize_for_asset
 
             evaluations_by_key[asset_key] = evaluation
             will_materialize_mapping[asset_key] = to_materialize_for_asset
@@ -562,10 +572,10 @@ class AssetDaemonContext:
                     will_materialize_mapping[neighbor_key] = {
                         ap._replace(asset_key=neighbor_key) for ap in to_materialize_for_asset
                     }
-                    unhandled_graph_subset |= {
+                    unhandled_asset_graph_subset |= {
                         ap._replace(asset_key=neighbor_key) for ap in to_skip_for_asset
                     }
-                    unhandled_graph_subset -= {
+                    unhandled_asset_graph_subset -= {
                         ap._replace(asset_key=neighbor_key)
                         for ap in to_materialize_for_asset | to_discard_for_asset
                     }
@@ -579,7 +589,7 @@ class AssetDaemonContext:
             evaluations_by_key,
             set().union(*will_materialize_mapping.values()),
             to_discard,
-            unhandled_graph_subset,
+            unhandled_asset_graph_subset,
         )
 
     def evaluate(
@@ -597,7 +607,7 @@ class AssetDaemonContext:
             else []
         )
 
-        evaluations, to_materialize, to_discard, unhandled_graph_subset = (
+        evaluations, to_materialize, to_discard, unhandled_asset_graph_subset = (
             self.get_auto_materialize_asset_evaluations()
         )
 
@@ -631,7 +641,7 @@ class AssetDaemonContext:
                     for asset_key in cast(Sequence[AssetKey], run_request.asset_selection)
                 ],
                 observe_request_timestamp=observe_request_timestamp,
-                unhandled_asset_graph_subset=unhandled_graph_subset,
+                unhandled_asset_graph_subset=unhandled_asset_graph_subset,
                 instance_queryer=self.instance_queryer,
             ),
             # only record evaluations where something happened
