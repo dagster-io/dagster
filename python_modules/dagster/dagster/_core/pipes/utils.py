@@ -11,8 +11,8 @@ from typing import Iterator, Optional
 
 from dagster_pipes import (
     PIPES_PROTOCOL_VERSION_FIELD,
-    DefaultPipesContextLoader,
     PipesContextData,
+    PipesDefaultContextLoader,
     PipesDefaultMessageWriter,
     PipesExtras,
     PipesParams,
@@ -66,7 +66,7 @@ class PipesFileContextInjector(PipesContextInjector):
         with open(self._path, "w") as input_stream:
             json.dump(context_data, input_stream)
         try:
-            yield {DefaultPipesContextLoader.FILE_PATH_KEY: self._path}
+            yield {PipesDefaultContextLoader.FILE_PATH_KEY: self._path}
         finally:
             if os.path.exists(self._path):
                 os.remove(self._path)
@@ -115,7 +115,7 @@ class PipesEnvContextInjector(PipesContextInjector):
             PipesParams: A dict of parameters that can be used by the external process to locate and
                 load the injected context data.
         """
-        yield {DefaultPipesContextLoader.DIRECT_KEY: context_data}
+        yield {PipesDefaultContextLoader.DIRECT_KEY: context_data}
 
 
 @experimental
