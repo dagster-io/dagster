@@ -259,7 +259,10 @@ def test_materialize_result_output_typing():
     ).success
 
 
-@pytest.mark.skip("generator return types are interpreted as Any.")
+@pytest.mark.skip(
+    "Generator return types are interpreted as Any. See"
+    " https://github.com/dagster-io/dagster/pull/16906"
+)
 def test_generator_return_type_annotation():
     class TestingIOManager(IOManager):
         def handle_output(self, context, obj):
@@ -276,11 +279,10 @@ def test_generator_return_type_annotation():
     materialize([generator_asset], resources={"io_manager": TestingIOManager()})
 
 
-pytest.mark.skip(
+@pytest.mark.skip(
     "Direct invocation causes errors, unskip these tests once direct invocation path is fixed."
+    " https://github.com/dagster-io/dagster/issues/16921"
 )
-
-
 def test_direct_invocation_materialize_result():
     @asset
     def my_asset() -> MaterializeResult:
@@ -312,6 +314,7 @@ def test_direct_invocation_materialize_result():
 
 @pytest.mark.skip(
     "Direct invocation causes errors, unskip these tests once direct invocation path is fixed."
+    " https://github.com/dagster-io/dagster/issues/16921"
 )
 def test_direct_invocation_for_generators():
     @asset
