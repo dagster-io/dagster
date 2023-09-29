@@ -36,22 +36,26 @@ from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.errors import (
     DagsterDefinitionChangedDeserializationError,
 )
-from dagster._core.host_representation.external_data import external_asset_nodes_from_defs
+from dagster._core.host_representation.external_data import (
+    external_asset_checks_from_defs,
+    external_asset_nodes_from_defs,
+)
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.test_utils import instance_for_test
 from dagster._seven.compat.pendulum import create_pendulum_time
 
 
-def to_external_asset_graph(assets) -> AssetGraph:
+def to_external_asset_graph(assets, asset_checks=None) -> AssetGraph:
     @repository
     def repo():
-        return assets
+        return assets + (asset_checks or [])
 
     external_asset_nodes = external_asset_nodes_from_defs(
         repo.get_all_jobs(), source_assets_by_key={}
     )
     return ExternalAssetGraph.from_repository_handles_and_external_asset_nodes(
-        [(MagicMock(), asset_node) for asset_node in external_asset_nodes]
+        [(MagicMock(), asset_node) for asset_node in external_asset_nodes],
+        external_asset_checks=external_asset_checks_from_defs(repo.get_all_jobs()),
     )
 
 
@@ -673,19 +677,19 @@ def test_asset_graph_partial_deserialization(asset_graph_from_assets):
     )
 
 
-def test_required_assets_and_checks_by_key_check_decorator():
+def test_required_assets_and_checks_by_key_check_decorator(asset_graph_from_assets):
     @asset
     def asset0(): ...
 
     @asset_check(asset=asset0)
     def check0(): ...
 
-    asset_graph = AssetGraph.from_assets([asset0], asset_checks=[check0])
+    asset_graph = asset_graph_from_assets([asset0], asset_checks=[check0])
     assert asset_graph.get_required_asset_and_check_keys(asset0.key) == set()
     assert asset_graph.get_required_asset_and_check_keys(check0.spec.key) == set()
 
 
-def test_required_assets_and_checks_by_key_asset_decorator():
+def test_required_assets_and_checks_by_key_asset_decorator(asset_graph_from_assets):
     foo_check = AssetCheckSpec(name="foo", asset="asset0")
     bar_check = AssetCheckSpec(name="bar", asset="asset0")
 
@@ -695,7 +699,7 @@ def test_required_assets_and_checks_by_key_asset_decorator():
     @asset_check(asset=asset0)
     def check0(): ...
 
-    asset_graph = AssetGraph.from_assets([asset0], asset_checks=[check0])
+    asset_graph = asset_graph_from_assets([asset0], asset_checks=[check0])
 
     grouped_keys = [asset0.key, foo_check.key, bar_check.key]
     for key in grouped_keys:
@@ -704,7 +708,7 @@ def test_required_assets_and_checks_by_key_asset_decorator():
     assert asset_graph.get_required_asset_and_check_keys(check0.spec.key) == set()
 
 
-def test_required_assets_and_checks_by_key_multi_asset():
+def test_required_assets_and_checks_by_key_multi_asset(asset_graph_from_assets):
     foo_check = AssetCheckSpec(name="foo", asset="asset0")
     bar_check = AssetCheckSpec(name="bar", asset="asset1")
 
@@ -722,11 +726,28 @@ def test_required_assets_and_checks_by_key_multi_asset():
     )
     def subsettable_asset_fn(): ...
 
-    asset_graph = AssetGraph.from_assets([asset_fn, subsettable_asset_fn])
+    asset_graph = asset_graph_from_assets([asset_fn, subsettable_asset_fn])
 
     grouped_keys = [AssetKey(["asset0"]), AssetKey(["asset1"]), foo_check.key, bar_check.key]
     for key in grouped_keys:
         assert asset_graph.get_required_asset_and_check_keys(key) == set(grouped_keys)
 
     for key in [AssetKey(["subsettable_asset0"]), AssetKey(["subsettable_asset1"]), biz_check.key]:
+        assert asset_graph.get_required_asset_and_check_keys(key) == set()
+
+
+def test_required_assets_and_checks_by_key_multi_asset_single_asset(asset_graph_from_assets):
+    foo_check = AssetCheckSpec(name="foo", asset="asset0")
+    bar_check = AssetCheckSpec(name="bar", asset="asset0")
+
+    @multi_asset(
+        outs={"asset0": AssetOut()},
+        check_specs=[foo_check, bar_check],
+        can_subset=True,
+    )
+    def asset_fn(): ...
+
+    asset_graph = asset_graph_from_assets([asset_fn])
+
+    for key in [AssetKey(["asset0"]), foo_check, bar_check]:
         assert asset_graph.get_required_asset_and_check_keys(key) == set()
