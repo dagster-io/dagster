@@ -60,9 +60,8 @@ def build_sling_asset(
             asset_def = build_sling_asset(
                     asset_spec=asset_spec,
                     source_stream="main.dest_table",
-                    table_object="file:///tmp/test.csv",
+                    target_object="file:///tmp/test.csv",
                     mode=SlingMode.FULL_REFRESH
-                    primary_key="id"
             )
 
 

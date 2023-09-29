@@ -41,7 +41,7 @@ class SlingSourceConnection(PermissiveConfig):
         .. code-block:: python
 
             source = SlingTargetConnection(type="postgres", connection_string=EnvVar("POSTGRES_CONNECTION_STRING"))
-            source = SlingSourceConnection(type="postgres", connection_string="postgresql://user:password@host:port/schema"
+            source = SlingSourceConnection(type="postgres", connection_string="postgresql://user:password@host:port/schema")
 
         Create a Sling Source for a Postgres database, using keyword arguments, as described here:
         https://docs.slingdata.io/connections/database-connections/postgres

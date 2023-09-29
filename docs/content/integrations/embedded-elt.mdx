@@ -9,6 +9,8 @@ This package provides a framework for building ELT pipelines with Dagster throug
 
 This package currently includes a single implementation using <a href="https://slingdata.io">Sling</a> provides a simple way to sync data between databases and file systems.
 
+We plan on adding additional embedded ELT tool integrations in the future.
+
 ## Relevant APIs
 
 | Name                                                                        | Description                                                                    |
@@ -50,7 +52,7 @@ Note that no path is required, as that is provided by the asset itself.
 ```python
 asset_def = build_sling_asset(
     asset_spec=AssetSpec("my_file"),
-    source_straem=f"file://{path_to_file}",
+    source_stream=f"file://{path_to_file}",
     ...
 )
 
