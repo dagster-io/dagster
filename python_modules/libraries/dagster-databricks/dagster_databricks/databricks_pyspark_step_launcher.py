@@ -49,6 +49,7 @@ from .configs import (
     define_databricks_storage_config,
     define_databricks_submit_run_config,
     define_oauth_credentials,
+    define_azure_credentials,
 )
 
 CODE_ZIP_NAME = "code.zip"
@@ -84,6 +85,7 @@ DAGSTER_SYSTEM_ENV_VARS = {
             description="Databricks access token",
         ),
         "oauth_credentials": define_oauth_credentials(),
+        "azure_credentials": define_azure_credentials(),
         "env_variables": define_databricks_env_variables(),
         "secrets_to_env_variables": define_databricks_secrets_config(),
         "storage": define_databricks_storage_config(),
@@ -260,9 +262,9 @@ class DatabricksPySparkStepLauncher(StepLauncher):
             token=databricks_token,
             oauth_client_id=oauth_credentials.get("client_id"),
             oauth_client_secret=oauth_credentials.get("client_secret"),
-            azure_client_id=azure_credentials.get("client_id"),
-            azure_client_secret=azure_credentials.get("client_secret"),
-            azure_tenant_id=azure_credentials.get("tenant_id"),
+            azure_client_id=azure_credentials.get("azure_client_id"),
+            azure_client_secret=azure_credentials.get("azure_client_secret"),
+            azure_tenant_id=azure_credentials.get("azure_tenant_id"),
             poll_interval_sec=poll_interval_sec,
             max_wait_time_sec=max_completion_wait_time_seconds,
         )
