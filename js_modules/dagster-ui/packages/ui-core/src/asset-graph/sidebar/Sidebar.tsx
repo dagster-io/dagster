@@ -310,7 +310,7 @@ export const AssetGraphExplorerSidebar = React.memo(
               activeItems={new Set([viewType])}
               buttons={[
                 {id: 'tree', label: 'Tree view', icon: 'gantt_flat'},
-                {id: 'group', label: 'Group view', icon: 'folder_open'},
+                {id: 'group', label: 'Group view', icon: 'asset_group'},
               ]}
               onClick={(id: 'tree' | 'group') => {
                 setViewType(id);
