@@ -15,13 +15,6 @@
   - The `@asset_check` decorator, as well as the `check_specs` argument to `@asset` and `@multi_asset` enable defining asset checks.
   - Materializing assets from the UI will default to executing their asset checks. You can also execute individual checks.
   - When viewing an asset in the asset graph or the asset details page, you can see whether its checks have passed, failed, or haven’t run successfully.
-  - You can load dbt tests as asset checks. Add the following to your `dbt_project.yml`:
-    ```jsx
-    tests:
-      +meta:
-        dagster:
-          asset_check: True
-    ```
 
 - **Auto materialize customization (experimental)** - `AutoMaterializePolicies` can now be customized [[docs](https://docs.dagster.io/concepts/assets/asset-auto-execution#auto-materialize-policies)].
   - All policies are composed of a set of `AutoMaterializeRule`s which determine if an asset should be materialized or skipped.
