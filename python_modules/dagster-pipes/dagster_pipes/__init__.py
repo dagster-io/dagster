@@ -31,6 +31,7 @@ from typing import (
     TypeVar,
     Union,
     cast,
+    get_args,
 )
 
 if TYPE_CHECKING:
@@ -285,18 +286,19 @@ def _assert_opt_param_value(
     return value
 
 
-def _assert_param_json_serializable(value: _T, method: str, param: str) -> _T:
+def _json_serialize_param(value: Any, method: str, param: str) -> str:
     try:
-        json.dumps(value)
+        serialized = json.dumps(value)
     except (TypeError, OverflowError):
         raise DagsterPipesError(
             f"Invalid type for parameter `{param}` of `{method}`. Expected a JSON-serializable"
             f" type, got `{type(value)}`."
         )
-    return value
+    return serialized
 
 
 _METADATA_VALUE_KEYS = frozenset(PipesMetadataValue.__annotations__.keys())
+_METADATA_TYPES = frozenset(get_args(PipesMetadataType))
 
 
 def _normalize_param_metadata(
@@ -319,6 +321,7 @@ def _normalize_param_metadata(
                     " string keys and values that are either raw metadata values or dictionaries"
                     f" with schema `{{raw_value: ..., type: ...}}`. Got a value `{value}`."
                 )
+            _assert_param_value(value["type"], _METADATA_TYPES, method, f"{param}.{key}.type")
             new_metadata[key] = cast(PipesMetadataValue, value)
         else:
             new_metadata[key] = {"raw_value": value, "type": PIPES_METADATA_TYPE_INFER}
@@ -340,7 +343,7 @@ def encode_env_var(value: Any) -> str:
     Returns:
         str: The encoded value.
     """
-    serialized = json.dumps(value)
+    serialized = _json_serialize_param(value, "encode_env_var", "value")
     compressed = zlib.compress(serialized.encode("utf-8"))
     encoded = base64.b64encode(compressed)
     return encoded.decode("utf-8")  # as string
