@@ -164,7 +164,7 @@ def test_ext_subprocess(
         extras = {"bar": "baz"}
         cmd = [_PYTHON_EXECUTABLE, external_script]
         return ext.run(
-            cmd,
+            command=cmd,
             context=context,
             extras=extras,
             env={
@@ -238,7 +238,7 @@ def test_ext_multi_asset():
     def foo_bar(context: AssetExecutionContext, pipes_subprocess_client: PipesSubprocessClient):
         with temp_script(script_fn) as script_path:
             cmd = [_PYTHON_EXECUTABLE, script_path]
-            return pipes_subprocess_client.run(cmd, context=context).get_results()
+            return pipes_subprocess_client.run(command=cmd, context=context).get_results()
 
     with instance_for_test() as instance:
         materialize(
@@ -265,7 +265,7 @@ def test_ext_dynamic_partitions():
     def foo(context: AssetExecutionContext, pipes_subprocess_client: PipesSubprocessClient):
         with temp_script(script_fn) as script_path:
             cmd = [_PYTHON_EXECUTABLE, script_path]
-            return pipes_subprocess_client.run(cmd, context=context).get_results()
+            return pipes_subprocess_client.run(command=cmd, context=context).get_results()
 
     with instance_for_test() as instance:
         instance.add_dynamic_partitions("blah", ["bar"])
@@ -307,7 +307,7 @@ def test_ext_typed_metadata():
     def foo(context: AssetExecutionContext, pipes_subprocess_client: PipesSubprocessClient):
         with temp_script(script_fn) as script_path:
             cmd = [_PYTHON_EXECUTABLE, script_path]
-            return pipes_subprocess_client.run(cmd, context=context).get_results()
+            return pipes_subprocess_client.run(command=cmd, context=context).get_results()
 
     with instance_for_test() as instance:
         materialize(
@@ -354,7 +354,7 @@ def test_ext_asset_failed():
     def foo(context: AssetExecutionContext, pipes_subprocess_client: PipesSubprocessClient):
         with temp_script(script_fn) as script_path:
             cmd = [_PYTHON_EXECUTABLE, script_path]
-            return pipes_subprocess_client.run(cmd, context=context).get_results()
+            return pipes_subprocess_client.run(command=cmd, context=context).get_results()
 
     with pytest.raises(DagsterPipesExecutionError):
         materialize([foo], resources={"pipes_subprocess_client": PipesSubprocessClient()})
@@ -371,7 +371,7 @@ def test_ext_asset_invocation():
     def foo(context: AssetExecutionContext, pipes_subprocess_client: PipesSubprocessClient):
         with temp_script(script_fn) as script_path:
             cmd = [_PYTHON_EXECUTABLE, script_path]
-            yield from pipes_subprocess_client.run(cmd, context=context).get_results()
+            yield from pipes_subprocess_client.run(command=cmd, context=context).get_results()
 
     foo(context=build_asset_context(), pipes_subprocess_client=PipesSubprocessClient())
 
