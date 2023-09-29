@@ -371,7 +371,7 @@ class MaterializeOnParentUpdatedRule(
                 partition_key=asset_partition.partition_key,
             ).parent_partitions
 
-            updated_parent_asset_partitions = context.instance_queryer.get_updated_parent_asset_partitions(
+            updated_parent_asset_partitions = context.instance_queryer.get_parent_asset_partitions_updated_after_child(
                 asset_partition,
                 parent_asset_partitions,
                 # do a precise check for updated parents, factoring in data versions, as long as
@@ -446,18 +446,16 @@ class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOut
     def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
         asset_partitions_by_waiting_on_asset_keys = defaultdict(set)
         for candidate in context.candidates:
-            unreconciled_ancestors = set()
+            outdated_ancestors = set()
             # find the root cause of why this asset partition's parents are outdated (if any)
             for parent in context.get_parents_that_will_not_be_materialized_on_current_tick(
                 asset_partition=candidate
             ):
-                unreconciled_ancestors.update(
-                    context.instance_queryer.get_root_unreconciled_ancestors(
-                        asset_partition=parent,
-                    )
+                outdated_ancestors.update(
+                    context.instance_queryer.get_outdated_ancestors(asset_partition=parent)
                 )
-            if unreconciled_ancestors:
-                asset_partitions_by_waiting_on_asset_keys[frozenset(unreconciled_ancestors)].add(
+            if outdated_ancestors:
+                asset_partitions_by_waiting_on_asset_keys[frozenset(outdated_ancestors)].add(
                     candidate
                 )
         if asset_partitions_by_waiting_on_asset_keys:
@@ -553,7 +551,7 @@ class SkipOnNotAllParentsUpdatedRule(
             ).parent_partitions
 
             updated_parent_partitions = (
-                context.instance_queryer.get_updated_parent_asset_partitions(
+                context.instance_queryer.get_parent_asset_partitions_updated_after_child(
                     candidate,
                     parent_partitions,
                     context.daemon_context.respect_materialization_data_versions,
