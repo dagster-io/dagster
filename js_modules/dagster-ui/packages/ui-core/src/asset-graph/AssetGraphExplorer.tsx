@@ -13,7 +13,6 @@ import pickBy from 'lodash/pickBy';
 import uniq from 'lodash/uniq';
 import without from 'lodash/without';
 import React from 'react';
-import {useHistory} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {useFeatureFlags} from '../app/Flags';
@@ -36,7 +35,7 @@ import {
   LargeDAGNotice,
   LoadingNotice,
 } from '../pipelines/GraphNotices';
-import {ExplorerPath, normalizePathnameForCacheKey} from '../pipelines/PipelinePathUtils';
+import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {Loading} from '../ui/Loading';
 
@@ -137,14 +136,7 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
   allAssetKeys,
 }) => {
   const findAssetLocation = useFindAssetLocation();
-  const pathname = useHistory().location.pathname;
-  const {layout, loading, async} = useAssetLayout(
-    assetGraphData,
-    // Use the pathname as part of the key so that different deployments don't invalidate each other's cached layout
-    // Remove the slash at the end in the key so that the same layout is used for both `/path` and `/path/`
-    `explorer:${normalizePathnameForCacheKey(pathname)}`,
-    fullAssetGraphData,
-  );
+  const {layout, loading, async} = useAssetLayout(assetGraphData);
   const viewportEl = React.useRef<SVGViewport>();
   const {flagHorizontalDAGs, flagDAGSidebar} = useFeatureFlags();
 
