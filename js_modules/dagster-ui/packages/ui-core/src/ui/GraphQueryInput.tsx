@@ -39,6 +39,7 @@ interface GraphQueryInputProps {
   popoverPosition?: PopoverPosition;
   className?: string;
   disabled?: boolean;
+  type?: 'asset_graph';
 
   linkToPreview?: {
     repoName: string;
@@ -325,7 +326,7 @@ export const GraphQueryInput = React.memo(
               disabled={props.disabled}
               value={pendingValue}
               icon="op_selector"
-              rightElement={<InfoIconDialog />}
+              rightElement={props.type === 'asset_graph' ? <InfoIconDialog /> : undefined}
               strokeColor={intentToStrokeColor(props.intent)}
               autoFocus={props.autoFocus}
               placeholder={placeholderTextForItems(props.placeholder, props.items)}

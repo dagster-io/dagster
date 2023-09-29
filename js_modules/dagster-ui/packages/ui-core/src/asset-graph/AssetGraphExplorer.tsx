@@ -431,6 +431,7 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
           <TopbarWrapper>
             <div>{fetchOptionFilters}</div>
             <GraphQueryInput
+              type="asset_graph"
               items={graphQueryItems}
               value={explorerPath.opsQuery}
               placeholder="Type an asset subset…"
