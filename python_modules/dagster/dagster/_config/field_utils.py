@@ -496,7 +496,10 @@ class IntEnvVar(int):
         """
         raise RuntimeError(
             f'Attempted to directly retrieve environment variable IntEnvVar("{self.name}").'
-            " IntEnvVar should only be used as input to Dagster config or resources."
+            " IntEnvVar defers resolution of the env var value until run time, and should only be"
+            " used as input to Dagster config or resources.\n\n"
+            "To access the environment variable value, call `get_value` on the IntEnvVar, or use"
+            " os.getenv directly."
         )
 
     def __str__(self) -> str:
@@ -535,7 +538,10 @@ class EnvVar(str):
         """
         raise RuntimeError(
             f'Attempted to directly retrieve environment variable EnvVar("{self.env_var_name}").'
-            " EnvVar should only be used as input to Dagster config or resources."
+            " EnvVar defers resolution of the env var value until run time, and should only be"
+            " used as input to Dagster config or resources.\n\n"
+            "To access the environment variable value, call `get_value` on the EnvVar, or use"
+            " os.getenv directly."
         )
 
     @property

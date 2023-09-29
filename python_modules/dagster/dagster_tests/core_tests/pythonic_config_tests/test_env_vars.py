@@ -35,9 +35,9 @@ def test_direct_use_env_var_err() -> None:
     with pytest.raises(
         RuntimeError,
         match=(
-            "Attempted to directly retrieve environment variable"
-            ' EnvVar\\("A_STR"\\). EnvVar should only be used as input to Dagster'
-            " config or resources."
+            'Attempted to directly retrieve environment variable EnvVar\\("A_STR"\\). EnvVar defers'
+            " resolution of the env var value until run time, and should only be used as input to"
+            " Dagster config or resources.\n\n"
         ),
     ):
         str(EnvVar("A_STR"))
@@ -45,9 +45,9 @@ def test_direct_use_env_var_err() -> None:
     with pytest.raises(
         RuntimeError,
         match=(
-            "Attempted to directly retrieve environment variable"
-            ' EnvVar\\("A_STR"\\). EnvVar should only be used as input to Dagster'
-            " config or resources."
+            'Attempted to directly retrieve environment variable EnvVar\\("A_STR"\\). EnvVar defers'
+            " resolution of the env var value until run time, and should only be used as input to"
+            " Dagster config or resources.\n\n"
         ),
     ):
         print(EnvVar("A_STR"))  # noqa: T201
@@ -57,9 +57,9 @@ def test_direct_use_int_env_var_err() -> None:
     with pytest.raises(
         RuntimeError,
         match=(
-            "Attempted to directly retrieve environment variable"
-            ' IntEnvVar\\("AN_INT"\\). IntEnvVar should only be used as input to Dagster'
-            " config or resources."
+            'Attempted to directly retrieve environment variable IntEnvVar\\("AN_INT"\\). IntEnvVar'
+            " defers resolution of the env var value until run time, and should only be used as"
+            " input to Dagster config or resources."
         ),
     ):
         int(EnvVar.int("AN_INT"))
@@ -67,9 +67,9 @@ def test_direct_use_int_env_var_err() -> None:
     with pytest.raises(
         RuntimeError,
         match=(
-            "Attempted to directly retrieve environment variable"
-            ' IntEnvVar\\("AN_INT"\\). IntEnvVar should only be used as input to Dagster'
-            " config or resources."
+            'Attempted to directly retrieve environment variable IntEnvVar\\("AN_INT"\\). IntEnvVar'
+            " defers resolution of the env var value until run time, and should only be used as"
+            " input to Dagster config or resources."
         ),
     ):
         print(EnvVar.int("AN_INT"))  # noqa: T201
