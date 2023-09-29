@@ -81,12 +81,14 @@ class TestCreateRemoteConfig:
     def test_given_oauth_creds_when_accessing_legacy_clients_raises_ValueError(
         self, mock_workspace_client, mock_step_launcher_factory
     ):
+        client_id = "abc123"
+        client_secret = "super-secret"
         test_launcher = mock_step_launcher_factory(
             databricks_token=None,
-            oauth_creds={"client_id": "abc123", "client_secret": "super-secret"},
+            oauth_creds={"client_id": client_id, "client_secret": client_secret},
         )
-        assert test_launcher.databricks_runner.oauth_client_id == "abc123"
-        assert test_launcher.databricks_runner.oauth_client_secret == "super-secret"
+        assert mock_workspace_client.call_args.kwargs["client_id"] == client_id
+        assert mock_workspace_client.call_args.kwargs["client_secret"] == client_secret
 
         with pytest.raises(ValueError):
             assert test_launcher.databricks_runner.client.client
