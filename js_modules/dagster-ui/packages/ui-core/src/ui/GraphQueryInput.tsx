@@ -459,43 +459,43 @@ const InfoIconDialog = () => {
                 </tr>
                 <tr>
                   <td>
-                    <Tag>*"my_asset"</Tag>
+                    <Tag>*&quot;my_asset&quot;</Tag>
                   </td>
                   <td>Render the entire upstream lineage of my_asset</td>
                 </tr>
                 <tr>
                   <td>
-                    <Tag>++"my_asset"</Tag>
+                    <Tag>++&quot;my_asset&quot;</Tag>
                   </td>
                   <td>Render two layers upstream of my_asset</td>
                 </tr>
                 <tr>
                   <td>
-                    <Tag>"my_asset"*</Tag>
+                    <Tag>&quot;my_asset&quot;*</Tag>
                   </td>
                   <td>Render one layer upstream of my_asset</td>
                 </tr>
                 <tr>
                   <td>
-                    <Tag>"my_asset"+</Tag>
+                    <Tag>&quot;my_asset&quot;+</Tag>
                   </td>
                   <td>Render the entire downstream lineage of my_asset</td>
                 </tr>
                 <tr>
                   <td>
-                    <Tag>"my_asset"++</Tag>
+                    <Tag>&quot;my_asset&quot;++</Tag>
                   </td>
                   <td>Render two layers downstream of my_asset</td>
                 </tr>
                 <tr>
                   <td>
-                    <Tag>+"my_asset"+</Tag>
+                    <Tag>+&quot;my_asset&quot;+</Tag>
                   </td>
                   <td>Render one layer upstream and downstream of my_asset</td>
                 </tr>
                 <tr>
                   <td>
-                    <Tag>"my_asset" AND "another"</Tag>
+                    <Tag>&quot;my_asset&quot; AND &quot;another&quot;</Tag>
                   </td>
                   <td>Render two disjointed lineage segments</td>
                 </tr>
