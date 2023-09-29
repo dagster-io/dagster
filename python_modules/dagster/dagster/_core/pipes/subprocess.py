@@ -67,10 +67,10 @@ class _PipesSubprocess(PipesClient):
     @public
     def run(
         self,
-        command: Union[str, Sequence[str]],
         *,
         context: OpExecutionContext,
         extras: Optional[PipesExtras] = None,
+        command: Union[str, Sequence[str]],
         env: Optional[Mapping[str, str]] = None,
         cwd: Optional[str] = None,
     ) -> PipesClientCompletedInvocation:

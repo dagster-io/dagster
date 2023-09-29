@@ -29,6 +29,7 @@ class PipesClient(ABC):
         *,
         context: OpExecutionContext,
         extras: Optional[PipesExtras] = None,
+        **kwargs,
     ) -> "PipesClientCompletedInvocation":
         """Synchronously execute an external process with the pipes protocol.
 

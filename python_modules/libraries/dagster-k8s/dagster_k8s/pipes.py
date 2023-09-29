@@ -125,13 +125,13 @@ class _PipesK8sClient(PipesClient):
         self,
         *,
         context: OpExecutionContext,
+        extras: Optional[PipesExtras] = None,
         image: Optional[str] = None,
         command: Optional[Union[str, Sequence[str]]] = None,
         namespace: Optional[str] = None,
         env: Optional[Mapping[str, str]] = None,
         base_pod_meta: Optional[Mapping[str, Any]] = None,
         base_pod_spec: Optional[Mapping[str, Any]] = None,
-        extras: Optional[PipesExtras] = None,
     ) -> PipesClientCompletedInvocation:
         """Publish a kubernetes pod and wait for it to complete, enriched with the pipes protocol.
 

@@ -73,10 +73,10 @@ class _PipesDatabricksClient(PipesClient):
 
     def run(
         self,
-        task: jobs.SubmitTask,
         *,
         context: OpExecutionContext,
         extras: Optional[PipesExtras] = None,
+        task: jobs.SubmitTask,
         submit_args: Optional[Mapping[str, str]] = None,
     ) -> PipesClientCompletedInvocation:
         """Synchronously execute a Databricks job with the pipes protocol.
