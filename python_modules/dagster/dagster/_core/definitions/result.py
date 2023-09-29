@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Iterator, NamedTuple, Optional, Sequence, Union
 
 import dagster._check as check
@@ -56,9 +57,6 @@ class MaterializeResult(
             ),
             data_version=check.opt_inst_param(data_version, "data_version", DataVersion),
         )
-
-
-from dataclasses import dataclass
 
 
 @dataclass

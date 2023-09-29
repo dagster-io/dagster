@@ -30,6 +30,7 @@ from dagster._core.definitions.resource_requirement import (
     OutputManagerRequirement,
     ResourceRequirement,
 )
+from dagster._core.definitions.result import StreamingExecutionResult
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -455,9 +456,6 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
         return direct_invocation_result(self, *args, **kwargs)
 
 
-from dagster._core.definitions.result import StreamingExecutionResult
-
-
 def _resolve_output_defs_from_outs(
     compute_fn: Union[Callable[..., Any], "DecoratedOpFunction"],
     outs: Optional[Mapping[str, Out]],
@@ -488,8 +486,6 @@ def _resolve_output_defs_from_outs(
 
     # Introspection on type annotations is experimental, so checking
     # metaclass is the best we can do.
-
-    # import code; code.interact(local=locals())
 
     if annotation != inspect.Parameter.empty and annotation == StreamingExecutionResult:
         pass
