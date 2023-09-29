@@ -31,7 +31,9 @@ class PipesClient(ABC):
         extras: Optional[PipesExtras] = None,
         **kwargs,
     ) -> "PipesClientCompletedInvocation":
-        """Synchronously execute an external process with the pipes protocol.
+        """Synchronously execute an external process with the pipes protocol. Derived
+         clients must have context and extras arguments, but also can add arbitrary
+         arguments that are appropriate for their own implementation.
 
         Args:
             context (OpExecutionContext): The context from the executing op/asset.
