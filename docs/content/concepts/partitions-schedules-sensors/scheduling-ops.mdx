@@ -19,8 +19,7 @@ Each schedule:
 - Targets a single job
 - Optionally defines a function that returns either:
   - One or more <PyObject object="RunRequest"/> objects. Each run request launches a run.
-  - An optional <PyObject object="SkipReason"/>, which specifies a message which describes why no runs were requested
-    on in the Dagster UI.
+  - An optional <PyObject object="SkipReason"/>, which specifies a message which describes why no runs were requested on in the Dagster UI.
 
 <!-- When defining a job that uses [ops](/concepts/ops-jobs-graphs/ops), you can schedule it ...TODO.
 
@@ -283,10 +282,10 @@ Schedules must be started for them to run. Schedules can be started and stopped:
 - In the Dagster UI using the **Schedules** tab:
 
   <Image
-    alt="Schedules tab in the Dagster UI"
-    src="/images/concepts/partitions-schedules-sensors/schedules-tab-toggle.png"
-    width={1164}
-    height={280}
+  alt="Schedules tab in the Dagster UI"
+  src="/images/concepts/partitions-schedules-sensors/schedules-tab-toggle.png"
+  width={1164}
+  height={280}
   />
 
 - Using the CLI:

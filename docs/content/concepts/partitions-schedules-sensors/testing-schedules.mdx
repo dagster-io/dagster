@@ -42,9 +42,9 @@ On the overview page for a particular schedule, there is a `Test schedule` butto
 3. Click the **Test Schedule** button, located near the top right corner of the page:
 
    <Image
-     src="/images/concepts/partitions-schedules-sensors/schedules/test-schedule-button.png"
-     width={320}
-     height={128}
+   src="/images/concepts/partitions-schedules-sensors/schedules/test-schedule-button.png"
+   width={320}
+   height={128}
    />
 
 4. You'll be prompted to select a mock schedule evaluation time. As schedules are defined on a cadence, the evaluation times provided in the dropdown are past and future times along that cadence.
@@ -52,17 +52,17 @@ On the overview page for a particular schedule, there is a `Test schedule` butto
    For example, let's say you're testing a schedule with a cadence of `"Every day at X time"`. In the dropdown, you'd see five evaluation times in the future and five evaluation times in the past along that cadence.
 
    <Image
-     src="/images/concepts/partitions-schedules-sensors/schedules/select-timestamp-page.png"
-     width={896}
-     height={449}
+   src="/images/concepts/partitions-schedules-sensors/schedules/select-timestamp-page.png"
+   width={896}
+   height={449}
    />
 
 5. After selecting an evaluation time, click the **Evaluate** button. A window containing the result of the evaluation will display:
 
    <Image
-     src="/images/concepts/partitions-schedules-sensors/schedules/eval-schedule-result-page.png"
-     width={896}
-     height={449}
+   src="/images/concepts/partitions-schedules-sensors/schedules/eval-schedule-result-page.png"
+   width={896}
+   height={449}
    />
 
    If the evaluation was successful and a run request was produced, you can open the launchpad pre-scaffolded with the config corresponding to that run request.
@@ -147,19 +147,19 @@ Next, using the UI, verify the schedule has been started:
 1. Open the left sidenav and locate the job attached to the schedule. Schedules that have been started will have a **green clock icon** next to them:
 
    <Image
-     alt="Started schedule icon next to schedule in left sidenav in the Dagster UI"
-     src="/images/concepts/partitions-schedules-sensors/schedule-started-icon-ui.png"
-     width={1031}
-     height={391}
+   alt="Started schedule icon next to schedule in left sidenav in the Dagster UI"
+   src="/images/concepts/partitions-schedules-sensors/schedule-started-icon-ui.png"
+   width={1031}
+   height={391}
    />
 
    If the schedule appears in the list but doesn't have the green clock icon, click the schedule. On the page that displays, use the **toggle at the top of the page** to mark it as running:
 
    <Image
-     alt="Start/stop toggle for schedules in Code Locations tab in the Dagster UI"
-     src="/images/concepts/partitions-schedules-sensors/schedule-page-toggle.png"
-     width={1043}
-     height={302}
+   alt="Start/stop toggle for schedules in Code Locations tab in the Dagster UI"
+   src="/images/concepts/partitions-schedules-sensors/schedule-page-toggle.png"
+   width={1043}
+   height={302}
    />
 
 2. Next, verify that the UI has loaded the latest version of your schedule code:
@@ -179,10 +179,10 @@ Clicking the schedule in the left sidenav in the UI opens the **Schedule details
 If the schedule is running, a **Next tick** will display near the top of the page. This indicates when the schedule is next expected to run:
 
 <Image
-  alt="Next tick attribute highlighted on Schedule details page in the Dagster UI"
-  src="/images/concepts/partitions-schedules-sensors/schedule-details-next-tick.png"
-  width={1043}
-  height={302}
+alt="Next tick attribute highlighted on Schedule details page in the Dagster UI"
+src="/images/concepts/partitions-schedules-sensors/schedule-details-next-tick.png"
+width={1043}
+height={302}
 />
 
 Verify that the time is what you expect, including the timezone.
@@ -224,16 +224,16 @@ If the schedule interval is correctly configured but runs aren't being created, 
 
 <ArticleList>
   <ArticleListItem
-    href="/concepts/partitions-schedules-sensors/partitions"
-    title="Partitions"
+    href="/concepts/partitions-schedules-sensors/schedules"
+    title="Schedules"
   ></ArticleListItem>
   <ArticleListItem
-    href="/concepts/partitions-schedules-sensors/partitioning-assets"
-    title="Partitioned assets"
+    href="/concepts/partitions-schedules-sensors/scheduling-assets"
+    title="Scheduling assets"
   ></ArticleListItem>
   <ArticleListItem
-    href="/concepts/partitions-schedules-sensors/partitioning-ops"
-    title="Partitioned op jobs"
+    href="/concepts/partitions-schedules-sensors/scheduling-ops"
+    title="Scheduling ops"
   ></ArticleListItem>
   <ArticleListItem
     href="/concepts/assets/software-defined-assets"
