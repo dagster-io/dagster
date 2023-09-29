@@ -5,78 +5,138 @@ description: Lightweight ELT with Dagster
 
 # Dagster Embedded ELT
 
-Here you should include one short sentence about the guide .
+This package provides a framework for building ELT pipelines with Dagster through
+helpful pre-built assets and resources. It is currently in experimental development,
+and we'd love to hear your feedback.
 
-<div className="w-full h-48 bg-gray-50 flex items-center justify-center">
-  Cover Image
-</div>
+This package currently includes a single implementation using <a href="https://slingdata.io">Sling</a>
+provides a simple way to sync data between databases and file systems.
 
 ## Relevant APIs
 
 | Name                                                   | Description            |
 | ------------------------------------------------------ | ---------------------- |
-| <PyObject module="dagster_dbt" object="dbt_cli_run" /> | Description of the API |
+| <PyObject module="dagster_embedded_elt.sling" object="build_sling_asset" /> | The core Sling asset factory for building syncs |
+| <PyObject module="dagster_embedded_elt.sling" object="SlingResource" /> | The Sling Resource used for handing credentials to databases and object stores |
 
 ---
 
-## Description of X by itself
+## Getting Started
 
-<div className="w-full h-48 bg-gray-200 flex items-center justify-center">
-  ...
-</div>
+To get started with `dagster-embedded-elt` and Sling, first familiarize yourself
+with <a href="https://docs.slingdata.io/sling-cli/running-tasks">Sling's documentation</a>
+
+First, setup a <PyObject module="dagster-embedded-elt.sling" object="SlingResource" />
+which defines the source and destination credentials. The <PyObject module="dagster-embedded-elt.sling" object="SlingResource" />
+requires both a <PyObject module="dagster-embedded-elt.sling" object="SlingSourceConnection" />  and a <PyObject module="dagster-embedded-elt.sling" object="SlingTargetConnection" />.
+
+You can provide either a connection string or a dictionary of connection parameters to each
+of these classes.
+
+For details on what connection parameters Sling accepts for each integration, see the <a href="https://docs.slingdata.io/connections/database-connections">Sling Connections</a> page.
+
+To create an Asset that syncs between two connections, you can use the <PyObject module="dagster-embedded-elt.sling" object="build_sling_asset" /> factory.
+
 
 ---
 
-## Explanation of how X relates to Dagster
+## Setting up a Sling Resource
 
-- Explain how Dagster relates to X, e.g.
+A Sling Resource is a Dagster Resource that contains references to both a
+Source Connection and a Target Connection. Sling is versatile in what a
+source or destination can represent. You can provide arbitrary keywords
+to the <PyObject module="dagster-embedded-elt.sling" object="SlingSourceConnection" /> and <PyObject module="dagster-embedded-elt.sling" object="SlingTargetConnection" /> classes.
 
-  - Dagster orchestrates X (ex: Spark, Dask)
-  - Dagster uses X to query data (ex: Bigquery, Snowflake)
-  - Dagster uses X to materialize data (ex: IO managers with Bigquery, S3, Snowflake)
-  - Dagster produces a side effect with X (ex: Slack, Pagerduty)
+The types and parameters for each connection are defined
+by <a href="https://docs.slingdata.io/connections/database-connections">Sling's Connections</a>.
 
-- Explain what Dagster concepts are used with X (ex: Resource, IOManger, library solid)
+The simplest connection is a file connection, which can be defined as:
 
-- If applicable, include diagrams and links to Dagster concepts
+```python
+from dagster_embedded_elt.sling import SlingSourceConnection
+source = SlingSourceConnection(type="file")
+```
 
-## Walkthrough of how to use X with Dagster
+Note that no path is required, as that is provided by the asset itself.
 
-- Setup
+```python
+asset_def = build_sling_asset(
+    asset_spec=AssetSpec("my_file"),
+    source_straem=f"file://{path_to_file}",
+    ...
+)
 
-  - Setup X
-    - What is the minimal amount of credentials/config from X that Dagster will need?
-    - What is a checkpoint where the user can confidently continue?
-      - for example, running X --version or X run --dry-run succeeds
-  - Install dagster-X package (include a link to API Docs)
+```
 
-- Quickstart example
-  - Write example code that uses both Dagster and X
-  - Show how to actually run the example code
+For database connections, you can provide a connection string or a dictionary of
+keyword arguments. For example, to connect to a SQLite database, you can provide
+an path to the database using the `instance` keyword, which is specified
+on the <a href="https://docs.slingdata.io/connections/database-connections/sqlite">Sqlite Connection</a> page.
 
-## Productionizing
 
-- If applicable, demonstrate how to deploy X (link to deployment guides if applicable)
-- Demonstrate how to set up modes to use with X (test, dev, staging, prod)
-  - A mocked version of X
-  - Write tests against test mode
+```python
+source = SlingSourceConnection(type="sqlite", instance="path/to/sqlite.db")
+```
 
-## Advanced Configuration
+Here are some additional examples of database connections:
 
-- Demonstrate how components within X can be configured/customized from Dagster
-- For example, if the dagster integration exposes a config schema that allows the user to pass through arguments to the underlying X
+```python
+source = SlingSourceConnection(
+    type="postgres", host="localhost", port=5432, database="my_database",
+    user="my_user", password=EnvVar("PG_PASS")
+)
 
-## Advanced Use Cases
+source = SlingSourceConnection(
+    type="snowflake", host="hostname.snowflake", user="username",
+    database="database", password=EnvVar("SF_PASSWORD"), role="role"
+)
+```
 
-- For “solid libraries”
+Similarily, you can define file/storage connections:
 
-  - How to run an X solid/pipeline on a schedule
-  - How to add a hook for when the X solid/pipeline finishes/fails/succeeds
-  - How to chain an X solid with other arbitrary solids
+```python
+source = SlingSourceConnection(
+    type="s3", bucket="sling-bucket",
+    access_key_id=EnvVar("AWS_ACCESS_KEY_ID"),
+    secret_access_key=EnvVar("AWS_SECRET_ACCESS_KEY")
+)
 
-- For “resource libraries”
-  - How to create a custom IO manager that uses X resource
+```
 
-## Conclusion
+## Creating a Sling Sync
 
-- Further learning materials, e.g. Dagster blogs or talks, X’s docs
+To create a Sling Sync, once you have defined your Resource, you can use the
+<PyObject module="dagster_embedded_elt.sling" object="build_sling_asset" /> factory to create an Asset.
+
+```python
+
+sling_resource = SlingResource(
+    source_connection=SlingSourceConnection(type="file"),
+    target_connection=SlingTargetConnection(
+        type="sqlite", connection_string="sqlite://path/to/sqlite.db"
+    ),
+)
+
+asset_spec = AssetSpec(
+    key=["main", "tbl"],
+    group_name="etl",
+    description="ETL Test",
+    deps=["foo"],
+)
+
+asset_def = build_sling_asset(
+    asset_spec=asset_spec,
+    source_stream="file://path/to/file.csv",
+    target_object="main.dest_tbl",
+    mode=SlingMode.INCREMENTAL,
+    primary_key="id",
+)
+
+sling_job = build_assets_job(
+    "sling_job",
+    [asset_def],
+    resource_defs={"sling": sling_resource},
+)
+
+```
+
