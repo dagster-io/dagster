@@ -41,11 +41,15 @@ def test_databricks_submit_job_existing_cluster(mock_submit_run, databricks_run_
             )
         ),
     ]
+    expected_health = [jobs.JobsHealthRule.from_dict(h) for h in databricks_run_config["job_health_settings"]]
 
     runner.submit_run(databricks_run_config, task)
     mock_submit_run.assert_called_with(
         run_name=databricks_run_config["run_name"],
         tasks=[expected_task],
+        health=expected_health,
+        idempotency_token=databricks_run_config["idempotency_token"],
+        timeout_seconds=databricks_run_config["timeout_seconds"]
     )
 
     databricks_run_config["install_default_libraries"] = False
@@ -55,9 +59,9 @@ def test_databricks_submit_job_existing_cluster(mock_submit_run, databricks_run_
     mock_submit_run.assert_called_with(
         run_name=databricks_run_config["run_name"],
         tasks=[expected_task],
-        health=None,
-        idempotency_token=None,
-        timeout_seconds=None,
+        health=expected_health,
+        idempotency_token=databricks_run_config["idempotency_token"],
+        timeout_seconds=databricks_run_config["timeout_seconds"]
     )
 
 
