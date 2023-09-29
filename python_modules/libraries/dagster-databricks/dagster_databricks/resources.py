@@ -23,8 +23,8 @@ class OauthCredentials(Config):
     client_secret: str = Field(description="OAuth client secret")
 
 
-class AzureOauthCredentials(Config):
-    """OAuth credentials for Azure Databricks.
+class AzureServicePrincipalCredentials(Config):
+    """Azure service principal credentials for Azure Databricks.
 
     See https://learn.microsoft.com/en-us/azure/databricks/dev-tools/auth#--azure-service-principal-authentication.
     """
@@ -48,7 +48,7 @@ class DatabricksClientResource(ConfigurableResource, IAttachDifferentObjectToOpC
             " https://docs.databricks.com/en/dev-tools/auth.html#oauth-2-0"
         ),
     )
-    azure_credentials: Optional[AzureOauthCredentials] = Field(
+    azure_credentials: Optional[AzureServicePrincipalCredentials] = Field(
         default=None,
         description=(
             "Azure service principal credentials. See"
@@ -72,8 +72,7 @@ class DatabricksClientResource(ConfigurableResource, IAttachDifferentObjectToOpC
         present = [True for v in [token, oauth_credentials, azure_credentials] if v is not None]
         if len(present) > 1:
             raise ValueError(
-                "Must provide one of token or oauth_credentials or azure_credentials, not"
-                " multiple"
+                "Must provide one of token or oauth_credentials or azure_credentials, not multiple"
             )
         elif not len(present):
             raise ValueError("Must provide one of token or oauth_credentials or azure_credentials")

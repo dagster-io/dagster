@@ -5,6 +5,7 @@ import dagster_databricks
 import dagster_pyspark
 import pytest
 from dagster import build_op_context
+from dagster_databricks import DatabricksClientResource
 from dagster_databricks.databricks import (
     DatabricksClient,
     DatabricksError,
@@ -12,8 +13,10 @@ from dagster_databricks.databricks import (
     _get_auth_type,
     AuthTypeEnum,
 )
+from dagster_databricks.resources import OauthCredentials, AzureServicePrincipalCredentials
 from databricks.sdk.service import compute, jobs
 from pytest_mock import MockerFixture
+
 
 HOST = "https://uksouth.azuredatabricks.net"
 TOKEN = "super-secret-token"
@@ -235,3 +238,52 @@ class TestGetAuthType:
         print(input_params)
         with pytest.raises(AssertionError):
             _get_auth_type(*input_params)
+
+
+class TestDatabricksClientHasCredentials:
+    def test_given_multiple_creds_raises_ValueError(self):
+        with pytest.raises(ValueError):
+            DatabricksClientResource(
+                host="https://some.host",
+                token="something",
+                oauth_credentials=OauthCredentials(
+                    client_id="test-client-id", client_secret="test-client-secret"
+                ),
+            )
+
+    def test_given_no_creds_raises_ValueError(self):
+        with pytest.raises(ValueError):
+            DatabricksClientResource(host="https://some.host")
+
+    def test_given_token_instantiates_correctly(self):
+        client = DatabricksClientResource(host="https://some.host", token="something")
+        assert client.token == "something"
+        assert client.oauth_credentials is None
+        assert client.azure_credentials is None
+
+    def test_given_oauth_instantiates_correctly(self):
+        client = DatabricksClientResource(
+            host="https://some.host",
+            oauth_credentials=OauthCredentials(
+                client_id="test-client-id", client_secret="test-client-secret"
+            ),
+        )
+        assert client.oauth_credentials.client_id == "test-client-id"
+        assert client.oauth_credentials.client_secret == "test-client-secret"
+        assert client.token is None
+        assert client.azure_credentials is None
+
+    def test_given_azure_instantiates_correctly(self):
+        client = DatabricksClientResource(
+            host="https://some.host",
+            azure_credentials=AzureServicePrincipalCredentials(
+                arm_client_id="test-client-id",
+                arm_client_secret="test-client-secret",
+                arm_tenant_id="test-tenant-id",
+            ),
+        )
+        assert client.azure_credentials.arm_client_id == "test-client-id"
+        assert client.azure_credentials.arm_client_secret == "test-client-secret"
+        assert client.azure_credentials.arm_tenant_id == "test-tenant-id"
+        assert client.token is None
+        assert client.oauth_credentials is None
