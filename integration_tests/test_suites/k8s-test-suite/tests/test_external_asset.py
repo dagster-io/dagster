@@ -26,7 +26,7 @@ def test_pipes_k8s_client(namespace, cluster_provider):
         context: AssetExecutionContext,
         pipes_k8s_client: PipesK8sClient,
     ):
-        yield from pipes_k8s_client.run(
+        return pipes_k8s_client.run(
             context=context,
             namespace=namespace,
             image=docker_image,
@@ -42,7 +42,7 @@ def test_pipes_k8s_client(namespace, cluster_provider):
                 "PYTHONPATH": "/dagster_test/toys/external_execution/",
                 "NUMBER_Y": "2",
             },
-        )
+        ).get_results()
 
     result = materialize(
         [number_y],
@@ -138,7 +138,7 @@ def test_pipes_k8s_client_file_inject(namespace, cluster_provider):
             ],
         )
 
-        yield from pipes_k8s_client.run(
+        return pipes_k8s_client.run(
             context=context,
             namespace=namespace,
             extras={
@@ -149,7 +149,7 @@ def test_pipes_k8s_client_file_inject(namespace, cluster_provider):
                 "NUMBER_Y": "2",
             },
             base_pod_spec=pod_spec,
-        )
+        ).get_results()
 
     result = materialize(
         [number_y],
