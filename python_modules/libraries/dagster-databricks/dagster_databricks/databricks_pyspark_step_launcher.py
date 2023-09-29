@@ -218,10 +218,6 @@ class DatabricksPySparkStepLauncher(StepLauncher):
             any([databricks_token, oauth_credentials, azure_credentials]),
             "Must provide either databricks_token, oauth_credentials, or azure_credentials",
         )
-        check.invariant(
-            databricks_token is None or oauth_credentials is None,
-            "Must provide either databricks_token or oauth_credentials, but cannot provide both",
-        )
         self.databricks_token = check.opt_str_param(databricks_token, "databricks_token")
         oauth_credentials = check.opt_mapping_param(
             oauth_credentials,
