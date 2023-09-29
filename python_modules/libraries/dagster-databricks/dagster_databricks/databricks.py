@@ -74,7 +74,14 @@ def _get_auth_type(
     azure_tenant_id: Optional[str] = None,
 ) -> AuthTypeEnum:
     """Get the type of authentication used to initialize the WorkspaceClient"""
-    _check_credentials(token, oauth_client_id, oauth_client_secret, azure_client_id, azure_client_secret, azure_tenant_id)
+    _check_credentials(
+        token,
+        oauth_client_id,
+        oauth_client_secret,
+        azure_client_id,
+        azure_client_secret,
+        azure_tenant_id,
+    )
     if oauth_client_id and oauth_client_secret:
         auth_type = AuthTypeEnum.OAUTH_M2M
     elif token:

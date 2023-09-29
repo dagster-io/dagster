@@ -5,8 +5,14 @@ import dagster_databricks
 import dagster_pyspark
 import pytest
 from dagster import build_op_context
-from dagster_databricks.databricks import (DatabricksClient, DatabricksError, DatabricksJobRunner, _check_credentials,
-                                           _get_auth_type, AuthTypeEnum)
+from dagster_databricks.databricks import (
+    DatabricksClient,
+    DatabricksError,
+    DatabricksJobRunner,
+    _check_credentials,
+    _get_auth_type,
+    AuthTypeEnum,
+)
 from dagster_databricks.types import (
     DatabricksRunLifeCycleState,
     DatabricksRunResultState,
@@ -212,7 +218,10 @@ class TestGetAuthType:
         [
             (("my_token", None, None, None, None, None), AuthTypeEnum.PAT),
             ((None, "client_id", "client_secret", None, None, None), AuthTypeEnum.OAUTH_M2M),
-            ((None, None, None, "client_id", "client_secret", "tenant_id"), AuthTypeEnum.AZURE_CLIENT_SECRET),
+            (
+                (None, None, None, "client_id", "client_secret", "tenant_id"),
+                AuthTypeEnum.AZURE_CLIENT_SECRET,
+            ),
         ],
     )
     def test_auth_type(self, input_params, expected):
