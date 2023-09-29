@@ -14,7 +14,7 @@ export const SearchFilter = <T,>({
     <SuggestWrapper {...containerProps}>
       <Suggest<(typeof values)[0]>
         key="asset-graph-explorer-search-bar"
-        inputProps={{placeholder: 'Search', style: {width: `min(100%, ${viewport.width}px)`}}}
+        inputProps={{placeholder: 'Jump to…', style: {width: `min(100%, ${viewport.width}px)`}}}
         items={values}
         inputValueRenderer={(item) => item.label}
         itemPredicate={(query, item) =>

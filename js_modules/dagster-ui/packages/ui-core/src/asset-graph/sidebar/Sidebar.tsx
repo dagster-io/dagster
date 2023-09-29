@@ -80,7 +80,7 @@ export const AssetGraphExplorerSidebar = React.memo(
       null | {id: string; path: string} | {id: string}
     >(null);
 
-    const [viewType, setViewType] = React.useState<'tree' | 'folder'>('tree');
+    const [viewType, setViewType] = React.useState<'tree' | 'group'>('tree');
 
     const rootNodes = React.useMemo(
       () =>
@@ -120,7 +120,7 @@ export const AssetGraphExplorerSidebar = React.memo(
       return treeNodes;
     }, [graphData.downstream, graphData.nodes, openNodes, rootNodes]);
 
-    const folderNodes = React.useMemo(() => {
+    const {folderNodes, codeLocationNodes} = React.useMemo(() => {
       const folderNodes: FolderNodeType[] = [];
 
       // Map of Code Locations -> Groups -> Assets
@@ -174,7 +174,7 @@ export const AssetGraphExplorerSidebar = React.memo(
         }
       });
 
-      return folderNodes;
+      return {folderNodes, codeLocationNodes};
     }, [graphData.nodes, openNodes]);
 
     const renderedNodes = viewType === 'tree' ? treeNodes : folderNodes;
@@ -192,9 +192,27 @@ export const AssetGraphExplorerSidebar = React.memo(
     const items = rowVirtualizer.getVirtualItems();
 
     React.useLayoutEffect(() => {
+      if (renderedNodes.length === 1 && viewType === 'group') {
+        // If there's a single code location and a single group in it then just open them
+        setOpenNodes((prevOpenNodes) => {
+          const nextOpenNodes = new Set(prevOpenNodes);
+          const locations = Object.keys(codeLocationNodes);
+          if (locations.length === 1) {
+            const location = codeLocationNodes[locations[0]!]!;
+            nextOpenNodes.add(location.locationName);
+            const groups = Object.keys(location.groups);
+            if (groups.length === 1) {
+              nextOpenNodes.add(
+                location.locationName + ':' + location.groups[groups[0]!]!.groupName,
+              );
+            }
+          }
+          return nextOpenNodes;
+        });
+      }
       if (lastSelectedNode) {
         setOpenNodes((prevOpenNodes) => {
-          if (viewType === 'folder') {
+          if (viewType === 'group') {
             const nextOpenNodes = new Set(prevOpenNodes);
             const assetNode = graphData.nodes[lastSelectedNode.id];
             if (assetNode) {
@@ -296,9 +314,9 @@ export const AssetGraphExplorerSidebar = React.memo(
               activeItems={new Set([viewType])}
               buttons={[
                 {id: 'tree', label: 'Tree view', icon: 'gantt_flat'},
-                {id: 'folder', label: 'Folder view', icon: 'folder_open'},
+                {id: 'group', label: 'Group view', icon: 'asset_group'},
               ]}
-              onClick={(id: 'tree' | 'folder') => {
+              onClick={(id: 'tree' | 'group') => {
                 setViewType(id);
               }}
             />

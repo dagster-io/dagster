@@ -39,6 +39,7 @@ interface SVGViewportState {
   y: number;
   scale: number;
   minScale: number;
+  isClickHeld: boolean;
 }
 
 interface Point {
@@ -94,6 +95,7 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
       lastY = offset.y;
     };
 
+    viewport.setState({isClickHeld: true});
     const onCancelClick = (e: MouseEvent) => {
       // If you press, drag, and release the mouse we don't want it to trigger a click
       // beneath your cursor. onClick's within the DAG should only fire if you did not
@@ -104,6 +106,7 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
       }
     };
     const onUp = () => {
+      viewport.setState({isClickHeld: false});
       document.removeEventListener('mousemove', onMove);
       document.removeEventListener('mouseup', onUp);
       setTimeout(() => {
@@ -299,6 +302,7 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
     y: 0,
     scale: DETAIL_ZOOM,
     minScale: 0,
+    isClickHeld: false,
   };
 
   resizeObserver: any | undefined;
@@ -587,7 +591,7 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
 
   render() {
     const {children, onClick, interactor} = this.props;
-    const {x, y, scale} = this.state;
+    const {x, y, scale, isClickHeld} = this.state;
     const dotsize = Math.max(7, 30 * scale);
 
     return (
@@ -596,6 +600,7 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
         style={Object.assign({}, SVGViewportStyles, {
           backgroundPosition: `${x}px ${y}px`,
           backgroundSize: `${dotsize}px`,
+          cursor: isClickHeld ? 'grabbing' : 'grab',
         })}
         onMouseDown={(e) => interactor.onMouseDown(this, e)}
         onDoubleClick={this.onDoubleClick}
