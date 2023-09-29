@@ -220,7 +220,7 @@ class PipesSession:
 
         Returns:
             Mapping[str, str]: Environment variables to pass to the external process. The values are
-                base-64-encoded and compressed with gzip.
+            base-64-encoded and compressed with gzip.
         """
         return {
             DAGSTER_PIPES_ENV_KEYS[IS_DAGSTER_PIPES_PROCESS]: encode_env_var(True),
