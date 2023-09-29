@@ -1941,8 +1941,8 @@ asset_check_job = build_assets_job("asset_check_job", [asset_1], asset_checks=[m
 
 @multi_asset(
     outs={
-        "one": AssetOut(key="one", group_name="asset_checks", is_required=False),
-        "two": AssetOut(key="two", group_name="asset_checks", is_required=False),
+        "one": AssetOut(key="one", is_required=False),
+        "two": AssetOut(key="two", is_required=False),
     },
     check_specs=[
         AssetCheckSpec("my_check", asset="one"),

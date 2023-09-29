@@ -307,7 +307,21 @@
         dict({
           'key': dict({
             'path': list([
+              'one',
+            ]),
+          }),
+        }),
+        dict({
+          'key': dict({
+            'path': list([
               'str_asset',
+            ]),
+          }),
+        }),
+        dict({
+          'key': dict({
+            'path': list([
+              'two',
             ]),
           }),
         }),
@@ -474,6 +488,16 @@
         'freshnessInfo': None,
         'freshnessPolicy': None,
         'id': 'test.test_repo.["no_multipartitions_1"]',
+      }),
+      dict({
+        'freshnessInfo': None,
+        'freshnessPolicy': None,
+        'id': 'test.test_repo.["one"]',
+      }),
+      dict({
+        'freshnessInfo': None,
+        'freshnessPolicy': None,
+        'id': 'test.test_repo.["two"]',
       }),
       dict({
         'freshnessInfo': None,
