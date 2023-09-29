@@ -491,7 +491,7 @@ class PipesBufferedFilesystemMessageWriterChannel(PipesBlobStoreMessageWriterCha
 # ########################
 
 
-class DefaultPipesContextLoader(PipesContextLoader):
+class PipesDefaultContextLoader(PipesContextLoader):
     FILE_PATH_KEY = "path"
     DIRECT_KEY = "data"
 
@@ -558,7 +558,7 @@ class PipesStreamMessageWriterChannel(PipesMessageWriterChannel):
         self._stream.writelines((json.dumps(message), "\n"))
 
 
-class EnvVarPipesParamsLoader(PipesParamsLoader):
+class PipesEnvVarParamsLoader(PipesParamsLoader):
     def load_context_params(self) -> PipesParams:
         return _param_from_env_var("context")
 
@@ -617,7 +617,7 @@ class PipesS3MessageWriterChannel(PipesBlobStoreMessageWriterChannel):
 # ########################
 
 
-class DbfsPipesContextLoader(PipesContextLoader):
+class PipesDbfsContextLoader(PipesContextLoader):
     @contextmanager
     def load_context(self, params: PipesParams) -> Iterator[PipesContextData]:
         unmounted_path = _assert_env_param_type(params, "path", str, self.__class__)
@@ -653,10 +653,10 @@ def init_dagster_pipes(
         return PipesContext.get()
 
     if is_dagster_pipes_process():
-        params_loader = params_loader or EnvVarPipesParamsLoader()
+        params_loader = params_loader or PipesEnvVarParamsLoader()
         context_params = params_loader.load_context_params()
         messages_params = params_loader.load_messages_params()
-        context_loader = context_loader or DefaultPipesContextLoader()
+        context_loader = context_loader or PipesDefaultContextLoader()
         message_writer = message_writer or PipesDefaultMessageWriter()
         stack = ExitStack()
         context_data = stack.enter_context(context_loader.load_context(context_params))
