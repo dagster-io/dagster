@@ -274,7 +274,11 @@ export const AssetGraphExplorerSidebar = React.memo(
           smoothScroll: true,
         });
       }
-    }, [indexOfLastSelectedNode, rowVirtualizer]);
+      // Only scroll if the rootNodes changes or the selected node changes
+      // otherwise opening/closing nodes will cause us to scroll again because the index changes
+      // if we toggle a node above the selected node
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedNode, rootNodes, rowVirtualizer]);
 
     return (
       <div style={{display: 'grid', gridTemplateRows: 'auto auto minmax(0, 1fr)', height: '100%'}}>
