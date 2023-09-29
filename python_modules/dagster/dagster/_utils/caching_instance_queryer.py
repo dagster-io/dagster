@@ -70,9 +70,9 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         self._logger = logger or logging.getLogger("dagster")
 
         self._asset_record_cache: Dict[AssetKey, Optional[AssetRecord]] = {}
-        self._asset_partition_count_cache: Dict[
-            Optional[int], Dict[AssetKey, Mapping[str, int]]
-        ] = defaultdict(dict)
+        self._asset_partitions_cache: Dict[Optional[int], Dict[AssetKey, Set[str]]] = defaultdict(
+            dict
+        )
         self._asset_partition_versions_updated_after_cursor_cache: Dict[
             AssetKeyPartitionKey, int
         ] = {}
@@ -101,18 +101,6 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
     ####################
     # QUERY BATCHING
     ####################
-
-    def prefetch_asset_partition_counts(
-        self, asset_keys: Sequence[AssetKey], after_cursor: Optional[int]
-    ):
-        """For performance, batches together queries for selected assets."""
-        if after_cursor is not None:
-            self._asset_partition_count_cache[after_cursor] = dict(
-                self.instance.get_materialization_count_by_partition(
-                    asset_keys=asset_keys,
-                    after_cursor=after_cursor,
-                )
-            )
 
     def prefetch_asset_records(self, asset_keys: Iterable[AssetKey]):
         """For performance, batches together queries for selected assets."""
@@ -493,48 +481,30 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         return result
 
     ####################
-    # PARTITION COUNTS
+    # PARTITIONS
     ####################
 
-    def get_materialized_partition_counts(
-        self, asset_key: AssetKey, after_cursor: Optional[int] = None
-    ) -> Mapping[str, int]:
-        """Returns a mapping from partition key to the number of times that partition has been
-        materialized for a given asset.
-
-        Args:
-            asset_key (AssetKey): The asset key.
-            after_cursor (Optional[int]): The cursor after which to look for materializations. If
-                not provided, will look at all materializations.
-        """
-        if (
-            after_cursor not in self._asset_partition_count_cache
-            or asset_key not in self._asset_partition_count_cache[after_cursor]
-        ):
-            self._asset_partition_count_cache[after_cursor][asset_key] = (
-                self.instance.get_materialization_count_by_partition(
-                    asset_keys=[asset_key], after_cursor=after_cursor
-                )[asset_key]
-            )
-        return self._asset_partition_count_cache[after_cursor][asset_key]
-
     def get_materialized_partitions(
-        self, asset_key: AssetKey, after_cursor: Optional[int] = None
-    ) -> Iterable[str]:
+        self, asset_key: AssetKey, before_cursor: Optional[int] = None
+    ) -> Set[str]:
         """Returns a list of the partitions that have been materialized for the given asset key.
 
         Args:
             asset_key (AssetKey): The asset key.
-            after_cursor (Optional[int]): The cursor after which to look for materializations. If
-                not provided, will look at all materializations.
+            before_cursor (Optional[int]): The cursor before which to look for materialized
+                partitions. If not provided, will look at all materializations.
         """
-        return [
-            partition_key
-            for partition_key, count in self.get_materialized_partition_counts(
-                asset_key, after_cursor
-            ).items()
-            if count > 0
-        ]
+        if (
+            before_cursor not in self._asset_partitions_cache
+            or asset_key not in self._asset_partitions_cache[before_cursor]
+        ):
+            self._asset_partitions_cache[before_cursor][asset_key] = (
+                self.instance.get_materialized_partitions(
+                    asset_key=asset_key, before_cursor=before_cursor
+                )
+            )
+
+        return self._asset_partitions_cache[before_cursor][asset_key]
 
     ####################
     # DYNAMIC PARTITIONS

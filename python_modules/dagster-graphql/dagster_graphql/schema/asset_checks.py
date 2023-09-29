@@ -7,7 +7,7 @@ from dagster._core.definitions.asset_check_evaluation import (
     AssetCheckEvaluation,
     AssetCheckEvaluationTargetMaterializationData,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckHandle, AssetCheckSeverity
+from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSeverity
 from dagster._core.host_representation.external_data import ExternalAssetCheck
 from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,
@@ -53,6 +53,8 @@ class GrapheneAssetCheckEvaluation(graphene.ObjectType):
     targetMaterialization = graphene.Field(GrapheneAssetCheckEvaluationTargetMaterializationData)
     metadataEntries = non_null_list(GrapheneMetadataEntry)
     severity = graphene.NonNull(GrapheneAssetCheckSeverity)
+
+    # NOTE: this should be renamed passed
     success = graphene.NonNull(graphene.Boolean)
 
     class Meta:
@@ -74,7 +76,7 @@ class GrapheneAssetCheckEvaluation(graphene.ObjectType):
 
         self.metadataEntries = list(iterate_metadata_entries(evaluation_data.metadata))
         self.severity = evaluation_data.severity
-        self.success = evaluation_data.success
+        self.success = evaluation_data.passed
         self.checkName = evaluation_data.check_name
         self.assetKey = evaluation_data.asset_key
 
@@ -205,5 +207,5 @@ class GrapheneAssetCheckHandle(graphene.ObjectType):
     class Meta:
         name = "AssetCheckhandle"
 
-    def __init__(self, handle: AssetCheckHandle):
+    def __init__(self, handle: AssetCheckKey):
         super().__init__(name=handle.name, assetKey=GrapheneAssetKey(path=handle.asset_key.path))

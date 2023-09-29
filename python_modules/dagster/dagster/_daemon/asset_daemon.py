@@ -1,4 +1,14 @@
-from typing import Dict, List, Optional, Tuple
+import logging
+import sys
+from collections import defaultdict
+from types import TracebackType
+from typing import (
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
+)
 
 import pendulum
 
@@ -6,10 +16,21 @@ import dagster._check as check
 from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
-from dagster._core.definitions.run_request import RunRequest
+from dagster._core.definitions.run_request import (
+    InstigatorType,
+    RunRequest,
+)
 from dagster._core.definitions.selector import JobSubsetSelector
-from dagster._core.host_representation.external import ExternalExecutionPlan, ExternalJob
+from dagster._core.host_representation.external import (
+    ExternalExecutionPlan,
+    ExternalJob,
+)
 from dagster._core.instance import DagsterInstance
+from dagster._core.scheduler.instigation import (
+    InstigatorTick,
+    TickData,
+    TickStatus,
+)
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import (
     ASSET_EVALUATION_ID_TAG,
@@ -20,11 +41,16 @@ from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._core.workspace.workspace import IWorkspace
 from dagster._daemon.daemon import DaemonIterator, IntervalDaemon
 from dagster._utils import hash_collection
+from dagster._utils.error import serializable_error_info_from_exc_info
 
 CURSOR_KEY = "ASSET_DAEMON_CURSOR"
 ASSET_DAEMON_PAUSED_KEY = "ASSET_DAEMON_PAUSED"
 
 EVALUATIONS_TTL_DAYS = 30
+
+FIXED_AUTO_MATERIALIZATION_ORIGIN_ID = "asset_daemon_origin"
+FIXED_AUTO_MATERIALIZATION_SELECTOR_ID = "asset_daemon_selector"
+FIXED_AUTO_MATERIALIZATION_INSTIGATOR_NAME = "asset_daemon"
 
 
 def get_auto_materialize_paused(instance: DagsterInstance) -> bool:
@@ -49,6 +75,72 @@ def _get_raw_cursor(instance: DagsterInstance) -> Optional[str]:
 def get_current_evaluation_id(instance: DagsterInstance) -> Optional[int]:
     raw_cursor = _get_raw_cursor(instance)
     return AssetDaemonCursor.get_evaluation_id_from_serialized(raw_cursor) if raw_cursor else None
+
+
+class AutoMaterializeLaunchContext:
+    def __init__(
+        self,
+        tick: InstigatorTick,
+        instance: DagsterInstance,
+        logger: logging.Logger,
+        tick_retention_settings,
+    ):
+        self._tick = tick
+        self._logger = logger
+        self._instance = instance
+
+        self._purge_settings = defaultdict(set)
+        for status, day_offset in tick_retention_settings.items():
+            self._purge_settings[day_offset].add(status)
+
+    @property
+    def status(self) -> TickStatus:
+        return self._tick.status
+
+    @property
+    def logger(self) -> logging.Logger:
+        return self._logger
+
+    def add_run_info(self, run_id=None):
+        self._tick = self._tick.with_run_info(run_id)
+
+    def update_state(self, status: TickStatus, **kwargs: object):
+        self._tick = self._tick.with_status(status=status, **kwargs)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(
+        self,
+        exception_type: Type[BaseException],
+        exception_value: Exception,
+        traceback: TracebackType,
+    ) -> None:
+        if exception_value and isinstance(exception_value, KeyboardInterrupt):
+            return
+
+        # Log the error if the failure wasn't an interrupt or the daemon generator stopping
+        if exception_value and not isinstance(exception_value, GeneratorExit):
+            error_data = serializable_error_info_from_exc_info(sys.exc_info())
+            tick_finish_timestamp = pendulum.now("UTC").timestamp()
+            self.update_state(
+                TickStatus.FAILURE, error=error_data, end_timestamp=tick_finish_timestamp
+            )
+
+        self._write()
+
+        for day_offset, statuses in self._purge_settings.items():
+            if day_offset <= 0:
+                continue
+            self._instance.purge_ticks(
+                FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
+                FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
+                before=pendulum.now("UTC").subtract(days=day_offset).timestamp(),
+                tick_statuses=list(statuses),
+            )
+
+    def _write(self) -> None:
+        self._instance.update_tick(self._tick)
 
 
 class AssetDaemon(IntervalDaemon):
@@ -79,6 +171,8 @@ class AssetDaemon(IntervalDaemon):
                 "Auto materialize evaluations are not getting logged. Run `dagster instance"
                 " migrate` to enable."
             )
+
+        evaluation_time = pendulum.now("UTC")
 
         workspace = workspace_process_context.create_request_context()
         asset_graph = ExternalAssetGraph.from_workspace(workspace)
@@ -116,80 +210,111 @@ class AssetDaemon(IntervalDaemon):
             else AssetDaemonCursor.empty()
         )
 
-        run_requests, new_cursor, evaluations = AssetDaemonContext(
-            asset_graph=asset_graph,
-            target_asset_keys=target_asset_keys,
-            instance=instance,
-            cursor=cursor,
-            materialize_run_tags={
-                AUTO_MATERIALIZE_TAG: "true",
-                **instance.auto_materialize_run_tags,
-            },
-            observe_run_tags={AUTO_OBSERVE_TAG: "true"},
-            auto_observe=True,
-            respect_materialization_data_versions=instance.auto_materialize_respect_materialization_data_versions,
-            logger=self._logger,
-        ).evaluate()
-
-        self._logger.info(
-            f"Tick produced {len(run_requests)} run{'s' if len(run_requests) != 1 else ''} and"
-            f" {len(evaluations)} asset evaluation{'s' if len(evaluations) != 1 else ''} for"
-            f" evaluation ID {new_cursor.evaluation_id}"
+        tick_retention_settings = instance.get_tick_retention_settings(
+            InstigatorType.AUTO_MATERIALIZE
         )
 
-        evaluations_by_asset_key = {evaluation.asset_key: evaluation for evaluation in evaluations}
-
-        pipeline_and_execution_plan_cache: Dict[int, Tuple[ExternalJob, ExternalExecutionPlan]] = {}
-
-        submit_job_inputs: List[Tuple[RunRequest, ExternalJob, ExternalExecutionPlan]] = []
-
-        # First do work that is most likely to fail before doing any writes (to make
-        # double-creation of runs less likely)
-        for run_request in run_requests:
-            yield
-            submit_job_inputs.append(
-                get_asset_run_submit_input(
-                    run_request._replace(
-                        tags={
-                            **run_request.tags,
-                            ASSET_EVALUATION_ID_TAG: str(new_cursor.evaluation_id),
-                        }
-                    ),
-                    instance,
-                    workspace,
-                    asset_graph,
-                    pipeline_and_execution_plan_cache,
-                )
+        tick = instance.create_tick(
+            TickData(
+                instigator_origin_id=FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
+                instigator_name=FIXED_AUTO_MATERIALIZATION_INSTIGATOR_NAME,
+                instigator_type=InstigatorType.AUTO_MATERIALIZE,
+                status=TickStatus.STARTED,
+                timestamp=evaluation_time.timestamp(),
+                selector_id=FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
             )
+        )
 
-        # Now submit all runs to the queue
-        for submit_job_input in submit_job_inputs:
-            yield
-
-            run_request, external_job, external_execution_plan = submit_job_input
-
-            asset_keys = check.not_none(run_request.asset_selection)
-
-            run = submit_asset_run(
-                run_request, instance, workspace, external_job, external_execution_plan
-            )
-
-            asset_key_str = ", ".join([asset_key.to_user_string() for asset_key in asset_keys])
+        with AutoMaterializeLaunchContext(
+            tick, instance, self._logger, tick_retention_settings
+        ) as tick_context:
+            run_requests, new_cursor, evaluations = AssetDaemonContext(
+                asset_graph=asset_graph,
+                target_asset_keys=target_asset_keys,
+                instance=instance,
+                cursor=cursor,
+                materialize_run_tags={
+                    AUTO_MATERIALIZE_TAG: "true",
+                    **instance.auto_materialize_run_tags,
+                },
+                observe_run_tags={AUTO_OBSERVE_TAG: "true"},
+                auto_observe=True,
+                respect_materialization_data_versions=instance.auto_materialize_respect_materialization_data_versions,
+                logger=self._logger,
+            ).evaluate()
 
             self._logger.info(
-                f"Launched run {run.run_id} for assets {asset_key_str} with tags {run_request.tags}"
+                f"Tick produced {len(run_requests)} run{'s' if len(run_requests) != 1 else ''} and"
+                f" {len(evaluations)} asset evaluation{'s' if len(evaluations) != 1 else ''} for"
+                f" evaluation ID {new_cursor.evaluation_id}"
             )
 
-            # add run id to evaluations
-            for asset_key in asset_keys:
-                # asset keys for observation runs don't have evaluations
-                if asset_key in evaluations_by_asset_key:
-                    evaluation = evaluations_by_asset_key[asset_key]
-                    evaluations_by_asset_key[asset_key] = evaluation._replace(
-                        run_ids=evaluation.run_ids | {run.run_id}
-                    )
+            evaluations_by_asset_key = {
+                evaluation.asset_key: evaluation for evaluation in evaluations
+            }
 
-        instance.daemon_cursor_storage.set_cursor_values({CURSOR_KEY: new_cursor.serialize()})
+            pipeline_and_execution_plan_cache: Dict[
+                int, Tuple[ExternalJob, ExternalExecutionPlan]
+            ] = {}
+
+            submit_job_inputs: List[Tuple[RunRequest, ExternalJob, ExternalExecutionPlan]] = []
+
+            # First do work that is most likely to fail before doing any writes (to make
+            # double-creation of runs less likely)
+            for run_request in run_requests:
+                yield
+                submit_job_inputs.append(
+                    get_asset_run_submit_input(
+                        run_request._replace(
+                            tags={
+                                **run_request.tags,
+                                ASSET_EVALUATION_ID_TAG: str(new_cursor.evaluation_id),
+                            }
+                        ),
+                        instance,
+                        workspace,
+                        asset_graph,
+                        pipeline_and_execution_plan_cache,
+                    )
+                )
+
+            # Now submit all runs to the queue
+            for submit_job_input in submit_job_inputs:
+                yield
+
+                run_request, external_job, external_execution_plan = submit_job_input
+
+                asset_keys = check.not_none(run_request.asset_selection)
+
+                run = submit_asset_run(
+                    run_request, instance, workspace, external_job, external_execution_plan
+                )
+
+                asset_key_str = ", ".join([asset_key.to_user_string() for asset_key in asset_keys])
+
+                self._logger.info(
+                    f"Launched run {run.run_id} for assets {asset_key_str} with tags"
+                    f" {run_request.tags}"
+                )
+
+                tick_context.add_run_info(run_id=run.run_id)
+
+                # add run id to evaluations
+                for asset_key in asset_keys:
+                    # asset keys for observation runs don't have evaluations
+                    if asset_key in evaluations_by_asset_key:
+                        evaluation = evaluations_by_asset_key[asset_key]
+                        evaluations_by_asset_key[asset_key] = evaluation._replace(
+                            run_ids=evaluation.run_ids | {run.run_id}
+                        )
+
+            tick_finish_timestamp = pendulum.now("UTC").timestamp()
+
+            instance.daemon_cursor_storage.set_cursor_values({CURSOR_KEY: new_cursor.serialize()})
+            tick_context.update_state(
+                TickStatus.SUCCESS if len(run_requests) > 0 else TickStatus.SKIPPED,
+                end_timestamp=tick_finish_timestamp,
+            )
 
         # We enforce uniqueness per (asset key, evaluation id). Store the evaluations after the cursor,
         # so that if the daemon crashes and doesn't update the cursor we don't try to write duplicates.

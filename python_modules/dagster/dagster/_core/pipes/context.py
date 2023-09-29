@@ -1,25 +1,26 @@
 from contextlib import contextmanager
 from dataclasses import dataclass
 from queue import Queue
-from typing import Any, Iterator, Mapping, Optional, Set, Union
+from typing import Any, Dict, Iterator, Mapping, Optional, Set, Union
 
 from dagster_pipes import (
-    DAGSTER_EXT_ENV_KEYS,
-    EXT_METADATA_TYPE_INFER,
-    IS_DAGSTER_EXT_PROCESS_ENV_VAR,
-    ExtContextData,
-    ExtDataProvenance,
-    ExtExtras,
-    ExtMessage,
-    ExtMetadataType,
-    ExtMetadataValue,
-    ExtParams,
-    ExtTimeWindow,
+    DAGSTER_PIPES_ENV_KEYS,
+    IS_DAGSTER_PIPES_PROCESS,
+    PIPES_METADATA_TYPE_INFER,
+    PipesContextData,
+    PipesDataProvenance,
+    PipesExtras,
+    PipesMessage,
+    PipesMetadataType,
+    PipesMetadataValue,
+    PipesParams,
+    PipesTimeWindow,
     encode_env_var,
 )
 from typing_extensions import TypeAlias
 
 import dagster._check as check
+from dagster._annotations import experimental, public
 from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.data_version import DataProvenance, DataVersion
@@ -27,42 +28,54 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataValue, normalize_metadata_value
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.result import MaterializeResult
-from dagster._core.definitions.time_window_partitions import TimeWindow
+from dagster._core.definitions.time_window_partitions import (
+    TimeWindow,
+    has_one_dimension_time_window_partitioning,
+)
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.execution.context.invocation import BoundOpExecutionContext
-from dagster._core.ext.client import ExtMessageReader
+from dagster._core.pipes.client import PipesMessageReader
 
-ExtResult: TypeAlias = Union[MaterializeResult, AssetCheckResult]
+PipesExecutionResult: TypeAlias = Union[MaterializeResult, AssetCheckResult]
 
 
-class ExtMessageHandler:
+@experimental
+class PipesMessageHandler:
+    """Class to process :py:obj:`PipesMessage` objects received from a pipes process.
+
+    Args:
+        context (OpExecutionContext): The context for the executing op/asset.
+    """
+
     def __init__(self, context: OpExecutionContext) -> None:
         self._context = context
         # Queue is thread-safe
-        self._result_queue: Queue[ExtResult] = Queue()
+        self._result_queue: Queue[PipesExecutionResult] = Queue()
         # Only read by the main thread after all messages are handled, so no need for a lock
         self._unmaterialized_assets: Set[AssetKey] = set(context.selected_asset_keys)
 
     @contextmanager
-    def handle_messages(self, message_reader: ExtMessageReader) -> Iterator[ExtParams]:
+    def handle_messages(self, message_reader: PipesMessageReader) -> Iterator[PipesParams]:
         with message_reader.read_messages(self) as params:
             yield params
         for key in self._unmaterialized_assets:
             self._result_queue.put(MaterializeResult(asset_key=key))
 
-    def clear_result_queue(self) -> Iterator[ExtResult]:
+    def clear_result_queue(self) -> Iterator[PipesExecutionResult]:
         while not self._result_queue.empty():
             yield self._result_queue.get()
 
     def _resolve_metadata(
-        self, metadata: Mapping[str, ExtMetadataValue]
+        self, metadata: Mapping[str, PipesMetadataValue]
     ) -> Mapping[str, MetadataValue]:
         return {
             k: self._resolve_metadata_value(v["raw_value"], v["type"]) for k, v in metadata.items()
         }
 
-    def _resolve_metadata_value(self, value: Any, metadata_type: ExtMetadataType) -> MetadataValue:
-        if metadata_type == EXT_METADATA_TYPE_INFER:
+    def _resolve_metadata_value(
+        self, value: Any, metadata_type: PipesMetadataType
+    ) -> MetadataValue:
+        if metadata_type == PIPES_METADATA_TYPE_INFER:
             return normalize_metadata_value(value)
         elif metadata_type == "text":
             return MetadataValue.text(value)
@@ -94,7 +107,7 @@ class ExtMessageHandler:
             check.failed(f"Unexpected metadata type {metadata_type}")
 
     # Type ignores because we currently validate in individual handlers
-    def handle_message(self, message: ExtMessage) -> None:
+    def handle_message(self, message: PipesMessage) -> None:
         if message["method"] == "report_asset_materialization":
             self._handle_report_asset_materialization(**message["params"])  # type: ignore
         elif message["method"] == "report_asset_check":
@@ -105,7 +118,7 @@ class ExtMessageHandler:
     def _handle_report_asset_materialization(
         self,
         asset_key: str,
-        metadata: Optional[Mapping[str, ExtMetadataValue]],
+        metadata: Optional[Mapping[str, PipesMetadataValue]],
         data_version: Optional[str],
     ) -> None:
         check.str_param(asset_key, "asset_key")
@@ -126,13 +139,13 @@ class ExtMessageHandler:
         self,
         asset_key: str,
         check_name: str,
-        success: bool,
+        passed: bool,
         severity: str,
-        metadata: Mapping[str, ExtMetadataValue],
+        metadata: Mapping[str, PipesMetadataValue],
     ) -> None:
         check.str_param(asset_key, "asset_key")
         check.str_param(check_name, "check_name")
-        check.bool_param(success, "success")
+        check.bool_param(passed, "passed")
         check.literal_param(severity, "severity", [x.value for x in AssetCheckSeverity])
         metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
         resolved_asset_key = AssetKey.from_user_string(asset_key)
@@ -141,7 +154,7 @@ class ExtMessageHandler:
         result = AssetCheckResult(
             asset_key=resolved_asset_key,
             check_name=check_name,
-            success=success,
+            passed=passed,
             severity=resolved_severity,
             metadata=resolved_metadata,
         )
@@ -153,38 +166,87 @@ class ExtMessageHandler:
 
 
 def _ext_params_as_env_vars(
-    context_injector_params: ExtParams, message_reader_params: ExtParams
+    context_injector_params: PipesParams, message_reader_params: PipesParams
 ) -> Mapping[str, str]:
     return {
-        DAGSTER_EXT_ENV_KEYS["context"]: encode_env_var(context_injector_params),
-        DAGSTER_EXT_ENV_KEYS["messages"]: encode_env_var(message_reader_params),
+        DAGSTER_PIPES_ENV_KEYS["context"]: encode_env_var(context_injector_params),
+        DAGSTER_PIPES_ENV_KEYS["messages"]: encode_env_var(message_reader_params),
     }
 
 
+@experimental
 @dataclass
-class ExtOrchestrationContext:
-    context_data: ExtContextData
-    message_handler: ExtMessageHandler
-    context_injector_params: ExtParams
-    message_reader_params: ExtParams
+class PipesSession:
+    """Object representing a pipes session.
 
-    def get_external_process_env_vars(self):
+    A pipes session is defined by a pair of :py:class:`PipesContextInjector` and
+    :py:class:`PipesMessageReader` objects. At the opening of the session, the context injector
+    writes context data to an externally accessible location, and the message reader starts
+    monitoring an externally accessible location. These locations are encoded in parameters stored
+    on a `PipesSession` object.
+
+    During the session, an external process should be started and the parameters injected into its
+    environment. The typical way to do this is to call :py:meth:`PipesSession.get_pipes_env_vars`
+    and pass the result as environment variables.
+
+    During execution, results (e.g. asset materializations) are reported by the external process and
+    buffered on the `PipesSession` object. The buffer can periodically be cleared and yielded to
+    Dagster machinery by calling `yield from PipesSession.get_results()`.
+
+    When the external process exits, the session can be closed. Closing consists of handling any
+    unprocessed messages written by the external process and cleaning up any resources used for
+    context injection and message reading.
+
+    Args:
+        context_data (PipesContextData): The context for the executing op/asset.
+        message_handler (PipesMessageHandler): The message handler to use for processing messages
+        context_injector_params (PipesParams): Parameters yielded by the context injector,
+            indicating the location from which the external process should load context data.
+        message_reader_params (PipesParams): Parameters yielded by the message reader, indicating
+            the location to which the external process should write messages.
+    """
+
+    context_data: PipesContextData
+    message_handler: PipesMessageHandler
+    context_injector_params: PipesParams
+    message_reader_params: PipesParams
+
+    @public
+    def get_pipes_env_vars(self) -> Dict[str, str]:
+        """Encode context injector and message reader params as environment variables.
+
+        Passing environment variables is the typical way to expose the pipes I/O parameters
+        to a pipes process.
+
+        Returns:
+            Mapping[str, str]: Environment variables to pass to the external process. The values are
+                base-64-encoded and compressed with gzip.
+        """
         return {
-            DAGSTER_EXT_ENV_KEYS[IS_DAGSTER_EXT_PROCESS_ENV_VAR]: encode_env_var(True),
+            DAGSTER_PIPES_ENV_KEYS[IS_DAGSTER_PIPES_PROCESS]: encode_env_var(True),
             **_ext_params_as_env_vars(
                 context_injector_params=self.context_injector_params,
                 message_reader_params=self.message_reader_params,
             ),
         }
 
-    def get_results(self) -> Iterator[ExtResult]:
+    @public
+    def get_results(self) -> Iterator[PipesExecutionResult]:
+        """Iterator over buffered :py:class:`PipesExecutionResult` objects received from the
+        external process.
+
+        When this is called it clears the results buffer.
+
+        Yields:
+            ExtResult: Result reported by external process.
+        """
         yield from self.message_handler.clear_result_queue()
 
 
 def build_external_execution_context_data(
     context: OpExecutionContext,
-    extras: Optional[ExtExtras],
-) -> "ExtContextData":
+    extras: Optional[PipesExtras],
+) -> "PipesContextData":
     asset_keys = (
         [_convert_asset_key(key) for key in sorted(context.selected_asset_keys)]
         if context.has_assets_def
@@ -207,9 +269,16 @@ def build_external_execution_context_data(
         else None
     )
     partition_key = context.partition_key if context.has_partition_key else None
-    partition_time_window = context.partition_time_window if context.has_partition_key else None
     partition_key_range = context.partition_key_range if context.has_partition_key else None
-    return ExtContextData(
+    partition_time_window = (
+        context.partition_time_window
+        if context.has_partition_key
+        and has_one_dimension_time_window_partitioning(
+            context.get_step_execution_context().partitions_def
+        )
+        else None
+    )
+    return PipesContextData(
         asset_keys=asset_keys,
         code_version_by_asset_key=code_version_by_asset_key,
         provenance_by_asset_key=provenance_by_asset_key,
@@ -233,11 +302,11 @@ def _convert_asset_key(asset_key: AssetKey) -> str:
 
 def _convert_data_provenance(
     provenance: Optional[DataProvenance],
-) -> Optional["ExtDataProvenance"]:
+) -> Optional["PipesDataProvenance"]:
     return (
         None
         if provenance is None
-        else ExtDataProvenance(
+        else PipesDataProvenance(
             code_version=provenance.code_version,
             input_data_versions={
                 _convert_asset_key(k): v.value for k, v in provenance.input_data_versions.items()
@@ -249,8 +318,8 @@ def _convert_data_provenance(
 
 def _convert_time_window(
     time_window: TimeWindow,
-) -> "ExtTimeWindow":
-    return ExtTimeWindow(
+) -> "PipesTimeWindow":
+    return PipesTimeWindow(
         start=time_window.start.isoformat(),
         end=time_window.end.isoformat(),
     )
@@ -258,8 +327,8 @@ def _convert_time_window(
 
 def _convert_partition_key_range(
     partition_key_range: PartitionKeyRange,
-) -> "ExtTimeWindow":
-    return ExtTimeWindow(
+) -> "PipesTimeWindow":
+    return PipesTimeWindow(
         start=partition_key_range.start,
         end=partition_key_range.end,
     )

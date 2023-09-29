@@ -13,7 +13,7 @@ import {doneStatuses, failedStatuses} from './RunStatuses';
 import {DagsterTag} from './RunTag';
 import {getReexecutionParamsForSelection} from './RunUtils';
 import {StepSelection} from './StepSelection';
-import {TerminationDialog, TerminationState} from './TerminationDialog';
+import {TerminationDialog, TerminationDialogResult} from './TerminationDialog';
 import {RunFragment, RunPageFragment} from './types/RunFragments.types';
 import {useJobAvailabilityErrorForRun} from './useJobAvailabilityErrorForRun';
 import {useJobReexecution} from './useJobReExecution';
@@ -31,8 +31,8 @@ export const CancelRunButton: React.FC<{run: RunFragment}> = ({run}) => {
   const closeDialog = React.useCallback(() => setShowDialog(false), []);
 
   const onComplete = React.useCallback(
-    async (terminationState: TerminationState) => {
-      const {errors} = terminationState;
+    async (result: TerminationDialogResult) => {
+      const {errors} = result;
       const error = runId && errors[runId];
       if (error && 'message' in error) {
         await showSharedToaster({

@@ -27,7 +27,7 @@ from dagster._core.definitions import (
     NodeHandle,
     Output,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckHandle
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_layer import AssetLayer
 from dagster._core.definitions.op_definition import OpComputeFunction
 from dagster._core.definitions.result import MaterializeResult
@@ -86,7 +86,7 @@ def create_step_outputs(
                     should_materialize=output_def.name in config_output_names,
                     asset_key=asset_info.key if asset_info and asset_info.is_required else None,
                     is_asset_partitioned=bool(asset_info.partitions_def) if asset_info else False,
-                    asset_check_handle=asset_layer.asset_check_handle_for_output(handle, name),
+                    asset_check_key=asset_layer.asset_check_key_for_output(handle, name),
                 ),
             )
         )
@@ -215,21 +215,21 @@ def execute_core_compute(
             )
             # Check results embedded in MaterializeResult are counted
             for check_result in step_output.check_results or []:
-                handle = check_result.to_asset_check_evaluation(step_context).asset_check_handle
+                handle = check_result.to_asset_check_evaluation(step_context).asset_check_key
                 output_name = step_context.job_def.asset_layer.get_output_name_for_asset_check(
                     handle
                 )
                 emitted_result_names.add(output_name)
         elif isinstance(step_output, AssetCheckEvaluation):
             output_name = step_context.job_def.asset_layer.get_output_name_for_asset_check(
-                step_output.asset_check_handle
+                step_output.asset_check_key
             )
             emitted_result_names.add(output_name)
         elif isinstance(step_output, AssetCheckResult):
             if step_output.asset_key and step_output.check_name:
-                handle = AssetCheckHandle(step_output.asset_key, step_output.check_name)
+                handle = AssetCheckKey(step_output.asset_key, step_output.check_name)
             else:
-                handle = step_output.to_asset_check_evaluation(step_context).asset_check_handle
+                handle = step_output.to_asset_check_evaluation(step_context).asset_check_key
             output_name = step_context.job_def.asset_layer.get_output_name_for_asset_check(handle)
             emitted_result_names.add(output_name)
 
@@ -237,7 +237,7 @@ def execute_core_compute(
         output.name
         for output in step.step_outputs
         # checks are required if we're in requires_typed_event_stream mode
-        if step_context.requires_typed_event_stream or output.properties.asset_check_handle
+        if step_context.requires_typed_event_stream or output.properties.asset_check_key
     }
     omitted_outputs = expected_op_output_names.difference(emitted_result_names)
     if omitted_outputs:

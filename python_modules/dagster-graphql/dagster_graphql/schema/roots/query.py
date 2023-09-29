@@ -15,6 +15,7 @@ from dagster._core.definitions.selector import (
 from dagster._core.execution.backfill import BulkActionStatus
 from dagster._core.nux import get_has_seen_nux
 from dagster._core.scheduler.instigation import InstigatorStatus, InstigatorType
+from dagster._core.workspace.permissions import Permissions
 
 from dagster_graphql.implementation.fetch_auto_materialize_asset_evaluations import (
     fetch_auto_materialize_asset_evaluations,
@@ -431,6 +432,11 @@ class GrapheneQuery(graphene.ObjectType):
     permissions = graphene.Field(
         non_null_list(GraphenePermission),
         description="Retrieve the set of permissions for the Dagster deployment.",
+    )
+
+    canBulkTerminate = graphene.Field(
+        graphene.NonNull(graphene.Boolean),
+        description="Returns whether the user has permission to terminate runs in the deployment",
     )
 
     assetsLatestInfo = graphene.Field(
@@ -943,6 +949,9 @@ class GrapheneQuery(graphene.ObjectType):
     def resolve_permissions(self, graphene_info: ResolveInfo):
         permissions = graphene_info.context.permissions
         return [GraphenePermission(permission, value) for permission, value in permissions.items()]
+
+    def resolve_canBulkTerminate(self, graphene_info: ResolveInfo) -> bool:
+        return graphene_info.context.has_permission(Permissions.TERMINATE_PIPELINE_EXECUTION)
 
     def resolve_assetsLatestInfo(
         self, graphene_info: ResolveInfo, assetKeys: Sequence[GrapheneAssetKeyInput]

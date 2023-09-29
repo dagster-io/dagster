@@ -48,6 +48,7 @@ from dagster._core.definitions.multi_dimensional_partitions import MultiPartitio
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.events import (
+    EVENT_TYPE_TO_PIPELINE_RUN_STATUS,
     AssetMaterializationPlannedData,
     AssetObservationData,
     DagsterEvent,
@@ -77,8 +78,10 @@ from dagster._core.storage.event_log.migration import (
     EVENT_LOG_DATA_MIGRATIONS,
     migrate_asset_key_data,
 )
+from dagster._core.storage.event_log.schema import SqlEventLogStorageTable
 from dagster._core.storage.event_log.sqlite.sqlite_event_log import SqliteEventLogStorage
 from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
+from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._core.test_utils import create_run_for_test, instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import make_new_run_id
@@ -1495,6 +1498,20 @@ class TestEventLogStorage:
                         after_cursor=0,
                     ),
                 )
+
+            # check that events were double-written to the index shard
+            with storage.index_connection() as conn:
+                run_status_change_events = conn.execute(
+                    db_select([SqlEventLogStorageTable.c.id]).where(
+                        SqlEventLogStorageTable.c.dagster_event_type.in_(
+                            [
+                                event_type.value
+                                for event_type in EVENT_TYPE_TO_PIPELINE_RUN_STATUS.keys()
+                            ]
+                        )
+                    )
+                ).fetchall()
+                assert len(run_status_change_events) == 6
 
     # .watch() is async, there's a small chance they don't run before the asserts
     @pytest.mark.flaky(reruns=1)
@@ -4052,7 +4069,7 @@ class TestEventLogStorage:
                     event_specific_data=AssetCheckEvaluation(
                         asset_key=AssetKey(["my_asset"]),
                         check_name="my_check",
-                        success=True,
+                        passed=True,
                         metadata={},
                         target_materialization_data=AssetCheckEvaluationTargetMaterializationData(
                             storage_id=42, run_id="bizbuz", timestamp=3.3

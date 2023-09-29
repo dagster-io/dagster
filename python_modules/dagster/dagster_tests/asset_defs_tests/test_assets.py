@@ -41,6 +41,7 @@ from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.decorators.asset_decorator import graph_asset
 from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.errors import (
@@ -110,7 +111,9 @@ def test_subset_for(subset, expected_keys, expected_inputs, expected_outputs):
     def abc_(context, in1, in2, in3):
         pass
 
-    subbed = abc_.subset_for({AssetKey(key) for key in subset.split(",")})
+    subbed = abc_.subset_for(
+        {AssetKey(key) for key in subset.split(",")}, selected_asset_check_keys=None
+    )
 
     assert subbed.keys == (
         {AssetKey(key) for key in expected_keys.split(",")} if expected_keys else set()
@@ -292,7 +295,7 @@ def test_retain_group_subset():
         can_subset=True,
     )
 
-    subset = ma.subset_for({AssetKey("b")})
+    subset = ma.subset_for({AssetKey("b")}, selected_asset_check_keys=None)
     assert subset.group_names_by_key[AssetKey("b")] == "bar"
 
 
@@ -348,7 +351,8 @@ def test_chain_replace_and_subset_for():
     }
 
     subbed_1 = replaced_1.subset_for(
-        {AssetKey(["foo", "bar_in1"]), AssetKey("in3"), AssetKey(["foo", "foo_a"]), AssetKey("b")}
+        {AssetKey(["foo", "bar_in1"]), AssetKey("in3"), AssetKey(["foo", "foo_a"]), AssetKey("b")},
+        selected_asset_check_keys=None,
     )
     assert subbed_1.keys == {AssetKey(["foo", "foo_a"]), AssetKey("b")}
 
@@ -386,7 +390,8 @@ def test_chain_replace_and_subset_for():
             AssetKey(["again", "foo", "bar_in1"]),
             AssetKey(["again", "foo", "foo_a"]),
             AssetKey(["c"]),
-        }
+        },
+        selected_asset_check_keys=None,
     )
     assert subbed_2.keys == {AssetKey(["again", "foo", "foo_a"])}
 
@@ -397,7 +402,7 @@ def test_fail_on_subset_for_nonsubsettable():
         pass
 
     with pytest.raises(CheckError, match="can_subset=False"):
-        abc_.subset_for({AssetKey("start"), AssetKey("a")})
+        abc_.subset_for({AssetKey("start"), AssetKey("a")}, selected_asset_check_keys=None)
 
 
 def test_fail_for_non_topological_order():
@@ -1713,7 +1718,7 @@ def test_return_materialization_with_asset_checks():
         def ret_checks(context: AssetExecutionContext):
             return MaterializeResult(
                 check_results=[
-                    AssetCheckResult(check_name="foo_check", metadata={"one": 1}, success=True)
+                    AssetCheckResult(check_name="foo_check", metadata={"one": 1}, passed=True)
                 ]
             )
 
@@ -2070,3 +2075,73 @@ def test_multi_asset_asset_key_on_context():
         match="Cannot call `context.asset_key` in a multi_asset with more than one asset",
     ):
         materialize([asset_key_context_with_two_specs])
+
+
+def test_graph_asset_explicit_coercible_key() -> None:
+    @op
+    def my_op() -> int:
+        return 1
+
+    # conversion
+    @graph_asset(key="my_graph_asset")
+    def _specified_elsewhere() -> int:
+        return my_op()
+
+    assert _specified_elsewhere.key == AssetKey(["my_graph_asset"])
+
+
+def test_graph_asset_explicit_fully_key() -> None:
+    @op
+    def my_op() -> int:
+        return 1
+
+    @graph_asset(key=AssetKey("my_graph_asset"))
+    def _specified_elsewhere() -> int:
+        return my_op()
+
+    assert _specified_elsewhere.key == AssetKey(["my_graph_asset"])
+
+
+def test_graph_asset_cannot_use_key_prefix_name_and_key() -> None:
+    @op
+    def my_op() -> int:
+        return 1
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=(
+            "Cannot specify a name or key prefix for @graph_asset when the key argument is provided"
+        ),
+    ):
+
+        @graph_asset(key_prefix="a_prefix", key=AssetKey("my_graph_asset"))
+        def _specified_elsewhere() -> int:
+            return my_op()
+
+        assert _specified_elsewhere  # appease linter
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=(
+            "Cannot specify a name or key prefix for @graph_asset when the key argument is provided"
+        ),
+    ):
+
+        @graph_asset(name="a_name", key=AssetKey("my_graph_asset"))
+        def _specified_elsewhere() -> int:
+            return my_op()
+
+        assert _specified_elsewhere  # appease linter
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=(
+            "Cannot specify a name or key prefix for @graph_asset when the key argument is provided"
+        ),
+    ):
+
+        @graph_asset(name="a_name", key_prefix="a_prefix", key=AssetKey("my_graph_asset"))
+        def _specified_elsewhere() -> int:
+            return my_op()
+
+        assert _specified_elsewhere  # appease linter

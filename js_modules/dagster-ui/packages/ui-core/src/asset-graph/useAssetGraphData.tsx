@@ -61,9 +61,14 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     [repoFilteredNodes],
   );
 
+  const fullGraphQueryItems = React.useMemo(
+    () => (nodes ? buildGraphQueryItems(nodes) : []),
+    [nodes],
+  );
+
   const fullAssetGraphData = React.useMemo(
-    () => (graphQueryItems ? buildGraphData(graphQueryItems.map((n) => n.node)) : null),
-    [graphQueryItems],
+    () => (fullGraphQueryItems ? buildGraphData(fullGraphQueryItems.map((n) => n.node)) : null),
+    [fullGraphQueryItems],
   );
 
   const {assetGraphData, graphAssetKeys, allAssetKeys, applyingEmptyDefault} = React.useMemo(() => {

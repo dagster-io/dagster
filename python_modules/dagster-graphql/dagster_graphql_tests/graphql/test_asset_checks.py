@@ -326,7 +326,7 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                 AssetCheckEvaluation(
                     asset_key=AssetKey(["asset_1"]),
                     check_name="my_check",
-                    success=True,
+                    passed=True,
                     metadata={"foo": MetadataValue.text("bar")},
                     target_materialization_data=AssetCheckEvaluationTargetMaterializationData(
                         storage_id=42, run_id="bizbuz", timestamp=3.3
@@ -387,7 +387,7 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                 AssetCheckEvaluation(
                     asset_key=AssetKey(["asset_1"]),
                     check_name="my_check",
-                    success=True,
+                    passed=True,
                     metadata={"foo": MetadataValue.text("bar")},
                     target_materialization_data=AssetCheckEvaluationTargetMaterializationData(
                         storage_id=42, run_id="bizbuz", timestamp=3.3
@@ -563,7 +563,7 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                 AssetCheckEvaluation(
                     asset_key=AssetKey(["asset_1"]),
                     check_name="my_check",
-                    success=True,
+                    passed=True,
                     metadata={},
                     target_materialization_data=AssetCheckEvaluationTargetMaterializationData(
                         storage_id=materialization_record.storage_id,
@@ -607,7 +607,7 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                 AssetCheckEvaluation(
                     asset_key=AssetKey(["asset_1"]),
                     check_name="my_check",
-                    success=True,
+                    passed=True,
                     metadata={},
                     target_materialization_data=AssetCheckEvaluationTargetMaterializationData(
                         storage_id=materialization_record.storage_id,
@@ -837,7 +837,7 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
         assert (
             result.data["launchPipelineExecution"]["message"]
             == "dagster._core.errors.DagsterInvalidSubsetError: Asset checks provided in"
-            " asset_check_selection argument AssetCheckHandle(asset_key=AssetKey(['asset_1']),"
+            " asset_check_selection argument AssetCheckKey(asset_key=AssetKey(['asset_1']),"
             " name='non-existent-check') do not exist in parent asset group or job.\n"
         )
 

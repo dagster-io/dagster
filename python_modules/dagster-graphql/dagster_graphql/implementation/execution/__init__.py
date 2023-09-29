@@ -8,7 +8,9 @@ import dagster._check as check
 from dagster._annotations import deprecated
 from dagster._core.definitions.events import AssetKey
 from dagster._core.events import EngineEventData
-from dagster._core.instance import DagsterInstance
+from dagster._core.instance import (
+    DagsterInstance,
+)
 from dagster._core.storage.captured_log_manager import CapturedLogManager
 from dagster._core.storage.compute_log_manager import ComputeIOType, ComputeLogFileData
 from dagster._core.storage.dagster_run import CANCELABLE_RUN_STATUSES
@@ -19,12 +21,11 @@ from starlette.concurrency import (
 )
 
 if TYPE_CHECKING:
-    from dagster_graphql.schema.roots.mutation import GrapheneTerminateRunPolicy
+    from dagster_graphql.schema.roots.mutation import (
+        GrapheneTerminateRunPolicy,
+    )
 
-from ..utils import (
-    assert_permission,
-    assert_permission_for_location,
-)
+from ..utils import assert_permission, assert_permission_for_location
 from .backfill import (
     cancel_partition_backfill as cancel_partition_backfill,
     create_and_launch_partition_backfill as create_and_launch_partition_backfill,
@@ -47,6 +48,7 @@ if TYPE_CHECKING:
         GrapheneAssetWipeSuccess,
         GrapheneDeletePipelineRunSuccess,
         GrapheneTerminateRunFailure,
+        GrapheneTerminateRunsResult,
         GrapheneTerminateRunSuccess,
     )
 
@@ -71,7 +73,9 @@ def _force_mark_as_canceled(
 
 
 def terminate_pipeline_execution(
-    graphene_info: "ResolveInfo", run_id: str, terminate_policy: "GrapheneTerminateRunPolicy"
+    graphene_info: "ResolveInfo",
+    run_id: str,
+    terminate_policy: "GrapheneTerminateRunPolicy",
 ) -> Union["GrapheneTerminateRunSuccess", "GrapheneTerminateRunFailure"]:
     from ...schema.errors import GrapheneRunNotFoundError
     from ...schema.pipelines.pipeline import GrapheneRun
@@ -92,7 +96,6 @@ def terminate_pipeline_execution(
     )
 
     if not record:
-        assert_permission(graphene_info, Permissions.TERMINATE_PIPELINE_EXECUTION)
         return GrapheneRunNotFoundError(run_id)
 
     run = record.dagster_run
@@ -101,11 +104,19 @@ def terminate_pipeline_execution(
     location_name = run.external_job_origin.location_name if run.external_job_origin else None
 
     if location_name:
-        assert_permission_for_location(
-            graphene_info, Permissions.TERMINATE_PIPELINE_EXECUTION, location_name
-        )
+        if not graphene_info.context.has_permission_for_location(
+            Permissions.TERMINATE_PIPELINE_EXECUTION, location_name
+        ):
+            return GrapheneTerminateRunFailure(
+                run=graphene_run,
+                message="You do not have permission to terminate this run",
+            )
     else:
-        assert_permission(graphene_info, Permissions.TERMINATE_PIPELINE_EXECUTION)
+        if not graphene_info.context.has_permission(Permissions.TERMINATE_PIPELINE_EXECUTION):
+            return GrapheneTerminateRunFailure(
+                run=graphene_run,
+                message="You do not have permission to terminate this run",
+            )
 
     can_cancel_run = run.status in CANCELABLE_RUN_STATUSES
 
@@ -141,6 +152,30 @@ def terminate_pipeline_execution(
     return GrapheneTerminateRunFailure(
         run=graphene_run, message=f"Unable to terminate run {run.run_id}"
     )
+
+
+def terminate_pipeline_execution_for_runs(
+    graphene_info: "ResolveInfo",
+    run_ids: Sequence[str],
+    terminate_policy: "GrapheneTerminateRunPolicy",
+) -> "GrapheneTerminateRunsResult":
+    from ...schema.roots.mutation import (
+        GrapheneTerminateRunsResult,
+    )
+
+    check.sequence_param(run_ids, "run_id", of_type=str)
+
+    terminate_run_results = []
+
+    for run_id in run_ids:
+        result = terminate_pipeline_execution(
+            graphene_info,
+            run_id,
+            terminate_policy,
+        )
+        terminate_run_results.append(result)
+
+    return GrapheneTerminateRunsResult(terminateRunResults=terminate_run_results)
 
 
 def delete_pipeline_run(

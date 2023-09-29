@@ -37,6 +37,7 @@ if TYPE_CHECKING:
 class InstigatorType(Enum):
     SCHEDULE = "SCHEDULE"
     SENSOR = "SENSOR"
+    AUTO_MATERIALIZE = "AUTO_MATERIALIZE"
 
 
 @whitelist_for_serdes
@@ -387,6 +388,12 @@ class SensorResult(
             AddDynamicPartitionsRequest]]]): A list of dynamic partition requests to request dynamic
             partition addition and deletion. Run requests will be evaluated using the state of the
             partitions with these changes applied.
+        asset_events (Optional[Sequence[Union[AssetObservation, AssetMaterialization, AssetCheckEvaluation]]]):  (Experimental) A
+            list of materializations, observations, and asset check evaluations that the system
+            will persist on your behalf at the end of sensor evaluation. These events will be not
+            be associated with any particular run, but will be queryable and viewable in the asset catalog.
+
+
     """
 
     def __new__(

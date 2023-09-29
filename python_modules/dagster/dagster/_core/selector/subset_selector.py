@@ -23,7 +23,7 @@ from typing import (
 
 from typing_extensions import Literal, TypeAlias
 
-from dagster._core.definitions.asset_check_spec import AssetCheckHandle
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.dependency import DependencyStructure
 from dagster._core.definitions.events import AssetKey
 from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
@@ -85,7 +85,7 @@ class AssetSelectionData(
         "_AssetSelectionData",
         [
             ("asset_selection", AbstractSet[AssetKey]),
-            ("asset_check_selection", Optional[AbstractSet[AssetCheckHandle]]),
+            ("asset_check_selection", Optional[AbstractSet[AssetCheckKey]]),
             ("parent_job_def", "JobDefinition"),
         ],
     )
@@ -101,12 +101,12 @@ class AssetSelectionData(
     def __new__(
         cls,
         asset_selection: AbstractSet[AssetKey],
-        asset_check_selection: Optional[AbstractSet[AssetCheckHandle]],
+        asset_check_selection: Optional[AbstractSet[AssetCheckKey]],
         parent_job_def: "JobDefinition",
     ):
         from dagster._core.definitions.job_definition import JobDefinition
 
-        check.opt_set_param(asset_check_selection, "asset_check_selection", AssetCheckHandle)
+        check.opt_set_param(asset_check_selection, "asset_check_selection", AssetCheckKey)
 
         return super(AssetSelectionData, cls).__new__(
             cls,

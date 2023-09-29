@@ -2,6 +2,40 @@
 
 When new releases include breaking changes or deprecations, this document describes how to migrate.
 
+## Migrating to 1.5.0
+
+### Breaking changes
+
+- The UI dialog for launching a backfill no longer includes a toggle to determine whether the backfill is launched as a single run or multiple runs. This toggle was misleading, because it implied that all backfills could be launched as single-run backfills, when it actually required special handling in the implementations of the assets targeted by the backfill to achieve this behavior.  Instead, whether to execute a backfill as a single run is now determined by a setting on the asset definition. To enable single-run backfills, set `backfill_policy=BackfillPolicy.single_run()` on the asset definitions. Refer to the [docs on single-run backfills](https://docs.dagster.io/concepts/partitions-schedules-sensors/backfills#single-run-backfills) for more information.
+
+- `AssetExecutionContext` is now a subclass of `OpExecutionContext`, not a type alias. The code
+```python
+def my_helper_function(context: AssetExecutionContext):
+    ...
+
+@op
+def my_op(context: OpExecutionContext):
+    my_helper_function(context)
+```
+will cause type checking errors. To migrate, update type hints to respect the new subclassing.
+
+- `AssetExecutionContext` cannot be used as the type annotation for `@op`s. To migrate, update the type hint in `@op` to `OpExecutionContext`. `@op`s that are used in `@graph_assets` may still use the `AssetExecutionContext` type hint.
+```python
+# old
+@op
+def my_op(context: AssetExecutionContext):
+    ...
+
+# correct
+@op
+def my_op(context: OpExecutionContext):
+    ...
+```
+
+- `AssetCheckResult(success=True)` is renamed to `AssetCheckResult(passed=True)`
+
+- Asset checks defined with Dagster version 1.4 will no longer work with Dagster Cloud, or with Dagster UI 1.5. Upgrade your `dagster` library to continue using checks.
+
 ## Migrating to 1.4.0
 
 ### Deprecations

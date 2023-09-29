@@ -112,9 +112,16 @@ def test_get_downstream_partitions_multiple_keys_in_range():
     assert result == single_dimension_subset
 
 
-single_dimension_def = StaticPartitionsDefinition(["a", "b", "c"])
-multipartitions_def = MultiPartitionsDefinition(
-    {"abc": single_dimension_def, "123": StaticPartitionsDefinition(["1", "2", "3"])}
+static_partitions_def = StaticPartitionsDefinition(["a", "b", "c"])
+static_multipartitions_def = MultiPartitionsDefinition(
+    {"abc": static_partitions_def, "123": StaticPartitionsDefinition(["1", "2", "3"])}
+)
+daily_partitions_def = DailyPartitionsDefinition("2023-01-01")
+weekly_multipartitions_def = MultiPartitionsDefinition(
+    {
+        "week": WeeklyPartitionsDefinition("2023-01-01"),
+        "ab": StaticPartitionsDefinition(["a", "b"]),
+    }
 )
 
 
@@ -122,9 +129,9 @@ multipartitions_def = MultiPartitionsDefinition(
     "upstream_partitions_def,upstream_partitions_subset,downstream_partitions_subset",
     [
         (
-            single_dimension_def,
-            single_dimension_def.empty_subset().with_partition_keys({"a"}),
-            multipartitions_def.empty_subset().with_partition_key_range(
+            static_partitions_def,
+            static_partitions_def.empty_subset().with_partition_keys({"a"}),
+            static_multipartitions_def.empty_subset().with_partition_key_range(
                 PartitionKeyRange(
                     MultiPartitionKey({"abc": "a", "123": "1"}),
                     MultiPartitionKey({"abc": "a", "123": "1"}),
@@ -132,9 +139,9 @@ multipartitions_def = MultiPartitionsDefinition(
             ),
         ),
         (
-            single_dimension_def,
-            single_dimension_def.empty_subset().with_partition_keys({"a", "b"}),
-            multipartitions_def.empty_subset().with_partition_keys(
+            static_partitions_def,
+            static_partitions_def.empty_subset().with_partition_keys({"a", "b"}),
+            static_multipartitions_def.empty_subset().with_partition_keys(
                 {
                     MultiPartitionKey({"abc": "b", "123": "2"}),
                     MultiPartitionKey({"abc": "a", "123": "2"}),
@@ -142,19 +149,19 @@ multipartitions_def = MultiPartitionsDefinition(
             ),
         ),
         (
-            multipartitions_def,
-            multipartitions_def.empty_subset().with_partition_keys(
+            static_multipartitions_def,
+            static_multipartitions_def.empty_subset().with_partition_keys(
                 {
                     MultiPartitionKey({"abc": "a", "123": "1"}),
                     MultiPartitionKey({"abc": "a", "123": "2"}),
                     MultiPartitionKey({"abc": "a", "123": "3"}),
                 }
             ),
-            single_dimension_def.empty_subset().with_partition_keys({"a"}),
+            static_partitions_def.empty_subset().with_partition_keys({"a"}),
         ),
         (
-            multipartitions_def,
-            multipartitions_def.empty_subset().with_partition_keys(
+            static_multipartitions_def,
+            static_multipartitions_def.empty_subset().with_partition_keys(
                 {
                     MultiPartitionKey({"abc": "a", "123": "1"}),
                     MultiPartitionKey({"abc": "a", "123": "2"}),
@@ -164,7 +171,21 @@ multipartitions_def = MultiPartitionsDefinition(
                     MultiPartitionKey({"abc": "b", "123": "3"}),
                 }
             ),
-            single_dimension_def.empty_subset().with_partition_keys({"a", "b"}),
+            static_partitions_def.empty_subset().with_partition_keys({"a", "b"}),
+        ),
+        (
+            daily_partitions_def,
+            daily_partitions_def.empty_subset()
+            .with_partition_key_range(PartitionKeyRange(start="2023-01-08", end="2023-01-14"))
+            .with_partition_key_range(PartitionKeyRange(start="2023-01-29", end="2023-02-04")),
+            weekly_multipartitions_def.empty_subset().with_partition_keys(
+                {
+                    MultiPartitionKey({"ab": "a", "week": "2023-01-08"}),
+                    MultiPartitionKey({"ab": "b", "week": "2023-01-08"}),
+                    MultiPartitionKey({"ab": "a", "week": "2023-01-29"}),
+                    MultiPartitionKey({"ab": "b", "week": "2023-01-29"}),
+                }
+            ),
         ),
     ],
 )

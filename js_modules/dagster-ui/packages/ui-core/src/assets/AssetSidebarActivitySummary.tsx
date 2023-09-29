@@ -71,11 +71,7 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
         <SidebarSection title="Freshness policy">
           <Box margin={{horizontal: 24, vertical: 12}} flex={{gap: 12, alignItems: 'flex-start'}}>
             <Body style={{flex: 1}}>{freshnessPolicyDescription(asset.freshnessPolicy)}</Body>
-            <OverdueTag
-              liveData={liveData}
-              policy={asset.freshnessPolicy}
-              assetKey={asset.assetKey}
-            />
+            <OverdueTag policy={asset.freshnessPolicy} assetKey={asset.assetKey} />
           </Box>
         </SidebarSection>
       )}

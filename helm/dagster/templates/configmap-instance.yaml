@@ -146,6 +146,10 @@ data:
       schedule:
         purge_after_days: {{ .Values.retention.schedule.purgeAfterDays | toYaml | nindent 12 }}
       {{- end }}
+      {{- if .Values.retention.autoMaterialize }}
+      auto_materialize:
+        purge_after_days: {{ .Values.retention.autoMaterialize.purgeAfterDays | toYaml | nindent 12 }}
+      {{- end }}
     {{- end }}
 
     {{- if .Values.additionalInstanceConfig }}

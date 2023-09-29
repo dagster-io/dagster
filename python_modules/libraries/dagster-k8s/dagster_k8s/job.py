@@ -787,7 +787,7 @@ def construct_dagster_k8s_job(
             {
                 "name": pod_name,
                 "labels": merge_dicts(
-                    dagster_labels, user_defined_pod_template_labels, job_config.labels
+                    dagster_labels, job_config.labels, user_defined_pod_template_labels
                 ),
             },
         ),

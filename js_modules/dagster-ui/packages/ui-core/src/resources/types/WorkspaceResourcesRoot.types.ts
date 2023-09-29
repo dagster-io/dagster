@@ -37,6 +37,7 @@ export type WorkspaceResourcesQuery = {
         name: string;
         allTopLevelResourceDetails: Array<{
           __typename: 'ResourceDetails';
+          id: string;
           name: string;
           description: string | null;
           resourceType: string;

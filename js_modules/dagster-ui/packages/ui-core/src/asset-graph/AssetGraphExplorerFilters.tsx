@@ -26,7 +26,7 @@ export const AssetGraphExplorerFilters = React.memo(
     const visibleReposSet = React.useMemo(() => new Set(visibleRepos), [visibleRepos]);
 
     const reposFilter = useStaticSetFilter<DagsterRepoOption>({
-      name: 'Repository',
+      name: 'Code location',
       icon: 'repo',
       allValues: allRepos.map((repo) => ({
         key: repo.repository.id,

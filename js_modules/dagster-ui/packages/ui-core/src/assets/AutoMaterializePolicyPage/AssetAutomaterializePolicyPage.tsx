@@ -84,7 +84,7 @@ export const AssetAutomaterializePolicyPage = ({
       <Box padding={{horizontal: 24, vertical: 12}} border="bottom">
         <AutoMaterializeExperimentalBanner />
       </Box>
-      <Box flex={{direction: 'row'}}>
+      <Box flex={{direction: 'row'}} style={{minHeight: 0, flex: 1}}>
         <Box flex={{direction: 'column', grow: 1}}>
           <Box
             flex={{alignItems: 'center'}}

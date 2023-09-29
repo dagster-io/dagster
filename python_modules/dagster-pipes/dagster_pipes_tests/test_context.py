@@ -2,15 +2,18 @@ from unittest.mock import MagicMock
 
 import pytest
 from dagster_pipes import (
-    DagsterExtError,
-    ExtContext,
-    ExtContextData,
-    ExtDataProvenance,
-    ExtPartitionKeyRange,
-    ExtTimeWindow,
+    PIPES_PROTOCOL_VERSION,
+    PIPES_PROTOCOL_VERSION_FIELD,
+    DagsterPipesError,
+    PipesContext,
+    PipesContextData,
+    PipesDataProvenance,
+    PipesMessage,
+    PipesPartitionKeyRange,
+    PipesTimeWindow,
 )
 
-TEST_EXT_CONTEXT_DEFAULTS = ExtContextData(
+TEST_EXT_CONTEXT_DEFAULTS = PipesContextData(
     asset_keys=None,
     code_version_by_asset_key=None,
     provenance_by_asset_key=None,
@@ -26,25 +29,25 @@ TEST_EXT_CONTEXT_DEFAULTS = ExtContextData(
 
 def _make_external_execution_context(**kwargs):
     kwargs = {**TEST_EXT_CONTEXT_DEFAULTS, **kwargs}
-    return ExtContext(
-        data=ExtContextData(**kwargs),
+    return PipesContext(
+        data=PipesContextData(**kwargs),
         message_channel=MagicMock(),
     )
 
 
 def _assert_undefined(context, key) -> None:
-    with pytest.raises(DagsterExtError, match=f"`{key}` is undefined"):
+    with pytest.raises(DagsterPipesError, match=f"`{key}` is undefined"):
         getattr(context, key)
 
 
 def _assert_unknown_asset_key(context, method, *args, **kwargs) -> None:
-    with pytest.raises(DagsterExtError, match="Invalid asset key"):
+    with pytest.raises(DagsterPipesError, match="Invalid asset key"):
         getattr(context, method)(*args, **kwargs)
 
 
 def _assert_undefined_asset_key(context, method, *args, **kwargs) -> None:
     with pytest.raises(
-        DagsterExtError, match=f"Calling `{method}` without passing an asset key is undefined"
+        DagsterPipesError, match=f"Calling `{method}` without passing an asset key is undefined"
     ):
         getattr(context, method)(*args, **kwargs)
 
@@ -62,7 +65,7 @@ def test_no_asset_context():
 
 
 def test_single_asset_context():
-    foo_provenance = ExtDataProvenance(
+    foo_provenance = PipesDataProvenance(
         code_version="alpha", input_data_versions={"bar": "baz"}, is_user_provided=False
     )
 
@@ -101,7 +104,7 @@ def test_single_asset_context():
 
 
 def test_multi_asset_context():
-    foo_provenance = ExtDataProvenance(
+    foo_provenance = PipesDataProvenance(
         code_version="alpha", input_data_versions={"bar": "baz"}, is_user_provided=False
     )
     bar_provenance = None
@@ -139,7 +142,7 @@ def test_no_partition_context():
 
 
 def test_single_partition_context():
-    partition_key_range = ExtPartitionKeyRange(start="foo", end="foo")
+    partition_key_range = PipesPartitionKeyRange(start="foo", end="foo")
 
     context = _make_external_execution_context(
         partition_key="foo",
@@ -154,8 +157,8 @@ def test_single_partition_context():
 
 
 def test_multiple_partition_context():
-    partition_key_range = ExtPartitionKeyRange(start="2023-01-01", end="2023-01-02")
-    time_window = ExtTimeWindow(start="2023-01-01", end="2023-01-02")
+    partition_key_range = PipesPartitionKeyRange(start="2023-01-01", end="2023-01-02")
+    time_window = PipesTimeWindow(start="2023-01-01", end="2023-01-02")
 
     context = _make_external_execution_context(
         partition_key=None,
@@ -173,12 +176,46 @@ def test_extras_context():
     context = _make_external_execution_context(extras={"foo": "bar"})
 
     assert context.get_extra("foo") == "bar"
-    with pytest.raises(DagsterExtError, match="Extra `bar` is undefined"):
+    with pytest.raises(DagsterPipesError, match="Extra `bar` is undefined"):
         context.get_extra("bar")
 
 
 def test_report_twice_materialized():
     context = _make_external_execution_context(asset_keys=["foo"])
-    with pytest.raises(DagsterExtError, match="already been materialized"):
+    with pytest.raises(DagsterPipesError, match="already been materialized"):
         context.report_asset_materialization(asset_key="foo")
         context.report_asset_materialization(asset_key="foo")
+
+
+def _make_pipes_message(method, params):
+    return PipesMessage(
+        {
+            PIPES_PROTOCOL_VERSION_FIELD: PIPES_PROTOCOL_VERSION,
+            "method": method,
+            "params": params,
+        }
+    )
+
+
+def test_log():
+    context = _make_external_execution_context(asset_keys=["foo"])
+    context.log.critical("foo")
+    context._message_channel.write_message.assert_called_with(  # noqa: SLF001
+        _make_pipes_message(method="log", params={"level": "CRITICAL", "message": "foo"})
+    )
+    context.log.error("foo")
+    context._message_channel.write_message.assert_called_with(  # noqa: SLF001
+        _make_pipes_message(method="log", params={"level": "ERROR", "message": "foo"})
+    )
+    context.log.warning("foo")
+    context._message_channel.write_message.assert_called_with(  # noqa: SLF001
+        _make_pipes_message(method="log", params={"level": "WARNING", "message": "foo"})
+    )
+    context.log.info("foo")
+    context._message_channel.write_message.assert_called_with(  # noqa: SLF001
+        _make_pipes_message(method="log", params={"level": "INFO", "message": "foo"})
+    )
+    context.log.debug("foo")
+    context._message_channel.write_message.assert_called_with(  # noqa: SLF001
+        _make_pipes_message(method="log", params={"level": "DEBUG", "message": "foo"})
+    )

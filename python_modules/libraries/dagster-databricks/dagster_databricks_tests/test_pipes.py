@@ -7,8 +7,8 @@ from typing import Any, Callable, Iterator
 
 import pytest
 from dagster import AssetExecutionContext, asset, materialize
-from dagster._core.errors import DagsterExternalExecutionError
-from dagster_databricks import ExtDatabricks, dbfs_tempdir
+from dagster._core.errors import DagsterPipesExecutionError
+from dagster_databricks.pipes import PipesDatabricksClient, dbfs_tempdir
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service import files, jobs
 
@@ -16,16 +16,20 @@ IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
 
 def script_fn():
-    from dagster_pipes import ExtDbfsContextLoader, ExtDbfsMessageWriter, init_dagster_ext
+    from dagster_pipes import (
+        DbfsPipesContextLoader,
+        PipesDbfsMessageWriter,
+        init_dagster_pipes,
+    )
 
-    context = init_dagster_ext(
-        context_loader=ExtDbfsContextLoader(), message_writer=ExtDbfsMessageWriter()
+    context = init_dagster_pipes(
+        context_loader=DbfsPipesContextLoader(), message_writer=PipesDbfsMessageWriter()
     )
 
     multiplier = context.get_extra("multiplier")
     value = 2 * multiplier
 
-    context.log(f"{context.asset_key}: {2} * {multiplier} = {value}")
+    context.log.info(f"{context.asset_key}: {2} * {multiplier} = {value}")
     context.report_asset_materialization(
         metadata={"value": value},
         data_version="alpha",
@@ -83,10 +87,10 @@ def _make_submit_task(path: str) -> jobs.SubmitTask:
 @pytest.mark.skipif(IS_BUILDKITE, reason="Not configured to run on BK yet.")
 def test_basic(client: WorkspaceClient):
     @asset
-    def number_x(context: AssetExecutionContext, ext_databricks: ExtDatabricks):
+    def number_x(context: AssetExecutionContext, pipes_databricks_client: PipesDatabricksClient):
         with temp_script(script_fn, client) as script_path:
             task = _make_submit_task(script_path)
-            ext_databricks.run(
+            pipes_databricks_client.run(
                 task=task,
                 context=context,
                 extras={"multiplier": 2, "storage_root": "fake"},
@@ -94,7 +98,7 @@ def test_basic(client: WorkspaceClient):
 
     result = materialize(
         [number_x],
-        resources={"ext_databricks": ExtDatabricks(client)},
+        resources={"pipes_databricks_client": PipesDatabricksClient(client)},
         raise_on_error=False,
     )
     assert result.success
@@ -105,12 +109,12 @@ def test_basic(client: WorkspaceClient):
 @pytest.mark.skipif(IS_BUILDKITE, reason="Not configured to run on BK yet.")
 def test_nonexistent_entry_point(client: WorkspaceClient):
     @asset
-    def fake(context: AssetExecutionContext, ext_databricks: ExtDatabricks):
+    def fake(context: AssetExecutionContext, pipes_databricks_client: PipesDatabricksClient):
         task = _make_submit_task("/fake/fake")
-        ext_databricks.run(task=task, context=context)
+        pipes_databricks_client.run(task=task, context=context)
 
-    with pytest.raises(DagsterExternalExecutionError, match=r"Cannot read the python file"):
+    with pytest.raises(DagsterPipesExecutionError, match=r"Cannot read the python file"):
         materialize(
             [fake],
-            resources={"ext_databricks": ExtDatabricks(client)},
+            resources={"pipes_databricks_client": PipesDatabricksClient(client)},
         )

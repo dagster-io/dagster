@@ -16,7 +16,8 @@ from typing import (
 
 import dagster._check as check
 from dagster._annotations import deprecated, experimental, public
-from dagster._core.definitions.asset_check_spec import AssetCheckSpec
+from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
+from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.data_version import (
     DataProvenance,
@@ -560,6 +561,45 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
         if not self.has_assets_def:
             return set()
         return self.assets_def.keys
+
+    @public
+    @property
+    def has_asset_checks_def(self) -> bool:
+        """Return a boolean indicating the presence of a backing AssetChecksDefinition
+        for the current execution.
+
+        Returns:
+            bool: True if there is a backing AssetChecksDefinition for the current execution, otherwise False.
+        """
+        return self.job_def.asset_layer.asset_checks_def_for_node(self.node_handle) is not None
+
+    @public
+    @property
+    def asset_checks_def(self) -> AssetChecksDefinition:
+        """The backing AssetChecksDefinition for what is currently executing, errors if not
+        available.
+
+        Returns:
+            AssetChecksDefinition.
+        """
+        asset_checks_def = self.job_def.asset_layer.asset_checks_def_for_node(self.node_handle)
+        if asset_checks_def is None:
+            raise DagsterInvalidPropertyError(
+                f"Op '{self.op.name}' does not have an asset checks definition."
+            )
+
+        return asset_checks_def
+
+    @public
+    @property
+    def selected_asset_check_keys(self) -> AbstractSet[AssetCheckKey]:
+        if self.has_assets_def:
+            return self.assets_def.check_keys
+
+        if self.has_asset_checks_def:
+            check.failed("Subset selection is not yet supported within an AssetChecksDefinition")
+
+        return set()
 
     @public
     @property

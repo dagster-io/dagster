@@ -93,10 +93,13 @@ class AssetDaemonContext:
         target_asset_keys: Optional[AbstractSet[AssetKey]],
         respect_materialization_data_versions: bool,
         logger: logging.Logger,
+        evaluation_time: Optional[datetime.datetime] = None,
     ):
         from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
-        self._instance_queryer = CachingInstanceQueryer(instance, asset_graph, logger=logger)
+        self._instance_queryer = CachingInstanceQueryer(
+            instance, asset_graph, evaluation_time=evaluation_time, logger=logger
+        )
         self._data_time_resolver = CachingDataTimeResolver(self.instance_queryer)
         self._cursor = cursor
         self._target_asset_keys = target_asset_keys or {
@@ -117,14 +120,6 @@ class AssetDaemonContext:
                 for key in self.target_asset_keys_and_parents
                 if not self.asset_graph.is_source(key)
             ]
-        )
-        self.instance_queryer.prefetch_asset_partition_counts(
-            [
-                key
-                for key in self.target_asset_keys_and_parents
-                if self.asset_graph.is_partitioned(key) and not self.asset_graph.is_source(key)
-            ],
-            after_cursor=cursor.latest_storage_id,
         )
 
     @property
@@ -453,12 +448,25 @@ class AssetDaemonContext:
         to_discard: Set[AssetKeyPartitionKey] = set()
         expected_data_time_mapping: Dict[AssetKey, Optional[datetime.datetime]] = defaultdict()
         visited_multi_asset_keys = set()
+
+        num_checked_assets = 0
+
+        num_target_asset_keys = len(self.target_asset_keys)
+
         for asset_key in itertools.chain(*self.asset_graph.toposort_asset_keys()):
             # an asset may have already been visited if it was part of a non-subsettable multi-asset
-            if asset_key not in self.target_asset_keys or asset_key in visited_multi_asset_keys:
+            if asset_key not in self.target_asset_keys:
                 continue
 
-            self._logger.debug(f"Evaluating asset {asset_key.to_user_string()}")
+            num_checked_assets = num_checked_assets + 1
+            self._logger.debug(
+                "Evaluating asset"
+                f" {asset_key.to_user_string()} ({num_checked_assets}/{num_target_asset_keys})"
+            )
+
+            if asset_key in visited_multi_asset_keys:
+                self._logger.debug(f"Asset {asset_key.to_user_string()} already visited")
+                continue
 
             (evaluation, to_materialize_for_asset, to_discard_for_asset) = self.evaluate_asset(
                 asset_key, will_materialize_mapping, expected_data_time_mapping
