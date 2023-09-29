@@ -43,7 +43,7 @@ class IJob(ABC):
 
     @property
     @abstractmethod
-    def asset_check_selection(self) -> Optional[AbstractSet[AssetKey]]:
+    def asset_check_selection(self) -> Optional[AbstractSet[AssetCheckKey]]:
         pass
 
     @property
