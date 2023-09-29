@@ -43,7 +43,7 @@ from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.decorators.asset_decorator import graph_asset
 from dagster._core.definitions.events import AssetMaterialization
-from dagster._core.definitions.result import MaterializeResult
+from dagster._core.definitions.result import MaterializeResult, StreamingExecutionResult
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -1732,12 +1732,11 @@ def test_return_materialization_with_asset_checks():
         assert asset_check_executions[0].status == AssetCheckExecutionRecordStatus.SUCCEEDED
 
 
-def test_return_materialization_multi_asset():
+def test_return_materialization_multi_asset_streaming():
     #
     # yield successful
     #
-    @multi_asset(outs={"one": AssetOut(), "two": AssetOut()})
-    def multi():
+    def _iter():
         yield MaterializeResult(
             asset_key="one",
             metadata={"one": 1},
@@ -1746,6 +1745,10 @@ def test_return_materialization_multi_asset():
             asset_key="two",
             metadata={"two": 2},
         )
+
+    @multi_asset(outs={"one": AssetOut(), "two": AssetOut()})
+    def multi() -> StreamingExecutionResult:
+        return StreamingExecutionResult(_iter())
 
     mats = _exec_asset(multi)
 

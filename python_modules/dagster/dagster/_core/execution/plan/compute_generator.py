@@ -30,7 +30,7 @@ from dagster._core.definitions import (
 from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 from dagster._core.definitions.input import InputDefinition
 from dagster._core.definitions.op_definition import OpDefinition
-from dagster._core.definitions.result import MaterializeResult
+from dagster._core.definitions.result import MaterializeResult, StreamingExecutionResult
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.types.dagster_type import DagsterTypeKind, is_generic_output_annotation
 from dagster._utils import is_named_tuple_instance
@@ -244,6 +244,8 @@ def _check_output_object_name(
 def validate_and_coerce_op_result_to_iterator(
     result: Any, context: OpExecutionContext, output_defs: Sequence[OutputDefinition]
 ) -> Iterator[Any]:
+    result = result.result_iter if isinstance(result, StreamingExecutionResult) else result
+
     if inspect.isgenerator(result):
         # this happens when a user explicitly returns a generator in the op
         for event in result:

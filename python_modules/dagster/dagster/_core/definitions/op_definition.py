@@ -455,6 +455,9 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
         return direct_invocation_result(self, *args, **kwargs)
 
 
+from dagster._core.definitions.result import StreamingExecutionResult
+
+
 def _resolve_output_defs_from_outs(
     compute_fn: Union[Callable[..., Any], "DecoratedOpFunction"],
     outs: Optional[Mapping[str, Out]],
@@ -485,22 +488,30 @@ def _resolve_output_defs_from_outs(
 
     # Introspection on type annotations is experimental, so checking
     # metaclass is the best we can do.
-    if annotation != inspect.Parameter.empty and not get_origin(annotation) == tuple:
+
+    # import code; code.interact(local=locals())
+
+    if annotation != inspect.Parameter.empty and annotation == StreamingExecutionResult:
+        pass
+    elif annotation != inspect.Parameter.empty and not get_origin(annotation) == tuple:
         raise DagsterInvariantViolationError(
             "Expected Tuple annotation for multiple outputs, but received non-tuple annotation."
         )
-    if annotation != inspect.Parameter.empty and not len(get_args(annotation)) == len(outs):
+    elif annotation != inspect.Parameter.empty and not len(get_args(annotation)) == len(outs):
         raise DagsterInvariantViolationError(
             "Expected Tuple annotation to have number of entries matching the "
             f"number of outputs for more than one output. Expected {len(outs)} "
             f"outputs but annotation has {len(get_args(annotation))}."
         )
     for idx, (name, cur_out) in enumerate(outs.items()):
-        annotation_type = (
-            get_args(annotation)[idx]
-            if annotation != inspect.Parameter.empty
-            else inspect.Parameter.empty
-        )
+        if annotation == StreamingExecutionResult:
+            annotation_type = None
+        else:
+            annotation_type = (
+                get_args(annotation)[idx]
+                if annotation != inspect.Parameter.empty
+                else inspect.Parameter.empty
+            )
         # Don't provide description when using multiple outputs. Introspection
         # is challenging when faced with multiple inputs.
         output_defs.append(

@@ -17,6 +17,7 @@ from dagster._core.definitions.metadata import (
 )
 from dagster._core.errors import DagsterError, DagsterInvalidDefinitionError
 from dagster._core.types.dagster_type import (
+    Any as DagsterAny,
     DagsterType,
     is_dynamic_output_annotation,
     resolve_dagster_type,
@@ -403,7 +404,7 @@ class Out(
 
     def to_definition(
         self,
-        annotation_type: type,
+        annotation_type: Optional[type],
         name: Optional[str],
         description: Optional[str],
         code_version: Optional[str],
@@ -411,7 +412,7 @@ class Out(
         dagster_type = (
             self.dagster_type
             if self.dagster_type is not NoValueSentinel
-            else _checked_inferred_type(annotation_type)
+            else _checked_inferred_type(annotation_type) if annotation_type else DagsterAny
         )
 
         klass = OutputDefinition if not self.is_dynamic else DynamicOutputDefinition

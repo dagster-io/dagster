@@ -1,4 +1,4 @@
-from typing import NamedTuple, Optional, Sequence
+from typing import Iterator, NamedTuple, Optional, Sequence, Union
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental
@@ -56,3 +56,12 @@ class MaterializeResult(
             ),
             data_version=check.opt_inst_param(data_version, "data_version", DataVersion),
         )
+
+
+from dataclasses import dataclass
+
+
+@dataclass
+class StreamingExecutionResult:
+    def __init__(self, result_iter: Iterator[Union[MaterializeResult, AssetCheckResult]]):
+        self.result_iter = result_iter
