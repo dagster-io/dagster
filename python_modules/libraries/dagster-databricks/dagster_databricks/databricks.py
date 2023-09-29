@@ -45,7 +45,7 @@ def _check_credentials(
     azure_tenant_id: Optional[str] = None,
 ):
     """Ensure that credentials are provided in a valid combination. Either token OR oauth OR azure credentials
-    should be provided, but not more than one
+    should be provided, but not more than one. Will raise an AssertionError if the combination of credentials is invalid
     """
     is_token_present = token is not None
     are_oauth_creds_present = oauth_client_id is not None and oauth_client_secret is not None
