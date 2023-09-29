@@ -32,7 +32,7 @@ class PipesClient(ABC):
         **kwargs,
     ) -> "PipesClientCompletedInvocation":
         """Synchronously execute an external process with the pipes protocol. Derived
-         clients must have context and extras arguments, but also can add arbitrary
+         clients must have `context` and `extras` arguments, but also can add arbitrary
          arguments that are appropriate for their own implementation.
 
         Args:
