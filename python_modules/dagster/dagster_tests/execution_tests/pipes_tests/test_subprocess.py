@@ -217,7 +217,8 @@ def test_ext_subprocess_client_no_return():
         DagsterInvariantViolationError,
         match=(
             r"did not yield or return expected outputs.*Did you forget to `yield from"
-            r" pipes_session.get_results\(\)`?"
+            r" pipes_session.get_results\(\)` or `return"
+            r" <PipesClient>\.run\(\.\.\.\)\.get_results`?"
         ),
     ):
         materialize([foo], resources={"client": client})
@@ -370,7 +371,7 @@ def test_ext_asset_invocation():
     def foo(context: AssetExecutionContext, pipes_subprocess_client: PipesSubprocessClient):
         with temp_script(script_fn) as script_path:
             cmd = [_PYTHON_EXECUTABLE, script_path]
-            return pipes_subprocess_client.run(cmd, context=context).get_results()
+            yield from pipes_subprocess_client.run(cmd, context=context).get_results()
 
     foo(context=build_asset_context(), pipes_subprocess_client=PipesSubprocessClient())
 
@@ -462,7 +463,8 @@ def test_ext_no_client_no_yield():
         DagsterInvariantViolationError,
         match=(
             r"did not yield or return expected outputs.*Did you forget to `yield from"
-            r" pipes_session.get_results\(\)`?"
+            r" pipes_session.get_results\(\)` or `return"
+            r" <PipesClient>\.run\(\.\.\.\)\.get_results`?"
         ),
     ):
         materialize([foo])
