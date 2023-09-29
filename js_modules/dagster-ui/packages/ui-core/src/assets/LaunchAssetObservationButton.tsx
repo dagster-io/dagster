@@ -43,7 +43,7 @@ export const LaunchAssetObservationButton: React.FC<{
 
   const scopeAssets = 'selected' in scope ? scope.selected : scope.all;
   if (!scopeAssets.length) {
-    return <span />;
+    return <></>;
   }
 
   const count = scopeAssets.length > 1 ? ` (${scopeAssets.length})` : '';
