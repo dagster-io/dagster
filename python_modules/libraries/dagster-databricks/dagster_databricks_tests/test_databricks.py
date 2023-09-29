@@ -9,13 +9,8 @@ from dagster_databricks.databricks import (
     DatabricksClient,
     DatabricksError,
     DatabricksJobRunner,
-    _check_credentials,
     _get_auth_type,
     AuthTypeEnum,
-)
-from dagster_databricks.types import (
-    DatabricksRunLifeCycleState,
-    DatabricksRunResultState,
 )
 from databricks.sdk.service import compute, jobs
 from pytest_mock import MockerFixture
@@ -125,27 +120,27 @@ def test_databricks_wait_for_run(mocker: MockerFixture):
         "num_calls": 0,
         "final_state": jobs.Run(
             state=jobs.RunState(
-                result_state=DatabricksRunResultState.SUCCESS,
-                life_cycle_state=DatabricksRunLifeCycleState.TERMINATED,
+                result_state=jobs.RunResultState.SUCCESS,
+                life_cycle_state=jobs.RunLifeCycleState.TERMINATED,
                 state_message="Finished",
             ),
         ),
     }
 
-    def _get_run(*args, **kwargs) -> dict:
+    def _get_run(*args, **kwargs):
         calls["num_calls"] += 1
 
         if calls["num_calls"] == 1:
             return jobs.Run(
                 state=jobs.RunState(
-                    life_cycle_state=DatabricksRunLifeCycleState.PENDING,
+                    life_cycle_state=jobs.RunLifeCycleState.PENDING,
                     state_message="",
                 ),
             )
         elif calls["num_calls"] == 2:
             return jobs.Run(
                 state=jobs.RunState(
-                    life_cycle_state=DatabricksRunLifeCycleState.RUNNING,
+                    life_cycle_state=jobs.RunLifeCycleState.RUNNING,
                     state_message="",
                 ),
             )
@@ -166,7 +161,7 @@ def test_databricks_wait_for_run(mocker: MockerFixture):
     calls["final_state"] = jobs.Run(
         state=jobs.RunState(
             result_state=None,
-            life_cycle_state=DatabricksRunLifeCycleState.SKIPPED,
+            life_cycle_state=jobs.RunLifeCycleState.SKIPPED,
             state_message="Skipped",
         ),
     )
@@ -182,8 +177,8 @@ def test_databricks_wait_for_run(mocker: MockerFixture):
     calls["num_calls"] = 0
     calls["final_state"] = jobs.Run(
         state=jobs.RunState(
-            result_state=DatabricksRunResultState.FAILED,
-            life_cycle_state=DatabricksRunLifeCycleState.TERMINATED,
+            result_state=jobs.RunResultState.FAILED,
+            life_cycle_state=jobs.RunLifeCycleState.TERMINATED,
             state_message="Failed",
         ),
     )
