@@ -38,7 +38,7 @@ class PipesClient(ABC):
 
         Returns:
             PipesClientCompletedInvocation: Wrapper containing results reported by the external
-                process.
+            process.
         """
 
 
@@ -67,7 +67,7 @@ class PipesContextInjector(ABC):
 
         Yields:
             PipesParams: A JSON-serializable dict of parameters to be used used by the external
-                process to locate and load the injected context data.
+            process to locate and load the injected context data.
         """
 
 
@@ -88,5 +88,5 @@ class PipesMessageReader(ABC):
 
         Yields:
             PipesParams: A dict of parameters that can be used by the external process to determine
-                where to write messages.
+            where to write messages.
         """

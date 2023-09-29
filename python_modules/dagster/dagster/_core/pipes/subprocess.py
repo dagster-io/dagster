@@ -85,7 +85,7 @@ class _PipesSubprocess(PipesClient):
 
         Returns:
             PipesClientCompletedInvocation: Wrapper containing results reported by the external
-                process.
+            process.
         """
         with open_pipes_session(
             context=context,
