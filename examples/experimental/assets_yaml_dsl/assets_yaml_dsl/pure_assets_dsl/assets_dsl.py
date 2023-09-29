@@ -40,7 +40,7 @@ def from_asset_entries(asset_entries: Dict[str, Any]) -> List[AssetsDefinition]:
         def _assets_def(
             context: AssetExecutionContext,
             pipes_subprocess_client: PipesSubprocessClient,
-        ) -> None:
+        ):
             # instead of querying a dummy client, do your real data processing here
 
             python_executable = shutil.which("python")
@@ -48,7 +48,7 @@ def from_asset_entries(asset_entries: Dict[str, Any]) -> List[AssetsDefinition]:
             pipes_subprocess_client.run(
                 command=[python_executable, file_relative_path(__file__, "sql_script.py"), sql],
                 context=context,
-            )
+            ).get_results()
 
         assets_defs.append(_assets_def)
 

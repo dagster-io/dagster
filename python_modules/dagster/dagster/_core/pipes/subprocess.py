@@ -1,5 +1,5 @@
 from subprocess import Popen
-from typing import Iterator, Mapping, Optional, Sequence, Union
+from typing import Mapping, Optional, Sequence, Union
 
 from dagster_pipes import PipesExtras
 
@@ -10,10 +10,10 @@ from dagster._core.errors import DagsterPipesExecutionError
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.pipes.client import (
     PipesClient,
+    PipesClientCompletedInvocation,
     PipesContextInjector,
     PipesMessageReader,
 )
-from dagster._core.pipes.context import PipesExecutionResult
 from dagster._core.pipes.utils import (
     PipesTempFileContextInjector,
     PipesTempFileMessageReader,
@@ -73,8 +73,8 @@ class _PipesSubprocess(PipesClient):
         extras: Optional[PipesExtras] = None,
         env: Optional[Mapping[str, str]] = None,
         cwd: Optional[str] = None,
-    ) -> Iterator[PipesExecutionResult]:
-        """Run a subprocess with in a pipes session.
+    ) -> PipesClientCompletedInvocation:
+        """Synchronously execute a subprocess with in a pipes session.
 
         Args:
             command (Union[str, Sequence[str]]): The command to run. Will be passed to `subprocess.Popen()`.
@@ -83,8 +83,9 @@ class _PipesSubprocess(PipesClient):
             env (Optional[Mapping[str, str]]): An optional dict of environment variables to pass to the subprocess.
             cwd (Optional[str]): Working directory in which to launch the subprocess command.
 
-        Yields:
-            PipesExecutionResult: Results reported by the subprocess.
+        Returns:
+            PipesClientCompletedInvocation: Wrapper containing results reported by the external
+                process.
         """
         with open_pipes_session(
             context=context,
@@ -101,14 +102,12 @@ class _PipesSubprocess(PipesClient):
                     **(env or {}),
                 },
             )
-            while process.poll() is None:
-                yield from pipes_session.get_results()
-
+            process.wait()
             if process.returncode != 0:
                 raise DagsterPipesExecutionError(
                     f"External execution process failed with code {process.returncode}"
                 )
-        yield from pipes_session.get_results()
+        return PipesClientCompletedInvocation(tuple(pipes_session.get_results()))
 
 
 PipesSubprocessClient = ResourceParam[_PipesSubprocess]
