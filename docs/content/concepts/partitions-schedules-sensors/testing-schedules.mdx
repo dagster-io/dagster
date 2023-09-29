@@ -1,6 +1,6 @@
 ---
 title: Testing scheduled jobs | Dagster
-description: Test your partition configuration and jobs.
+description: Test your schedules and troubleshoot common issues.
 ---
 
 # Testing schedules
@@ -11,7 +11,7 @@ description: Test your partition configuration and jobs.
   and <a href="/concepts/ops-jobs-graphs/ops">ops</a>.{" "}
 </Note>
 
-In this guide, we'll cover a few ways to test your partitioned config and jobs.
+In this guide, we'll cover a few ways to test your schedules.
 
 ---
 
@@ -19,110 +19,204 @@ In this guide, we'll cover a few ways to test your partitioned config and jobs.
 
 Before continuing, you should be familiar with:
 
-- [Partitioned assets](/concepts/partitions-schedules-sensors/partitioning-assets)
-- [Partitioned ops and jobs](/concepts/partitions-schedules-sensors/partitioning-ops) (Optional; Advanced)
+- [Scheduling assets](/concepts/partitions-schedules-sensors/scheduling-assets)
+- [Scheduling ops](/concepts/partitions-schedules-sensors/scheduling-ops) (Optional; Advanced)
 
 ---
 
-## Testing partitioned config
+## Testing schedules
 
-Invoking a <PyObject object="PartitionedConfig" /> object directly invokes the decorated function.
+<TabGroup>
+<TabItem name="Via the Dagster UI">
 
-If you want to check whether the generated run config is valid for the config of a job, you can use the <PyObject object="validate_run_config" /> function.
+### Via the Dagster UI
 
-```python file=/concepts/partitions_schedules_sensors/partitioned_config_test.py startafter=start_partition_config endbefore=end_partition_config
-from dagster import validate_run_config, daily_partitioned_config
-from datetime import datetime
+In the UI, you can manually trigger a test evaluation of a schedule using a mock evaluation time and view the results.
+
+On the overview page for a particular schedule, there is a `Test schedule` button. Clicking this button will perform a test evaluation of your schedule for a provided mock evaluation time, and show you the results of that evaluation.
+
+1. Click **Overview > Schedules**.
+
+2. Click the schedule you want to test.
+
+3. Click the **Test Schedule** button, located near the top right corner of the page:
+
+   <Image
+     src="/images/concepts/partitions-schedules-sensors/schedules/test-schedule-button.png"
+     width={320}
+     height={128}
+   />
+
+4. You'll be prompted to select a mock schedule evaluation time. As schedules are defined on a cadence, the evaluation times provided in the dropdown are past and future times along that cadence.
+
+   For example, let's say you're testing a schedule with a cadence of `"Every day at X time"`. In the dropdown, you'd see five evaluation times in the future and five evaluation times in the past along that cadence.
+
+   <Image
+     src="/images/concepts/partitions-schedules-sensors/schedules/select-timestamp-page.png"
+     width={896}
+     height={449}
+   />
+
+5. After selecting an evaluation time, click the **Evaluate** button. A window containing the result of the evaluation will display:
+
+   <Image
+     src="/images/concepts/partitions-schedules-sensors/schedules/eval-schedule-result-page.png"
+     width={896}
+     height={449}
+   />
+
+   If the evaluation was successful and a run request was produced, you can open the launchpad pre-scaffolded with the config corresponding to that run request.
+
+</TabItem>
+<TabItem name="Via Python">
+
+### Via Python
+
+To test a function decorated by the <PyObject object="schedule" decorator /> decorator, you can invoke the schedule definition like it's a regular Python function. The invocation will return run config, which can then be validated using the <PyObject object="validate_run_config" /> function. Below is a test for the `configurable_job_schedule` that we defined in [an earlier section](#schedules-that-provide-custom-run-config-and-tags).
+
+It uses <PyObject object="build_schedule_context" /> to construct a <PyObject object="ScheduleEvaluationContext" /> to provide for the `context` parameter.
+
+```python file=concepts/partitions_schedules_sensors/schedules/schedule_examples.py startafter=start_test_cron_schedule_context endbefore=end_test_cron_schedule_context
+from dagster import build_schedule_context, validate_run_config
 
 
-@daily_partitioned_config(start_date=datetime(2020, 1, 1))
-def my_partitioned_config(start: datetime, _end: datetime):
-    return {
-        "ops": {
-            "process_data_for_date": {"config": {"date": start.strftime("%Y-%m-%d")}}
-        }
-    }
-
-
-def test_my_partitioned_config():
-    # assert that the decorated function returns the expected output
-    run_config = my_partitioned_config(datetime(2020, 1, 3), datetime(2020, 1, 4))
-    assert run_config == {
-        "ops": {"process_data_for_date": {"config": {"date": "2020-01-03"}}}
-    }
-
-    # assert that the output of the decorated function is valid configuration for the
-    # do_stuff_partitioned job
-    assert validate_run_config(do_stuff_partitioned, run_config)
+def test_configurable_job_schedule():
+    context = build_schedule_context(
+        scheduled_execution_time=datetime.datetime(2020, 1, 1)
+    )
+    run_request = configurable_job_schedule(context)
+    assert validate_run_config(configurable_job, run_request.run_config)
 ```
 
-If you want to test that a <PyObject object="PartitionedConfig" /> creates the partitions you expect, use the `get_partition_keys` or `get_run_config_for_partition_key` functions:
+If your `@schedule`-decorated function doesn't have a context parameter, you don't need to provide one when invoking it.
 
-```python file=/concepts/partitions_schedules_sensors/partitioned_config_test.py startafter=start_partition_keys endbefore=end_partition_keys
-from dagster import Config
+#### Testing schedules with resources
 
+For schedules which utilize [resources](/concepts/resources), you can provide the necessary resources when invoking the schedule function.
 
-@daily_partitioned_config(start_date=datetime(2020, 1, 1), minute_offset=15)
-def my_offset_partitioned_config(start: datetime, _end: datetime):
-    return {
-        "ops": {
-            "process_data": {
-                "config": {
-                    "start": start.strftime("%Y-%m-%d-%H:%M"),
-                    "end": _end.strftime("%Y-%m-%d-%H:%M"),
-                }
-            }
-        }
-    }
+Below is a test for the `process_data_schedule` that we defined in the [Using resources in schedules](#using-resources-in-schedules) section, which uses the `date_formatter` resource.
 
+```python file=/concepts/resources/pythonic_resources.py startafter=start_test_resource_on_schedule endbefore=end_test_resource_on_schedule dedent=4
+from dagster import build_schedule_context, validate_run_config
 
-class ProcessDataConfig(Config):
-    start: str
-    end: str
-
-
-@op
-def process_data(context, config: ProcessDataConfig):
-    s = config.start
-    e = config.end
-    context.log.info(f"processing data for {s} - {e}")
-
-
-@job(config=my_offset_partitioned_config)
-def do_more_stuff_partitioned():
-    process_data()
-
-
-def test_my_offset_partitioned_config():
-    # test that the partition keys are what you expect
-    keys = my_offset_partitioned_config.get_partition_keys()
-    assert keys[0] == "2020-01-01"
-    assert keys[1] == "2020-01-02"
-
-    # test that the run_config for a partition is valid for do_stuff_partitioned
-    run_config = my_offset_partitioned_config.get_run_config_for_partition_key(keys[0])
-    assert validate_run_config(do_more_stuff_partitioned, run_config)
-
-    # test that the contents of run_config are what you expect
-    assert run_config == {
-        "ops": {
-            "process_data": {
-                "config": {"start": "2020-01-01-00:15", "end": "2020-01-02-00:15"}
-            }
-        }
-    }
+def test_process_data_schedule():
+    context = build_schedule_context(
+        scheduled_execution_time=datetime.datetime(2020, 1, 1)
+    )
+    run_request = process_data_schedule(
+        context, date_formatter=DateFormatter(format="%Y-%m-%d")
+    )
+    assert (
+        run_request.run_config["ops"]["fetch_data"]["config"]["date"]
+        == "2020-01-01"
+    )
 ```
+
+</TabItem>
+</TabGroup>
 
 ---
 
-## Testing partitioned jobs
+## Troubleshooting
 
-To run a partitioned job in-process on a particular partition, supply a value for the `partition_key` argument of <PyObject object="JobDefinition" method="execute_in_process" />. For example:
+Try these steps if you're trying to run a schedule and are running into problems:
 
-```python file=/concepts/partitions_schedules_sensors/partitioned_job_test.py startafter=start endbefore=end
-def test_do_stuff_partitioned():
-    assert do_stuff_partitioned.execute_in_process(partition_key="2020-01-01").success
+- [Verify the schedule is included as a definition](#verify-the-schedule-is-included-as-a-definition)
+- [Verify the schedule has been started](#verify-that-the-schedule-has-been-started)
+- [Verify schedule interval configuration](#verify-schedule-interval-configuration)
+- [Verify dagster-daemon setup](#verify-dagster-daemon-setup)
+
+### Verify the schedule is included as a definition
+
+First, verify that the schedule has been included in a <PyObject object="Definitions" /> object. This ensures that the schedule is detectable and loadable by Dagster tools like the UI and CLI:
+
+```python
+defs = Definitions(
+   assets=[asset_1, asset_2],
+   jobs=[job_1],
+   schedules=[all_assets_job_schedule],
+)
 ```
+
+Refer to the [Code locations documentation](/concepts/code-locations) for more info.
+
+### Verify that the schedule has been started
+
+Next, using the UI, verify the schedule has been started:
+
+1. Open the left sidenav and locate the job attached to the schedule. Schedules that have been started will have a **green clock icon** next to them:
+
+   <Image
+     alt="Started schedule icon next to schedule in left sidenav in the Dagster UI"
+     src="/images/concepts/partitions-schedules-sensors/schedule-started-icon-ui.png"
+     width={1031}
+     height={391}
+   />
+
+   If the schedule appears in the list but doesn't have the green clock icon, click the schedule. On the page that displays, use the **toggle at the top of the page** to mark it as running:
+
+   <Image
+     alt="Start/stop toggle for schedules in Code Locations tab in the Dagster UI"
+     src="/images/concepts/partitions-schedules-sensors/schedule-page-toggle.png"
+     width={1043}
+     height={302}
+   />
+
+2. Next, verify that the UI has loaded the latest version of your schedule code:
+
+   1. Click **Deployment** in the top navigation.
+
+   2. In the **Code locations** tab, click **Reload** (local webserver) or **Redeploy** (Dagster Cloud).
+
+   If the webserver is unable to load the code location - for example, due to a syntax error - an error message with additional info will display in the left UI sidenav.
+
+   If the code location is loaded successfully but the schedule doesn't appear in the list of schedules, verify that the schedule is included in a <PyObject object="Definitions" /> object.
+
+### Verify schedule interval configuration
+
+Clicking the schedule in the left sidenav in the UI opens the **Schedule details** page for the schedule.
+
+If the schedule is running, a **Next tick** will display near the top of the page. This indicates when the schedule is next expected to run:
+
+<Image
+  alt="Next tick attribute highlighted on Schedule details page in the Dagster UI"
+  src="/images/concepts/partitions-schedules-sensors/schedule-details-next-tick.png"
+  width={1043}
+  height={302}
+/>
+
+Verify that the time is what you expect, including the timezone.
+
+### Verify dagster-daemon setup
+
+<Note>This section is applicable to Open Source (OSS) deployments.</Note>
+
+If the schedule interval is correctly configured but runs aren't being created, it's possible that the dagster-daemon process isn't working correctly. If you haven't set up a Dagster daemon yet, refer to the [Deployment guides](/deployment) for more info.
+
+1. First, check that the daemon is running:
+
+   1. In the UI, click **Deployment** in the top navigation.
+   2. Click the **Daemons** tab.
+   3. Locate the **Scheduler** row.
+
+   The daemon process periodically sends out a hearbeat from the scheduler. If the scheduler daemon has a status of **Not running**, this indicates that there's an issue with your daemon deployment. If the daemon ran into an error that resulted in an exception, this error will often display in this tab.
+
+   If there isn't a clear error on this page or if the daemon should be sending heartbeans but isn't, move on to step two.
+
+2. Next, check the logs from the daemon process. The steps to do this will depend on your deployment - for example, if you're using Kubernetes, you'll need to get the logs from the pod that's running the daemon. You should be able to search those logs for the name of your schedule (or `SchedulerDaemon` to see all logs associated with the scheduler) to gain an understanding of what's going wrong.
+
+   If the daemon output contains error indicating the schedule couldn't be found, verify that the daemon is using the same `workspace.yaml` file as the webserver. The daemon does not need to restart in order to pick up changes to the `workspace.yaml` file. Refer to the [Workspace files documentation](/concepts/code-locations/workspace-files) for more info.
+
+   If the logs don't indicate the cause of the issue, move on to step three.
+
+3. Lastly, double-check your schedule code:
+
+   1. In the UI, open the schedule's **Schedule details** page by clicking the schedule in the left sidenav.
+   2. On this page, locate the latest tick for the schedule.
+
+   If there was an error trying to submit runs for the schedule, a red **Failure** badge should display in the **Status** column. Click the badge to display an error and stack trace describing the execution failure.
+
+**Still stuck?** If these steps didn't resolve the issue, reach out in Slack or file an issue on GitHub.
 
 ---
 
