@@ -105,6 +105,15 @@ class S3Config(Config):
     https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-iam-roles.html
     """
 
+    copy_if_not_exists: Optional[str]
+    """Specifiy additional headers passed to strage backend, that enable 'if_not_exists' semantics.
+    
+    https://docs.rs/object_store/0.7.0/object_store/aws/enum.S3CopyIfNotExists.html#variant.Header
+    """
+
+    allow_unsafe_rename: Optional[bool]
+    """Allows tables writes that may conflict with concurrent writers."""
+
 
 class GcsConfig(Config):
     """Storage configuration for Google Cloud Storage object store."""
@@ -122,3 +131,63 @@ class GcsConfig(Config):
 
     application_credentials: Optional[str]
     """Application credentials path"""
+
+
+class ClientConfig(Config):
+    """Configuration for http client interacting with storage APIs."""
+
+    allow_http: Optional[bool]
+    """Allow non-TLS, i.e. non-HTTPS connections"""
+
+    allow_invalid_certificates: Optional[bool]
+    """Skip certificate validation on https connections.
+
+    ## Warning
+    
+    You should think very carefully before using this method.
+    If invalid certificates are trusted, any certificate for any site will be trusted for use.
+    This includes expired certificates. This introduces significant vulnerabilities,
+    and should only be used as a last resort or for testing
+    """
+
+    connect_timeout: Optional[int]
+    """Timeout for only the connect phase of a Client"""
+
+    default_content_type: Optional[str]
+    """default CONTENT_TYPE for uploads"""
+
+    http1_only: Optional[bool]
+    """Only use http1 connections"""
+
+    http2_keep_alive_interval: Optional[int]
+    """Interval for HTTP2 Ping frames should be sent to keep a connection alive."""
+
+    http2_keep_alive_timeout: Optional[int]
+    """Timeout for receiving an acknowledgement of the keep-alive ping."""
+
+    http2_keep_alive_while_idle: Optional[int]
+    """Enable HTTP2 keep alive pings for idle connections"""
+
+    http2_only: Optional[bool]
+    """Only use http2 connections"""
+
+    pool_idle_timeout: Optional[int]
+    """The pool max idle timeout
+
+    This is the length of time an idle connection will be kept alive
+    """
+
+    pool_max_idle_per_host: Optional[int]
+    """maximum number of idle connections per host"""
+
+    proxy_url: Optional[str]
+    """HTTP proxy to use for requests"""
+
+    timeout: Optional[int]
+    """Request timeout
+
+    The timeout is applied from when the request starts connecting until the response body has finished
+    """
+
+    user_agent: Optional[str]
+    """User-Agent header to be used by this client"""

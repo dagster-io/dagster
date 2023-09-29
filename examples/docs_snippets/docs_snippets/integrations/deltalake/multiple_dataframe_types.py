@@ -27,7 +27,7 @@ from dagster_deltalake_polars import DeltaLakePolarsTypeHandler
 from dagster import Definitions
 
 
-class DeltaLakePandasPySparkPolarsIOManager(DeltaLakeIOManager):
+class DeltaLakePandasPyArrowPolarsIOManager(DeltaLakeIOManager):
     @staticmethod
     def type_handlers():
         """type_handlers should return a list of the TypeHandlers that the I/O manager can use.
@@ -52,7 +52,7 @@ class DeltaLakePandasPySparkPolarsIOManager(DeltaLakeIOManager):
 defs = Definitions(
     assets=[iris_dataset, rose_dataset],
     resources={
-        "io_manager": DeltaLakePandasPySparkPolarsIOManager(
+        "io_manager": DeltaLakePandasPyArrowPolarsIOManager(
             root_uri="path/todeltalake",
             storage_options=LocalConfig(),
             schema="iris",
