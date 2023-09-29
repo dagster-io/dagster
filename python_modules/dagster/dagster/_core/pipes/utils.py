@@ -61,7 +61,7 @@ class PipesFileContextInjector(PipesContextInjector):
 
         Yields:
             PipesParams: A dict of parameters that can be used by the external process to locate and
-                load the injected context data.
+            load the injected context data.
         """
         with open(self._path, "w") as input_stream:
             json.dump(context_data, input_stream)
@@ -88,7 +88,7 @@ class PipesTempFileContextInjector(PipesContextInjector):
 
         Yields:
             PipesParams: A dict of parameters that can be used by the external process to locate and
-                load the injected context data.
+            load the injected context data.
         """
         with tempfile.TemporaryDirectory() as tempdir:
             with PipesFileContextInjector(
@@ -113,7 +113,7 @@ class PipesEnvContextInjector(PipesContextInjector):
 
         Yields:
             PipesParams: A dict of parameters that can be used by the external process to locate and
-                load the injected context data.
+            load the injected context data.
         """
         yield {PipesDefaultContextLoader.DIRECT_KEY: context_data}
 
@@ -143,7 +143,7 @@ class PipesFileMessageReader(PipesMessageReader):
 
         Yields:
             PipesParams: A dict of parameters that specifies where a pipes process should write
-                pipes protocol messages.
+            pipes protocol messages.
         """
         is_task_complete = Event()
         thread = None
@@ -184,7 +184,7 @@ class PipesTempFileMessageReader(PipesMessageReader):
 
         Yields:
             PipesParams: A dict of parameters that specifies where a pipes process should write
-                pipes protocol messages.
+            pipes protocol messages.
         """
         with tempfile.TemporaryDirectory() as tempdir:
             with PipesFileMessageReader(
@@ -230,7 +230,7 @@ class PipesBlobStoreMessageReader(PipesMessageReader):
 
         Yields:
             PipesParams: A dict of parameters that specifies where a pipes process should write
-                pipes protocol message chunks.
+            pipes protocol message chunks.
         """
         with self.get_params() as params:
             is_task_complete = Event()
@@ -259,7 +259,7 @@ class PipesBlobStoreMessageReader(PipesMessageReader):
 
         Yields:
             PipesParams: A dict of parameters that specifies where a pipes process should write
-                pipes protocol message chunks.
+            pipes protocol message chunks.
         """
 
     @abstractmethod
