@@ -1,5 +1,5 @@
 import functools
-from collections import deque
+from collections import defaultdict, deque
 from datetime import datetime
 from heapq import heapify, heappop, heappush
 from typing import (
@@ -169,7 +169,7 @@ class AssetGraph:
         code_versions_by_key: Dict[AssetKey, Optional[str]] = {}
         is_observable_by_key: Dict[AssetKey, bool] = {}
         auto_observe_interval_minutes_by_key: Dict[AssetKey, Optional[float]] = {}
-        required_assets_and_checks_by_key: Dict[SpecKey, AbstractSet[SpecKey]] = {}
+        required_assets_and_checks_by_key: Dict[SpecKey, AbstractSet[SpecKey]] = defaultdict(set)
 
         for asset in all_assets:
             if isinstance(asset, SourceAsset):
@@ -194,7 +194,13 @@ class AssetGraph:
                     all_required_keys = {*asset.check_keys, *asset.keys}
                     for key in asset.keys:
                         required_multi_asset_sets_by_key[key] = asset.keys
+                    for key in all_required_keys:
                         required_assets_and_checks_by_key[key] = all_required_keys
+                elif len(asset.keys) == 1 and asset.check_specs:
+                    required_keys = {asset.key, *asset.check_keys}
+                    for key in required_keys:
+                        required_assets_and_checks_by_key[key] = required_keys
+
                 code_versions_by_key.update(asset.code_versions_by_key)
 
         return InternalAssetGraph(
