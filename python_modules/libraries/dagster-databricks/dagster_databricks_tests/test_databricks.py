@@ -277,13 +277,13 @@ class TestDatabricksClientHasCredentials:
         client = DatabricksClientResource(
             host="https://some.host",
             azure_credentials=AzureServicePrincipalCredentials(
-                arm_client_id="test-client-id",
-                arm_client_secret="test-client-secret",
-                arm_tenant_id="test-tenant-id",
+                azure_client_id="test-client-id",
+                azure_client_secret="test-client-secret",
+                azure_tenant_id="test-tenant-id",
             ),
         )
-        assert client.azure_credentials.arm_client_id == "test-client-id"
-        assert client.azure_credentials.arm_client_secret == "test-client-secret"
-        assert client.azure_credentials.arm_tenant_id == "test-tenant-id"
+        assert client.azure_credentials.azure_client_id == "test-client-id"
+        assert client.azure_credentials.azure_client_secret == "test-client-secret"
+        assert client.azure_credentials.azure_tenant_id == "test-tenant-id"
         assert client.token is None
         assert client.oauth_credentials is None

@@ -29,9 +29,9 @@ class AzureServicePrincipalCredentials(Config):
     See https://learn.microsoft.com/en-us/azure/databricks/dev-tools/auth#--azure-service-principal-authentication.
     """
 
-    arm_client_id: str = Field(description="The client ID of the Azure service principal")
-    arm_client_secret: str = Field(description="The client secret of the Azure service principal")
-    arm_tenant_id: str = Field(description="The tenant ID of the Azure service principal")
+    azure_client_id: str = Field(description="The client ID of the Azure service principal")
+    azure_client_secret: str = Field(description="The client secret of the Azure service principal")
+    azure_tenant_id: str = Field(description="The tenant ID of the Azure service principal")
 
 
 class DatabricksClientResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
@@ -91,9 +91,9 @@ class DatabricksClientResource(ConfigurableResource, IAttachDifferentObjectToOpC
             client_secret = None
 
         if self.azure_credentials:
-            azure_client_id = self.azure_credentials.arm_client_id
-            azure_client_secret = self.azure_credentials.arm_client_secret
-            azure_tenant_id = self.azure_credentials.arm_tenant_id
+            azure_client_id = self.azure_credentials.azure_client_id
+            azure_client_secret = self.azure_credentials.azure_client_secret
+            azure_tenant_id = self.azure_credentials.azure_tenant_id
         else:
             azure_client_id = None
             azure_client_secret = None
