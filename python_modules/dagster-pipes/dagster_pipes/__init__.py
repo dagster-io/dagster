@@ -793,11 +793,11 @@ def init_dagster_pipes(
 
     Args:
         context_loader (Optional[PipesContextLoader]): The context loader to use. Defaults to
-            :py:class:`DefaultPipesContextLoader`.
+            :py:class:`PipesDefaultContextLoader`.
         message_writer (Optional[PipesMessageWriter]): The message writer to use. Defaults to
             :py:class:`PipesDefaultMessageWriter`.
         params_loader (Optional[PipesParamsLoader]): The params loader to use. Defaults to
-            :py:class:`EnvVarPipesParamsLoader`.
+            :py:class:`PipesEnvVarParamsLoader`.
 
     Returns:
         PipesContext: The initialized context.
@@ -826,7 +826,7 @@ def init_dagster_pipes(
 class PipesContext:
     """The context for a Dagster Pipes process.
 
-    This class is analogous to :py:class:`OpExecutionContext` on the Dagster side of the Pipes
+    This class is analogous to :py:class:`~dagster.OpExecutionContext` on the Dagster side of the Pipes
     connection. It provides access to information such as the asset key(s) and partition key(s) in
     scope for the current step. It also provides methods for logging and emitting results that will
     be streamed back to Dagster.

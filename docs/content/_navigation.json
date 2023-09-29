@@ -986,6 +986,10 @@
             "path": "/_apidocs/utilities"
           },
           {
+            "title": "Pipes",
+            "path": "/_apidocs/pipes"
+          },
+          {
             "title": "Internals",
             "path": "/_apidocs/internals"
           }
@@ -994,6 +998,10 @@
       {
         "title": "Libraries",
         "children": [
+          {
+            "title": "Dagster Pipes (dagster-pipes)",
+            "path": "/_apidocs/libraries/dagster-pipes"
+          },
           {
             "title": "Airbyte (dagster-airbyte)",
             "path": "/_apidocs/libraries/dagster-airbyte"
