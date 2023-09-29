@@ -92,8 +92,14 @@ def test_asset_check_execution(dbt_commands: List[List[str]]) -> None:
     assert result.success
 
     events = []
+    invocation_id = ""
     for dbt_command in dbt_commands:
-        events += list(dbt.cli(dbt_command, manifest=manifest_asset_checks_json).stream())
+        dbt_cli_invocation = dbt.cli(dbt_command, manifest=manifest_asset_checks_json)
+
+        events += list(dbt_cli_invocation.stream())
+        invocation_id = dbt_cli_invocation.get_artifact("run_results.json")["metadata"][
+            "invocation_id"
+        ]
 
     assert (
         AssetCheckResult(
@@ -104,6 +110,7 @@ def test_asset_check_execution(dbt_commands: List[List[str]]) -> None:
                 "unique_id": (
                     "test.test_dagster_asset_checks.unique_customers_customer_id.c5af1ff4b1"
                 ),
+                "invocation_id": invocation_id,
                 "status": "pass",
             },
             severity=AssetCheckSeverity.WARN,
@@ -119,6 +126,7 @@ def test_asset_check_execution(dbt_commands: List[List[str]]) -> None:
                 "unique_id": (
                     "test.test_dagster_asset_checks.not_null_customers_customer_id.5c9bf9911d"
                 ),
+                "invocation_id": invocation_id,
                 "status": "pass",
             },
             severity=AssetCheckSeverity.ERROR,
