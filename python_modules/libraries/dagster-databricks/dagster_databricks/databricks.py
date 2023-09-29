@@ -36,7 +36,7 @@ class AuthTypeEnum(Enum):
     AZURE_CLIENT_SECRET = "azure-client-secret"
 
 
-def _check_credentials(
+def _assert_valid_credentials_combos(
     token: Optional[str],
     oauth_client_id: Optional[str] = None,
     oauth_client_secret: Optional[str] = None,
@@ -74,7 +74,7 @@ def _get_auth_type(
     azure_tenant_id: Optional[str] = None,
 ) -> AuthTypeEnum:
     """Get the type of authentication used to initialize the WorkspaceClient"""
-    _check_credentials(
+    _assert_valid_credentials_combos(
         token,
         oauth_client_id,
         oauth_client_secret,
@@ -113,7 +113,7 @@ class DatabricksClient:
         self.host = host
         self.workspace_id = workspace_id
 
-        auth_type = _get_auth_type(
+        self.auth_type = _get_auth_type(
             token,
             oauth_client_id,
             oauth_client_secret,
@@ -129,7 +129,7 @@ class DatabricksClient:
             client_secret=oauth_client_secret,
             product="dagster-databricks",
             product_version=__version__,
-            auth_type=auth_type.value,
+            auth_type=self.auth_type.value,
             azure_client_id=azure_client_id,
             azure_client_secret=azure_client_secret,
             azure_tenant_id=azure_tenant_id,
