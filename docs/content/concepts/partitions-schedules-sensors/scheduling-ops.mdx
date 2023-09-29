@@ -228,7 +228,7 @@ Dagster's [resources](/concepts/resources) system can be used with schedules to 
 
 To specify resource dependencies, annotate the resource as a parameter to the schedule's function. Resources are provided by attaching them to your <PyObject object="Definitions" /> call.
 
-Here, a resource is provided which helps a schedule generate a date string:
+Here, a resource is provided that helps a schedule generate a date string:
 
 ```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_on_schedule endbefore=end_new_resource_on_schedule dedent=4
 from dagster import (
