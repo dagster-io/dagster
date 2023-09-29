@@ -6,6 +6,7 @@ from subprocess import PIPE, STDOUT, Popen
 from typing import Any, Dict, Generator, List, Optional
 
 from dagster import ConfigurableResource, PermissiveConfig, get_dagster_logger
+from dagster._annotations import experimental
 from dagster._utils.env import environ
 from pydantic import Field
 from sling import Sling  # type: ignore
@@ -15,6 +16,7 @@ logger = get_dagster_logger()
 
 class SlingMode(str, Enum):
     """The mode to use when syncing.
+
     See the Sling docs for more information: https://docs.slingdata.io/sling-cli/running-tasks#modes.
     """
 
@@ -28,21 +30,25 @@ class SlingSourceConnection(PermissiveConfig):
     """A Sling Source Connection defines the source connection used by :py:class:`~dagster_elt.sling.SlingResource`.
 
     Examples:
+
         Creating a Sling Source for a file, such as CSV or JSON:
 
         .. code-block:: python
+
              source = SlingSourceConnection(type="file")
 
         Create a Sling Source for a Postgres database, using a connection string:
 
         .. code-block:: python
+
             source = SlingTargetConnection(type="postgres", connection_string=EnvVar("POSTGRES_CONNECTION_STRING"))
             source = SlingSourceConnection(type="postgres", connection_string="postgresql://user:password@host:port/schema"
 
         Create a Sling Source for a Postgres database, using keyword arguments, as described here:
         https://docs.slingdata.io/connections/database-connections/postgres
 
-        .. code-block::python
+        .. code-block:: python
+
             source = SlingTargetConnection(type="postgres", host="host", user="hunter42", password=EnvVar("POSTGRES_PASSWORD"))
 
     """
@@ -60,11 +66,13 @@ class SlingTargetConnection(PermissiveConfig):
         Creating a Sling Target for a file, such as CSV or JSON:
 
         .. code-block:: python
+
              source = SlingTargetConnection(type="file")
 
         Create a Sling Source for a Postgres database, using a connection string:
 
         .. code-block:: python
+
             source = SlingTargetConnection(type="postgres", connection_string="postgresql://user:password@host:port/schema"
             source = SlingTargetConnection(type="postgres", connection_string=EnvVar("POSTGRES_CONNECTION_STRING"))
 
@@ -72,6 +80,7 @@ class SlingTargetConnection(PermissiveConfig):
         https://docs.slingdata.io/connections/database-connections/postgres
 
         .. code-block::python
+
             source = SlingTargetConnection(type="postgres", host="host", user="hunter42", password=EnvVar("POSTGRES_PASSWORD"))
 
 
@@ -85,38 +94,29 @@ class SlingTargetConnection(PermissiveConfig):
     )
 
 
+@experimental
 class SlingResource(ConfigurableResource):
     """Resource for interacting with the Sling package.
 
     Examples:
+
         .. code-block:: python
-        from dagster import Definitions, asset
-        from dagster_etl.sling import SlingResource, build_sling_asset
 
-        asset_def = build_sling_asset(
-            source_stream="schema.source_table",
-            target_object="warehouse.dest_table",
-            mode=SlingMode.INCREMENTAL,
-            primary_key="event_id",
-        )
+            from dagster_etl.sling import SlingResource
+            sling_resource = SlingResource(
+                source_connection=SlingSourceConnection(
+                    type="postgres", connection_string=EnvVar("POSTGRES_CONNECTION_STRING")
+                ),
+                target_connection=SlingTargetConnection(
+                    type="snowflake",
+                    host="host",
+                    user="user",
+                    database="database",
+                    password="password",
+                    role="role",
+                ),
+            )
 
-        sling_resource = SlingResource(
-            source_connection=SlingSourceConnection(
-                type="postgres",
-                connection_string=EnvVar("POSTGRES_CONNECTION_STRING")),
-            target_connection=SlingTargetConnection(
-                type="snowflake",
-                host=<host>,
-                user=<user>,
-                database=<database>,
-                password=<password>,
-                role=<role>")
-        )
-
-        defs = Definitions(
-            assets=[asset_def],
-            resources={"sling": sling_resource}
-        )
     """
 
     source_connection: SlingSourceConnection

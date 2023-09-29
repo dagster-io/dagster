@@ -9,9 +9,12 @@ from dagster import (
     multi_asset,
 )
 
+from dagster._annotations import experimental
+
 from dagster_embedded_elt.sling.resources import SlingMode, SlingResource
 
 
+@experimental
 def build_sling_asset(
     asset_spec: AssetSpec,
     source_stream: str,
