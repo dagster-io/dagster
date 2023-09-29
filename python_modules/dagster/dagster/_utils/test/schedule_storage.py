@@ -729,6 +729,17 @@ class TestScheduleStorage:
         assert res[0].evaluation_id == 10
         assert res[0].evaluation.num_requested == 1
 
+        res = storage.get_auto_materialize_evaluations_for_evaluation_id(evaluation_id=10)
+
+        assert len(res) == 2
+        assert res[0].evaluation.asset_key == AssetKey("asset_one")
+        assert res[0].evaluation_id == 10
+        assert res[0].evaluation.num_requested == 0
+
+        assert res[1].evaluation.asset_key == AssetKey("asset_two")
+        assert res[1].evaluation_id == 10
+        assert res[1].evaluation.num_requested == 1
+
         storage.add_auto_materialize_asset_evaluations(
             evaluation_id=11,
             asset_evaluations=[

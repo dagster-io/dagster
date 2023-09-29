@@ -742,6 +742,13 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
             asset_key, limit, cursor
         )
 
+    def get_auto_materialize_evaluations_for_evaluation_id(
+        self, evaluation_id: int
+    ) -> Sequence["AutoMaterializeAssetEvaluationRecord"]:
+        return self._storage.schedule_storage.get_auto_materialize_evaluations_for_evaluation_id(
+            evaluation_id
+        )
+
     def purge_asset_evaluations(self, before: float):
         return self._storage.schedule_storage.purge_asset_evaluations(before)
 
