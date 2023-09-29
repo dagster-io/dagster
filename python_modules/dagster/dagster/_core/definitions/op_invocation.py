@@ -391,7 +391,7 @@ def _type_check_output_wrapper(
             for event in gen:
                 if isinstance(
                     event,
-                    (AssetMaterialization, AssetObservation, ExpectationResult, MaterializeResult),
+                    (AssetMaterialization, AssetObservation, ExpectationResult),
                 ):
                     yield event
                 else:
