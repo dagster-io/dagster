@@ -19,7 +19,7 @@ from typing import (
 import dagster._check as check
 import dagster._seven as seven
 from dagster._annotations import PublicAttr, deprecated, experimental_param, public
-from dagster._core.definitions.data_version import DATA_VERSION_TAG, DataVersion
+from dagster._core.definitions.data_version import DataVersion
 from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX, SYSTEM_TAG_PREFIX
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import NamedTupleSerializer
@@ -616,21 +616,6 @@ class AssetMaterialization(
             description=description,
             metadata={"path": MetadataValue.path(path)},
         )
-
-    def get_data_version(self) -> Optional[str]:
-        if not self.tags:
-            return None
-
-        version_value = self.tags.get(DATA_VERSION_TAG)
-
-        if version_value is None:
-            return None
-
-        if not isinstance(version_value, str):
-            # be defensive in case bad values come from underlying storage
-            return None
-
-        return version_value
 
 
 @deprecated(

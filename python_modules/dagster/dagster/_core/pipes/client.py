@@ -62,7 +62,6 @@ class PipesClientCompletedInvocation:
             for check_result in self._results
             if isinstance(check_result, AssetCheckResult)
         ]
-        # import code; code.interact(local=locals())
 
         check.invariant(
             len(mat_results) == 1,
@@ -77,8 +76,6 @@ class PipesClientCompletedInvocation:
                     "Check result specified an asset key that is not part of the returned"
                     " materialization. If this was deliberate, use get_results() instead.",
                 )
-
-        # data_version_str = mat_result.get_data_version()
 
         if check_results:
             return mat_result._replace(
