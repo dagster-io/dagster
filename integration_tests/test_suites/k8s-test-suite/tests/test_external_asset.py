@@ -11,7 +11,7 @@ from dagster._core.pipes.utils import PipesEnvContextInjector, open_pipes_sessio
 from dagster_k8s import execute_k8s_job
 from dagster_k8s.client import DagsterKubernetesClient
 from dagster_k8s.pipes import PipesK8sClient, PipesK8sPodLogsMessageReader
-from dagster_pipes import DefaultPipesContextLoader, PipesContextData
+from dagster_pipes import PipesContextData, PipesDefaultContextLoader
 from dagster_test.test_project import (
     get_test_project_docker_image,
 )
@@ -80,7 +80,7 @@ class PipesConfigMapContextInjector(PipesContextInjector):
         )
         self._client.core_api.create_namespaced_config_map(self._namespace, context_config_map_body)
         try:
-            yield {DefaultPipesContextLoader.FILE_PATH_KEY: "/mnt/dagster/context.json"}
+            yield {PipesDefaultContextLoader.FILE_PATH_KEY: "/mnt/dagster/context.json"}
         finally:
             self._client.core_api.delete_namespaced_config_map(self._cm_name, self._namespace)
 
