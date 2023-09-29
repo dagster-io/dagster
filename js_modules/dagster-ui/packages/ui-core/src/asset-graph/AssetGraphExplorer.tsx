@@ -17,6 +17,7 @@ import {useHistory} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {useFeatureFlags} from '../app/Flags';
+import {AssetLiveDataRefresh} from '../asset-data/AssetLiveDataProvider';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {LaunchAssetObservationButton} from '../assets/LaunchAssetObservationButton';
 import {AssetKey} from '../assets/types';
@@ -428,6 +429,7 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
 
           <Box style={{position: 'absolute', right: 12, top: 8}}>
             <Box flex={{alignItems: 'center', gap: 12}}>
+              <AssetLiveDataRefresh />
               <LaunchAssetObservationButton
                 preferredJobName={explorerPath.pipelineName}
                 scope={

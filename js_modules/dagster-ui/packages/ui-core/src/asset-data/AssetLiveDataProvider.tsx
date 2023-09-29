@@ -14,6 +14,8 @@ import {AssetKeyInput} from '../graphql/types';
 import {isDocumentVisible, useDocumentVisibility} from '../hooks/useDocumentVisibility';
 import {useDidLaunchEvent} from '../runs/RunUtils';
 
+import {AssetDataRefreshButton} from './AssetDataRefreshButton';
+
 const _assetKeyListeners: Record<string, Array<DataForNodeListener>> = {};
 let providerListener = (_key: string, _data?: LiveDataForNode) => {};
 const _cache: Record<string, LiveDataForNode> = {};
@@ -56,11 +58,13 @@ export function useAssetsLiveData(assetKeys: AssetKeyInput[]) {
 
   return {
     liveDataByNode: data,
+
     refresh: React.useCallback(() => {
       _resetLastFetchedOrRequested(assetKeys);
       setNeedsImmediateFetch();
       setIsRefreshing(true);
     }, [setNeedsImmediateFetch, assetKeys]),
+
     refreshing: React.useMemo(() => {
       for (const key of assetKeys) {
         const stringKey = tokenForAssetKey(key);
@@ -120,6 +124,16 @@ const AssetLiveDataContext = React.createContext<{
   onUnsubscribed: () => {},
 });
 
+const AssetLiveDataRefreshContext = React.createContext<{
+  isGloballyRefreshing: boolean;
+  oldestDataTimestamp: number;
+  refresh: () => void;
+}>({
+  isGloballyRefreshing: false,
+  oldestDataTimestamp: Infinity,
+  refresh: () => {},
+});
+
 // Map of asset keys to their last fetched time and last requested time
 const lastFetchedOrRequested: Record<
   string,
@@ -143,6 +157,28 @@ export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) =
 
   const isDocumentVisible = useDocumentVisibility();
 
+  const [isGloballyRefreshing, setIsGloballyRefreshing] = React.useState(false);
+  const [oldestDataTimestamp, setOldestDataTimestamp] = React.useState(0);
+
+  const onUpdatingOrUpdated = React.useCallback(() => {
+    const allAssetKeys = Object.keys(_assetKeyListeners).filter(
+      (key) => _assetKeyListeners[key]?.length,
+    );
+    let isRefreshing = allAssetKeys.length ? true : false;
+    let oldestDataTimestamp = Infinity;
+    for (const key of allAssetKeys) {
+      if (lastFetchedOrRequested[key]?.fetched) {
+        isRefreshing = false;
+      }
+      oldestDataTimestamp = Math.min(
+        oldestDataTimestamp,
+        lastFetchedOrRequested[key]?.fetched ?? Infinity,
+      );
+    }
+    setIsGloballyRefreshing(isRefreshing);
+    setOldestDataTimestamp(oldestDataTimestamp === Infinity ? 0 : oldestDataTimestamp);
+  }, []);
+
   React.useEffect(() => {
     if (!isDocumentVisible) {
       return;
@@ -150,19 +186,19 @@ export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) =
     // Check for assets to fetch every 5 seconds to simplify logic
     // This means assets will be fetched at most 5 + SUBSCRIPTION_IDLE_POLL_RATE after their first fetch
     // but then will be fetched every SUBSCRIPTION_IDLE_POLL_RATE after that
-    const interval = setInterval(() => fetchData(client), 5000);
-    fetchData(client);
+    const interval = setInterval(() => fetchData(client, onUpdatingOrUpdated), 5000);
+    fetchData(client, onUpdatingOrUpdated);
     return () => {
       clearInterval(interval);
     };
-  }, [client, isDocumentVisible]);
+  }, [client, isDocumentVisible, onUpdatingOrUpdated]);
 
   React.useEffect(() => {
     if (!needsImmediateFetch) {
       return;
     }
     const timeout = setTimeout(() => {
-      fetchData(client);
+      fetchData(client, onUpdatingOrUpdated);
       setNeedsImmediateFetch(false);
       // Wait BATCHING_INTERVAL before doing fetch in case the component is unmounted quickly (eg. in the case of scrolling/filtering quickly)
     }, BATCHING_INTERVAL);
@@ -240,7 +276,19 @@ export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) =
         [],
       )}
     >
-      {children}
+      <AssetLiveDataRefreshContext.Provider
+        value={{
+          isGloballyRefreshing,
+          oldestDataTimestamp,
+          refresh: React.useCallback(() => {
+            setIsGloballyRefreshing(true);
+            _resetLastFetchedOrRequested();
+            setNeedsImmediateFetch(true);
+          }, [setNeedsImmediateFetch]),
+        }}
+      >
+        {children}
+      </AssetLiveDataRefreshContext.Provider>
     </AssetLiveDataContext.Provider>
   );
 };
@@ -250,6 +298,7 @@ async function _batchedQueryAssets(
   assetKeys: AssetKeyInput[],
   client: ApolloClient<any>,
   setData: (data: Record<string, LiveDataForNode>) => void,
+  onUpdatingOrUpdated: () => void,
 ) {
   // Bail if the document isn't visible
   if (!assetKeys.length || isFetching) {
@@ -263,6 +312,7 @@ async function _batchedQueryAssets(
       requested: requestTime,
     };
   });
+  onUpdatingOrUpdated();
   const data = await _queryAssetKeys(client, assetKeys);
   const fetchedTime = Date.now();
   assetKeys.forEach((key) => {
@@ -271,10 +321,11 @@ async function _batchedQueryAssets(
     };
   });
   setData(data);
+  onUpdatingOrUpdated();
   isFetching = false;
   const nextAssets = _determineAssetsToFetch();
   if (nextAssets.length) {
-    _batchedQueryAssets(nextAssets, client, setData);
+    _batchedQueryAssets(nextAssets, client, setData, onUpdatingOrUpdated);
   }
 }
 
@@ -333,19 +384,24 @@ function _determineAssetsToFetch() {
   return assetsWithoutData.concat(assetsToFetch).slice(0, BATCH_SIZE);
 }
 
-function fetchData(client: ApolloClient<any>) {
-  _batchedQueryAssets(_determineAssetsToFetch(), client, (data) => {
-    Object.entries(data).forEach(([key, assetData]) => {
-      const listeners = _assetKeyListeners[key];
-      providerListener(key, assetData);
-      if (!listeners) {
-        return;
-      }
-      listeners.forEach((listener) => {
-        listener(key, assetData);
+function fetchData(client: ApolloClient<any>, onUpdatingOrUpdated: () => void) {
+  _batchedQueryAssets(
+    _determineAssetsToFetch(),
+    client,
+    (data) => {
+      Object.entries(data).forEach(([key, assetData]) => {
+        const listeners = _assetKeyListeners[key];
+        providerListener(key, assetData);
+        if (!listeners) {
+          return;
+        }
+        listeners.forEach((listener) => {
+          listener(key, assetData);
+        });
       });
-    });
-  });
+    },
+    onUpdatingOrUpdated,
+  );
 }
 
 function getAllAssetKeysWithListeners(): AssetKeyInput[] {
@@ -369,4 +425,17 @@ export function _setCacheEntryForTest(assetKey: AssetKeyInput, data?: LiveDataFo
       listener(stringKey, data);
     });
   }
+}
+
+export function AssetLiveDataRefresh() {
+  const {isGloballyRefreshing, oldestDataTimestamp, refresh} = React.useContext(
+    AssetLiveDataRefreshContext,
+  );
+  return (
+    <AssetDataRefreshButton
+      isRefreshing={isGloballyRefreshing}
+      oldestDataTimestamp={oldestDataTimestamp}
+      onRefresh={refresh}
+    />
+  );
 }

@@ -36,7 +36,7 @@ export const RefreshableCountdown = (props: Props) => {
   );
 };
 
-const RefreshButton = styled.button`
+export const RefreshButton = styled.button`
   border: none;
   cursor: pointer;
   padding: 8px;
