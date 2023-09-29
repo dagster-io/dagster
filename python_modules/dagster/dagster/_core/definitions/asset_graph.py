@@ -1,5 +1,5 @@
 import functools
-from collections import deque
+from collections import defaultdict, deque
 from datetime import datetime
 from heapq import heapify, heappop, heappush
 from typing import (
@@ -51,7 +51,7 @@ from .time_window_partitions import (
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 
-SpecKey = Union[AssetKey, AssetCheckKey]
+AssetKeyOrCheckKey = Union[AssetKey, AssetCheckKey]
 
 
 class ParentsPartitionsResult(NamedTuple):
@@ -82,7 +82,9 @@ class AssetGraph:
         code_versions_by_key: Mapping[AssetKey, Optional[str]],
         is_observable_by_key: Mapping[AssetKey, bool],
         auto_observe_interval_minutes_by_key: Mapping[AssetKey, Optional[float]],
-        required_assets_and_checks_by_key: Mapping[SpecKey, AbstractSet[SpecKey]],
+        required_assets_and_checks_by_key: Mapping[
+            AssetKeyOrCheckKey, AbstractSet[AssetKeyOrCheckKey]
+        ],
     ):
         self._asset_dep_graph = asset_dep_graph
         self._source_asset_keys = source_asset_keys
@@ -169,7 +171,9 @@ class AssetGraph:
         code_versions_by_key: Dict[AssetKey, Optional[str]] = {}
         is_observable_by_key: Dict[AssetKey, bool] = {}
         auto_observe_interval_minutes_by_key: Dict[AssetKey, Optional[float]] = {}
-        required_assets_and_checks_by_key: Dict[SpecKey, AbstractSet[SpecKey]] = {}
+        required_assets_and_checks_by_key: Dict[
+            AssetKeyOrCheckKey, AbstractSet[AssetKeyOrCheckKey]
+        ] = defaultdict(set)
 
         for asset in all_assets:
             if isinstance(asset, SourceAsset):
@@ -194,7 +198,13 @@ class AssetGraph:
                     all_required_keys = {*asset.check_keys, *asset.keys}
                     for key in asset.keys:
                         required_multi_asset_sets_by_key[key] = asset.keys
+                    for key in all_required_keys:
                         required_assets_and_checks_by_key[key] = all_required_keys
+                elif len(asset.keys) == 1 and asset.check_specs and not asset.can_subset:
+                    required_keys = {asset.key, *asset.check_keys}
+                    for key in required_keys:
+                        required_assets_and_checks_by_key[key] = required_keys
+
                 code_versions_by_key.update(asset.code_versions_by_key)
 
         return InternalAssetGraph(
@@ -501,7 +511,9 @@ class AssetGraph:
             return self._required_multi_asset_sets_by_key[asset_key]
         return set()
 
-    def get_required_asset_and_check_keys(self, key: SpecKey) -> AbstractSet[SpecKey]:
+    def get_required_asset_and_check_keys(
+        self, key: AssetKeyOrCheckKey
+    ) -> AbstractSet[AssetKeyOrCheckKey]:
         return self._required_assets_and_checks_by_key.get(key, set())
 
     def get_code_version(self, asset_key: AssetKey) -> Optional[str]:
@@ -695,7 +707,9 @@ class InternalAssetGraph(AssetGraph):
         code_versions_by_key: Mapping[AssetKey, Optional[str]],
         is_observable_by_key: Mapping[AssetKey, bool],
         auto_observe_interval_minutes_by_key: Mapping[AssetKey, Optional[float]],
-        required_assets_and_checks_by_key: Mapping[SpecKey, AbstractSet[SpecKey]],
+        required_assets_and_checks_by_key: Mapping[
+            AssetKeyOrCheckKey, AbstractSet[AssetKeyOrCheckKey]
+        ],
     ):
         super().__init__(
             asset_dep_graph=asset_dep_graph,
