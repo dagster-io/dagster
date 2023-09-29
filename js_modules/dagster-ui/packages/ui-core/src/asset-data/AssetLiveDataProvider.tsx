@@ -205,7 +205,7 @@ export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) =
     return () => {
       clearTimeout(timeout);
     };
-  }, [client, needsImmediateFetch]);
+  }, [client, needsImmediateFetch, onUpdatingOrUpdated]);
 
   React.useEffect(() => {
     providerListener = (stringKey, assetData) => {

@@ -1,4 +1,4 @@
-import {Box, Button, Colors, Icon, RefreshButton, Tooltip} from '@dagster-io/ui-components';
+import {Box, Button, Colors, Icon, Tooltip} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import updateLocale from 'dayjs/plugin/updateLocale';
