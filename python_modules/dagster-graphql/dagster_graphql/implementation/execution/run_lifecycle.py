@@ -88,7 +88,7 @@ def create_valid_pipeline_run(
         ),
         asset_selection=(
             frozenset(execution_params.selector.asset_selection)
-            if execution_params.selector.asset_selection is not None
+            if execution_params.selector.asset_selection
             else None
         ),
         asset_check_selection=(

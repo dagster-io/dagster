@@ -197,6 +197,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
         all_check_keys = {spec.key for spec in (check_specs_by_output_name or {}).values()}
 
+        # NOTE: this logic mirrors subsetting at the asset layer. This is ripe for consolidation.
         if selected_asset_keys is None and selected_asset_check_keys is None:
             # if no selections, include everything
             self._selected_asset_keys = all_asset_keys

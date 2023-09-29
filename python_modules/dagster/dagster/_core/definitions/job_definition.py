@@ -1024,18 +1024,12 @@ class JobDefinition(IHasInternalInit):
 
     @property
     def asset_selection(self) -> Optional[AbstractSet[AssetKey]]:
-        return (
-            self.asset_selection_data.asset_selection
-            if self.asset_selection_data is not None
-            else None
-        )
+        return self.asset_selection_data.asset_selection if self.asset_selection_data else None
 
     @property
     def asset_check_selection(self) -> Optional[AbstractSet[AssetCheckKey]]:
         return (
-            self.asset_selection_data.asset_check_selection
-            if self.asset_selection_data is not None
-            else None
+            self.asset_selection_data.asset_check_selection if self.asset_selection_data else None
         )
 
     @property

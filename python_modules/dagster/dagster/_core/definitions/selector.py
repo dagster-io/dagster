@@ -33,7 +33,7 @@ class JobSubsetSelector(
         asset_selection: Optional[Iterable[AssetKey]] = None,
         asset_check_selection: Optional[Iterable[AssetCheckKey]] = None,
     ):
-        asset_selection = set(asset_selection) if asset_selection is not None else None
+        asset_selection = set(asset_selection) if asset_selection else None
         asset_check_selection = (
             set(asset_check_selection) if asset_check_selection is not None else None
         )
