@@ -1736,18 +1736,19 @@ def test_return_materialization_multi_asset_streaming():
     #
     # yield successful
     #
-    def _iter():
-        yield MaterializeResult(
-            asset_key="one",
-            metadata={"one": 1},
-        )
-        yield MaterializeResult(
-            asset_key="two",
-            metadata={"two": 2},
-        )
 
     @multi_asset(outs={"one": AssetOut(), "two": AssetOut()})
     def multi() -> StreamingExecutionResult:
+        def _iter():
+            yield MaterializeResult(
+                asset_key="one",
+                metadata={"one": 1},
+            )
+            yield MaterializeResult(
+                asset_key="two",
+                metadata={"two": 2},
+            )
+
         return StreamingExecutionResult(_iter())
 
     mats = _exec_asset(multi)
