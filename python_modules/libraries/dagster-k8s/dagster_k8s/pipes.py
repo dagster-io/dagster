@@ -13,12 +13,12 @@ from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.pipes.client import (
     PipesClient,
+    PipesClientCompletedInvocation,
     PipesContextInjector,
     PipesMessageReader,
     PipesParams,
 )
 from dagster._core.pipes.context import (
-    PipesExecutionResult,
     PipesMessageHandler,
 )
 from dagster._core.pipes.utils import (
@@ -132,8 +132,8 @@ class _PipesK8sClient(PipesClient):
         base_pod_meta: Optional[Mapping[str, Any]] = None,
         base_pod_spec: Optional[Mapping[str, Any]] = None,
         extras: Optional[PipesExtras] = None,
-    ) -> Iterator[PipesExecutionResult]:
-        """Publish a kubernetes pod and wait for it to complete, enriched with the ext protocol.
+    ) -> PipesClientCompletedInvocation:
+        """Publish a kubernetes pod and wait for it to complete, enriched with the pipes protocol.
 
         Args:
             image (Optional[str]):
@@ -160,8 +160,9 @@ class _PipesK8sClient(PipesClient):
             message_reader (Optional[PipesMessageReader]):
                 Override the default ext protocol message reader.
 
-        Yields:
-            PipesExecutionResult: Results reported by the external process.
+        Returns:
+            PipesClientCompletedInvocation: Wrapper containing results reported by the external
+                process.
         """
         client = DagsterKubernetesClient.production_client()
 
@@ -208,7 +209,7 @@ class _PipesK8sClient(PipesClient):
                     )
             finally:
                 client.core_api.delete_namespaced_pod(pod_name, namespace)
-        return pipes_session.get_results()
+        return PipesClientCompletedInvocation(tuple(pipes_session.get_results()))
 
 
 def build_pod_body(
