@@ -30,7 +30,6 @@ class SlingSourceConnection(PermissiveConfig):
     """A Sling Source Connection defines the source connection used by :py:class:`~dagster_elt.sling.SlingResource`.
 
     Examples:
-
         Creating a Sling Source for a file, such as CSV or JSON:
 
         .. code-block:: python
@@ -99,7 +98,6 @@ class SlingResource(ConfigurableResource):
     """Resource for interacting with the Sling package.
 
     Examples:
-
         .. code-block:: python
 
             from dagster_etl.sling import SlingResource
@@ -275,4 +273,3 @@ class SlingResource(ConfigurableResource):
             source_options=source_options,
             target_options=target_options,
         )
-

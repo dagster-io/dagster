@@ -8,7 +8,6 @@ from dagster import (
     MaterializeResult,
     multi_asset,
 )
-
 from dagster._annotations import experimental
 
 from dagster_embedded_elt.sling.resources import SlingMode, SlingResource

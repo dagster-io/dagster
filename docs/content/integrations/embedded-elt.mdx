@@ -5,50 +5,38 @@ description: Lightweight ELT with Dagster
 
 # Dagster Embedded ELT
 
-This package provides a framework for building ELT pipelines with Dagster through
-helpful pre-built assets and resources. It is currently in experimental development,
-and we'd love to hear your feedback.
+This package provides a framework for building ELT pipelines with Dagster through helpful pre-built assets and resources. It is currently in experimental development, and we'd love to hear your feedback.
 
-This package currently includes a single implementation using <a href="https://slingdata.io">Sling</a>
-provides a simple way to sync data between databases and file systems.
+This package currently includes a single implementation using <a href="https://slingdata.io">Sling</a> provides a simple way to sync data between databases and file systems.
 
 ## Relevant APIs
 
-| Name                                                   | Description            |
-| ------------------------------------------------------ | ---------------------- |
-| <PyObject module="dagster_embedded_elt.sling" object="build_sling_asset" /> | The core Sling asset factory for building syncs |
-| <PyObject module="dagster_embedded_elt.sling" object="SlingResource" /> | The Sling Resource used for handing credentials to databases and object stores |
+| Name                                                                        | Description                                                                    |
+| --------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| <PyObject module="dagster_embedded_elt.sling" object="build_sling_asset" /> | The core Sling asset factory for building syncs                                |
+| <PyObject module="dagster_embedded_elt.sling" object="SlingResource" />     | The Sling Resource used for handing credentials to databases and object stores |
 
 ---
 
 ## Getting Started
 
-To get started with `dagster-embedded-elt` and Sling, first familiarize yourself
-with <a href="https://docs.slingdata.io/sling-cli/running-tasks">Sling's documentation</a>
+To get started with `dagster-embedded-elt` and Sling, first familiarize yourself with <a href="https://docs.slingdata.io/sling-cli/running-tasks">Sling's documentation</a>
 
-First, setup a <PyObject module="dagster-embedded-elt.sling" object="SlingResource" />
-which defines the source and destination credentials. The <PyObject module="dagster-embedded-elt.sling" object="SlingResource" />
-requires both a <PyObject module="dagster-embedded-elt.sling" object="SlingSourceConnection" />  and a <PyObject module="dagster-embedded-elt.sling" object="SlingTargetConnection" />.
+First, setup a <PyObject module="dagster-embedded-elt.sling" object="SlingResource" /> which defines the source and destination credentials. The <PyObject module="dagster-embedded-elt.sling" object="SlingResource" /> requires both a <PyObject module="dagster-embedded-elt.sling" object="SlingSourceConnection" /> and a <PyObject module="dagster-embedded-elt.sling" object="SlingTargetConnection" />.
 
-You can provide either a connection string or a dictionary of connection parameters to each
-of these classes.
+You can provide either a connection string or a dictionary of connection parameters to each of these classes.
 
 For details on what connection parameters Sling accepts for each integration, see the <a href="https://docs.slingdata.io/connections/database-connections">Sling Connections</a> page.
 
 To create an Asset that syncs between two connections, you can use the <PyObject module="dagster-embedded-elt.sling" object="build_sling_asset" /> factory.
 
-
 ---
 
 ## Setting up a Sling Resource
 
-A Sling Resource is a Dagster Resource that contains references to both a
-Source Connection and a Target Connection. Sling is versatile in what a
-source or destination can represent. You can provide arbitrary keywords
-to the <PyObject module="dagster-embedded-elt.sling" object="SlingSourceConnection" /> and <PyObject module="dagster-embedded-elt.sling" object="SlingTargetConnection" /> classes.
+A Sling Resource is a Dagster Resource that contains references to both a Source Connection and a Target Connection. Sling is versatile in what a source or destination can represent. You can provide arbitrary keywords to the <PyObject module="dagster-embedded-elt.sling" object="SlingSourceConnection" /> and <PyObject module="dagster-embedded-elt.sling" object="SlingTargetConnection" /> classes.
 
-The types and parameters for each connection are defined
-by <a href="https://docs.slingdata.io/connections/database-connections">Sling's Connections</a>.
+The types and parameters for each connection are defined by <a href="https://docs.slingdata.io/connections/database-connections">Sling's Connections</a>.
 
 The simplest connection is a file connection, which can be defined as:
 
@@ -68,11 +56,7 @@ asset_def = build_sling_asset(
 
 ```
 
-For database connections, you can provide a connection string or a dictionary of
-keyword arguments. For example, to connect to a SQLite database, you can provide
-an path to the database using the `instance` keyword, which is specified
-on the <a href="https://docs.slingdata.io/connections/database-connections/sqlite">Sqlite Connection</a> page.
-
+For database connections, you can provide a connection string or a dictionary of keyword arguments. For example, to connect to a SQLite database, you can provide an path to the database using the `instance` keyword, which is specified on the <a href="https://docs.slingdata.io/connections/database-connections/sqlite">Sqlite Connection</a> page.
 
 ```python
 source = SlingSourceConnection(type="sqlite", instance="path/to/sqlite.db")
@@ -105,8 +89,7 @@ source = SlingSourceConnection(
 
 ## Creating a Sling Sync
 
-To create a Sling Sync, once you have defined your Resource, you can use the
-<PyObject module="dagster_embedded_elt.sling" object="build_sling_asset" /> factory to create an Asset.
+To create a Sling Sync, once you have defined your Resource, you can use the <PyObject module="dagster_embedded_elt.sling" object="build_sling_asset" /> factory to create an Asset.
 
 ```python
 
@@ -139,4 +122,3 @@ sling_job = build_assets_job(
 )
 
 ```
-
