@@ -270,10 +270,11 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         self._check_specs_by_handle = {
             spec.key: spec for spec in self._check_specs_by_output_name.values()
         }
-        if selected_asset_check_keys is not None:
-            self._selected_asset_check_keys = selected_asset_check_keys
+        if selected_asset_check_keys is None:
+            # default to all checks
+            self._selected_asset_check_keys = set(self._check_specs_by_handle.keys())
         else:
-            self._selected_asset_check_keys = self._check_specs_by_handle.keys()
+            self._selected_asset_check_keys = selected_asset_check_keys
 
         if self._partitions_def is None:
             # check if backfill policy is BackfillPolicyType.SINGLE_RUN if asset is not partitioned

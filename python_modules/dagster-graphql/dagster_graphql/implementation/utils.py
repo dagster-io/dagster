@@ -156,7 +156,7 @@ def pipeline_selector_from_graphql(data: Mapping[str, Any]) -> JobSubsetSelector
         op_selection=data.get("solidSelection"),
         asset_selection=(
             [AssetKey.from_graphql_input(asset_key) for asset_key in asset_selection]
-            if asset_selection
+            if asset_selection is not None
             else None
         ),
         asset_check_selection=(
