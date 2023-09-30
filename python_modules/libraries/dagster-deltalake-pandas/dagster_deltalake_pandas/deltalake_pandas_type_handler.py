@@ -27,10 +27,6 @@ class DeltaLakePandasTypeHandler(DeltalakeBaseArrowTypeHandler[pd.DataFrame]):
 
 
 class DeltaLakePandasIOManager(DeltaLakeIOManager):
-    @classmethod
-    def _is_dagster_maintained(cls) -> bool:
-        return True
-
     @staticmethod
     def type_handlers() -> Sequence[DbTypeHandler]:
         return [DeltaLakePandasTypeHandler(), DeltaLakePyArrowTypeHandler()]
