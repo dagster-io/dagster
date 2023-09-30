@@ -26,7 +26,7 @@ if sys.version_info >= (3, 11):
 else:
     from typing_extensions import NotRequired
 
-from .config import AzureConfig, GcsConfig, LocalConfig, S3Config
+from .config import AzureConfig, ClientConfig, GcsConfig, LocalConfig, S3Config
 
 DELTA_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 DELTA_DATE_FORMAT = "%Y-%m-%d"
@@ -49,6 +49,7 @@ class _StorageOptionsConfig(TypedDict, total=False):
 class _DeltaTableIOManagerResourceConfig(TypedDict):
     root_uri: str
     storage_options: _StorageOptionsConfig
+    client_options: NotRequired[Dict[str, str]]
     table_config: NotRequired[Dict[str, str]]
 
 
@@ -109,6 +110,10 @@ class DeltaLakeIOManager(ConfigurableIOManagerFactory):
     storage_options: Union[AzureConfig, S3Config, LocalConfig, GcsConfig] = Field(
         discriminator="provider",
         description="Configuration for accessing storage location.",
+    )
+
+    client_options: Optional[ClientConfig] = Field(
+        default=None, description="Additional configuration passed to http client."
     )
 
     table_config: Optional[Dict[str, str]] = Field(
@@ -187,6 +192,7 @@ class DeltaLakeDbClient(DbClient):
         else:
             storage_options = {}
 
+        storage_options = {**storage_options, **(resource_config.get("client_options") or {})}
         table_config = resource_config.get("table_config")
         table_uri = f"{root_uri}/{table_slice.schema}/{table_slice.table}"
 
@@ -197,17 +203,6 @@ class DeltaLakeDbClient(DbClient):
         )
 
         yield conn
-
-
-def _get_cleanup_statement(table_slice: TableSlice) -> str:
-    """Returns a SQL statement that deletes data in the given table to make way for the output data
-    being written.
-    """
-    if table_slice.partition_dimensions and len(table_slice.partition_dimensions) > 0:
-        query = f"DELETE FROM {table_slice.schema}.{table_slice.table} WHERE\n"
-        return query + _partition_where_clause(table_slice.partition_dimensions)
-    else:
-        return f"DELETE FROM {table_slice.schema}.{table_slice.table}"
 
 
 def _partition_where_clause(

@@ -1,10 +1,10 @@
-from typing import Union
+from typing import Optional, Union
 
 from dagster import ConfigurableResource
 from deltalake import DeltaTable
 from pydantic import Field
 
-from .config import AzureConfig, GcsConfig, LocalConfig, S3Config
+from .config import AzureConfig, ClientConfig, GcsConfig, LocalConfig, S3Config
 
 
 class DeltaTableResource(ConfigurableResource):
@@ -38,7 +38,13 @@ class DeltaTableResource(ConfigurableResource):
         discriminator="provider"
     )
 
+    client_options: Optional[ClientConfig] = Field(
+        default=None, description="Additional configuration passed to http client."
+    )
+
     def load(self) -> DeltaTable:
-        options = self.storage_options.dict() if self.storage_options else {}
+        storage_options = self.storage_options.dict() if self.storage_options else {}
+        client_options = self.client_options.dict() if self.client_options else {}
+        options = {**storage_options, **client_options}
         table = DeltaTable(table_uri=self.url, storage_options=options)
         return table
