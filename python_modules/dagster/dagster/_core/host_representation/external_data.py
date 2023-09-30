@@ -45,7 +45,7 @@ from dagster._core.definitions import (
     ScheduleDefinition,
     SourceAsset,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckSpec
+from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
 from dagster._core.definitions.asset_sensor_definition import AssetSensorDefinition
 from dagster._core.definitions.asset_spec import (
     SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
@@ -1124,6 +1124,10 @@ class ExternalAssetCheck(
             asset_key=spec.asset_key,
             description=spec.description,
         )
+
+    @property
+    def key(self) -> AssetCheckKey:
+        return AssetCheckKey(asset_key=self.asset_key, name=self.name)
 
 
 @whitelist_for_serdes(

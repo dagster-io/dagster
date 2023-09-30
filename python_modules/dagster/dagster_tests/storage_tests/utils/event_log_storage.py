@@ -40,7 +40,7 @@ from dagster._core.definitions.asset_check_evaluation import (
     AssetCheckEvaluationPlanned,
     AssetCheckEvaluationTargetMaterializationData,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
+from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSeverity
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.job_base import InMemoryJob
@@ -4040,7 +4040,9 @@ class TestEventLogStorage:
             )
         )
 
-        checks = storage.get_asset_check_executions(AssetKey(["my_asset"]), "my_check", limit=10)
+        checks = storage.get_asset_check_execution_history(
+            AssetCheckKey(AssetKey(["my_asset"]), "my_check"), limit=10
+        )
         assert len(checks) == 1
         assert checks[0].status == AssetCheckExecutionRecordStatus.PLANNED
         assert checks[0].run_id == "foo"
@@ -4070,7 +4072,9 @@ class TestEventLogStorage:
             )
         )
 
-        checks = storage.get_asset_check_executions(AssetKey(["my_asset"]), "my_check", limit=10)
+        checks = storage.get_asset_check_execution_history(
+            AssetCheckKey(AssetKey(["my_asset"]), "my_check"), limit=10
+        )
         assert len(checks) == 1
         assert checks[0].status == AssetCheckExecutionRecordStatus.SUCCEEDED
         assert (

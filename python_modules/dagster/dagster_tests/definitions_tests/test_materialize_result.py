@@ -17,6 +17,7 @@ from dagster import (
     materialize,
     multi_asset,
 )
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.errors import DagsterInvariantViolationError, DagsterStepOutputNotFoundError
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 
@@ -72,9 +73,8 @@ def test_return_materialization_with_asset_checks():
             )
 
         materialize([ret_checks], instance=instance)
-        asset_check_executions = instance.event_log_storage.get_asset_check_executions(
-            asset_key=ret_checks.key,
-            check_name="foo_check",
+        asset_check_executions = instance.event_log_storage.get_asset_check_execution_history(
+            key=AssetCheckKey(asset_key=ret_checks.key, name="foo_check"),
             limit=1,
         )
         assert len(asset_check_executions) == 1
