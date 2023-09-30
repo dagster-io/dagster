@@ -15,6 +15,7 @@ export const FeatureFlag = {
   flagHorizontalDAGs: 'flagHorizontalDAGs' as const,
   flagDisableAutoLoadDefaults: 'flagDisableAutoLoadDefaults' as const,
   flagDAGSidebar: 'flagDAGSidebar' as const,
+  flagDisableDAGCache: 'flagDisableDAGCache' as const,
 };
 export type FeatureFlagType = keyof typeof FeatureFlag;
 

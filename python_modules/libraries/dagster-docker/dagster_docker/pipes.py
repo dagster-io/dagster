@@ -7,14 +7,15 @@ from dagster import (
     ResourceParam,
     _check as check,
 )
+from dagster._annotations import experimental
 from dagster._core.pipes.client import (
     PipesClient,
+    PipesClientCompletedInvocation,
     PipesContextInjector,
     PipesMessageReader,
 )
 from dagster._core.pipes.context import (
     PipesMessageHandler,
-    PipesResult,
 )
 from dagster._core.pipes.utils import (
     PipesEnvContextInjector,
@@ -29,7 +30,8 @@ from dagster_pipes import (
 )
 
 
-class DockerLogsMessageReader(PipesMessageReader):
+@experimental
+class PipesDockerLogsMessageReader(PipesMessageReader):
     @contextmanager
     def read_messages(
         self,
@@ -49,17 +51,22 @@ class DockerLogsMessageReader(PipesMessageReader):
             extract_message_or_forward_to_stdout(handler, log_line)
 
 
+@experimental
 class _PipesDockerClient(PipesClient):
-    """An ext protocol compliant resource for launching docker containers.
+    """A pipes client that runs external processes in docker containers.
 
-        By default context is injected via environment variables and messages are parsed out of the
-        log stream and other logs are forwarded to stdout of the orchestration process.
+    By default context is injected via environment variables and messages are parsed out of the
+    log stream, with other logs forwarded to stdout of the orchestration process.
 
     Args:
-        env (Optional[Mapping[str, str]]): An optional dict of environment variables to pass to the subprocess.
-        register (Optional[Mapping[str, str]]): An optional dict of registry credentials to login the docker client.
-        context_injector (Optional[PipesContextInjector]): An context injector to use to inject context into the docker container process. Defaults to PipesEnvContextInjector.
-        message_reader (Optional[PipesContextInjector]): An context injector to use to read messages from the docker container process. Defaults to DockerLogsMessageReader.
+        env (Optional[Mapping[str, str]]): An optional dict of environment variables to pass to the
+            container.
+        register (Optional[Mapping[str, str]]): An optional dict of registry credentials to login to
+            the docker client.
+        context_injector (Optional[PipesContextInjector]): A context injector to use to inject
+            context into the docker container process. Defaults to :py:class:`PipesEnvContextInjector`.
+        message_reader (Optional[PipesContextInjector]): A message reader to use to read messages
+            from the docker container process. Defaults to :py:class:`DockerLogsMessageReader`.
     """
 
     def __init__(
@@ -82,7 +89,7 @@ class _PipesDockerClient(PipesClient):
 
         self.message_reader = (
             check.opt_inst_param(message_reader, "message_reader", PipesMessageReader)
-            or DockerLogsMessageReader()
+            or PipesDockerLogsMessageReader()
         )
 
     def run(
@@ -95,8 +102,8 @@ class _PipesDockerClient(PipesClient):
         registry: Optional[Mapping[str, str]] = None,
         container_kwargs: Optional[Mapping[str, Any]] = None,
         extras: Optional[PipesExtras] = None,
-    ) -> Iterator[PipesResult]:
-        """Create a docker container and run it to completion, enriched with the ext protocol.
+    ) -> PipesClientCompletedInvocation:
+        """Create a docker container and run it to completion, enriched with the pipes protocol.
 
         Args:
             image (str):
@@ -115,8 +122,12 @@ class _PipesDockerClient(PipesClient):
                 Extra values to pass along as part of the ext protocol.
             context_injector (Optional[PipesContextInjector]):
                 Override the default ext protocol context injection.
-            message_Reader (Optional[PipesMessageReader]):
+            message_reader (Optional[PipesMessageReader]):
                 Override the default ext protocol message reader.
+
+        Returns:
+            PipesClientCompletedInvocation: Wrapper containing results reported by the external
+                process.
         """
         with open_pipes_session(
             context=context,
@@ -155,7 +166,7 @@ class _PipesDockerClient(PipesClient):
 
             result = container.start()
             try:
-                if isinstance(self.message_reader, DockerLogsMessageReader):
+                if isinstance(self.message_reader, PipesDockerLogsMessageReader):
                     self.message_reader.consume_docker_logs(container)
 
                 result = container.wait()
@@ -163,7 +174,7 @@ class _PipesDockerClient(PipesClient):
                     raise DagsterPipesError(f"Container exited with non-zero status code: {result}")
             finally:
                 container.stop()
-        return pipes_session.get_results()
+        return PipesClientCompletedInvocation(tuple(pipes_session.get_results()))
 
     def _create_container(
         self,

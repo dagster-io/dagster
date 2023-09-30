@@ -222,27 +222,29 @@ export const DELETE_MUTATION = gql`
 `;
 
 export const TERMINATE_MUTATION = gql`
-  mutation Terminate($runId: String!, $terminatePolicy: TerminateRunPolicy) {
-    terminatePipelineExecution(runId: $runId, terminatePolicy: $terminatePolicy) {
-      ... on TerminateRunFailure {
-        message
-      }
-      ... on RunNotFoundError {
-        message
-      }
-      ... on TerminateRunSuccess {
-        run {
-          id
-          canTerminate
+  mutation Terminate($runIds: [String!]!, $terminatePolicy: TerminateRunPolicy) {
+    terminateRuns(runIds: $runIds, terminatePolicy: $terminatePolicy) {
+      ...PythonErrorFragment
+      ... on TerminateRunsResult {
+        terminateRunResults {
+          ...PythonErrorFragment
+          ... on RunNotFoundError {
+            message
+          }
+          ... on TerminateRunFailure {
+            message
+          }
+          ... on TerminateRunSuccess {
+            run {
+              id
+              canTerminate
+            }
+          }
         }
-      }
-      ... on UnauthorizedError {
-        message
       }
       ...PythonErrorFragment
     }
   }
-
   ${PYTHON_ERROR_FRAGMENT}
 `;
 

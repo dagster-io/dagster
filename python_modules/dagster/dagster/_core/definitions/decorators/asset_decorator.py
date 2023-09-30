@@ -474,7 +474,9 @@ class _Asset:
             selected_asset_keys=None,  # no subselection in decorator
             can_subset=False,
             metadata_by_key={out_asset_key: self.metadata} if self.metadata else None,
-            descriptions_by_key=None,  # not supported for now
+            # see comment in @multi_asset's call to dagster_internal_init for the gory details
+            # this is best understood as an _override_ which @asset does not support
+            descriptions_by_key=None,
             check_specs_by_output_name=check_specs_by_output_name,
             selected_asset_check_keys=None,  # no subselection in decorator
         )
@@ -639,6 +641,7 @@ def multi_asset(
                     Out(
                         Nothing,
                         is_required=not (can_subset or asset_spec.skippable),
+                        description=asset_spec.description,
                     ),
                 )
             if upstream_asset_deps:
@@ -846,7 +849,16 @@ def multi_asset(
             auto_materialize_policies_by_key=auto_materialize_policies_by_key,
             backfill_policy=backfill_policy,
             selected_asset_keys=None,  # no subselection in decorator
-            descriptions_by_key=None,  # not supported for now
+            # descriptions by key is more accurately understood as _overriding_ the descriptions
+            # by key that are in the OutputDefinitions associated with the asset key.
+            # This is a dangerous construction liable for bugs. Instead there should be a
+            # canonical source of asset descriptions in AssetsDefinintion and if we need
+            # to create a memoized cached dictionary of asset keys for perf or something we do
+            # that in the `__init__` or on demand.
+            #
+            # This is actually an override. We do not override descriptions
+            # in OutputDefinitions in @multi_asset
+            descriptions_by_key=None,
             metadata_by_key=metadata_by_key,
             check_specs_by_output_name=check_specs_by_output_name,
             selected_asset_check_keys=None,  # no subselection in decorator
@@ -1322,8 +1334,12 @@ def _make_asset_deps(deps: Optional[Iterable[CoercibleToAssetDep]]) -> Optional[
 
             # we cannot do deduplication via a set because MultiPartitionMappings have an internal
             # dictionary that cannot be hashed. Instead deduplicate by making a dictionary and checking
-            # for existing keys.
-            if asset_dep.asset_key in dep_dict.keys():
+            # for existing keys. If an asset is specified as a dependency more than once, only error if the
+            # dependency is different (ie has a different PartitionMapping)
+            if (
+                asset_dep.asset_key in dep_dict.keys()
+                and asset_dep != dep_dict[asset_dep.asset_key]
+            ):
                 raise DagsterInvariantViolationError(
                     f"Cannot set a dependency on asset {asset_dep.asset_key} more than once per"
                     " asset."

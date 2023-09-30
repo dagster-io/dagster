@@ -130,9 +130,11 @@ export const ROOT_WORKSPACE_QUERY = gql`
       pipelineName
     }
     assetGroups {
+      id
       groupName
     }
     allTopLevelResourceDetails {
+      id
       name
     }
     ...RepositoryInfoFragment

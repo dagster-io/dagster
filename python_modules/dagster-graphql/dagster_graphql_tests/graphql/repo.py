@@ -85,10 +85,10 @@ from dagster._core.definitions.decorators.sensor_decorator import sensor
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import Failure
 from dagster._core.definitions.executor_definition import in_process_executor
+from dagster._core.definitions.external_asset import external_assets_from_specs
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
-from dagster._core.definitions.observable_asset import create_unexecutable_observable_assets_def
 from dagster._core.definitions.partition import PartitionedConfig
 from dagster._core.definitions.reconstruct import ReconstructableRepository
 from dagster._core.definitions.sensor_definition import RunRequest, SkipReason
@@ -1383,7 +1383,7 @@ def executable_asset() -> None:
     pass
 
 
-unexecutable_asset = create_unexecutable_observable_assets_def([AssetSpec("unexecutable_asset")])
+unexecutable_asset = next(iter(external_assets_from_specs([AssetSpec("unexecutable_asset")])))
 
 executable_test_job = build_assets_job(
     name="executable_test_job", assets=[executable_asset, unexecutable_asset]
@@ -1924,7 +1924,7 @@ def define_asset_jobs():
 @asset_check(asset=asset_1, description="asset_1 check")
 def my_check(asset_1):
     return AssetCheckResult(
-        success=True,
+        passed=True,
         metadata={
             "foo": "bar",
             "baz": "quux",

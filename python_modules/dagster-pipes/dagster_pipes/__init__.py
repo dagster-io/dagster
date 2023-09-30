@@ -2,6 +2,7 @@ import atexit
 import base64
 import datetime
 import json
+import logging
 import os
 import sys
 import time
@@ -18,6 +19,7 @@ from typing import (
     ClassVar,
     Dict,
     Generic,
+    Iterable,
     Iterator,
     Literal,
     Mapping,
@@ -29,6 +31,7 @@ from typing import (
     TypeVar,
     Union,
     cast,
+    get_args,
 )
 
 if TYPE_CHECKING:
@@ -69,6 +72,8 @@ PIPES_PROTOCOL_VERSION_FIELD = "__dagster_pipes_version"
 
 
 class PipesMessage(TypedDict):
+    """A message sent from the orchestration process to the external process."""
+
     __dagster_pipes_version: str
     method: str
     params: Optional[Mapping[str, Any]]
@@ -78,6 +83,10 @@ class PipesMessage(TypedDict):
 
 
 class PipesContextData(TypedDict):
+    """The serializable data passed from the orchestration process to the external process. This gets
+    wrapped in a :py:class:`PipesContext`.
+    """
+
     asset_keys: Optional[Sequence[str]]
     code_version_by_asset_key: Optional[Mapping[str, Optional[str]]]
     provenance_by_asset_key: Optional[Mapping[str, Optional["PipesDataProvenance"]]]
@@ -91,16 +100,22 @@ class PipesContextData(TypedDict):
 
 
 class PipesPartitionKeyRange(TypedDict):
+    """A range of partition keys."""
+
     start: str
     end: str
 
 
 class PipesTimeWindow(TypedDict):
+    """A span of time delimited by a start and end timestamp. This is defined for time-based partitioning schemes."""
+
     start: str  # timestamp
     end: str  # timestamp
 
 
 class PipesDataProvenance(TypedDict):
+    """Provenance information for an asset."""
+
     code_version: str
     input_data_versions: Mapping[str, str]
     is_user_provided: bool
@@ -134,7 +149,6 @@ PipesMetadataType = Literal[
     "asset",
     "null",
 ]
-
 
 # ########################
 # ##### UTIL
@@ -252,7 +266,7 @@ def _assert_opt_env_param_type(
     return value
 
 
-def _assert_param_value(value: _T, expected_values: Sequence[_T], method: str, param: str) -> _T:
+def _assert_param_value(value: _T, expected_values: Iterable[_T], method: str, param: str) -> _T:
     if value not in expected_values:
         raise DagsterPipesError(
             f"Invalid value for parameter `{param}` of `{method}`. Expected one of"
@@ -272,18 +286,19 @@ def _assert_opt_param_value(
     return value
 
 
-def _assert_param_json_serializable(value: _T, method: str, param: str) -> _T:
+def _json_serialize_param(value: Any, method: str, param: str) -> str:
     try:
-        json.dumps(value)
+        serialized = json.dumps(value)
     except (TypeError, OverflowError):
         raise DagsterPipesError(
             f"Invalid type for parameter `{param}` of `{method}`. Expected a JSON-serializable"
             f" type, got `{type(value)}`."
         )
-    return value
+    return serialized
 
 
 _METADATA_VALUE_KEYS = frozenset(PipesMetadataValue.__annotations__.keys())
+_METADATA_TYPES = frozenset(get_args(PipesMetadataType))
 
 
 def _normalize_param_metadata(
@@ -306,6 +321,7 @@ def _normalize_param_metadata(
                     " string keys and values that are either raw metadata values or dictionaries"
                     f" with schema `{{raw_value: ..., type: ...}}`. Got a value `{value}`."
                 )
+            _assert_param_value(value["type"], _METADATA_TYPES, method, f"{param}.{key}.type")
             new_metadata[key] = cast(PipesMetadataValue, value)
         else:
             new_metadata[key] = {"raw_value": value, "type": PIPES_METADATA_TYPE_INFER}
@@ -318,13 +334,31 @@ def _param_from_env_var(key: str) -> Any:
 
 
 def encode_env_var(value: Any) -> str:
-    serialized = json.dumps(value)
+    """Encode value by serializing to JSON, compressing with zlib, and finally encoding with base64.
+    `base64_encode(compress(to_json(value)))` in function notation.
+
+    Args:
+        value (Any): The value to encode. Must be JSON-serializable.
+
+    Returns:
+        str: The encoded value.
+    """
+    serialized = _json_serialize_param(value, "encode_env_var", "value")
     compressed = zlib.compress(serialized.encode("utf-8"))
     encoded = base64.b64encode(compressed)
     return encoded.decode("utf-8")  # as string
 
 
-def decode_env_var(value: Any) -> str:
+def decode_env_var(value: str) -> Any:
+    """Decode a value by decoding from base64, decompressing with zlib, and finally deserializing from
+    JSON. `from_json(decompress(base64_decode(value)))` in function notation.
+
+    Args:
+        value (Any): The value to decode.
+
+    Returns:
+        Any: The decoded value.
+    """
     decoded = base64.b64decode(value)
     decompressed = zlib.decompress(decoded)
     return json.loads(decompressed.decode("utf-8"))
@@ -357,6 +391,23 @@ def _get_mock() -> "MagicMock":
     return MagicMock()
 
 
+class _PipesLogger(logging.Logger):
+    def __init__(self, context: "PipesContext") -> None:
+        super().__init__(name="dagster-pipes")
+        self.addHandler(_PipesLoggerHandler(context))
+
+
+class _PipesLoggerHandler(logging.Handler):
+    def __init__(self, context: "PipesContext") -> None:
+        super().__init__()
+        self._context = context
+
+    def emit(self, record: logging.LogRecord) -> None:
+        self._context._write_message(  # noqa: SLF001
+            "log", {"message": record.getMessage(), "level": record.levelname}
+        )
+
+
 # ########################
 # ##### IO - BASE
 # ########################
@@ -365,7 +416,19 @@ def _get_mock() -> "MagicMock":
 class PipesContextLoader(ABC):
     @abstractmethod
     @contextmanager
-    def load_context(self, params: PipesParams) -> Iterator[PipesContextData]: ...
+    def load_context(self, params: PipesParams) -> Iterator[PipesContextData]:
+        """A `@contextmanager` that loads context data injected by the orchestration process.
+
+        This method should read and yield the context data from the location specified by the passed in
+        `PipesParams`.
+
+        Args:
+            params (PipesParams): The params provided by the context injector in the orchestration
+                process.
+
+        Yields:
+            PipesContextData: The context data.
+        """
 
 
 T_MessageChannel = TypeVar("T_MessageChannel", bound="PipesMessageWriterChannel")
@@ -374,20 +437,47 @@ T_MessageChannel = TypeVar("T_MessageChannel", bound="PipesMessageWriterChannel"
 class PipesMessageWriter(ABC, Generic[T_MessageChannel]):
     @abstractmethod
     @contextmanager
-    def open(self, params: PipesParams) -> Iterator[T_MessageChannel]: ...
+    def open(self, params: PipesParams) -> Iterator[T_MessageChannel]:
+        """A `@contextmanager` that initializes a channel for writing messages back to Dagster.
+
+        This method should takes the params passed by the orchestration-side
+        :py:class:`PipesMessageReader` and use them to construct and yield a
+        :py:class:`PipesMessageWriterChannel`.
+
+        Args:
+            params (PipesParams): The params provided by the message reader in the orchestration
+                process.
+
+        Yields:
+            PipesMessageWriterChannel: Channel for writing messagse back to Dagster.
+        """
 
 
 class PipesMessageWriterChannel(ABC, Generic[T_MessageChannel]):
+    """Object that writes messages back to the Dagster orchestration process."""
+
     @abstractmethod
-    def write_message(self, message: PipesMessage) -> None: ...
+    def write_message(self, message: PipesMessage) -> None:
+        """Write a message to the orchestration process.
+
+        Args:
+            message (PipesMessage): The message to write.
+        """
 
 
 class PipesParamsLoader(ABC):
-    @abstractmethod
-    def load_context_params(self) -> PipesParams: ...
+    """Object that loads params passed from the orchestration process by the context injector and
+    message reader. These params are used to respectively bootstrap the
+    :py:class:`PipesContextLoader` and :py:class:`PipesMessageWriter`.
+    """
 
     @abstractmethod
-    def load_messages_params(self) -> PipesParams: ...
+    def load_context_params(self) -> PipesParams:
+        """PipesParams: Load params passed by the orchestration-side context injector."""
+
+    @abstractmethod
+    def load_messages_params(self) -> PipesParams:
+        """PipesParams: Load params passed by the orchestration-side message reader."""
 
 
 T_BlobStoreMessageWriterChannel = TypeVar(
@@ -396,11 +486,23 @@ T_BlobStoreMessageWriterChannel = TypeVar(
 
 
 class PipesBlobStoreMessageWriter(PipesMessageWriter[T_BlobStoreMessageWriterChannel]):
+    """Message writer channel that periodically uploads message chunks to some blob store endpoint."""
+
     def __init__(self, *, interval: float = 10):
         self.interval = interval
 
     @contextmanager
     def open(self, params: PipesParams) -> Iterator[T_BlobStoreMessageWriterChannel]:
+        """Construct and yield a :py:class:`PipesBlobStoreMessageWriterChannel`.
+
+        Args:
+            params (PipesParams): The params provided by the message reader in the orchestration
+                process.
+
+        Yields:
+            PipesBlobStoreMessageWriterChannel: Channel that periodically uploads message chunks to
+            a blob store.
+        """
         channel = self.make_channel(params)
         with channel.buffered_upload_loop():
             yield channel
@@ -410,6 +512,8 @@ class PipesBlobStoreMessageWriter(PipesMessageWriter[T_BlobStoreMessageWriterCha
 
 
 class PipesBlobStoreMessageWriterChannel(PipesMessageWriterChannel):
+    """Message writer channel that periodically uploads message chunks to some blob store endpoint."""
+
     def __init__(self, *, interval: float = 10):
         self._interval = interval
         self._lock = Lock()
@@ -458,6 +562,12 @@ class PipesBlobStoreMessageWriterChannel(PipesMessageWriterChannel):
 
 
 class PipesBufferedFilesystemMessageWriterChannel(PipesBlobStoreMessageWriterChannel):
+    """Message writer channel that periodically writes message chunks to an endpoint mounted on the filesystem.
+
+    Args:
+        interval (float): interval in seconds between chunk uploads
+    """
+
     def __init__(self, path: str, *, interval: float = 10):
         super().__init__(interval=interval)
         self._path = path
@@ -473,7 +583,15 @@ class PipesBufferedFilesystemMessageWriterChannel(PipesBlobStoreMessageWriterCha
 # ########################
 
 
-class DefaultPipesContextLoader(PipesContextLoader):
+class PipesDefaultContextLoader(PipesContextLoader):
+    """Context loader that loads context data from either a file or directly from the provided params.
+
+    The location of the context data is configured by the params received by the loader. If the params
+    include a key `path`, then the context data will be loaded from a file at the specified path. If
+    the params instead include a key `data`, then the corresponding value should be a dict
+    representing the context data.
+    """
+
     FILE_PATH_KEY = "path"
     DIRECT_KEY = "data"
 
@@ -495,6 +613,14 @@ class DefaultPipesContextLoader(PipesContextLoader):
 
 
 class PipesDefaultMessageWriter(PipesMessageWriter):
+    """Message writer that writes messages to either a file or the stdout or stderr stream.
+
+    The write location is configured by the params received by the writer. If the params include a
+    key `path`, then messages will be written to a file at the specified path. If the params instead
+    include a key `stdio`, then messages then the corresponding value must specify either `stderr`
+    or `stdout`, and messages will be written to the selected stream.
+    """
+
     FILE_PATH_KEY = "path"
     STDIO_KEY = "stdio"
     STDERR = "stderr"
@@ -524,6 +650,8 @@ class PipesDefaultMessageWriter(PipesMessageWriter):
 
 
 class PipesFileMessageWriterChannel(PipesMessageWriterChannel):
+    """Message writer channel that writes one message per line to a file."""
+
     def __init__(self, path: str):
         self._path = path
 
@@ -533,6 +661,8 @@ class PipesFileMessageWriterChannel(PipesMessageWriterChannel):
 
 
 class PipesStreamMessageWriterChannel(PipesMessageWriterChannel):
+    """Message writer channel that writes one message per line to a `TextIO` stream."""
+
     def __init__(self, stream: TextIO):
         self._stream = stream
 
@@ -540,7 +670,9 @@ class PipesStreamMessageWriterChannel(PipesMessageWriterChannel):
         self._stream.writelines((json.dumps(message), "\n"))
 
 
-class EnvVarPipesParamsLoader(PipesParamsLoader):
+class PipesEnvVarParamsLoader(PipesParamsLoader):
+    """Params loader that extracts params from environment variables."""
+
     def load_context_params(self) -> PipesParams:
         return _param_from_env_var("context")
 
@@ -554,6 +686,13 @@ class EnvVarPipesParamsLoader(PipesParamsLoader):
 
 
 class PipesS3MessageWriter(PipesBlobStoreMessageWriter):
+    """Message writer that writes messages by periodically writing message chunks to an S3 bucket.
+
+    Args:
+        client (Any): A boto3.client("s3") object.
+        interval (float): interval in seconds between upload chunk uploads
+    """
+
     # client is a boto3.client("s3") object
     def __init__(self, client: Any, *, interval: float = 10):
         super().__init__(interval=interval)
@@ -564,10 +703,10 @@ class PipesS3MessageWriter(PipesBlobStoreMessageWriter):
     def make_channel(
         self,
         params: PipesParams,
-    ) -> "PipesS3MessageChannel":
+    ) -> "PipesS3MessageWriterChannel":
         bucket = _assert_env_param_type(params, "bucket", str, self.__class__)
         key_prefix = _assert_opt_env_param_type(params, "key_prefix", str, self.__class__)
-        return PipesS3MessageChannel(
+        return PipesS3MessageWriterChannel(
             client=self._client,
             bucket=bucket,
             key_prefix=key_prefix,
@@ -575,7 +714,16 @@ class PipesS3MessageWriter(PipesBlobStoreMessageWriter):
         )
 
 
-class PipesS3MessageChannel(PipesBlobStoreMessageWriterChannel):
+class PipesS3MessageWriterChannel(PipesBlobStoreMessageWriterChannel):
+    """Message writer channel for writing messages by periodically writing message chunks to an S3 bucket.
+
+    Args:
+        client (Any): A boto3.client("s3") object.
+        bucket (str): The name of the S3 bucket to write to.
+        key_prefix (Optional[str]): An optional prefix to use for the keys of written blobs.
+        interval (float): interval in seconds between upload chunk uploads
+    """
+
     # client is a boto3.client("s3") object
     def __init__(
         self, client: Any, bucket: str, key_prefix: Optional[str], *, interval: float = 10
@@ -599,7 +747,9 @@ class PipesS3MessageChannel(PipesBlobStoreMessageWriterChannel):
 # ########################
 
 
-class DbfsPipesContextLoader(PipesContextLoader):
+class PipesDbfsContextLoader(PipesContextLoader):
+    """Context loader that reads context from a JSON file on DBFS."""
+
     @contextmanager
     def load_context(self, params: PipesParams) -> Iterator[PipesContextData]:
         unmounted_path = _assert_env_param_type(params, "path", str, self.__class__)
@@ -609,6 +759,8 @@ class DbfsPipesContextLoader(PipesContextLoader):
 
 
 class PipesDbfsMessageWriter(PipesBlobStoreMessageWriter):
+    """Message writer that writes messages by periodically writing message chunks to a directory on DBFS."""
+
     def make_channel(
         self,
         params: PipesParams,
@@ -631,14 +783,36 @@ def init_dagster_pipes(
     message_writer: Optional[PipesMessageWriter] = None,
     params_loader: Optional[PipesParamsLoader] = None,
 ) -> "PipesContext":
+    """Initialize the Dagster Pipes context.
+
+    This function should be called near the entry point of a pipes process. It will load injected
+    context information from Dagster and spin up the machinery for streaming messages back to
+    Dagster.
+
+    If the process was not launched by Dagster, this function will emit a warning and return a
+    `MagicMock` object. This should make all operations on the context no-ops and prevent your code
+    from crashing. However, it is recommended to instead check :py:func:`is_dagster_pipes_process()`
+    to handle the case where the process is not launched by Dagster.
+
+    Args:
+        context_loader (Optional[PipesContextLoader]): The context loader to use. Defaults to
+            :py:class:`PipesDefaultContextLoader`.
+        message_writer (Optional[PipesMessageWriter]): The message writer to use. Defaults to
+            :py:class:`PipesDefaultMessageWriter`.
+        params_loader (Optional[PipesParamsLoader]): The params loader to use. Defaults to
+            :py:class:`PipesEnvVarParamsLoader`.
+
+    Returns:
+        PipesContext: The initialized context.
+    """
     if PipesContext.is_initialized():
         return PipesContext.get()
 
     if is_dagster_pipes_process():
-        params_loader = params_loader or EnvVarPipesParamsLoader()
+        params_loader = params_loader or PipesEnvVarParamsLoader()
         context_params = params_loader.load_context_params()
         messages_params = params_loader.load_messages_params()
-        context_loader = context_loader or DefaultPipesContextLoader()
+        context_loader = context_loader or PipesDefaultContextLoader()
         message_writer = message_writer or PipesDefaultMessageWriter()
         stack = ExitStack()
         context_data = stack.enter_context(context_loader.load_context(context_params))
@@ -653,21 +827,37 @@ def init_dagster_pipes(
 
 
 class PipesContext:
+    """The context for a Dagster Pipes process.
+
+    This class is analogous to :py:class:`~dagster.OpExecutionContext` on the Dagster side of the Pipes
+    connection. It provides access to information such as the asset key(s) and partition key(s) in
+    scope for the current step. It also provides methods for logging and emitting results that will
+    be streamed back to Dagster.
+
+    This class should not be directly instantiated by the user. Instead it should be initialized by
+    calling :py:func:`init_dagster_pipes()`, which will return the singleton instance of this class.
+    After `init_dagster_pipes()` has been called, the singleton instance can also be retrieved by
+    calling :py:func:`PipesContext.get`.
+    """
+
     _instance: ClassVar[Optional["PipesContext"]] = None
 
     @classmethod
     def is_initialized(cls) -> bool:
+        """bool: Whether the context has been initialized."""
         return cls._instance is not None
 
     @classmethod
     def set(cls, context: "PipesContext") -> None:
+        """Set the singleton instance of the context."""
         cls._instance = context
 
     @classmethod
     def get(cls) -> "PipesContext":
+        """Get the singleton instance of the context. Raises an error if the context has not been initialized."""
         if cls._instance is None:
             raise Exception(
-                "ExtContext has not been initialized. You must call `init_dagster_ext()`."
+                "ExtContext has not been initialized. You must call `init_dagster_pipes()`."
             )
         return cls._instance
 
@@ -678,6 +868,7 @@ class PipesContext:
     ) -> None:
         self._data = data
         self._message_channel = message_channel
+        self._logger = _PipesLogger(self)
         self._materialized_assets: set[str] = set()
 
     def _write_message(self, method: str, params: Optional[Mapping[str, Any]] = None) -> None:
@@ -696,21 +887,31 @@ class PipesContext:
 
     @property
     def is_asset_step(self) -> bool:
+        """bool: Whether the current step targets assets."""
         return self._data["asset_keys"] is not None
 
     @property
     def asset_key(self) -> str:
+        """str: The AssetKey for the currently scoped asset. Raises an error if 0 or multiple assets
+        are in scope.
+        """
         asset_keys = _assert_defined_asset_property(self._data["asset_keys"], "asset_key")
         _assert_single_asset(self._data, "asset_key")
         return asset_keys[0]
 
     @property
     def asset_keys(self) -> Sequence[str]:
+        """Sequence[str]: The AssetKeys for the currently scoped assets. Raises an error if no
+        assets are in scope.
+        """
         asset_keys = _assert_defined_asset_property(self._data["asset_keys"], "asset_keys")
         return asset_keys
 
     @property
     def provenance(self) -> Optional[PipesDataProvenance]:
+        """Optional[PipesDataProvenance]: The provenance for the currently scoped asset. Raises an
+        error if 0 or multiple assets are in scope.
+        """
         provenance_by_asset_key = _assert_defined_asset_property(
             self._data["provenance_by_asset_key"], "provenance"
         )
@@ -719,6 +920,9 @@ class PipesContext:
 
     @property
     def provenance_by_asset_key(self) -> Mapping[str, Optional[PipesDataProvenance]]:
+        """Mapping[str, Optional[PipesDataProvenance]]: Mapping of asset key to provenance for the
+        currently scoped assets. Raises an error if no assets are in scope.
+        """
         provenance_by_asset_key = _assert_defined_asset_property(
             self._data["provenance_by_asset_key"], "provenance_by_asset_key"
         )
@@ -726,6 +930,9 @@ class PipesContext:
 
     @property
     def code_version(self) -> Optional[str]:
+        """Optional[str]: The code version for the currently scoped asset. Raises an error if 0 or
+        multiple assets are in scope.
+        """
         code_version_by_asset_key = _assert_defined_asset_property(
             self._data["code_version_by_asset_key"], "code_version"
         )
@@ -734,6 +941,9 @@ class PipesContext:
 
     @property
     def code_version_by_asset_key(self) -> Mapping[str, Optional[str]]:
+        """Mapping[str, Optional[str]]: Mapping of asset key to code version for the currently
+        scoped assets. Raises an error if no assets are in scope.
+        """
         code_version_by_asset_key = _assert_defined_asset_property(
             self._data["code_version_by_asset_key"], "code_version_by_asset_key"
         )
@@ -741,17 +951,24 @@ class PipesContext:
 
     @property
     def is_partition_step(self) -> bool:
+        """bool: Whether the current step is scoped to one or more partitions."""
         return self._data["partition_key_range"] is not None
 
     @property
     def partition_key(self) -> str:
+        """str: The partition key for the currently scoped partition. Raises an error if 0 or
+        multiple partitions are in scope.
+        """
         partition_key = _assert_defined_partition_property(
             self._data["partition_key"], "partition_key"
         )
         return partition_key
 
     @property
-    def partition_key_range(self) -> Optional["PipesPartitionKeyRange"]:
+    def partition_key_range(self) -> "PipesPartitionKeyRange":
+        """PipesPartitionKeyRange: The partition key range for the currently scoped partition or
+        partitions. Raises an error if no partitions are in scope.
+        """
         partition_key_range = _assert_defined_partition_property(
             self._data["partition_key_range"], "partition_key_range"
         )
@@ -759,6 +976,10 @@ class PipesContext:
 
     @property
     def partition_time_window(self) -> Optional["PipesTimeWindow"]:
+        """Optional[PipesTimeWindow]: The partition time window for the currently scoped partition
+        or partitions. Returns None if partitions in scope are not temporal. Raises an error if no
+        partitions are in scope.
+        """
         # None is a valid value for partition_time_window, but we check that a partition key range
         # is defined.
         _assert_defined_partition_property(
@@ -768,21 +989,35 @@ class PipesContext:
 
     @property
     def run_id(self) -> str:
+        """str: The run ID for the currently executing pipeline run."""
         return self._data["run_id"]
 
     @property
     def job_name(self) -> Optional[str]:
+        """Optional[str]: The job name for the currently executing run. Returns None if the run is
+        not derived from a job.
+        """
         return self._data["job_name"]
 
     @property
     def retry_number(self) -> int:
+        """int: The retry number for the currently executing run."""
         return self._data["retry_number"]
 
     def get_extra(self, key: str) -> Any:
+        """Get the value of an extra provided by the user. Raises an error if the extra is not defined.
+
+        Args:
+            key (str): The key of the extra.
+
+        Returns:
+            Any: The value of the extra.
+        """
         return _assert_defined_extra(self._data["extras"], key)
 
     @property
     def extras(self) -> Mapping[str, Any]:
+        """Mapping[str, Any]: Key-value map for all extras provided by the user."""
         return self._data["extras"]
 
     # ##### WRITE
@@ -792,7 +1027,19 @@ class PipesContext:
         metadata: Optional[Mapping[str, Union[PipesMetadataRawValue, PipesMetadataValue]]] = None,
         data_version: Optional[str] = None,
         asset_key: Optional[str] = None,
-    ):
+    ) -> None:
+        """Report to Dagster that an asset has been materialized. Streams a payload containing
+        materialization information back to Dagster. If no assets are in scope, raises an error.
+
+        Args:
+            metadata (Optional[Mapping[str, Union[PipesMetadataRawValue, PipesMetadataValue]]]):
+                Metadata for the materialized asset. Defaults to None.
+            data_version (Optional[str]): The data version for the materialized asset.
+                Defaults to None.
+            asset_key (Optional[str]): The asset key for the materialized asset. If only a
+                single asset is in scope, default to that asset's key. If multiple assets are in scope,
+                this must be set explicitly or an error will be raised.
+        """
         asset_key = _resolve_optionally_passed_asset_key(
             self._data, asset_key, "report_asset_materialization"
         )
@@ -819,16 +1066,29 @@ class PipesContext:
     def report_asset_check(
         self,
         check_name: str,
-        success: bool,
+        passed: bool,
         severity: PipesAssetCheckSeverity = "ERROR",
         metadata: Optional[Mapping[str, Union[PipesMetadataRawValue, PipesMetadataValue]]] = None,
         asset_key: Optional[str] = None,
     ) -> None:
+        """Report to Dagster that an asset check has been performed. Streams a payload containing
+        check result information back to Dagster. If no assets or associated checks are in scope, raises an error.
+
+        Args:
+            check_name (str): The name of the check.
+            passed (bool): Whether the check passed.
+            severity (PipesAssetCheckSeverity): The severity of the check. Defaults to "ERROR".
+            metadata (Optional[Mapping[str, Union[PipesMetadataRawValue, PipesMetadataValue]]]):
+                Metadata for the check. Defaults to None.
+            asset_key (Optional[str]): The asset key for the check. If only a single asset is in
+                scope, default to that asset's key. If multiple assets are in scope, this must be
+                set explicitly or an error will be raised.
+        """
         asset_key = _resolve_optionally_passed_asset_key(
             self._data, asset_key, "report_asset_check"
         )
         check_name = _assert_param_type(check_name, str, "report_asset_check", "check_name")
-        success = _assert_param_type(success, bool, "report_asset_check", "success")
+        passed = _assert_param_type(passed, bool, "report_asset_check", "passed")
         metadata = (
             _normalize_param_metadata(metadata, "report_asset_check", "metadata")
             if metadata
@@ -839,13 +1099,13 @@ class PipesContext:
             {
                 "asset_key": asset_key,
                 "check_name": check_name,
-                "success": success,
+                "passed": passed,
                 "metadata": metadata,
                 "severity": severity,
             },
         )
 
-    def log(self, message: str, level: str = "info") -> None:
-        message = _assert_param_type(message, str, "log", "asset_key")
-        level = _assert_param_value(level, ["info", "warning", "error"], "log", "level")
-        self._write_message("log", {"message": message, "level": level})
+    @property
+    def log(self) -> logging.Logger:
+        """logging.Logger: A logger that streams log messages back to Dagster."""
+        return self._logger

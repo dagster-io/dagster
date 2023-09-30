@@ -983,6 +983,13 @@ class PartitionsSubset(ABC, Generic[T_str]):
             return self
         return self.with_partition_keys(other.get_partition_keys())
 
+    def __sub__(self, other: "PartitionsSubset") -> "PartitionsSubset[T_str]":
+        if self is other:
+            return self.partitions_def.empty_subset()
+        return self.partitions_def.empty_subset().with_partition_keys(
+            set(self.get_partition_keys()).difference(set(other.get_partition_keys()))
+        )
+
     @abstractmethod
     def serialize(self) -> str: ...
 

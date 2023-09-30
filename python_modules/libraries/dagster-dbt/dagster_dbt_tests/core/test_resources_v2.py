@@ -389,7 +389,10 @@ def test_dbt_cli_op_execution() -> None:
 def test_no_default_asset_events_emitted(data: dict) -> None:
     asset_events = DbtCliEventMessage(
         raw_event={
-            "info": {"level": "info"},
+            "info": {
+                "level": "info",
+                "invocation_id": "1-2-3",
+            },
             "data": data,
         }
     ).to_default_asset_events(manifest={})
@@ -399,7 +402,10 @@ def test_no_default_asset_events_emitted(data: dict) -> None:
 
 def test_to_default_asset_output_events() -> None:
     raw_event = {
-        "info": {"level": "info"},
+        "info": {
+            "level": "info",
+            "invocation_id": "1-2-3",
+        },
         "data": {
             "node_info": {
                 "unique_id": "a.b.c",
@@ -409,7 +415,7 @@ def test_to_default_asset_output_events() -> None:
                 "node_started_at": "2024-01-01T00:00:00Z",
                 "node_finished_at": "2024-01-01T00:01:00Z",
                 "meta": {},
-            }
+            },
         },
     }
     asset_events = list(
@@ -420,6 +426,7 @@ def test_to_default_asset_output_events() -> None:
     assert all(isinstance(e, Output) for e in asset_events)
     assert asset_events[0].metadata == {
         "unique_id": TextMetadataValue("a.b.c"),
+        "invocation_id": TextMetadataValue("1-2-3"),
         "Execution Duration": FloatMetadataValue(60.0),
     }
 
@@ -451,7 +458,10 @@ def test_dbt_tests_to_events(is_asset_check: bool) -> None:
         },
     }
     raw_event = {
-        "info": {"level": "info"},
+        "info": {
+            "level": "info",
+            "invocation_id": "1-2-3",
+        },
         "data": {
             "node_info": {
                 "unique_id": "test.a",

@@ -14,7 +14,11 @@ from dagster._core.definitions.selector import (
 )
 from dagster._core.execution.backfill import BulkActionStatus
 from dagster._core.nux import get_has_seen_nux
-from dagster._core.scheduler.instigation import InstigatorStatus, InstigatorType
+from dagster._core.scheduler.instigation import (
+    InstigatorStatus,
+    InstigatorType,
+)
+from dagster._core.workspace.permissions import Permissions
 
 from dagster_graphql.implementation.fetch_auto_materialize_asset_evaluations import (
     fetch_auto_materialize_asset_evaluations,
@@ -72,6 +76,7 @@ from ...implementation.fetch_schedules import (
 )
 from ...implementation.fetch_sensors import get_sensor_or_error, get_sensors_or_error
 from ...implementation.fetch_solids import get_graph_or_error
+from ...implementation.fetch_ticks import get_instigation_ticks
 from ...implementation.loader import (
     BatchMaterializationLoader,
     CrossRepoAssetDependedByLoader,
@@ -119,6 +124,8 @@ from ..instigation import (
     GrapheneInstigationStateOrError,
     GrapheneInstigationStatesOrError,
     GrapheneInstigationStatus,
+    GrapheneInstigationTick,
+    GrapheneInstigationTickStatus,
     GrapheneInstigationType,
 )
 from ..logs.compute_logs import (
@@ -433,6 +440,11 @@ class GrapheneQuery(graphene.ObjectType):
         description="Retrieve the set of permissions for the Dagster deployment.",
     )
 
+    canBulkTerminate = graphene.Field(
+        graphene.NonNull(graphene.Boolean),
+        description="Returns whether the user has permission to terminate runs in the deployment",
+    )
+
     assetsLatestInfo = graphene.Field(
         non_null_list(GrapheneAssetLatestInfo),
         assetKeys=graphene.Argument(non_null_list(GrapheneAssetKeyInput)),
@@ -476,6 +488,16 @@ class GrapheneQuery(graphene.ObjectType):
         limit=graphene.Argument(graphene.NonNull(graphene.Int)),
         cursor=graphene.Argument(graphene.String),
         description="Retrieve the auto materialization evaluation records for all assets.",
+    )
+
+    autoMaterializeTicks = graphene.Field(
+        non_null_list(GrapheneInstigationTick),
+        dayRange=graphene.Int(),
+        dayOffset=graphene.Int(),
+        limit=graphene.Int(),
+        cursor=graphene.String(),
+        statuses=graphene.List(graphene.NonNull(GrapheneInstigationTickStatus)),
+        description="Fetch the history of auto-materialization ticks",
     )
 
     assetChecksOrError = graphene.Field(
@@ -944,6 +966,9 @@ class GrapheneQuery(graphene.ObjectType):
         permissions = graphene_info.context.permissions
         return [GraphenePermission(permission, value) for permission, value in permissions.items()]
 
+    def resolve_canBulkTerminate(self, graphene_info: ResolveInfo) -> bool:
+        return graphene_info.context.has_permission(Permissions.TERMINATE_PIPELINE_EXECUTION)
+
     def resolve_assetsLatestInfo(
         self, graphene_info: ResolveInfo, assetKeys: Sequence[GrapheneAssetKeyInput]
     ):
@@ -1006,6 +1031,27 @@ class GrapheneQuery(graphene.ObjectType):
     ):
         return fetch_auto_materialize_asset_evaluations(
             graphene_info=graphene_info, graphene_asset_key=assetKey, cursor=cursor, limit=limit
+        )
+
+    def resolve_autoMaterializeTicks(
+        self, graphene_info, dayRange=None, dayOffset=None, limit=None, cursor=None, statuses=None
+    ):
+        from dagster._daemon.asset_daemon import (
+            FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
+            FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
+        )
+
+        return get_instigation_ticks(
+            graphene_info=graphene_info,
+            instigator_type=InstigatorType.AUTO_MATERIALIZE,
+            instigator_origin_id=FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
+            selector_id=FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
+            batch_loader=None,
+            dayRange=dayRange,
+            dayOffset=dayOffset,
+            limit=limit,
+            cursor=cursor,
+            status_strings=statuses,
         )
 
     def resolve_assetChecksOrError(

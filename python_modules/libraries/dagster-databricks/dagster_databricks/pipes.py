@@ -8,15 +8,16 @@ from contextlib import contextmanager
 from typing import Iterator, Mapping, Optional
 
 import dagster._check as check
+from dagster._annotations import experimental
 from dagster._core.definitions.resource_annotation import ResourceParam
-from dagster._core.errors import DagsterExternalExecutionError
+from dagster._core.errors import DagsterPipesExecutionError
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.pipes.client import (
     PipesClient,
+    PipesClientCompletedInvocation,
     PipesContextInjector,
     PipesMessageReader,
 )
-from dagster._core.pipes.context import PipesResult
 from dagster._core.pipes.utils import (
     PipesBlobStoreMessageReader,
     open_pipes_session,
@@ -31,12 +32,18 @@ from databricks.sdk.service import files, jobs
 from pydantic import Field
 
 
+@experimental
 class _PipesDatabricksClient(PipesClient):
-    """Ext client for databricks.
+    """Pipes client for databricks.
 
     Args:
-        client (WorkspaceClient): A databricks workspace client.
-        env (Optional[Mapping[str,str]]: An optional dict of environment variables to pass to the databricks job.
+        client (WorkspaceClient): A databricks `WorkspaceClient` object.
+        env (Optional[Mapping[str,str]]: An optional dict of environment variables to pass to the
+            databricks job.
+        context_injector (Optional[PipesContextInjector]): A context injector to use to inject
+            context into the k8s container process. Defaults to :py:class:`PipesDbfsContextInjector`.
+        message_reader (Optional[PipesMessageReader]): A message reader to use to read messages
+            from the databricks job. Defaults to :py:class:`PipesDbfsMessageReader`.
     """
 
     env: Optional[Mapping[str, str]] = Field(
@@ -71,8 +78,8 @@ class _PipesDatabricksClient(PipesClient):
         context: OpExecutionContext,
         extras: Optional[PipesExtras] = None,
         submit_args: Optional[Mapping[str, str]] = None,
-    ) -> Iterator[PipesResult]:
-        """Run a Databricks job with the EXT protocol.
+    ) -> PipesClientCompletedInvocation:
+        """Synchronously execute a Databricks job with the pipes protocol.
 
         Args:
             task (databricks.sdk.service.jobs.SubmitTask): Specification of the databricks
@@ -80,8 +87,15 @@ class _PipesDatabricksClient(PipesClient):
                 `spark_env_vars` key of the `new_cluster` field (if there is an existing dictionary
                 here, the EXT environment variables will be merged in). Everything else will be
                 passed unaltered under the `tasks` arg to `WorkspaceClient.jobs.submit`.
+            context (OpExecutionContext): The context from the executing op or asset.
+            extras (Optional[PipesExtras]): An optional dict of extra parameters to pass to the
+                subprocess.
             submit_args (Optional[Mapping[str, str]]): Additional keyword arguments that will be
                 forwarded as-is to `WorkspaceClient.jobs.submit`.
+
+        Returns:
+            PipesClientCompletedInvocation: Wrapper containing results reported by the external
+                process.
         """
         with open_pipes_session(
             context=context,
@@ -113,16 +127,15 @@ class _PipesDatabricksClient(PipesClient):
                     if run.state.result_state == jobs.RunResultState.SUCCESS:
                         break
                     else:
-                        raise DagsterExternalExecutionError(
+                        raise DagsterPipesExecutionError(
                             f"Error running Databricks job: {run.state.state_message}"
                         )
                 elif run.state.life_cycle_state == jobs.RunLifeCycleState.INTERNAL_ERROR:
-                    raise DagsterExternalExecutionError(
+                    raise DagsterPipesExecutionError(
                         f"Error running Databricks job: {run.state.state_message}"
                     )
-                yield from pipes_session.get_results()
                 time.sleep(5)
-        yield from pipes_session.get_results()
+        return PipesClientCompletedInvocation(tuple(pipes_session.get_results()))
 
 
 PipesDatabricksClient = ResourceParam[_PipesDatabricksClient]
@@ -141,13 +154,30 @@ def dbfs_tempdir(dbfs_client: files.DbfsAPI) -> Iterator[str]:
         dbfs_client.delete(tempdir, recursive=True)
 
 
+@experimental
 class PipesDbfsContextInjector(PipesContextInjector):
+    """A context injector that injects context into a Databricks job by writing a JSON file to DBFS.
+
+    Args:
+        client (WorkspaceClient): A databricks `WorkspaceClient` object.
+    """
+
     def __init__(self, *, client: WorkspaceClient):
         super().__init__()
         self.dbfs_client = files.DbfsAPI(client.api_client)
 
     @contextmanager
     def inject_context(self, context: "PipesContextData") -> Iterator[PipesParams]:
+        """Inject context to external environment by writing it to an automatically-generated
+        DBFS temporary file as JSON and exposing the path to the file.
+
+        Args:
+            context_data (PipesContextData): The context data to inject.
+
+        Yields:
+            PipesParams: A dict of parameters that can be used by the external process to locate and
+                load the injected context data.
+        """
         with dbfs_tempdir(self.dbfs_client) as tempdir:
             path = os.path.join(tempdir, _CONTEXT_FILENAME)
             contents = base64.b64encode(json.dumps(context).encode("utf-8")).decode("utf-8")
@@ -155,7 +185,16 @@ class PipesDbfsContextInjector(PipesContextInjector):
             yield {"path": path}
 
 
+@experimental
 class PipesDbfsMessageReader(PipesBlobStoreMessageReader):
+    """Message reader that reads messages by periodically reading message chunks from an
+    automatically-generated temporary directory on DBFS.
+
+    Args:
+        interval (float): interval in seconds between attempts to download a chunk
+        client (WorkspaceClient): A databricks `WorkspaceClient` object.
+    """
+
     def __init__(self, *, interval: int = 10, client: WorkspaceClient):
         super().__init__(interval=interval)
         self.dbfs_client = files.DbfsAPI(client.api_client)

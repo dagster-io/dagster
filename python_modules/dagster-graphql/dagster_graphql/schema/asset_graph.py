@@ -1104,6 +1104,7 @@ class GrapheneAssetNode(graphene.ObjectType):
 
 
 class GrapheneAssetGroup(graphene.ObjectType):
+    id = graphene.NonNull(graphene.String)
     groupName = graphene.NonNull(graphene.String)
     assetKeys = non_null_list(GrapheneAssetKey)
 

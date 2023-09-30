@@ -246,6 +246,7 @@ export type AssetGroup = {
   __typename: 'AssetGroup';
   assetKeys: Array<AssetKey>;
   groupName: Scalars['String'];
+  id: Scalars['String'];
 };
 
 export type AssetGroupSelector = {
@@ -2009,6 +2010,7 @@ export type Mutation = {
   stopSensor: StopSensorMutationResultOrError;
   terminatePipelineExecution: TerminateRunResult;
   terminateRun: TerminateRunResult;
+  terminateRuns: TerminateRunsResultOrError;
   wipeAssets: AssetWipeMutationResult;
 };
 
@@ -2124,6 +2126,11 @@ export type MutationTerminatePipelineExecutionArgs = {
 
 export type MutationTerminateRunArgs = {
   runId: Scalars['String'];
+  terminatePolicy?: InputMaybe<TerminateRunPolicy>;
+};
+
+export type MutationTerminateRunsArgs = {
+  runIds: Array<Scalars['String']>;
   terminatePolicy?: InputMaybe<TerminateRunPolicy>;
 };
 
@@ -2815,6 +2822,8 @@ export type Query = {
   assetsLatestInfo: Array<AssetLatestInfo>;
   assetsOrError: AssetsOrError;
   autoMaterializeAssetEvaluationsOrError: Maybe<AutoMaterializeAssetEvaluationRecordsOrError>;
+  autoMaterializeTicks: Array<InstigationTick>;
+  canBulkTerminate: Scalars['Boolean'];
   capturedLogs: CapturedLogs;
   capturedLogsMetadata: CapturedLogsMetadata;
   executionPlanOrError: ExecutionPlanOrError;
@@ -2898,6 +2907,14 @@ export type QueryAutoMaterializeAssetEvaluationsOrErrorArgs = {
   assetKey: AssetKeyInput;
   cursor?: InputMaybe<Scalars['String']>;
   limit: Scalars['Int'];
+};
+
+export type QueryAutoMaterializeTicksArgs = {
+  cursor?: InputMaybe<Scalars['String']>;
+  dayOffset?: InputMaybe<Scalars['Int']>;
+  dayRange?: InputMaybe<Scalars['Int']>;
+  limit?: InputMaybe<Scalars['Int']>;
+  statuses?: InputMaybe<Array<InstigationTickStatus>>;
 };
 
 export type QueryCapturedLogsArgs = {
@@ -3198,6 +3215,7 @@ export type ResourceDetails = {
   configFields: Array<ConfigTypeField>;
   configuredValues: Array<ConfiguredValue>;
   description: Maybe<Scalars['String']>;
+  id: Scalars['String'];
   isTopLevel: Scalars['Boolean'];
   jobsOpsUsing: Array<JobWithOps>;
   name: Scalars['String'];
@@ -4135,13 +4153,19 @@ export type TerminateRunResult =
   | PythonError
   | RunNotFoundError
   | TerminateRunFailure
-  | TerminateRunSuccess
-  | UnauthorizedError;
+  | TerminateRunSuccess;
 
 export type TerminateRunSuccess = TerminatePipelineExecutionSuccess & {
   __typename: 'TerminateRunSuccess';
   run: Run;
 };
+
+export type TerminateRunsResult = {
+  __typename: 'TerminateRunsResult';
+  terminateRunResults: Array<TerminateRunResult>;
+};
+
+export type TerminateRunsResultOrError = PythonError | TerminateRunsResult;
 
 export type TestFields = {
   __typename: 'TestFields';
@@ -4727,6 +4751,7 @@ export const buildAssetGroup = (
     __typename: 'AssetGroup',
     assetKeys: overrides && overrides.hasOwnProperty('assetKeys') ? overrides.assetKeys! : [],
     groupName: overrides && overrides.hasOwnProperty('groupName') ? overrides.groupName! : 'aut',
+    id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : 'eligendi',
   };
 };
 
@@ -8259,6 +8284,12 @@ export const buildMutation = (
         : relationshipsToOmit.has('PythonError')
         ? ({} as PythonError)
         : buildPythonError({}, relationshipsToOmit),
+    terminateRuns:
+      overrides && overrides.hasOwnProperty('terminateRuns')
+        ? overrides.terminateRuns!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     wipeAssets:
       overrides && overrides.hasOwnProperty('wipeAssets')
         ? overrides.wipeAssets!
@@ -9723,6 +9754,14 @@ export const buildQuery = (
         : relationshipsToOmit.has('AutoMaterializeAssetEvaluationNeedsMigrationError')
         ? ({} as AutoMaterializeAssetEvaluationNeedsMigrationError)
         : buildAutoMaterializeAssetEvaluationNeedsMigrationError({}, relationshipsToOmit),
+    autoMaterializeTicks:
+      overrides && overrides.hasOwnProperty('autoMaterializeTicks')
+        ? overrides.autoMaterializeTicks!
+        : [],
+    canBulkTerminate:
+      overrides && overrides.hasOwnProperty('canBulkTerminate')
+        ? overrides.canBulkTerminate!
+        : false,
     capturedLogs:
       overrides && overrides.hasOwnProperty('capturedLogs')
         ? overrides.capturedLogs!
@@ -10279,6 +10318,7 @@ export const buildResourceDetails = (
       overrides && overrides.hasOwnProperty('configuredValues') ? overrides.configuredValues! : [],
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'laudantium',
+    id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : 'quia',
     isTopLevel: overrides && overrides.hasOwnProperty('isTopLevel') ? overrides.isTopLevel! : false,
     jobsOpsUsing:
       overrides && overrides.hasOwnProperty('jobsOpsUsing') ? overrides.jobsOpsUsing! : [],
@@ -12195,6 +12235,21 @@ export const buildTerminateRunSuccess = (
         : relationshipsToOmit.has('Run')
         ? ({} as Run)
         : buildRun({}, relationshipsToOmit),
+  };
+};
+
+export const buildTerminateRunsResult = (
+  overrides?: Partial<TerminateRunsResult>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'TerminateRunsResult'} & TerminateRunsResult => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('TerminateRunsResult');
+  return {
+    __typename: 'TerminateRunsResult',
+    terminateRunResults:
+      overrides && overrides.hasOwnProperty('terminateRunResults')
+        ? overrides.terminateRunResults!
+        : [],
   };
 };
 

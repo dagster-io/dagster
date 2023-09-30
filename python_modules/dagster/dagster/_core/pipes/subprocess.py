@@ -1,18 +1,19 @@
 from subprocess import Popen
-from typing import Iterator, Mapping, Optional, Sequence, Union
+from typing import Mapping, Optional, Sequence, Union
 
 from dagster_pipes import PipesExtras
 
 from dagster import _check as check
+from dagster._annotations import experimental, public
 from dagster._core.definitions.resource_annotation import ResourceParam
-from dagster._core.errors import DagsterExternalExecutionError
+from dagster._core.errors import DagsterPipesExecutionError
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.pipes.client import (
     PipesClient,
+    PipesClientCompletedInvocation,
     PipesContextInjector,
     PipesMessageReader,
 )
-from dagster._core.pipes.context import PipesResult
 from dagster._core.pipes.utils import (
     PipesTempFileContextInjector,
     PipesTempFileMessageReader,
@@ -20,17 +21,21 @@ from dagster._core.pipes.utils import (
 )
 
 
+@experimental
 class _PipesSubprocess(PipesClient):
     """A pipes client that runs a subprocess with the given command and environment.
 
-    By default parameters are injected via environment variables. And then context is passed via
+    By default parameters are injected via environment variables. Context is passed via
     a temp file, and structured messages are read from from a temp file.
 
     Args:
-        env (Optional[Mapping[str, str]]): An optional dict of environment variables to pass to the subprocess.
+        env (Optional[Mapping[str, str]]): An optional dict of environment variables to pass to the
+            subprocess.
         cwd (Optional[str]): Working directory in which to launch the subprocess command.
-        context_injector (Optional[PipesContextInjector]): An context injector to use to inject context into the subprocess. Defaults to PipesTempFileContextInjector.
-        message_reader (Optional[PipesContextInjector]): An context injector to use to read messages from  the subprocess. Defaults to PipesTempFileMessageReader.
+        context_injector (Optional[PipesContextInjector]): A context injector to use to inject
+            context into the subprocess. Defaults to :py:class:`PipesTempFileContextInjector`.
+        message_reader (Optional[PipesMessageReader]): A message reader to use to read messages from
+            the subprocess. Defaults to :py:class:`PipesTempFileMessageReader`.
     """
 
     def __init__(
@@ -59,6 +64,7 @@ class _PipesSubprocess(PipesClient):
             or PipesTempFileMessageReader()
         )
 
+    @public
     def run(
         self,
         command: Union[str, Sequence[str]],
@@ -67,7 +73,20 @@ class _PipesSubprocess(PipesClient):
         extras: Optional[PipesExtras] = None,
         env: Optional[Mapping[str, str]] = None,
         cwd: Optional[str] = None,
-    ) -> Iterator[PipesResult]:
+    ) -> PipesClientCompletedInvocation:
+        """Synchronously execute a subprocess with in a pipes session.
+
+        Args:
+            command (Union[str, Sequence[str]]): The command to run. Will be passed to `subprocess.Popen()`.
+            context (OpExecutionContext): The context from the executing op or asset.
+            extras (Optional[PipesExtras]): An optional dict of extra parameters to pass to the subprocess.
+            env (Optional[Mapping[str, str]]): An optional dict of environment variables to pass to the subprocess.
+            cwd (Optional[str]): Working directory in which to launch the subprocess command.
+
+        Returns:
+            PipesClientCompletedInvocation: Wrapper containing results reported by the external
+            process.
+        """
         with open_pipes_session(
             context=context,
             context_injector=self.context_injector,
@@ -83,14 +102,12 @@ class _PipesSubprocess(PipesClient):
                     **(env or {}),
                 },
             )
-            while process.poll() is None:
-                yield from pipes_session.get_results()
-
+            process.wait()
             if process.returncode != 0:
-                raise DagsterExternalExecutionError(
+                raise DagsterPipesExecutionError(
                     f"External execution process failed with code {process.returncode}"
                 )
-        yield from pipes_session.get_results()
+        return PipesClientCompletedInvocation(tuple(pipes_session.get_results()))
 
 
-PipesSubprocess = ResourceParam[_PipesSubprocess]
+PipesSubprocessClient = ResourceParam[_PipesSubprocess]

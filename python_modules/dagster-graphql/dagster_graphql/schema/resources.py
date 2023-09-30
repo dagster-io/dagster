@@ -76,6 +76,7 @@ class GrapheneJobAndSpecificOps(graphene.ObjectType):
 
 
 class GrapheneResourceDetails(graphene.ObjectType):
+    id = graphene.NonNull(graphene.String)
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
     configFields = graphene.Field(
@@ -111,6 +112,8 @@ class GrapheneResourceDetails(graphene.ObjectType):
         self, location_name: str, repository_name: str, external_resource: ExternalResource
     ):
         super().__init__()
+
+        self.id = f"{location_name}-{repository_name}-{external_resource.name}"
 
         self._location_name = check.str_param(location_name, "location_name")
         self._repository_name = check.str_param(repository_name, "repository_name")

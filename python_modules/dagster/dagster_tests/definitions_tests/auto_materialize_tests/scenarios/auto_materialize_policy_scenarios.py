@@ -1,7 +1,9 @@
 import datetime
 
 from dagster import (
+    Field,
     PartitionKeyRange,
+    StringSource,
 )
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
@@ -123,6 +125,18 @@ partitioned_to_unpartitioned_allow_missing_parent = [
         "unpartitioned2", ["unpartitioned1"], auto_materialize_policy=AutoMaterializePolicy.eager()
     ),
 ]
+
+# Asset that triggers an error within the daemon when you try to generate
+# a plan to materialize it
+error_asset = [
+    asset_def(
+        "error_asset",
+        config_schema={
+            "foo": Field(StringSource, default_value={"env": "VAR_THAT_DOES_NOT_EXIST"}),
+        },
+    )
+]
+
 
 get_unpartitioned_with_one_parent_partitioned_skip_on_parents_updated = (
     lambda require_update_for_all_parent_partitions: with_auto_materialize_policy(
@@ -781,5 +795,14 @@ auto_materialize_policy_scenarios = {
             current_time=create_pendulum_time(year=2023, month=1, day=1, hour=4),
             expected_run_requests=[run_request(["asset3"], partition_key="2023-01-01-03:00")],
         )
+    ),
+    "error_asset_scenario": AssetReconciliationScenario(
+        assets=with_auto_materialize_policy(error_asset, AutoMaterializePolicy.eager()),
+        unevaluated_runs=[],
+        expected_run_requests=[run_request(["error_asset"])],
+        expected_error_message=(
+            'You have attempted to fetch the environment variable "VAR_THAT_DOES_NOT_EXIST" which'
+            " is not set"
+        ),
     ),
 }

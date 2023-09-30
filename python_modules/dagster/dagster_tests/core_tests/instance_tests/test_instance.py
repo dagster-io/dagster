@@ -769,7 +769,7 @@ def test_report_runless_asset_event():
             AssetCheckEvaluation(
                 asset_key=my_asset_key,
                 check_name=my_check,
-                success=True,
+                passed=True,
                 metadata={},
             )
         )

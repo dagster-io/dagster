@@ -376,6 +376,9 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     def _instance(self) -> Optional["DagsterInstance"]:
         return self._storage._instance  # noqa: SLF001
 
+    def index_connection(self):
+        return self._storage.event_log_storage.index_connection()
+
     def register_instance(self, instance: "DagsterInstance") -> None:
         if not self._storage.has_instance:
             self._storage.register_instance(instance)

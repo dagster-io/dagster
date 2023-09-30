@@ -90,12 +90,7 @@ export const AssetNodeLineage: React.FC<{
           Not all upstream/downstream assets shown. Increase the depth to show more.
         </DepthHidesAssetsNotice>
       )}
-      <AssetNodeLineageGraph
-        assetKey={assetKey}
-        liveDataByNode={liveDataByNode}
-        assetGraphData={assetGraphData}
-        params={params}
-      />
+      <AssetNodeLineageGraph assetKey={assetKey} assetGraphData={assetGraphData} params={params} />
     </Box>
   );
 };

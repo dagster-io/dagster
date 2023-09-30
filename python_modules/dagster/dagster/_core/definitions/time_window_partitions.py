@@ -1604,17 +1604,20 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
         serialized_partitions_def_unique_id: Optional[str],
         serialized_partitions_def_class_name: Optional[str],
     ) -> bool:
-        if (
-            serialized_partitions_def_class_name
-            and serialized_partitions_def_class_name != partitions_def.__class__.__name__
-        ):
-            return False
-
         if serialized_partitions_def_unique_id:
             return (
                 partitions_def.get_serializable_unique_identifier()
                 == serialized_partitions_def_unique_id
             )
+
+        if (
+            serialized_partitions_def_class_name
+            # note: all TimeWindowPartitionsDefinition subclasses will get serialized as raw
+            # TimeWindowPartitionsDefinitions, so this class name check will not always pass,
+            # hence the unique id check above
+            and serialized_partitions_def_class_name != partitions_def.__class__.__name__
+        ):
+            return False
 
         data = json.loads(serialized)
         return isinstance(data, list) or (
@@ -1813,14 +1816,13 @@ def fetch_flattened_time_window_ranges(
 
 
 def has_one_dimension_time_window_partitioning(
-    partitions_def: PartitionsDefinition,
+    partitions_def: Optional[PartitionsDefinition],
 ) -> bool:
     from .multi_dimensional_partitions import MultiPartitionsDefinition
 
     if isinstance(partitions_def, TimeWindowPartitionsDefinition):
         return True
-
-    if isinstance(partitions_def, MultiPartitionsDefinition):
+    elif isinstance(partitions_def, MultiPartitionsDefinition):
         time_window_dims = [
             dim
             for dim in partitions_def.partitions_defs

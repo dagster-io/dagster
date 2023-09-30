@@ -148,6 +148,7 @@ export interface LiveDataForNode {
     numPartitions: number;
     numFailed: number;
   } | null;
+  opNames: string[];
 }
 
 export const MISSING_LIVE_DATA: LiveDataForNode = {
@@ -162,6 +163,7 @@ export const MISSING_LIVE_DATA: LiveDataForNode = {
   staleStatus: null,
   staleCauses: [],
   assetChecks: [],
+  opNames: [],
   stepKey: '',
 };
 
@@ -217,6 +219,7 @@ export const buildLiveDataForNode = (
     unstartedRunIds: assetLatestInfo?.unstartedRunIds || [],
     partitionStats: assetNode.partitionStats || null,
     runWhichFailedToMaterialize,
+    opNames: assetNode.opNames,
   };
 };
 

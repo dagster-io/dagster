@@ -7,8 +7,8 @@ from typing import Any, Callable, Iterator
 
 import pytest
 from dagster import AssetExecutionContext, asset, materialize
-from dagster._core.errors import DagsterExternalExecutionError
-from dagster_databricks import PipesDatabricksClient, dbfs_tempdir
+from dagster._core.errors import DagsterPipesExecutionError
+from dagster_databricks.pipes import PipesDatabricksClient, dbfs_tempdir
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service import files, jobs
 
@@ -17,19 +17,19 @@ IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
 def script_fn():
     from dagster_pipes import (
-        DbfsPipesContextLoader,
+        PipesDbfsContextLoader,
         PipesDbfsMessageWriter,
         init_dagster_pipes,
     )
 
     context = init_dagster_pipes(
-        context_loader=DbfsPipesContextLoader(), message_writer=PipesDbfsMessageWriter()
+        context_loader=PipesDbfsContextLoader(), message_writer=PipesDbfsMessageWriter()
     )
 
     multiplier = context.get_extra("multiplier")
     value = 2 * multiplier
 
-    context.log(f"{context.asset_key}: {2} * {multiplier} = {value}")
+    context.log.info(f"{context.asset_key}: {2} * {multiplier} = {value}")
     context.report_asset_materialization(
         metadata={"value": value},
         data_version="alpha",
@@ -90,11 +90,11 @@ def test_basic(client: WorkspaceClient):
     def number_x(context: AssetExecutionContext, pipes_databricks_client: PipesDatabricksClient):
         with temp_script(script_fn, client) as script_path:
             task = _make_submit_task(script_path)
-            pipes_databricks_client.run(
+            return pipes_databricks_client.run(
                 task=task,
                 context=context,
                 extras={"multiplier": 2, "storage_root": "fake"},
-            )
+            ).get_results()
 
     result = materialize(
         [number_x],
@@ -111,9 +111,9 @@ def test_nonexistent_entry_point(client: WorkspaceClient):
     @asset
     def fake(context: AssetExecutionContext, pipes_databricks_client: PipesDatabricksClient):
         task = _make_submit_task("/fake/fake")
-        pipes_databricks_client.run(task=task, context=context)
+        return pipes_databricks_client.run(task=task, context=context).get_results()
 
-    with pytest.raises(DagsterExternalExecutionError, match=r"Cannot read the python file"):
+    with pytest.raises(DagsterPipesExecutionError, match=r"Cannot read the python file"):
         materialize(
             [fake],
             resources={"pipes_databricks_client": PipesDatabricksClient(client)},

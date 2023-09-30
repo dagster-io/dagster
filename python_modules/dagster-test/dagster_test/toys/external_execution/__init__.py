@@ -3,7 +3,7 @@ import sys
 
 from dagster import AssetExecutionContext, Config, Definitions, asset
 from dagster._core.pipes.subprocess import (
-    PipesSubprocess,
+    PipesSubprocessClient,
 )
 from pydantic import Field
 
@@ -32,14 +32,22 @@ class NumberConfig(Config):
 
 
 @asset
-def number_x(context: AssetExecutionContext, ext: PipesSubprocess, config: NumberConfig) -> None:
+def number_x(
+    context: AssetExecutionContext,
+    pipes_subprocess_client: PipesSubprocessClient,
+    config: NumberConfig,
+) -> None:
     extras = {**get_common_extras(context), "multiplier": config.multiplier}
-    ext.run(command_for_asset("number_x"), context=context, extras=extras)
+    pipes_subprocess_client.run(command_for_asset("number_x"), context=context, extras=extras)
 
 
 @asset
-def number_y(context: AssetExecutionContext, ext: PipesSubprocess, config: NumberConfig):
-    ext.run(
+def number_y(
+    context: AssetExecutionContext,
+    pipes_subprocess_client: PipesSubprocessClient,
+    config: NumberConfig,
+):
+    pipes_subprocess_client.run(
         command_for_asset("number_y"),
         context=context,
         extras=get_common_extras(context),
@@ -48,15 +56,21 @@ def number_y(context: AssetExecutionContext, ext: PipesSubprocess, config: Numbe
 
 
 @asset(deps=[number_x, number_y])
-def number_sum(context: AssetExecutionContext, ext: PipesSubprocess) -> None:
-    ext.run(command_for_asset("number_sum"), context=context, extras=get_common_extras(context))
+def number_sum(
+    context: AssetExecutionContext, pipes_subprocess_client: PipesSubprocessClient
+) -> None:
+    pipes_subprocess_client.run(
+        command_for_asset("number_sum"), context=context, extras=get_common_extras(context)
+    )
 
 
-ext = PipesSubprocess(
+pipes_subprocess_client = PipesSubprocessClient(
     env=get_env(),
 )
 
-defs = Definitions(assets=[number_x, number_y, number_sum], resources={"ext": ext})
+defs = Definitions(
+    assets=[number_x, number_y, number_sum], resources={"ext": pipes_subprocess_client}
+)
 
 if __name__ == "__main__":
     from dagster import instance_for_test, materialize
@@ -65,5 +79,5 @@ if __name__ == "__main__":
         materialize(
             [number_x, number_y, number_sum],
             instance=instance,
-            resources={"ext": ext},
+            resources={"ext": pipes_subprocess_client},
         )

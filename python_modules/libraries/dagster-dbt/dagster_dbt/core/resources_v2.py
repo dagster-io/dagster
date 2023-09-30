@@ -118,6 +118,7 @@ class DbtCliEventMessage:
                 "No dbt manifest was provided. Dagster events for dbt tests will not be created."
             )
 
+        invocation_id: str = self.raw_event["info"]["invocation_id"]
         unique_id: str = event_node_info["unique_id"]
         node_resource_type: str = event_node_info["resource_type"]
         node_status: str = event_node_info["node_status"]
@@ -134,15 +135,22 @@ class DbtCliEventMessage:
                 output_name=output_name_fn(event_node_info),
                 metadata={
                     "unique_id": unique_id,
+                    "invocation_id": invocation_id,
                     "Execution Duration": duration_seconds,
                 },
             )
         elif manifest and node_resource_type == NodeType.Test and is_node_finished:
             upstream_unique_ids: List[str] = manifest["parent_map"][unique_id]
             test_resource_props = manifest["nodes"][unique_id]
-            metadata = {"unique_id": unique_id, "status": node_status}
+            metadata = {
+                "unique_id": unique_id,
+                "invocation_id": invocation_id,
+                "status": node_status,
+            }
 
-            is_asset_check = is_asset_check_from_dbt_resource_props(test_resource_props)
+            is_asset_check = is_asset_check_from_dbt_resource_props(
+                dagster_dbt_translator.settings, test_resource_props
+            )
             attached_node_unique_id = test_resource_props.get("attached_node")
             is_generic_test = bool(attached_node_unique_id)
 
@@ -158,7 +166,7 @@ class DbtCliEventMessage:
                 )
 
                 yield AssetCheckResult(
-                    success=is_test_successful,
+                    passed=is_test_successful,
                     asset_key=attached_node_asset_key,
                     check_name=event_node_info["node_name"],
                     metadata=metadata,

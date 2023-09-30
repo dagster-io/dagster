@@ -1491,7 +1491,6 @@ union TerminateRunResult =
     TerminateRunSuccess
   | TerminateRunFailure
   | RunNotFoundError
-  | UnauthorizedError
   | PythonError
 
 type TerminateRunSuccess implements TerminatePipelineExecutionSuccess {
@@ -2022,11 +2021,13 @@ type Job implements SolidContainer & IPipelineSnapshot {
 }
 
 type AssetGroup {
+  id: String!
   groupName: String!
   assetKeys: [AssetKey!]!
 }
 
 type ResourceDetails {
+  id: String!
   name: String!
   description: String
   configFields: [ConfigTypeField!]!
@@ -3029,6 +3030,7 @@ type Query {
     limit: Int
   ): PartitionBackfillsOrError!
   permissions: [Permission!]!
+  canBulkTerminate: Boolean!
   assetsLatestInfo(assetKeys: [AssetKeyInput!]!): [AssetLatestInfo!]!
   logsForRun(runId: ID!, afterCursor: String, limit: Int): EventConnectionOrError!
   capturedLogsMetadata(logKey: [String!]!): CapturedLogsMetadata!
@@ -3040,6 +3042,13 @@ type Query {
     limit: Int!
     cursor: String
   ): AutoMaterializeAssetEvaluationRecordsOrError
+  autoMaterializeTicks(
+    dayRange: Int
+    dayOffset: Int
+    limit: Int
+    cursor: String
+    statuses: [InstigationTickStatus!]
+  ): [InstigationTick!]!
   assetChecksOrError(assetKey: AssetKeyInput!, checkName: String): AssetChecksOrError!
 }
 
@@ -3276,6 +3285,10 @@ type Mutation {
     terminatePolicy: TerminateRunPolicy
   ): TerminateRunResult!
   terminateRun(runId: String!, terminatePolicy: TerminateRunPolicy): TerminateRunResult!
+  terminateRuns(
+    runIds: [String!]!
+    terminatePolicy: TerminateRunPolicy
+  ): TerminateRunsResultOrError!
   deletePipelineRun(runId: String!): DeletePipelineRunResult!
   deleteRun(runId: String!): DeletePipelineRunResult!
   reloadRepositoryLocation(repositoryLocationName: String!): ReloadRepositoryLocationMutationResult!
@@ -3317,6 +3330,12 @@ enum ReexecutionStrategy {
 union SensorDryRunResult = PythonError | SensorNotFoundError | DryRunInstigationTick
 
 union ScheduleDryRunResult = DryRunInstigationTick | PythonError | ScheduleNotFoundError
+
+union TerminateRunsResultOrError = TerminateRunsResult | PythonError
+
+type TerminateRunsResult {
+  terminateRunResults: [TerminateRunResult!]!
+}
 
 union AssetWipeMutationResult =
     AssetNotFoundError

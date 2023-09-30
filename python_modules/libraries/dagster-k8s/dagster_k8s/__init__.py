@@ -10,6 +10,10 @@ from .ops import (
     execute_k8s_job as execute_k8s_job,
     k8s_job_op as k8s_job_op,
 )
+from .pipes import (
+    PipesK8sClient as PipesK8sClient,
+    PipesK8sPodLogsMessageReader as PipesK8sPodLogsMessageReader,
+)
 from .version import __version__ as __version__
 
 DagsterLibraryRegistry.register("dagster-k8s", __version__)
