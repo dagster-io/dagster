@@ -361,62 +361,6 @@ defs = Definitions(
 
 ---
 
-## Storing multiple DataFrame types in Delta Lake
-
-If you work with several DataFrame libraries and want a single I/O manager to handle storing and loading these DataFrames in Delta Lake, you can write a new I/O manager that handles the DataFrame types.
-
-To do this, inherit from the <PyObject module="dagster_deltalake" object="DeltaLakeIOManager" /> base class and implement the `type_handlers` and `default_load_type` methods. The resulting I/O manager will inherit the configuration fields of the base `DeltaLakePandasIOManager`.
-
-```python file=/integrations/deltalake/multiple_dataframe_types.py startafter=start_example endbefore=end_example
-from typing import Optional, Type
-
-import pandas as pd
-from dagster_deltalake import (
-    DeltaLakeIOManager,
-    DeltaLakePyArrowTypeHandler,
-    LocalConfig,
-)
-from dagster_deltalake_pandas import DeltaLakePandasTypeHandler
-from dagster_deltalake_polars import DeltaLakePolarsTypeHandler
-
-from dagster import Definitions
-
-
-class DeltaLakePandasPySparkPolarsIOManager(DeltaLakeIOManager):
-    @staticmethod
-    def type_handlers():
-        """type_handlers should return a list of the TypeHandlers that the I/O manager can use.
-        Here we return the DeltaLakePandasTypeHandler, DeltaLakePyArrowTypeHandler, and DeltaLakePolarsTypeHandler
-        so that the I/O manager can store Pandas DataFrames, PyArrow Tables, and Polars DataFrames.
-        """
-        return [
-            DeltaLakePandasTypeHandler(),
-            DeltaLakePyArrowTypeHandler(),
-            DeltaLakePolarsTypeHandler(),
-        ]
-
-    @staticmethod
-    def default_load_type() -> Optional[Type]:
-        """If an asset is not annotated with an return type, default_load_type will be used to
-        determine which TypeHandler to use to store and load the output.
-        In this case, unannotated assets will be stored and loaded as Pandas DataFrames.
-        """
-        return pd.DataFrame
-
-
-defs = Definitions(
-    assets=[iris_dataset, rose_dataset],
-    resources={
-        "io_manager": DeltaLakePandasPySparkPolarsIOManager(
-            root_uri="path/todeltalake",
-            storage_options=LocalConfig(),
-            schema="iris",
-        )
-    },
-)
-```
----
-
 ## Configuring storage backends
 
 The deltalake library comes with support for many storage backends out fo the box.
@@ -439,6 +383,7 @@ from dagster_deltalake import S3Config
 
 config = S3Config(allow_unsafe_rename=True)
 ```
+
 </TabItem>
 
 <TabItem name="Set-up a locking client">
@@ -458,9 +403,10 @@ aws dynamodb create-table --table-name delta_rs_lock_table \
 ```
 
 <Note>
-  The delta-rs community is actively working on extending the awailable options for locking
-  backends. This includes locking backends compatible with Databricks to allow concurrent
-  writes from Databrticks and external environments.
+  The delta-rs community is actively working on extending the awailable options
+  for locking backends. This includes locking backends compatible with
+  Databricks to allow concurrent writes from Databrticks and external
+  environments.
 </Note>
 
 </TabItem>
@@ -475,6 +421,7 @@ from dagster_deltalake import S3Config
 
 config = S3Config(copy_if_not_exists="header: cf-copy-destination-if-none-match: *")
 ```
+
 </TabItem>
 
 </TabGroup>
