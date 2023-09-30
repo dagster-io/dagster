@@ -1,22 +1,37 @@
+import inspect
+from dataclasses import dataclass
+from typing import Callable, Dict
+
+from typing_extensions import Annotated
+
+
+@dataclass
+class TransformParamInfo:
+    asset_key: str
+
+
+@dataclass
+class TransformOutput:
+    asset_key: str
+
+
+@dataclass
+class TransformInfo:
+    input_params: Dict[str, TransformParamInfo]
+    output: TransformOutput
+
+
 class FFDataFrame:
     def __init__(self, data):
         self.data = data
-
-
-class PipesTransform:
-    pass
 
 
 def add_values(df1: FFDataFrame, df2: FFDataFrame) -> FFDataFrame:
     return FFDataFrame(df1.data + df2.data)
 
 
-def transform_two_fn(one_output: FFDataFrame) -> FFDataFrame:
-    return one_output  # deliberate noop
-
-
 class StoreRequest:
-    def __init__(self, asset_key):
+    def __init__(self, asset_key) -> None:
         self._asset_key = asset_key
 
     @property
@@ -45,38 +60,6 @@ class FFDataFrameStore:
         self.data[self._full_address(write_request)] = value
 
 
-def test_basic_test() -> None:
-    df1 = FFDataFrame(1)
-    df2 = FFDataFrame(2)
-
-    assert transform_one_fn(df1, df2).data == 3
-
-
-from dataclasses import dataclass
-from typing import Dict
-
-
-@dataclass
-class TransformParamInfo:
-    asset_key: str
-
-
-@dataclass
-class TransformOutput:
-    asset_key: str
-
-
-@dataclass
-class TransformInfo:
-    input_params: Dict[str, TransformParamInfo]
-    output: TransformOutput
-
-
-from typing import Callable
-
-from typing_extensions import Annotated
-
-
 def execute_transform(store: FFDataFrameStore, transform_fn: Callable):
     transform_info = get_transform_info_from_annotated_fn(transform_fn)
     input_values = {}
@@ -87,9 +70,6 @@ def execute_transform(store: FFDataFrameStore, transform_fn: Callable):
     output_value = transform_fn(**input_values)
 
     store.write(WriteRequest(transform_info.output.asset_key), output_value)
-
-
-import inspect
 
 
 def get_transform_param_info_dict(signature) -> Dict[str, TransformParamInfo]:
@@ -121,6 +101,13 @@ def get_transform_info_from_annotated_fn(func) -> TransformInfo:
     param_infos = get_transform_param_info_dict(signature)
     transform_output = get_transform_output_annotation(signature)
     return TransformInfo(input_params=param_infos, output=transform_output)
+
+
+def test_basic_test() -> None:
+    df1 = FFDataFrame(1)
+    df2 = FFDataFrame(2)
+
+    assert transform_one_fn(df1, df2).data == 3
 
 
 def get_initial_state() -> Dict[str, FFDataFrame]:
