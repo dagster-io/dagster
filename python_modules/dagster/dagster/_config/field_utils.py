@@ -1,7 +1,7 @@
 # encoding: utf-8
 import hashlib
 import os
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Mapping, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Mapping, Optional, Sequence, Type
 
 import dagster._check as check
 from dagster._annotations import public
@@ -475,6 +475,16 @@ def config_dictionary_from_values(
     return check.is_dict(_config_value_to_dict_representation(None, values))
 
 
+def _create_direct_access_exception(cls: Type, env_var_name: str) -> Exception:
+    return RuntimeError(
+        f'Attempted to directly retrieve environment variable {cls.__name__}("{env_var_name}").'
+        f" {cls.__name__} defers resolution of the environment variable value until run time, and"
+        " should only be used as input to Dagster config or resources.\n\nTo access the"
+        f" environment variable value, call `get_value` on the {cls.__name__}, or use os.getenv"
+        " directly."
+    )
+
+
 class IntEnvVar(int):
     """Class used to represent an environment variable in the Dagster config system.
 
@@ -494,13 +504,7 @@ class IntEnvVar(int):
         """Raises an exception of the EnvVar value is directly accessed. Users should instead use
         the `get_value` method, or use the EnvVar as an input to Dagster config or resources.
         """
-        raise RuntimeError(
-            f'Attempted to directly retrieve environment variable IntEnvVar("{self.name}").'
-            " IntEnvVar defers resolution of the env var value until run time, and should only be"
-            " used as input to Dagster config or resources.\n\n"
-            "To access the environment variable value, call `get_value` on the IntEnvVar, or use"
-            " os.getenv directly."
-        )
+        raise _create_direct_access_exception(self.__class__, self.env_var_name)
 
     def __str__(self) -> str:
         return str(int(self))
@@ -536,13 +540,7 @@ class EnvVar(str):
         """Raises an exception of the EnvVar value is directly accessed. Users should instead use
         the `get_value` method, or use the EnvVar as an input to Dagster config or resources.
         """
-        raise RuntimeError(
-            f'Attempted to directly retrieve environment variable EnvVar("{self.env_var_name}").'
-            " EnvVar defers resolution of the env var value until run time, and should only be"
-            " used as input to Dagster config or resources.\n\n"
-            "To access the environment variable value, call `get_value` on the EnvVar, or use"
-            " os.getenv directly."
-        )
+        raise _create_direct_access_exception(self.__class__, self.env_var_name)
 
     @property
     def env_var_name(self) -> str:
