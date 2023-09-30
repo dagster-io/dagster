@@ -196,6 +196,10 @@ class SensorEvaluationContext:
     def resource_defs(self) -> Optional[Mapping[str, "ResourceDefinition"]]:
         return self._resource_defs
 
+    @property
+    def sensor_name(self) -> str:
+        return check.not_none(self._sensor_name, "Only valid when sensor name provided")
+
     def merge_resources(self, resources_dict: Mapping[str, Any]) -> "SensorEvaluationContext":
         """Merge the specified resources into this context.
 
