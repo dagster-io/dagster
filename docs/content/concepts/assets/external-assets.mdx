@@ -5,5 +5,27 @@ description: External assets model assets in Dagster that are not scheduled or m
 
 # External assets (Experimental)
 
+An external asset is an asset that is not materialized by Dagster, but is tracked in the asset graph and asset catalog.
 
-Something something something. Something. Something else.
+## Relevant APIs
+
+TODO
+
+## Defining External Assets
+
+### A single external asset
+
+The following code declares a single external asset and passes it to <PyObject object="Definitions"/>
+
+```python file=/concepts/assets/external_assets/single_declaration.py
+from dagster import AssetSpec, Definitions
+from dagster._core.definitions.external_asset import external_asset_from_spec
+
+defs = Definitions(assets=[external_asset_from_spec(AssetSpec("my_asset"))])
+```
+
+## What about Source Assets?
+
+A common use case for external assets is modeling data produced by an process not under Dagster's control. For example a daily drop of a file from a third party in s3.
+
+In most systems these are described as sources. This includes Dagster, which includes&#xA;<PyObject object="SourceAsset" displayText="SourceAsset" />&#xA;which will be supplanted by external assets in the near-term&#xA;future, as external assets are a superset of the functionality&#xA;of Source Assets.

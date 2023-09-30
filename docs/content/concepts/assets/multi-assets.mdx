@@ -17,7 +17,7 @@ A multi-asset represents a set of software-defined assets that are all updated b
 
 When working with [software-defined assets](/concepts/assets/software-defined-assets), it's sometimes inconvenient or impossible to map each persisted asset to a unique [op](/concepts/ops-jobs-graphs/ops) or [graph](/concepts/ops-jobs-graphs/graphs). A multi-asset is a way to define a single op or graph that will produce the contents of multiple data assets at once.
 
-Multi-assets may be useful in the following scenarios:
+    Multi-assets may be useful in the following scenarios:
 
 - A single call to an API results in multiple tables being updated (e.g. Airbyte, Fivetran, dbt).
 - The same in-memory object is used to compute multiple assets.
