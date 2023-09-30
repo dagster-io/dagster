@@ -2639,20 +2639,63 @@ class SqlEventLogStorage(EventLogStorage):
         with self.index_connection() as conn:
             rows = db_fetch_mappings(conn, query)
 
-        return [
-            AssetCheckExecutionRecord(
-                id=cast(int, row["id"]),
-                run_id=cast(str, row["run_id"]),
-                status=AssetCheckExecutionRecordStatus(row["execution_status"]),
-                evaluation_event=(
-                    deserialize_value(cast(str, row["evaluation_event"]), EventLogEntry)
-                    if row["evaluation_event"]
-                    else None
-                ),
-                create_timestamp=datetime_as_float(cast(datetime, row["create_timestamp"])),
+        return [AssetCheckExecutionRecord.from_db_row(row) for row in rows]
+
+    def get_latest_asset_check_execution_by_key(
+        self, check_keys: Sequence[AssetCheckKey]
+    ) -> Mapping[AssetCheckKey, AssetCheckExecutionRecord]:
+        if not check_keys:
+            return {}
+
+        latest_ids_subquery = db_subquery(
+            db_select(
+                [
+                    db.func.max(AssetCheckExecutionsTable.c.id).label("id"),
+                ]
             )
+            .where(
+                db.and_(
+                    AssetCheckExecutionsTable.c.asset_key.in_(
+                        [key.asset_key.to_string() for key in check_keys]
+                    ),
+                    AssetCheckExecutionsTable.c.check_name.in_([key.name for key in check_keys]),
+                )
+            )
+            .group_by(
+                AssetCheckExecutionsTable.c.asset_key,
+                AssetCheckExecutionsTable.c.check_name,
+            )
+        )
+
+        query = db_select(
+            [
+                AssetCheckExecutionsTable.c.id,
+                AssetCheckExecutionsTable.c.asset_key,
+                AssetCheckExecutionsTable.c.check_name,
+                AssetCheckExecutionsTable.c.run_id,
+                AssetCheckExecutionsTable.c.execution_status,
+                AssetCheckExecutionsTable.c.evaluation_event,
+                AssetCheckExecutionsTable.c.create_timestamp,
+            ]
+        ).select_from(
+            AssetCheckExecutionsTable.join(
+                latest_ids_subquery,
+                db.and_(
+                    AssetCheckExecutionsTable.c.id == latest_ids_subquery.c.id,
+                ),
+            )
+        )
+
+        with self.index_connection() as conn:
+            rows = db_fetch_mappings(conn, query)
+
+        return {
+            AssetCheckKey(
+                asset_key=check.not_none(AssetKey.from_db_string(cast(str, row["asset_key"]))),
+                name=cast(str, row["check_name"]),
+            ): AssetCheckExecutionRecord.from_db_row(row)
             for row in rows
-        ]
+        }
 
     @property
     def supports_asset_checks(self):
