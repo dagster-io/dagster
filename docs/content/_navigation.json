@@ -105,6 +105,10 @@
           {
             "title": "Asset checks (Experimental)",
             "path": "/concepts/assets/asset-checks"
+          },
+          {
+            "title": "External assets (Experimental)",
+            "path": "/concepts/assets/external-assets"
           }
         ]
       },
