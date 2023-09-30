@@ -2609,8 +2609,6 @@ class SqlEventLogStorage(EventLogStorage):
         check_name: str,
         limit: int,
         cursor: Optional[int] = None,
-        materialization_event_storage_id: Optional[int] = None,
-        include_planned: bool = True,
     ) -> Sequence[AssetCheckExecutionRecord]:
         query = (
             db_select(
@@ -2633,27 +2631,6 @@ class SqlEventLogStorage(EventLogStorage):
 
         if cursor:
             query = query.where(AssetCheckExecutionsTable.c.id < cursor)
-        if not include_planned:
-            query = query.where(
-                AssetCheckExecutionsTable.c.execution_status
-                != AssetCheckExecutionRecordStatus.PLANNED.value
-            )
-        if materialization_event_storage_id:
-            if include_planned:
-                # rows in PLANNED status are not associated with a materialization event yet
-                query = query.where(
-                    db.or_(
-                        AssetCheckExecutionsTable.c.materialization_event_storage_id
-                        == materialization_event_storage_id,
-                        AssetCheckExecutionsTable.c.execution_status
-                        == AssetCheckExecutionRecordStatus.PLANNED.value,
-                    )
-                )
-            else:
-                query = query.where(
-                    AssetCheckExecutionsTable.c.materialization_event_storage_id
-                    == materialization_event_storage_id
-                )
 
         with self.index_connection() as conn:
             rows = conn.execute(query).fetchall()

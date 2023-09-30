@@ -4045,16 +4045,6 @@ class TestEventLogStorage:
         assert checks[0].status == AssetCheckExecutionRecordStatus.PLANNED
         assert checks[0].run_id == "foo"
 
-        checks = storage.get_asset_check_executions(
-            AssetKey(["my_asset"]), "my_check", limit=10, include_planned=False
-        )
-        assert len(checks) == 0
-
-        checks = storage.get_asset_check_executions(
-            AssetKey(["my_asset"]), "my_check", limit=10, materialization_event_storage_id=123
-        )
-        assert len(checks) == 1
-
         # update the planned check
         storage.store_event(
             EventLogEntry(
@@ -4089,21 +4079,6 @@ class TestEventLogStorage:
             ].evaluation_event.dagster_event.event_specific_data.target_materialization_data.storage_id
             == 42
         )
-
-        checks = storage.get_asset_check_executions(
-            AssetKey(["my_asset"]), "my_check", limit=10, include_planned=False
-        )
-        assert len(checks) == 1
-
-        checks = storage.get_asset_check_executions(
-            AssetKey(["my_asset"]), "my_check", limit=10, materialization_event_storage_id=123
-        )
-        assert len(checks) == 0
-
-        checks = storage.get_asset_check_executions(
-            AssetKey(["my_asset"]), "my_check", limit=10, materialization_event_storage_id=42
-        )
-        assert len(checks) == 1
 
     def test_external_asset_event(self, storage):
         key = AssetKey("test_asset")
