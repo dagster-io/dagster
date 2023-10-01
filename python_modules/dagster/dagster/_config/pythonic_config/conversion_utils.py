@@ -268,6 +268,7 @@ def _convert_pydantic_discriminated_union_field(pydantic_field: ModelFieldCompat
     from .config import Config, infer_schema_from_config_class
 
     field_type = pydantic_field.annotation
+    discriminator = pydantic_field.discriminator if pydantic_field.discriminator else None
 
     if not get_origin(field_type) == Union:
         raise DagsterInvalidDefinitionError("Discriminated union must be a Union type.")
@@ -277,11 +278,13 @@ def _convert_pydantic_discriminated_union_field(pydantic_field: ModelFieldCompat
         raise NotImplementedError("Discriminated unions with non-Config types are not supported.")
 
     sub_fields_mapping = {}
-    for sub_field in sub_fields:
-        sub_field_annotation = model_fields(sub_field)[pydantic_field.discriminator].annotation
+    if discriminator:
+        for sub_field in sub_fields:
+            sub_field_annotation = model_fields(sub_field)[discriminator].annotation
 
-        for sub_field_key in get_args(sub_field_annotation):
-            sub_fields_mapping[sub_field_key] = sub_field
+            for sub_field_key in get_args(sub_field_annotation):
+                sub_fields_mapping[sub_field_key] = sub_field
+
     # First, we generate a mapping between the various discriminator values and the
     # Dagster config fields that correspond to them. We strip the discriminator key
     # from the fields, since the user should not have to specify it.
@@ -289,9 +292,7 @@ def _convert_pydantic_discriminated_union_field(pydantic_field: ModelFieldCompat
     dagster_config_field_mapping = {
         discriminator_value: infer_schema_from_config_class(
             field,
-            fields_to_omit=(
-                {pydantic_field.discriminator} if pydantic_field.discriminator else None
-            ),
+            fields_to_omit=({discriminator} if discriminator else None),
         )
         for discriminator_value, field in sub_fields_mapping.items()
     }
