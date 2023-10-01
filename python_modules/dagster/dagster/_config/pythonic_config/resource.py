@@ -12,7 +12,6 @@ from typing import (
     NamedTuple,
     Optional,
     Set,
-    Tuple,
     Type,
     TypeVar,
     Union,
@@ -865,16 +864,28 @@ def _is_annotated_as_resource_type(annotation: Type, metadata: List[str]) -> boo
     )
 
 
+class ResourceDataWithAnnotation(NamedTuple):
+    key: str
+    value: Any
+    annotation: Type
+    annotation_metadata: List[str]
+
+
 def separate_resource_params(cls: Type[BaseModel], data: Dict[str, Any]) -> SeparatedResourceParams:
     """Separates out the key/value inputs of fields in a structured config Resource class which
     are marked as resources (ie, using ResourceDependency) from those which are not.
     """
     keys_by_alias = {field.alias: field for field in cls.__fields__.values()}
-    data_with_annotation: List[Tuple[str, Any, Type, List[str]]] = [
+    data_with_annotation: List[ResourceDataWithAnnotation] = [
         # No longer exists in Pydantic 2.x, will need to be updated when we upgrade
-        (k, v, keys_by_alias[k].outer_type_, [])
-        for k, v in data.items()
-        if k in keys_by_alias
+        ResourceDataWithAnnotation(
+            key=field_key,
+            value=field_value,
+            annotation=keys_by_alias[field_key].outer_type_,
+            annotation_metadata=[],
+        )
+        for field_key, field_value in data.items()
+        if field_key in keys_by_alias
     ]
     # We need to grab metadata from the annotation in order to tell if
     # this key was annotated with a typing.Annotated annotation (which we use for resource/resource deps),
