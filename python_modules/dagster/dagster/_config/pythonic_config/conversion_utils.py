@@ -144,7 +144,7 @@ def _convert_pydantic_field(
     from .config import Config, infer_schema_from_config_class
 
     if pydantic_field.discriminator:
-        return _convert_pydantic_descriminated_union_field(pydantic_field)
+        return _convert_pydantic_discriminated_union_field(pydantic_field)
 
     field_type = pydantic_field.annotation
     if safe_is_subclass(field_type, Config):
@@ -240,8 +240,8 @@ def _config_type_for_type_on_pydantic_field(
         return convert_potential_field(potential_dagster_type).config_type
 
 
-def _convert_pydantic_descriminated_union_field(pydantic_field: ModelFieldCompat) -> Field:
-    """Builds a Selector config field from a Pydantic field which is a descriminated union.
+def _convert_pydantic_discriminated_union_field(pydantic_field: ModelFieldCompat) -> Field:
+    """Builds a Selector config field from a Pydantic field which is a discriminated union.
 
     For example:
 
@@ -270,11 +270,11 @@ def _convert_pydantic_descriminated_union_field(pydantic_field: ModelFieldCompat
     field_type = pydantic_field.annotation
 
     if not get_origin(field_type) == Union:
-        raise DagsterInvalidDefinitionError("Descriminated union must be a Union type.")
+        raise DagsterInvalidDefinitionError("Discriminated union must be a Union type.")
 
     sub_fields = get_args(field_type)
     if not all(issubclass(sub_field, Config) for sub_field in sub_fields):
-        raise NotImplementedError("Descriminated unions with non-Config types are not supported.")
+        raise NotImplementedError("Discriminated unions with non-Config types are not supported.")
 
     sub_fields_mapping = {}
     for sub_field in sub_fields:

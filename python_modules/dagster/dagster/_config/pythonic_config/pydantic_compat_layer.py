@@ -1,19 +1,12 @@
 from typing import (
+    Any,
     Dict,
+    List,
+    Optional,
     Type,
 )
 
 import pydantic
-
-PydanticUndefined = None
-try:
-    from pydantic_core import PydanticUndefined as _PydanticUndefined  # type: ignore
-
-    PydanticUndefined = _PydanticUndefined
-except:
-    pass
-
-
 from pydantic import BaseModel
 
 from .attach_other_object_to_context import (
@@ -32,47 +25,43 @@ class ModelFieldCompat:
         self.field = field
 
     @property
-    def annotation(self):
+    def annotation(self) -> Type:
         return self.field.annotation
 
     @property
-    def metadata(self):
-        return getattr(self.field, "metadata", None)
+    def metadata(self) -> List[str]:
+        return getattr(self.field, "metadata", [])
 
     @property
-    def alias(self):
+    def alias(self) -> str:
         return self.field.alias
 
     @property
-    def default(self):
+    def default(self) -> Any:
         return self.field.default
 
     @property
-    def description(self):
-        # Pydantic 1.x
-        field_info = getattr(self.field, "field_info", None)
-        if field_info:
-            return field_info.description
+    def description(self) -> Optional[str]:
+        if USING_PYDANTIC_2:
+            return getattr(self.field, "description", None)
+        else:
+            field_info = getattr(self.field, "field_info", None)
+            return field_info.description if field_info else None
 
-        # Pydantic 2.x
-        return getattr(self.field, "description", None)
-
-    def is_required(self):
-        # Pydantic 2.x
-        if hasattr(self.field, "is_required"):
-            return self.field.is_required()
-
-        # Pydantic 1.x
-        return self.field.required
+    def is_required(self) -> bool:
+        if USING_PYDANTIC_2:
+            if hasattr(self.field, "is_required"):
+                return self.field.is_required()
+        else:
+            return self.field.required
 
     @property
-    def discriminator(self):
-        # Pydantic 2.x
-        if hasattr(self.field, "discriminator"):
-            return self.field.discriminator
-
-        # Pydantic 1.x
-        return getattr(self.field, "discriminator_key", None)
+    def discriminator(self) -> Optional[str]:
+        if USING_PYDANTIC_2:
+            if hasattr(self.field, "discriminator"):
+                return self.field.discriminator if hasattr(self.field, "discriminator") else None
+        else:
+            return getattr(self.field, "discriminator_key", None)
 
 
 def model_fields(model) -> Dict[str, ModelFieldCompat]:
@@ -102,12 +91,10 @@ def model_config(model: Type[BaseModel]):
     """Returns the config for a given pydantic model, wrapped such that it has
     a Pydantic 2-style interface for accessing config values.
     """
-    # Pydantic 2.x
-    if hasattr(model, "model_config"):
+    if USING_PYDANTIC_2:
         return getattr(model, "model_config")
-
-    # Pydantic 1.x
-    return Pydantic1ConfigWrapper(getattr(model, "__config__"))
+    else:
+        return Pydantic1ConfigWrapper(getattr(model, "__config__"))
 
 
 try:

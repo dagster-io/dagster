@@ -16,7 +16,6 @@ from typing_extensions import TypeVar
 
 import dagster._check as check
 from dagster import (
-    Field,
     Field as DagsterField,
     Shape,
 )
@@ -62,6 +61,17 @@ INTERNAL_MARKER = "__internal__"
 assert CACHED_METHOD_FIELD_SUFFIX.endswith(INTERNAL_MARKER)
 
 
+def _is_frozen_pydantic_error(e: Exception) -> bool:
+    """Parses an error to determine if it is a Pydantic error indicating that the instance
+    is immutable. We use this to attach a more helpful error message.
+    """
+    return "Instance is frozen" in str(  # Pydantic 2.x error
+        e
+    ) or "is immutable and does not support item assignment" in str(  # Pydantic 1.x error
+        e
+    )
+
+
 class MakeConfigCacheable(BaseModel):
     """This class centralizes and implements all the chicanery we need in order
     to support caching decorators. If we decide this is a bad idea we can remove it
@@ -97,11 +107,7 @@ class MakeConfigCacheable(BaseModel):
             return super().__setattr__(name, value)
         except (TypeError, ValueError) as e:
             clsname = self.__class__.__name__
-            if "Instance is frozen" in str(  # Pydantic 2.x error
-                e
-            ) or "is immutable and does not support item assignment" in str(  # Pydantic 1.x error
-                e
-            ):
+            if _is_frozen_pydantic_error(e):
                 if isinstance(self, ConfigurableResourceFactory):
                     raise DagsterInvalidInvocationError(
                         f"'{clsname}' is a Pythonic resource and does not support item assignment,"
@@ -271,8 +277,8 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
             field = model_fields(self).get(key)
 
             if field:
-                alias = field.alias or key
-                output[alias] = value
+                resolved_field_name = field.alias or key
+                output[resolved_field_name] = value
             else:
                 output[key] = value
         return output
@@ -381,7 +387,7 @@ def infer_schema_from_config_class(
     model_cls: Type["Config"],
     description: Optional[str] = None,
     fields_to_omit: Optional[Set[str]] = None,
-) -> Field:
+) -> DagsterField:
     from .config import Config
     from .resource import ConfigurableResourceFactory, _is_annotated_as_resource_type
 
@@ -393,16 +399,16 @@ def infer_schema_from_config_class(
         "Config type annotation must inherit from dagster.Config",
     )
 
-    fields: Dict[str, Field] = {}
+    fields: Dict[str, DagsterField] = {}
     for key, pydantic_field_info in model_fields(model_cls).items():
         if _is_annotated_as_resource_type(
             pydantic_field_info.annotation, pydantic_field_info.metadata
         ):
             continue
 
-        alias = pydantic_field_info.alias if pydantic_field_info.alias else key
+        resolved_field_name = pydantic_field_info.alias if pydantic_field_info.alias else key
         if key not in fields_to_omit:
-            if isinstance(pydantic_field_info.default, Field):
+            if isinstance(pydantic_field_info.default, DagsterField):
                 raise DagsterInvalidDefinitionError(
                     "Using 'dagster.Field' is not supported within a Pythonic config or resource"
                     " definition. 'dagster.Field' should only be used in legacy Dagster config"
@@ -410,7 +416,7 @@ def infer_schema_from_config_class(
                 )
 
             try:
-                fields[alias] = _convert_pydantic_field(pydantic_field_info)
+                fields[resolved_field_name] = _convert_pydantic_field(pydantic_field_info)
             except DagsterInvalidConfigDefinitionError as e:
                 raise DagsterInvalidPythonicConfigDefinitionError(
                     config_class=model_cls,
@@ -424,4 +430,4 @@ def infer_schema_from_config_class(
 
     docstring = model_cls.__doc__.strip() if model_cls.__doc__ else None
 
-    return Field(config=shape_cls(fields), description=description or docstring)
+    return DagsterField(config=shape_cls(fields), description=description or docstring)
