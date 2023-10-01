@@ -24,9 +24,25 @@ def safe_is_subclass(cls: Any, possible_parent_cls: Type) -> bool:
 
 
 def is_optional(annotation: Type) -> bool:
-    """Returns true if the annotation is Optional[T] or Union[T, None]."""
-    return (
-        get_origin(annotation) in (Union, UnionType)
-        and len(get_args(annotation)) == 2
-        and type(None) in get_args(annotation)
-    )
+    """Returns true if the annotation signifies an Optional type.
+
+    In particular, this can be:
+    - Optional[T]
+    - Union[T, None]
+    - Union[None, T]
+    - T | None (in Python 3.10+)
+    - None | T (in Python 3.10+).
+
+    """
+    # Optional[T] is equivalent to Union[T, None], see
+    # https://docs.python.org/3/library/typing.html#typing.Optional
+    # A user could also specify a Union themselves
+    if get_origin(annotation) == Union:
+        return len(get_args(annotation)) == 2 and type(None) in get_args(annotation)
+
+    # The Python 3.10 pipe syntax evaluates to a UnionType
+    # rather than a Union, so we need to check for that as well
+    if get_origin(annotation) == UnionType:
+        return len(get_args(annotation)) == 2 and type(None) in get_args(annotation)
+
+    return False
