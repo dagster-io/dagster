@@ -1,4 +1,5 @@
 from typing import (
+    TYPE_CHECKING,
     Any,
     Dict,
     List,
@@ -13,6 +14,9 @@ from .attach_other_object_to_context import (
     IAttachDifferentObjectToOpContext as IAttachDifferentObjectToOpContext,
 )
 
+if TYPE_CHECKING:
+    from pydantic.fields import ModelField
+
 USING_PYDANTIC_2 = int(pydantic.__version__.split(".")[0]) >= 2
 
 
@@ -21,8 +25,8 @@ class ModelFieldCompat:
     metadata and annotations between Pydantic 1 and 2.
     """
 
-    def __init__(self, field):
-        self.field = field
+    def __init__(self, field) -> None:
+        self.field: "ModelField" = field
 
     @property
     def annotation(self) -> Type:
@@ -50,16 +54,16 @@ class ModelFieldCompat:
 
     def is_required(self) -> bool:
         if USING_PYDANTIC_2:
-            if hasattr(self.field, "is_required"):
-                return self.field.is_required()
+            return self.field.is_required()  # type: ignore
         else:
-            return self.field.required
+            # required is of type 'BoolUndefined', which is a Union of bool and pydantic 1.x's UndefinedType
+            return self.field.required if isinstance(self.field.required, bool) else False
 
     @property
     def discriminator(self) -> Optional[str]:
         if USING_PYDANTIC_2:
             if hasattr(self.field, "discriminator"):
-                return self.field.discriminator if hasattr(self.field, "discriminator") else None
+                return self.field.discriminator if hasattr(self.field, "discriminator") else None  # type: ignore
         else:
             return getattr(self.field, "discriminator_key", None)
 
