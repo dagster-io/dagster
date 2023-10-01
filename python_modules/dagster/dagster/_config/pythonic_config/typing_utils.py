@@ -57,7 +57,7 @@ class LateBoundTypesForResourceTypeChecking:
 
 
 @dataclass_transform(kw_only_default=True, field_specifiers=(Field,))
-class BaseConfigMeta(ModelMetaclass): # type: ignore
+class BaseConfigMeta(ModelMetaclass):  # type: ignore
     def __new__(cls, name, bases, namespaces, **kwargs) -> Any:
         annotations = namespaces.get("__annotations__", {})
 
