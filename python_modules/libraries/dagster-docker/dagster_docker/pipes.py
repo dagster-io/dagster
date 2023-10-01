@@ -150,7 +150,7 @@ class _PipesDockerClient(PipesClient):
                     image=image,
                     command=command,
                     env=env,
-                    open_pipes_session_env=pipes_session.get_pipes_env_vars(),
+                    open_pipes_session_env=pipes_session.get_pipes_bootstrap_env_vars(),
                     container_kwargs=container_kwargs,
                 )
             except docker.errors.ImageNotFound:
@@ -160,7 +160,7 @@ class _PipesDockerClient(PipesClient):
                     image=image,
                     command=command,
                     env=env,
-                    open_pipes_session_env=pipes_session.get_pipes_env_vars(),
+                    open_pipes_session_env=pipes_session.get_pipes_bootstrap_env_vars(),
                     container_kwargs=container_kwargs,
                 )
 

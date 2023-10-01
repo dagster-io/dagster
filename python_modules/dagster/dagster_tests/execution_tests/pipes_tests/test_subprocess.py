@@ -420,7 +420,7 @@ def test_ext_no_client(external_script):
             PipesTempFileMessageReader(),
             extras=extras,
         ) as pipes_session:
-            subprocess.run(cmd, env=pipes_session.get_pipes_env_vars(), check=False)
+            subprocess.run(cmd, env=pipes_session.get_pipes_bootstrap_env_vars(), check=False)
         yield from pipes_session.get_results()
 
     with instance_for_test() as instance:
@@ -457,7 +457,7 @@ def test_ext_no_client_no_yield():
                 PipesTempFileMessageReader(),
             ) as pipes_session:
                 cmd = [_PYTHON_EXECUTABLE, external_script]
-                subprocess.run(cmd, env=pipes_session.get_pipes_env_vars(), check=False)
+                subprocess.run(cmd, env=pipes_session.get_pipes_bootstrap_env_vars(), check=False)
 
     with pytest.raises(
         DagsterInvariantViolationError,

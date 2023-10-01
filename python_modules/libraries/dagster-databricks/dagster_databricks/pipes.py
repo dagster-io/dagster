@@ -107,7 +107,7 @@ class _PipesDatabricksClient(PipesClient):
             submit_task_dict["new_cluster"]["spark_env_vars"] = {
                 **submit_task_dict["new_cluster"].get("spark_env_vars", {}),
                 **(self.env or {}),
-                **pipes_session.get_pipes_env_vars(),
+                **pipes_session.get_pipes_bootstrap_env_vars(),
             }
             task = jobs.SubmitTask.from_dict(submit_task_dict)
             run_id = self.client.jobs.submit(
