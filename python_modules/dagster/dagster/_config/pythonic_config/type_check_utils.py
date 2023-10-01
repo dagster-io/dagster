@@ -42,6 +42,8 @@ def is_optional(annotation: Type) -> bool:
 
     # The Python 3.10 pipe syntax evaluates to a UnionType
     # rather than a Union, so we need to check for that as well
+    # UnionType values are equivalent to Unions, e.g. str | None == Union[str, None]
+    # but the types themselves are not, e.g. type(str | None) != type(Union[str, None])
     if get_origin(annotation) == UnionType:
         return len(get_args(annotation)) == 2 and type(None) in get_args(annotation)
 
