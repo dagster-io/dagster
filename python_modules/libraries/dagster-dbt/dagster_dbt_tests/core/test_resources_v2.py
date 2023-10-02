@@ -24,6 +24,7 @@ from dagster_dbt.core.resources_v2 import (
     DbtCliEventMessage,
     DbtCliResource,
 )
+from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 from dagster_dbt.dbt_manifest import DbtManifestParam
 from dagster_dbt.errors import DagsterDbtCliRuntimeError
 from pydantic import ValidationError
@@ -463,7 +464,6 @@ def test_dbt_tests_to_events(is_asset_check: bool) -> None:
                     "severity": "ERROR",
                 },
                 "name": "test.a",
-                "meta": {"dagster": {"asset_check": is_asset_check}},
                 "attached_node": "model.a" if is_asset_check else None,
             },
         },
@@ -489,8 +489,15 @@ def test_dbt_tests_to_events(is_asset_check: bool) -> None:
             },
         },
     }
+
+    dagster_dbt_translator = DagsterDbtTranslator(
+        settings=DagsterDbtTranslatorSettings(enable_asset_checks=is_asset_check)
+    )
+
     asset_events = list(
-        DbtCliEventMessage(raw_event=raw_event).to_default_asset_events(manifest=manifest)
+        DbtCliEventMessage(raw_event=raw_event).to_default_asset_events(
+            manifest=manifest, dagster_dbt_translator=dagster_dbt_translator
+        )
     )
 
     expected_event_type = AssetCheckResult if is_asset_check else AssetObservation
