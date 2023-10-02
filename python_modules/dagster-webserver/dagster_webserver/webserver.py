@@ -231,16 +231,6 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                 """)
 
     def build_static_routes(self):
-        def next_file_response(file_path):
-            with open(file_path, encoding="utf8") as f:
-                content = f.read().replace(
-                    "BUILDTIME_ASSETPREFIX_REPLACE_ME", f"{self._app_path_prefix}"
-                )
-                return Response(content=content, media_type=guess_type(file_path)[0])
-
-        def _next_static_file(path, file_path):
-            return Route(path, lambda _: next_file_response(file_path), name="next_static")
-
         def _static_file(path, file_path):
             return Route(
                 path,
@@ -253,16 +243,9 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
         for subdir, _, files in walk(base_dir):
             for file in files:
                 full_path = path.join(subdir, file)
-
                 # Replace path.sep to make sure our routes use forward slashes on windows
                 mount_path = "/" + full_path[len(base_dir) :].replace(path.sep, "/")
-                # We only need to replace BUILDTIME_ASSETPREFIX_REPLACE_ME in javascript files
-                if self._uses_app_path_prefix and (
-                    file.endswith(".js") or file.endswith(".js.map")
-                ):
-                    routes.append(_next_static_file(mount_path, full_path))
-                else:
-                    routes.append(_static_file(mount_path, full_path))
+                routes.append(_static_file(mount_path, full_path))
 
         # No build directory, this happens in a test environment. Don't fail loudly since we already have other tests that will fail loudly if
         # there is in fact no build
