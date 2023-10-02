@@ -87,6 +87,7 @@ def build_sling_asset(
             target_options=target_options,
         ):
             match = re.search(r"(\d+) rows", stdout_line)
+            last_row_count_observed = None
             if match:
                 last_row_count_observed = int(match.group(1))
             context.log.info(stdout_line)
