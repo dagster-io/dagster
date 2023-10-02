@@ -352,7 +352,7 @@ def open_pipes_session(
             ) as pipes_session:
                 subprocess.Popen(
                     ["/bin/python", "/path/to/script.py"],
-                    env={**pipes_session.get_pipes_env_vars()}
+                    env={**pipes_session.get_bootstrap_env_vars()}
                 )
                 while process.poll() is None:
                     yield from pipes_session.get_results()

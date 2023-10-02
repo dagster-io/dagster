@@ -191,7 +191,7 @@ def test_use_excute_k8s_job(namespace, cluster_provider):
                     for k, v in {
                         "PYTHONPATH": "/dagster_test/toys/external_execution/",
                         "NUMBER_Y": "2",
-                        **pipes_session.get_pipes_env_vars(),
+                        **pipes_session.get_bootstrap_env_vars(),
                     }.items()
                 ],
                 k8s_job_name=job_name,

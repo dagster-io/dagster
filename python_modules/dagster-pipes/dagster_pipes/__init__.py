@@ -60,7 +60,7 @@ def _param_name_to_env_key(key: str) -> str:
 
 IS_DAGSTER_PIPES_PROCESS = "IS_DAGSTER_PIPED_PROCESS"
 
-DAGSTER_PIPES_ENV_KEYS = {
+DAGSTER_PIPES_BOOTSTRAP_PARAM_NAMES = {
     k: _param_name_to_env_key(k) for k in (IS_DAGSTER_PIPES_PROCESS, "context", "messages")
 }
 
