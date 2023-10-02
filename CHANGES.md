@@ -88,6 +88,11 @@ def my_op(context: OpExecutionContext):
   - [Partitioning ops](https://docs.dagster.io/concepts/partitions-schedules-sensors/partitioning-ops) - Details about partitioning ops
   - [Testing partitions](https://docs.dagster.io/concepts/partitions-schedules-sensors/testing-partitions) - As described
 
+### Dagster Cloud
+
+- **New dagster-insights sub-module** - We have released an experimental `dagster_cloud.dagster_insights` module that contains utilities for capturing and submitting external metrics about data operations to Dagster Cloud via an api. Dagster Cloud Insights is a soon-to-be released feature that shows improves visibility into usage and cost metrics such as run duration and Snowflake credits in the Cloud UI.
+
+
 # 1.4.17 / 0.20.17 (libraries)
 
 ### New
