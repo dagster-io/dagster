@@ -40,7 +40,6 @@ from typing_extensions import Literal
 
 from ..asset_utils import (
     get_manifest_and_translator_from_dbt_assets,
-    is_asset_check_from_dbt_resource_props,
     output_name_fn,
 )
 from ..dagster_dbt_translator import DagsterDbtTranslator
@@ -148,9 +147,7 @@ class DbtCliEventMessage:
                 "status": node_status,
             }
 
-            is_asset_check = is_asset_check_from_dbt_resource_props(
-                dagster_dbt_translator.settings, test_resource_props
-            )
+            is_asset_check = dagster_dbt_translator.settings.enable_asset_checks
             attached_node_unique_id = test_resource_props.get("attached_node")
             is_generic_test = bool(attached_node_unique_id)
 
