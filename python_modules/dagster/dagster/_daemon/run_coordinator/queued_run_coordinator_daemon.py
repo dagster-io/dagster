@@ -240,6 +240,16 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
             tag_concurrency_limits, in_progress_runs
         )
 
+        in_progress_step_tag_concurrency_limit_counter = TagConcurrencyLimitsCounter(
+            tag_concurrency_limits,
+            in_progress_tagged_items=[
+                step
+                for run in in_progress_runs
+                if run.execution_plan_snapshot_id
+                for step in instance.run_storage.get_execution_plan_snapshot(run.execution_plan_snapshot_id).steps
+            ]
+        )
+
         batch: List[DagsterRun] = []
         for run in sorted_runs:
             if max_concurrent_runs_enabled and len(batch) >= max_runs_to_launch:
@@ -253,6 +263,15 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
             )
             if location_name and location_name in paused_location_names:
                 continue
+
+            if run.execution_plan_snapshot_id:
+                step_execution_plan = instance.run_storage.get_execution_plan_snapshot(run.execution_plan_snapshot_id)
+
+                if any(in_progress_step_tag_concurrency_limit_counter.is_blocked(step) for step in step_execution_plan.steps):
+                    continue
+
+                for step in step_execution_plan.steps:
+                    in_progress_step_tag_concurrency_limit_counter.update_counters_with_launched_item(step)
 
             tag_concurrency_limits_counter.update_counters_with_launched_item(run)
             batch.append(run)
