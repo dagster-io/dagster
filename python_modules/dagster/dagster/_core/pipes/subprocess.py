@@ -97,7 +97,7 @@ class _PipesSubprocess(PipesClient):
                 command,
                 cwd=cwd or self.cwd,
                 env={
-                    **pipes_session.get_pipes_bootstrap_env_vars(),
+                    **pipes_session.get_bootstrap_env_vars(),
                     **self.env,
                     **(env or {}),
                 },

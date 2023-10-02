@@ -179,7 +179,7 @@ class _PipesK8sClient(PipesClient):
                 image=image,
                 command=command,
                 env_vars={
-                    **pipes_session.get_pipes_bootstrap_env_vars(),
+                    **pipes_session.get_bootstrap_env_vars(),
                     **(self.env or {}),
                     **(env or {}),
                 },

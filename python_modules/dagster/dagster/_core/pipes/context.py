@@ -177,7 +177,7 @@ class PipesSession:
     on a `PipesSession` object.
 
     During the session, an external process should be started and the parameters injected into its
-    environment. The typical way to do this is to call :py:meth:`PipesSession.get_pipes_bootstrap_env_vars`
+    environment. The typical way to do this is to call :py:meth:`PipesSession.get_bootstrap_env_vars`
     and pass the result as environment variables.
 
     During execution, results (e.g. asset materializations) are reported by the external process and
@@ -203,7 +203,7 @@ class PipesSession:
     message_reader_params: PipesParams
 
     @public
-    def get_pipes_bootstrap_env_vars(self) -> Dict[str, str]:
+    def get_bootstrap_env_vars(self) -> Dict[str, str]:
         """Encode context injector and message reader params as environment variables.
 
         Passing environment variables is the typical way to expose the pipes I/O parameters
@@ -215,13 +215,13 @@ class PipesSession:
         """
         return {
             param_name: encode_env_var(param_value)
-            for param_name, param_value in self.get_pipes_bootstrap_params().items()
+            for param_name, param_value in self.get_bootstrap_params().items()
         }
 
     @public
-    def get_pipes_bootstrap_params(self) -> Dict[str, Any]:
+    def get_bootstrap_params(self) -> Dict[str, Any]:
         """Get the params necessary to bootstrap a launched pipes process. These parameters are typically
-        are as environment variable. See `get_pipes_bootstrap_env_vars`. It is the context injector's
+        are as environment variable. See `get_bootstrap_env_vars`. It is the context injector's
         responsibility to decide how to pass these parameters to the external environment.
 
         Returns:
