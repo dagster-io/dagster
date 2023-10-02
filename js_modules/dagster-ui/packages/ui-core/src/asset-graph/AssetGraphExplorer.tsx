@@ -43,10 +43,11 @@ import {Loading, LoadingSpinner} from '../ui/Loading';
 import {AssetEdges} from './AssetEdges';
 import {AssetGraphJobSidebar} from './AssetGraphJobSidebar';
 import {AssetGroupNode} from './AssetGroupNode';
+import {CollapsedGroupNode} from './AssetGroupsGraph';
 import {AssetNode, AssetNodeMinimal} from './AssetNode';
 import {AssetNodeLink} from './ForeignNode';
 import {SidebarAssetInfo} from './SidebarAssetInfo';
-import {GraphData, graphHasCycles, GraphNode, tokenForAssetKey} from './Utils';
+import {GraphData, graphHasCycles, GraphNode, groupIdForNode, tokenForAssetKey} from './Utils';
 import {AssetGraphLayout, AssetLayoutEdge} from './layout';
 import {AssetGraphExplorerSidebar} from './sidebar/Sidebar';
 import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
@@ -142,7 +143,8 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
   allAssetKeys,
 }) => {
   const findAssetLocation = useFindAssetLocation();
-  const {layout, loading, async} = useAssetLayout(assetGraphData);
+  const [expandedGroups, setExpandedGroups] = React.useState<string[]>([]);
+  const {layout, loading, async} = useAssetLayout(assetGraphData, expandedGroups);
   const viewportEl = React.useRef<SVGViewport>();
   const {flagHorizontalDAGs, flagDAGSidebar} = useFeatureFlags();
 
@@ -351,20 +353,39 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
                     .map((group) => (
                       <foreignObject
                         key={group.id}
-                        {...group.bounds}
+                        className="group"
+                        width={group.bounds.width}
+                        height={group.bounds.height}
+                        style={{transform: `translate(${group.bounds.x}px, ${group.bounds.y}px)`}}
                         onDoubleClick={(e) => {
                           if (!viewportEl.current) {
                             return;
                           }
-                          const targetScale = viewportEl.current.scaleForSVGBounds(
-                            group.bounds.width,
-                            group.bounds.height,
-                          );
-                          viewportEl.current.zoomToSVGBox(group.bounds, true, targetScale * 0.9);
-                          e.stopPropagation();
+                          if (!expandedGroups.includes(group.id)) {
+                            setExpandedGroups((expanded) => [...expanded, group.id]);
+                          } else {
+                            const targetScale = viewportEl.current.scaleForSVGBounds(
+                              group.bounds.width,
+                              group.bounds.height,
+                            );
+                            viewportEl.current.zoomToSVGBox(group.bounds, true, targetScale * 0.9);
+                            e.stopPropagation();
+                          }
                         }}
                       >
-                        <AssetGroupNode group={group} scale={scale} />
+                        {group.expanded ? (
+                          <AssetGroupNode group={group} scale={scale} />
+                        ) : (
+                          <CollapsedGroupNode
+                            key={group.id}
+                            group={{
+                              ...group,
+                              assetCount: Object.values(assetGraphData.nodes).filter(
+                                (n) => groupIdForNode(n) === group.id,
+                              ).length,
+                            }}
+                          />
+                        )}
                       </foreignObject>
                     ))}
 
@@ -376,6 +397,10 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
                       if (allowGroupsOnlyZoomLevel && scale < GROUPS_ONLY_SCALE) {
                         return;
                       }
+                      if (bounds.width === 1) {
+                        return;
+                      }
+
                       return (
                         <foreignObject
                           {...bounds}
@@ -519,6 +544,8 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
               selectNode={selectNodeById}
               explorerPath={explorerPath}
               onChangeExplorerPath={onChangeExplorerPath}
+              expandedGroups={expandedGroups}
+              setExpandedGroups={setExpandedGroups}
               hideSidebar={() => {
                 setShowSidebar(false);
               }}
@@ -535,6 +562,12 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
 const SVGContainer = styled.svg`
   overflow: visible;
   border-radius: 0;
+
+  foreignObject.group {
+    transition:
+      transform 300ms linear,
+      opacity 300ms linear;
+  }
 `;
 
 // Helpers

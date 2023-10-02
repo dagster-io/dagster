@@ -47,6 +47,7 @@ export interface GraphData {
   nodes: {[assetId: GraphId]: GraphNode};
   downstream: {[assetId: GraphId]: {[childAssetId: GraphId]: boolean}};
   upstream: {[assetId: GraphId]: {[parentAssetId: GraphId]: boolean}};
+  expandedGroups?: string[];
 }
 
 export const buildGraphData = (assetNodes: AssetNode[]) => {
@@ -264,3 +265,15 @@ export function walkTreeDownwards(
   // TODO
   console.log({nodeId, graphData, callback});
 }
+
+// Prefix group nodes in the Dagre layout so that an asset and an asset
+// group cannot have the same name.
+export const GROUP_NODE_PREFIX = 'group__';
+
+export const groupIdForNode = (node: GraphNode) =>
+  [
+    GROUP_NODE_PREFIX,
+    node.definition.repository.location.name,
+    node.definition.repository.name,
+    node.definition.groupName,
+  ].join('__');

@@ -11,12 +11,15 @@ import {DEFAULT_MAX_ZOOM, SVGViewport} from '../graph/SVGViewport';
 import {AssetEdges} from './AssetEdges';
 import {AssetDescription, AssetName, NameTooltipStyle} from './AssetNode';
 import {GraphData, GraphNode} from './Utils';
-import {ASSET_NODE_NAME_MAX_LENGTH, AssetLayout, AssetLayoutEdge} from './layout';
+import {AssetLayout, AssetLayoutEdge} from './layout';
 
 type GroupNode = {
   key: string;
   assets: GraphNode[];
-  repository: GraphNode['definition']['repository'];
+  assetCount: number;
+  groupName: string;
+  repositoryName: string;
+  repositoryLocationName: string;
   name: string;
   upstream: {
     [groupKey: string]: number;
@@ -44,8 +47,12 @@ export const AssetGroupsGraph: React.FC<{data: GraphData}> = ({data}) => {
         {
           key,
           assets,
+          assetCount: assets.length,
           repository: assets[0]!.definition.repository,
           name: assets[0]!.definition.groupName || '',
+          groupName: assets[0]!.definition.groupName || '',
+          repositoryName: assets[0]!.definition.repository.name,
+          repositoryLocationName: assets[0]!.definition.repository.location.name,
           upstream: countBy(
             assets
               .flatMap((a) => Object.keys(data.upstream[a.id] || {}))
@@ -78,9 +85,11 @@ export const AssetGroupsGraph: React.FC<{data: GraphData}> = ({data}) => {
       maxZoom={DEFAULT_MAX_ZOOM}
       maxAutocenterZoom={1.0}
     >
-      {() => (
+      {(_, viewport) => (
         <SVGContainer width={layout.width} height={layout.height}>
           <AssetEdges
+            selected={null}
+            viewportRect={viewport}
             highlighted={highlighted}
             edges={layout.edges}
             strokeWidth={4}
@@ -105,7 +114,7 @@ export const AssetGroupsGraph: React.FC<{data: GraphData}> = ({data}) => {
                   e.stopPropagation();
                 }}
               >
-                <GroupNode group={groups[group.id]!} />
+                <CollapsedGroupNode group={groups[group.id]!} />
               </foreignObject>
             ))}
         </SVGContainer>
@@ -114,43 +123,53 @@ export const AssetGroupsGraph: React.FC<{data: GraphData}> = ({data}) => {
   );
 };
 
-const GroupNode: React.FC<{group: GroupNode}> = ({group}) => {
-  const name = `${group.name} in ${group.repository.name}@${group.repository.location.name}`;
+export const CollapsedGroupNode: React.FC<{
+  group: {
+    assetCount: number;
+    groupName: string;
+    repositoryName: string;
+    repositoryLocationName: string;
+  };
+}> = ({group}) => {
+  const name = `${group.groupName} `;
   return (
-    <AssetNodeContainer $selected={false}>
-      <AssetNodeBox $selected={false}>
-        <AssetName $isSource={false}>
+    <CollapsedGroupNodeContainer $selected={false}>
+      <CollapsedGroupNodeBox $selected={false}>
+        <Box style={{padding: '6px 8px'}} flex={{direction: 'row', gap: 4}} border="top">
           <span style={{marginTop: 1}}>
             <Icon name="asset_group" />
           </span>
           <div
             data-tooltip={name}
             data-tooltip-style={NameTooltipStyle}
-            style={{overflow: 'hidden', textOverflow: 'ellipsis'}}
+            style={{overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: 600}}
           >
-            {withMiddleTruncation(name, {
-              maxLength: 35,
-            })}
+            {withMiddleTruncation(name, {maxLength: 35})}
           </div>
           <div style={{flex: 1}} />
-        </AssetName>
-        <Box style={{padding: '6px 8px'}} flex={{direction: 'column', gap: 4}} border="top">
-          <AssetDescription $color={Colors.Gray400}>{group.assets.length} assets</AssetDescription>
         </Box>
-      </AssetNodeBox>
-    </AssetNodeContainer>
+        <Box style={{padding: '6px 8px'}} flex={{direction: 'column', gap: 4}} border="top">
+          {withMiddleTruncation(`${group.repositoryName}@${group.repositoryLocationName}`, {
+            maxLength: 35,
+          })}
+        </Box>
+        <Box style={{padding: '6px 8px'}} flex={{direction: 'column', gap: 4}} border="top">
+          <AssetDescription $color={Colors.Gray400}>{group.assetCount} assets</AssetDescription>
+        </Box>
+      </CollapsedGroupNodeBox>
+    </CollapsedGroupNodeContainer>
   );
 };
 
-const AssetNodeContainer = styled.div<{$selected: boolean}>`
+const CollapsedGroupNodeContainer = styled.div<{$selected: boolean}>`
   user-select: none;
   cursor: default;
   padding: 4px;
 `;
 
-const AssetNodeBox = styled.div<{$selected: boolean}>`
-  border: 2px solid ${(p) => (p.$selected ? Colors.Blue500 : Colors.Blue200)};
-  outline: 3px solid ${(p) => (p.$selected ? Colors.Blue200 : 'transparent')};
+const CollapsedGroupNodeBox = styled.div<{$selected: boolean}>`
+  border: 2px solid ${(p) => (p.$selected ? Colors.Blue500 : Colors.Gray200)};
+  outline: 3px solid ${(p) => (p.$selected ? Colors.Gray200 : 'transparent')};
 
   background: ${Colors.White};
   border-radius: 8px;

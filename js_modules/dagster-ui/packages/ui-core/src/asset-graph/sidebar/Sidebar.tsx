@@ -1,5 +1,6 @@
 import {Box, Button, Colors, Icon, ButtonGroup, Tooltip} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
+import {isEqual} from 'lodash';
 import React from 'react';
 import styled from 'styled-components';
 
@@ -7,7 +8,7 @@ import {AssetKey} from '../../assets/types';
 import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
 import {Container, Inner, Row} from '../../ui/VirtualizedTable';
 import {buildRepoPathForHuman} from '../../workspace/buildRepoAddress';
-import {GraphData, GraphNode, tokenForAssetKey} from '../Utils';
+import {GROUP_NODE_PREFIX, GraphData, GraphNode, tokenForAssetKey} from '../Utils';
 import {SearchFilter} from '../sidebar/SearchFilter';
 
 import {Node} from './Node';
@@ -25,6 +26,8 @@ export const AssetGraphExplorerSidebar = React.memo(
     onChangeExplorerPath,
     allAssetKeys,
     hideSidebar,
+    expandedGroups,
+    setExpandedGroups,
   }: {
     assetGraphData: GraphData;
     fullAssetGraphData: GraphData;
@@ -33,6 +36,8 @@ export const AssetGraphExplorerSidebar = React.memo(
     explorerPath: ExplorerPath;
     onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
     allAssetKeys: AssetKey[];
+    expandedGroups: string[];
+    setExpandedGroups: (a: string[]) => void;
     hideSidebar: () => void;
   }) => {
     // In the empty stay when no query is typed use the full asset graph data to populate the sidebar
@@ -81,6 +86,19 @@ export const AssetGraphExplorerSidebar = React.memo(
     >(null);
 
     const [viewType, setViewType] = React.useState<'tree' | 'group'>('group');
+
+    React.useEffect(() => {
+      const desiredExpandedGroups = Array.from(openNodes)
+        .filter((o) => o.includes('@') && o.includes(':'))
+        .map((o) => {
+          const [_, repoName, repoLocationName, groupName] = /([^@]*)@([^:]*):(.*)/.exec(o) || [];
+          return [GROUP_NODE_PREFIX, repoLocationName, repoName, groupName].join('__');
+        });
+      console.log(desiredExpandedGroups);
+      if (!isEqual(expandedGroups, desiredExpandedGroups)) {
+        setExpandedGroups(desiredExpandedGroups);
+      }
+    }, [expandedGroups, openNodes, setExpandedGroups]);
 
     const rootNodes = React.useMemo(
       () =>
