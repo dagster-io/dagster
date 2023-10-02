@@ -77,6 +77,7 @@ def build_sling_asset(
     )
     def sync(context: AssetExecutionContext) -> MaterializeResult:
         sling: SlingResource = getattr(context.resources, sling_resource_key)
+        last_row_count_observed = None
         for stdout_line in sling.sync(
             source_stream=source_stream,
             target_object=target_object,
@@ -87,7 +88,6 @@ def build_sling_asset(
             target_options=target_options,
         ):
             match = re.search(r"(\d+) rows", stdout_line)
-            last_row_count_observed = None
             if match:
                 last_row_count_observed = int(match.group(1))
             context.log.info(stdout_line)
