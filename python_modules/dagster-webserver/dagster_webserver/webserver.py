@@ -271,6 +271,8 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                 full_path = os.path.join(subdir, file)
 
                 # Replace path.sep to make sure our routes use forward slashes on windows
+                # Note forward slashes are okay here because these are used for routing, not for
+                # file paths
                 mount_path = "/" + full_path[len(base_dir) :].replace(os.path.sep, "/")
                 # We only need to replace BUILDTIME_ASSETPREFIX_REPLACE_ME in javascript files
                 if self._uses_app_path_prefix and (
