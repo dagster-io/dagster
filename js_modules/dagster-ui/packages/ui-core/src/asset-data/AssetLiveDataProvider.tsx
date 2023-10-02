@@ -82,7 +82,6 @@ export function useAssetsLiveData(assetKeys: AssetKeyInput[]) {
 }
 
 async function _queryAssetKeys(client: ApolloClient<any>, assetKeys: AssetKeyInput[]) {
-  console.log({assetKeys});
   const {data} = await client.query<AssetGraphLiveQuery, AssetGraphLiveQueryVariables>({
     query: ASSETS_GRAPH_LIVE_QUERY,
     fetchPolicy: 'network-only',
