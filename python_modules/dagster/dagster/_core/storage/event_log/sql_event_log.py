@@ -1275,15 +1275,23 @@ class SqlEventLogStorage(EventLogStorage):
             columns.append(AssetKeyTable.c.wipe_timestamp)
 
         query = db_select(columns).order_by(AssetKeyTable.c.asset_key.asc())
+        if asset_keys:
+            ... 
+
         query = self._apply_asset_filter_to_query(query, asset_keys, prefix, limit, cursor)
 
         if self.has_secondary_index(ASSET_KEY_INDEX_COLS):
+
             query = query.where(
                 db.or_(
                     AssetKeyTable.c.wipe_timestamp.is_(None),
                     AssetKeyTable.c.last_materialization_timestamp > AssetKeyTable.c.wipe_timestamp,
                 )
             )
+
+            if asset_keys:            
+                query.filter(AssetKeyTable.c.asset_key.in_(list(ak.to_string() for ak in asset_keys)))
+
             with self.index_connection() as conn:
                 rows = db_fetch_mappings(conn, query)
 
