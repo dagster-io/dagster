@@ -1,6 +1,4 @@
 import {gql, useQuery} from '@apollo/client';
-import {fi} from 'date-fns/locale';
-import {set} from 'lodash';
 import groupBy from 'lodash/groupBy';
 import keyBy from 'lodash/keyBy';
 import reject from 'lodash/reject';
