@@ -81,6 +81,11 @@ const asyncGetFullAssetLayoutIndexDB = indexedDBAsyncMemoize(
   _assetLayoutCacheKey,
 );
 
+export function asyncIsAssetLayoutCached(graphData: GraphData) {
+  const key = _assetLayoutCacheKey(graphData);
+  return asyncGetFullAssetLayoutIndexDB.isCached(key);
+}
+
 const asyncGetFullAssetLayout = asyncMemoize(
   (graphData: GraphData, opts: LayoutAssetGraphOptions) => {
     return new Promise<AssetGraphLayout>((resolve) => {

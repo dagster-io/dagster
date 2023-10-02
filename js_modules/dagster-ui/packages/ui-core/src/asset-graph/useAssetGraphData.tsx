@@ -1,4 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
+import {fi} from 'date-fns/locale';
+import {set} from 'lodash';
 import groupBy from 'lodash/groupBy';
 import keyBy from 'lodash/keyBy';
 import reject from 'lodash/reject';
@@ -6,6 +8,7 @@ import React from 'react';
 
 import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
 import {AssetKey} from '../assets/types';
+import {asyncIsAssetLayoutCached} from '../graph/asyncGraphLayout';
 import {AssetGroupSelector, PipelineSelector} from '../graphql/types';
 
 import {ASSET_NODE_FRAGMENT} from './AssetNode';
@@ -71,13 +74,19 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     [fullGraphQueryItems],
   );
 
-  const {assetGraphData, graphAssetKeys, allAssetKeys, applyingEmptyDefault} = React.useMemo(() => {
+  const {
+    assetGraphDataPotentiallyEmpty,
+    assetGraphData,
+    graphAssetKeys,
+    allAssetKeys,
+    applyingEmptyDefault,
+  } = React.useMemo(() => {
     if (repoFilteredNodes === undefined || graphQueryItems === undefined) {
       return {
         graphAssetKeys: [],
         graphQueryItems: [],
         assetGraphData: null,
-        fullAssetGraphData: null,
+        assetGraphDataPotentiallyEmpty: null,
         applyingEmptyDefault: false,
       };
     }
@@ -86,31 +95,55 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     // In the future it might be ideal to move this server-side, but we currently
     // get to leverage the useQuery cache almost 100% of the time above, making this
     // super fast after the first load vs a network fetch on every page view.
-    const {all, applyingEmptyDefault} = filterByQuery(graphQueryItems, opsQuery);
+    const {all: allPotentiallyEmpty, applyingEmptyDefault} = filterByQuery(
+      graphQueryItems,
+      opsQuery,
+    );
+
+    let assetGraphData;
+    if (applyingEmptyDefault) {
+      // build the graph data anyways to check if it's cached
+      const {all} = filterByQuery(graphQueryItems, '*');
+      assetGraphData = buildGraphData(all.map((n) => n.node));
+      if (options.hideEdgesToNodesOutsideQuery) {
+        removeEdgesToHiddenAssets(assetGraphData, repoFilteredNodes);
+      }
+    }
 
     // Assemble the response into the data structure used for layout, traversal, etc.
-    const assetGraphData = buildGraphData(all.map((n) => n.node));
+    const assetGraphDataPotentiallyEmpty = buildGraphData(allPotentiallyEmpty.map((n) => n.node));
     if (options.hideEdgesToNodesOutsideQuery) {
-      removeEdgesToHiddenAssets(assetGraphData, repoFilteredNodes);
+      removeEdgesToHiddenAssets(assetGraphDataPotentiallyEmpty, repoFilteredNodes);
     }
 
     return {
       allAssetKeys: repoFilteredNodes.map((n) => n.assetKey),
-      graphAssetKeys: all.map((n) => ({path: n.node.assetKey.path})),
+      graphAssetKeys: allPotentiallyEmpty.map((n) => ({path: n.node.assetKey.path})),
       assetGraphData,
+      assetGraphDataPotentiallyEmpty,
       graphQueryItems,
       applyingEmptyDefault,
     };
   }, [repoFilteredNodes, graphQueryItems, opsQuery, options.hideEdgesToNodesOutsideQuery]);
 
+  const [isAssetLayoutCached, setIsAssetLayoutCached] = React.useState(false);
+  React.useEffect(() => {
+    (async () => {
+      if (assetGraphData) {
+        const isCached = await asyncIsAssetLayoutCached(assetGraphData);
+        setIsAssetLayoutCached(isCached);
+      }
+    })();
+  }, [assetGraphData]);
+
   return {
     fetchResult,
-    assetGraphData,
+    assetGraphData: isAssetLayoutCached ? assetGraphData : assetGraphDataPotentiallyEmpty,
     fullAssetGraphData,
     graphQueryItems,
     graphAssetKeys,
     allAssetKeys,
-    applyingEmptyDefault,
+    applyingEmptyDefault: applyingEmptyDefault && !isAssetLayoutCached,
   };
 }
 
