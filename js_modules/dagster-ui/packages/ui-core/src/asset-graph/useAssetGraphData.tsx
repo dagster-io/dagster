@@ -98,7 +98,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
       opsQuery,
     );
 
-    let assetGraphData;
+    let assetGraphData = null;
     if (applyingEmptyDefault) {
       // build the graph data anyways to check if it's cached
       const {all} = filterByQuery(graphQueryItems, '*');
