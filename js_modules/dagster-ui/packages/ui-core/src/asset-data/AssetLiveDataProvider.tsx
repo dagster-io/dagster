@@ -82,6 +82,7 @@ export function useAssetsLiveData(assetKeys: AssetKeyInput[]) {
 }
 
 async function _queryAssetKeys(client: ApolloClient<any>, assetKeys: AssetKeyInput[]) {
+  console.log({assetKeys});
   const {data} = await client.query<AssetGraphLiveQuery, AssetGraphLiveQueryVariables>({
     query: ASSETS_GRAPH_LIVE_QUERY,
     fetchPolicy: 'network-only',
@@ -313,19 +314,34 @@ async function _batchedQueryAssets(
     };
   });
   onUpdatingOrUpdated();
-  const data = await _queryAssetKeys(client, assetKeys);
-  const fetchedTime = Date.now();
-  assetKeys.forEach((key) => {
-    lastFetchedOrRequested[tokenForAssetKey(key)] = {
-      fetched: fetchedTime,
-    };
-  });
-  setData(data);
-  onUpdatingOrUpdated();
-  isFetching = false;
-  const nextAssets = _determineAssetsToFetch();
-  if (nextAssets.length) {
-    _batchedQueryAssets(nextAssets, client, setData, onUpdatingOrUpdated);
+  try {
+    const data = await _queryAssetKeys(client, assetKeys);
+    const fetchedTime = Date.now();
+    assetKeys.forEach((key) => {
+      lastFetchedOrRequested[tokenForAssetKey(key)] = {
+        fetched: fetchedTime,
+      };
+    });
+    setData(data);
+    onUpdatingOrUpdated();
+    isFetching = false;
+    const nextAssets = _determineAssetsToFetch();
+    if (nextAssets.length) {
+      _batchedQueryAssets(nextAssets, client, setData, onUpdatingOrUpdated);
+    }
+  } catch (e) {
+    console.error(e);
+    // Retry fetching in 5 seconds if theres a network error
+    setTimeout(() => {
+      assetKeys.forEach((key) => {
+        delete lastFetchedOrRequested[tokenForAssetKey(key)];
+        isFetching = false;
+        const nextAssets = _determineAssetsToFetch();
+        if (nextAssets.length) {
+          _batchedQueryAssets(nextAssets, client, setData, onUpdatingOrUpdated);
+        }
+      });
+    }, 5000);
   }
 }
 
