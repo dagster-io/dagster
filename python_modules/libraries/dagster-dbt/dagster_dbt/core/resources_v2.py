@@ -622,6 +622,7 @@ class DbtCliResource(ConfigurableResource):
         manifest: Optional[DbtManifestParam] = None,
         dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
         context: Optional[OpExecutionContext] = None,
+        target_path: Optional[Path] = None,
     ) -> DbtCliInvocation:
         """Create a subprocess to execute a dbt CLI command.
 
@@ -636,6 +637,9 @@ class DbtCliResource(ConfigurableResource):
                 provided to the context argument, then the dagster_dbt_translator provided to
                 `@dbt_assets` will be used.
             context (Optional[OpExecutionContext]): The execution context from within `@dbt_assets`.
+            target_path (Optional[Path]): An explicit path to a target folder to use to store and
+                retrieve dbt artifacts when running a dbt CLI command. If not provided, a unique
+                target path will be generated.
 
         Returns:
             DbtCliInvocation: A invocation instance that can be used to retrieve the output of the
@@ -744,7 +748,7 @@ class DbtCliResource(ConfigurableResource):
                     dbt_macro_args = {"key": "value"}
                     dbt.cli(["run-operation", "my-macro", json.dumps(dbt_macro_args)]).wait()
         """
-        target_path = self._get_unique_target_path(context=context)
+        target_path = target_path or self._get_unique_target_path(context=context)
         env = {
             **os.environ.copy(),
             # Run dbt with unbuffered output.
