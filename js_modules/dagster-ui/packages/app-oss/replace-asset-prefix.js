@@ -25,7 +25,7 @@ function processDirectory(directory) {
         '"BUILDTIME_ASSETPREFIX_REPLACE_ME',
         // if typeof window === "undefined" then we are inside a web worker
         // Grab the path from the location object
-        '(() => {if (typeof window === "undefined") {return self.location.pathname.split("_next")[0].slice(0, -1)} return self.__webpack_public_path__ || "";})() + "',
+        '(() => {if (typeof window === "undefined") {return self.location.pathname.split("/_next/")[0]} return self.__webpack_public_path__ || "";})() + "',
       );
     }
   }
