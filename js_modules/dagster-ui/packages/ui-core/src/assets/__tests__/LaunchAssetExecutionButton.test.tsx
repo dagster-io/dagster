@@ -325,7 +325,42 @@ describe('LaunchAssetExecutionButton', () => {
       // missing-and-failed only option is available
       expect(screen.getByTestId('missing-only-checkbox')).toBeEnabled();
 
+      // ranges-as-tags option is available
+      const rangesAsTags = screen.getByTestId('ranges-as-tags-true-radio');
+      await waitFor(async () => expect(rangesAsTags).toBeEnabled());
+
       await expectLaunchExecutesMutationAndCloses('Launch 1148-run backfill', launchMock);
+    });
+
+    it('should launch a single run if you choose to pass the partition range using tags', async () => {
+      const launchMock = buildExpectedLaunchSingleRunMutation({
+        mode: 'default',
+        executionMetadata: {
+          tags: [
+            {key: 'dagster/asset_partition_range_start', value: '2020-01-02'},
+            {key: 'dagster/asset_partition_range_end', value: '2023-02-22'},
+          ],
+        },
+        runConfigData: '{}\n',
+        selector: {
+          repositoryLocationName: 'test.py',
+          repositoryName: 'repo',
+          pipelineName: 'my_asset_job',
+          assetSelection: [{path: ['asset_daily']}],
+        },
+      });
+      renderButton({
+        scope: {all: [ASSET_DAILY]},
+        preferredJobName: 'my_asset_job',
+        launchMock,
+      });
+      await clickMaterializeButton();
+      await screen.findByTestId('choose-partitions-dialog');
+
+      const rangesAsTags = screen.getByTestId('ranges-as-tags-true-radio');
+      await waitFor(async () => expect(rangesAsTags).toBeEnabled());
+      await userEvent.click(rangesAsTags);
+      await expectLaunchExecutesMutationAndCloses('Launch 1 run', launchMock);
     });
   });
 
@@ -354,6 +389,7 @@ describe('LaunchAssetExecutionButton', () => {
 
       // backfill options for run as tags, missing only are not available
       expect(screen.queryByTestId('missing-only-checkbox')).toBeNull();
+      expect(screen.queryByTestId('ranges-as-tags-true-radio')).toBeNull();
 
       await expectLaunchExecutesMutationAndCloses('Launch backfill', LaunchMutationMock);
     });
@@ -384,6 +420,7 @@ describe('LaunchAssetExecutionButton', () => {
 
       // backfill options for run as tags, missing only are not available
       expect(await screen.queryByTestId('missing-only-checkbox')).toBeNull();
+      expect(await screen.queryByTestId('ranges-as-tags-true-radio')).toBeNull();
 
       await expectLaunchExecutesMutationAndCloses('Launch backfill', LaunchPureAllMutationMock);
     });

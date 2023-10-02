@@ -1,5 +1,6 @@
 import {gql, useApolloClient, useQuery} from '@apollo/client';
 // eslint-disable-next-line no-restricted-imports
+import {Radio} from '@blueprintjs/core';
 import {
   Box,
   Button,
@@ -13,6 +14,7 @@ import {
   Checkbox,
   Icon,
   Subheading,
+  RadioContainer,
 } from '@dagster-io/ui-components';
 import reject from 'lodash/reject';
 import React from 'react';
@@ -52,6 +54,7 @@ import {
 } from '../partitions/BackfillMessaging';
 import {DimensionRangeWizard} from '../partitions/DimensionRangeWizard';
 import {assembleIntoSpans, stringForSpan} from '../partitions/SpanRepresentation';
+import {DagsterTag} from '../runs/RunTag';
 import {testId} from '../testing/testId';
 import {RepoAddress} from '../workspace/types';
 
@@ -192,6 +195,11 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
     shouldReadPartitionQueryStringParam: true,
   });
 
+  const [launchWithRangesAsTags, setLaunchWithRangesAsTags] = React.useState(false);
+  const canLaunchWithRangesAsTags =
+    selections.every((s) => s.selectedRanges.length === 1) &&
+    selections.some((s) => s.selectedKeys.length > 1);
+
   const keysFiltered = React.useMemo(() => {
     return explodePartitionKeysInSelectionMatching(selections, (dIdxs) => {
       if (missingFailedOnly) {
@@ -210,7 +218,16 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   const {useLaunchWithTelemetry} = useLaunchPadHooks();
   const launchWithTelemetry = useLaunchWithTelemetry();
   const launchAsBackfill =
-    ['pureWithAnchorAsset', 'pureAll'].includes(target.type) || keysFiltered.length !== 1;
+    ['pureWithAnchorAsset', 'pureAll'].includes(target.type) ||
+    (!launchWithRangesAsTags && keysFiltered.length !== 1);
+
+  React.useEffect(() => {
+    !canLaunchWithRangesAsTags && setLaunchWithRangesAsTags(false);
+  }, [canLaunchWithRangesAsTags]);
+
+  React.useEffect(() => {
+    launchWithRangesAsTags && setMissingFailedOnly(false);
+  }, [launchWithRangesAsTags]);
 
   React.useEffect(() => {
     ['pureWithAnchorAsset', 'pureAll'].includes(target.type) && setMissingFailedOnly(false);
@@ -290,7 +307,19 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
     }
 
     const runConfigData = partition.runConfigOrError.yaml || '';
-    const allTags = [...partition.tagsOrError.results, ...tags];
+    let allTags = [...partition.tagsOrError.results, ...tags];
+
+    if (launchWithRangesAsTags) {
+      allTags = allTags.filter((t) => !t.key.startsWith(DagsterTag.Partition));
+      allTags.push({
+        key: DagsterTag.AssetPartitionRangeStart,
+        value: keysFiltered[0]!,
+      });
+      allTags.push({
+        key: DagsterTag.AssetPartitionRangeEnd,
+        value: keysFiltered[keysFiltered.length - 1]!,
+      });
+    }
 
     const result = await launchWithTelemetry(
       {
@@ -549,13 +578,48 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
           isInitiallyOpen={true}
         >
           {target.type === 'job' && (
-            <Box padding={{vertical: 16, horizontal: 24}}>
+            <Box padding={{vertical: 16, horizontal: 24}} flex={{direction: 'column', gap: 12}}>
               <Checkbox
                 data-testid={testId('missing-only-checkbox')}
                 label="Backfill only failed and missing partitions within selection"
                 checked={missingFailedOnly}
+                disabled={launchWithRangesAsTags}
                 onChange={() => setMissingFailedOnly(!missingFailedOnly)}
               />
+              <RadioContainer>
+                <Subheading>Launch as...</Subheading>
+                <Radio
+                  data-testid={testId('ranges-as-tags-true-radio')}
+                  checked={canLaunchWithRangesAsTags && launchWithRangesAsTags}
+                  disabled={!canLaunchWithRangesAsTags}
+                  onChange={() => setLaunchWithRangesAsTags(!launchWithRangesAsTags)}
+                >
+                  <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+                    <span>Single run</span>
+                    <Tooltip
+                      targetTagName="div"
+                      position="top-left"
+                      content={
+                        <div style={{maxWidth: 300}}>
+                          This option requires that your assets are written to operate on a
+                          partition key range via context.asset_partition_key_range_for_output or
+                          context.asset_partitions_time_window_for_output.
+                        </div>
+                      }
+                    >
+                      <Icon name="info" color={Colors.Gray500} />
+                    </Tooltip>
+                  </Box>
+                </Radio>
+                <Radio
+                  data-testid={testId('ranges-as-tags-false-radio')}
+                  checked={!canLaunchWithRangesAsTags || !launchWithRangesAsTags}
+                  disabled={!canLaunchWithRangesAsTags}
+                  onChange={() => setLaunchWithRangesAsTags(!launchWithRangesAsTags)}
+                >
+                  Multiple runs (One per selected partition)
+                </Radio>
+              </RadioContainer>
             </Box>
           )}
         </ToggleableSection>
