@@ -1,9 +1,9 @@
 import gzip
 import io
-import uuid
 import os
-from typing import Generic, List, TypeVar
 import tempfile
+import uuid
+from typing import Generic, List, TypeVar
 
 import dagster._check as check
 from dagster import __version__ as dagster_version
@@ -28,9 +28,7 @@ from starlette.responses import (
     JSONResponse,
     PlainTextResponse,
     RedirectResponse,
-    Response,
     StreamingResponse,
-    guess_type,
 )
 from starlette.routing import Mount, Route, WebSocketRoute
 from starlette.types import Message
@@ -39,6 +37,7 @@ from .graphql import GraphQLServer
 from .version import __version__
 
 T_IWorkspaceProcessContext = TypeVar("T_IWorkspaceProcessContext", bound=IWorkspaceProcessContext)
+
 
 class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
     _process_context: T_IWorkspaceProcessContext
