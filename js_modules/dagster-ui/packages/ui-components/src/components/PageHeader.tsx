@@ -13,21 +13,17 @@ interface Props {
   metadata?: React.ReactNode;
   right?: React.ReactNode;
   tabs?: React.ReactNode;
-  paddingBelowTitle?: number;
 }
 
 export const PageHeader = (props: Props) => {
-  const {title, tags, right, tabs, paddingBelowTitle = 16} = props;
+  const {title, tags, right, tabs} = props;
   return (
     <PageHeaderContainer
       background={Colors.Gray50}
       padding={{top: 16, left: 24, right: 12}}
       border="bottom"
     >
-      <Box
-        flex={{direction: 'row', justifyContent: 'space-between'}}
-        padding={{bottom: paddingBelowTitle as any}}
-      >
+      <Box flex={{direction: 'row', justifyContent: 'space-between'}} padding={{bottom: 16}}>
         <Box flex={{direction: 'row', alignItems: 'flex-start', gap: 12, wrap: 'wrap'}}>
           {title}
           {tags}
