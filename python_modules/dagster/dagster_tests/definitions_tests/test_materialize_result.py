@@ -279,10 +279,6 @@ def test_generator_return_type_annotation():
     materialize([generator_asset], resources={"io_manager": TestingIOManager()})
 
 
-@pytest.mark.skip(
-    "Direct invocation causes errors, unskip these tests once direct invocation path is fixed."
-    " https://github.com/dagster-io/dagster/issues/16921"
-)
 def test_direct_invocation_materialize_result():
     @asset
     def my_asset() -> MaterializeResult:
@@ -312,10 +308,6 @@ def test_direct_invocation_materialize_result():
     assert res[1].metadata["baz"] == "qux"
 
 
-@pytest.mark.skip(
-    "Direct invocation causes errors, unskip these tests once direct invocation path is fixed."
-    " https://github.com/dagster-io/dagster/issues/16921"
-)
 def test_direct_invocation_for_generators():
     @asset
     def generator_asset() -> Generator[MaterializeResult, None, None]:
@@ -355,10 +347,6 @@ def test_materialize_result_with_partitions():
     assert mats[0].metadata["key"].text == "red"
 
 
-@pytest.mark.skip(
-    "Direct invocation causes errors, unskip these tests once direct invocation path is fixed."
-    " https://github.com/dagster-io/dagster/issues/16921"
-)
 def test_materialize_result_with_partitions_direct_invocation():
     @asset(partitions_def=StaticPartitionsDefinition(["red", "blue", "yellow"]))
     def partitioned_asset(context: AssetExecutionContext) -> MaterializeResult:
