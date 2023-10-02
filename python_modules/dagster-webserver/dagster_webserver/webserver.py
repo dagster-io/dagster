@@ -27,9 +27,7 @@ from starlette.responses import (
     JSONResponse,
     PlainTextResponse,
     RedirectResponse,
-    Response,
     StreamingResponse,
-    guess_type,
 )
 from starlette.routing import Mount, Route, WebSocketRoute
 from starlette.types import Message
