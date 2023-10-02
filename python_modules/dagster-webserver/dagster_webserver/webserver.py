@@ -1,8 +1,9 @@
 import gzip
 import io
 import uuid
-from os import path, walk
+import os
 from typing import Generic, List, TypeVar
+import tempfile
 
 import dagster._check as check
 from dagster import __version__ as dagster_version
@@ -39,7 +40,6 @@ from .version import __version__
 
 T_IWorkspaceProcessContext = TypeVar("T_IWorkspaceProcessContext", bound=IWorkspaceProcessContext)
 
-
 class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
     _process_context: T_IWorkspaceProcessContext
     _uses_app_path_prefix: bool
@@ -61,7 +61,7 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
         return []
 
     def relative_path(self, rel: str) -> str:
-        return path.join(path.dirname(__file__), rel)
+        return os.path.join(os.path.dirname(__file__), rel)
 
     def make_request_context(self, conn: HTTPConnection) -> BaseWorkspaceRequestContext:
         return self._process_context.create_request_context(conn)
@@ -155,7 +155,7 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
             ComputeIOType(file_type),
         )
 
-        if not path.exists(file):
+        if not os.path.exists(file):
             raise HTTPException(404, detail="No log files available for download")
 
         return FileResponse(
@@ -191,7 +191,7 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
         else:
             location = compute_log_manager.get_captured_local_path(log_key, file_extension)
 
-        if not location or not path.exists(location):
+        if not location or not os.path.exists(location):
             raise HTTPException(404, detail="No log files available for download")
 
         filebase = "__".join(log_key)
@@ -231,15 +231,31 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                 """)
 
     def build_static_routes(self):
-        def next_file_response(file_path):
-            with open(file_path, encoding="utf8") as f:
-                content = f.read().replace(
-                    "BUILDTIME_ASSETPREFIX_REPLACE_ME", f"{self._app_path_prefix}"
-                )
-                return Response(content=content, media_type=guess_type(file_path)[0])
+        temp_dir = tempfile.TemporaryDirectory() if self._uses_app_path_prefix else None
+
+        def next_file_response(path, file_path):
+            # Create the full temporary directory path, including subdirectories
+            temp_dir_path = os.path.join(temp_dir.name, *os.path.dirname(path).split(os.path.sep))
+
+            # Ensure the temporary directory and its parent directories exist
+            os.makedirs(temp_dir_path, exist_ok=True)
+
+            # Create the full path to the temporary file
+            temp_file_path = os.path.join(temp_dir_path, os.path.basename(path))
+
+            if not os.path.exists(temp_file_path):
+                # If the temporary file does not exist, create it and write the contents
+                with open(file_path, encoding="utf8") as file:
+                    content = file.read().replace(
+                        "BUILDTIME_ASSETPREFIX_REPLACE_ME", f"{self._app_path_prefix}"
+                    )
+                with open(temp_file_path, mode="xt+", encoding="utf8") as file:
+                    file.write(content)
+
+            return FileResponse(path=temp_file_path)
 
         def _next_static_file(path, file_path):
-            return Route(path, lambda _: next_file_response(file_path), name="next_static")
+            return Route(path, lambda _: next_file_response(path, file_path), name="next_static")
 
         def _static_file(path, file_path):
             return Route(
@@ -250,12 +266,12 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
 
         routes = []
         base_dir = self.relative_path("webapp/build/")
-        for subdir, _, files in walk(base_dir):
+        for subdir, _, files in os.walk(base_dir):
             for file in files:
-                full_path = path.join(subdir, file)
+                full_path = os.path.join(subdir, file)
 
                 # Replace path.sep to make sure our routes use forward slashes on windows
-                mount_path = "/" + full_path[len(base_dir) :].replace(path.sep, "/")
+                mount_path = "/" + full_path[len(base_dir) :].replace(os.path.sep, "/")
                 # We only need to replace BUILDTIME_ASSETPREFIX_REPLACE_ME in javascript files
                 if self._uses_app_path_prefix and (
                     file.endswith(".js") or file.endswith(".js.map")
