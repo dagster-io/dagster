@@ -173,7 +173,7 @@ def build_asset_with_blocking_check(
 
         for check_spec in check_specs:
             executions = context.instance.event_log_storage.get_asset_check_execution_history(
-                key=check_spec.key, limit=1
+                check_key=check_spec.key, limit=1
             )
             check.invariant(
                 len(executions) == 1, "Expected asset check {check_spec.name} to execute"

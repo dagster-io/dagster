@@ -2606,11 +2606,11 @@ class SqlEventLogStorage(EventLogStorage):
 
     def get_asset_check_execution_history(
         self,
-        key: AssetCheckKey,
+        check_key: AssetCheckKey,
         limit: int,
         cursor: Optional[int] = None,
     ) -> Sequence[AssetCheckExecutionRecord]:
-        check.inst_param(key, "key", AssetCheckKey)
+        check.inst_param(check_key, "key", AssetCheckKey)
         check.int_param(limit, "limit")
         check.opt_int_param(cursor, "cursor")
 
@@ -2626,8 +2626,8 @@ class SqlEventLogStorage(EventLogStorage):
             )
             .where(
                 db.and_(
-                    AssetCheckExecutionsTable.c.asset_key == key.asset_key.to_string(),
-                    AssetCheckExecutionsTable.c.check_name == key.name,
+                    AssetCheckExecutionsTable.c.asset_key == check_key.asset_key.to_string(),
+                    AssetCheckExecutionsTable.c.check_name == check_key.name,
                 )
             )
             .order_by(AssetCheckExecutionsTable.c.id.desc())
@@ -2637,7 +2637,7 @@ class SqlEventLogStorage(EventLogStorage):
             query = query.where(AssetCheckExecutionsTable.c.id < cursor)
 
         with self.index_connection() as conn:
-            rows = conn.execute(query).fetchall()
+            rows = db_fetch_mappings(conn, query)
 
         return [
             AssetCheckExecutionRecord(

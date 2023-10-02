@@ -610,12 +610,12 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
 
     def get_asset_check_execution_history(
         self,
-        key: "AssetCheckKey",
+        check_key: "AssetCheckKey",
         limit: int,
         cursor: Optional[int] = None,
     ) -> Sequence[AssetCheckExecutionRecord]:
         return self._storage.event_log_storage.get_asset_check_execution_history(
-            key=key,
+            check_key=check_key,
             limit=limit,
             cursor=cursor,
         )

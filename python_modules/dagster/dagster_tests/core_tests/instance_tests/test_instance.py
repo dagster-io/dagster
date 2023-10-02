@@ -775,7 +775,7 @@ def test_report_runless_asset_event():
             )
         )
         records = instance.event_log_storage.get_asset_check_execution_history(
-            key=AssetCheckKey(asset_key=my_asset_key, name=my_check),
+            check_key=AssetCheckKey(asset_key=my_asset_key, name=my_check),
             limit=1,
         )
         assert len(records) == 1

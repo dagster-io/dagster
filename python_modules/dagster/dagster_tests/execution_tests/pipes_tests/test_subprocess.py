@@ -191,7 +191,7 @@ def test_ext_subprocess(
         assert re.search(r"dagster - INFO - [^\n]+ - hello world\n", captured.err, re.MULTILINE)
 
         asset_check_executions = instance.event_log_storage.get_asset_check_execution_history(
-            key=AssetCheckKey(foo.key, name="foo_check"),
+            check_key=AssetCheckKey(foo.key, name="foo_check"),
             limit=1,
         )
         assert len(asset_check_executions) == 1

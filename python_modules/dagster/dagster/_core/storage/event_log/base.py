@@ -499,7 +499,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     @abstractmethod
     def get_asset_check_execution_history(
         self,
-        key: AssetCheckKey,
+        check_key: AssetCheckKey,
         limit: int,
         cursor: Optional[int] = None,
     ) -> Sequence[AssetCheckExecutionRecord]:

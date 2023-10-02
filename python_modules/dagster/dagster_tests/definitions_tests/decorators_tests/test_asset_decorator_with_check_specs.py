@@ -424,7 +424,7 @@ def test_multi_asset_with_check_subset():
         assert check_eval.check_name == "check1"
         assert (
             instance.event_log_storage.get_asset_check_execution_history(
-                key=AssetCheckKey(AssetKey(["asset1"]), name="check1"), limit=1
+                AssetCheckKey(AssetKey(["asset1"]), name="check1"), limit=1
             )[0].status
             == AssetCheckExecutionRecordStatus.SUCCEEDED
         )
@@ -441,7 +441,7 @@ def test_multi_asset_with_check_subset():
         assert check_eval.check_name == "check1"
         assert (
             instance.event_log_storage.get_asset_check_execution_history(
-                key=AssetCheckKey(AssetKey(["asset1"]), name="check1"), limit=1
+                check_key=AssetCheckKey(AssetKey(["asset1"]), name="check1"), limit=1
             )[0].status
             == AssetCheckExecutionRecordStatus.SUCCEEDED
         )
@@ -453,7 +453,7 @@ def test_multi_asset_with_check_subset():
         assert len(result.get_asset_materialization_events()) == 1
         assert not result.get_asset_check_evaluations()
         assert not instance.event_log_storage.get_asset_check_execution_history(
-            key=AssetCheckKey(AssetKey(["asset1"]), name="check1"), limit=1
+            check_key=AssetCheckKey(AssetKey(["asset1"]), name="check1"), limit=1
         )
 
 
