@@ -10,7 +10,7 @@
   - `AssetDep` type allows you to specify upstream dependencies with partition mappings when using the `deps` parameter of `@asset` and `AssetSpec`.
   - `MaterializeResult` can be optionally returned from an asset to report metadata about the asset when the asset handles any storage requirements within the function body and does not use an I/O manager.
   - `AssetSpec` has been added as a new way to declare the assets produced by `@multi_asset`. When using `AssetSpec`, the multi_asset does not need to return any values to be stored by the I/O manager. Instead, the multi_asset should handle any storage requirements in the body of the function.
-- **Asset checks (experimental)** - You can now define, execute, and monitor data quality checks in Dagster [[docs](https://dagster.dagster-docs.io/concepts/assets/asset-checks)].
+- **Asset checks (experimental)** - You can now define, execute, and monitor data quality checks in Dagster [[docs](https://docs.dagster.io/concepts/assets/asset-checks)].
 
   - The `@asset_check` decorator, as well as the `check_specs` argument to `@asset` and `@multi_asset` enable defining asset checks.
   - Materializing assets from the UI will default to executing their asset checks. You can also execute individual checks.
