@@ -13,7 +13,7 @@ from dagster_pipes import (
     PipesTimeWindow,
 )
 
-TEST_EXT_CONTEXT_DEFAULTS = PipesContextData(
+TEST_PIPES_CONTEXT_DEFAULTS = PipesContextData(
     asset_keys=None,
     code_version_by_asset_key=None,
     provenance_by_asset_key=None,
@@ -28,7 +28,7 @@ TEST_EXT_CONTEXT_DEFAULTS = PipesContextData(
 
 
 def _make_external_execution_context(**kwargs):
-    kwargs = {**TEST_EXT_CONTEXT_DEFAULTS, **kwargs}
+    kwargs = {**TEST_PIPES_CONTEXT_DEFAULTS, **kwargs}
     return PipesContext(
         data=PipesContextData(**kwargs),
         message_channel=MagicMock(),
