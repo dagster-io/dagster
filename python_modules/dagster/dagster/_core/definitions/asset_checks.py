@@ -172,8 +172,8 @@ def build_asset_with_blocking_check(
         yield Output(asset_return_value)
 
         for check_spec in check_specs:
-            executions = context.instance.event_log_storage.get_asset_check_executions(
-                asset_key=asset_def.key, check_name=check_spec.name, limit=1
+            executions = context.instance.event_log_storage.get_asset_check_execution_history(
+                check_key=check_spec.key, limit=1
             )
             check.invariant(
                 len(executions) == 1, "Expected asset check {check_spec.name} to execute"

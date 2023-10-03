@@ -15,6 +15,7 @@ from typing import (
 
 import dagster._check as check
 from dagster._core.assets import AssetDetails
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.event_api import EventHandlerFn, EventLogRecord, EventRecordsFilter
 from dagster._core.events import DagsterEventType
@@ -495,12 +496,12 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     def supports_asset_checks(self):
         return True
 
-    def get_asset_check_executions(
+    @abstractmethod
+    def get_asset_check_execution_history(
         self,
-        asset_key: AssetKey,
-        check_name: str,
+        check_key: AssetCheckKey,
         limit: int,
         cursor: Optional[int] = None,
     ) -> Sequence[AssetCheckExecutionRecord]:
         """Get the executions for an asset check, sorted by recency."""
-        raise NotImplementedError()
+        pass

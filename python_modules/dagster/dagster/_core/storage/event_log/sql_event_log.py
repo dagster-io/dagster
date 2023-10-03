@@ -32,6 +32,7 @@ from dagster._core.definitions.asset_check_evaluation import (
     AssetCheckEvaluation,
     AssetCheckEvaluationPlanned,
 )
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey, AssetMaterialization
 from dagster._core.errors import (
     DagsterEventLogInvalidForRun,
@@ -2603,13 +2604,16 @@ class SqlEventLogStorage(EventLogStorage):
                 f" {rows_updated}."
             )
 
-    def get_asset_check_executions(
+    def get_asset_check_execution_history(
         self,
-        asset_key: AssetKey,
-        check_name: str,
+        check_key: AssetCheckKey,
         limit: int,
         cursor: Optional[int] = None,
     ) -> Sequence[AssetCheckExecutionRecord]:
+        check.inst_param(check_key, "key", AssetCheckKey)
+        check.int_param(limit, "limit")
+        check.opt_int_param(cursor, "cursor")
+
         query = (
             db_select(
                 [
@@ -2622,8 +2626,8 @@ class SqlEventLogStorage(EventLogStorage):
             )
             .where(
                 db.and_(
-                    AssetCheckExecutionsTable.c.asset_key == asset_key.to_string(),
-                    AssetCheckExecutionsTable.c.check_name == check_name,
+                    AssetCheckExecutionsTable.c.asset_key == check_key.asset_key.to_string(),
+                    AssetCheckExecutionsTable.c.check_name == check_key.name,
                 )
             )
             .order_by(AssetCheckExecutionsTable.c.id.desc())
@@ -2633,17 +2637,19 @@ class SqlEventLogStorage(EventLogStorage):
             query = query.where(AssetCheckExecutionsTable.c.id < cursor)
 
         with self.index_connection() as conn:
-            rows = conn.execute(query).fetchall()
+            rows = db_fetch_mappings(conn, query)
 
         return [
             AssetCheckExecutionRecord(
-                id=cast(int, row[0]),
-                run_id=cast(str, row[1]),
-                status=AssetCheckExecutionRecordStatus(row[2]),
+                id=cast(int, row["id"]),
+                run_id=cast(str, row["run_id"]),
+                status=AssetCheckExecutionRecordStatus(row["execution_status"]),
                 evaluation_event=(
-                    deserialize_value(cast(str, row[3]), EventLogEntry) if row[3] else None
+                    deserialize_value(cast(str, row["evaluation_event"]), EventLogEntry)
+                    if row["evaluation_event"]
+                    else None
                 ),
-                create_timestamp=datetime_as_float(cast(datetime, row[4])),
+                create_timestamp=datetime_as_float(cast(datetime, row["create_timestamp"])),
             )
             for row in rows
         ]
