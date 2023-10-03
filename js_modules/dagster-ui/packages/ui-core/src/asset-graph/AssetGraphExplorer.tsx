@@ -38,7 +38,7 @@ import {
 } from '../pipelines/GraphNotices';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
-import {Loading} from '../ui/Loading';
+import {Loading, LoadingSpinner} from '../ui/Loading';
 
 import {AssetEdges} from './AssetEdges';
 import {AssetGraphJobSidebar} from './AssetGraphJobSidebar';
@@ -78,7 +78,12 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
     graphQueryItems,
     allAssetKeys,
     applyingEmptyDefault,
+    isCalculating,
   } = useAssetGraphData(props.explorerPath.opsQuery, props.fetchOptions);
+
+  if (isCalculating) {
+    return <LoadingSpinner purpose="page" />;
+  }
 
   return (
     <Loading allowStaleData queryResult={fetchResult}>
