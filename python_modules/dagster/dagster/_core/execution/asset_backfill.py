@@ -246,23 +246,18 @@ class AssetBackfillData(NamedTuple):
         ) -> Union[PartitionedAssetBackfillStatus, UnpartitionedAssetBackfillStatus]:
             if self.target_subset.asset_graph.get_partitions_def(asset_key) is not None:
                 materialized_subset = self.materialized_subset.get_partitions_subset(asset_key)
-                failed_partitions = set(
-                    self.failed_and_downstream_subset.get_partitions_subset(
-                        asset_key
-                    ).get_partition_keys()
-                )
-                requested_partitions = set(
-                    self.requested_subset.get_partitions_subset(asset_key).get_partition_keys()
-                )
+                failed_subset = self.failed_and_downstream_subset.get_partitions_subset(asset_key)
+                requested_subset = self.requested_subset.get_partitions_subset(asset_key)
 
                 return PartitionedAssetBackfillStatus(
                     asset_key,
                     len(self.target_subset.get_partitions_subset(asset_key)),
                     {
                         AssetBackfillStatus.MATERIALIZED: len(materialized_subset),
-                        AssetBackfillStatus.FAILED: len(failed_partitions),
-                        AssetBackfillStatus.IN_PROGRESS: len(requested_partitions) - (
-                            len(failed_partitions & requested_partitions) + len(materialized_subset)
+                        AssetBackfillStatus.FAILED: len(failed_subset - materialized_subset),
+                        AssetBackfillStatus.IN_PROGRESS: len(requested_subset) - (
+                            len((failed_subset & requested_subset) - materialized_subset)
+                            + len(materialized_subset)
                         ),
                     },
                 )
