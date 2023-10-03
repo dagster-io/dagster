@@ -643,6 +643,27 @@ class PipesDbfsMessageWriter(PipesBlobStoreMessageWriter):
 # ########################
 
 
+@contextmanager
+def open_dagster_pipes_context(
+    *,
+    context_loader: PipesContextLoader,
+    message_writer: PipesMessageWriter,
+    params_loader: PipesParamsLoader,
+) -> Iterator["PipesContext"]:
+    context_params = params_loader.load_context_params()
+    messages_params = params_loader.load_messages_params()
+    with context_loader.load_context(context_params) as context_data, message_writer.open(
+        messages_params
+    ) as message_channel:
+        pipes_context = PipesContext(context_data, message_channel)
+
+        try:
+            PipesContext.set(pipes_context)
+            yield pipes_context
+        finally:
+            PipesContext.unset()
+
+
 def init_dagster_pipes(
     *,
     context_loader: Optional[PipesContextLoader] = None,
@@ -680,6 +701,10 @@ class PipesContext:
     @classmethod
     def set(cls, context: "PipesContext") -> None:
         cls._instance = context
+
+    @classmethod
+    def unset(cls) -> None:
+        cls._instance = None
 
     @classmethod
     def get(cls) -> "PipesContext":

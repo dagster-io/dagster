@@ -64,6 +64,9 @@ class PipesClientCompletedInvocation:
         ]
 
         check.invariant(
+            len(mat_results) > 0, "No materialization results received. Internal error?"
+        )
+        check.invariant(
             len(mat_results) == 1,
             "Multiple materialize results returned. If this was deliberate, use get_results()"
             " instead.",
