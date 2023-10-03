@@ -160,16 +160,16 @@ export function indexedDBAsyncMemoize<T, R, U extends (arg: T, ...rest: any[]) =
     maxCount: 50,
   });
   const ret = (async (arg: T, ...rest: any[]) => {
-    const hashKey = hashFn ? hashFn(arg, ...rest) : arg;
+    const hash = hashFn ? hashFn(arg, ...rest) : arg;
 
     const encoder = new TextEncoder();
-    const data = encoder.encode(hashKey.toString());
+    const data = encoder.encode(hash.toString());
     const hashBuffer = await crypto.subtle.digest('SHA-1', data);
     const hashArray = Array.from(new Uint8Array(hashBuffer)); // convert buffer to byte array
-    const hashHex = hashArray.map((b) => b.toString(16).padStart(2, '0')).join(''); // convert bytes to hex string
+    const hashKey = hashArray.map((b) => b.toString(16).padStart(2, '0')).join(''); // convert bytes to hex string
 
     return new Promise<R>(async (resolve) => {
-      if (await lru.has(hashHex)) {
+      if (await lru.has(hashKey)) {
         const {value} = await lru.get(hashKey);
         resolve(value);
         return;
