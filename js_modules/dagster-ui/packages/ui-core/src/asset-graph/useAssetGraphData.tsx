@@ -72,19 +72,12 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     [fullGraphQueryItems],
   );
 
-  const {
-    assetGraphDataPotentiallyEmpty,
-    assetGraphData,
-    graphAssetKeys,
-    allAssetKeys,
-    applyingEmptyDefault,
-  } = React.useMemo(() => {
+  const {assetGraphData, graphAssetKeys, allAssetKeys, applyingEmptyDefault} = React.useMemo(() => {
     if (repoFilteredNodes === undefined || graphQueryItems === undefined) {
       return {
         graphAssetKeys: [],
         graphQueryItems: [],
         assetGraphData: null,
-        assetGraphDataPotentiallyEmpty: null,
         applyingEmptyDefault: false,
       };
     }
@@ -93,55 +86,73 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     // In the future it might be ideal to move this server-side, but we currently
     // get to leverage the useQuery cache almost 100% of the time above, making this
     // super fast after the first load vs a network fetch on every page view.
-    const {all: allPotentiallyEmpty, applyingEmptyDefault} = filterByQuery(
-      graphQueryItems,
-      opsQuery,
-    );
-
-    let assetGraphData = null;
-    if (applyingEmptyDefault) {
-      // build the graph data anyways to check if it's cached
-      const {all} = filterByQuery(graphQueryItems, '*');
-      assetGraphData = buildGraphData(all.map((n) => n.node));
-      if (options.hideEdgesToNodesOutsideQuery) {
-        removeEdgesToHiddenAssets(assetGraphData, repoFilteredNodes);
-      }
-    }
+    const {all, applyingEmptyDefault} = filterByQuery(graphQueryItems, opsQuery);
 
     // Assemble the response into the data structure used for layout, traversal, etc.
-    const assetGraphDataPotentiallyEmpty = buildGraphData(allPotentiallyEmpty.map((n) => n.node));
+    const assetGraphData = buildGraphData(all.map((n) => n.node));
     if (options.hideEdgesToNodesOutsideQuery) {
-      removeEdgesToHiddenAssets(assetGraphDataPotentiallyEmpty, repoFilteredNodes);
+      removeEdgesToHiddenAssets(assetGraphData, repoFilteredNodes);
     }
 
     return {
       allAssetKeys: repoFilteredNodes.map((n) => n.assetKey),
-      graphAssetKeys: allPotentiallyEmpty.map((n) => ({path: n.node.assetKey.path})),
+      graphAssetKeys: all.map((n) => ({path: n.node.assetKey.path})),
       assetGraphData,
-      assetGraphDataPotentiallyEmpty,
       graphQueryItems,
       applyingEmptyDefault,
     };
   }, [repoFilteredNodes, graphQueryItems, opsQuery, options.hideEdgesToNodesOutsideQuery]);
 
-  const [isAssetLayoutCached, setIsAssetLayoutCached] = React.useState(false);
-  React.useEffect(() => {
+  // Used to avoid showing "query error"
+  const [isCalculating, setIsCalculating] = React.useState<boolean>(true);
+  const [isCached, setIsCached] = React.useState<boolean>(false);
+  const [assetGraphDataMaybeCached, setAssetGraphDataMaybeCached] =
+    React.useState<GraphData | null>(null);
+
+  React.useLayoutEffect(() => {
+    setAssetGraphDataMaybeCached(null);
+    setIsCached(false);
+    setIsCalculating(true);
     (async () => {
-      if (assetGraphData) {
-        const isCached = await asyncIsAssetLayoutCached(assetGraphData);
-        setIsAssetLayoutCached(isCached);
+      let fullAssetGraphData = null;
+      if (applyingEmptyDefault && repoFilteredNodes) {
+        // build the graph data anyways to check if it's cached
+        const {all} = filterByQuery(graphQueryItems, '*');
+        fullAssetGraphData = buildGraphData(all.map((n) => n.node));
+        if (options.hideEdgesToNodesOutsideQuery) {
+          removeEdgesToHiddenAssets(fullAssetGraphData, repoFilteredNodes);
+        }
+        if (fullAssetGraphData) {
+          const isCached = await asyncIsAssetLayoutCached(fullAssetGraphData);
+          if (isCached) {
+            setAssetGraphDataMaybeCached(fullAssetGraphData);
+            setIsCached(true);
+            setIsCalculating(false);
+            return;
+          }
+        }
       }
+      setAssetGraphDataMaybeCached(assetGraphData);
+      setIsCached(false);
+      setIsCalculating(false);
     })();
-  }, [assetGraphData]);
+  }, [
+    applyingEmptyDefault,
+    graphQueryItems,
+    options.hideEdgesToNodesOutsideQuery,
+    repoFilteredNodes,
+    assetGraphData,
+  ]);
 
   return {
     fetchResult,
-    assetGraphData: isAssetLayoutCached ? assetGraphData : assetGraphDataPotentiallyEmpty,
+    assetGraphData: assetGraphDataMaybeCached,
     fullAssetGraphData,
     graphQueryItems,
     graphAssetKeys,
     allAssetKeys,
-    applyingEmptyDefault: applyingEmptyDefault && !isAssetLayoutCached,
+    applyingEmptyDefault: applyingEmptyDefault && !isCached,
+    isCalculating,
   };
 }
 
