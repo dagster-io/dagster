@@ -455,15 +455,7 @@ class AssetDaemonContext:
     @functools.cached_property
     def skipped_asset_graph_subset(self) -> AssetGraphSubset:
         subset = self.cursor.skipped_asset_graph_subset or AssetGraphSubset(self.asset_graph)
-        # factor out any asset partitions which have been materialized since last tick
-        for asset_key in self.asset_graph.all_asset_keys:
-            new_asset_partitions = self.instance_queryer.get_asset_partitions_updated_after_cursor(
-                asset_key=asset_key,
-                asset_partitions=None,
-                after_cursor=self.latest_storage_id,
-                respect_materialization_data_versions=False,
-            )
-            subset -= new_asset_partitions
+        # TODO: factor out any asset partitions which have been materialized since last tick
         return subset
 
     def get_auto_materialize_asset_evaluations(
