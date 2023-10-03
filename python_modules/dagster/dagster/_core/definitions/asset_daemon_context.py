@@ -88,7 +88,7 @@ class AssetDaemonContext:
         self,
         instance: "DagsterInstance",
         asset_graph: AssetGraph,
-        cursor: AssetDaemonCursor,
+        raw_cursor: Optional[str],
         materialize_run_tags: Optional[Mapping[str, str]],
         observe_run_tags: Optional[Mapping[str, str]],
         auto_observe: bool,
@@ -103,7 +103,11 @@ class AssetDaemonContext:
             instance, asset_graph, evaluation_time=evaluation_time, logger=logger
         )
         self._data_time_resolver = CachingDataTimeResolver(self.instance_queryer)
-        self._cursor = cursor
+        self._cursor = (
+            AssetDaemonCursor.from_serialized(raw_cursor, asset_graph)
+            if raw_cursor
+            else AssetDaemonCursor.empty()
+        )
         self._target_asset_keys = target_asset_keys or {
             key
             for key, policy in self.asset_graph.auto_materialize_policies_by_key.items()
@@ -454,15 +458,7 @@ class AssetDaemonContext:
 
     @functools.cached_property
     def skipped_asset_graph_subset(self) -> AssetGraphSubset:
-        subset = (
-            AssetGraphSubset.from_storage_dict(
-                self.cursor.serialized_skipped_asset_graph_subset,
-                self.asset_graph,
-                allow_partial=True,
-            )
-            if self.cursor.serialized_skipped_asset_graph_subset
-            else AssetGraphSubset(self.asset_graph)
-        )
+        subset = self.cursor.skipped_asset_graph_subset or AssetGraphSubset(self.asset_graph)
         # factor out any asset partitions which have been materialized since last tick
         for asset_key in self.asset_graph.all_asset_keys:
             new_asset_partitions = self.instance_queryer.get_asset_partitions_updated_after_cursor(
@@ -598,7 +594,7 @@ class AssetDaemonContext:
 
     def evaluate(
         self,
-    ) -> Tuple[Sequence[RunRequest], AssetDaemonCursor, Sequence[AutoMaterializeAssetEvaluation],]:
+    ) -> Tuple[str, int, Sequence[RunRequest], Sequence[AutoMaterializeAssetEvaluation],]:
         observe_request_timestamp = pendulum.now().timestamp()
         auto_observe_run_requests = (
             get_auto_observe_run_requests(
@@ -629,29 +625,31 @@ class AssetDaemonContext:
             newly_materialized_root_partitions_by_asset_key,
         ) = self.get_newly_updated_roots()
 
+        new_cursor = self.cursor.with_updates(
+            latest_storage_id=self.get_new_latest_storage_id(),
+            to_materialize=to_materialize,
+            to_discard=to_discard,
+            asset_graph=self.asset_graph,
+            newly_materialized_root_asset_keys=newly_materialized_root_asset_keys,
+            newly_materialized_root_partitions_by_asset_key=newly_materialized_root_partitions_by_asset_key,
+            evaluation_id=self.cursor.evaluation_id + 1,
+            newly_observe_requested_asset_keys=[
+                asset_key
+                for run_request in auto_observe_run_requests
+                for asset_key in cast(Sequence[AssetKey], run_request.asset_selection)
+            ],
+            observe_request_timestamp=observe_request_timestamp,
+            skipped_asset_graph_subset=skipped_asset_graph_subset,
+            instance_queryer=self.instance_queryer,
+        )
         return (
+            new_cursor.serialize(self.instance_queryer),
+            new_cursor.evaluation_id,
             run_requests,
-            self.cursor.with_updates(
-                latest_storage_id=self.get_new_latest_storage_id(),
-                to_materialize=to_materialize,
-                to_discard=to_discard,
-                asset_graph=self.asset_graph,
-                newly_materialized_root_asset_keys=newly_materialized_root_asset_keys,
-                newly_materialized_root_partitions_by_asset_key=newly_materialized_root_partitions_by_asset_key,
-                evaluation_id=self.cursor.evaluation_id + 1,
-                newly_observe_requested_asset_keys=[
-                    asset_key
-                    for run_request in auto_observe_run_requests
-                    for asset_key in cast(Sequence[AssetKey], run_request.asset_selection)
-                ],
-                observe_request_timestamp=observe_request_timestamp,
-                skipped_asset_graph_subset=skipped_asset_graph_subset,
-                instance_queryer=self.instance_queryer,
-            ),
-            # only record evaluations where something happened
             [
                 evaluation
                 for evaluation in evaluations.values()
+                # only record evaluations where something happened
                 if sum([evaluation.num_requested, evaluation.num_skipped, evaluation.num_discarded])
                 > 0
             ],
