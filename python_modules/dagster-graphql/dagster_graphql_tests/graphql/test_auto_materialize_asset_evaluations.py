@@ -221,6 +221,59 @@ query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: Stri
 }
 """
 
+QUERY_FOR_EVALUATION_ID = """
+query GetEvaluationsForEvaluationIdQuery($evaluationId: Int!) {
+    autoMaterializeEvaluationsForEvaluationId(evaluationId: $evaluationId) {
+        ... on AutoMaterializeAssetEvaluationRecords {
+            records {
+                numRequested
+                numSkipped
+                numDiscarded
+                rulesWithRuleEvaluations {
+                    rule {
+                        decisionType
+                    }
+                    ruleEvaluations {
+                        partitionKeysOrError {
+                            ... on PartitionKeys {
+                                partitionKeys
+                            }
+                            ... on Error {
+                                message
+                            }
+                        }
+                        evaluationData {
+                            ... on TextRuleEvaluationData {
+                                text
+                            }
+                            ... on ParentMaterializedRuleEvaluationData {
+                                updatedAssetKeys {
+                                    path
+                                }
+                                willUpdateAssetKeys {
+                                    path
+                                }
+                            }
+                            ... on WaitingOnKeysRuleEvaluationData {
+                                waitingOnAssetKeys {
+                                    path
+                                }
+                            }
+                        }
+                    }
+                }
+                rules {
+                    decisionType
+                    description
+                    className
+                }
+            }
+            currentEvaluationId
+        }
+    }
+}
+"""
+
 
 class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
     def test_get_historic_rules(self, graphql_context: WorkspaceRequestContext):
@@ -256,20 +309,64 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
         assert len(results.data["autoMaterializeAssetEvaluationsOrError"]["records"]) == 1
         assert results.data["autoMaterializeAssetEvaluationsOrError"]["records"][0]["rules"] is None
 
-        results = execute_dagster_graphql(
+        results_asset_two = execute_dagster_graphql(
             graphql_context,
             QUERY,
             variables={"assetKey": {"path": ["asset_two"]}, "limit": 10, "cursor": None},
         )
-        assert len(results.data["autoMaterializeAssetEvaluationsOrError"]["records"]) == 1
+        assert len(results_asset_two.data["autoMaterializeAssetEvaluationsOrError"]["records"]) == 1
         assert (
-            len(results.data["autoMaterializeAssetEvaluationsOrError"]["records"][0]["rules"]) == 1
+            len(
+                results_asset_two.data["autoMaterializeAssetEvaluationsOrError"]["records"][0][
+                    "rules"
+                ]
+            )
+            == 1
         )
-        rule = results.data["autoMaterializeAssetEvaluationsOrError"]["records"][0]["rules"][0]
+        rule = results_asset_two.data["autoMaterializeAssetEvaluationsOrError"]["records"][0][
+            "rules"
+        ][0]
 
         assert rule["decisionType"] == "MATERIALIZE"
         assert rule["description"] == "materialization is missing"
         assert rule["className"] == "MaterializeOnMissingRule"
+
+        results_by_evaluation_id = execute_dagster_graphql(
+            graphql_context,
+            QUERY_FOR_EVALUATION_ID,
+            variables={"evaluationId": 10},
+        )
+
+        records = results_by_evaluation_id.data["autoMaterializeEvaluationsForEvaluationId"][
+            "records"
+        ]
+
+        assert len(records) == 2
+
+        # record from both previous queries are contained here
+        assert any(
+            record == results.data["autoMaterializeAssetEvaluationsOrError"]["records"][0]
+            for record in records
+        )
+
+        assert any(
+            record == results_asset_two.data["autoMaterializeAssetEvaluationsOrError"]["records"][0]
+            for record in records
+        )
+
+        results_by_empty_evaluation_id = execute_dagster_graphql(
+            graphql_context,
+            QUERY_FOR_EVALUATION_ID,
+            variables={"evaluationId": 12345},
+        )
+        assert (
+            len(
+                results_by_empty_evaluation_id.data["autoMaterializeEvaluationsForEvaluationId"][
+                    "records"
+                ]
+            )
+            == 0
+        )
 
     def _test_get_evaluations(self, graphql_context: WorkspaceRequestContext):
         results = execute_dagster_graphql(
@@ -602,6 +699,19 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
                 "currentEvaluationId": None,
             }
         }
+
+        results_by_evaluation_id = execute_dagster_graphql(
+            graphql_context,
+            QUERY_FOR_EVALUATION_ID,
+            variables={"evaluationId": 10},
+        )
+
+        records = results_by_evaluation_id.data["autoMaterializeEvaluationsForEvaluationId"][
+            "records"
+        ]
+
+        assert len(records) == 1
+        assert records[0] == results.data["autoMaterializeAssetEvaluationsOrError"]["records"][0]
 
     def _test_current_evaluation_id(self, graphql_context: WorkspaceRequestContext):
         graphql_context.instance.daemon_cursor_storage.set_cursor_values(
