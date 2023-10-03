@@ -9,7 +9,7 @@ from typing import Any, Callable, Iterator
 
 import boto3
 import pytest
-from dagster._core.definitions.asset_check_spec import AssetCheckSpec
+from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.data_version import (
     DATA_VERSION_IS_USER_PROVIDED_TAG,
@@ -190,9 +190,8 @@ def test_pipes_subprocess(
         captured = capsys.readouterr()
         assert re.search(r"dagster - INFO - [^\n]+ - hello world\n", captured.err, re.MULTILINE)
 
-        asset_check_executions = instance.event_log_storage.get_asset_check_executions(
-            asset_key=foo.key,
-            check_name="foo_check",
+        asset_check_executions = instance.event_log_storage.get_asset_check_execution_history(
+            check_key=AssetCheckKey(foo.key, name="foo_check"),
             limit=1,
         )
         assert len(asset_check_executions) == 1
@@ -438,9 +437,11 @@ def test_pipes_no_client(external_script):
         assert mat.asset_materialization.tags[DATA_VERSION_TAG] == "alpha"
         assert mat.asset_materialization.tags[DATA_VERSION_IS_USER_PROVIDED_TAG]
 
-        asset_check_executions = instance.event_log_storage.get_asset_check_executions(
-            asset_key=subproc_run.key,
-            check_name="foo_check",
+        asset_check_executions = instance.event_log_storage.get_asset_check_execution_history(
+            AssetCheckKey(
+                asset_key=subproc_run.key,
+                name="foo_check",
+            ),
             limit=1,
         )
         assert len(asset_check_executions) == 1

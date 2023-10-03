@@ -104,9 +104,8 @@ def _get_asset_check_execution_status(
 def fetch_executions(
     instance: DagsterInstance, asset_check: ExternalAssetCheck, limit: int, cursor: Optional[str]
 ) -> List[GrapheneAssetCheckExecution]:
-    executions = instance.event_log_storage.get_asset_check_executions(
-        asset_key=asset_check.asset_key,
-        check_name=asset_check.name,
+    executions = instance.event_log_storage.get_asset_check_execution_history(
+        check_key=asset_check.key,
         limit=limit,
         cursor=int(cursor) if cursor else None,
     )
@@ -189,9 +188,8 @@ def fetch_execution_for_latest_materialization(
     # we hide executions if they aren't for the latest asset materialization.
     # currently we only consider the most recently launched check.
 
-    executions = instance.event_log_storage.get_asset_check_executions(
-        asset_key=external_asset_check.asset_key,
-        check_name=external_asset_check.name,
+    executions = instance.event_log_storage.get_asset_check_execution_history(
+        check_key=external_asset_check.key,
         limit=1,
         cursor=None,
     )
