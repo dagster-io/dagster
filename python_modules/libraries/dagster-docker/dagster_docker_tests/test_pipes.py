@@ -29,9 +29,9 @@ def test_default():
     @asset
     def number_x(
         context: AssetExecutionContext,
-        pipes_docker_client: PipesDockerClient,
+        pipes_client: PipesDockerClient,
     ):
-        return pipes_docker_client.run(
+        return pipes_client.run(
             image=docker_image,
             command=[
                 "python",
@@ -45,7 +45,7 @@ def test_default():
 
     result = materialize(
         [number_x],
-        resources={"pipes_docker_client": PipesDockerClient(**ext_config)},
+        resources={"pipes_client": PipesDockerClient(**ext_config)},
         raise_on_error=False,
     )
     assert result.success
@@ -69,7 +69,7 @@ def test_file_io():
         @asset
         def number_x(
             context: AssetExecutionContext,
-            pipes_docker_client: PipesDockerClient,
+            pipes_client: PipesDockerClient,
         ):
             instance_storage = context.instance.storage_directory()
             host_storage = os.path.join(instance_storage, "number_example")
@@ -88,7 +88,7 @@ def test_file_io():
                 },
             }
 
-            return pipes_docker_client.run(
+            return pipes_client.run(
                 image=docker_image,
                 command=[
                     "python",
@@ -107,7 +107,7 @@ def test_file_io():
         result = materialize(
             [number_x],
             resources={
-                "pipes_docker_client": PipesDockerClient(
+                "pipes_client": PipesDockerClient(
                     context_injector=PipesFileContextInjector(os.path.join(tempdir, "context")),
                 )
             },

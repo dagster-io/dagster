@@ -136,7 +136,7 @@ def s3_client() -> Iterator[boto3.client]:
         ("user/env", "user/file"),
     ],
 )
-def test_ext_subprocess(
+def test_pipes_subprocess(
     capsys, tmpdir, external_script, s3_client, context_injector_spec, message_reader_spec
 ):
     if context_injector_spec == "default":
@@ -198,7 +198,7 @@ def test_ext_subprocess(
         assert asset_check_executions[0].status == AssetCheckExecutionRecordStatus.SUCCEEDED
 
 
-def test_ext_subprocess_client_no_return():
+def test_pipes_subprocess_client_no_return():
     def script_fn():
         from dagster_pipes import init_dagster_pipes
 
@@ -223,7 +223,7 @@ def test_ext_subprocess_client_no_return():
         materialize([foo], resources={"client": client})
 
 
-def test_ext_multi_asset():
+def test_pipes_multi_asset():
     def script_fn():
         from dagster_pipes import init_dagster_pipes
 
@@ -256,7 +256,7 @@ def test_ext_multi_asset():
         assert bar_mat.asset_materialization.tags[DATA_VERSION_TAG] == "alpha"
 
 
-def test_ext_dynamic_partitions():
+def test_pipes_dynamic_partitions():
     def script_fn():
         pass
 
@@ -279,7 +279,7 @@ def test_ext_dynamic_partitions():
         assert foo_mat.asset_materialization.partition == "bar"
 
 
-def test_ext_typed_metadata():
+def test_pipes_typed_metadata():
     def script_fn():
         from dagster_pipes import init_dagster_pipes
 
@@ -345,7 +345,7 @@ def test_ext_typed_metadata():
         assert metadata["null_meta"].value is None
 
 
-def test_ext_asset_failed():
+def test_pipes_asset_failed():
     def script_fn():
         raise Exception("foo")
 
@@ -359,7 +359,7 @@ def test_ext_asset_failed():
         materialize([foo], resources={"pipes_subprocess_client": PipesSubprocessClient()})
 
 
-def test_ext_asset_invocation():
+def test_pipes_asset_invocation():
     def script_fn():
         from dagster_pipes import init_dagster_pipes
 
@@ -378,7 +378,7 @@ def test_ext_asset_invocation():
 PATH_WITH_NONEXISTENT_DIR = "/tmp/does-not-exist/foo"
 
 
-def test_ext_no_orchestration():
+def test_pipes_no_orchestration():
     def script_fn():
         from dagster_pipes import (
             PipesContext,
@@ -407,7 +407,7 @@ def test_ext_no_orchestration():
         )
 
 
-def test_ext_no_client(external_script):
+def test_pipes_no_client(external_script):
     @asset(check_specs=[AssetCheckSpec(name="foo_check", asset=AssetKey(["subproc_run"]))])
     def subproc_run(context: AssetExecutionContext):
         extras = {"bar": "baz"}
@@ -445,7 +445,7 @@ def test_ext_no_client(external_script):
         assert asset_check_executions[0].status == AssetCheckExecutionRecordStatus.SUCCEEDED
 
 
-def test_ext_no_client_no_yield():
+def test_pipes_no_client_no_yield():
     def script_fn():
         pass
 
