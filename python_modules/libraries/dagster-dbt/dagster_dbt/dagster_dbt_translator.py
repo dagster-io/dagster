@@ -18,6 +18,18 @@ from .asset_utils import (
 )
 
 
+@dataclass(frozen=True)
+class DagsterDbtTranslatorSettings:
+    """Settings to enable Dagster features for your dbt project.
+
+    Args:
+        enable_asset_checks (bool): Whether to load dbt tests as Dagster asset checks.
+            Defaults to False.
+    """
+
+    enable_asset_checks: bool = False
+
+
 class DagsterDbtTranslator:
     """Holds a set of methods that derive Dagster asset definition metadata given a representation
     of a dbt resource (models, tests, sources, etc).
@@ -25,6 +37,21 @@ class DagsterDbtTranslator:
     This class is exposed so that methods can be overriden to customize how Dagster asset metadata
     is derived.
     """
+
+    def __init__(self, settings: Optional[DagsterDbtTranslatorSettings] = None):
+        """Initialize the translator.
+
+        Args:
+            settings (Optional[DagsterDbtTranslatorSettings]): Settings for the translator.
+        """
+        self._settings = settings or DagsterDbtTranslatorSettings()
+
+    @property
+    def settings(self) -> DagsterDbtTranslatorSettings:
+        if not hasattr(self, "_settings"):
+            self._settings = DagsterDbtTranslatorSettings()
+
+        return self._settings
 
     @classmethod
     @public
@@ -313,6 +340,8 @@ class KeyPrefixDagsterDbtTranslator(DagsterDbtTranslator):
         self,
         asset_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
         source_asset_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+        *args,
+        **kwargs,
     ):
         self._asset_key_prefix = (
             check_opt_coercible_to_asset_key_prefix_param(asset_key_prefix, "asset_key_prefix")
@@ -324,6 +353,8 @@ class KeyPrefixDagsterDbtTranslator(DagsterDbtTranslator):
             )
             or []
         )
+
+        super().__init__(*args, **kwargs)
 
     @public
     def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:

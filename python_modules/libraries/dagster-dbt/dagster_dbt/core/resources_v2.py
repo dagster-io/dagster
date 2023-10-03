@@ -40,7 +40,6 @@ from typing_extensions import Literal
 
 from ..asset_utils import (
     get_manifest_and_translator_from_dbt_assets,
-    is_asset_check_from_dbt_resource_props,
     output_name_fn,
 )
 from ..dagster_dbt_translator import DagsterDbtTranslator
@@ -118,6 +117,7 @@ class DbtCliEventMessage:
                 "No dbt manifest was provided. Dagster events for dbt tests will not be created."
             )
 
+        invocation_id: str = self.raw_event["info"]["invocation_id"]
         unique_id: str = event_node_info["unique_id"]
         node_resource_type: str = event_node_info["resource_type"]
         node_status: str = event_node_info["node_status"]
@@ -134,15 +134,20 @@ class DbtCliEventMessage:
                 output_name=output_name_fn(event_node_info),
                 metadata={
                     "unique_id": unique_id,
+                    "invocation_id": invocation_id,
                     "Execution Duration": duration_seconds,
                 },
             )
         elif manifest and node_resource_type == NodeType.Test and is_node_finished:
             upstream_unique_ids: List[str] = manifest["parent_map"][unique_id]
             test_resource_props = manifest["nodes"][unique_id]
-            metadata = {"unique_id": unique_id, "status": node_status}
+            metadata = {
+                "unique_id": unique_id,
+                "invocation_id": invocation_id,
+                "status": node_status,
+            }
 
-            is_asset_check = is_asset_check_from_dbt_resource_props(test_resource_props)
+            is_asset_check = dagster_dbt_translator.settings.enable_asset_checks
             attached_node_unique_id = test_resource_props.get("attached_node")
             is_generic_test = bool(attached_node_unique_id)
 
@@ -614,6 +619,7 @@ class DbtCliResource(ConfigurableResource):
         manifest: Optional[DbtManifestParam] = None,
         dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
         context: Optional[OpExecutionContext] = None,
+        target_path: Optional[Path] = None,
     ) -> DbtCliInvocation:
         """Create a subprocess to execute a dbt CLI command.
 
@@ -628,6 +634,9 @@ class DbtCliResource(ConfigurableResource):
                 provided to the context argument, then the dagster_dbt_translator provided to
                 `@dbt_assets` will be used.
             context (Optional[OpExecutionContext]): The execution context from within `@dbt_assets`.
+            target_path (Optional[Path]): An explicit path to a target folder to use to store and
+                retrieve dbt artifacts when running a dbt CLI command. If not provided, a unique
+                target path will be generated.
 
         Returns:
             DbtCliInvocation: A invocation instance that can be used to retrieve the output of the
@@ -736,7 +745,7 @@ class DbtCliResource(ConfigurableResource):
                     dbt_macro_args = {"key": "value"}
                     dbt.cli(["run-operation", "my-macro", json.dumps(dbt_macro_args)]).wait()
         """
-        target_path = self._get_unique_target_path(context=context)
+        target_path = target_path or self._get_unique_target_path(context=context)
         env = {
             **os.environ.copy(),
             # Run dbt with unbuffered output.

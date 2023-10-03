@@ -31,7 +31,7 @@ def test_default():
         context: AssetExecutionContext,
         pipes_docker_client: PipesDockerClient,
     ):
-        yield from pipes_docker_client.run(
+        return pipes_docker_client.run(
             image=docker_image,
             command=[
                 "python",
@@ -41,7 +41,7 @@ def test_default():
             context=context,
             extras={"storage_root": "/tmp/", "multiplier": 2},
             env={"PYTHONPATH": "/dagster_test/toys/external_execution/"},
-        )
+        ).get_results()
 
     result = materialize(
         [number_x],
@@ -88,7 +88,7 @@ def test_file_io():
                 },
             }
 
-            yield from pipes_docker_client.run(
+            return pipes_docker_client.run(
                 image=docker_image,
                 command=[
                     "python",
@@ -102,7 +102,7 @@ def test_file_io():
                     "environment": {"PYTHONPATH": "/dagster_test/toys/external_execution/"},
                     "volumes": volumes,
                 },
-            )
+            ).get_results()
 
         result = materialize(
             [number_x],

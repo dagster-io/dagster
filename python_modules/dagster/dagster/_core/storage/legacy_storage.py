@@ -613,16 +613,12 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         check_name: str,
         limit: int,
         cursor: Optional[int] = None,
-        materialization_event_storage_id: Optional[int] = None,
-        include_planned: bool = True,
     ) -> Sequence[AssetCheckExecutionRecord]:
         return self._storage.event_log_storage.get_asset_check_executions(
             asset_key=asset_key,
             check_name=check_name,
             limit=limit,
             cursor=cursor,
-            materialization_event_storage_id=materialization_event_storage_id,
-            include_planned=include_planned,
         )
 
 

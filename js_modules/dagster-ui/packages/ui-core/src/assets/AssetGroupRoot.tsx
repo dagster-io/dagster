@@ -84,11 +84,7 @@ export const AssetGroupRoot: React.FC<{repoAddress: RepoAddress; tab: 'lineage' 
     <Page style={{display: 'flex', flexDirection: 'column', paddingBottom: 0}}>
       <PageHeader
         title={<Heading>{groupName}</Heading>}
-        right={
-          <div style={{marginBottom: -8}}>
-            <ReloadAllButton label="Reload definitions" />
-          </div>
-        }
+        right={<ReloadAllButton label="Reload definitions" />}
         tags={<AssetGroupTags groupSelector={groupSelector} repoAddress={repoAddress} />}
         tabs={
           <Box

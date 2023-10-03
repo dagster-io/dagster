@@ -286,7 +286,7 @@ const AssetInsetForHoverEffect = styled.div`
 
 const AssetNodeContainer = styled.div<{$selected: boolean}>`
   user-select: none;
-  cursor: default;
+  cursor: pointer;
   padding: 4px;
 `;
 

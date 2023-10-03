@@ -11,8 +11,8 @@ from typing import Iterator, Optional
 
 from dagster_pipes import (
     PIPES_PROTOCOL_VERSION_FIELD,
-    DefaultPipesContextLoader,
     PipesContextData,
+    PipesDefaultContextLoader,
     PipesDefaultMessageWriter,
     PipesExtras,
     PipesParams,
@@ -61,12 +61,12 @@ class PipesFileContextInjector(PipesContextInjector):
 
         Yields:
             PipesParams: A dict of parameters that can be used by the external process to locate and
-                load the injected context data.
+            load the injected context data.
         """
         with open(self._path, "w") as input_stream:
             json.dump(context_data, input_stream)
         try:
-            yield {DefaultPipesContextLoader.FILE_PATH_KEY: self._path}
+            yield {PipesDefaultContextLoader.FILE_PATH_KEY: self._path}
         finally:
             if os.path.exists(self._path):
                 os.remove(self._path)
@@ -88,7 +88,7 @@ class PipesTempFileContextInjector(PipesContextInjector):
 
         Yields:
             PipesParams: A dict of parameters that can be used by the external process to locate and
-                load the injected context data.
+            load the injected context data.
         """
         with tempfile.TemporaryDirectory() as tempdir:
             with PipesFileContextInjector(
@@ -113,9 +113,9 @@ class PipesEnvContextInjector(PipesContextInjector):
 
         Yields:
             PipesParams: A dict of parameters that can be used by the external process to locate and
-                load the injected context data.
+            load the injected context data.
         """
-        yield {DefaultPipesContextLoader.DIRECT_KEY: context_data}
+        yield {PipesDefaultContextLoader.DIRECT_KEY: context_data}
 
 
 @experimental
@@ -143,7 +143,7 @@ class PipesFileMessageReader(PipesMessageReader):
 
         Yields:
             PipesParams: A dict of parameters that specifies where a pipes process should write
-                pipes protocol messages.
+            pipes protocol messages.
         """
         is_task_complete = Event()
         thread = None
@@ -184,7 +184,7 @@ class PipesTempFileMessageReader(PipesMessageReader):
 
         Yields:
             PipesParams: A dict of parameters that specifies where a pipes process should write
-                pipes protocol messages.
+            pipes protocol messages.
         """
         with tempfile.TemporaryDirectory() as tempdir:
             with PipesFileMessageReader(
@@ -230,7 +230,7 @@ class PipesBlobStoreMessageReader(PipesMessageReader):
 
         Yields:
             PipesParams: A dict of parameters that specifies where a pipes process should write
-                pipes protocol message chunks.
+            pipes protocol message chunks.
         """
         with self.get_params() as params:
             is_task_complete = Event()
@@ -259,7 +259,7 @@ class PipesBlobStoreMessageReader(PipesMessageReader):
 
         Yields:
             PipesParams: A dict of parameters that specifies where a pipes process should write
-                pipes protocol message chunks.
+            pipes protocol message chunks.
         """
 
     @abstractmethod
@@ -296,8 +296,11 @@ def extract_message_or_forward_to_stdout(handler: "PipesMessageHandler", log_lin
 
 
 _FAIL_TO_YIELD_ERROR_MESSAGE = (
-    "Did you forget to `yield from pipes_session.get_results()`? `get_results` should be called"
-    " once after the `open_pipes_session` block has exited to yield any remaining buffered results."
+    "Did you forget to `yield from pipes_session.get_results()` or `return"
+    " <PipesClient>.run(...).get_results`? If using `open_pipes_session`,"
+    " `pipes_session.get_results` should be called once after the `open_pipes_session` block has"
+    " exited to yield any remaining buffered results. If using `<PipesClient>.run`, you should"
+    " always return `<PipesClient>.run(...).get_results()`."
 )
 
 
@@ -349,7 +352,7 @@ def open_pipes_session(
             ) as pipes_session:
                 subprocess.Popen(
                     ["/bin/python", "/path/to/script.py"],
-                    env={**pipes_session.get_pipes_env_vars()}
+                    env={**pipes_session.get_bootstrap_env_vars()}
                 )
                 while process.poll() is None:
                     yield from pipes_session.get_results()

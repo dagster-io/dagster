@@ -489,7 +489,7 @@ def test_bfs_filter_asset_subsets_different_mappings(asset_graph_from_assets):
     )
 
 
-def test_asset_graph_subset_contains() -> None:
+def test_asset_graph_subset_contains(asset_graph_from_assets) -> None:
     daily_partitions_def = DailyPartitionsDefinition(start_date="2022-01-01")
 
     @asset(partitions_def=daily_partitions_def)
@@ -504,7 +504,7 @@ def test_asset_graph_subset_contains() -> None:
     @asset
     def unpartitioned2(): ...
 
-    asset_graph = AssetGraph.from_assets(
+    asset_graph = asset_graph_from_assets(
         [partitioned1, partitioned2, unpartitioned1, unpartitioned2]
     )
 
@@ -528,7 +528,7 @@ def test_asset_graph_subset_contains() -> None:
     assert AssetKeyPartitionKey(partitioned2.key, "2022-01-01") not in asset_graph_subset
 
 
-def test_asset_graph_difference():
+def test_asset_graph_difference(asset_graph_from_assets):
     daily_partitions_def = DailyPartitionsDefinition(start_date="2022-01-01")
 
     @asset(partitions_def=daily_partitions_def)
@@ -543,7 +543,7 @@ def test_asset_graph_difference():
     @asset
     def unpartitioned2(): ...
 
-    asset_graph = AssetGraph.from_assets(
+    asset_graph = asset_graph_from_assets(
         [partitioned1, partitioned2, unpartitioned1, unpartitioned2]
     )
 
@@ -595,7 +595,7 @@ def test_asset_graph_difference():
     )
 
 
-def test_asset_graph_partial_deserialization():
+def test_asset_graph_partial_deserialization(asset_graph_from_assets):
     daily_partitions_def = DailyPartitionsDefinition(start_date="2022-01-01")
     static_partitions_def = StaticPartitionsDefinition(["a", "b", "c"])
 
@@ -612,7 +612,7 @@ def test_asset_graph_partial_deserialization():
         @asset
         def unpartitioned2(): ...
 
-        return AssetGraph.from_assets([partitioned1, partitioned2, unpartitioned1, unpartitioned2])
+        return asset_graph_from_assets([partitioned1, partitioned2, unpartitioned1, unpartitioned2])
 
     def get_ag2() -> AssetGraph:
         @asset(partitions_def=daily_partitions_def)
@@ -632,7 +632,7 @@ def test_asset_graph_partial_deserialization():
         @asset
         def unpartitioned3(): ...
 
-        return AssetGraph.from_assets(
+        return asset_graph_from_assets(
             [partitioned1, partitioned2, partitioned3, unpartitioned2, unpartitioned3]
         )
 

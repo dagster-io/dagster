@@ -10,11 +10,11 @@ from dagster import (
 from dagster._annotations import experimental
 from dagster._core.pipes.client import (
     PipesClient,
+    PipesClientCompletedInvocation,
     PipesContextInjector,
     PipesMessageReader,
 )
 from dagster._core.pipes.context import (
-    PipesExecutionResult,
     PipesMessageHandler,
 )
 from dagster._core.pipes.utils import (
@@ -102,7 +102,7 @@ class _PipesDockerClient(PipesClient):
         registry: Optional[Mapping[str, str]] = None,
         container_kwargs: Optional[Mapping[str, Any]] = None,
         extras: Optional[PipesExtras] = None,
-    ) -> Iterator[PipesExecutionResult]:
+    ) -> PipesClientCompletedInvocation:
         """Create a docker container and run it to completion, enriched with the pipes protocol.
 
         Args:
@@ -125,8 +125,9 @@ class _PipesDockerClient(PipesClient):
             message_reader (Optional[PipesMessageReader]):
                 Override the default ext protocol message reader.
 
-        Yields:
-            PipesExecutionResult: Results reported by the external process.
+        Returns:
+            PipesClientCompletedInvocation: Wrapper containing results reported by the external
+                process.
         """
         with open_pipes_session(
             context=context,
@@ -149,7 +150,7 @@ class _PipesDockerClient(PipesClient):
                     image=image,
                     command=command,
                     env=env,
-                    open_pipes_session_env=pipes_session.get_pipes_env_vars(),
+                    open_pipes_session_env=pipes_session.get_bootstrap_env_vars(),
                     container_kwargs=container_kwargs,
                 )
             except docker.errors.ImageNotFound:
@@ -159,7 +160,7 @@ class _PipesDockerClient(PipesClient):
                     image=image,
                     command=command,
                     env=env,
-                    open_pipes_session_env=pipes_session.get_pipes_env_vars(),
+                    open_pipes_session_env=pipes_session.get_bootstrap_env_vars(),
                     container_kwargs=container_kwargs,
                 )
 
@@ -173,7 +174,7 @@ class _PipesDockerClient(PipesClient):
                     raise DagsterPipesError(f"Container exited with non-zero status code: {result}")
             finally:
                 container.stop()
-        return pipes_session.get_results()
+        return PipesClientCompletedInvocation(tuple(pipes_session.get_results()))
 
     def _create_container(
         self,

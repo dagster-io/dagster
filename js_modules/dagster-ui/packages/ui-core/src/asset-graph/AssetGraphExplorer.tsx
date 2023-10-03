@@ -1,5 +1,4 @@
 import {
-  Box,
   Checkbox,
   Colors,
   NonIdealState,
@@ -8,15 +7,16 @@ import {
   Button,
   Icon,
   Tooltip,
+  TextInputContainer,
 } from '@dagster-io/ui-components';
 import pickBy from 'lodash/pickBy';
 import uniq from 'lodash/uniq';
 import without from 'lodash/without';
 import React from 'react';
-import {useHistory} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {useFeatureFlags} from '../app/Flags';
+import {AssetLiveDataRefresh} from '../asset-data/AssetLiveDataProvider';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {LaunchAssetObservationButton} from '../assets/LaunchAssetObservationButton';
 import {AssetKey} from '../assets/types';
@@ -36,7 +36,7 @@ import {
   LargeDAGNotice,
   LoadingNotice,
 } from '../pipelines/GraphNotices';
-import {ExplorerPath, normalizePathnameForCacheKey} from '../pipelines/PipelinePathUtils';
+import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {Loading} from '../ui/Loading';
 
@@ -137,14 +137,7 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
   allAssetKeys,
 }) => {
   const findAssetLocation = useFindAssetLocation();
-  const pathname = useHistory().location.pathname;
-  const {layout, loading, async} = useAssetLayout(
-    assetGraphData,
-    // Use the pathname as part of the key so that different deployments don't invalidate each other's cached layout
-    // Remove the slash at the end in the key so that the same layout is used for both `/path` and `/path/`
-    `explorer:${normalizePathnameForCacheKey(pathname)}`,
-    fullAssetGraphData,
-  );
+  const {layout, loading, async} = useAssetLayout(assetGraphData);
   const viewportEl = React.useRef<SVGViewport>();
   const {flagHorizontalDAGs, flagDAGSidebar} = useFeatureFlags();
 
@@ -426,26 +419,41 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
             </OptionsOverlay>
           )}
 
-          <Box style={{position: 'absolute', right: 12, top: 8}}>
-            <Box flex={{alignItems: 'center', gap: 12}}>
-              <LaunchAssetObservationButton
-                preferredJobName={explorerPath.pipelineName}
-                scope={
-                  selectedDefinitions.length
-                    ? {selected: selectedDefinitions.filter((a) => a.isObservable)}
-                    : {all: allDefinitionsForMaterialize.filter((a) => a.isObservable)}
-                }
-              />
-              <LaunchAssetExecutionButton
-                preferredJobName={explorerPath.pipelineName}
-                scope={
-                  selectedDefinitions.length
-                    ? {selected: selectedDefinitions}
-                    : {all: allDefinitionsForMaterialize}
-                }
-              />
-            </Box>
-          </Box>
+          <TopbarWrapper>
+            <div>{fetchOptionFilters}</div>
+            <GraphQueryInput
+              type="asset_graph"
+              items={graphQueryItems}
+              value={explorerPath.opsQuery}
+              placeholder="Type an asset subset…"
+              onChange={(opsQuery) => onChangeExplorerPath({...explorerPath, opsQuery}, 'replace')}
+              popoverPosition="bottom-left"
+            />
+            <Button
+              onClick={() => {
+                onChangeExplorerPath({...explorerPath, opsQuery: ''}, 'push');
+              }}
+            >
+              Clear query
+            </Button>
+            <AssetLiveDataRefresh />
+            <LaunchAssetObservationButton
+              preferredJobName={explorerPath.pipelineName}
+              scope={
+                selectedDefinitions.length
+                  ? {selected: selectedDefinitions.filter((a) => a.isObservable)}
+                  : {all: allDefinitionsForMaterialize.filter((a) => a.isObservable)}
+              }
+            />
+            <LaunchAssetExecutionButton
+              preferredJobName={explorerPath.pipelineName}
+              scope={
+                selectedDefinitions.length
+                  ? {selected: selectedDefinitions}
+                  : {all: allDefinitionsForMaterialize}
+              }
+            />
+          </TopbarWrapper>
           <QueryOverlay>
             {showSidebar || !flagDAGSidebar ? null : (
               <Tooltip content="Show sidebar">
@@ -457,16 +465,6 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
                 />
               </Tooltip>
             )}
-            {fetchOptionFilters}
-
-            <GraphQueryInput
-              width={fetchOptionFilters ? '16vw' : undefined}
-              items={graphQueryItems}
-              value={explorerPath.opsQuery}
-              placeholder="Type an asset subset…"
-              onChange={(opsQuery) => onChangeExplorerPath({...explorerPath, opsQuery}, 'replace')}
-              popoverPosition="bottom-left"
-            />
           </QueryOverlay>
         </ErrorBoundary>
       }
@@ -586,3 +584,26 @@ const assetKeyTokensInRange = (
 
   return uniq(ledToTarget);
 };
+
+const TopbarWrapper = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: grid;
+  background: white;
+  grid-template-columns: auto 1fr auto auto auto auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 15px;
+  border-bottom: 1px solid ${Colors.KeylineGray};
+  ${TextInputContainer} {
+    width: 100%;
+  }
+  > :nth-child(2) {
+    > * {
+      display: block;
+      width: 100%;
+    }
+  }
+`;

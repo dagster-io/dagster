@@ -43,7 +43,11 @@ from dagster._utils.warnings import deprecation_warning
 from .utils import input_name_fn, output_name_fn
 
 if TYPE_CHECKING:
-    from .dagster_dbt_translator import DagsterDbtTranslator, DbtManifestWrapper
+    from .dagster_dbt_translator import (
+        DagsterDbtTranslator,
+        DagsterDbtTranslatorSettings,
+        DbtManifestWrapper,
+    )
 
 MANIFEST_METADATA_KEY = "dagster_dbt/manifest"
 DAGSTER_DBT_TRANSLATOR_METADATA_KEY = "dagster_dbt/dagster_dbt_translator"
@@ -514,10 +518,6 @@ def default_description_fn(dbt_resource_props: Mapping[str, Any], display_raw_sq
     return "\n\n".join(filter(None, description_sections))
 
 
-def is_asset_check_from_dbt_resource_props(dbt_resource_props: Mapping[str, Any]) -> bool:
-    return dbt_resource_props["meta"].get("dagster", {}).get("asset_check", False)
-
-
 def is_generic_test_on_attached_node_from_dbt_resource_props(
     unique_id: str, dbt_resource_props: Mapping[str, Any]
 ) -> bool:
@@ -528,14 +528,21 @@ def is_generic_test_on_attached_node_from_dbt_resource_props(
 
 
 def default_asset_check_fn(
-    asset_key: AssetKey, unique_id: str, dbt_resource_props: Mapping[str, Any]
+    asset_key: AssetKey,
+    unique_id: str,
+    dagster_dbt_translator_settings: "DagsterDbtTranslatorSettings",
+    dbt_resource_props: Mapping[str, Any],
 ) -> Optional[AssetCheckSpec]:
-    is_asset_check = is_asset_check_from_dbt_resource_props(dbt_resource_props)
     is_generic_test_on_attached_node = is_generic_test_on_attached_node_from_dbt_resource_props(
         unique_id, dbt_resource_props
     )
 
-    if not all([is_asset_check, is_generic_test_on_attached_node]):
+    if not all(
+        [
+            dagster_dbt_translator_settings.enable_asset_checks,
+            is_generic_test_on_attached_node,
+        ]
+    ):
         return None
 
     return AssetCheckSpec(
@@ -711,7 +718,9 @@ def get_asset_deps(
 
             for test_unique_id in test_unique_ids:
                 test_resource_props = manifest["nodes"][test_unique_id]
-                check_spec = default_asset_check_fn(asset_key, unique_id, test_resource_props)
+                check_spec = default_asset_check_fn(
+                    asset_key, unique_id, dagster_dbt_translator.settings, test_resource_props
+                )
 
                 if check_spec:
                     check_specs.append(check_spec)
