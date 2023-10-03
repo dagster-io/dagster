@@ -25,6 +25,7 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
+    Set,
     TextIO,
     Type,
     TypedDict,
@@ -54,6 +55,14 @@ _ENV_KEY_PREFIX = "DAGSTER_PIPES_"
 
 def _param_name_to_env_key(key: str) -> str:
     return f"{_ENV_KEY_PREFIX}{key.upper()}"
+
+
+def _make_message(method: str, params: Optional[Mapping[str, Any]]) -> "PipesMessage":
+    return {
+        PIPES_PROTOCOL_VERSION_FIELD: PIPES_PROTOCOL_VERSION,
+        "method": method,
+        "params": params,
+    }
 
 
 # ##### PARAMETERS
@@ -777,7 +786,7 @@ class PipesDbfsMessageWriter(PipesBlobStoreMessageWriter):
 # ########################
 
 
-def init_dagster_pipes(
+def open_dagster_pipes(
     *,
     context_loader: Optional[PipesContextLoader] = None,
     message_writer: Optional[PipesMessageWriter] = None,
@@ -810,19 +819,31 @@ def init_dagster_pipes(
 
     if is_dagster_pipes_process():
         params_loader = params_loader or PipesEnvVarParamsLoader()
-        context_params = params_loader.load_context_params()
-        messages_params = params_loader.load_messages_params()
         context_loader = context_loader or PipesDefaultContextLoader()
         message_writer = message_writer or PipesDefaultMessageWriter()
-        stack = ExitStack()
-        context_data = stack.enter_context(context_loader.load_context(context_params))
-        message_channel = stack.enter_context(message_writer.open(messages_params))
-        atexit.register(stack.__exit__, None, None, None)
-        context = PipesContext(context_data, message_channel)
+        context = PipesContext(params_loader, context_loader, message_writer)
     else:
         _emit_orchestration_inactive_warning()
         context = _get_mock()
     PipesContext.set(context)
+    return context
+
+
+def init_dagster_pipes(
+    *,
+    context_loader: Optional[PipesContextLoader] = None,
+    message_writer: Optional[PipesMessageWriter] = None,
+    params_loader: Optional[PipesParamsLoader] = None,
+) -> "PipesContext":
+    warnings.warn(
+        "`init_dagster_pipes` has been renamed to `open_dagster_pipes`. `init_dagster_pipes` will"
+        " be removed in 1.5.3.",
+        category=DeprecationWarning,
+    )
+    context = open_dagster_pipes(
+        context_loader=context_loader, message_writer=message_writer, params_loader=params_loader
+    )
+    atexit.register(context.close)
     return context
 
 
@@ -835,8 +856,8 @@ class PipesContext:
     be streamed back to Dagster.
 
     This class should not be directly instantiated by the user. Instead it should be initialized by
-    calling :py:func:`init_dagster_pipes()`, which will return the singleton instance of this class.
-    After `init_dagster_pipes()` has been called, the singleton instance can also be retrieved by
+    calling :py:func:`open_dagster_pipes()`, which will return the singleton instance of this class.
+    After `open_dagster_pipes()` has been called, the singleton instance can also be retrieved by
     calling :py:func:`PipesContext.get`.
     """
 
@@ -857,28 +878,49 @@ class PipesContext:
         """Get the singleton instance of the context. Raises an error if the context has not been initialized."""
         if cls._instance is None:
             raise Exception(
-                "ExtContext has not been initialized. You must call `init_dagster_pipes()`."
+                "PipesContext has not been initialized. You must call `open_dagster_pipes()`."
             )
         return cls._instance
 
     def __init__(
         self,
-        data: PipesContextData,
-        message_channel: PipesMessageWriterChannel,
+        params_loader: PipesParamsLoader,
+        context_loader: PipesContextLoader,
+        message_writer: PipesMessageWriter,
     ) -> None:
-        self._data = data
-        self._message_channel = message_channel
+        context_params = params_loader.load_context_params()
+        messages_params = params_loader.load_messages_params()
+        self._io_stack = ExitStack()
+        self._data = self._io_stack.enter_context(context_loader.load_context(context_params))
+        self._message_channel = self._io_stack.enter_context(message_writer.open(messages_params))
         self._logger = _PipesLogger(self)
-        self._materialized_assets: set[str] = set()
+        self._materialized_assets: Set[str] = set()
+        self._closed: bool = False
+
+    def __enter__(self) -> "PipesContext":
+        return self
+
+    def __exit__(self, exc_type: Any, exc_value: Any, traceback: Any) -> None:
+        self.close()
+
+    def close(self) -> None:
+        """Close the pipes connection. This will flush all buffered messages to the orchestration
+        process and cause any further attempt to write a message to raise an error. This method is
+        idempotent-- subsequent calls after the first have no effect.
+        """
+        if not self._closed:
+            self._io_stack.close()
+            self._closed = True
+
+    @property
+    def is_closed(self) -> bool:
+        """bool: Whether the context has been closed."""
+        return self._closed
 
     def _write_message(self, method: str, params: Optional[Mapping[str, Any]] = None) -> None:
-        message = PipesMessage(
-            {
-                PIPES_PROTOCOL_VERSION_FIELD: PIPES_PROTOCOL_VERSION,
-                "method": method,
-                "params": params,
-            }
-        )
+        if self._closed:
+            raise DagsterPipesError("Cannot send message after pipes context is closed.")
+        message = _make_message(method, params)
         self._message_channel.write_message(message)
 
     # ########################
