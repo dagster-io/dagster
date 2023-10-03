@@ -1413,7 +1413,6 @@ export type InputDefinition = {
   description: Maybe<Scalars['String']>;
   metadataEntries: Array<MetadataEntry>;
   name: Scalars['String'];
-  solidDefinition: SolidDefinition;
   type: DagsterType;
 };
 
@@ -2266,7 +2265,6 @@ export type OutputDefinition = {
   isDynamic: Maybe<Scalars['Boolean']>;
   metadataEntries: Array<MetadataEntry>;
   name: Scalars['String'];
-  solidDefinition: SolidDefinition;
   type: DagsterType;
 };
 
@@ -6937,12 +6935,6 @@ export const buildInputDefinition = (
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'non',
-    solidDefinition:
-      overrides && overrides.hasOwnProperty('solidDefinition')
-        ? overrides.solidDefinition!
-        : relationshipsToOmit.has('SolidDefinition')
-        ? ({} as SolidDefinition)
-        : buildSolidDefinition({}, relationshipsToOmit),
     type:
       overrides && overrides.hasOwnProperty('type')
         ? overrides.type!
@@ -8595,12 +8587,6 @@ export const buildOutputDefinition = (
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'repellendus',
-    solidDefinition:
-      overrides && overrides.hasOwnProperty('solidDefinition')
-        ? overrides.solidDefinition!
-        : relationshipsToOmit.has('SolidDefinition')
-        ? ({} as SolidDefinition)
-        : buildSolidDefinition({}, relationshipsToOmit),
     type:
       overrides && overrides.hasOwnProperty('type')
         ? overrides.type!
