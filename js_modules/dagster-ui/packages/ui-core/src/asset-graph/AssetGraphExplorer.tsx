@@ -621,13 +621,13 @@ function filterEdges(
 ) {
   if (allowGroupsOnlyZoomLevel && scale < GROUPS_ONLY_SCALE) {
     return edges.filter((e) => {
-      const fromAsset = graphData.nodes[e.fromId]!;
-      const toAsset = graphData.nodes[e.toId]!;
+      const fromAsset = graphData.nodes[e.fromId];
+      const toAsset = graphData.nodes[e.toId];
       // If the assets are in the same asset group then filter out the edge
       return (
-        fromAsset.definition.groupName !== toAsset.definition.groupName ||
-        fromAsset.definition.repository.id !== toAsset.definition.repository.id ||
-        fromAsset.definition.repository.location.id !== toAsset.definition.repository.location.id
+        fromAsset?.definition.groupName !== toAsset?.definition.groupName ||
+        fromAsset?.definition.repository.id !== toAsset?.definition.repository.id ||
+        fromAsset?.definition.repository.location.id !== toAsset?.definition.repository.location.id
       );
     });
   }
