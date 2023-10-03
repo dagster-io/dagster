@@ -47,7 +47,7 @@ import {AssetNode, AssetNodeMinimal} from './AssetNode';
 import {AssetNodeLink} from './ForeignNode';
 import {SidebarAssetInfo} from './SidebarAssetInfo';
 import {GraphData, graphHasCycles, GraphNode, tokenForAssetKey} from './Utils';
-import {AssetGraphLayout} from './layout';
+import {AssetGraphLayout, AssetLayoutEdge} from './layout';
 import {AssetGraphExplorerSidebar} from './sidebar/Sidebar';
 import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
 import {AssetGraphFetchScope, AssetGraphQueryItem, useAssetGraphData} from './useAssetGraphData';
@@ -331,7 +331,12 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
                     viewportRect={viewportRect}
                     selected={selectedGraphNodes.map((n) => n.id)}
                     highlighted={highlighted}
-                    edges={layout.edges}
+                    edges={filterEdges(
+                      layout.edges,
+                      allowGroupsOnlyZoomLevel,
+                      scale,
+                      assetGraphData,
+                    )}
                     strokeWidth={allowGroupsOnlyZoomLevel ? Math.max(4, 3 / scale) : 4}
                     baseColor={
                       allowGroupsOnlyZoomLevel && scale < GROUPS_ONLY_SCALE
@@ -612,3 +617,24 @@ const TopbarWrapper = styled.div`
     }
   }
 `;
+
+function filterEdges(
+  edges: AssetLayoutEdge[],
+  allowGroupsOnlyZoomLevel: boolean,
+  scale: number,
+  graphData: GraphData,
+) {
+  if (allowGroupsOnlyZoomLevel && scale < GROUPS_ONLY_SCALE) {
+    return edges.filter((e) => {
+      const fromAsset = graphData.nodes[e.fromId];
+      const toAsset = graphData.nodes[e.toId];
+      // If the assets are in the same asset group then filter out the edge
+      return (
+        fromAsset?.definition.groupName !== toAsset?.definition.groupName ||
+        fromAsset?.definition.repository.id !== toAsset?.definition.repository.id ||
+        fromAsset?.definition.repository.location.id !== toAsset?.definition.repository.location.id
+      );
+    });
+  }
+  return edges;
+}
