@@ -25,6 +25,7 @@ For a step-by-step implementation walkthrough, refer to the [Using dbt with Dags
 | <PyObject module="dagster_dbt" object="DbtCliResource" />                                      | A class that defines a Dagster resource used to execute dbt CLI commands.                                                                                                                                         |
 | <PyObject module="dagster_dbt" object="DbtCliInvocation" />                                    | A class that defines the representation of an invoked dbt command.                                                                                                                                                |
 | <PyObject module="dagster_dbt" object="DagsterDbtTranslator" />                                | A class that can be overridden to customize how Dagster asset metadata is derived from a dbt manifest.                                                                                                            |
+| <PyObject module="dagster_dbt" object="DagsterDbtTranslatorSettings" />                        | A class with settings to enable Dagster features for a dbt project.                                                                                                                                               |
 | <PyObject module="dagster_dbt" object="DbtManifestAssetSelection" />                           | A class that defines a selection of assets from a dbt manifest and a dbt selection string.                                                                                                                        |
 | <PyObject module="dagster_dbt" object="build_dbt_asset_selection" />                           | A helper method that builds a <PyObject module="dagster_dbt" object="DbtManifestAssetSelection" /> from a dbt manifest and dbt selection string.                                                                  |
 | <PyObject module="dagster_dbt" object="build_schedule_from_dbt_selection" />                   | A helper method that builds a <PyObject module="dagster" object="ScheduleDefinition" /> from a dbt manifest, dbt selection string, and cron string.                                                               |
@@ -482,6 +483,46 @@ def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
 ## dbt models, code versions, and staleness
 
 Note that Dagster allows the optional specification of a [`code_version`](/concepts/assets/software-defined-assets#asset-code-versions) for each software-defined asset, which are used to track changes. The `code_version` for an asset arising from a dbt model is defined automatically as the hash of the SQL defining the DBT model. This allows the asset graph in the UI to indicate which dbt models have new SQL since they were last materialized.
+
+---
+
+## Loading dbt tests as asset checks <Experimental />
+
+<Note>
+  <strong>Dagster asset checks are currently an experimental feature. </strong>{" "}
+  To provide feedback, join our{" "}
+  <a href="https://github.com/dagster-io/dagster/discussions/16527">
+    GitHub discussion
+  </a>{" "}
+  to share your use case with Dagster asset checks and dbt.
+</Note>
+
+Dagster allows you to model your existing dbt tests as [asset checks](/concepts/assets/asset-checks).
+
+To enable this for your dbt project, you'll need to define a <PyObject module="dagster_dbt" object="DagsterDbtTranslator" /> with <PyObject module="dagster_dbt" object="DagsterDbtTranslatorSettings" /> that have asset checks enabled. The following example enables asset checks when using <PyObject module="dagster_dbt" object="dbt_assets" decorator/>:
+
+```python startafter=start_enable_asset_check_dagster_dbt_translator endbefore=end_enable_asset_check_dagster_dbt_translator file=/integrations/dbt/dbt.py dedent=4
+from pathlib import Path
+from dagster import AssetExecutionContext
+from dagster_dbt import (
+    DagsterDbtTranslator,
+    DagsterDbtTranslatorSettings,
+    DbtCliResource,
+    dbt_assets,
+)
+
+manifest_path = Path("path/to/dbt_project/target/manifest.json")
+dagster_dbt_translator = DagsterDbtTranslator(
+    settings=DagsterDbtTranslatorSettings(enable_asset_checks=True)
+)
+
+@dbt_assets(
+    manifest=manifest_path,
+    dagster_dbt_translator=dagster_dbt_translator,
+)
+def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+    yield from dbt.cli(["build"], context=context).stream()
+```
 
 ---
 
