@@ -42,6 +42,11 @@ class IJob(ABC):
         pass
 
     @property
+    @abstractmethod
+    def asset_check_selection(self) -> Optional[AbstractSet[AssetCheckKey]]:
+        pass
+
+    @property
     def resolved_op_selection(self) -> Optional[AbstractSet[str]]:
         return set(self.op_selection) if self.op_selection else None
 
@@ -79,3 +84,7 @@ class InMemoryJob(IJob):
     @property
     def asset_selection(self) -> Optional[AbstractSet[AssetKey]]:
         return self._job_def.asset_selection
+
+    @property
+    def asset_check_selection(self) -> Optional[AbstractSet[AssetCheckKey]]:
+        return self._job_def.asset_check_selection
