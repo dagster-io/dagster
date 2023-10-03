@@ -238,6 +238,10 @@ class GrapheneInstigationTick(graphene.ObjectType):
     logKey = graphene.List(graphene.NonNull(graphene.String))
     logEvents = graphene.Field(graphene.NonNull(GrapheneInstigationEventConnection))
     dynamicPartitionsRequestResults = non_null_list(GrapheneDynamicPartitionsRequestResult)
+    endTimestamp = graphene.Field(graphene.Float)
+    requestedAssetKeys = non_null_list(GrapheneAssetKey)
+    requestedAssetMaterializationCount = graphene.NonNull(graphene.Int)
+    autoMaterializeAssetEvaluationId = graphene.Field(graphene.Int)
 
     class Meta:
         name = "InstigationTick"
@@ -255,6 +259,8 @@ class GrapheneInstigationTick(graphene.ObjectType):
             originRunIds=tick.origin_run_ids,
             cursor=tick.cursor,
             logKey=tick.log_key,
+            endTimestamp=tick.end_timestamp,
+            autoMaterializeAssetEvaluationId=tick.tick_data.auto_materialize_evaluation_id,
         )
 
     def resolve_id(self, _):
@@ -283,6 +289,14 @@ class GrapheneInstigationTick(graphene.ObjectType):
             GrapheneDynamicPartitionsRequestResult(request_result)
             for request_result in self._tick.dynamic_partitions_request_results
         ]
+
+    def resolve_requestedAssetKeys(self, _):
+        return [
+            GrapheneAssetKey(path=asset_key.path) for asset_key in self._tick.requested_asset_keys
+        ]
+
+    def resolve_requestedAssetMaterializationCount(self, _):
+        return self._tick.requested_asset_materialization_count
 
 
 class GrapheneDryRunInstigationTick(graphene.ObjectType):

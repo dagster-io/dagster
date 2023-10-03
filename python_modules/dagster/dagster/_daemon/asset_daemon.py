@@ -6,6 +6,7 @@ from typing import (
     Dict,
     List,
     Optional,
+    Sequence,
     Tuple,
     Type,
 )
@@ -103,6 +104,9 @@ class AutoMaterializeLaunchContext:
 
     def add_run_info(self, run_id=None):
         self._tick = self._tick.with_run_info(run_id)
+
+    def set_run_requests(self, run_requests: Sequence[RunRequest]):
+        self._tick = self._tick.with_run_requests(run_requests)
 
     def update_state(self, status: TickStatus, **kwargs: object):
         self._tick = self._tick.with_status(status=status, **kwargs)
@@ -214,6 +218,8 @@ class AssetDaemon(IntervalDaemon):
             InstigatorType.AUTO_MATERIALIZE
         )
 
+        evaluation_id = cursor.evaluation_id + 1
+
         tick = instance.create_tick(
             TickData(
                 instigator_origin_id=FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
@@ -222,6 +228,7 @@ class AssetDaemon(IntervalDaemon):
                 status=TickStatus.STARTED,
                 timestamp=evaluation_time.timestamp(),
                 selector_id=FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
+                auto_materialize_evaluation_id=evaluation_id,
             )
         )
 
@@ -234,7 +241,6 @@ class AssetDaemon(IntervalDaemon):
                 instance=instance,
                 cursor=cursor,
                 materialize_run_tags={
-                    AUTO_MATERIALIZE_TAG: "true",
                     **instance.auto_materialize_run_tags,
                 },
                 observe_run_tags={AUTO_OBSERVE_TAG: "true"},
@@ -268,6 +274,7 @@ class AssetDaemon(IntervalDaemon):
                         run_request._replace(
                             tags={
                                 **run_request.tags,
+                                AUTO_MATERIALIZE_TAG: "true",
                                 ASSET_EVALUATION_ID_TAG: str(new_cursor.evaluation_id),
                             }
                         ),
@@ -277,6 +284,8 @@ class AssetDaemon(IntervalDaemon):
                         pipeline_and_execution_plan_cache,
                     )
                 )
+
+            tick_context.set_run_requests(run_requests=run_requests)
 
             # Now submit all runs to the queue
             for submit_job_input in submit_job_inputs:

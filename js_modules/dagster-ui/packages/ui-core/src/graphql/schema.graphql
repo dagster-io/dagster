@@ -2382,6 +2382,10 @@ type InstigationTick {
   logKey: [String!]
   logEvents: InstigationEventConnection!
   dynamicPartitionsRequestResults: [DynamicPartitionsRequestResult!]!
+  endTimestamp: Float
+  requestedAssetKeys: [AssetKey!]!
+  requestedAssetMaterializationCount: Int!
+  autoMaterializeAssetEvaluationId: Int
 }
 
 type InstigationEventConnection {

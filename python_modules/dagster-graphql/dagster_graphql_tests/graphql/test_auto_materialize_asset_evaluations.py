@@ -2,7 +2,7 @@ from datetime import datetime
 
 import dagster._check as check
 import pendulum
-from dagster import AssetKey
+from dagster import AssetKey, RunRequest
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.auto_materialize_rule import (
     AutoMaterializeAssetEvaluation,
@@ -41,13 +41,19 @@ query AssetDameonTicksQuery($dayRange: Int, $dayOffset: Int, $statuses: [Instiga
     autoMaterializeTicks(dayRange: $dayRange, dayOffset: $dayOffset, statuses: $statuses, limit: $limit, cursor: $cursor) {
         id
         timestamp
+        endTimestamp
         status
+        requestedAssetKeys {
+            path
+        }
+        requestedAssetMaterializationCount
+        autoMaterializeAssetEvaluationId
     }
 }
 """
 
 
-def _create_tick(instance, status, timestamp):
+def _create_tick(instance, status, timestamp, evaluation_id, run_requests=None, end_timestamp=None):
     return instance.create_tick(
         TickData(
             instigator_origin_id=FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
@@ -55,8 +61,11 @@ def _create_tick(instance, status, timestamp):
             instigator_type=InstigatorType.AUTO_MATERIALIZE,
             status=status,
             timestamp=timestamp,
+            end_timestamp=end_timestamp,
             selector_id=FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
             run_ids=[],
+            auto_materialize_evaluation_id=evaluation_id,
+            run_requests=run_requests,
         )
     )
 
@@ -71,15 +80,32 @@ class TestAutoMaterializeTicks(ExecutingGraphQLContextTestMatrix):
         assert len(result.data["autoMaterializeTicks"]) == 0
 
         now = pendulum.now("UTC")
+        end_timestamp = now.timestamp() + 20
 
-        success_1 = _create_tick(graphql_context.instance, TickStatus.SUCCESS, now.timestamp())
+        success_1 = _create_tick(
+            graphql_context.instance,
+            TickStatus.SUCCESS,
+            now.timestamp(),
+            end_timestamp=end_timestamp,
+            evaluation_id=3,
+            run_requests=[
+                RunRequest(asset_selection=[AssetKey("foo"), AssetKey("bar")], partition_key="abc"),
+                RunRequest(asset_selection=[AssetKey("bar")], partition_key="def"),
+            ],
+        )
 
         success_2 = _create_tick(
-            graphql_context.instance, TickStatus.SUCCESS, now.subtract(days=1, hours=1).timestamp()
+            graphql_context.instance,
+            TickStatus.SUCCESS,
+            now.subtract(days=1, hours=1).timestamp(),
+            evaluation_id=2,
         )
 
         _create_tick(
-            graphql_context.instance, TickStatus.SKIPPED, now.subtract(days=2, hours=1).timestamp()
+            graphql_context.instance,
+            TickStatus.SKIPPED,
+            now.subtract(days=2, hours=1).timestamp(),
+            evaluation_id=1,
         )
 
         result = execute_dagster_graphql(
@@ -95,6 +121,14 @@ class TestAutoMaterializeTicks(ExecutingGraphQLContextTestMatrix):
             variables={"dayRange": 1, "dayOffset": None},
         )
         assert len(result.data["autoMaterializeTicks"]) == 1
+        tick = result.data["autoMaterializeTicks"][0]
+        assert tick["endTimestamp"] == end_timestamp
+        assert tick["autoMaterializeAssetEvaluationId"] == 3
+        assert sorted(tick["requestedAssetKeys"], key=lambda x: x["path"][0]) == [
+            {"path": ["bar"]},
+            {"path": ["foo"]},
+        ]
+        assert tick["requestedAssetMaterializationCount"] == 3
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -111,6 +145,10 @@ class TestAutoMaterializeTicks(ExecutingGraphQLContextTestMatrix):
         ticks = result.data["autoMaterializeTicks"]
         assert len(ticks) == 1
         assert ticks[0]["timestamp"] == success_1.timestamp
+        assert (
+            ticks[0]["autoMaterializeAssetEvaluationId"]
+            == success_1.tick_data.auto_materialize_evaluation_id
+        )
 
         cursor = ticks[0]["id"]
 
