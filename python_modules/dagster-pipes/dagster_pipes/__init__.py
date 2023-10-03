@@ -88,6 +88,10 @@ class PipesMessage(TypedDict):
     params: Optional[Mapping[str, Any]]
 
 
+PIPES_OPENED_MESSAGE: PipesMessage = _make_message("opened", None)
+PIPES_CLOSED_MESSAGE: PipesMessage = _make_message("closed", None)
+
+
 ###### PIPES CONTEXT
 
 
@@ -893,6 +897,7 @@ class PipesContext:
         self._io_stack = ExitStack()
         self._data = self._io_stack.enter_context(context_loader.load_context(context_params))
         self._message_channel = self._io_stack.enter_context(message_writer.open(messages_params))
+        self._message_channel.write_message(PIPES_OPENED_MESSAGE)
         self._logger = _PipesLogger(self)
         self._materialized_assets: Set[str] = set()
         self._closed: bool = False
@@ -909,6 +914,7 @@ class PipesContext:
         idempotent-- subsequent calls after the first have no effect.
         """
         if not self._closed:
+            self._message_channel.write_message(PIPES_CLOSED_MESSAGE)
             self._io_stack.close()
             self._closed = True
 

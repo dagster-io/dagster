@@ -23,6 +23,7 @@ from dagster import (
     _check as check,
 )
 from dagster._annotations import experimental
+from dagster._core.errors import DagsterPipesExecutionError
 from dagster._core.pipes.client import (
     PipesContextInjector,
     PipesMessageReader,
@@ -370,4 +371,11 @@ def open_pipes_session(
             message_handler=message_handler,
             context_injector_params=ci_params,
             message_reader_params=mr_params,
+        )
+    if not message_handler.is_closed:
+        raise DagsterPipesExecutionError(
+            "Pipes session was not closed. This means messages buffered in the external process may"
+            " have been discarded without being delivered. To close a pipes session, either use"
+            " `open_dagster_pipes` as a context manager or explicitly call `PipesContext.close()`"
+            " in the external process."
         )

@@ -32,6 +32,7 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
     has_one_dimension_time_window_partitioning,
 )
+from dagster._core.errors import DagsterPipesExecutionError
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.execution.context.invocation import BoundOpExecutionContext
 from dagster._core.pipes.client import PipesMessageReader
@@ -53,6 +54,7 @@ class PipesMessageHandler:
         self._result_queue: Queue[PipesExecutionResult] = Queue()
         # Only read by the main thread after all messages are handled, so no need for a lock
         self._unmaterialized_assets: Set[AssetKey] = set(context.selected_asset_keys)
+        self._closed = False
 
     @contextmanager
     def handle_messages(self, message_reader: PipesMessageReader) -> Iterator[PipesParams]:
@@ -64,6 +66,10 @@ class PipesMessageHandler:
     def clear_result_queue(self) -> Iterator[PipesExecutionResult]:
         while not self._result_queue.empty():
             yield self._result_queue.get()
+
+    @property
+    def is_closed(self) -> bool:
+        return self._closed
 
     def _resolve_metadata(
         self, metadata: Mapping[str, PipesMetadataValue]
@@ -108,12 +114,29 @@ class PipesMessageHandler:
 
     # Type ignores because we currently validate in individual handlers
     def handle_message(self, message: PipesMessage) -> None:
-        if message["method"] == "report_asset_materialization":
+        if self._closed:
+            raise DagsterPipesExecutionError(
+                f"Received message after pipes session closed: `{message}`"
+            )
+        if message["method"] == "opened":
+            self._handle_opened()
+        elif message["method"] == "closed":
+            self._handle_closed()
+        elif message["method"] == "report_asset_materialization":
             self._handle_report_asset_materialization(**message["params"])  # type: ignore
         elif message["method"] == "report_asset_check":
             self._handle_report_asset_check(**message["params"])  # type: ignore
         elif message["method"] == "log":
             self._handle_log(**message["params"])  # type: ignore
+        else:
+            raise DagsterPipesExecutionError(f"Unknown message method: {message['method']}")
+
+    def _handle_opened(self) -> None:
+        self._context.log.info("Opened pipes connection.")
+
+    def _handle_closed(self) -> None:
+        self._closed = True
+        self._context.log.info("Closed pipes connection.")
 
     def _handle_report_asset_materialization(
         self,

@@ -495,3 +495,23 @@ def test_pipes_manual_close():
         materialize([foo], instance=instance, resources={"pipes_client": PipesSubprocessClient()})
         mat = instance.get_latest_materialization_event(foo.key)
         assert mat and mat.asset_materialization
+
+
+def test_pipes_no_close():
+    def script_fn():
+        from dagster_pipes import open_dagster_pipes
+
+        context = open_dagster_pipes()
+        context.report_asset_materialization(data_version="alpha")
+
+    @asset
+    def foo(context: OpExecutionContext, pipes_client: PipesSubprocessClient):
+        with temp_script(script_fn) as script_path:
+            cmd = [_PYTHON_EXECUTABLE, script_path]
+            return pipes_client.run(command=cmd, context=context).get_results()
+
+    with instance_for_test() as instance:
+        with pytest.raises(DagsterPipesExecutionError, match="Pipes session was not closed"):
+            materialize(
+                [foo], instance=instance, resources={"pipes_client": PipesSubprocessClient()}
+            )
