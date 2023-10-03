@@ -34,6 +34,7 @@ from dagster._core.errors import DagsterInvalidPropertyError
 from dagster._core.execution.context.compute import OpExecutionContext
 from dbt.contracts.results import NodeStatus, TestStatus
 from dbt.node_types import NodeType
+from dbt.version import __version__ as dbt_version
 from packaging import version
 from pydantic import Field, root_validator, validator
 from typing_extensions import Literal
@@ -581,8 +582,6 @@ class DbtCliResource(ConfigurableResource):
     @root_validator(pre=True)
     def validate_dbt_version(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate that the dbt version is supported."""
-        from dbt.version import __version__ as dbt_version
-
         if version.parse(dbt_version) < version.parse("1.4.0"):
             raise ValueError(
                 "To use `dagster_dbt.DbtCliResource`, you must use `dbt-core>=1.4.0`. Currently,"
@@ -780,6 +779,16 @@ class DbtCliResource(ConfigurableResource):
             manifest, dagster_dbt_translator = get_manifest_and_translator_from_dbt_assets(
                 [assets_def]
             )
+
+            # When dbt is enabled with asset checks, we turn off any indirection with dbt selection.
+            # This way, the Dagster context completely determines what is executed in a dbt
+            # invocation with a subsetted selection.
+            if (
+                version.parse(dbt_version) >= version.parse("1.5.0")
+                and dagster_dbt_translator.settings.enable_asset_checks
+            ):
+                env["DBT_INDIRECT_SELECTION"] = "empty"
+
             selection_args = get_subset_selection_for_context(
                 context=context,
                 manifest=manifest,
@@ -844,6 +853,7 @@ def get_subset_selection_for_context(
         default_dbt_selection += ["--exclude", exclude]
 
     dbt_resource_props_by_output_name = get_dbt_resource_props_by_output_name(manifest)
+    dbt_resource_props_by_test_name = get_dbt_resource_props_by_test_name(manifest)
 
     # TODO: this should be a property on the context if this is a permanent indicator for
     # determining whether the current execution context is performing a subsetted execution.
@@ -864,6 +874,15 @@ def get_subset_selection_for_context(
         # Explicitly select a dbt resource by its fully qualified name (FQN).
         # https://docs.getdbt.com/reference/node-selection/methods#the-file-or-fqn-method
         fqn_selector = f"fqn:{'.'.join(dbt_resource_props['fqn'])}"
+
+        selected_dbt_resources.append(fqn_selector)
+
+    for _, check_name in context.selected_asset_check_keys:
+        test_resource_props = dbt_resource_props_by_test_name[check_name]
+
+        # Explicitly select a dbt resource by its fully qualified name (FQN).
+        # https://docs.getdbt.com/reference/node-selection/methods#the-file-or-fqn-method
+        fqn_selector = f"fqn:{'.'.join(test_resource_props['fqn'])}"
 
         selected_dbt_resources.append(fqn_selector)
 
@@ -888,4 +907,14 @@ def get_dbt_resource_props_by_output_name(
         output_name_fn(node): node
         for node in node_info_by_dbt_unique_id.values()
         if node["resource_type"] in ASSET_RESOURCE_TYPES
+    }
+
+
+def get_dbt_resource_props_by_test_name(
+    manifest: Mapping[str, Any]
+) -> Mapping[str, Mapping[str, Any]]:
+    return {
+        dbt_resource_props["name"]: dbt_resource_props
+        for unique_id, dbt_resource_props in manifest["nodes"].items()
+        if unique_id.startswith("test")
     }

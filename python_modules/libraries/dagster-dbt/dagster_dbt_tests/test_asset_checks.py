@@ -1,17 +1,21 @@
 import json
 import os
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 import pytest
-from dagster import AssetCheckResult, AssetExecutionContext, AssetKey, materialize
+from dagster import AssetCheckResult, AssetExecutionContext, AssetKey, AssetSelection, materialize
 from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.asset_defs import load_assets_from_dbt_manifest
 from dagster_dbt.core.resources_v2 import DbtCliResource
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
+from dbt.version import __version__ as dbt_version
+from packaging import version
 
 pytest.importorskip("dbt.version", minversion="1.4")
+
+is_dbt_1_4 = version.parse("1.4.0") <= version.parse(dbt_version) < version.parse("1.5.0")
 
 
 test_asset_checks_dbt_project_dir = (
@@ -110,7 +114,37 @@ def test_enable_asset_checks_with_custom_translator() -> None:
         ],
     ],
 )
-def test_asset_check_execution(dbt_commands: List[List[str]]) -> None:
+@pytest.mark.parametrize(
+    "selection",
+    [
+        None,
+        pytest.param(
+            AssetSelection.keys(AssetKey(["customers"])),
+            marks=pytest.mark.xfail(
+                is_dbt_1_4,
+                reason="DBT_INDIRECT_SELECTION=empty is not supported in dbt 1.4",
+            ),
+        ),
+        pytest.param(
+            AssetSelection.keys(AssetKey(["customers"])).without_checks(),
+            marks=pytest.mark.xfail(
+                is_dbt_1_4,
+                reason="DBT_INDIRECT_SELECTION=empty is not supported in dbt 1.4",
+            ),
+        ),
+        AssetSelection.keys(AssetKey(["customers"]))
+        - AssetSelection.keys(AssetKey(["customers"])).without_checks(),
+    ],
+    ids=[
+        "no selection",
+        "select customers with checks",
+        "select customers without checks",
+        "select only checks for customers",
+    ],
+)
+def test_asset_check_execution(
+    dbt_commands: List[List[str]], selection: Optional[AssetSelection]
+) -> None:
     dbt = DbtCliResource(project_dir=os.fspath(test_asset_checks_dbt_project_dir))
 
     @dbt_assets(manifest=manifest, dagster_dbt_translator=dagster_dbt_translator_with_checks)
@@ -123,6 +157,7 @@ def test_asset_check_execution(dbt_commands: List[List[str]]) -> None:
         resources={
             "dbt": dbt,
         },
+        selection=selection,
     )
 
     assert result.success
