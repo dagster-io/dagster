@@ -1056,3 +1056,47 @@ def test_asset_backfill_cancellation():
         ).get_partition_keys()
         == []
     )
+
+
+def test_asset_backfill_target_asset_and_grandchild():
+    instance = DagsterInstance.ephemeral()
+
+    @asset(partitions_def=DailyPartitionsDefinition("2023-09-20"))
+    def foo():
+        pass
+
+    @asset(partitions_def=DailyPartitionsDefinition("2023-09-20"))
+    def foo_child(foo):
+        pass
+
+    @asset(partitions_def=WeeklyPartitionsDefinition("2023-09-20"))
+    def foo_grandchild(foo_child):
+        pass
+
+    assets_by_repo_name = {
+        "repo": [
+            foo,
+            foo_child,
+            foo_grandchild,
+        ]
+    }
+    asset_graph = get_asset_graph(assets_by_repo_name)
+
+    asset_selection = [
+        foo.key,
+        foo_grandchild.key,
+    ]
+
+    asset_backfill_data = AssetBackfillData.from_asset_partitions(
+        asset_graph=asset_graph,
+        partition_names=None,
+        asset_selection=asset_selection,
+        dynamic_partitions_store=MagicMock(),
+        all_partitions=True,
+        backfill_start_time=pendulum.datetime(2023, 10, 5, 0, 0, 0),
+    )
+
+    print(asset_backfill_data)
+
+    run_backfill_to_completion(asset_graph, assets_by_repo_name, asset_backfill_data, [], instance)
+    assert False

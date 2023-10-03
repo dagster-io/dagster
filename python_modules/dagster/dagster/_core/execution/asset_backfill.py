@@ -1035,6 +1035,7 @@ def execute_asset_backfill_iteration_inner(
             latest_storage_id=asset_backfill_data.latest_storage_id,
         )
         initial_candidates.update(parent_materialized_asset_partitions)
+        print(f"initial_candidates: {initial_candidates}")
 
         yield None
 
