@@ -92,9 +92,9 @@ def assets_defs_from_stock_assets(stock_assets: StockAssets) -> List[AssetsDefin
         python_executable = shutil.which("python")
         assert python_executable is not None
         script_path = file_relative_path(__file__, "user_scripts/fetch_the_tickers.py")
-        pipes_subprocess_client.run(
+        return pipes_subprocess_client.run(
             command=[python_executable, script_path], context=context, extras={"tickers": tickers}
-        )
+        ).get_results()
 
     @asset(deps=fetch_the_tickers.keys, group_name=group_name)
     def index_strategy() -> None:

@@ -24,8 +24,3 @@ models:
     materialized: table
     staging:
       materialized: view
-
-tests:
-  +meta:
-    dagster:
-      asset_check: True

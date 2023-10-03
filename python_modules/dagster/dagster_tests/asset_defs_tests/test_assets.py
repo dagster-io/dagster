@@ -36,8 +36,6 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._core.definitions import AssetIn, SourceAsset, asset, multi_asset
-from dagster._core.definitions.asset_check_result import AssetCheckResult
-from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
@@ -49,10 +47,8 @@ from dagster._core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvalidPropertyError,
     DagsterInvariantViolationError,
-    DagsterStepOutputNotFoundError,
 )
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 from dagster._core.storage.mem_io_manager import InMemoryIOManager
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.dagster_type import Nothing
@@ -1709,141 +1705,6 @@ def test_return_materialization():
         match="Asset key random not found in AssetsDefinition",
     ):
         mats = _exec_asset(ret_mismatch)
-
-
-def test_return_materialization_with_asset_checks():
-    with instance_for_test() as instance:
-
-        @asset(check_specs=[AssetCheckSpec(name="foo_check", asset=AssetKey("ret_checks"))])
-        def ret_checks(context: AssetExecutionContext):
-            return MaterializeResult(
-                check_results=[
-                    AssetCheckResult(check_name="foo_check", metadata={"one": 1}, passed=True)
-                ]
-            )
-
-        materialize([ret_checks], instance=instance)
-        asset_check_executions = instance.event_log_storage.get_asset_check_executions(
-            asset_key=ret_checks.key,
-            check_name="foo_check",
-            limit=1,
-        )
-        assert len(asset_check_executions) == 1
-        assert asset_check_executions[0].status == AssetCheckExecutionRecordStatus.SUCCEEDED
-
-
-def test_return_materialization_multi_asset():
-    #
-    # yield successful
-    #
-    @multi_asset(outs={"one": AssetOut(), "two": AssetOut()})
-    def multi():
-        yield MaterializeResult(
-            asset_key="one",
-            metadata={"one": 1},
-        )
-        yield MaterializeResult(
-            asset_key="two",
-            metadata={"two": 2},
-        )
-
-    mats = _exec_asset(multi)
-
-    assert len(mats) == 2, mats
-    assert "one" in mats[0].metadata
-    assert mats[0].tags
-    assert "two" in mats[1].metadata
-    assert mats[1].tags
-
-    #
-    # missing a non optional out
-    #
-    @multi_asset(outs={"one": AssetOut(), "two": AssetOut()})
-    def missing():
-        yield MaterializeResult(
-            asset_key="one",
-            metadata={"one": 1},
-        )
-
-    # currently a less than ideal error
-    with pytest.raises(
-        DagsterStepOutputNotFoundError,
-        match=(
-            'Core compute for op "missing" did not return an output for non-optional output "two"'
-        ),
-    ):
-        _exec_asset(missing)
-
-    #
-    # missing asset_key
-    #
-    @multi_asset(outs={"one": AssetOut(), "two": AssetOut()})
-    def no_key():
-        yield MaterializeResult(
-            metadata={"one": 1},
-        )
-        yield MaterializeResult(
-            metadata={"two": 2},
-        )
-
-    with pytest.raises(
-        DagsterInvariantViolationError,
-        match=(
-            "MaterializeResult did not include asset_key and it can not be inferred. Specify which"
-            " asset_key, options are:"
-        ),
-    ):
-        _exec_asset(no_key)
-
-    #
-    # return tuple success
-    #
-    @multi_asset(outs={"one": AssetOut(), "two": AssetOut()})
-    def ret_multi():
-        return (
-            MaterializeResult(
-                asset_key="one",
-                metadata={"one": 1},
-            ),
-            MaterializeResult(
-                asset_key="two",
-                metadata={"two": 2},
-            ),
-        )
-
-    mats = _exec_asset(ret_multi)
-
-    assert len(mats) == 2, mats
-    assert "one" in mats[0].metadata
-    assert mats[0].tags
-    assert "two" in mats[1].metadata
-    assert mats[1].tags
-
-    #
-    # return list error
-    #
-    @multi_asset(outs={"one": AssetOut(), "two": AssetOut()})
-    def ret_list():
-        return [
-            MaterializeResult(
-                asset_key="one",
-                metadata={"one": 1},
-            ),
-            MaterializeResult(
-                asset_key="two",
-                metadata={"two": 2},
-            ),
-        ]
-
-    # not the best
-    with pytest.raises(
-        DagsterInvariantViolationError,
-        match=(
-            "When using multiple outputs, either yield each output, or return a tuple containing a"
-            " value for each output."
-        ),
-    ):
-        _exec_asset(ret_list)
 
 
 def test_multi_asset_no_out():

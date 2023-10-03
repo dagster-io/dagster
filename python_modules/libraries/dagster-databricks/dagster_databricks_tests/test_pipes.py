@@ -17,13 +17,13 @@ IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
 def script_fn():
     from dagster_pipes import (
-        DbfsPipesContextLoader,
+        PipesDbfsContextLoader,
         PipesDbfsMessageWriter,
         init_dagster_pipes,
     )
 
     context = init_dagster_pipes(
-        context_loader=DbfsPipesContextLoader(), message_writer=PipesDbfsMessageWriter()
+        context_loader=PipesDbfsContextLoader(), message_writer=PipesDbfsMessageWriter()
     )
 
     multiplier = context.get_extra("multiplier")
@@ -90,11 +90,11 @@ def test_basic(client: WorkspaceClient):
     def number_x(context: AssetExecutionContext, pipes_databricks_client: PipesDatabricksClient):
         with temp_script(script_fn, client) as script_path:
             task = _make_submit_task(script_path)
-            pipes_databricks_client.run(
+            return pipes_databricks_client.run(
                 task=task,
                 context=context,
                 extras={"multiplier": 2, "storage_root": "fake"},
-            )
+            ).get_results()
 
     result = materialize(
         [number_x],
@@ -111,7 +111,7 @@ def test_nonexistent_entry_point(client: WorkspaceClient):
     @asset
     def fake(context: AssetExecutionContext, pipes_databricks_client: PipesDatabricksClient):
         task = _make_submit_task("/fake/fake")
-        pipes_databricks_client.run(task=task, context=context)
+        return pipes_databricks_client.run(task=task, context=context).get_results()
 
     with pytest.raises(DagsterPipesExecutionError, match=r"Cannot read the python file"):
         materialize(

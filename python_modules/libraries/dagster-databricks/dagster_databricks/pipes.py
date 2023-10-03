@@ -14,10 +14,10 @@ from dagster._core.errors import DagsterPipesExecutionError
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.pipes.client import (
     PipesClient,
+    PipesClientCompletedInvocation,
     PipesContextInjector,
     PipesMessageReader,
 )
-from dagster._core.pipes.context import PipesExecutionResult
 from dagster._core.pipes.utils import (
     PipesBlobStoreMessageReader,
     open_pipes_session,
@@ -78,8 +78,8 @@ class _PipesDatabricksClient(PipesClient):
         context: OpExecutionContext,
         extras: Optional[PipesExtras] = None,
         submit_args: Optional[Mapping[str, str]] = None,
-    ) -> Iterator[PipesExecutionResult]:
-        """Run a Databricks job with the pipes protocol.
+    ) -> PipesClientCompletedInvocation:
+        """Synchronously execute a Databricks job with the pipes protocol.
 
         Args:
             task (databricks.sdk.service.jobs.SubmitTask): Specification of the databricks
@@ -93,8 +93,9 @@ class _PipesDatabricksClient(PipesClient):
             submit_args (Optional[Mapping[str, str]]): Additional keyword arguments that will be
                 forwarded as-is to `WorkspaceClient.jobs.submit`.
 
-        Yields:
-            PipesExecutionResult: Results reported by the external process.
+        Returns:
+            PipesClientCompletedInvocation: Wrapper containing results reported by the external
+                process.
         """
         with open_pipes_session(
             context=context,
@@ -106,7 +107,7 @@ class _PipesDatabricksClient(PipesClient):
             submit_task_dict["new_cluster"]["spark_env_vars"] = {
                 **submit_task_dict["new_cluster"].get("spark_env_vars", {}),
                 **(self.env or {}),
-                **pipes_session.get_pipes_env_vars(),
+                **pipes_session.get_bootstrap_env_vars(),
             }
             task = jobs.SubmitTask.from_dict(submit_task_dict)
             run_id = self.client.jobs.submit(
@@ -133,9 +134,8 @@ class _PipesDatabricksClient(PipesClient):
                     raise DagsterPipesExecutionError(
                         f"Error running Databricks job: {run.state.state_message}"
                     )
-                yield from pipes_session.get_results()
                 time.sleep(5)
-        yield from pipes_session.get_results()
+        return PipesClientCompletedInvocation(tuple(pipes_session.get_results()))
 
 
 PipesDatabricksClient = ResourceParam[_PipesDatabricksClient]

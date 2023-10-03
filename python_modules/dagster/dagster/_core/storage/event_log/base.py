@@ -501,11 +501,6 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         check_name: str,
         limit: int,
         cursor: Optional[int] = None,
-        materialization_event_storage_id: Optional[int] = None,
-        include_planned: bool = True,
     ) -> Sequence[AssetCheckExecutionRecord]:
-        """Get the executions for an asset check, sorted by recency. If materialization_event_storage_id
-        is set and include_planned is True, the returned Sequence will include executions that are planned
-        but do not have a target materialization yet (since we don't set the target until the check is executed).
-        """
+        """Get the executions for an asset check, sorted by recency."""
         raise NotImplementedError()

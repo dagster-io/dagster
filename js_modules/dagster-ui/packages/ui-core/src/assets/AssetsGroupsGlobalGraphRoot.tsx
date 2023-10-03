@@ -94,11 +94,7 @@ export const AssetsGroupsGlobalGraphRoot: React.FC = () => {
     <Page style={{display: 'flex', flexDirection: 'column', paddingBottom: 0}}>
       <PageHeader
         title={<Heading>Global Asset Lineage</Heading>}
-        right={
-          <div style={{marginBottom: -8}}>
-            <ReloadAllButton label="Reload definitions" />
-          </div>
-        }
+        right={<ReloadAllButton label="Reload definitions" />}
       />
       <AssetGraphExplorer
         fetchOptions={fetchOptions}

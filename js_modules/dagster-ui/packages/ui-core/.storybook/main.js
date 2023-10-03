@@ -16,7 +16,7 @@ const config = {
     getAbsolutePath('@storybook/addon-mdx-gfm'),
   ],
   framework: {
-    name: getAbsolutePath('@storybook/react-webpack5'),
+    name: getAbsolutePath("@storybook/nextjs"),
     options: {},
   },
   // https://storybook.js.org/docs/react/configure/webpack#bundle-splitting

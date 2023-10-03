@@ -2822,6 +2822,7 @@ export type Query = {
   assetsLatestInfo: Array<AssetLatestInfo>;
   assetsOrError: AssetsOrError;
   autoMaterializeAssetEvaluationsOrError: Maybe<AutoMaterializeAssetEvaluationRecordsOrError>;
+  autoMaterializeTicks: Array<InstigationTick>;
   canBulkTerminate: Scalars['Boolean'];
   capturedLogs: CapturedLogs;
   capturedLogsMetadata: CapturedLogsMetadata;
@@ -2906,6 +2907,14 @@ export type QueryAutoMaterializeAssetEvaluationsOrErrorArgs = {
   assetKey: AssetKeyInput;
   cursor?: InputMaybe<Scalars['String']>;
   limit: Scalars['Int'];
+};
+
+export type QueryAutoMaterializeTicksArgs = {
+  cursor?: InputMaybe<Scalars['String']>;
+  dayOffset?: InputMaybe<Scalars['Int']>;
+  dayRange?: InputMaybe<Scalars['Int']>;
+  limit?: InputMaybe<Scalars['Int']>;
+  statuses?: InputMaybe<Array<InstigationTickStatus>>;
 };
 
 export type QueryCapturedLogsArgs = {
@@ -9745,6 +9754,10 @@ export const buildQuery = (
         : relationshipsToOmit.has('AutoMaterializeAssetEvaluationNeedsMigrationError')
         ? ({} as AutoMaterializeAssetEvaluationNeedsMigrationError)
         : buildAutoMaterializeAssetEvaluationNeedsMigrationError({}, relationshipsToOmit),
+    autoMaterializeTicks:
+      overrides && overrides.hasOwnProperty('autoMaterializeTicks')
+        ? overrides.autoMaterializeTicks!
+        : [],
     canBulkTerminate:
       overrides && overrides.hasOwnProperty('canBulkTerminate')
         ? overrides.canBulkTerminate!

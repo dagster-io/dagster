@@ -6,6 +6,7 @@ import {
   Group,
   Heading,
   Icon,
+  MiddleTruncate,
   Mono,
   Spinner,
   Subheading,
@@ -199,8 +200,19 @@ export const AssetPartitionDetail: React.FC<{
     <Box padding={{horizontal: 24, bottom: 24}} style={{flex: 1}}>
       <Box padding={{vertical: 24}} border="bottom" flex={{alignItems: 'center'}}>
         {partition ? (
-          <Box flex={{gap: 12, alignItems: 'center'}}>
-            <Heading>{partition}</Heading>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'minmax(0, 1fr) auto',
+              gap: 12,
+              alignItems: 'center',
+            }}
+            data-tooltip={partition}
+            data-tooltip-style={PartitionHeadingTooltipStyle}
+          >
+            <Heading>
+              <MiddleTruncate text={partition} />
+            </Heading>
             {hasLoadingState ? (
               <Spinner purpose="body-text" />
             ) : latest ? (
@@ -213,7 +225,7 @@ export const AssetPartitionDetail: React.FC<{
                 include="all"
               />
             ) : undefined}
-          </Box>
+          </div>
         ) : (
           <Heading color={Colors.Gray400}>No partition selected</Heading>
         )}
@@ -336,3 +348,11 @@ export const AssetPartitionDetailEmpty = ({partitionKey}: {partitionKey?: string
     hasLoadingState
   />
 );
+
+const PartitionHeadingTooltipStyle = JSON.stringify({
+  background: Colors.Gray100,
+  border: `1px solid ${Colors.Gray200}`,
+  fontSize: '18px',
+  fontWeight: '600',
+  color: Colors.Dark,
+});

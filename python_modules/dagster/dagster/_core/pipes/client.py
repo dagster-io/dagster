@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Iterator, Optional
+from typing import TYPE_CHECKING, Iterator, Optional, Sequence
 
 from dagster_pipes import (
     PipesContextData,
@@ -29,16 +29,26 @@ class PipesClient(ABC):
         *,
         context: OpExecutionContext,
         extras: Optional[PipesExtras] = None,
-    ) -> Iterator["PipesExecutionResult"]:
-        """Run a command in the external environment.
+    ) -> "PipesClientCompletedInvocation":
+        """Synchronously execute an external process with the pipes protocol.
 
         Args:
             context (OpExecutionContext): The context from the executing op/asset.
             extras (Optional[PipesExtras]): Arbitrary data to pass to the external environment.
 
-        Yields:
-            PipesExecutionResult: Results reported by the external process.
+        Returns:
+            PipesClientCompletedInvocation: Wrapper containing results reported by the external
+            process.
         """
+
+
+@experimental
+class PipesClientCompletedInvocation:
+    def __init__(self, results: Sequence["PipesExecutionResult"]):
+        self._results = results
+
+    def get_results(self) -> Sequence["PipesExecutionResult"]:
+        return tuple(self._results)
 
 
 @experimental
@@ -57,7 +67,7 @@ class PipesContextInjector(ABC):
 
         Yields:
             PipesParams: A JSON-serializable dict of parameters to be used used by the external
-                process to locate and load the injected context data.
+            process to locate and load the injected context data.
         """
 
 
@@ -78,5 +88,5 @@ class PipesMessageReader(ABC):
 
         Yields:
             PipesParams: A dict of parameters that can be used by the external process to determine
-                where to write messages.
+            where to write messages.
         """
