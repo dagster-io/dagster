@@ -84,7 +84,7 @@ export const LoadingNotice: React.FC<{async: boolean; nodeType: 'asset' | 'op'}>
 const LoadingContainer = styled.div`
   background-color: ${Colors.White};
   position: absolute;
-  top: 0;
+  top: 57px;
   bottom: 0;
   left: 0;
   right: 0;
