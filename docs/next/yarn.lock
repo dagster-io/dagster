@@ -4591,7 +4591,7 @@ __metadata:
     next-remote-watch: "git+https://github.com/hashicorp/next-remote-watch.git#405c803c6b9b19eb8307d66cf5c93fc3a66a1c5"
     next-seo: ^4.17.0
     node-html-parser: ^5.3.3
-    postcss: ^8.2.8
+    postcss: ^8.4.31
     prettier: ^2.8.8
     react: ^18.2.0
     react-dom: ^18.2.0
@@ -8780,6 +8780,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"nanoid@npm:^3.3.6":
+  version: 3.3.6
+  resolution: "nanoid@npm:3.3.6"
+  bin:
+    nanoid: bin/nanoid.cjs
+  checksum: 7d0eda657002738aa5206107bd0580aead6c95c460ef1bdd0b1a87a9c7ae6277ac2e9b945306aaa5b32c6dcb7feaf462d0f552e7f8b5718abfc6ead5c94a71b3
+  languageName: node
+  linkType: hard
+
 "natural-compare-lite@npm:^1.4.0":
   version: 1.4.0
   resolution: "natural-compare-lite@npm:1.4.0"
@@ -9502,7 +9511,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"postcss@npm:8.4.14, postcss@npm:^8.1.6, postcss@npm:^8.2.8, postcss@npm:^8.3.5":
+"postcss@npm:8.4.14, postcss@npm:^8.1.6, postcss@npm:^8.3.5":
   version: 8.4.14
   resolution: "postcss@npm:8.4.14"
   dependencies:
@@ -9510,6 +9519,17 @@ __metadata:
     picocolors: ^1.0.0
     source-map-js: ^1.0.2
   checksum: fe58766ff32e4becf65a7d57678995cfd239df6deed2fe0557f038b47c94e4132e7e5f68b5aa820c13adfec32e523b693efaeb65798efb995ce49ccd83953816
+  languageName: node
+  linkType: hard
+
+"postcss@npm:^8.4.31":
+  version: 8.4.31
+  resolution: "postcss@npm:8.4.31"
+  dependencies:
+    nanoid: ^3.3.6
+    picocolors: ^1.0.0
+    source-map-js: ^1.0.2
+  checksum: 1d8611341b073143ad90486fcdfeab49edd243377b1f51834dc4f6d028e82ce5190e4f11bb2633276864503654fb7cab28e67abdc0fbf9d1f88cad4a0ff0beea
   languageName: node
   linkType: hard
 
