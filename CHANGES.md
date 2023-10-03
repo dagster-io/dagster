@@ -9,7 +9,7 @@
 - **Improved ergonomics for execution dependencies in assets**  - We introduced a set of APIs to simplify working with Dagster that don't use the I/O manager system for handling data between assets. I/O manager workflows will not be affected.
   - `AssetDep` type allows you to specify upstream dependencies with partition mappings when using the `deps` parameter of `@asset` and `AssetSpec`.
   - `MaterializeResult` can be optionally returned from an asset to report metadata about the asset when the asset handles any storage requirements within the function body and does not use an I/O manager.
-  - `AssetSpec` has been added as a new way to declare the assets produced by `@multi_asset`. When using , the does not need to return any values to be stored by the I/O manager. Instead, the should handle any storage requirements in the body of the function.
+  - `AssetSpec` has been added as a new way to declare the assets produced by `@multi_asset`. When using `AssetSpec`, the multi_asset does not need to return any values to be stored by the I/O manager. Instead, the multi_asset should handle any storage requirements in the body of the function.
 - **Asset checks (experimental)** - You can now define, execute, and monitor data quality checks in Dagster [[docs](https://dagster.dagster-docs.io/concepts/assets/asset-checks)].
 
   - The `@asset_check` decorator, as well as the `check_specs` argument to `@asset` and `@multi_asset` enable defining asset checks.
@@ -91,7 +91,6 @@ def my_op(context: OpExecutionContext):
 ### Dagster Cloud
 
 - **New dagster-insights sub-module** - We have released an experimental `dagster_cloud.dagster_insights` module that contains utilities for capturing and submitting external metrics about data operations to Dagster Cloud via an api. Dagster Cloud Insights is a soon-to-be released feature that shows improves visibility into usage and cost metrics such as run duration and Snowflake credits in the Cloud UI.
-
 
 # 1.4.17 / 0.20.17 (libraries)
 
