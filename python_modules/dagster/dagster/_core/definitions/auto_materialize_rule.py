@@ -523,7 +523,7 @@ class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOut
             if asset_partitions_by_waiting_on_asset_keys
             else []
         )
-        return self._get_merged_results(context, results)
+        return None, results
 
 
 @whitelist_for_serdes

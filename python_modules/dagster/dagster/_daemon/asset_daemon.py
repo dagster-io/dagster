@@ -315,6 +315,8 @@ class AssetDaemon(IntervalDaemon):
             instance.daemon_cursor_storage.set_cursor_values(
                 {CURSOR_KEY: new_cursor.serialize(asset_daemon_context.instance_queryer)}
             )
+            print("NEW CURSOR")
+            print(new_cursor.serialize(asset_daemon_context.instance_queryer))
             tick_context.update_state(
                 TickStatus.SUCCESS if len(run_requests) > 0 else TickStatus.SKIPPED,
                 end_timestamp=tick_finish_timestamp,
