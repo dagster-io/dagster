@@ -116,11 +116,17 @@ class AssetGraphSubset:
         result_partition_subsets_by_asset_key = {**self.partitions_subsets_by_asset_key}
         result_non_partitioned_asset_keys = set(self._non_partitioned_asset_keys)
 
+        print("xxxxxxxxxx")
+        print(other)
         if not isinstance(other, AssetGraphSubset):
             other = AssetGraphSubset.from_asset_partition_set(other, self.asset_graph)
+        print(" ")
+        print(other)
 
         for asset_key in other.asset_keys:
             if asset_key in other.non_partitioned_asset_keys:
+                print(other)
+                print(self)
                 check.invariant(asset_key not in self.partitions_subsets_by_asset_key)
                 result_non_partitioned_asset_keys = oper(
                     result_non_partitioned_asset_keys, {asset_key}
@@ -182,10 +188,10 @@ class AssetGraphSubset:
         partitions_by_asset_key = defaultdict(set)
         non_partitioned_asset_keys = set()
         for asset_key, partition_key in asset_partitions_set:
-            if partition_key is not None:
-                partitions_by_asset_key[asset_key].add(partition_key)
-            else:
+            if not asset_graph.is_partitioned(asset_key):
                 non_partitioned_asset_keys.add(asset_key)
+            elif partition_key is not None:
+                partitions_by_asset_key[asset_key].add(partition_key)
 
         return AssetGraphSubset(
             partitions_subsets_by_asset_key={

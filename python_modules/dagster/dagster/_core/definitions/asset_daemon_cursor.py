@@ -59,7 +59,7 @@ class AssetDaemonCursor(NamedTuple):
     handled_root_partitions_by_asset_key: Mapping[AssetKey, PartitionsSubset]
     evaluation_id: int
     last_observe_request_timestamp_by_asset_key: Mapping[AssetKey, float]
-    serialized_unhandled_asset_graph_subset: Optional[Mapping[str, Any]]
+    serialized_skipped_asset_graph_subset: Optional[Mapping[str, Any]]
 
     def was_previously_handled(self, asset_key: AssetKey) -> bool:
         return asset_key in self.handled_root_asset_keys
@@ -93,7 +93,7 @@ class AssetDaemonCursor(NamedTuple):
         asset_graph: AssetGraph,
         newly_observe_requested_asset_keys: Sequence[AssetKey],
         observe_request_timestamp: float,
-        unhandled_asset_graph_subset: AssetGraphSubset,
+        skipped_asset_graph_subset: AssetGraphSubset,
         instance_queryer: CachingInstanceQueryer,
     ) -> "AssetDaemonCursor":
         """Returns a cursor that represents this cursor plus the updates that have happened within the
@@ -158,7 +158,7 @@ class AssetDaemonCursor(NamedTuple):
             handled_root_partitions_by_asset_key=result_handled_root_partitions_by_asset_key,
             evaluation_id=evaluation_id,
             last_observe_request_timestamp_by_asset_key=result_last_observe_request_timestamp_by_asset_key,
-            serialized_unhandled_asset_graph_subset=unhandled_asset_graph_subset.to_storage_dict(
+            serialized_skipped_asset_graph_subset=skipped_asset_graph_subset.to_storage_dict(
                 instance_queryer
             ),
         )
@@ -171,7 +171,7 @@ class AssetDaemonCursor(NamedTuple):
             handled_root_asset_keys=set(),
             evaluation_id=0,
             last_observe_request_timestamp_by_asset_key={},
-            serialized_unhandled_asset_graph_subset=None,
+            serialized_skipped_asset_graph_subset=None,
         )
 
     @classmethod
@@ -188,7 +188,7 @@ class AssetDaemonCursor(NamedTuple):
 
             evaluation_id = data[3] if len(data) == 4 else 0
             serialized_last_observe_request_timestamp_by_asset_key = {}
-            serialized_unhandled_asset_graph_subset = None
+            serialized_skipped_asset_graph_subset = None
         else:
             latest_storage_id = data["latest_storage_id"]
             serialized_handled_root_asset_keys = data["handled_root_asset_keys"]
@@ -199,7 +199,7 @@ class AssetDaemonCursor(NamedTuple):
             serialized_last_observe_request_timestamp_by_asset_key = data.get(
                 "last_observe_request_timestamp_by_asset_key", {}
             )
-            serialized_unhandled_asset_graph_subset = data.get("unhandled_asset_graph_subset")
+            serialized_skipped_asset_graph_subset = data.get("skipped_asset_graph_subset")
 
         handled_root_partitions_by_asset_key = {}
         for (
@@ -244,7 +244,7 @@ class AssetDaemonCursor(NamedTuple):
                 AssetKey.from_user_string(key_str): timestamp
                 for key_str, timestamp in serialized_last_observe_request_timestamp_by_asset_key.items()
             },
-            serialized_unhandled_asset_graph_subset=serialized_unhandled_asset_graph_subset,
+            serialized_skipped_asset_graph_subset=serialized_skipped_asset_graph_subset,
         )
 
     @classmethod
@@ -275,7 +275,7 @@ class AssetDaemonCursor(NamedTuple):
                     key.to_user_string(): timestamp
                     for key, timestamp in self.last_observe_request_timestamp_by_asset_key.items()
                 },
-                "unhandled_asset_graph_subset": self.serialized_unhandled_asset_graph_subset,
+                "skipped_asset_graph_subset": self.serialized_skipped_asset_graph_subset,
             }
         )
         return serialized
