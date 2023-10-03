@@ -295,6 +295,12 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     def resolve_partitionStatusCounts(
         self, graphene_info: ResolveInfo
     ) -> Sequence["GraphenePartitionStatusCounts"]:
+        # This resolver is only enabled for job backfills, since it assumes a unique run per
+        # partition key (which is not true for asset backfills). Asset backfills should rely on
+        # the assetBackfillData resolver instead.
+        if self._backfill_job.is_asset_backfill:
+            return []
+
         partition_run_data = self._get_partition_run_data(graphene_info)
         return partition_status_counts_from_run_partition_data(
             partition_run_data,
