@@ -313,19 +313,29 @@ async function _batchedQueryAssets(
     };
   });
   onUpdatingOrUpdated();
-  const data = await _queryAssetKeys(client, assetKeys);
-  const fetchedTime = Date.now();
-  assetKeys.forEach((key) => {
-    lastFetchedOrRequested[tokenForAssetKey(key)] = {
-      fetched: fetchedTime,
-    };
-  });
-  setData(data);
-  onUpdatingOrUpdated();
-  isFetching = false;
-  const nextAssets = _determineAssetsToFetch();
-  if (nextAssets.length) {
-    _batchedQueryAssets(nextAssets, client, setData, onUpdatingOrUpdated);
+
+  function doNextFetch() {
+    isFetching = false;
+    const nextAssets = _determineAssetsToFetch();
+    if (nextAssets.length) {
+      _batchedQueryAssets(nextAssets, client, setData, onUpdatingOrUpdated);
+    }
+  }
+  try {
+    const data = await _queryAssetKeys(client, assetKeys);
+    const fetchedTime = Date.now();
+    assetKeys.forEach((key) => {
+      lastFetchedOrRequested[tokenForAssetKey(key)] = {
+        fetched: fetchedTime,
+      };
+    });
+    setData(data);
+    onUpdatingOrUpdated();
+    doNextFetch();
+  } catch (e) {
+    console.error(e);
+    // Retry fetching in 5 seconds if theres a network error
+    setTimeout(doNextFetch, 5000);
   }
 }
 
