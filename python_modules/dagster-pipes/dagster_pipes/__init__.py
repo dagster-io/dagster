@@ -874,6 +874,10 @@ class PipesContext:
         cls._instance = context
 
     @classmethod
+    def unset(cls) -> None:
+        cls._instance = None
+
+    @classmethod
     def get(cls) -> "PipesContext":
         """Get the singleton instance of the context. Raises an error if the context has not been initialized."""
         if cls._instance is None:
