@@ -597,8 +597,8 @@ def test_missing_required_output_generator():
     with pytest.raises(
         DagsterInvariantViolationError,
         match=(
-            "Invocation of op 'op_multiple_outputs_not_sent' did not return an output "
-            "for non-optional output '1'"
+            'Invocation of op "op_multiple_outputs_not_sent" did not return an output '
+            'for non-optional output "1"'
         ),
     ):
         list(op_multiple_outputs_not_sent())
