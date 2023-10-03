@@ -676,6 +676,11 @@
         ]
       },
       {
+        "title": "Embedded ELT",
+        "path": "/integrations/embedded-elt"
+
+      },
+      {
         "title": "Fivetran",
         "path": "/integrations/fivetran"
       },
