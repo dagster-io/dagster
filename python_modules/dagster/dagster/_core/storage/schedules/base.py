@@ -162,6 +162,16 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         """
 
     @abc.abstractmethod
+    def get_latest_auto_materialize_asset_evaluations(
+        self, asset_keys: Sequence[AssetKey]
+    ) -> Mapping[AssetKey, Optional[AutoMaterializeAssetEvaluationRecord]]:
+        """Get the most recent policy evaluations for each asset.
+
+        Args:
+            asset_keys (Sequence[AssetKey]): The asset keys to query
+        """
+
+    @abc.abstractmethod
     def get_auto_materialize_evaluations_for_evaluation_id(
         self, evaluation_id: int
     ) -> Sequence[AutoMaterializeAssetEvaluationRecord]:

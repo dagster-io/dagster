@@ -2,6 +2,7 @@ from abc import abstractmethod
 from collections import defaultdict
 from datetime import datetime
 from typing import (
+    AbstractSet,
     Any,
     Callable,
     ContextManager,
@@ -509,6 +510,44 @@ class SqlScheduleStorage(ScheduleStorage):
 
             rows = db_fetch_mappings(conn, query)
             return [AutoMaterializeAssetEvaluationRecord.from_db_row(row) for row in rows]
+
+    def get_latest_auto_materialize_asset_evaluations(
+        self, asset_keys: AbstractSet[AssetKey]
+    ) -> Sequence[AutoMaterializeAssetEvaluationRecord]:
+        latest_evaluations_subquery = (
+            db_select(
+                [
+                    AssetDaemonAssetEvaluationsTable.c.asset_key,
+                    db.func.max(AssetDaemonAssetEvaluationsTable.c.evaluation_id).label(
+                        "max_evaluation_id"
+                    ),
+                ]
+            )
+            .where(
+                AssetDaemonAssetEvaluationsTable.c.asset_key.in_(
+                    [asset_key.to_string() for asset_key in asset_keys]
+                )
+            )
+            .group_by(AssetDaemonAssetEvaluationsTable.c.asset_key)
+            .subquery("latest_evaluations")
+        )
+        query = db_select(
+            [
+                AssetDaemonAssetEvaluationsTable.c.id,
+                AssetDaemonAssetEvaluationsTable.c.asset_evaluation_body,
+                AssetDaemonAssetEvaluationsTable.c.evaluation_id,
+                AssetDaemonAssetEvaluationsTable.c.create_timestamp,
+            ]
+        ).select_from(
+            latest_evaluations_subquery.join(
+                AssetDaemonAssetEvaluationsTable,
+                AssetDaemonAssetEvaluationsTable.c.id
+                == latest_evaluations_subquery.c.max_evaluation_id,
+            )
+        )
+        with self.connect() as conn:
+            rows = db_fetch_mappings(conn, query)
+        return [AutoMaterializeAssetEvaluationRecord.from_db_row(row) for row in rows]
 
     def get_auto_materialize_evaluations_for_evaluation_id(
         self, evaluation_id: int

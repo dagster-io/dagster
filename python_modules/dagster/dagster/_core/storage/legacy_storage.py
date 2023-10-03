@@ -748,6 +748,13 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
             asset_key, limit, cursor
         )
 
+    def get_latest_auto_materialize_asset_evaluations(
+        self, asset_keys: Sequence[AssetKey]
+    ) -> Mapping[AssetKey, Optional["AutoMaterializeAssetEvaluationRecord"]]:
+        return self._storage.schedule_storage.get_latest_auto_materialize_asset_evaluations(
+            asset_keys
+        )
+
     def get_auto_materialize_evaluations_for_evaluation_id(
         self, evaluation_id: int
     ) -> Sequence["AutoMaterializeAssetEvaluationRecord"]:
