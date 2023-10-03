@@ -38,7 +38,7 @@
     "eslint": "8.48.0",
     "eslint-config-next": "13.4.19",
     "eslint-config-prettier": "^9.0.0",
-    "postcss": "^8.4.29",
+    "postcss": "^8.4.31",
     "prettier": "^3.0.3",
     "remark-cli": "^9.0.0",
     "remark-gfm": "^1.0.0",
