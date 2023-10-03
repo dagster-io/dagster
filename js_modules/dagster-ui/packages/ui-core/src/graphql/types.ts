@@ -1524,13 +1524,17 @@ export enum InstigationStatus {
 
 export type InstigationTick = {
   __typename: 'InstigationTick';
+  autoMaterializeAssetEvaluationId: Maybe<Scalars['Int']>;
   cursor: Maybe<Scalars['String']>;
   dynamicPartitionsRequestResults: Array<DynamicPartitionsRequestResult>;
+  endTimestamp: Maybe<Scalars['Float']>;
   error: Maybe<PythonError>;
   id: Scalars['ID'];
   logEvents: InstigationEventConnection;
   logKey: Maybe<Array<Scalars['String']>>;
   originRunIds: Array<Scalars['String']>;
+  requestedAssetKeys: Array<AssetKey>;
+  requestedAssetMaterializationCount: Scalars['Int'];
   runIds: Array<Scalars['String']>;
   runKeys: Array<Scalars['String']>;
   runs: Array<Run>;
@@ -7176,11 +7180,17 @@ export const buildInstigationTick = (
   relationshipsToOmit.add('InstigationTick');
   return {
     __typename: 'InstigationTick',
+    autoMaterializeAssetEvaluationId:
+      overrides && overrides.hasOwnProperty('autoMaterializeAssetEvaluationId')
+        ? overrides.autoMaterializeAssetEvaluationId!
+        : 5375,
     cursor: overrides && overrides.hasOwnProperty('cursor') ? overrides.cursor! : 'voluptatem',
     dynamicPartitionsRequestResults:
       overrides && overrides.hasOwnProperty('dynamicPartitionsRequestResults')
         ? overrides.dynamicPartitionsRequestResults!
         : [],
+    endTimestamp:
+      overrides && overrides.hasOwnProperty('endTimestamp') ? overrides.endTimestamp! : 8.87,
     error:
       overrides && overrides.hasOwnProperty('error')
         ? overrides.error!
@@ -7200,6 +7210,14 @@ export const buildInstigationTick = (
     logKey: overrides && overrides.hasOwnProperty('logKey') ? overrides.logKey! : [],
     originRunIds:
       overrides && overrides.hasOwnProperty('originRunIds') ? overrides.originRunIds! : [],
+    requestedAssetKeys:
+      overrides && overrides.hasOwnProperty('requestedAssetKeys')
+        ? overrides.requestedAssetKeys!
+        : [],
+    requestedAssetMaterializationCount:
+      overrides && overrides.hasOwnProperty('requestedAssetMaterializationCount')
+        ? overrides.requestedAssetMaterializationCount!
+        : 412,
     runIds: overrides && overrides.hasOwnProperty('runIds') ? overrides.runIds! : [],
     runKeys: overrides && overrides.hasOwnProperty('runKeys') ? overrides.runKeys! : [],
     runs: overrides && overrides.hasOwnProperty('runs') ? overrides.runs! : [],
