@@ -3,9 +3,7 @@ import itertools
 import json
 from collections import defaultdict
 from typing import (
-    TYPE_CHECKING,
     AbstractSet,
-    Any,
     Dict,
     Iterable,
     Mapping,
@@ -23,6 +21,7 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
 )
+from dagster._core.instance import DynamicPartitionsStore
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 from .asset_graph import AssetGraph
@@ -30,9 +29,6 @@ from .partition import (
     PartitionsDefinition,
     PartitionsSubset,
 )
-
-if TYPE_CHECKING:
-    from dagster._core.instance import DynamicPartitionsStore
 
 
 class AssetDaemonCursor(NamedTuple):
@@ -262,7 +258,7 @@ class AssetDaemonCursor(NamedTuple):
         else:
             return data["evaluation_id"]
 
-    def serialize(self, instance_queryer: CachingInstanceQueryer) -> str:
+    def serialize(self, dynamic_partitions_store: DynamicPartitionsStore) -> str:
         serializable_handled_root_partitions_by_asset_key = {
             key.to_user_string(): subset.serialize()
             for key, subset in self.handled_root_partitions_by_asset_key.items()
@@ -282,7 +278,7 @@ class AssetDaemonCursor(NamedTuple):
                     for key, timestamp in self.last_observe_request_timestamp_by_asset_key.items()
                 },
                 "skipped_asset_graph_subset": (
-                    self.skipped_asset_graph_subset.to_storage_dict(instance_queryer)
+                    self.skipped_asset_graph_subset.to_storage_dict(dynamic_partitions_store)
                     if self.skipped_asset_graph_subset
                     else None
                 ),

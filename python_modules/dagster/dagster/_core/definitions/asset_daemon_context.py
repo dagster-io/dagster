@@ -88,7 +88,7 @@ class AssetDaemonContext:
         self,
         instance: "DagsterInstance",
         asset_graph: AssetGraph,
-        raw_cursor: Optional[str],
+        cursor: AssetDaemonCursor,
         materialize_run_tags: Optional[Mapping[str, str]],
         observe_run_tags: Optional[Mapping[str, str]],
         auto_observe: bool,
@@ -103,11 +103,7 @@ class AssetDaemonContext:
             instance, asset_graph, evaluation_time=evaluation_time, logger=logger
         )
         self._data_time_resolver = CachingDataTimeResolver(self.instance_queryer)
-        self._cursor = (
-            AssetDaemonCursor.from_serialized(raw_cursor, asset_graph)
-            if raw_cursor
-            else AssetDaemonCursor.empty()
-        )
+        self._cursor = cursor
         self._target_asset_keys = target_asset_keys or {
             key
             for key, policy in self.asset_graph.auto_materialize_policies_by_key.items()
@@ -594,7 +590,7 @@ class AssetDaemonContext:
 
     def evaluate(
         self,
-    ) -> Tuple[str, int, Sequence[RunRequest], Sequence[AutoMaterializeAssetEvaluation],]:
+    ) -> Tuple[Sequence[RunRequest], AssetDaemonCursor, Sequence[AutoMaterializeAssetEvaluation],]:
         observe_request_timestamp = pendulum.now().timestamp()
         auto_observe_run_requests = (
             get_auto_observe_run_requests(
@@ -625,27 +621,25 @@ class AssetDaemonContext:
             newly_materialized_root_partitions_by_asset_key,
         ) = self.get_newly_updated_roots()
 
-        new_cursor = self.cursor.with_updates(
-            latest_storage_id=self.get_new_latest_storage_id(),
-            to_materialize=to_materialize,
-            to_discard=to_discard,
-            asset_graph=self.asset_graph,
-            newly_materialized_root_asset_keys=newly_materialized_root_asset_keys,
-            newly_materialized_root_partitions_by_asset_key=newly_materialized_root_partitions_by_asset_key,
-            evaluation_id=self.cursor.evaluation_id + 1,
-            newly_observe_requested_asset_keys=[
-                asset_key
-                for run_request in auto_observe_run_requests
-                for asset_key in cast(Sequence[AssetKey], run_request.asset_selection)
-            ],
-            observe_request_timestamp=observe_request_timestamp,
-            skipped_asset_graph_subset=skipped_asset_graph_subset,
-            instance_queryer=self.instance_queryer,
-        )
         return (
-            new_cursor.serialize(self.instance_queryer),
-            new_cursor.evaluation_id,
             run_requests,
+            self.cursor.with_updates(
+                latest_storage_id=self.get_new_latest_storage_id(),
+                to_materialize=to_materialize,
+                to_discard=to_discard,
+                asset_graph=self.asset_graph,
+                newly_materialized_root_asset_keys=newly_materialized_root_asset_keys,
+                newly_materialized_root_partitions_by_asset_key=newly_materialized_root_partitions_by_asset_key,
+                evaluation_id=self.cursor.evaluation_id + 1,
+                newly_observe_requested_asset_keys=[
+                    asset_key
+                    for run_request in auto_observe_run_requests
+                    for asset_key in cast(Sequence[AssetKey], run_request.asset_selection)
+                ],
+                observe_request_timestamp=observe_request_timestamp,
+                skipped_asset_graph_subset=skipped_asset_graph_subset,
+                instance_queryer=self.instance_queryer,
+            ),
             [
                 evaluation
                 for evaluation in evaluations.values()

@@ -341,7 +341,9 @@ class AssetReconciliationScenario(
                     )
 
                 # make sure we can deserialize it using the new asset graph
-                cursor = AssetDaemonCursor.from_serialized(cursor.serialize(), repo.asset_graph)
+                cursor = AssetDaemonCursor.from_serialized(
+                    cursor.serialize(instance), repo.asset_graph
+                )
 
             else:
                 cursor = AssetDaemonCursor.empty()

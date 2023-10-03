@@ -205,6 +205,11 @@ class AssetDaemon(IntervalDaemon):
         )
 
         raw_cursor = _get_raw_cursor(instance)
+        cursor = (
+            AssetDaemonCursor.from_serialized(raw_cursor, asset_graph)
+            if raw_cursor
+            else AssetDaemonCursor.empty()
+        )
 
         tick_retention_settings = instance.get_tick_retention_settings(
             InstigatorType.AUTO_MATERIALIZE
@@ -224,11 +229,11 @@ class AssetDaemon(IntervalDaemon):
         with AutoMaterializeLaunchContext(
             tick, instance, self._logger, tick_retention_settings
         ) as tick_context:
-            new_raw_cursor, new_evaluation_id, run_requests, evaluations = AssetDaemonContext(
+            asset_daemon_context = AssetDaemonContext(
                 asset_graph=asset_graph,
                 target_asset_keys=target_asset_keys,
                 instance=instance,
-                raw_cursor=raw_cursor,
+                cursor=cursor,
                 materialize_run_tags={
                     AUTO_MATERIALIZE_TAG: "true",
                     **instance.auto_materialize_run_tags,
@@ -237,12 +242,13 @@ class AssetDaemon(IntervalDaemon):
                 auto_observe=True,
                 respect_materialization_data_versions=instance.auto_materialize_respect_materialization_data_versions,
                 logger=self._logger,
-            ).evaluate()
+            )
+            run_requests, new_cursor, evaluations = asset_daemon_context.evaluate()
 
             self._logger.info(
                 f"Tick produced {len(run_requests)} run{'s' if len(run_requests) != 1 else ''} and"
                 f" {len(evaluations)} asset evaluation{'s' if len(evaluations) != 1 else ''} for"
-                f" evaluation ID {new_evaluation_id}"
+                f" evaluation ID {new_cursor.evaluation_id}"
             )
 
             evaluations_by_asset_key = {
@@ -264,7 +270,7 @@ class AssetDaemon(IntervalDaemon):
                         run_request._replace(
                             tags={
                                 **run_request.tags,
-                                ASSET_EVALUATION_ID_TAG: str(new_evaluation_id),
+                                ASSET_EVALUATION_ID_TAG: str(new_cursor.evaluation_id),
                             }
                         ),
                         instance,
@@ -306,7 +312,9 @@ class AssetDaemon(IntervalDaemon):
 
             tick_finish_timestamp = pendulum.now("UTC").timestamp()
 
-            instance.daemon_cursor_storage.set_cursor_values({CURSOR_KEY: new_raw_cursor})
+            instance.daemon_cursor_storage.set_cursor_values(
+                {CURSOR_KEY: new_cursor.serialize(asset_daemon_context.instance_queryer)}
+            )
             tick_context.update_state(
                 TickStatus.SUCCESS if len(run_requests) > 0 else TickStatus.SKIPPED,
                 end_timestamp=tick_finish_timestamp,
@@ -316,7 +324,7 @@ class AssetDaemon(IntervalDaemon):
         # so that if the daemon crashes and doesn't update the cursor we don't try to write duplicates.
         if schedule_storage.supports_auto_materialize_asset_evaluations:
             schedule_storage.add_auto_materialize_asset_evaluations(
-                new_evaluation_id, list(evaluations_by_asset_key.values())
+                new_cursor.evaluation_id, list(evaluations_by_asset_key.values())
             )
             schedule_storage.purge_asset_evaluations(
                 before=pendulum.now("UTC").subtract(days=EVALUATIONS_TTL_DAYS).timestamp(),
