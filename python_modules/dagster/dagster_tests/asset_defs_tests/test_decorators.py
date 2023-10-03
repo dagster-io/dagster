@@ -998,6 +998,18 @@ def test_graph_asset_w_config_dict():
     assert result.success
     assert result.output_for_node("foo") == 1
 
+    @graph_multi_asset(
+        outs={"first_asset": AssetOut()},
+        config={"foo_op": {"config": {"val": 1}}},
+    )
+    def bar():
+        x = foo_op()
+        return {"first_asset": x}
+
+    result = materialize_to_memory([bar])
+    assert result.success
+    assert result.output_for_node("bar", "first_asset") == 1
+
 
 def test_graph_asset_w_config_mapping():
     class FooConfig(Config):
@@ -1018,6 +1030,18 @@ def test_graph_asset_w_config_mapping():
     result = materialize_to_memory([foo], run_config={"ops": {"foo": {"config": 1}}})
     assert result.success
     assert result.output_for_node("foo") == 1
+
+    @graph_multi_asset(
+        outs={"first_asset": AssetOut()},
+        config=foo_config_mapping,
+    )
+    def bar():
+        x = foo_op()
+        return {"first_asset": x}
+
+    result = materialize_to_memory([bar], run_config={"ops": {"bar": {"config": 1}}})
+    assert result.success
+    assert result.output_for_node("bar", "first_asset") == 1
 
 
 @ignore_warning("Class `FreshnessPolicy` is experimental")
