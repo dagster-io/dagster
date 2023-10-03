@@ -152,12 +152,14 @@ export function asyncMemoize<T, R, U extends (arg: T, ...rest: any[]) => Promise
 export function indexedDBAsyncMemoize<T, R, U extends (arg: T, ...rest: any[]) => Promise<R>>(
   fn: U,
   hashFn?: (arg: T, ...rest: any[]) => any,
-): U {
+): U & {
+  isCached: (hashKey: string) => Promise<boolean>;
+} {
   const lru = cache<string, R>({
     dbName: 'indexDBAsyncMemoizeDB',
     maxCount: 50,
   });
-  return (async (arg: T, ...rest: any[]) => {
+  const ret = (async (arg: T, ...rest: any[]) => {
     const hashKey = hashFn ? hashFn(arg, ...rest) : arg;
 
     return new Promise<R>(async (resolve) => {
@@ -176,6 +178,10 @@ export function indexedDBAsyncMemoize<T, R, U extends (arg: T, ...rest: any[]) =
       });
     });
   }) as any;
+  ret.isCached = async (hashKey: string) => {
+    return await lru.has(hashKey);
+  };
+  return ret;
 }
 
 // Simple memoization function for methods that take a single object argument.
