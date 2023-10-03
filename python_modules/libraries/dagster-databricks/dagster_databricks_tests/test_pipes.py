@@ -62,10 +62,10 @@ CLUSTER_DEFAULTS = {
     "num_workers": 0,
 }
 
-TASK_KEY = "DAGSTER_EXT_TASK"
+TASK_KEY = "DAGSTER_PIPES_TASK"
 
 # This has been manually uploaded to a test DBFS workspace.
-DAGSTER_EXTERNALS_WHL_PATH = "dbfs:/FileStore/jars/dagster_ext-1!0+dev-py3-none-any.whl"
+DAGSTER_PIPES_WHL_PATH = "dbfs:/FileStore/jars/dagster_pipes-1!0+dev-py3-none-any.whl"
 
 
 def _make_submit_task(path: str) -> jobs.SubmitTask:
@@ -73,7 +73,7 @@ def _make_submit_task(path: str) -> jobs.SubmitTask:
         {
             "new_cluster": CLUSTER_DEFAULTS,
             "libraries": [
-                {"whl": DAGSTER_EXTERNALS_WHL_PATH},
+                {"whl": DAGSTER_PIPES_WHL_PATH},
             ],
             "task_key": TASK_KEY,
             "spark_python_task": {
@@ -85,12 +85,12 @@ def _make_submit_task(path: str) -> jobs.SubmitTask:
 
 
 @pytest.mark.skipif(IS_BUILDKITE, reason="Not configured to run on BK yet.")
-def test_basic(client: WorkspaceClient):
+def test_pipes_client(client: WorkspaceClient):
     @asset
-    def number_x(context: AssetExecutionContext, pipes_databricks_client: PipesDatabricksClient):
+    def number_x(context: AssetExecutionContext, pipes_client: PipesDatabricksClient):
         with temp_script(script_fn, client) as script_path:
             task = _make_submit_task(script_path)
-            return pipes_databricks_client.run(
+            return pipes_client.run(
                 task=task,
                 context=context,
                 extras={"multiplier": 2, "storage_root": "fake"},
@@ -109,9 +109,9 @@ def test_basic(client: WorkspaceClient):
 @pytest.mark.skipif(IS_BUILDKITE, reason="Not configured to run on BK yet.")
 def test_nonexistent_entry_point(client: WorkspaceClient):
     @asset
-    def fake(context: AssetExecutionContext, pipes_databricks_client: PipesDatabricksClient):
+    def fake(context: AssetExecutionContext, pipes_client: PipesDatabricksClient):
         task = _make_submit_task("/fake/fake")
-        return pipes_databricks_client.run(task=task, context=context).get_results()
+        return pipes_client.run(task=task, context=context).get_results()
 
     with pytest.raises(DagsterPipesExecutionError, match=r"Cannot read the python file"):
         materialize(

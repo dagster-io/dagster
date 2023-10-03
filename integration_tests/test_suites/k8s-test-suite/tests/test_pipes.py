@@ -18,15 +18,15 @@ from dagster_test.test_project import (
 
 
 @pytest.mark.default
-def test_pipes_k8s_client(namespace, cluster_provider):
+def test_pipes_client(namespace, cluster_provider):
     docker_image = get_test_project_docker_image()
 
     @asset
     def number_y(
         context: AssetExecutionContext,
-        pipes_k8s_client: PipesK8sClient,
+        pipes_client: PipesK8sClient,
     ):
-        return pipes_k8s_client.run(
+        return pipes_client.run(
             context=context,
             namespace=namespace,
             image=docker_image,
@@ -46,7 +46,7 @@ def test_pipes_k8s_client(namespace, cluster_provider):
 
     result = materialize(
         [number_y],
-        resources={"pipes_k8s_client": PipesK8sClient()},
+        resources={"pipes_client": PipesK8sClient()},
         raise_on_error=False,
     )
     assert result.success
@@ -114,7 +114,7 @@ class PipesConfigMapContextInjector(PipesContextInjector):
 
 
 @pytest.mark.default
-def test_pipes_k8s_client_file_inject(namespace, cluster_provider):
+def test_pipes_client_file_inject(namespace, cluster_provider):
     # a convoluted test to
     # - vet base_pod_spec works for setting volumes & mounts
     # - preserve file injection via config map code
@@ -127,7 +127,7 @@ def test_pipes_k8s_client_file_inject(namespace, cluster_provider):
     @asset
     def number_y(
         context: AssetExecutionContext,
-        pipes_k8s_client: PipesK8sClient,
+        pipes_client: PipesK8sClient,
     ):
         pod_spec = injector.build_pod_spec(
             image=docker_image,
@@ -138,7 +138,7 @@ def test_pipes_k8s_client_file_inject(namespace, cluster_provider):
             ],
         )
 
-        return pipes_k8s_client.run(
+        return pipes_client.run(
             context=context,
             namespace=namespace,
             extras={
@@ -153,7 +153,7 @@ def test_pipes_k8s_client_file_inject(namespace, cluster_provider):
 
     result = materialize(
         [number_y],
-        resources={"pipes_k8s_client": PipesK8sClient(context_injector=injector)},
+        resources={"pipes_client": PipesK8sClient(context_injector=injector)},
         raise_on_error=False,
     )
     assert result.success
@@ -162,7 +162,7 @@ def test_pipes_k8s_client_file_inject(namespace, cluster_provider):
     assert mats[0].metadata["is_even"].value is True
 
 
-def test_use_excute_k8s_job(namespace, cluster_provider):
+def test_use_execute_k8s_job(namespace, cluster_provider):
     docker_image = get_test_project_docker_image()
 
     @asset
@@ -201,7 +201,7 @@ def test_use_excute_k8s_job(namespace, cluster_provider):
 
     result = materialize(
         [number_y_job],
-        resources={"pipes_k8s_client": PipesK8sClient()},
+        resources={"pipes_client": PipesK8sClient()},
         raise_on_error=False,
     )
     assert result.success
