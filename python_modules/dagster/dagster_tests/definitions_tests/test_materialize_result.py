@@ -74,7 +74,7 @@ def test_return_materialization_with_asset_checks():
 
         materialize([ret_checks], instance=instance)
         asset_check_executions = instance.event_log_storage.get_asset_check_execution_history(
-            key=AssetCheckKey(asset_key=ret_checks.key, name="foo_check"),
+            AssetCheckKey(asset_key=ret_checks.key, name="foo_check"),
             limit=1,
         )
         assert len(asset_check_executions) == 1
