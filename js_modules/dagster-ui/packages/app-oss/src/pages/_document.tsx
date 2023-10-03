@@ -14,6 +14,12 @@ export default function Document() {
   return (
     <Html lang="en">
       <Head nonce="NONCE-PLACEHOLDER">
+        <script
+          nonce="NONCE-PLACEHOLDER"
+          dangerouslySetInnerHTML={{
+            __html: 'window.__webpack_public_path__ = "__PATH_PREFIX__"',
+          }}
+        />
         {/* Not sure if we need the following script */}
         <script
           id="webpack-nonce-setter"
