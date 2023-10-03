@@ -96,12 +96,12 @@ class _PipesDockerClient(PipesClient):
         self,
         *,
         context: OpExecutionContext,
+        extras: Optional[PipesExtras] = None,
         image: str,
         command: Union[str, Sequence[str]],
         env: Optional[Mapping[str, str]] = None,
         registry: Optional[Mapping[str, str]] = None,
         container_kwargs: Optional[Mapping[str, Any]] = None,
-        extras: Optional[PipesExtras] = None,
     ) -> PipesClientCompletedInvocation:
         """Create a docker container and run it to completion, enriched with the pipes protocol.
 
