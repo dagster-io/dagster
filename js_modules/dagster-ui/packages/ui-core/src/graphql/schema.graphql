@@ -2819,7 +2819,6 @@ type Input {
 }
 
 type InputDefinition {
-  solidDefinition: SolidDefinition!
   name: String!
   description: String
   type: DagsterType!
@@ -2847,7 +2846,6 @@ type Output {
 }
 
 type OutputDefinition {
-  solidDefinition: SolidDefinition!
   name: String!
   description: String
   isDynamic: Boolean
