@@ -397,9 +397,7 @@ class AssetReconciliationScenario(
                     asset_graph = ExternalAssetGraph.from_workspace(workspace)
 
             target_asset_keys = (
-                self.asset_selection.resolve(asset_graph)
-                if self.asset_selection
-                else asset_graph.materializable_asset_keys
+                self.asset_selection.resolve(asset_graph) if self.asset_selection else None
             )
 
             run_requests, cursor, evaluations = AssetDaemonContext(

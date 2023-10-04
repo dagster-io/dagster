@@ -502,7 +502,12 @@ class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOut
     ) -> Tuple[Optional[AbstractSet[AssetKeyPartitionKey]], RuleEvaluationResults]:
         asset_partitions_by_waiting_on_asset_keys = defaultdict(set)
 
-        for candidate in context.candidates:
+        for candidate in {
+            *context.new_candidates,
+            *context.daemon_context.get_asset_partitions_with_newly_updated_parents_for_key(
+                context.asset_key
+            ),
+        }:
             outdated_ancestors = set()
             # find the root cause of why this asset partition's parents are outdated (if any)
             for parent in context.get_parents_that_will_not_be_materialized_on_current_tick(

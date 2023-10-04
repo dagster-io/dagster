@@ -761,7 +761,6 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             respect_materialization_data_versions (bool): If True, will use data versions to filter
                 out asset partitions which were materialized, but not have not had their data
                 versions changed since the given cursor.
-                NOTE: This boolean has been temporarily disabled
         """
         if not self.asset_partition_has_materialization_or_observation(
             AssetKeyPartitionKey(asset_key), after_cursor=after_cursor

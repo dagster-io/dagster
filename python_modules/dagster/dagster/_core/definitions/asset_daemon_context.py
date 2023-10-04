@@ -457,13 +457,23 @@ class AssetDaemonContext:
         subset = self.cursor.skipped_asset_graph_subset or AssetGraphSubset(self.asset_graph)
         # factor out any asset partitions which have been materialized since last tick
         for asset_key in self.asset_graph.all_asset_keys:
+            partitions_def = self.asset_graph.get_partitions_def(asset_key)
             new_asset_partitions = self.instance_queryer.get_asset_partitions_updated_after_cursor(
                 asset_key=asset_key,
                 asset_partitions=None,
                 after_cursor=self.latest_storage_id,
                 respect_materialization_data_versions=False,
             )
-            subset -= new_asset_partitions
+            # ensure we only operate on partitions that are valid for this asset
+            subset -= {
+                ap
+                for ap in new_asset_partitions
+                if partitions_def is None
+                or (
+                    ap.partition_key is not None
+                    and partitions_def.has_partition_key(ap.partition_key)
+                )
+            }
         return subset
 
     def get_auto_materialize_asset_evaluations(

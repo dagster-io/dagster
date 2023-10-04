@@ -805,4 +805,63 @@ auto_materialize_policy_scenarios = {
             " is not set"
         ),
     ),
+    "memory_required1": AssetReconciliationScenario(
+        assets=[
+            *vee[0:-1],
+            *with_auto_materialize_policy(
+                vee[-1:],
+                AutoMaterializePolicy.eager().without_rules(
+                    AutoMaterializeRule.materialize_on_parent_updated(),
+                ),
+            ),
+        ],
+        cursor_from=AssetReconciliationScenario(
+            assets=[
+                *vee[0:-1],
+                *with_auto_materialize_policy(
+                    vee[-1:],
+                    AutoMaterializePolicy.eager().without_rules(
+                        AutoMaterializeRule.materialize_on_parent_updated(),
+                    ),
+                ),
+            ],
+            unevaluated_runs=[run(["A"])],
+            # C must wait for B to be materialized
+            expected_run_requests=[],
+            expected_evaluations=[
+                AssetEvaluationSpec(
+                    asset_key="C",
+                    rule_evaluations=[
+                        (
+                            AutoMaterializeRuleEvaluation(
+                                AutoMaterializeRule.materialize_on_missing().to_snapshot(),
+                                evaluation_data=None,
+                            ),
+                            None,
+                        ),
+                        (
+                            AutoMaterializeRuleEvaluation(
+                                AutoMaterializeRule.skip_on_parent_missing().to_snapshot(),
+                                evaluation_data=WaitingOnAssetsRuleEvaluationData(
+                                    waiting_on_asset_keys=frozenset({AssetKey("B")})
+                                ),
+                            ),
+                            None,
+                        ),
+                    ],
+                    num_requested=0,
+                    num_skipped=1,
+                    num_discarded=0,
+                )
+            ],
+        ),
+        unevaluated_runs=[run(["B"])],
+        # can now run C because the skip rule is no longer true
+        expected_run_requests=[run_request(["C"])],
+        expected_evaluations=[
+            AssetEvaluationSpec.from_single_rule(
+                asset_key="C", rule=AutoMaterializeRule.materialize_on_missing()
+            )
+        ],
+    ),
 }
