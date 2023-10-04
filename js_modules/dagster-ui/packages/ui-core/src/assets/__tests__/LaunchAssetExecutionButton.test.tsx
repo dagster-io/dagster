@@ -8,6 +8,7 @@ import {CustomAlertProvider} from '../../app/CustomAlertProvider';
 import {LaunchPartitionBackfillMutation} from '../../instance/backfill/types/BackfillUtils.types';
 import {LaunchPipelineExecutionMutation} from '../../runs/types/RunUtils.types';
 import {TestProvider} from '../../testing/TestProvider';
+import * as WorkspaceContext from '../../workspace/WorkspaceContext';
 import {
   AssetsInScope,
   ERROR_INVALID_ASSET_SELECTION,
@@ -37,6 +38,8 @@ import {
 
 // This file must be mocked because Jest can't handle `import.meta.url`.
 jest.mock('../../graph/asyncGraphLayout', () => ({}));
+
+const flagSpy = jest.spyOn(WorkspaceContext, 'useFeatureFlagForCodeLocation');
 
 describe('LaunchAssetExecutionButton', () => {
   describe('labeling', () => {
@@ -306,61 +309,100 @@ describe('LaunchAssetExecutionButton', () => {
       await expectLaunchExecutesMutationAndCloses('Launch 1 run', launchMock);
     });
 
-    it('should launch backfills as pure-asset backfills if no job is in context', async () => {
-      const launchMock = buildExpectedLaunchBackfillMutation({
-        selector: undefined,
-        assetSelection: [{path: ['asset_daily']}],
-        partitionNames: ASSET_DAILY_PARTITION_KEYS,
-        fromFailure: false,
-        tags: [],
+    describe('Single run backfill toggle', () => {
+      afterEach(() => {
+        flagSpy.mockClear();
       });
-      renderButton({
-        scope: {all: [ASSET_DAILY]},
-        preferredJobName: undefined,
-        launchMock,
-      });
-      await clickMaterializeButton();
-      await screen.findByTestId('choose-partitions-dialog');
 
-      // missing-and-failed only option is available
-      expect(screen.getByTestId('missing-only-checkbox')).toBeEnabled();
-
-      // ranges-as-tags option is available
-      const rangesAsTags = screen.getByTestId('ranges-as-tags-true-radio');
-      await waitFor(async () => expect(rangesAsTags).toBeEnabled());
-
-      await expectLaunchExecutesMutationAndCloses('Launch 1148-run backfill', launchMock);
-    });
-
-    it('should launch a single run if you choose to pass the partition range using tags', async () => {
-      const launchMock = buildExpectedLaunchSingleRunMutation({
-        mode: 'default',
-        executionMetadata: {
-          tags: [
-            {key: 'dagster/asset_partition_range_start', value: '2020-01-02'},
-            {key: 'dagster/asset_partition_range_end', value: '2023-02-22'},
-          ],
-        },
-        runConfigData: '{}\n',
-        selector: {
-          repositoryLocationName: 'test.py',
-          repositoryName: 'repo',
-          pipelineName: 'my_asset_job',
+      it('should launch backfills as pure-asset backfills if no job is in context', async () => {
+        flagSpy.mockReturnValue(true);
+        const launchMock = buildExpectedLaunchBackfillMutation({
+          selector: undefined,
           assetSelection: [{path: ['asset_daily']}],
-        },
-      });
-      renderButton({
-        scope: {all: [ASSET_DAILY]},
-        preferredJobName: 'my_asset_job',
-        launchMock,
-      });
-      await clickMaterializeButton();
-      await screen.findByTestId('choose-partitions-dialog');
+          partitionNames: ASSET_DAILY_PARTITION_KEYS,
+          fromFailure: false,
+          tags: [],
+        });
+        renderButton({
+          scope: {all: [ASSET_DAILY]},
+          preferredJobName: undefined,
+          launchMock,
+        });
+        await clickMaterializeButton();
+        await screen.findByTestId('choose-partitions-dialog');
 
-      const rangesAsTags = screen.getByTestId('ranges-as-tags-true-radio');
-      await waitFor(async () => expect(rangesAsTags).toBeEnabled());
-      await userEvent.click(rangesAsTags);
-      await expectLaunchExecutesMutationAndCloses('Launch 1 run', launchMock);
+        // missing-and-failed only option is available
+        expect(screen.getByTestId('missing-only-checkbox')).toBeEnabled();
+
+        // ranges-as-tags option is available
+        const rangesAsTags = screen.getByTestId('ranges-as-tags-true-radio');
+        await waitFor(async () => expect(rangesAsTags).toBeEnabled());
+
+        await expectLaunchExecutesMutationAndCloses('Launch 1148-run backfill', launchMock);
+      });
+
+      it('should launch a single run if you choose to pass the partition range using tags', async () => {
+        flagSpy.mockReturnValue(true);
+        const launchMock = buildExpectedLaunchSingleRunMutation({
+          mode: 'default',
+          executionMetadata: {
+            tags: [
+              {key: 'dagster/asset_partition_range_start', value: '2020-01-02'},
+              {key: 'dagster/asset_partition_range_end', value: '2023-02-22'},
+            ],
+          },
+          runConfigData: '{}\n',
+          selector: {
+            repositoryLocationName: 'test.py',
+            repositoryName: 'repo',
+            pipelineName: 'my_asset_job',
+            assetSelection: [{path: ['asset_daily']}],
+          },
+        });
+        renderButton({
+          scope: {all: [ASSET_DAILY]},
+          preferredJobName: 'my_asset_job',
+          launchMock,
+        });
+        await clickMaterializeButton();
+        await screen.findByTestId('choose-partitions-dialog');
+
+        const rangesAsTags = screen.getByTestId('ranges-as-tags-true-radio');
+        await waitFor(async () => expect(rangesAsTags).toBeEnabled());
+        await userEvent.click(rangesAsTags);
+        await expectLaunchExecutesMutationAndCloses('Launch 1 run', launchMock);
+      });
+
+      it('should not show the backfill toggle if the flag is false', async () => {
+        flagSpy.mockReturnValue(false);
+
+        const launchMock = buildExpectedLaunchSingleRunMutation({
+          mode: 'default',
+          executionMetadata: {
+            tags: [
+              {key: 'dagster/asset_partition_range_start', value: '2020-01-02'},
+              {key: 'dagster/asset_partition_range_end', value: '2023-02-22'},
+            ],
+          },
+          runConfigData: '{}\n',
+          selector: {
+            repositoryLocationName: 'test.py',
+            repositoryName: 'repo',
+            pipelineName: 'my_asset_job',
+            assetSelection: [{path: ['asset_daily']}],
+          },
+        });
+        renderButton({
+          scope: {all: [ASSET_DAILY]},
+          preferredJobName: 'my_asset_job',
+          launchMock,
+        });
+        await clickMaterializeButton();
+        await screen.findByTestId('choose-partitions-dialog');
+
+        const rangesAsTags = screen.queryByTestId('ranges-as-tags-true-radio');
+        expect(rangesAsTags).toBeNull();
+      });
     });
   });
 
