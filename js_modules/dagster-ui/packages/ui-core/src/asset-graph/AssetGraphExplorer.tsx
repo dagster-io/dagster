@@ -430,6 +430,18 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
           )}
 
           <TopbarWrapper>
+            {showSidebar || !flagDAGSidebar ? (
+              <div />
+            ) : (
+              <Tooltip content="Show sidebar">
+                <Button
+                  icon={<Icon name="panel_show_left" />}
+                  onClick={() => {
+                    setShowSidebar(true);
+                  }}
+                />
+              </Tooltip>
+            )}
             <div>{fetchOptionFilters}</div>
             <GraphQueryInput
               type="asset_graph"
@@ -464,18 +476,6 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
               }
             />
           </TopbarWrapper>
-          <QueryOverlay>
-            {showSidebar || !flagDAGSidebar ? null : (
-              <Tooltip content="Show sidebar">
-                <Button
-                  icon={<Icon name="panel_show_left" />}
-                  onClick={() => {
-                    setShowSidebar(true);
-                  }}
-                />
-              </Tooltip>
-            )}
-          </QueryOverlay>
         </ErrorBoundary>
       }
       second={
@@ -602,7 +602,7 @@ const TopbarWrapper = styled.div`
   right: 0;
   display: grid;
   background: white;
-  grid-template-columns: auto 1fr auto auto auto auto;
+  grid-template-columns: auto auto 1fr auto auto auto auto;
   gap: 12px;
   align-items: center;
   padding: 12px 15px;
