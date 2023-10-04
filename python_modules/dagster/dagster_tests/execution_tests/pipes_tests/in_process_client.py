@@ -78,18 +78,14 @@ class InProcessMessageReader(PipesMessageReader):
     def __init__(
         self,
         message_writer: InProcessPipesMessageWriter,
-        fn: Callable[[PipesContext], None],
         pipes_context: PipesContext,
     ) -> None:
         self.message_writer = message_writer
-        self.fn = fn
         self.pipes_context = pipes_context
 
     @contextmanager
     def read_messages(self, handler: "PipesMessageHandler") -> Iterator[PipesParams]:
         yield {}
-        # instead of doing something like polling a thread, we just sychronously call the function and handle all messagse
-        self.fn(self.pipes_context)
         for pipes_message in self.message_writer.write_channel.messages:
             handler.handle_message(pipes_message)
 
@@ -115,10 +111,10 @@ class _InProcessPipesClient(PipesClient):
                 context=context,
                 context_injector=InProcessContextInjector(),
                 message_reader=InProcessMessageReader(
-                    pipes_message_writer, fn=fn, pipes_context=pipes_context
+                    pipes_message_writer, pipes_context=pipes_context
                 ),
             ) as session:
-                pass
+                fn(pipes_context)
 
         return PipesClientCompletedInvocation(list(session.get_results()))
 
