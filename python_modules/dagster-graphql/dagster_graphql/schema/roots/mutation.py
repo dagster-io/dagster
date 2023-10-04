@@ -25,6 +25,7 @@ from ...implementation.execution import (
     terminate_pipeline_execution,
     terminate_pipeline_execution_for_runs,
     wipe_assets,
+    report_runless_asset_events,
 )
 from ...implementation.external import fetch_workspace, get_full_external_job_or_raise
 from ...implementation.telemetry import log_ui_telemetry_event
@@ -58,6 +59,7 @@ from ..errors import (
 from ..external import GrapheneWorkspace, GrapheneWorkspaceLocationEntry
 from ..inputs import (
     GrapheneAssetKeyInput,
+    GrapheneReportRunlessAssetEventsParams,
     GrapheneExecutionParams,
     GrapheneLaunchBackfillParams,
     GrapheneReexecutionParams,
@@ -673,6 +675,50 @@ class GrapheneAssetWipeMutation(graphene.Mutation):
         )
 
 
+class GrapheneReportRunlessAssetEventsSuccess(graphene.ObjectType):
+    """Output indicating that runless asset events were reported."""
+
+    assetKey = GrapheneAssetKey
+
+    class Meta:
+        name = "ReportRunlessAssetEventsSuccess"
+
+
+class GrapheneReportRunlessAssetEventsResult(graphene.Union):
+    """The output from reporting runless events."""
+
+    class Meta:
+        types = (
+            GrapheneAssetNotFoundError,
+            GrapheneUnauthorizedError,
+            GraphenePythonError,
+            GrapheneReportRunlessAssetEventsSuccess,
+        )
+        name = "ReportRunlessAssetEventsResult"
+
+
+class GrapheneReportRunlessAssetEventsMutation(graphene.Mutation):
+    """Reports runless events for an asset or a subset of its partitions."""
+
+    Output = graphene.NonNull(GrapheneReportRunlessAssetEventsResult)
+
+    class Arguments:
+        eventParams = graphene.Argument(GrapheneReportRunlessAssetEventsParams)
+
+    class Meta:
+        name = "ReportRunlessAssetEventsMutation"
+
+    @capture_error
+    @check_permission(Permissions.REPORT_RUNLESS_ASSET_EVENTS)
+    def mutate(
+        self, graphene_info: ResolveInfo, eventParams: GrapheneReportRunlessAssetEventsParams
+    ):
+        event_type = eventParams.eventType.to_dagster_event_type()
+        asset_key = AssetKey.from_graphql_input(eventParams["assetKey"])
+
+        return report_runless_asset_events(graphene_info, AssetKey.from_graphql_input(eventParams))
+
+
 class GrapheneLogTelemetrySuccess(graphene.ObjectType):
     """Output indicating that telemetry was logged."""
 
@@ -818,6 +864,7 @@ class GrapheneMutation(graphene.ObjectType):
     reloadWorkspace = GrapheneReloadWorkspaceMutation.Field()
     shutdownRepositoryLocation = GrapheneShutdownRepositoryLocationMutation.Field()
     wipeAssets = GrapheneAssetWipeMutation.Field()
+    reportRunlessAssetEvents = GrapheneReportRunlessAssetEventsMutation.Field()
     launchPartitionBackfill = GrapheneLaunchBackfillMutation.Field()
     resumePartitionBackfill = GrapheneResumeBackfillMutation.Field()
     cancelPartitionBackfill = GrapheneCancelBackfillMutation.Field()
