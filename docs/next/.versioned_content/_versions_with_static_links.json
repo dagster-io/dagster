@@ -350,5 +350,9 @@
   {
     "url": "https://release-1-5-0.dagster.dagster-docs.io/",
     "version": "1.5.0"
+  },
+  {
+    "url": "https://release-1-5-1.dagster.dagster-docs.io/",
+    "version": "1.5.1"
   }
 ]
