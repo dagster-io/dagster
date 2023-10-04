@@ -174,9 +174,16 @@ class PipesFileMessageReader(PipesMessageReader):
                 thread.join()
 
     def _reader_thread(self, handler: "PipesMessageHandler", is_resource_complete: Event) -> None:
-        for line in tail_file(self._path, lambda: is_resource_complete.is_set()):
-            message = json.loads(line)
-            handler.handle_message(message)
+        try:
+            for line in tail_file(self._path, lambda: is_resource_complete.is_set()):
+                message = json.loads(line)
+                handler.handle_message(message)
+        except:
+            handler.report_pipes_framework_exception(
+                f"{self.__class__.__name__} reader thread",
+                sys.exc_info(),
+            )
+            raise
 
     def no_messages_debug_text(self) -> str:
         return f"Attempted to read messages from file {self._path}."
@@ -302,7 +309,7 @@ class PipesBlobStoreMessageReader(PipesMessageReader):
                 messages_thread.start()
                 logs_thread = Thread(
                     target=self._logs_thread,
-                    args=(params, is_session_closed, messages_thread),
+                    args=(handler, params, is_session_closed, messages_thread),
                     daemon=True,
                 )
                 logs_thread.start()
@@ -337,23 +344,33 @@ class PipesBlobStoreMessageReader(PipesMessageReader):
         params: PipesParams,
         is_session_closed: Event,
     ) -> None:
-        start_or_last_download = datetime.datetime.now()
-        while True:
-            now = datetime.datetime.now()
-            if (now - start_or_last_download).seconds > self.interval or is_session_closed.is_set():
-                start_or_last_download = now
-                chunk = self.download_messages_chunk(self.counter, params)
-                if chunk:
-                    for line in chunk.split("\n"):
-                        message = json.loads(line)
-                        handler.handle_message(message)
-                    self.counter += 1
-                elif is_session_closed.is_set():
-                    break
-            time.sleep(DEFAULT_SLEEP_INTERVAL)
+        try:
+            start_or_last_download = datetime.datetime.now()
+            while True:
+                now = datetime.datetime.now()
+                if (
+                    now - start_or_last_download
+                ).seconds > self.interval or is_session_closed.is_set():
+                    start_or_last_download = now
+                    chunk = self.download_messages_chunk(self.counter, params)
+                    if chunk:
+                        for line in chunk.split("\n"):
+                            message = json.loads(line)
+                            handler.handle_message(message)
+                        self.counter += 1
+                    elif is_session_closed.is_set():
+                        break
+                time.sleep(DEFAULT_SLEEP_INTERVAL)
+        except:
+            handler.report_pipes_framework_exception(
+                f"{self.__class__.__name__} messages thread",
+                sys.exc_info(),
+            )
+            raise
 
     def _logs_thread(
         self,
+        handler: "PipesMessageHandler",
         params: PipesParams,
         is_session_closed: Event,
         messages_thread: Thread,
@@ -407,7 +424,12 @@ class PipesBlobStoreMessageReader(PipesMessageReader):
 
             # Wait for the external process to complete
             is_session_closed.wait()
-
+        except:
+            handler.report_pipes_framework_exception(
+                f"{self.__class__.__name__} logs thread",
+                sys.exc_info(),
+            )
+            raise
         finally:
             for log_reader in self.log_readers:
                 if log_reader.is_running():
