@@ -740,6 +740,19 @@ class TestScheduleStorage:
         assert res[1].evaluation_id == 10
         assert res[1].evaluation.num_requested == 1
 
+        res = storage.get_latest_auto_materialize_asset_evaluations(
+            asset_keys={AssetKey("asset_one"), AssetKey("asset_two")}
+        )
+
+        assert len(res) == 2
+        assert res[0].evaluation.asset_key == AssetKey("asset_one")
+        assert res[0].evaluation_id == 10
+        assert res[0].evaluation.num_requested == 0
+
+        assert res[1].evaluation.asset_key == AssetKey("asset_two")
+        assert res[1].evaluation_id == 10
+        assert res[1].evaluation.num_requested == 1
+
         storage.add_auto_materialize_asset_evaluations(
             evaluation_id=11,
             asset_evaluations=[
@@ -771,6 +784,21 @@ class TestScheduleStorage:
         )
         assert len(res) == 1
         assert res[0].evaluation_id == 10
+
+        res = storage.get_latest_auto_materialize_asset_evaluations(
+            asset_keys={AssetKey("asset_one"), AssetKey("asset_two")}
+        )
+
+        assert len(res) == 2
+        assert res[0].evaluation.asset_key == AssetKey("asset_one")
+        assert res[0].evaluation_id == 11
+        assert res[1].evaluation.asset_key == AssetKey("asset_two")
+        assert res[1].evaluation_id == 10
+
+        res = storage.get_latest_auto_materialize_asset_evaluations(
+            asset_keys={AssetKey("asset_one"), AssetKey("fake")}
+        )
+        assert len(res) == 1
 
     def test_auto_materialize_asset_evaluations_with_partitions(self, storage):
         if not self.can_store_auto_materialize_asset_evaluations():
