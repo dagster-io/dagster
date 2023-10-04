@@ -32,8 +32,8 @@ def build_dagster_ui_steps() -> List[CommandStep]:
             "cd js_modules/dagster-ui",
             # Explicitly install Node 16.x because BK is otherwise running 12.x.
             # Todo: Fix BK images to use newer Node versions, remove this.
-            "curl -sL https://deb.nodesource.com/setup_16.x | bash -",
-            "apt-get -yqq --no-install-recommends install nodejs",
+            "sudo yum install https://rpm.nodesource.com/pub_20.x/nodistro/repo/nodesource-release-nodistro-1.noarch.rpm -y",
+            "sudo yum install nodejs -y --setopt=nodesource-nodejs.module_hotfixes=1",
             "tox -vv -e py310",
         )
         .on_test_image(AvailablePythonVersion.get_default())
