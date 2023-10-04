@@ -663,6 +663,7 @@ class AutoMaterializeAssetEvaluationRecord(NamedTuple):
     evaluation: AutoMaterializeAssetEvaluation
     evaluation_id: int
     timestamp: float
+    asset_key: AssetKey
 
     @classmethod
     def from_db_row(cls, row):
@@ -673,4 +674,5 @@ class AutoMaterializeAssetEvaluationRecord(NamedTuple):
             ),
             evaluation_id=row["evaluation_id"],
             timestamp=datetime_as_float(row["create_timestamp"]),
+            asset_key=AssetKey.from_db_string(row["asset_key"]),
         )

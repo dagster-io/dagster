@@ -2832,6 +2832,7 @@ export type Query = {
   assetsLatestInfo: Array<AssetLatestInfo>;
   assetsOrError: AssetsOrError;
   autoMaterializeAssetEvaluationsOrError: Maybe<AutoMaterializeAssetEvaluationRecordsOrError>;
+  autoMaterializeEvaluationsForEvaluationId: Maybe<AutoMaterializeAssetEvaluationRecordsOrError>;
   autoMaterializeTicks: Array<InstigationTick>;
   canBulkTerminate: Scalars['Boolean'];
   capturedLogs: CapturedLogs;
@@ -2917,6 +2918,10 @@ export type QueryAutoMaterializeAssetEvaluationsOrErrorArgs = {
   assetKey: AssetKeyInput;
   cursor?: InputMaybe<Scalars['String']>;
   limit: Scalars['Int'];
+};
+
+export type QueryAutoMaterializeEvaluationsForEvaluationIdArgs = {
+  evaluationId: Scalars['Int'];
 };
 
 export type QueryAutoMaterializeTicksArgs = {
@@ -9775,6 +9780,12 @@ export const buildQuery = (
     autoMaterializeAssetEvaluationsOrError:
       overrides && overrides.hasOwnProperty('autoMaterializeAssetEvaluationsOrError')
         ? overrides.autoMaterializeAssetEvaluationsOrError!
+        : relationshipsToOmit.has('AutoMaterializeAssetEvaluationNeedsMigrationError')
+        ? ({} as AutoMaterializeAssetEvaluationNeedsMigrationError)
+        : buildAutoMaterializeAssetEvaluationNeedsMigrationError({}, relationshipsToOmit),
+    autoMaterializeEvaluationsForEvaluationId:
+      overrides && overrides.hasOwnProperty('autoMaterializeEvaluationsForEvaluationId')
+        ? overrides.autoMaterializeEvaluationsForEvaluationId!
         : relationshipsToOmit.has('AutoMaterializeAssetEvaluationNeedsMigrationError')
         ? ({} as AutoMaterializeAssetEvaluationNeedsMigrationError)
         : buildAutoMaterializeAssetEvaluationNeedsMigrationError({}, relationshipsToOmit),
