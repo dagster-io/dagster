@@ -26,7 +26,6 @@ import {closestNodeInDirection, isNodeOffscreen} from '../graph/common';
 import {
   GraphExplorerOptions,
   OptionsOverlay,
-  QueryOverlay,
   RightInfoPanel,
   RightInfoPanelContent,
 } from '../pipelines/GraphExplorer';
@@ -430,6 +429,18 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
           )}
 
           <TopbarWrapper>
+            {showSidebar || !flagDAGSidebar ? (
+              <div />
+            ) : (
+              <Tooltip content="Show sidebar">
+                <Button
+                  icon={<Icon name="panel_show_left" />}
+                  onClick={() => {
+                    setShowSidebar(true);
+                  }}
+                />
+              </Tooltip>
+            )}
             <div>{fetchOptionFilters}</div>
             <GraphQueryInput
               type="asset_graph"
@@ -464,18 +475,6 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
               }
             />
           </TopbarWrapper>
-          <QueryOverlay>
-            {showSidebar || !flagDAGSidebar ? null : (
-              <Tooltip content="Show sidebar">
-                <Button
-                  icon={<Icon name="panel_show_left" />}
-                  onClick={() => {
-                    setShowSidebar(true);
-                  }}
-                />
-              </Tooltip>
-            )}
-          </QueryOverlay>
         </ErrorBoundary>
       }
       second={
@@ -602,7 +601,7 @@ const TopbarWrapper = styled.div`
   right: 0;
   display: grid;
   background: white;
-  grid-template-columns: auto 1fr auto auto auto auto;
+  grid-template-columns: auto auto 1fr auto auto auto auto;
   gap: 12px;
   align-items: center;
   padding: 12px 15px;
@@ -610,7 +609,7 @@ const TopbarWrapper = styled.div`
   ${TextInputContainer} {
     width: 100%;
   }
-  > :nth-child(2) {
+  > :nth-child(3) {
     > * {
       display: block;
       width: 100%;
