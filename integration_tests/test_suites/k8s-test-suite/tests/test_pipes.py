@@ -65,6 +65,9 @@ class PipesConfigMapContextInjector(PipesContextInjector):
         self._namespace = namespace
         self._cm_name = "dagster-pipes-cm"
 
+    def no_messages_debug_text(self) -> str:
+        return "Attempted to inject context via volume mounted config map."
+
     @contextmanager
     def inject_context(
         self,

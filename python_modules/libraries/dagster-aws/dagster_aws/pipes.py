@@ -30,3 +30,10 @@ class PipesS3MessageReader(PipesBlobStoreMessageReader):
             return obj["Body"].read().decode("utf-8")
         except ClientError:
             return None
+
+    def no_messages_debug_text(self) -> str:
+        return (
+            f"Attempted to read messages from S3 bucket {self.bucket}. Expected"
+            " PipesS3MessageWriter to be explicitly passed to open_dagster_pipes in the external"
+            " process."
+        )
