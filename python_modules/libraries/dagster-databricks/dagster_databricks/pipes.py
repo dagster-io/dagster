@@ -184,6 +184,13 @@ class PipesDbfsContextInjector(PipesContextInjector):
             self.dbfs_client.put(path, contents=contents, overwrite=True)
             yield {"path": path}
 
+    def no_messages_debug_text(self) -> str:
+        return (
+            "Attempted to inject context via a temporary file in dbfs. Expected"
+            " PipesDbfsContextLoader to be explicitly passed to open_dagster_pipes in the external"
+            " process."
+        )
+
 
 @experimental
 class PipesDbfsMessageReader(PipesBlobStoreMessageReader):
@@ -217,3 +224,10 @@ class PipesDbfsMessageReader(PipesBlobStoreMessageReader):
         # status check showing a non-existent file.
         except IOError:
             return None
+
+    def no_messages_debug_text(self) -> str:
+        return (
+            "Attempted to read messages from a temporary file in dbfs. Expected"
+            " PipesDbfsMessageWriter to be explicitly passed to open_dagster_pipes in the external"
+            " process."
+        )

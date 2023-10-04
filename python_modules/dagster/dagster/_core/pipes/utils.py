@@ -71,6 +71,9 @@ class PipesFileContextInjector(PipesContextInjector):
             if os.path.exists(self._path):
                 os.remove(self._path)
 
+    def no_messages_debug_text(self) -> str:
+        return f"Attempted to inject context via file {self._path}"
+
 
 @experimental
 class PipesTempFileContextInjector(PipesContextInjector):
@@ -96,6 +99,9 @@ class PipesTempFileContextInjector(PipesContextInjector):
             ).inject_context(context) as params:
                 yield params
 
+    def no_messages_debug_text(self) -> str:
+        return "Attempted to inject context via a temporary file."
+
 
 class PipesEnvContextInjector(PipesContextInjector):
     """Context injector that injects context data into the external process by injecting it directly into the external process environment."""
@@ -116,6 +122,9 @@ class PipesEnvContextInjector(PipesContextInjector):
             load the injected context data.
         """
         yield {PipesDefaultContextLoader.DIRECT_KEY: context_data}
+
+    def no_messages_debug_text(self) -> str:
+        return "Attempted to inject context directly, typically as an environment variable."
 
 
 @experimental
@@ -166,6 +175,9 @@ class PipesFileMessageReader(PipesMessageReader):
             message = json.loads(line)
             handler.handle_message(message)
 
+    def no_messages_debug_text(self) -> str:
+        return f"Attempted to read messages from file {self._path}."
+
 
 @experimental
 class PipesTempFileMessageReader(PipesMessageReader):
@@ -191,6 +203,9 @@ class PipesTempFileMessageReader(PipesMessageReader):
                 os.path.join(tempdir, _MESSAGE_READER_FILENAME)
             ).read_messages(handler) as params:
                 yield params
+
+    def no_messages_debug_text(self) -> str:
+        return "Attempted to read messages from a local temporary file."
 
 
 class PipesBlobStoreMessageReader(PipesMessageReader):
@@ -362,12 +377,30 @@ def open_pipes_session(
     context.set_requires_typed_event_stream(error_message=_FAIL_TO_YIELD_ERROR_MESSAGE)
     context_data = build_external_execution_context_data(context, extras)
     message_handler = PipesMessageHandler(context)
-    with context_injector.inject_context(
-        context_data
-    ) as ci_params, message_handler.handle_messages(message_reader) as mr_params:
-        yield PipesSession(
-            context_data=context_data,
-            message_handler=message_handler,
-            context_injector_params=ci_params,
-            message_reader_params=mr_params,
-        )
+    try:
+        with context_injector.inject_context(
+            context_data
+        ) as ci_params, message_handler.handle_messages(message_reader) as mr_params:
+            yield PipesSession(
+                context_data=context_data,
+                message_handler=message_handler,
+                context_injector_params=ci_params,
+                message_reader_params=mr_params,
+            )
+    finally:
+        if not message_handler.received_any_message:
+            context.log.warn(
+                "[pipes] did not receive any messages from external process. Check stdout / stderr"
+                " logs from the external process if"
+                f" possible.\n{context_injector.__class__.__name__}:"
+                f" {context_injector.no_messages_debug_text()}\n{message_reader.__class__.__name__}:"
+                f" {message_reader.no_messages_debug_text()}\n"
+            )
+        elif not message_handler.received_closed_message:
+            context.log.warn(
+                "[pipes] did not receive closed message from external process. Buffered messages"
+                " may have been discarded without being delivered. Use `open_dagster_pipes` as a"
+                " context manager (a with block) to ensure that cleanup is successfully completed."
+                " If that is not possible, manually call `PipesContext.close()` before process"
+                " exit."
+            )
