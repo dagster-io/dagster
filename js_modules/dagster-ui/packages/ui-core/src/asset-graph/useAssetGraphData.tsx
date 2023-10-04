@@ -6,7 +6,7 @@ import React from 'react';
 
 import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
 import {AssetKey} from '../assets/types';
-import {asyncIsAssetLayoutCached} from '../graph/asyncGraphLayout';
+import {asyncGetFullAssetLayoutIndexDB} from '../graph/asyncGraphLayout';
 import {AssetGroupSelector, PipelineSelector} from '../graphql/types';
 
 import {ASSET_NODE_FRAGMENT} from './AssetNode';
@@ -123,7 +123,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
           removeEdgesToHiddenAssets(fullAssetGraphData, repoFilteredNodes);
         }
         if (fullAssetGraphData) {
-          const isCached = await asyncIsAssetLayoutCached(fullAssetGraphData);
+          const isCached = await asyncGetFullAssetLayoutIndexDB.isCached(fullAssetGraphData);
           if (isCached) {
             setAssetGraphDataMaybeCached(fullAssetGraphData);
             setIsCached(true);
