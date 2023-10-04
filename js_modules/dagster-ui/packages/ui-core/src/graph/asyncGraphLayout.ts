@@ -45,7 +45,7 @@ const _assetLayoutCacheKey = (graphData: GraphData) => {
 
 const getFullAssetLayout = memoize(layoutAssetGraph, _assetLayoutCacheKey);
 
-const asyncGetFullAssetLayoutIndexDB = indexedDBAsyncMemoize(
+export const asyncGetFullAssetLayoutIndexDB = indexedDBAsyncMemoize(
   (graphData: GraphData, opts: LayoutAssetGraphOptions) => {
     return new Promise<AssetGraphLayout>((resolve) => {
       const worker = new Worker(new URL('../workers/dagre_layout.worker', import.meta.url));
@@ -58,11 +58,6 @@ const asyncGetFullAssetLayoutIndexDB = indexedDBAsyncMemoize(
   },
   _assetLayoutCacheKey,
 );
-
-export function asyncIsAssetLayoutCached(graphData: GraphData) {
-  const key = _assetLayoutCacheKey(graphData);
-  return asyncGetFullAssetLayoutIndexDB.isCached(key);
-}
 
 const asyncGetFullAssetLayout = asyncMemoize(
   (graphData: GraphData, opts: LayoutAssetGraphOptions) => {
