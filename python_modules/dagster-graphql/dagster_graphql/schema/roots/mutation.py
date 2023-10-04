@@ -22,10 +22,10 @@ from dagster_graphql.implementation.execution.launch_execution import (
 
 from ...implementation.execution import (
     delete_pipeline_run,
+    report_runless_asset_events,
     terminate_pipeline_execution,
     terminate_pipeline_execution_for_runs,
     wipe_assets,
-    report_runless_asset_events,
 )
 from ...implementation.external import fetch_workspace, get_full_external_job_or_raise
 from ...implementation.telemetry import log_ui_telemetry_event
@@ -59,10 +59,10 @@ from ..errors import (
 from ..external import GrapheneWorkspace, GrapheneWorkspaceLocationEntry
 from ..inputs import (
     GrapheneAssetKeyInput,
-    GrapheneReportRunlessAssetEventsParams,
     GrapheneExecutionParams,
     GrapheneLaunchBackfillParams,
     GrapheneReexecutionParams,
+    GrapheneReportRunlessAssetEventsParams,
     GrapheneRepositorySelector,
 )
 from ..partition_sets import GrapheneAddDynamicPartitionResult
@@ -678,7 +678,7 @@ class GrapheneAssetWipeMutation(graphene.Mutation):
 class GrapheneReportRunlessAssetEventsSuccess(graphene.ObjectType):
     """Output indicating that runless asset events were reported."""
 
-    assetKey = GrapheneAssetKey
+    assetKey = graphene.NonNull(GrapheneAssetKey)
 
     class Meta:
         name = "ReportRunlessAssetEventsSuccess"
@@ -689,7 +689,6 @@ class GrapheneReportRunlessAssetEventsResult(graphene.Union):
 
     class Meta:
         types = (
-            GrapheneAssetNotFoundError,
             GrapheneUnauthorizedError,
             GraphenePythonError,
             GrapheneReportRunlessAssetEventsSuccess,
@@ -703,7 +702,7 @@ class GrapheneReportRunlessAssetEventsMutation(graphene.Mutation):
     Output = graphene.NonNull(GrapheneReportRunlessAssetEventsResult)
 
     class Arguments:
-        eventParams = graphene.Argument(GrapheneReportRunlessAssetEventsParams)
+        eventParams = graphene.Argument(graphene.NonNull(GrapheneReportRunlessAssetEventsParams))
 
     class Meta:
         name = "ReportRunlessAssetEventsMutation"
@@ -713,10 +712,18 @@ class GrapheneReportRunlessAssetEventsMutation(graphene.Mutation):
     def mutate(
         self, graphene_info: ResolveInfo, eventParams: GrapheneReportRunlessAssetEventsParams
     ):
-        event_type = eventParams.eventType.to_dagster_event_type()
+        event_type = eventParams["eventType"].to_dagster_event_type()
         asset_key = AssetKey.from_graphql_input(eventParams["assetKey"])
+        partition_keys = eventParams.get("partitionKeys", None)
+        description = eventParams.get("description", None)
 
-        return report_runless_asset_events(graphene_info, AssetKey.from_graphql_input(eventParams))
+        return report_runless_asset_events(
+            graphene_info,
+            event_type=event_type,
+            asset_key=asset_key,
+            partition_keys=partition_keys,
+            description=description,
+        )
 
 
 class GrapheneLogTelemetrySuccess(graphene.ObjectType):

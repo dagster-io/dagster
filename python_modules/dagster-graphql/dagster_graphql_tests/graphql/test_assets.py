@@ -3,6 +3,7 @@ import os
 import time
 from typing import Dict, List, Optional, Sequence
 
+import pytest
 from dagster import (
     AssetKey,
     AssetMaterialization,
@@ -19,6 +20,7 @@ from dagster import (
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.dagster_run import DagsterRunStatus
+from dagster._core.storage.event_log.base import EventRecordsFilter
 from dagster._core.test_utils import instance_for_test, poll_for_finished_run
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._utils import Counter, safe_tempfile_path, traced_counter
@@ -39,6 +41,7 @@ from dagster_graphql.test.utils import (
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     AllRepositoryGraphQLContextTestMatrix,
     ExecutingGraphQLContextTestMatrix,
+    ReadonlyGraphQLContextTestMatrix,
 )
 
 GET_ASSET_KEY_QUERY = """
@@ -98,6 +101,24 @@ WIPE_ASSETS = """
         }
     }
 """
+
+REPORT_RUNLESS_ASSET_EVENTS = """
+mutation reportRunlessAssetEvents($eventParams: ReportRunlessAssetEventsParams!) {
+	reportRunlessAssetEvents(eventParams: $eventParams) {
+    __typename
+    ... on PythonError {
+      message
+      stack
+    }
+    ... on ReportRunlessAssetEventsSuccess {
+      assetKey {
+        path
+      }
+    }
+  }
+}
+"""
+
 
 GET_ASSET_MATERIALIZATION_TIMESTAMP = """
     query AssetQuery($assetKey: AssetKeyInput!, $asOf: String) {
@@ -773,6 +794,89 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 
         asset_keys = graphql_context.instance.all_asset_keys()
         assert AssetKey("a") not in asset_keys
+
+    @pytest.mark.parametrize(
+        "event_type,asset_key,partitions,description",
+        [
+            (
+                DagsterEventType.ASSET_MATERIALIZATION,
+                AssetKey("asset1"),
+                None,
+                None,
+            ),
+            (
+                DagsterEventType.ASSET_MATERIALIZATION,
+                AssetKey("asset1"),
+                None,
+                "runless materialization",
+            ),
+            (
+                DagsterEventType.ASSET_MATERIALIZATION,
+                AssetKey("asset1"),
+                ["partition1", "partition2"],
+                None,
+            ),
+            (
+                DagsterEventType.ASSET_OBSERVATION,
+                AssetKey("asset1"),
+                ["partition1", "partition2"],
+                "runless observation",
+            ),
+        ],
+    )
+    def test_report_runless_asset_events(
+        self,
+        graphql_context: WorkspaceRequestContext,
+        event_type: DagsterEventType,
+        asset_key: AssetKey,
+        partitions: Optional[Sequence[str]],
+        description: Optional[str],
+    ):
+        assert graphql_context.instance.all_asset_keys() == []
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            REPORT_RUNLESS_ASSET_EVENTS,
+            variables={
+                "eventParams": {
+                    "eventType": event_type.value,
+                    "assetKey": {"path": asset_key.path},
+                    "partitionKeys": partitions,
+                    "description": description,
+                }
+            },
+        )
+
+        assert result.data
+        assert result.data["reportRunlessAssetEvents"]
+        assert (
+            result.data["reportRunlessAssetEvents"]["__typename"]
+            == "ReportRunlessAssetEventsSuccess"
+        )
+
+        event_records = graphql_context.instance.get_event_records(
+            EventRecordsFilter(
+                event_type=event_type,
+                asset_key=asset_key,
+            ),
+            ascending=True,
+        )
+        if partitions:
+            assert len(event_records) == len(partitions)
+        else:
+            assert len(event_records) == 1
+
+        for i in range(len(event_records)):
+            assert event_records[i].event_log_entry.dagster_event_type == event_type
+            assert event_records[i].partition_key == (partitions[i] if partitions else None)
+            if event_type == DagsterEventType.ASSET_MATERIALIZATION:
+                materialization = event_records[i].asset_materialization
+                assert materialization
+                assert materialization.description == description
+            else:
+                observation = event_records[i].asset_observation
+                assert observation
+                assert observation.description == description
 
     def test_asset_asof_timestamp(self, graphql_context: WorkspaceRequestContext):
         _create_run(graphql_context, "asset_tag_job")
@@ -2220,6 +2324,34 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
                 assert a["hasAssetChecks"] is True
             else:
                 assert a["hasAssetChecks"] is False, f"Asset {a['assetKey']} has asset checks"
+
+
+class TestAssetEventsReadOnly(ReadonlyGraphQLContextTestMatrix):
+    def test_report_runless_asset_events_permissions(
+        self,
+        graphql_context: WorkspaceRequestContext,
+    ):
+        assert graphql_context.instance.all_asset_keys() == []
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            REPORT_RUNLESS_ASSET_EVENTS,
+            variables={
+                "eventParams": {
+                    "eventType": DagsterEventType.ASSET_MATERIALIZATION,
+                    "assetKey": {"path": ["asset1"]},
+                }
+            },
+        )
+
+        assert result.data
+        assert result.data["reportRunlessAssetEvents"]
+        assert result.data["reportRunlessAssetEvents"]["__typename"] == "UnauthorizedError"
+
+        event_records = graphql_context.instance.get_event_records(
+            EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION)
+        )
+        assert len(event_records) == 0
 
 
 class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):

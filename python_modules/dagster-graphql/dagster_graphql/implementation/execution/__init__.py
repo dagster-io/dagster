@@ -8,10 +8,10 @@ import dagster._check as check
 from dagster._annotations import deprecated
 from dagster._core.definitions.events import AssetKey
 from dagster._core.events import (
-    EngineEventData,
-    DagsterEventType,
     AssetMaterialization,
     AssetObservation,
+    DagsterEventType,
+    EngineEventData,
 )
 from dagster._core.instance import (
     DagsterInstance,
@@ -51,8 +51,8 @@ if TYPE_CHECKING:
     from ...schema.errors import GrapheneRunNotFoundError
     from ...schema.roots.mutation import (
         GrapheneAssetWipeSuccess,
-        GrapheneReportRunlessAssetEventsSuccess,
         GrapheneDeletePipelineRunSuccess,
+        GrapheneReportRunlessAssetEventsSuccess,
         GrapheneTerminateRunFailure,
         GrapheneTerminateRunsResult,
         GrapheneTerminateRunSuccess,
@@ -402,7 +402,9 @@ def report_runless_asset_events(
     asset_key: AssetKey,
     partition_keys: Optional[Sequence[str]] = None,
     description: Optional[str] = None,
-) -> "GrapheneAssetWipeSuccess":
+) -> "GrapheneReportRunlessAssetEventsSuccess":
+    from ...schema.roots.mutation import GrapheneReportRunlessAssetEventsSuccess
+
     instance = graphene_info.context.instance
 
     if partition_keys is not None:
@@ -415,4 +417,4 @@ def report_runless_asset_events(
             create_asset_event(event_type, asset_key, None, description)
         )
 
-    return GrapheneReportRunlessAssetEventsSuccess(asset_key=asset_key)
+    return GrapheneReportRunlessAssetEventsSuccess(assetKey=asset_key)
