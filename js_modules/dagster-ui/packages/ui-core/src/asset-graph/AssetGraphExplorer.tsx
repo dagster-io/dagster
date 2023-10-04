@@ -610,7 +610,7 @@ const TopbarWrapper = styled.div`
   ${TextInputContainer} {
     width: 100%;
   }
-  > :nth-child(2) {
+  > :nth-child(3) {
     > * {
       display: block;
       width: 100%;
