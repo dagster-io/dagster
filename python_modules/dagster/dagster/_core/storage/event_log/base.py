@@ -503,5 +503,12 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         limit: int,
         cursor: Optional[int] = None,
     ) -> Sequence[AssetCheckExecutionRecord]:
-        """Get the executions for an asset check, sorted by recency."""
+        """Get executions for one asset check, sorted by recency."""
+        pass
+
+    @abstractmethod
+    def get_latest_asset_check_execution_by_key(
+        self, check_keys: Sequence[AssetCheckKey]
+    ) -> Mapping[AssetCheckKey, AssetCheckExecutionRecord]:
+        """Get the latest executions for a list of asset checks."""
         pass

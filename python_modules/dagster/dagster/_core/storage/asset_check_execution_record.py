@@ -2,6 +2,8 @@ import enum
 from typing import NamedTuple, Optional
 
 from dagster import EventLogEntry
+from dagster._serdes import deserialize_value
+from dagster._utils import datetime_as_float
 
 
 # We store a limit set of statuses in the database, and then resolve them to the actual status
@@ -28,3 +30,17 @@ class AssetCheckExecutionRecord(NamedTuple):
     status: AssetCheckExecutionRecordStatus
     evaluation_event: Optional[EventLogEntry]
     create_timestamp: float
+
+    @classmethod
+    def from_db_row(cls, row) -> "AssetCheckExecutionRecord":
+        return cls(
+            id=row["id"],
+            run_id=row["run_id"],
+            status=AssetCheckExecutionRecordStatus(row["execution_status"]),
+            evaluation_event=(
+                deserialize_value(row["evaluation_event"], EventLogEntry)
+                if row["evaluation_event"]
+                else None
+            ),
+            create_timestamp=datetime_as_float(row["create_timestamp"]),
+        )

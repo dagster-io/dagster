@@ -620,6 +620,12 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
             cursor=cursor,
         )
 
+    def get_latest_asset_check_execution_by_key(
+        self,
+        check_keys: Sequence["AssetCheckKey"],
+    ) -> Mapping["AssetCheckKey", Optional[AssetCheckExecutionRecord]]:
+        return self._storage.event_log_storage.get_latest_asset_check_execution_by_key(check_keys)
+
 
 class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
     def __init__(self, storage: DagsterStorage, inst_data: Optional[ConfigurableClassData] = None):
