@@ -456,7 +456,7 @@ class AssetDaemonContext:
     def skipped_asset_graph_subset(self) -> AssetGraphSubset:
         subset = self.cursor.skipped_asset_graph_subset or AssetGraphSubset(self.asset_graph)
         # factor out any asset partitions which have been materialized since last tick
-        for asset_key in self.asset_graph.all_asset_keys:
+        for asset_key in self.target_asset_keys:
             partitions_def = self.asset_graph.get_partitions_def(asset_key)
             new_asset_partitions = self.instance_queryer.get_asset_partitions_updated_after_cursor(
                 asset_key=asset_key,

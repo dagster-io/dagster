@@ -40,7 +40,7 @@ from .scenarios.scenarios import ASSET_RECONCILIATION_SCENARIOS
 )
 def test_reconciliation(scenario, respect_materialization_data_versions):
     instance = DagsterInstance.ephemeral()
-    run_requests, _, evaluations = scenario.do_sensor_scenario(
+    run_requests, cursor, evaluations = scenario.do_sensor_scenario(
         instance, respect_materialization_data_versions=respect_materialization_data_versions
     )
 
@@ -74,6 +74,18 @@ def test_reconciliation(scenario, respect_materialization_data_versions):
                 for evaluation_spec in scenario.expected_evaluations
             ]
         ) == _sorted_evaluations(evaluations)
+
+    if scenario.expected_skipped_subset is not None:
+        # the __eq__ method for AssetGraphSubset ends up checking for object equality between
+        # the underlying AssetGraphs, so we just compare the important bits.
+        assert (
+            cursor.skipped_asset_graph_subset.non_partitioned_asset_keys
+            == scenario.expected_skipped_asset_graph_subset.non_partitioned_asset_keys
+        )
+        assert (
+            cursor.skipped_asset_graph_subset.partitions_subsets_by_asset_key
+            == scenario.expected_skipped_asset_graph_subset.partitions_subsets_by_asset_key
+        )
 
     assert len(run_requests) == len(scenario.expected_run_requests), evaluations
 

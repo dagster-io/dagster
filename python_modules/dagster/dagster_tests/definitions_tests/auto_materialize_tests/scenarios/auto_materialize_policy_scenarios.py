@@ -14,7 +14,7 @@ from dagster._core.definitions.auto_materialize_rule import (
     ParentUpdatedRuleEvaluationData,
     WaitingOnAssetsRuleEvaluationData,
 )
-from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._seven.compat.pendulum import create_pendulum_time
 
@@ -67,6 +67,11 @@ vee = [
     asset_def("A"),
     asset_def("B"),
     asset_def("C", ["A", "B"]),
+]
+partitioned_vee = [
+    asset_def("A", partitions_def=two_partitions_partitions_def),
+    asset_def("B", partitions_def=two_partitions_partitions_def),
+    asset_def("C", ["A", "B"], partitions_def=two_partitions_partitions_def),
 ]
 lopsided_vee = [
     asset_def("root1"),
@@ -157,7 +162,6 @@ one_upstream_starts_later_than_downstream_skip_on_not_all_parents_updated = (
         ),
     )
 )
-
 
 # auto materialization policies
 auto_materialize_policy_scenarios = {
@@ -805,63 +809,76 @@ auto_materialize_policy_scenarios = {
             " is not set"
         ),
     ),
-    "memory_required1": AssetReconciliationScenario(
-        assets=[
-            *vee[0:-1],
-            *with_auto_materialize_policy(
-                vee[-1:],
-                AutoMaterializePolicy.eager().without_rules(
-                    AutoMaterializeRule.materialize_on_parent_updated(),
-                ),
-            ),
-        ],
+    "skipped_subset_unpartitioned": AssetReconciliationScenario(
+        assets=vee,
+        asset_selection=AssetSelection.keys("C"),
         cursor_from=AssetReconciliationScenario(
-            assets=[
-                *vee[0:-1],
-                *with_auto_materialize_policy(
-                    vee[-1:],
-                    AutoMaterializePolicy.eager().without_rules(
-                        AutoMaterializeRule.materialize_on_parent_updated(),
-                    ),
-                ),
-            ],
+            assets=vee,
+            asset_selection=AssetSelection.keys("C"),
             unevaluated_runs=[run(["A"])],
             # C must wait for B to be materialized
             expected_run_requests=[],
-            expected_evaluations=[
-                AssetEvaluationSpec(
-                    asset_key="C",
-                    rule_evaluations=[
-                        (
-                            AutoMaterializeRuleEvaluation(
-                                AutoMaterializeRule.materialize_on_missing().to_snapshot(),
-                                evaluation_data=None,
-                            ),
-                            None,
-                        ),
-                        (
-                            AutoMaterializeRuleEvaluation(
-                                AutoMaterializeRule.skip_on_parent_missing().to_snapshot(),
-                                evaluation_data=WaitingOnAssetsRuleEvaluationData(
-                                    waiting_on_asset_keys=frozenset({AssetKey("B")})
-                                ),
-                            ),
-                            None,
-                        ),
-                    ],
-                    num_requested=0,
-                    num_skipped=1,
-                    num_discarded=0,
-                )
-            ],
+            # C is skipped because B is not materialized
+            expected_skipped_subset={AssetKeyPartitionKey(AssetKey("C"))},
         ),
         unevaluated_runs=[run(["B"])],
         # can now run C because the skip rule is no longer true
         expected_run_requests=[run_request(["C"])],
-        expected_evaluations=[
-            AssetEvaluationSpec.from_single_rule(
-                asset_key="C", rule=AutoMaterializeRule.materialize_on_missing()
-            )
+        # C is no longer skipped
+        expected_skipped_subset=set(),
+    ),
+    "skipped_subset_partitioned": AssetReconciliationScenario(
+        assets=partitioned_vee,
+        asset_selection=AssetSelection.keys("C"),
+        cursor_from=AssetReconciliationScenario(
+            assets=partitioned_vee,
+            asset_selection=AssetSelection.keys("C"),
+            unevaluated_runs=[
+                run(["A"], partition_key="a"),
+                run(["A"], partition_key="b"),
+            ],
+            # C must wait for B to be materialized
+            expected_run_requests=[],
+            # C is skipped because B is not materialized
+            expected_skipped_subset={
+                AssetKeyPartitionKey(AssetKey("C"), partition_key="a"),
+                AssetKeyPartitionKey(AssetKey("C"), partition_key="b"),
+            },
+        ),
+        unevaluated_runs=[run(["B"], partition_key="a")],
+        # can now run C[a] because the skip rule is no longer true
+        expected_run_requests=[run_request(["C"], partition_key="a")],
+        # C[a] is no longer skipped
+        expected_skipped_subset={
+            AssetKeyPartitionKey(AssetKey("C"), partition_key="b"),
+        },
+    ),
+    "skipped_subset_partitioned2": AssetReconciliationScenario(
+        assets=partitioned_vee,
+        asset_selection=AssetSelection.keys("C"),
+        cursor_from=AssetReconciliationScenario(
+            assets=partitioned_vee,
+            asset_selection=AssetSelection.keys("C"),
+            unevaluated_runs=[
+                run(["A"], partition_key="a"),
+                run(["A"], partition_key="b"),
+            ],
+            # C must wait for B to be materialized
+            expected_run_requests=[],
+            # C is skipped because B is not materialized
+            expected_skipped_subset={
+                AssetKeyPartitionKey(AssetKey("C"), partition_key="a"),
+                AssetKeyPartitionKey(AssetKey("C"), partition_key="b"),
+            },
+        ),
+        # manually run C
+        unevaluated_runs=[
+            run(["C"], partition_key="a"),
         ],
+        expected_run_requests=[],
+        # C[a] is no longer skipped because it was executed manually
+        expected_skipped_subset={
+            AssetKeyPartitionKey(AssetKey("C"), partition_key="b"),
+        },
     ),
 }
