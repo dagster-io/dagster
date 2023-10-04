@@ -26,7 +26,6 @@ import {closestNodeInDirection, isNodeOffscreen} from '../graph/common';
 import {
   GraphExplorerOptions,
   OptionsOverlay,
-  QueryOverlay,
   RightInfoPanel,
   RightInfoPanelContent,
 } from '../pipelines/GraphExplorer';
