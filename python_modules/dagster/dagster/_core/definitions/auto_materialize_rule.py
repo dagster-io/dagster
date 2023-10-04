@@ -502,7 +502,17 @@ class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOut
     ) -> Tuple[Optional[AbstractSet[AssetKeyPartitionKey]], RuleEvaluationResults]:
         asset_partitions_by_waiting_on_asset_keys = defaultdict(set)
 
-        for candidate in context.candidates:
+        # we only need to evaluate net-new candidates and candidates whose parents have been updated
+        # since the previous tick. if a candidate's parents have not been updated since the previous
+        # tick, then this rule value cannot have updated
+        candidates_to_evaluate = context.new_candidates | {
+            ap
+            for ap in context.daemon_context.get_asset_partitions_with_newly_updated_parents_for_key(
+                context.asset_key
+            )
+            if ap in context.daemon_context.skipped_asset_graph_subset
+        }
+        for candidate in candidates_to_evaluate:
             outdated_ancestors = set()
             # find the root cause of why this asset partition's parents are outdated (if any)
             for parent in context.get_parents_that_will_not_be_materialized_on_current_tick(
@@ -523,7 +533,7 @@ class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOut
             if asset_partitions_by_waiting_on_asset_keys
             else []
         )
-        return None, results
+        return self._get_merged_results(context, results)
 
 
 @whitelist_for_serdes
@@ -540,7 +550,18 @@ class SkipOnParentMissingRule(AutoMaterializeRule, NamedTuple("_SkipOnParentMiss
         self, context: RuleEvaluationContext
     ) -> Tuple[Optional[AbstractSet[AssetKeyPartitionKey]], RuleEvaluationResults]:
         asset_partitions_by_waiting_on_asset_keys = defaultdict(set)
-        for candidate in context.candidates:
+
+        # we only need to evaluate net-new candidates and candidates whose parents have been updated
+        # since the previous tick. if a candidate's parents have not been updated since the previous
+        # tick, then this rule value cannot have updated
+        candidates_to_evaluate = context.new_candidates | {
+            ap
+            for ap in context.daemon_context.get_asset_partitions_with_newly_updated_parents_for_key(
+                context.asset_key
+            )
+            if ap in context.daemon_context.skipped_asset_graph_subset
+        }
+        for candidate in candidates_to_evaluate:
             missing_parent_asset_keys = set()
             for parent in context.get_parents_that_will_not_be_materialized_on_current_tick(
                 asset_partition=candidate
@@ -652,12 +673,11 @@ class SkipOnNotAllParentsUpdatedRule(
                     candidate
                 )
 
-        if asset_partitions_by_waiting_on_asset_keys:
-            return None, [
-                (WaitingOnAssetsRuleEvaluationData(waiting_on_asset_keys=k), v)
-                for k, v in asset_partitions_by_waiting_on_asset_keys.items()
-            ]
-        return None, []
+        results = [
+            (WaitingOnAssetsRuleEvaluationData(waiting_on_asset_keys=k), v)
+            for k, v in asset_partitions_by_waiting_on_asset_keys.items()
+        ] if asset_partitions_by_waiting_on_asset_keys else []
+        return self._get_merged_results(context, results)
 
 
 @whitelist_for_serdes
