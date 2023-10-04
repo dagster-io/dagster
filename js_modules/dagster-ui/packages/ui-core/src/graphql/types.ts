@@ -206,6 +206,11 @@ export type AssetCheckNeedsMigrationError = Error & {
   message: Scalars['String'];
 };
 
+export type AssetCheckNeedsUserCodeUpgrade = Error & {
+  __typename: 'AssetCheckNeedsUserCodeUpgrade';
+  message: Scalars['String'];
+};
+
 export enum AssetCheckSeverity {
   ERROR = 'ERROR',
   WARN = 'WARN',
@@ -222,7 +227,10 @@ export type AssetChecks = {
   checks: Array<AssetCheck>;
 };
 
-export type AssetChecksOrError = AssetCheckNeedsMigrationError | AssetChecks;
+export type AssetChecksOrError =
+  | AssetCheckNeedsMigrationError
+  | AssetCheckNeedsUserCodeUpgrade
+  | AssetChecks;
 
 export type AssetConnection = {
   __typename: 'AssetConnection';
@@ -4654,6 +4662,18 @@ export const buildAssetCheckNeedsMigrationError = (
   return {
     __typename: 'AssetCheckNeedsMigrationError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'enim',
+  };
+};
+
+export const buildAssetCheckNeedsUserCodeUpgrade = (
+  overrides?: Partial<AssetCheckNeedsUserCodeUpgrade>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetCheckNeedsUserCodeUpgrade'} & AssetCheckNeedsUserCodeUpgrade => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetCheckNeedsUserCodeUpgrade');
+  return {
+    __typename: 'AssetCheckNeedsUserCodeUpgrade',
+    message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'tempora',
   };
 };
 

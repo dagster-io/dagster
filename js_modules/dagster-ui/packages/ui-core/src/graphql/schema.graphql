@@ -3249,13 +3249,20 @@ type AutoMaterializeAssetEvaluationNeedsMigrationError implements Error {
   message: String!
 }
 
-union AssetChecksOrError = AssetChecks | AssetCheckNeedsMigrationError
+union AssetChecksOrError =
+    AssetChecks
+  | AssetCheckNeedsMigrationError
+  | AssetCheckNeedsUserCodeUpgrade
 
 type AssetChecks {
   checks: [AssetCheck!]!
 }
 
 type AssetCheckNeedsMigrationError implements Error {
+  message: String!
+}
+
+type AssetCheckNeedsUserCodeUpgrade implements Error {
   message: String!
 }
 

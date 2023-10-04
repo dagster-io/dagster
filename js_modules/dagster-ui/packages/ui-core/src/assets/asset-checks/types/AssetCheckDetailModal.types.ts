@@ -138,6 +138,7 @@ export type AssetCheckDetailsQuery = {
   __typename: 'Query';
   assetChecksOrError:
     | {__typename: 'AssetCheckNeedsMigrationError'; message: string}
+    | {__typename: 'AssetCheckNeedsUserCodeUpgrade'}
     | {
         __typename: 'AssetChecks';
         checks: Array<{
