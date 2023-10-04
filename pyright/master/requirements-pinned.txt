@@ -40,7 +40,7 @@ attrs==23.1.0
 autodocsumm==0.2.11
 autoflake==2.2.1
 -e python_modules/automation
-avro==1.10.2
+avro==1.11.3
 avro-gen3==0.7.10
 azure-core==1.29.1
 azure-identity==1.14.0
