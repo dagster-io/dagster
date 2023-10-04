@@ -514,7 +514,7 @@ class SqlScheduleStorage(ScheduleStorage):
     def get_latest_auto_materialize_asset_evaluations(
         self, asset_keys: AbstractSet[AssetKey]
     ) -> Sequence[AutoMaterializeAssetEvaluationRecord]:
-        latest_evaluations_subquery = (
+        latest_evaluations_subquery = db_subquery(
             db_select(
                 [
                     AssetDaemonAssetEvaluationsTable.c.asset_key,
@@ -526,8 +526,8 @@ class SqlScheduleStorage(ScheduleStorage):
                     [asset_key.to_string() for asset_key in asset_keys]
                 )
             )
-            .group_by(AssetDaemonAssetEvaluationsTable.c.asset_key)
-            .subquery("latest_evaluations")
+            .group_by(AssetDaemonAssetEvaluationsTable.c.asset_key),
+            name="latest_evaluations"
         )
         query = db_select(
             [

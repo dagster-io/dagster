@@ -740,8 +740,11 @@ class TestScheduleStorage:
         assert res[1].evaluation_id == 10
         assert res[1].evaluation.num_requested == 1
 
-        res = storage.get_latest_auto_materialize_asset_evaluations(
-            asset_keys={AssetKey("asset_one"), AssetKey("asset_two")}
+        res = sorted(
+            storage.get_latest_auto_materialize_asset_evaluations(
+                asset_keys={AssetKey("asset_one"), AssetKey("asset_two")}
+            ),
+            key=lambda x: x.evaluation.asset_key,
         )
 
         assert len(res) == 2
@@ -785,8 +788,11 @@ class TestScheduleStorage:
         assert len(res) == 1
         assert res[0].evaluation_id == 10
 
-        res = storage.get_latest_auto_materialize_asset_evaluations(
-            asset_keys={AssetKey("asset_one"), AssetKey("asset_two")}
+        res = sorted(
+            storage.get_latest_auto_materialize_asset_evaluations(
+                asset_keys={AssetKey("asset_one"), AssetKey("asset_two")}
+            ),
+            key=lambda x: x.evaluation.asset_key,
         )
 
         assert len(res) == 2
