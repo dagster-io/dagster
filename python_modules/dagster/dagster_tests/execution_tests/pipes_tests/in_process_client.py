@@ -25,7 +25,7 @@ from dagster_pipes import (
     PipesMessageWriterChannel,
     PipesParams,
     PipesParamsLoader,
-    open_dagster_pipes_context,
+    open_dagster_pipes,
 )
 
 
@@ -106,7 +106,7 @@ class _InProcessPipesClient(PipesClient):
         pipes_context_data = build_external_execution_context_data(context=context, extras=extras)
         pipes_context_loader = InProcessPipesContextLoader(pipes_context_data)
         pipes_message_writer = InProcessPipesMessageWriter()
-        with open_dagster_pipes_context(
+        with open_dagster_pipes(
             context_loader=pipes_context_loader,
             message_writer=pipes_message_writer,
             params_loader=InProcessPipesParamLoader(),
