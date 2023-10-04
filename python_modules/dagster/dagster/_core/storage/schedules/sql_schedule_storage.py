@@ -527,7 +527,7 @@ class SqlScheduleStorage(ScheduleStorage):
                 )
             )
             .group_by(AssetDaemonAssetEvaluationsTable.c.asset_key),
-            name="latest_evaluations"
+            name="latest_evaluations",
         )
         query = db_select(
             [
