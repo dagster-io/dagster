@@ -50,6 +50,9 @@ class PipesDockerLogsMessageReader(PipesMessageReader):
         for log_line in container.logs(stdout=True, stderr=True, stream=True, follow=True):
             extract_message_or_forward_to_stdout(handler, log_line)
 
+    def no_messages_debug_text(self) -> str:
+        return "Attempted to read messages by extracting them from docker logs directly."
+
 
 @experimental
 class _PipesDockerClient(PipesClient):

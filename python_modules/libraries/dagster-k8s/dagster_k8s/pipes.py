@@ -80,6 +80,9 @@ class PipesK8sPodLogsMessageReader(PipesMessageReader):
             for log_line in log_chunk.split("\n"):
                 extract_message_or_forward_to_stdout(handler, log_line)
 
+    def no_messages_debug_text(self) -> str:
+        return "Attempted to read messages by extracting them from kubernetes pod logs directly."
+
 
 @experimental
 class _PipesK8sClient(PipesClient):

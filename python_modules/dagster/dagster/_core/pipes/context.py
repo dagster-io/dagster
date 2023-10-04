@@ -54,7 +54,8 @@ class PipesMessageHandler:
         self._result_queue: Queue[PipesExecutionResult] = Queue()
         # Only read by the main thread after all messages are handled, so no need for a lock
         self._unmaterialized_assets: Set[AssetKey] = set(context.selected_asset_keys)
-        self._closed = False
+        self._received_any_msg = False
+        self._received_closed_msg = False
 
     @contextmanager
     def handle_messages(self, message_reader: PipesMessageReader) -> Iterator[PipesParams]:
@@ -68,8 +69,12 @@ class PipesMessageHandler:
             yield self._result_queue.get()
 
     @property
-    def is_closed(self) -> bool:
-        return self._closed
+    def received_any_message(self) -> bool:
+        return self._received_any_msg
+
+    @property
+    def received_closed_message(self) -> bool:
+        return self._received_closed_msg
 
     def _resolve_metadata(
         self, metadata: Mapping[str, PipesMetadataValue]
@@ -114,12 +119,18 @@ class PipesMessageHandler:
 
     # Type ignores because we currently validate in individual handlers
     def handle_message(self, message: PipesMessage) -> None:
-        if self._closed:
+        if self._received_closed_msg:
+            # should we be more flexible incase complexity causes some other messages to be flushed after close?
             raise DagsterPipesExecutionError(
                 f"Received message after pipes session closed: `{message}`"
             )
+
+        if not self._received_any_msg:
+            self._received_any_msg = True
+            self._context.log.info("[pipes] external process successfully opened dagster pipes.")
+
         if message["method"] == "opened":
-            self._handle_opened()
+            pass
         elif message["method"] == "closed":
             self._handle_closed()
         elif message["method"] == "report_asset_materialization":
@@ -131,12 +142,8 @@ class PipesMessageHandler:
         else:
             raise DagsterPipesExecutionError(f"Unknown message method: {message['method']}")
 
-    def _handle_opened(self) -> None:
-        self._context.log.info("Opened pipes connection.")
-
     def _handle_closed(self) -> None:
-        self._closed = True
-        self._context.log.info("Closed pipes connection.")
+        self._received_closed_msg = True
 
     def _handle_report_asset_materialization(
         self,

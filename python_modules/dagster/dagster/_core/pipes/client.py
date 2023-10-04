@@ -73,6 +73,10 @@ class PipesContextInjector(ABC):
             process to locate and load the injected context data.
         """
 
+    @abstractmethod
+    def no_messages_debug_text(self) -> str:
+        """A message to be displayed when no messages are received from the external process to aid with debugging."""
+
 
 @experimental
 class PipesMessageReader(ABC):
@@ -93,3 +97,7 @@ class PipesMessageReader(ABC):
             PipesParams: A dict of parameters that can be used by the external process to determine
             where to write messages.
         """
+
+    @abstractmethod
+    def no_messages_debug_text(self) -> str:
+        """A message to be displayed when no messages are received from the external process to aid with debugging."""
