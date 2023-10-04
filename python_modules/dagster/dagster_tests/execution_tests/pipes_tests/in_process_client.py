@@ -1,11 +1,8 @@
 from contextlib import contextmanager
 from typing import Callable, Iterator, List, Optional
 
-from dagster import (
-    ResourceParam,
-    _check as check,
-)
 from dagster._annotations import public
+from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.pipes.client import (
     PipesClient,
@@ -48,16 +45,11 @@ class InProcessPipesMessageWriteChannel(PipesMessageWriterChannel):
 
 class InProcessPipesMessageWriter(PipesMessageWriter):
     def __init__(self) -> None:
-        self._write_channel = InProcessPipesMessageWriteChannel()
-        check.inst(self._write_channel, InProcessPipesMessageWriteChannel)
-
-    @property
-    def write_channel(self) -> InProcessPipesMessageWriteChannel:
-        return self._write_channel
+        self.write_channel = InProcessPipesMessageWriteChannel()
 
     @contextmanager
     def open(self, params: PipesParams) -> Iterator[InProcessPipesMessageWriteChannel]:
-        yield self._write_channel
+        yield self.write_channel
 
 
 class InProcessPipesParamLoader(PipesParamsLoader):
