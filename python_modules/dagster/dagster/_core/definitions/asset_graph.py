@@ -1,5 +1,5 @@
 import functools
-from collections import defaultdict, deque
+from collections import deque
 from datetime import datetime
 from heapq import heapify, heappop, heappush
 from typing import (
@@ -173,7 +173,7 @@ class AssetGraph:
         auto_observe_interval_minutes_by_key: Dict[AssetKey, Optional[float]] = {}
         required_assets_and_checks_by_key: Dict[
             AssetKeyOrCheckKey, AbstractSet[AssetKeyOrCheckKey]
-        ] = defaultdict(set)
+        ] = {}
 
         for asset in all_assets:
             if isinstance(asset, SourceAsset):
@@ -194,18 +194,17 @@ class AssetGraph:
                 freshness_policies_by_key.update(asset.freshness_policies_by_key)
                 auto_materialize_policies_by_key.update(asset.auto_materialize_policies_by_key)
                 backfill_policies_by_key.update({key: asset.backfill_policy for key in asset.keys})
-                if len(asset.keys) > 1 and not asset.can_subset:
-                    all_required_keys = {*asset.check_keys, *asset.keys}
-                    for key in asset.keys:
-                        required_multi_asset_sets_by_key[key] = asset.keys
-                    for key in all_required_keys:
-                        required_assets_and_checks_by_key[key] = all_required_keys
-                elif len(asset.keys) == 1 and asset.check_specs and not asset.can_subset:
-                    required_keys = {asset.key, *asset.check_keys}
-                    for key in required_keys:
-                        required_assets_and_checks_by_key[key] = required_keys
-
                 code_versions_by_key.update(asset.code_versions_by_key)
+
+                if not asset.can_subset:
+                    if len(asset.keys) > 1:
+                        for key in asset.keys:
+                            required_multi_asset_sets_by_key[key] = asset.keys
+
+                    all_required_keys = {*asset.check_keys, *asset.keys}
+                    if len(all_required_keys) > 1:
+                        for key in all_required_keys:
+                            required_assets_and_checks_by_key[key] = all_required_keys
 
         return InternalAssetGraph(
             asset_dep_graph=generate_asset_dep_graph(assets_defs, source_assets),
