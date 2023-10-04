@@ -82,13 +82,21 @@ const AssetCheckDetailModalImpl = ({
       checkName,
     },
     nextCursorForResult: (data) => {
-      if (!data || data.assetChecksOrError.__typename === 'AssetCheckNeedsMigrationError') {
+      if (
+        !data ||
+        data.assetChecksOrError.__typename === 'AssetCheckNeedsMigrationError' ||
+        data.assetChecksOrError.__typename === 'AssetCheckNeedsUserCodeUpgrade'
+      ) {
         return undefined;
       }
       return data.assetChecksOrError.checks[0]?.executions[PAGE_SIZE - 1]?.id.toString();
     },
     getResultArray: (data) => {
-      if (!data || data.assetChecksOrError.__typename === 'AssetCheckNeedsMigrationError') {
+      if (
+        !data ||
+        data.assetChecksOrError.__typename === 'AssetCheckNeedsMigrationError' ||
+        data.assetChecksOrError.__typename === 'AssetCheckNeedsUserCodeUpgrade'
+      ) {
         return [];
       }
       return data.assetChecksOrError.checks[0]?.executions || [];
@@ -131,6 +139,9 @@ const AssetCheckDetailModalImpl = ({
       );
     }
     if (executionHistoryData.assetChecksOrError.__typename === 'AssetCheckNeedsMigrationError') {
+      return <MigrationRequired />;
+    }
+    if (executionHistoryData.assetChecksOrError.__typename === 'AssetCheckNeedsUserCodeUpgrade') {
       return <MigrationRequired />;
     }
     const check = executionHistoryData.assetChecksOrError.checks[0];
@@ -300,15 +311,25 @@ export function MigrationRequired() {
               A database schema migration is required to use asset checks. Run{' '}
               <Mono>dagster instance migrate</Mono>.
             </Body2>
-            {/* <Box
-              as="a"
-              href="https://docs.dagster.io/concepts/assets/asset-checks"
-              target="_blank"
-              flex={{direction: 'row', alignItems: 'end', gap: 4}}
-            >
-              Learn more about Asset Checks
-              <Icon name="open_in_new" color={Colors.Link} />
-            </Box> */}
+          </Box>
+        }
+      />
+    </Box>
+  );
+}
+
+export function NeedsUserCodeUpgrade() {
+  return (
+    <Box padding={24}>
+      <NonIdealState
+        icon="warning"
+        title="Upgrade required"
+        description={
+          <Box flex={{direction: 'column'}}>
+            <Body2 color={Colors.Gray700} style={{padding: '6px 0'}}>
+              Checks aren&apos;t supported with dagster versions before 1.5. Upgrade the dagster
+              library in this code location to use them.
+            </Body2>
           </Box>
         }
       />
