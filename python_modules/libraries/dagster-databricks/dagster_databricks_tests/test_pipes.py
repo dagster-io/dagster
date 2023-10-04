@@ -19,21 +19,19 @@ def script_fn():
     from dagster_pipes import (
         PipesDbfsContextLoader,
         PipesDbfsMessageWriter,
-        init_dagster_pipes,
+        open_dagster_pipes,
     )
 
-    context = init_dagster_pipes(
+    with open_dagster_pipes(
         context_loader=PipesDbfsContextLoader(), message_writer=PipesDbfsMessageWriter()
-    )
+    ) as context:
+        multiplier = context.get_extra("multiplier")
+        value = 2 * multiplier
 
-    multiplier = context.get_extra("multiplier")
-    value = 2 * multiplier
-
-    context.log.info(f"{context.asset_key}: {2} * {multiplier} = {value}")
-    context.report_asset_materialization(
-        metadata={"value": value},
-        data_version="alpha",
-    )
+        context.log.info(f"{context.asset_key}: {2} * {multiplier} = {value}")
+        context.report_asset_materialization(
+            metadata={"value": value},
+        )
 
 
 @contextmanager
@@ -98,12 +96,12 @@ def test_pipes_client(client: WorkspaceClient):
 
     result = materialize(
         [number_x],
-        resources={"pipes_databricks_client": PipesDatabricksClient(client)},
+        resources={"pipes_client": PipesDatabricksClient(client)},
         raise_on_error=False,
     )
     assert result.success
     mats = result.asset_materializations_for_node(number_x.op.name)
-    assert mats[0].metadata["path"]
+    assert mats[0].metadata["value"].value == 4
 
 
 @pytest.mark.skipif(IS_BUILDKITE, reason="Not configured to run on BK yet.")
@@ -116,5 +114,5 @@ def test_nonexistent_entry_point(client: WorkspaceClient):
     with pytest.raises(DagsterPipesExecutionError, match=r"Cannot read the python file"):
         materialize(
             [fake],
-            resources={"pipes_databricks_client": PipesDatabricksClient(client)},
+            resources={"pipes_client": PipesDatabricksClient(client)},
         )

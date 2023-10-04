@@ -76,9 +76,8 @@ def external_script() -> Iterator[str]:
         import time
 
         from dagster_pipes import (
-            PipesContext,
             PipesS3MessageWriter,
-            init_dagster_pipes,
+            open_dagster_pipes,
         )
 
         if os.getenv("MESSAGE_READER_SPEC") == "user/s3":
@@ -91,23 +90,24 @@ def external_script() -> Iterator[str]:
         else:
             message_writer = None  # use default
 
-        init_dagster_pipes(message_writer=message_writer)
-        context = PipesContext.get()
-        context.log.info("hello world")
-        time.sleep(0.1)  # sleep to make sure that we encompass multiple intervals for blob store IO
-        context.report_asset_materialization(
-            metadata={"bar": {"raw_value": context.get_extra("bar"), "type": "md"}},
-            data_version="alpha",
-        )
-        context.report_asset_check(
-            "foo_check",
-            passed=True,
-            severity="WARN",
-            metadata={
-                "meta_1": 1,
-                "meta_2": {"raw_value": "foo", "type": "text"},
-            },
-        )
+        with open_dagster_pipes(message_writer=message_writer) as context:
+            context.log.info("hello world")
+            time.sleep(
+                0.1
+            )  # sleep to make sure that we encompass multiple intervals for blob store IO
+            context.report_asset_materialization(
+                metadata={"bar": {"raw_value": context.get_extra("bar"), "type": "md"}},
+                data_version="alpha",
+            )
+            context.report_asset_check(
+                "foo_check",
+                passed=True,
+                severity="WARN",
+                metadata={
+                    "meta_1": 1,
+                    "meta_2": {"raw_value": "foo", "type": "text"},
+                },
+            )
 
     with temp_script(script_fn) as script_path:
         yield script_path
@@ -201,10 +201,10 @@ def test_pipes_subprocess(
 
 def test_pipes_subprocess_client_no_return():
     def script_fn():
-        from dagster_pipes import init_dagster_pipes
+        from dagster_pipes import open_dagster_pipes
 
-        context = init_dagster_pipes()
-        context.report_asset_materialization()
+        with open_dagster_pipes() as context:
+            context.report_asset_materialization()
 
     @asset
     def foo(context: OpExecutionContext, client: PipesSubprocessClient):
@@ -226,13 +226,13 @@ def test_pipes_subprocess_client_no_return():
 
 def test_pipes_multi_asset():
     def script_fn():
-        from dagster_pipes import init_dagster_pipes
+        from dagster_pipes import open_dagster_pipes
 
-        context = init_dagster_pipes()
-        context.report_asset_materialization(
-            {"foo_meta": "ok"}, data_version="alpha", asset_key="foo"
-        )
-        context.report_asset_materialization(data_version="alpha", asset_key="bar")
+        with open_dagster_pipes() as context:
+            context.report_asset_materialization(
+                {"foo_meta": "ok"}, data_version="alpha", asset_key="foo"
+            )
+            context.report_asset_materialization(data_version="alpha", asset_key="bar")
 
     @multi_asset(specs=[AssetSpec("foo"), AssetSpec("bar")])
     def foo_bar(context: AssetExecutionContext, pipes_subprocess_client: PipesSubprocessClient):
@@ -259,7 +259,10 @@ def test_pipes_multi_asset():
 
 def test_pipes_dynamic_partitions():
     def script_fn():
-        pass
+        from dagster_pipes import open_dagster_pipes
+
+        with open_dagster_pipes() as _:
+            pass
 
     @asset(partitions_def=DynamicPartitionsDefinition(name="blah"))
     def foo(context: AssetExecutionContext, pipes_subprocess_client: PipesSubprocessClient):
@@ -282,26 +285,26 @@ def test_pipes_dynamic_partitions():
 
 def test_pipes_typed_metadata():
     def script_fn():
-        from dagster_pipes import init_dagster_pipes
+        from dagster_pipes import open_dagster_pipes
 
-        context = init_dagster_pipes()
-        context.report_asset_materialization(
-            metadata={
-                "infer_meta": "bar",
-                "text_meta": {"raw_value": "bar", "type": "text"},
-                "url_meta": {"raw_value": "http://bar.com", "type": "url"},
-                "path_meta": {"raw_value": "/bar", "type": "path"},
-                "notebook_meta": {"raw_value": "/bar.ipynb", "type": "notebook"},
-                "json_meta": {"raw_value": ["bar"], "type": "json"},
-                "md_meta": {"raw_value": "bar", "type": "md"},
-                "float_meta": {"raw_value": 1.0, "type": "float"},
-                "int_meta": {"raw_value": 1, "type": "int"},
-                "bool_meta": {"raw_value": True, "type": "bool"},
-                "dagster_run_meta": {"raw_value": "foo", "type": "dagster_run"},
-                "asset_meta": {"raw_value": "bar/baz", "type": "asset"},
-                "null_meta": {"raw_value": None, "type": "null"},
-            }
-        )
+        with open_dagster_pipes() as context:
+            context.report_asset_materialization(
+                metadata={
+                    "infer_meta": "bar",
+                    "text_meta": {"raw_value": "bar", "type": "text"},
+                    "url_meta": {"raw_value": "http://bar.com", "type": "url"},
+                    "path_meta": {"raw_value": "/bar", "type": "path"},
+                    "notebook_meta": {"raw_value": "/bar.ipynb", "type": "notebook"},
+                    "json_meta": {"raw_value": ["bar"], "type": "json"},
+                    "md_meta": {"raw_value": "bar", "type": "md"},
+                    "float_meta": {"raw_value": 1.0, "type": "float"},
+                    "int_meta": {"raw_value": 1, "type": "int"},
+                    "bool_meta": {"raw_value": True, "type": "bool"},
+                    "dagster_run_meta": {"raw_value": "foo", "type": "dagster_run"},
+                    "asset_meta": {"raw_value": "bar/baz", "type": "asset"},
+                    "null_meta": {"raw_value": None, "type": "null"},
+                }
+            )
 
     @asset
     def foo(context: AssetExecutionContext, pipes_subprocess_client: PipesSubprocessClient):
@@ -362,10 +365,10 @@ def test_pipes_asset_failed():
 
 def test_pipes_asset_invocation():
     def script_fn():
-        from dagster_pipes import init_dagster_pipes
+        from dagster_pipes import open_dagster_pipes
 
-        context = init_dagster_pipes()
-        context.log.info("hello world")
+        with open_dagster_pipes() as context:
+            context.log.info("hello world")
 
     @asset
     def foo(context: AssetExecutionContext, pipes_subprocess_client: PipesSubprocessClient):
@@ -383,19 +386,19 @@ def test_pipes_no_orchestration():
     def script_fn():
         from dagster_pipes import (
             PipesContext,
-            init_dagster_pipes,
             is_dagster_pipes_process,
+            open_dagster_pipes,
         )
 
         assert not is_dagster_pipes_process()
 
-        init_dagster_pipes()
-        context = PipesContext.get()
-        context.log.info("hello world")
-        context.report_asset_materialization(
-            metadata={"bar": context.get_extra("bar")},
-            data_version="alpha",
-        )
+        with open_dagster_pipes() as _:
+            context = PipesContext.get()
+            context.log.info("hello world")
+            context.report_asset_materialization(
+                metadata={"bar": context.get_extra("bar")},
+                data_version="alpha",
+            )
 
     with temp_script(script_fn) as script_path:
         cmd = ["python", script_path]
@@ -446,7 +449,10 @@ def test_pipes_no_client(external_script):
 
 def test_pipes_no_client_no_yield():
     def script_fn():
-        pass
+        from dagster_pipes import open_dagster_pipes
+
+        with open_dagster_pipes() as _:
+            pass
 
     @asset
     def foo(context: OpExecutionContext):
@@ -468,3 +474,23 @@ def test_pipes_no_client_no_yield():
         ),
     ):
         materialize([foo])
+
+
+def test_pipes_manual_close():
+    def script_fn():
+        from dagster_pipes import open_dagster_pipes
+
+        context = open_dagster_pipes()
+        context.report_asset_materialization(data_version="alpha")
+        context.close()
+
+    @asset
+    def foo(context: OpExecutionContext, pipes_client: PipesSubprocessClient):
+        with temp_script(script_fn) as script_path:
+            cmd = [_PYTHON_EXECUTABLE, script_path]
+            return pipes_client.run(command=cmd, context=context).get_results()
+
+    with instance_for_test() as instance:
+        materialize([foo], instance=instance, resources={"pipes_client": PipesSubprocessClient()})
+        mat = instance.get_latest_materialization_event(foo.key)
+        assert mat and mat.asset_materialization

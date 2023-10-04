@@ -208,7 +208,10 @@ class PipesDbfsMessageReader(PipesBlobStoreMessageReader):
         message_path = os.path.join(params["path"], f"{index}.json")
         try:
             raw_message = self.dbfs_client.read(message_path)
-            return raw_message.data
+
+            # Files written to dbfs using the Python IO interface used in PipesDbfsMessageWriter are
+            # base64-encoded.
+            return base64.b64decode(raw_message.data).decode("utf-8")
         # An error here is an expected result, since an IOError will be thrown if the next message
         # chunk doesn't yet exist. Swallowing the error here is equivalent to doing a no-op on a
         # status check showing a non-existent file.
