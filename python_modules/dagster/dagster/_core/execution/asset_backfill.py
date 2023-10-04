@@ -249,16 +249,21 @@ class AssetBackfillData(NamedTuple):
                 failed_subset = self.failed_and_downstream_subset.get_partitions_subset(asset_key)
                 requested_subset = self.requested_subset.get_partitions_subset(asset_key)
 
+                # The failed subset includes partitions that failed and their downstream partitions.
+                # The downstream partitions are not included in the requested subset, so we determine
+                # the in progress subset by subtracting partitions that are failed and requested.
+                requested_and_failed_subset = failed_subset & requested_subset
+                in_progress_subset = requested_subset - (
+                    requested_and_failed_subset | materialized_subset
+                )
+
                 return PartitionedAssetBackfillStatus(
                     asset_key,
                     len(self.target_subset.get_partitions_subset(asset_key)),
                     {
                         AssetBackfillStatus.MATERIALIZED: len(materialized_subset),
                         AssetBackfillStatus.FAILED: len(failed_subset - materialized_subset),
-                        AssetBackfillStatus.IN_PROGRESS: len(requested_subset) - (
-                            len((failed_subset & requested_subset) - materialized_subset)
-                            + len(materialized_subset)
-                        ),
+                        AssetBackfillStatus.IN_PROGRESS: len(in_progress_subset),
                     },
                 )
             else:
