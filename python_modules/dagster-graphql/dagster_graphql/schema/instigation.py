@@ -49,13 +49,7 @@ from .tags import GraphenePipelineTag
 from .util import ResolveInfo, non_null_list
 
 
-class GrapheneInstigationType(graphene.Enum):
-    SCHEDULE = "SCHEDULE"
-    SENSOR = "SENSOR"
-
-    class Meta:
-        name = "InstigationType"
-
+GrapheneInstigationType = graphene.Enum.from_enum(InstigatorType, "InstigationType")
 
 class GrapheneInstigationStatus(graphene.Enum):
     RUNNING = "RUNNING"
@@ -251,6 +245,7 @@ class GrapheneInstigationTick(graphene.ObjectType):
     requestedAssetMaterializationCount = graphene.NonNull(graphene.Int)
     requestedMaterializationsForAssets = non_null_list(GrapheneRequestedMaterializationsForAsset)
     autoMaterializeAssetEvaluationId = graphene.Field(graphene.Int)
+    instigationType = graphene.NonNull(GrapheneInstigationType)
 
     class Meta:
         name = "InstigationTick"
@@ -264,6 +259,7 @@ class GrapheneInstigationTick(graphene.ObjectType):
             runIds=tick.run_ids,
             runKeys=tick.run_keys,
             error=GraphenePythonError(tick.error) if tick.error else None,
+            instigationType=tick.instigator_type,
             skipReason=tick.skip_reason,
             originRunIds=tick.origin_run_ids,
             cursor=tick.cursor,

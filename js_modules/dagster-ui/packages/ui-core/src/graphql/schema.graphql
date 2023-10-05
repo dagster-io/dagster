@@ -2354,6 +2354,7 @@ type InstigationState {
 enum InstigationType {
   SCHEDULE
   SENSOR
+  AUTO_MATERIALIZE
 }
 
 enum InstigationStatus {
@@ -2393,6 +2394,7 @@ type InstigationTick {
   requestedAssetMaterializationCount: Int!
   requestedMaterializationsForAssets: [RequestedMaterializationsForAsset!]!
   autoMaterializeAssetEvaluationId: Int
+  instigationType: InstigationType!
 }
 
 type InstigationEventConnection {
