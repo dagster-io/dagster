@@ -1,3 +1,4 @@
+from dagster._core.pipes.utils import open_pipes_session
 import pytest
 from dagster import (
     AssetCheckSpec,
@@ -13,7 +14,7 @@ from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster_pipes import DagsterPipesError, PipesContext
 
-from .in_process_client import InProcessPipesClient
+from .in_process_client import InProcessContextInjector, InProcessPipesClient
 
 
 def execute_asset_through_def(assets_def, resources) -> ExecuteInProcessResult:
