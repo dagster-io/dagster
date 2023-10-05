@@ -214,6 +214,9 @@ query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: Stri
                     description
                     className
                 }
+                assetKey {
+                    path
+                }
             }
             currentEvaluationId
         }
@@ -267,6 +270,9 @@ query GetEvaluationsForEvaluationIdQuery($evaluationId: Int!) {
                     description
                     className
                 }
+                assetKey {
+                    path
+                }
             }
             currentEvaluationId
         }
@@ -308,6 +314,9 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
         )
         assert len(results.data["autoMaterializeAssetEvaluationsOrError"]["records"]) == 1
         assert results.data["autoMaterializeAssetEvaluationsOrError"]["records"][0]["rules"] is None
+        assert results.data["autoMaterializeAssetEvaluationsOrError"]["records"][0]["assetKey"] == {
+            "path": ["asset_one"]
+        }
 
         results_asset_two = execute_dagster_graphql(
             graphql_context,
