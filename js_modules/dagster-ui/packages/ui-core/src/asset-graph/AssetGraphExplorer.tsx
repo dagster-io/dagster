@@ -8,6 +8,7 @@ import {
   Icon,
   Tooltip,
   TextInputContainer,
+  Box,
 } from '@dagster-io/ui-components';
 import pickBy from 'lodash/pickBy';
 import uniq from 'lodash/uniq';
@@ -442,14 +443,18 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
               </Tooltip>
             )}
             <div>{fetchOptionFilters}</div>
-            <GraphQueryInput
-              type="asset_graph"
-              items={graphQueryItems}
-              value={explorerPath.opsQuery}
-              placeholder="Type an asset subset…"
-              onChange={(opsQuery) => onChangeExplorerPath({...explorerPath, opsQuery}, 'replace')}
-              popoverPosition="bottom-left"
-            />
+            <GraphQueryInputFlexWrap>
+              <GraphQueryInput
+                type="asset_graph"
+                items={graphQueryItems}
+                value={explorerPath.opsQuery}
+                placeholder="Type an asset subset…"
+                onChange={(opsQuery) =>
+                  onChangeExplorerPath({...explorerPath, opsQuery}, 'replace')
+                }
+                popoverPosition="bottom-left"
+              />
+            </GraphQueryInputFlexWrap>
             <Button
               onClick={() => {
                 onChangeExplorerPath({...explorerPath, opsQuery: ''}, 'push');
@@ -605,11 +610,15 @@ const TopbarWrapper = styled.div`
   align-items: center;
   padding: 12px;
   border-bottom: 1px solid ${Colors.KeylineGray};
-  ${TextInputContainer} {
-    width: 100%;
-  }
-  > :nth-child(2) {
-    flex: 1;
+`;
+
+const GraphQueryInputFlexWrap = styled.div`
+  flex: 1;
+
+  > ${Box} {
+    ${TextInputContainer} {
+      width: 100%;
+    }
     > * {
       display: block;
       width: 100%;
