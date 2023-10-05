@@ -7,14 +7,19 @@ import {timestampToString} from './timestampToString';
 interface Props {
   timestamp: {ms: number} | {unix: number};
   timeFormat?: TimeFormat;
+  dateTimeSeparator?: string;
 }
 
 export const Timestamp: React.FC<Props> = (props) => {
-  const {timestamp, timeFormat} = props;
+  const {timestamp, timeFormat, dateTimeSeparator} = props;
   const {
     timezone: [timezone],
     hourCycle: [hourCycle],
   } = React.useContext(TimeContext);
   const locale = navigator.language;
-  return <>{timestampToString({timestamp, locale, timezone, timeFormat, hourCycle})}</>;
+  return (
+    <>
+      {timestampToString({timestamp, locale, dateTimeSeparator, timezone, timeFormat, hourCycle})}
+    </>
+  );
 };

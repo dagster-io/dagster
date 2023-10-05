@@ -6,6 +6,7 @@ type Config = {
   timestamp: {ms: number} | {unix: number};
   locale: string;
   timezone: string;
+  dateTimeSeparator?: string;
   timeFormat?: TimeFormat;
   hourCycle?: HourCycle;
 };
@@ -17,6 +18,7 @@ export const timestampToString = (config: Config) => {
     timezone,
     timeFormat = DEFAULT_TIME_FORMAT,
     hourCycle = 'Automatic',
+    dateTimeSeparator = ', ',
   } = config;
 
   const msec = 'ms' in timestamp ? timestamp.ms : timestamp.unix * 1000;
@@ -33,7 +35,7 @@ export const timestampToString = (config: Config) => {
   });
   const sameYear = timestampYear === viewerYear;
 
-  return date.toLocaleDateString(locale, {
+  const stringDate = date.toLocaleDateString(locale, {
     month: 'short',
     day: 'numeric',
     year: sameYear ? undefined : 'numeric',
@@ -44,4 +46,5 @@ export const timestampToString = (config: Config) => {
     timeZone: targetTimezone,
     timeZoneName: timeFormat.showTimezone ? 'short' : undefined,
   });
+  return stringDate.replace(', ', dateTimeSeparator);
 };
