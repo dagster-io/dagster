@@ -1430,6 +1430,7 @@ type WorkspaceLocationEntry {
   displayMetadata: [RepositoryMetadata!]!
   updatedTimestamp: Float!
   permissions: [Permission!]!
+  featureFlags: [FeatureFlag!]!
 }
 
 union RepositoryLocationOrLoadError = RepositoryLocation | PythonError
@@ -1443,6 +1444,11 @@ type Permission {
   permission: String!
   value: Boolean!
   disabledReason: String
+}
+
+type FeatureFlag {
+  name: String!
+  enabled: Boolean!
 }
 
 type ReloadWorkspaceMutation {

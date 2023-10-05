@@ -1240,6 +1240,12 @@ export type FailureMetadata = DisplayableEvent & {
   metadataEntries: Array<MetadataEntry>;
 };
 
+export type FeatureFlag = {
+  __typename: 'FeatureFlag';
+  enabled: Scalars['Boolean'];
+  name: Scalars['String'];
+};
+
 export type FieldNotDefinedConfigError = PipelineConfigValidationError & {
   __typename: 'FieldNotDefinedConfigError';
   fieldName: Scalars['String'];
@@ -4277,6 +4283,7 @@ export type Workspace = {
 export type WorkspaceLocationEntry = {
   __typename: 'WorkspaceLocationEntry';
   displayMetadata: Array<RepositoryMetadata>;
+  featureFlags: Array<FeatureFlag>;
   id: Scalars['ID'];
   loadStatus: RepositoryLocationLoadStatus;
   locationOrLoadError: Maybe<RepositoryLocationOrLoadError>;
@@ -6593,6 +6600,19 @@ export const buildFailureMetadata = (
     label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'unde',
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
+  };
+};
+
+export const buildFeatureFlag = (
+  overrides?: Partial<FeatureFlag>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'FeatureFlag'} & FeatureFlag => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('FeatureFlag');
+  return {
+    __typename: 'FeatureFlag',
+    enabled: overrides && overrides.hasOwnProperty('enabled') ? overrides.enabled! : true,
+    name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'et',
   };
 };
 
@@ -12523,6 +12543,8 @@ export const buildWorkspaceLocationEntry = (
     __typename: 'WorkspaceLocationEntry',
     displayMetadata:
       overrides && overrides.hasOwnProperty('displayMetadata') ? overrides.displayMetadata! : [],
+    featureFlags:
+      overrides && overrides.hasOwnProperty('featureFlags') ? overrides.featureFlags! : [],
     id:
       overrides && overrides.hasOwnProperty('id')
         ? overrides.id!
