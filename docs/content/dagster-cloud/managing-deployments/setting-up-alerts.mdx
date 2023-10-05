@@ -6,7 +6,7 @@ title: "Setting up alerts in Dagster Cloud | Dagster Docs"
 
 <Note>This guide is applicable to Dagster Cloud.</Note>
 
-In this guide, we'll walk you through configuring job and run alerts in Dagster Cloud.
+In this guide, we'll walk you through configuring alerts in Dagster Cloud.
 
 ---
 
@@ -14,14 +14,13 @@ In this guide, we'll walk you through configuring job and run alerts in Dagster 
 
 Alert policies define which events will trigger an alert, the conditions under which an alert will be sent, and how the alert will be sent.
 
-Currently, alerts can be triggered by job run failure/success, schedule/sensor tick failure, code location load error, and agent downtime.
-
+- **Asset based alert policies** can trigger on asset materialization failure or success, as well as asset check error, warn, passed, or failure to execute. An asset group or asset key can be provided to asset based alert policies, which limits notifications to only fire if the asset group or asset key matches the materialized asset. In the case of checks, notifications will only be sent if the asset group/key to which the check is attached matches.
 - **Job run based alert policies** include a set of configured tags. If an alert policy has no configured tags, all jobs will be eligible for that alert. Otherwise, only jobs that contain all the tags for a given alert policy are eligible for that alert.
 - **Alert policies created for schedule/sensor tick failure will apply to all schedules/sensors**. However, you will only receive alerts when the schedule/sensor changes from a state of succeeding to failing, so subsequent failures will not trigger new alerts.
 - **Code location error alert policies** will trigger when a code location fails to load due to an error.
 - **Agent downtime alert policies** will trigger when a Hybrid agent stops heart beating.
 
-Alert policies are configured on a per-deployment basis. For example, alerts configured in a `prod` deployment are only applicable to jobs in that deployment.
+Alert policies are configured on a per-deployment basis. For example, asset alerts configured in a `prod` deployment are only applicable to assets in that deployment.
 
 Currently, Slack and email notifications are supported.
 
@@ -56,14 +55,20 @@ Currently, Slack and email notifications are supported.
 
 4. Click **+ Create alert policy**.
 
-5. From the **Alert Policy type** drop-down, select **Run alert**, **Schedule/Sensor alert**, **Code location error alert**, or **Agent downtime alert**.
+5. From the **Alert Policy type** drop-down, select the type of alert to create.
 
 6. In the **Create alert policy** window, fill in the following:
 
    - **Alert policy name** - Enter a name for the alert policy. For example, `slack_urgent_failure`
    - **Description** - Enter a description for the alert policy
 
-   For run-based alerts, fill out these additional options:
+   For asset-based alerts, fill out these additional options:
+
+   - **Asset group** - Select the asset group to monitor. You will have the option to select from all asset groups in the deployment.
+   - **Asset key** - Select the asset key to monitor. You will have the option to select from all asset keys in the deployment. **Note:** If you select an asset group, you will not be able to select an asset key.
+   - **Events** - Select whether the alert should trigger on asset materialization failure, asset materialization success, asset check error, asset check warn, asset check passed, or asset check failure to execute
+
+   For job-based alerts, fill out these additional options:
 
    - **Tags** - Add tag(s) for the alert policy. Jobs with these tags will trigger the alert. For example: `level:critical` or `team:sales`
    - **Events** - Select whether the alert should trigger on job success, failure, or both
