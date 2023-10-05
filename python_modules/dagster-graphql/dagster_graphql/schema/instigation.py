@@ -224,6 +224,14 @@ class GrapheneDynamicPartitionsRequestResult(DynamicPartitionsRequestMixin, grap
         return self._dynamic_partitions_request_result.skipped_partitions
 
 
+class GrapheneRequestedMaterializationsForAsset(graphene.ObjectType):
+    assetKey = graphene.NonNull(GrapheneAssetKey)
+    partitionKeys = non_null_list(graphene.String)
+
+    class Meta:
+        name = "RequestedMaterializationsForAsset"
+
+
 class GrapheneInstigationTick(graphene.ObjectType):
     id = graphene.NonNull(graphene.ID)
     status = graphene.NonNull(GrapheneInstigationTickStatus)
@@ -241,6 +249,7 @@ class GrapheneInstigationTick(graphene.ObjectType):
     endTimestamp = graphene.Field(graphene.Float)
     requestedAssetKeys = non_null_list(GrapheneAssetKey)
     requestedAssetMaterializationCount = graphene.NonNull(graphene.Int)
+    requestedMaterializationsForAssets = non_null_list(GrapheneRequestedMaterializationsForAsset)
     autoMaterializeAssetEvaluationId = graphene.Field(graphene.Int)
 
     class Meta:
@@ -293,6 +302,14 @@ class GrapheneInstigationTick(graphene.ObjectType):
     def resolve_requestedAssetKeys(self, _):
         return [
             GrapheneAssetKey(path=asset_key.path) for asset_key in self._tick.requested_asset_keys
+        ]
+
+    def resolve_requestedMaterializationsForAssets(self, _):
+        return [
+            GrapheneRequestedMaterializationsForAsset(
+                assetKey=GrapheneAssetKey(path=asset_key.path), partitionKeys=list(partition_keys)
+            )
+            for asset_key, partition_keys in self._tick.requested_assets_and_partitions.items()
         ]
 
     def resolve_requestedAssetMaterializationCount(self, _):

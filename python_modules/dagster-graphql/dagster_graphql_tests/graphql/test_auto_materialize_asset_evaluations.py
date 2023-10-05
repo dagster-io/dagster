@@ -46,6 +46,12 @@ query AssetDameonTicksQuery($dayRange: Int, $dayOffset: Int, $statuses: [Instiga
         requestedAssetKeys {
             path
         }
+        requestedMaterializationsForAssets {
+            assetKey {
+                path
+            }
+            partitionKeys
+        }
         requestedAssetMaterializationCount
         autoMaterializeAssetEvaluationId
     }
@@ -91,6 +97,7 @@ class TestAutoMaterializeTicks(ExecutingGraphQLContextTestMatrix):
             run_requests=[
                 RunRequest(asset_selection=[AssetKey("foo"), AssetKey("bar")], partition_key="abc"),
                 RunRequest(asset_selection=[AssetKey("bar")], partition_key="def"),
+                RunRequest(asset_selection=[AssetKey("baz")], partition_key=None),
             ],
         )
 
@@ -126,9 +133,23 @@ class TestAutoMaterializeTicks(ExecutingGraphQLContextTestMatrix):
         assert tick["autoMaterializeAssetEvaluationId"] == 3
         assert sorted(tick["requestedAssetKeys"], key=lambda x: x["path"][0]) == [
             {"path": ["bar"]},
+            {"path": ["baz"]},
             {"path": ["foo"]},
         ]
-        assert tick["requestedAssetMaterializationCount"] == 3
+
+        asset_materializations = tick["requestedMaterializationsForAssets"]
+        by_asset_key = {
+            AssetKey.from_coercible(mat["assetKey"]["path"]).to_user_string(): mat["partitionKeys"]
+            for mat in asset_materializations
+        }
+
+        assert {key: sorted(val) for key, val in by_asset_key.items()} == {
+            "foo": ["abc"],
+            "bar": ["abc", "def"],
+            "baz": [],
+        }
+
+        assert tick["requestedAssetMaterializationCount"] == 4
 
         result = execute_dagster_graphql(
             graphql_context,

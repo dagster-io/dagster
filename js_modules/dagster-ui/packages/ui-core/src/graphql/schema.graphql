@@ -2391,6 +2391,7 @@ type InstigationTick {
   endTimestamp: Float
   requestedAssetKeys: [AssetKey!]!
   requestedAssetMaterializationCount: Int!
+  requestedMaterializationsForAssets: [RequestedMaterializationsForAsset!]!
   autoMaterializeAssetEvaluationId: Int
 }
 
@@ -2411,6 +2412,11 @@ type DynamicPartitionsRequestResult {
   partitionsDefName: String!
   type: DynamicPartitionsRequestType!
   skippedPartitionKeys: [String!]!
+}
+
+type RequestedMaterializationsForAsset {
+  assetKey: AssetKey!
+  partitionKeys: [String!]!
 }
 
 type ScheduleData {
