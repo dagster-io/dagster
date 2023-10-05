@@ -8,6 +8,7 @@ import {
   Icon,
   Tooltip,
   TextInputContainer,
+  Box,
 } from '@dagster-io/ui-components';
 import pickBy from 'lodash/pickBy';
 import uniq from 'lodash/uniq';
@@ -428,10 +429,8 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
             </OptionsOverlay>
           )}
 
-          <TopbarWrapper>
-            {showSidebar || !flagDAGSidebar ? (
-              <div />
-            ) : (
+          <TopbarWrapper style={{paddingLeft: showSidebar || !flagDAGSidebar ? 12 : 24}}>
+            {showSidebar || !flagDAGSidebar ? undefined : (
               <Tooltip content="Show sidebar">
                 <Button
                   icon={<Icon name="panel_show_left" />}
@@ -442,14 +441,18 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
               </Tooltip>
             )}
             <div>{fetchOptionFilters}</div>
-            <GraphQueryInput
-              type="asset_graph"
-              items={graphQueryItems}
-              value={explorerPath.opsQuery}
-              placeholder="Type an asset subset…"
-              onChange={(opsQuery) => onChangeExplorerPath({...explorerPath, opsQuery}, 'replace')}
-              popoverPosition="bottom-left"
-            />
+            <GraphQueryInputFlexWrap>
+              <GraphQueryInput
+                type="asset_graph"
+                items={graphQueryItems}
+                value={explorerPath.opsQuery}
+                placeholder="Type an asset subset…"
+                onChange={(opsQuery) =>
+                  onChangeExplorerPath({...explorerPath, opsQuery}, 'replace')
+                }
+                popoverPosition="bottom-left"
+              />
+            </GraphQueryInputFlexWrap>
             <Button
               onClick={() => {
                 onChangeExplorerPath({...explorerPath, opsQuery: ''}, 'push');
@@ -599,17 +602,21 @@ const TopbarWrapper = styled.div`
   top: 0;
   left: 0;
   right: 0;
-  display: grid;
+  display: flex;
   background: white;
-  grid-template-columns: auto auto 1fr auto auto auto auto;
   gap: 12px;
   align-items: center;
-  padding: 12px 15px;
+  padding: 12px;
   border-bottom: 1px solid ${Colors.KeylineGray};
-  ${TextInputContainer} {
-    width: 100%;
-  }
-  > :nth-child(3) {
+`;
+
+const GraphQueryInputFlexWrap = styled.div`
+  flex: 1;
+
+  > ${Box} {
+    ${TextInputContainer} {
+      width: 100%;
+    }
     > * {
       display: block;
       width: 100%;
