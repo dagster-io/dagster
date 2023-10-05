@@ -227,13 +227,11 @@ class AutoMaterializeRule(ABC):
             return []
 
         # here, we query the instance for the last recorded evaluation record
-        previous_evaluation_record = context.instance_queryer.get_previous_asset_evaluation_record(
-            asset_key=context.asset_key
-        )
-        if previous_evaluation_record is None:
+        previous_evaluation = context.cursor.latest_evaluation_by_asset_key.get(context.asset_key)
+        if previous_evaluation is None:
             return []
 
-        return previous_evaluation_record.evaluation.get_rule_evaluation_results(
+        return previous_evaluation.get_rule_evaluation_results(
             rule_snapshot=self.to_snapshot(),
             asset_graph=context.asset_graph,
         )
@@ -673,10 +671,14 @@ class SkipOnNotAllParentsUpdatedRule(
                     candidate
                 )
 
-        results = [
-            (WaitingOnAssetsRuleEvaluationData(waiting_on_asset_keys=k), v)
-            for k, v in asset_partitions_by_waiting_on_asset_keys.items()
-        ] if asset_partitions_by_waiting_on_asset_keys else []
+        results = (
+            [
+                (WaitingOnAssetsRuleEvaluationData(waiting_on_asset_keys=k), v)
+                for k, v in asset_partitions_by_waiting_on_asset_keys.items()
+            ]
+            if asset_partitions_by_waiting_on_asset_keys
+            else []
+        )
         return self._get_merged_results(context, results)
 
 
@@ -781,6 +783,33 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
                 num_discarded=num_discarded,
                 rule_snapshots=auto_materialize_policy.rule_snapshots,
             )
+
+    def equivalent_to_stored_evaluation(
+        self, stored_evaluation: Optional["AutoMaterializeAssetEvaluation"]
+    ) -> bool:
+        """This function returns if a stored record is "functionally equivalent" to this one. To
+        do so, we can't just use regular namedtuple equality, as the serialized partition subsets
+        will be potentially different between the two.
+        """
+        if stored_evaluation is None:
+            return False
+        return (
+            # if num_requested > 0, then there's no way this record can be equivalent to the stored
+            # record, as we did work on the previous tick to mutate the global state, so even if
+            # we somehow had the same exact set of reasons on this tick, we'd want to write a new
+            # entry to the database (with different run ids and all that)
+            stored_evaluation.num_requested == 0
+            and stored_evaluation.num_skipped == self.num_skipped
+            and stored_evaluation.num_discarded == self.num_discarded
+            # note that two serialized partition subsets can be equivalent without being equal
+            # for example, static partition subsets sometimes get serialized with their component
+            # keys in different orders. If this check fails, we should have a backup check that
+            # actually deserializes these partition subsets and asserts their equality, it's just
+            # a slightly expensive operation, so we should avoid it if possible with this quick
+            # check.
+            and sorted(tuple(x) for x in stored_evaluation.partition_subsets_by_condition)
+            == sorted(self.partition_subsets_by_condition)
+        )
 
     def get_rule_evaluation_results(
         self, rule_snapshot: AutoMaterializeRuleSnapshot, asset_graph: AssetGraph

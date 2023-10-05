@@ -45,7 +45,6 @@ from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
-    from dagster._core.scheduler.instigation import AutoMaterializeAssetEvaluationRecord
     from dagster._core.storage.event_log import EventLogRecord
     from dagster._core.storage.event_log.base import AssetRecord
 
@@ -933,20 +932,3 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                 self._outdated_ancestors_cache[current_partition] = outdated_ancestors
 
         return self._outdated_ancestors_cache[asset_partition]
-
-    @cached_method
-    def get_previous_asset_evaluation_record(
-        self, asset_key: AssetKey
-    ) -> Optional["AutoMaterializeAssetEvaluationRecord"]:
-        schedule_storage = self.instance.schedule_storage
-        if schedule_storage is None:
-            return None
-        evaluation_record = next(
-            iter(
-                schedule_storage.get_auto_materialize_asset_evaluations(
-                    asset_key=asset_key, limit=1
-                )
-            ),
-            None,
-        )
-        return evaluation_record

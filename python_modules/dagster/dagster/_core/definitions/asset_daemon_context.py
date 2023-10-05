@@ -648,6 +648,7 @@ class AssetDaemonContext:
                 ],
                 observe_request_timestamp=observe_request_timestamp,
                 skipped_asset_graph_subset=skipped_asset_graph_subset,
+                evaluations=list(evaluations.values()),
                 instance_queryer=self.instance_queryer,
             ),
             [
@@ -656,6 +657,9 @@ class AssetDaemonContext:
                 # only record evaluations where something happened
                 if sum([evaluation.num_requested, evaluation.num_skipped, evaluation.num_discarded])
                 > 0
+                and not evaluation.equivalent_to_stored_evaluation(
+                    self.cursor.latest_evaluation_by_asset_key.get(evaluation.asset_key)
+                )
             ],
         )
 
