@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, List, Optional, Union, cast
 import dagster._check as check
 from dagster import AssetKey
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
+from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.host_representation.external_data import ExternalAssetCheck
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.asset_check_execution_record import (
@@ -24,6 +25,41 @@ from ..schema.asset_checks import (
 
 if TYPE_CHECKING:
     from ..schema.util import ResolveInfo
+
+
+# def _fetch_asset_checks(
+#     graphene_info: "ResolveInfo",
+#     asset_key: AssetKey,
+#     check_name: Optional[str] = None,
+# ) -> GrapheneAssetChecks:
+#     asset_graph = ExternalAssetGraph.from_workspace(graphene_info.context)
+
+#     external_asset_checks = []
+#     for location in graphene_info.context.code_locations:
+#         for repository in location.get_repositories().values():
+#             for external_check in repository.external_repository_data.external_asset_checks or []:
+#                 if external_check.asset_key == asset_key:
+#                     if not check_name or check_name == external_check.name:
+#                         if (
+#                             len(asset_graph.get_required_asset_and_check_keys(external_check.key))
+#                             > 1
+#                         ):
+#                             can_execute_individually = (
+#                                 GrapheneAssetCheckCanExecuteIndividually.REQUIRES_MATERIALIZATION
+#                             )
+#                         else:
+#                             can_execute_individually = (
+#                                 GrapheneAssetCheckCanExecuteIndividually.CAN_EXECUTE
+#                             )
+
+#                         external_asset_checks.append((external_check, can_execute_individually))
+
+#     return GrapheneAssetChecks(
+#         checks=[
+#             GrapheneAssetCheck(asset_check=check, can_execute_individually=can_execute_individually)
+#             for check, can_execute_individually in external_asset_checks
+#         ]
+#     )
 
 
 def has_asset_checks(
@@ -70,15 +106,24 @@ def fetch_asset_checks(
                     if not check_name or check_name == external_check.name:
                         external_asset_checks.append((external_check))
 
-    return GrapheneAssetChecks(
-        checks=[
+    asset_graph = ExternalAssetGraph.from_workspace(graphene_info.context)
+
+    graphene_checks = []
+    for external_check in external_asset_checks:
+        can_execute_individually = (
+            GrapheneAssetCheckCanExecuteIndividually.CAN_EXECUTE
+            if len(asset_graph.get_required_asset_and_check_keys(external_check.key) or []) <= 1
+            # NOTE: once we support multi checks, we'll need to add a case for
+            # non subsettable multi checks
+            else GrapheneAssetCheckCanExecuteIndividually.REQUIRES_MATERIALIZATION
+        )
+        graphene_checks.append(
             GrapheneAssetCheck(
-                asset_check=check,
-                can_execute_individually=GrapheneAssetCheckCanExecuteIndividually.CAN_EXECUTE,  # type: ignore[assignment]
+                asset_check=external_check, can_execute_individually=can_execute_individually
             )
-            for check in external_asset_checks
-        ]
-    )
+        )
+
+    return GrapheneAssetChecks(checks=graphene_checks)
 
 
 def _get_asset_check_execution_status(

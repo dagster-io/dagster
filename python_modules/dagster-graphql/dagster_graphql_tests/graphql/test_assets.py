@@ -2216,7 +2216,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert result.data["assetNodes"]
 
         for a in result.data["assetNodes"]:
-            if a["assetKey"]["path"] in [["asset_1"], ["one"]]:
+            if a["assetKey"]["path"] in [["asset_1"], ["one"], ["check_in_op_asset"]]:
                 assert a["hasAssetChecks"] is True
             else:
                 assert a["hasAssetChecks"] is False, f"Asset {a['assetKey']} has asset checks"

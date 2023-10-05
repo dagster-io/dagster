@@ -1922,6 +1922,8 @@ def define_asset_jobs():
         ),
         subsettable_checked_multi_asset,
         checked_multi_asset_job,
+        check_in_op_asset,
+        asset_check_job,
     ]
 
 
@@ -1936,7 +1938,15 @@ def my_check(asset_1):
     )
 
 
-asset_check_job = build_assets_job("asset_check_job", [asset_1], asset_checks=[my_check])
+@asset(check_specs=[AssetCheckSpec(asset="check_in_op_asset", name="my_check")])
+def check_in_op_asset():
+    yield Output(1)
+    yield AssetCheckResult(passed=True)
+
+
+asset_check_job = build_assets_job(
+    "asset_check_job", [asset_1, check_in_op_asset], asset_checks=[my_check]
+)
 
 
 @multi_asset(

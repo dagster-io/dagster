@@ -83,6 +83,13 @@
         dict({
           'key': dict({
             'path': list([
+              'check_in_op_asset',
+            ]),
+          }),
+        }),
+        dict({
+          'key': dict({
+            'path': list([
               'diamond_source',
             ]),
           }),
@@ -447,6 +454,11 @@
         'freshnessInfo': None,
         'freshnessPolicy': None,
         'id': 'test.test_repo.["diamond_source"]',
+      }),
+      dict({
+        'freshnessInfo': None,
+        'freshnessPolicy': None,
+        'id': 'test.test_repo.["check_in_op_asset"]',
       }),
       dict({
         'freshnessInfo': dict({

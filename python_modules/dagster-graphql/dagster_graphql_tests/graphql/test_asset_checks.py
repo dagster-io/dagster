@@ -261,6 +261,26 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
             }
         }
 
+        res = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_CHECKS,
+            variables={"assetKey": {"path": ["check_in_op_asset"]}},
+        )
+        assert res.data == {
+            "assetChecksOrError": {
+                "checks": [
+                    {
+                        "name": "my_check",
+                        "assetKey": {
+                            "path": ["check_in_op_asset"],
+                        },
+                        "description": None,
+                        "canExecuteIndividually": "REQUIRES_MATERIALIZATION",
+                    }
+                ]
+            }
+        }
+
     def test_asset_check_executions_with_id(self, graphql_context: WorkspaceRequestContext):
         graphql_context.instance.wipe()
 

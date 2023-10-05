@@ -115,6 +115,7 @@ class GrapheneAssetCheckCanExecuteIndividually(graphene.Enum):
         name = "AssetCheckCanExecuteIndividually"
 
     CAN_EXECUTE = "CAN_EXECUTE"
+    REQUIRES_MATERIALIZATION = "REQUIRES_MATERIALIZATION"
     NEEDS_USER_CODE_UPGRADE = "NEEDS_USER_CODE_UPGRADE"
 
 
@@ -136,7 +137,7 @@ class GrapheneAssetCheck(graphene.ObjectType):
     def __init__(
         self,
         asset_check: ExternalAssetCheck,
-        can_execute_individually: GrapheneAssetCheckCanExecuteIndividually,
+        can_execute_individually,
     ):
         self._asset_check = asset_check
         self._can_execute_individually = can_execute_individually

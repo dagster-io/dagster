@@ -132,6 +132,7 @@ export type AssetCheckExecutionsArgs = {
 export enum AssetCheckCanExecuteIndividually {
   CAN_EXECUTE = 'CAN_EXECUTE',
   NEEDS_USER_CODE_UPGRADE = 'NEEDS_USER_CODE_UPGRADE',
+  REQUIRES_MATERIALIZATION = 'REQUIRES_MATERIALIZATION',
 }
 
 export type AssetCheckEvaluation = {
