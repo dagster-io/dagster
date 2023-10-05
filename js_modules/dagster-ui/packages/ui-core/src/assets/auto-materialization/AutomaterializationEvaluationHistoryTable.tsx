@@ -78,7 +78,7 @@ const StatusTag = ({
       case 'Complete':
         return <Tag intent="success" icon="dot" />;
     }
-  }, []);
+  }, [errors, status]);
 
   return (
     <>
