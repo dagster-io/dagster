@@ -429,10 +429,8 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
             </OptionsOverlay>
           )}
 
-          <TopbarWrapper>
-            {showSidebar || !flagDAGSidebar ? (
-              <div />
-            ) : (
+          <TopbarWrapper style={{paddingLeft: showSidebar || !flagDAGSidebar ? 12 : 24}}>
+            {showSidebar || !flagDAGSidebar ? undefined : (
               <Tooltip content="Show sidebar">
                 <Button
                   icon={<Icon name="panel_show_left" />}
