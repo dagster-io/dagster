@@ -599,9 +599,8 @@ const TopbarWrapper = styled.div`
   top: 0;
   left: 0;
   right: 0;
-  display: grid;
+  display: flex;
   background: white;
-  grid-template-columns: auto auto 1fr auto auto auto auto;
   gap: 12px;
   align-items: center;
   padding: 12px;
@@ -609,7 +608,8 @@ const TopbarWrapper = styled.div`
   ${TextInputContainer} {
     width: 100%;
   }
-  > :nth-child(3) {
+  > :nth-child(2) {
+    flex: 1;
     > * {
       display: block;
       width: 100%;
