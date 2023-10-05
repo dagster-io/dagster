@@ -649,13 +649,11 @@ from dagster_dbt import DbtCliResource, dbt_assets
     partitions_def=DailyPartitionsDefinition(start_date="2023-01-01")
 )
 def partitionshop_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
-    time_window = context.asset_partitions_time_window_for_output(
-        list(context.selected_output_names)[0]
-    )
+    start, end = context.partition_time_window
 
     dbt_vars = {
-        "min_date": time_window.start.isoformat(),
-        "max_date": time_window.end.isoformat()
+        "min_date": start.isoformat(),
+        "max_date": end.isoformat()
     }
     dbt_build_args = ["build", "--vars", json.dumps(dbt_vars)]
 
