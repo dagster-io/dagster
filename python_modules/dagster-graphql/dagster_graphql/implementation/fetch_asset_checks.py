@@ -55,20 +55,23 @@ def fetch_asset_checks(
 
     external_asset_checks = []
     for location in graphene_info.context.code_locations:
-        # check if the code location is too old to support executing asset checks individually
-        code_location_version = (location.get_dagster_library_versions() or {}).get("dagster")
-        if code_location_version and version.parse(code_location_version) < version.parse("1.5"):
-            return GrapheneAssetCheckNeedsUserCodeUpgrade(
-                message=(
-                    "Asset checks require dagster>=1.5. Upgrade your dagster version for this code"
-                    " location."
-                )
-            )
-
         for repository in location.get_repositories().values():
             for external_check in repository.external_repository_data.external_asset_checks or []:
                 if external_check.asset_key == asset_key:
                     if not check_name or check_name == external_check.name:
+                        # check if the code location is too old to support executing asset checks individually
+                        code_location_version = (location.get_dagster_library_versions() or {}).get(
+                            "dagster"
+                        )
+                        if code_location_version and version.parse(
+                            code_location_version
+                        ) < version.parse("1.5"):
+                            return GrapheneAssetCheckNeedsUserCodeUpgrade(
+                                message=(
+                                    "Asset checks require dagster>=1.5. Upgrade your dagster"
+                                    " version for this code location."
+                                )
+                            )
                         external_asset_checks.append((external_check))
 
     asset_graph = ExternalAssetGraph.from_workspace(graphene_info.context)
