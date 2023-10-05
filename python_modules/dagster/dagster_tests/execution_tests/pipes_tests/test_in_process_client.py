@@ -10,6 +10,7 @@ from dagster import (
     multi_asset,
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster_pipes import DagsterPipesError, PipesContext
 
 from .in_process_client import InProcessPipesClient
@@ -151,5 +152,33 @@ def test_with_asset_checks() -> None:
     result = execute_asset_through_def(
         an_asset, resources={"inprocess_client": InProcessPipesClient()}
     )
-    called["yes"]
+    assert called["yes"]
     assert result.success
+
+
+def test_wrong_asset_check_name() -> None:
+    called = {}
+
+    def _impl(context: PipesContext):
+        context.report_asset_check(check_name="wrong_name", passed=True)
+
+    @asset(
+        check_specs=[
+            AssetCheckSpec(name="check_one", asset="an_asset"),
+        ]
+    )
+    # Bug in MaterializeResult type inference
+    # def an_asset(context: AssetExecutionContext, inprocess_client: InProcessPipesClient) -> MaterializeResult:
+    def an_asset(context: AssetExecutionContext, inprocess_client: InProcessPipesClient):
+        mat_result = inprocess_client.run(context=context, fn=_impl).get_materialize_result()
+        called["yes"] = True
+        return mat_result
+
+    with pytest.raises(DagsterInvariantViolationError) as exc_info:
+        execute_asset_through_def(an_asset, resources={"inprocess_client": InProcessPipesClient()})
+    assert (
+        "Received unexpected AssetCheckResult. No checks currently being evaluated target asset"
+        " 'an_asset' and have name 'wrong_name'"
+        in str(exc_info.value)
+    )
+    assert called["yes"]
