@@ -48,7 +48,14 @@ class PipesDockerLogsMessageReader(PipesMessageReader):
             self._handler, "Can only consume logs within context manager scope."
         )
         for log_line in container.logs(stdout=True, stderr=True, stream=True, follow=True):
-            extract_message_or_forward_to_stdout(handler, log_line)
+            if isinstance(log_line, bytes):
+                log_entry = log_line.decode("utf-8")
+            elif isinstance(log_line, str):
+                log_entry = log_line
+            else:
+                continue
+
+            extract_message_or_forward_to_stdout(handler, log_entry)
 
     def no_messages_debug_text(self) -> str:
         return "Attempted to read messages by extracting them from docker logs directly."
