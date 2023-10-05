@@ -199,7 +199,7 @@ class GrapheneRunlessAssetEventType(graphene.Enum):
     class Meta:
         name = "AssetEventType"
 
-    def to_dagster_event_type(self):
+    def to_dagster_event_type(self) -> DagsterEventType:
         if self == GrapheneRunlessAssetEventType.ASSET_MATERIALIZATION:
             return DagsterEventType.ASSET_MATERIALIZATION
         elif self == GrapheneRunlessAssetEventType.ASSET_OBSERVATION:
