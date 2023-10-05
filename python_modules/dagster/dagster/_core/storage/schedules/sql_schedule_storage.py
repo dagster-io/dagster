@@ -533,6 +533,7 @@ class SqlScheduleStorage(ScheduleStorage):
         )
         query = db_select(
             [
+                AssetDaemonAssetEvaluationsTable.c.asset_key,
                 AssetDaemonAssetEvaluationsTable.c.id,
                 AssetDaemonAssetEvaluationsTable.c.asset_evaluation_body,
                 AssetDaemonAssetEvaluationsTable.c.evaluation_id,
