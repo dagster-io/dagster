@@ -48,8 +48,8 @@ from .repository_origin import GrapheneRepositoryOrigin
 from .tags import GraphenePipelineTag
 from .util import ResolveInfo, non_null_list
 
-
 GrapheneInstigationType = graphene.Enum.from_enum(InstigatorType, "InstigationType")
+
 
 class GrapheneInstigationStatus(graphene.Enum):
     RUNNING = "RUNNING"
