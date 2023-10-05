@@ -19,7 +19,14 @@ from dagster_pipes import (
     PipesContext,
 )
 
-from .in_process_client import InProcessContextInjector, InProcessPipesClient
+from .in_process_client import (
+    InProcessContextInjector,
+    InProcessMessageReader,
+    InProcessPipesClient,
+    InProcessPipesContextLoader,
+    InProcessPipesMessageWriter,
+    InProcessPipesParamLoader,
+)
 
 
 def execute_asset_through_def(assets_def, resources) -> ExecuteInProcessResult:
@@ -188,14 +195,6 @@ def test_wrong_asset_check_name() -> None:
         in str(exc_info.value)
     )
     assert called["yes"]
-
-
-from .in_process_client import (
-    InProcessMessageReader,
-    InProcessPipesContextLoader,
-    InProcessPipesMessageWriter,
-    InProcessPipesParamLoader,
-)
 
 
 def test_open_pipes_session_get_materialize_result() -> None:
