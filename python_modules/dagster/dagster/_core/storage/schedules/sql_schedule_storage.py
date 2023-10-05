@@ -518,7 +518,9 @@ class SqlScheduleStorage(ScheduleStorage):
             db_select(
                 [
                     AssetDaemonAssetEvaluationsTable.c.asset_key,
-                    db.func.max(AssetDaemonAssetEvaluationsTable.c.id).label("max_id"),
+                    db.func.max(AssetDaemonAssetEvaluationsTable.c.evaluation_id).label(
+                        "max_evaluation_id"
+                    ),
                 ]
             )
             .where(
@@ -539,7 +541,12 @@ class SqlScheduleStorage(ScheduleStorage):
         ).select_from(
             latest_evaluations_subquery.join(
                 AssetDaemonAssetEvaluationsTable,
-                AssetDaemonAssetEvaluationsTable.c.id == latest_evaluations_subquery.c.max_id,
+                db.and_(
+                    AssetDaemonAssetEvaluationsTable.c.asset_key
+                    == latest_evaluations_subquery.c.asset_key,
+                    AssetDaemonAssetEvaluationsTable.c.evaluation_id
+                    == latest_evaluations_subquery.c.max_evaluation_id,
+                ),
             )
         )
         with self.connect() as conn:
