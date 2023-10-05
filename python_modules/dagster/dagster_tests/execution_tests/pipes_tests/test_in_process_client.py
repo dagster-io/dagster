@@ -1,5 +1,6 @@
 import pytest
 from dagster import (
+    AssetCheckSpec,
     AssetExecutionContext,
     AssetSpec,
     Definitions,
@@ -8,6 +9,7 @@ from dagster import (
     asset,
     multi_asset,
 )
+from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster_pipes import DagsterPipesError, PipesContext
 
 from .in_process_client import InProcessPipesClient
@@ -107,3 +109,45 @@ def test_multi_asset_get_materialize_result_error() -> None:
         in str(exc_info.value)
     )
     assert called["yes"]
+
+
+def test_with_asset_checks() -> None:
+    called = {}
+
+    def _impl(context: PipesContext):
+        context.report_asset_materialization(metadata={"some_key": "some_value"})
+        context.report_asset_check(
+            check_name="check_one", passed=True, severity="ERROR", metadata={"key_one": "value_one"}
+        )
+        context.report_asset_check(
+            check_name="check_two", passed=False, severity="WARN", metadata={"key_two": "value_two"}
+        )
+
+    @asset(
+        check_specs=[
+            AssetCheckSpec(name="check_one", asset="an_asset"),
+            AssetCheckSpec(name="check_two", asset="an_asset"),
+        ]
+    )
+    def an_asset(context: AssetExecutionContext, inprocess_client: InProcessPipesClient):
+        mat_result = inprocess_client.run(context=context, fn=_impl).get_materialize_result()
+        assert len(mat_result.check_results) == 2
+
+        check_result_one = mat_result.check_result_named("check_one")
+        assert check_result_one.passed is True
+        assert check_result_one.severity == AssetCheckSeverity.ERROR
+        assert check_result_one.metadata["key_one"].value == "value_one"
+
+        check_result_two = mat_result.check_result_named("check_two")
+        assert check_result_two.passed is False
+        assert check_result_two.severity == AssetCheckSeverity.WARN
+        assert check_result_two.metadata["key_two"].value == "value_two"
+
+        called["yes"] = True
+        return mat_result
+
+    result = execute_asset_through_def(
+        an_asset, resources={"inprocess_client": InProcessPipesClient()}
+    )
+    called["yes"]
+    assert result.success
