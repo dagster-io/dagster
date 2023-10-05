@@ -1,7 +1,9 @@
 import pytest
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._utils import hash_collection
-from dagster_k8s.container_context import K8sContainerContext
+from dagster._utils.merger import deep_merge_dicts
+from dagster_k8s.container_context import K8sConfigMergeBehavior, K8sContainerContext
+from dagster_k8s.job import UserDefinedDagsterK8sConfig
 
 
 @pytest.fixture
@@ -40,8 +42,22 @@ def container_context_config():
             },
             "run_k8s_config": {
                 "container_config": {"command": ["echo", "RUN"], "tty": True},
-                "pod_template_spec_metadata": {"namespace": "my_pod_namespace"},
-                "pod_spec_config": {"dns_policy": "value"},
+                "pod_template_spec_metadata": {
+                    "namespace": "my_pod_namespace",
+                    "labels": {"baz": "quux", "norm": "boo"},
+                },
+                "pod_spec_config": {
+                    "dns_policy": "value",
+                    "imagePullSecrets": [
+                        {"name": "image-secret-1"},
+                        {"name": "image-secret-2"},
+                    ],
+                    "securityContext": {
+                        "supplementalGroups": [
+                            1234,
+                        ]
+                    },
+                },
                 "job_metadata": {
                     "namespace": "my_job_value",
                 },
@@ -91,9 +107,21 @@ def other_container_context_config():
                     "command": ["REPLACED"],
                     "stdin": True,
                 },  # container_config is merged shallowly
-                "pod_template_spec_metadata": {"namespace": "my_other_namespace"},
+                "pod_template_spec_metadata": {
+                    "namespace": "my_other_namespace",
+                    "labels": {"foo": "bar", "norm": "abc"},
+                },
                 "pod_spec_config": {
-                    "dnsPolicy": "other_value"
+                    "dnsPolicy": "other_value",
+                    "imagePullSecrets": [
+                        {"name": "image-secret-2"},
+                        {"name": "image-secret-3"},
+                    ],
+                    "securityContext": {
+                        "supplementalGroups": [
+                            5678,
+                        ]
+                    },
                 },  # camel case and snake case are reconciled and merged
                 "job_metadata": {
                     "namespace": "my_other_job_value",
@@ -168,13 +196,19 @@ def test_empty_container_context(empty_container_context):
     assert empty_container_context.namespace is None
     assert empty_container_context.resources == {}
     assert empty_container_context.scheduler_name is None
+
+    server_k8s_config_dict = empty_container_context.server_k8s_config.to_dict()
+
     assert all(
-        empty_container_context.server_k8s_config[key] == {}
-        for key in empty_container_context.server_k8s_config
+        server_k8s_config_dict[key] == {}
+        for key in server_k8s_config_dict
+        if key != "merge_behavior"
     )
+
+    run_k8s_config_dict = empty_container_context.run_k8s_config.to_dict()
+
     assert all(
-        empty_container_context.run_k8s_config[key] == {}
-        for key in empty_container_context.run_k8s_config
+        run_k8s_config_dict[key] == {} for key in run_k8s_config_dict if key != "merge_behavior"
     )
     assert empty_container_context.env == []
 
@@ -298,19 +332,37 @@ def test_merge(empty_container_context, container_context, other_container_conte
     }
     assert merged.scheduler_name == "my_other_scheduler"
 
-    assert merged.run_k8s_config == {
+    assert merged.run_k8s_config.to_dict() == {
         "container_config": {
             "command": ["REPLACED"],
             "stdin": True,
             "tty": True,
         },
-        "pod_template_spec_metadata": {"namespace": "my_other_namespace"},
-        "pod_spec_config": {"dns_policy": "other_value"},
+        "pod_template_spec_metadata": {
+            "namespace": "my_other_namespace",
+            "labels": {  # Replaced
+                "foo": "bar",
+                "norm": "abc",
+            },
+        },
+        "pod_spec_config": {
+            "dns_policy": "other_value",
+            "image_pull_secrets": [
+                {"name": "image-secret-2"},
+                {"name": "image-secret-3"},
+            ],
+            "security_context": {
+                "supplemental_groups": [
+                    5678,
+                ]
+            },
+        },
         "job_metadata": {
             "namespace": "my_other_job_value",
         },
         "job_spec_config": {"backoff_limit": 240},
         "job_config": {},
+        "merge_behavior": K8sConfigMergeBehavior.SHALLOW.value,
     }
     _check_same_sorted(
         merged.env,
@@ -323,3 +375,41 @@ def test_merge(empty_container_context, container_context, other_container_conte
     assert container_context.merge(empty_container_context) == container_context
     assert empty_container_context.merge(container_context) == container_context
     assert other_container_context.merge(empty_container_context) == other_container_context
+
+    deep_merged_container_context = container_context.merge(
+        other_container_context._replace(
+            run_k8s_config=UserDefinedDagsterK8sConfig.from_dict(
+                {
+                    **other_container_context.run_k8s_config.to_dict(),
+                    "merge_behavior": K8sConfigMergeBehavior.DEEP.value,
+                }
+            )
+        ),
+    )
+
+    assert deep_merged_container_context.run_k8s_config.to_dict() == deep_merge_dicts(
+        merged.run_k8s_config.to_dict(),
+        {
+            "pod_template_spec_metadata": {
+                "labels": {
+                    "baz": "quux",  # other wins ties
+                    "foo": "bar",  # old values included
+                    "norm": "abc",  # new values merged in
+                }
+            },
+            "pod_spec_config": {
+                "image_pull_secrets": [
+                    {"name": "image-secret-1"},
+                    {"name": "image-secret-2"},
+                    {"name": "image-secret-3"},
+                ],
+                "security_context": {
+                    "supplemental_groups": [
+                        1234,
+                        5678,
+                    ]
+                },
+            },
+            "merge_behavior": K8sConfigMergeBehavior.DEEP.value,
+        },
+    )

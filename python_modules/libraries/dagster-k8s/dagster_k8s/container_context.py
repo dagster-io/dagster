@@ -1,3 +1,4 @@
+import copy
 from typing import TYPE_CHECKING, Any, Dict, Mapping, NamedTuple, Optional, Sequence, cast
 
 import dagster._check as check
@@ -13,18 +14,33 @@ from dagster._utils import hash_collection
 if TYPE_CHECKING:
     from . import K8sRunLauncher
 
-from .job import DagsterK8sJobConfig, UserDefinedDagsterK8sConfig, get_user_defined_k8s_config
+from .job import (
+    DagsterK8sJobConfig,
+    K8sConfigMergeBehavior,
+    UserDefinedDagsterK8sConfig,
+    get_user_defined_k8s_config,
+)
 from .models import k8s_snake_case_dict
 
 
 def _dedupe_list(values):
     new_list = []
+    hashes = set()
     for value in values:
-        if value not in new_list:
+        value_hash = hash_collection(value) if isinstance(value, (list, dict)) else hash(value)
+        if value_hash not in hashes:
+            hashes.add(value_hash)
             new_list.append(value)
-    return sorted(
-        new_list, key=lambda x: hash_collection(x) if isinstance(x, (list, dict)) else hash(x)
-    )
+
+    return new_list
+
+
+# Lists that don't make sense to append when they're set from two different raw k8s configs,
+# even if deep-merging
+ALWAYS_SHALLOW_MERGE_LIST_FIELDS = {
+    "command",
+    "args",
+}
 
 
 class K8sContainerContext(
@@ -44,8 +60,8 @@ class K8sContainerContext(
             ("resources", Mapping[str, Any]),
             ("scheduler_name", Optional[str]),
             ("security_context", Mapping[str, Any]),
-            ("server_k8s_config", Mapping[str, Any]),
-            ("run_k8s_config", Mapping[str, Any]),
+            ("server_k8s_config", UserDefinedDagsterK8sConfig),
+            ("run_k8s_config", UserDefinedDagsterK8sConfig),
             ("env", Sequence[Mapping[str, Any]]),
         ],
     )
@@ -71,8 +87,8 @@ class K8sContainerContext(
         resources: Optional[Mapping[str, Any]] = None,
         scheduler_name: Optional[str] = None,
         security_context: Optional[Mapping[str, Any]] = None,
-        server_k8s_config: Optional[Mapping[str, Any]] = None,
-        run_k8s_config: Optional[Mapping[str, Any]] = None,
+        server_k8s_config: Optional[UserDefinedDagsterK8sConfig] = None,
+        run_k8s_config: Optional[UserDefinedDagsterK8sConfig] = None,
         env: Optional[Sequence[Mapping[str, Any]]] = None,
     ):
         return super(K8sContainerContext, cls).__new__(
@@ -96,12 +112,8 @@ class K8sContainerContext(
             resources=check.opt_mapping_param(resources, "resources"),
             scheduler_name=check.opt_str_param(scheduler_name, "scheduler_name"),
             security_context=check.opt_mapping_param(security_context, "security_context"),
-            server_k8s_config=UserDefinedDagsterK8sConfig(
-                **check.opt_mapping_param(server_k8s_config, "server_k8s_config")
-            ).to_dict(),
-            run_k8s_config=UserDefinedDagsterK8sConfig(
-                **check.opt_mapping_param(run_k8s_config, "run_k8s_config")
-            ).to_dict(),
+            server_k8s_config=server_k8s_config or UserDefinedDagsterK8sConfig.from_dict({}),
+            run_k8s_config=run_k8s_config or UserDefinedDagsterK8sConfig.from_dict({}),
             env=[
                 k8s_snake_case_dict(kubernetes.client.V1EnvVar, e)
                 for e in check.opt_sequence_param(env, "env")
@@ -109,31 +121,71 @@ class K8sContainerContext(
         )
 
     def _merge_k8s_config(
-        self, first_config: Mapping[str, Any], second_config: Mapping[str, Any]
-    ) -> Mapping[str, Any]:
+        self,
+        onto_config: UserDefinedDagsterK8sConfig,
+        from_config: UserDefinedDagsterK8sConfig,
+    ) -> UserDefinedDagsterK8sConfig:
         # Keys are always the same and initialized in constructor
-        assert set(first_config) == set(second_config)
+        merge_behavior = from_config.merge_behavior
+        onto_dict = onto_config.to_dict()
+        from_dict = from_config.to_dict()
+        assert set(onto_dict) == set(from_dict)
+        if merge_behavior == K8sConfigMergeBehavior.DEEP:
+            onto_dict = copy.deepcopy(onto_dict)
+            merged_dict = self._deep_merge_k8s_config(onto_dict=onto_dict, from_dict=from_dict)
+        else:
+            merged_dict = {
+                key: (
+                    {**onto_dict[key], **from_dict[key]}
+                    if isinstance(onto_dict[key], dict)
+                    else from_dict[key]
+                )
+                for key in onto_dict
+            }
+        return UserDefinedDagsterK8sConfig.from_dict(merged_dict)
 
-        return {key: {**first_config[key], **second_config[key]} for key in first_config}
+    def _deep_merge_k8s_config(self, onto_dict: Dict[str, Any], from_dict: Mapping[str, Any]):
+        for from_key, from_value in from_dict.items():
+            if from_key not in onto_dict:
+                onto_dict[from_key] = from_value
 
-    def merge(self, other: "K8sContainerContext") -> "K8sContainerContext":
+            else:
+                onto_value = onto_dict[from_key]
+
+                if (
+                    isinstance(from_value, list)
+                    and from_key not in ALWAYS_SHALLOW_MERGE_LIST_FIELDS
+                ):
+                    check.invariant(isinstance(onto_value, list))
+                    onto_dict[from_key] = _dedupe_list([*onto_value, *from_value])
+                elif isinstance(from_value, dict):
+                    check.invariant(isinstance(onto_value, dict))
+                    onto_dict[from_key] = self._deep_merge_k8s_config(onto_value, from_value)
+                else:
+                    onto_dict[from_key] = from_value
+        return onto_dict
+
+    def merge(
+        self,
+        other: "K8sContainerContext",
+    ) -> "K8sContainerContext":
         # Lists of attributes that can be combined are combined, scalar values are replaced
         # prefering the passed in container context
         return K8sContainerContext(
             image_pull_policy=(
                 other.image_pull_policy if other.image_pull_policy else self.image_pull_policy
             ),
-            image_pull_secrets=_dedupe_list([*other.image_pull_secrets, *self.image_pull_secrets]),
+            image_pull_secrets=_dedupe_list([*self.image_pull_secrets, *other.image_pull_secrets]),
             service_account_name=(
                 other.service_account_name
                 if other.service_account_name
                 else self.service_account_name
             ),
-            env_config_maps=_dedupe_list([*other.env_config_maps, *self.env_config_maps]),
-            env_secrets=_dedupe_list([*other.env_secrets, *self.env_secrets]),
-            env_vars=_dedupe_list([*other.env_vars, *self.env_vars]),
-            volume_mounts=_dedupe_list([*other.volume_mounts, *self.volume_mounts]),
-            volumes=_dedupe_list([*other.volumes, *self.volumes]),
+            env_config_maps=_dedupe_list([*self.env_config_maps, *other.env_config_maps]),
+            env_secrets=_dedupe_list([*self.env_secrets, *other.env_secrets]),
+            env_vars=_dedupe_list([*self.env_vars, *other.env_vars]),
+            volume_mounts=_dedupe_list([*self.volume_mounts, *other.volume_mounts]),
+            volumes=_dedupe_list([*self.volumes, *other.volumes]),
             labels={**self.labels, **other.labels},
             namespace=other.namespace if other.namespace else self.namespace,
             resources=other.resources if other.resources else self.resources,
@@ -145,7 +197,7 @@ class K8sContainerContext(
                 self.server_k8s_config, other.server_k8s_config
             ),
             run_k8s_config=self._merge_k8s_config(self.run_k8s_config, other.run_k8s_config),
-            env=_dedupe_list([*other.env, *self.env]),
+            env=_dedupe_list([*self.env, *other.env]),
         )
 
     def get_environment_dict(self) -> Mapping[str, str]:
@@ -176,7 +228,9 @@ class K8sContainerContext(
                     resources=run_launcher.resources,
                     scheduler_name=run_launcher.scheduler_name,
                     security_context=run_launcher.security_context,
-                    run_k8s_config=run_launcher.run_k8s_config,
+                    run_k8s_config=UserDefinedDagsterK8sConfig.from_dict(
+                        run_launcher.run_k8s_config or {}
+                    ),
                 )
             )
 
@@ -191,9 +245,7 @@ class K8sContainerContext(
         if include_run_tags:
             user_defined_k8s_config = get_user_defined_k8s_config(dagster_run.tags)
 
-            context = context.merge(
-                K8sContainerContext(run_k8s_config=user_defined_k8s_config.to_dict())
-            )
+            context = context.merge(K8sContainerContext(run_k8s_config=user_defined_k8s_config))
 
         return context
 
@@ -241,10 +293,14 @@ class K8sContainerContext(
                 resources=processed_context_value.get("resources"),
                 scheduler_name=processed_context_value.get("scheduler_name"),
                 security_context=processed_context_value.get("security_context"),
-                server_k8s_config=processed_context_value.get("server_k8s_config"),
-                run_k8s_config=processed_context_value.get("run_k8s_config"),
+                server_k8s_config=UserDefinedDagsterK8sConfig.from_dict(
+                    processed_context_value.get("server_k8s_config", {})
+                ),
+                run_k8s_config=UserDefinedDagsterK8sConfig.from_dict(
+                    processed_context_value.get("run_k8s_config", {})
+                ),
                 env=processed_context_value.get("env"),
-            )
+            ),
         )
 
     def get_k8s_job_config(self, job_image, run_launcher) -> DagsterK8sJobConfig:
@@ -266,9 +322,3 @@ class K8sContainerContext(
             scheduler_name=self.scheduler_name,
             security_context=self.security_context,
         )
-
-    def get_run_user_defined_k8s_config(self) -> UserDefinedDagsterK8sConfig:
-        return UserDefinedDagsterK8sConfig(**self.run_k8s_config)
-
-    def get_server_user_defined_k8s_config(self) -> UserDefinedDagsterK8sConfig:
-        return UserDefinedDagsterK8sConfig(**self.server_k8s_config)
