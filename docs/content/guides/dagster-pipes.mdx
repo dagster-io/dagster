@@ -1,0 +1,76 @@
+---
+title: Dagster Pipes | Dagster Docs
+description: "Dagster Pipes provides a protocol between the orchestration environment (Dagster) and external execution (ex: Databricks) and a toolkit for building implementations of that protocol."
+---
+
+# Dagster Pipes
+
+At a high level, Dagster Pipes allows you to send Dagster context data into an external process which is then sent back to Dagster.
+
+For example, let’s say you want to incorporate some business logic in a Dagster pipeline. However, it needs to deal with pre-existing data pipelines and Python environments, it’s written in a language other than Python, or you wish to complete separate the orchestration and business logic execution environment.,
+
+Using Dagster Pipes, you can write a few lines of code in your business logic in an external environment and send metadata and event logs back to Dagster.
+
+---
+
+## Benefits
+
+With Dagster Pipes, you can:
+
+- Incorporate existing code into Dagster without huge refactors
+- Onboard stakeholder teams onto Dagster incrementally
+- Run code in external environments (with minimal dependencies) and stream log and structured metadata back to Dagster
+- Separate orchestration and business logic environments
+- Use languages other than Python with Dagster
+
+---
+
+## How it works
+
+Dagster Pipes provides a protocol between the orchestration environment (Dagster) and external execution (ex: Databricks) and a toolkit for building implementations of that protocol.
+
+Let’s take a look at how Dagster Pipes would work with the following assumptions:
+
+- We have some external code that contains some business logic.
+- Our code also calculates the number of records it processes at a given time. We want to send this metadata back to Dagster.
+- We have a Dagster asset that:
+  - Provides access to asset context data, such as logging, via <PyObject object="AssetExecutionContext" />
+  - Invokes the external code
+
+Refer to the following diagram and explanation for how Dagster Pipes would accomplish this, step-by-step. **Note:** Depending on the technology you use (ex: Databricks, Docker), this implementation of the protocol may vary. Refer to the [Understanding Dagster Pipes process guide](/guides/dagster-pipes/understanding-dagster-pipes) for more info.
+
+<Image
+alt="Diagram explaining the Dagster Pipes process"
+src="/images/guides/dagster-pipes/dagster-pipes-process.png"
+width={1000}
+height={393}
+/>
+
+### In the orchestration process (Dagster)
+
+1. The Dagster asset is executed.
+2. A connection to the external process, such as Databricks, is established.
+3. Dagster sends context info (ex: `partition_key`, `asset_key`, etc.) and any provided parameters to the external process.
+
+### In the external process
+
+1. The external process is invoked.
+2. The external process sends information about the its execution, and any specified metadata, to Dagster.
+
+After Dagster receives the data from the external process, it’ll be visible in the [Dagster UI](/concepts/webserver/ui).
+
+---
+
+## Usage
+
+Ready to get started with Dagster Pipes? Depending on what your goal is, how you approach using Dagster Pipes will differ:
+
+- **If you’re writing code that's being orchestrated by Dagster**, all you’ll need to do is lightly modify your existing code. Refer to the [Modifying existing code to work with Dagster Pipes](/guides/dagster-pipes/modifying-existing-code-to-work-with-dagster-pipes) guide for more info and examples.
+- **If you need to orchestrate code others have written,** you can use our ready-to-go integrations to execute code in your chosen technology:
+  - [Databricks](/guides/dagster-pipes/integrating-databricks-with-dagster-pipes)
+  - [Docker](/guides/dagster-pipes/integrating-docker-with-dagster-pipes)
+  - [Kubernetes](/guides/dagster-pipes/integrating-kubernetes-with-dagster-pipes)
+  - [Subprocess](/guides/dagster-pipes/integrating-subprocess-with-dagster-pipes)
+- **If you don’t see your integration or you want to fully customize your Pipes experience,** use these in-depth guides to get up to speed:
+  - [Understanding the Dagster Pipes process](/guides/dagster-pipes/understanding-dagster-pipes)
+  - [Customizing Dagster Pipes protocols](/guides/dagster-pipes/customizing-dagster-pipes-protocols)
