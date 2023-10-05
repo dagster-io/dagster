@@ -70,14 +70,15 @@ query GetAssetChecksQuery($assetKey: AssetKeyInput!, $checkName: String) {
 """
 
 GET_ASSET_CHECK_HISTORY_WITH_ID = """
-query GetAssetChecksQuery($assetKey: AssetKeyInput!, $checkName: String) {
+query GetAssetChecksQuery($assetKey: AssetKeyInput!, $checkName: String, $limit: Int!, $cursor: String) {
     assetChecksOrError(assetKey: $assetKey, checkName: $checkName) {
         ... on AssetChecks {
             checks {
                 name
-                executions(limit: 10) {
+                executions(limit: $limit, cursor: $cursor) {
                     id
                     status
+                    runId
                 }
             }
         }
@@ -281,28 +282,53 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
             }
         }
 
-    def test_asset_check_executions_with_id(self, graphql_context: WorkspaceRequestContext):
+    def test_asset_check_execution_cursoring(self, graphql_context: WorkspaceRequestContext):
         graphql_context.instance.wipe()
 
-        run = create_run_for_test(graphql_context.instance)
-
-        graphql_context.instance.event_log_storage.store_event(
-            _planned_event(
-                run.run_id,
-                AssetCheckEvaluationPlanned(asset_key=AssetKey(["asset_1"]), check_name="my_check"),
+        run_ids = [create_run_for_test(graphql_context.instance).run_id for _ in range(10)]
+        for run_id in run_ids:
+            graphql_context.instance.event_log_storage.store_event(
+                _planned_event(
+                    run_id,
+                    AssetCheckEvaluationPlanned(
+                        asset_key=AssetKey(["asset_1"]), check_name="my_check"
+                    ),
+                )
             )
+
+        expected_limit = 6
+        res = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_CHECK_HISTORY_WITH_ID,
+            variables={
+                "assetKey": {"path": ["asset_1"]},
+                "checkName": "my_check",
+                "limit": expected_limit,
+            },
         )
+        assert res.data
+        expected_run_ids = list(reversed(run_ids))[:expected_limit]
+        for expected_run_id, execution in zip(
+            expected_run_ids, res.data["assetChecksOrError"]["checks"][0]["executions"]
+        ):
+            assert execution["runId"] == expected_run_id
 
         res = execute_dagster_graphql(
             graphql_context,
             GET_ASSET_CHECK_HISTORY_WITH_ID,
-            variables={"assetKey": {"path": ["asset_1"]}, "checkName": "my_check"},
+            variables={
+                "assetKey": {"path": ["asset_1"]},
+                "checkName": "my_check",
+                "limit": expected_limit,
+                "cursor": res.data["assetChecksOrError"]["checks"][0]["executions"][-1]["id"],
+            },
         )
         assert res.data
-        assert res.data["assetChecksOrError"]["checks"][0]["executions"][0]["id"]
-        assert (
-            res.data["assetChecksOrError"]["checks"][0]["executions"][0]["status"] == "IN_PROGRESS"
-        )
+        expected_run_ids = list(reversed(run_ids))[expected_limit:]
+        for expected_run_id, execution in zip(
+            expected_run_ids, res.data["assetChecksOrError"]["checks"][0]["executions"]
+        ):
+            assert execution["runId"] == expected_run_id
 
     def test_asset_check_executions(self, graphql_context: WorkspaceRequestContext):
         graphql_context.instance.wipe()
