@@ -1,11 +1,14 @@
+import pytest
 from dagster import (
     AssetExecutionContext,
+    AssetSpec,
     Definitions,
     ExecuteInProcessResult,
     MaterializeResult,
     asset,
+    multi_asset,
 )
-from dagster_pipes import PipesContext
+from dagster_pipes import DagsterPipesError, PipesContext
 
 from .in_process_client import InProcessPipesClient
 
@@ -39,7 +42,7 @@ def test_basic_materialization() -> None:
     assert mat_events[0].materialization.metadata["some_key"].value == "some_value"
 
 
-def test_get_materialize_result():
+def test_get_materialize_result() -> None:
     called = {}
 
     def _impl(context: PipesContext):
@@ -59,4 +62,48 @@ def test_get_materialize_result():
     mat_events = result.get_asset_materialization_events()
     assert len(mat_events) == 1
     assert mat_events[0].materialization.metadata["some_key"].value == "some_value"
+    assert called["yes"]
+
+
+def test_get_double_report_error() -> None:
+    called = {}
+
+    def _impl(context: PipesContext):
+        context.report_asset_materialization(asset_key="one", metadata={"some_key": "some_value"})
+        context.report_asset_materialization(asset_key="two", metadata={"some_key": "some_value"})
+        called["yes"] = True
+
+    @asset
+    def an_asset(
+        context: AssetExecutionContext, inprocess_client: InProcessPipesClient
+    ) -> MaterializeResult:
+        return inprocess_client.run(context=context, fn=_impl).get_materialize_result()
+
+    with pytest.raises(DagsterPipesError) as exc_info:
+        execute_asset_through_def(an_asset, resources={"inprocess_client": InProcessPipesClient()})
+
+    assert "Invalid asset key." in str(exc_info.value)
+
+
+def test_multi_asset_get_materialize_result_error() -> None:
+    called = {}
+
+    def _impl(context: PipesContext):
+        called["yes"] = True
+        pass
+
+    @multi_asset(specs=[AssetSpec(key="one"), AssetSpec(key="two")])
+    def some_assets(context: AssetExecutionContext, inprocess_client: InProcessPipesClient):
+        inprocess_client.run(context=context, fn=_impl).get_materialize_result()
+
+    with pytest.raises(DagsterPipesError) as exc_info:
+        execute_asset_through_def(
+            some_assets, resources={"inprocess_client": InProcessPipesClient()}
+        )
+
+    assert (
+        "Multiple materialize results returned with asset keys ['one', 'two']. If you are"
+        " materializing multiple assets in a pipes invocation, use get_results() instead."
+        in str(exc_info.value)
+    )
     assert called["yes"]

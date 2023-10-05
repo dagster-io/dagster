@@ -3,6 +3,7 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING, Iterator, List, Optional, Sequence
 
 from dagster_pipes import (
+    DagsterPipesError,
     PipesContextData,
     PipesExtras,
     PipesParams,
@@ -69,11 +70,13 @@ class PipesClientCompletedInvocation:
         check.invariant(
             len(mat_results) > 0, "No materialization results received. Internal error?"
         )
-        check.invariant(
-            len(mat_results) == 1,
-            "Multiple materialize results returned. If this was deliberate, use get_results()"
-            " instead.",
-        )
+        if len(mat_results) > 1:
+            raise DagsterPipesError(
+                "Multiple materialize results returned with asset keys"
+                f" {sorted([check.not_none(mr.asset_key).to_user_string() for mr in mat_results])}."
+                " If you are materializing multiple assets in a pipes invocation, use"
+                " get_results() instead.",
+            )
         mat_result = next(iter(mat_results))
         for check_result in check_results:
             if check_result.asset_key:
