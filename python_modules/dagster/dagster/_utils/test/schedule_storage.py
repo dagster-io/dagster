@@ -297,8 +297,14 @@ class TestScheduleStorage:
         current_time = time.time()
         tick = storage.create_tick(self.build_schedule_tick(current_time))
 
-        updated_tick = tick.with_status(TickStatus.SUCCESS).with_run_info(run_id="1234")
-        assert updated_tick.status == TickStatus.SUCCESS
+        assert not tick.end_timestamp
+
+        freeze_datetime = pendulum.now("UTC")
+
+        with pendulum.test(freeze_datetime):
+            updated_tick = tick.with_status(TickStatus.SUCCESS).with_run_info(run_id="1234")
+            assert updated_tick.status == TickStatus.SUCCESS
+            assert updated_tick.end_timestamp == freeze_datetime.timestamp()
 
         storage.update_tick(updated_tick)
 
@@ -316,9 +322,14 @@ class TestScheduleStorage:
 
         current_time = time.time()
         tick = storage.create_tick(self.build_schedule_tick(current_time))
+        assert not tick.end_timestamp
 
-        updated_tick = tick.with_status(TickStatus.SKIPPED)
-        assert updated_tick.status == TickStatus.SKIPPED
+        freeze_datetime = pendulum.now("UTC")
+
+        with pendulum.test(freeze_datetime):
+            updated_tick = tick.with_status(TickStatus.SKIPPED)
+            assert updated_tick.status == TickStatus.SKIPPED
+            assert updated_tick.end_timestamp == freeze_datetime.timestamp()
 
         storage.update_tick(updated_tick)
 
@@ -337,11 +348,15 @@ class TestScheduleStorage:
         current_time = time.time()
         tick = storage.create_tick(self.build_schedule_tick(current_time))
 
-        updated_tick = tick.with_status(
-            TickStatus.FAILURE,
-            error=SerializableErrorInfo(message="Error", stack=[], cls_name="TestError"),
-        )
-        assert updated_tick.status == TickStatus.FAILURE
+        freeze_datetime = pendulum.now("UTC")
+
+        with pendulum.test(freeze_datetime):
+            updated_tick = tick.with_status(
+                TickStatus.FAILURE,
+                error=SerializableErrorInfo(message="Error", stack=[], cls_name="TestError"),
+            )
+            assert updated_tick.status == TickStatus.FAILURE
+            assert updated_tick.end_timestamp == freeze_datetime.timestamp()
 
         storage.update_tick(updated_tick)
 
