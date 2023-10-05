@@ -54,7 +54,7 @@ export const layoutAssetGraph = (
           marginx: MARGIN,
           marginy: MARGIN,
           nodesep: -10,
-          edgesep: 10,
+          edgesep: 90,
           ranksep: 60,
         }
       : {
