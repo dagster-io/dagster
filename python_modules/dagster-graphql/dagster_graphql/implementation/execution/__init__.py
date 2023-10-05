@@ -1,7 +1,7 @@
 import asyncio
 import os
 import sys
-from typing import TYPE_CHECKING, Any, AsyncIterator, Optional, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, Any, AsyncIterator, Mapping, Optional, Sequence, Tuple, Union
 
 # re-exports
 import dagster._check as check
@@ -383,14 +383,15 @@ def create_asset_event(
     asset_key: AssetKey,
     partition_key: Optional[str],
     description: Optional[str],
+    tags: Optional[Mapping[str, str]],
 ) -> Union[AssetMaterialization, AssetObservation]:
     if event_type == DagsterEventType.ASSET_MATERIALIZATION:
         return AssetMaterialization(
-            asset_key=asset_key, partition=partition_key, description=description
+            asset_key=asset_key, partition=partition_key, description=description, tags=tags
         )
     elif event_type == DagsterEventType.ASSET_OBSERVATION:
         return AssetObservation(
-            asset_key=asset_key, partition=partition_key, description=description
+            asset_key=asset_key, partition=partition_key, description=description, tags=tags
         )
     else:
         check.failed(f"Unexpected event type {event_type}")
@@ -402,6 +403,7 @@ def report_runless_asset_events(
     asset_key: AssetKey,
     partition_keys: Optional[Sequence[str]] = None,
     description: Optional[str] = None,
+    tags: Optional[Mapping[str, str]] = None,
 ) -> "GrapheneReportRunlessAssetEventsSuccess":
     from ...schema.roots.mutation import GrapheneReportRunlessAssetEventsSuccess
 
@@ -410,11 +412,11 @@ def report_runless_asset_events(
     if partition_keys is not None:
         for partition_key in partition_keys:
             instance.report_runless_asset_event(
-                create_asset_event(event_type, asset_key, partition_key, description)
+                create_asset_event(event_type, asset_key, partition_key, description, tags)
             )
     else:
         instance.report_runless_asset_event(
-            create_asset_event(event_type, asset_key, None, description)
+            create_asset_event(event_type, asset_key, None, description, tags)
         )
 
     return GrapheneReportRunlessAssetEventsSuccess(assetKey=asset_key)

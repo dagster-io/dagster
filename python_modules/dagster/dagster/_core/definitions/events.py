@@ -21,6 +21,11 @@ import dagster._seven as seven
 from dagster._annotations import PublicAttr, deprecated, experimental_param, public
 from dagster._core.definitions.data_version import DATA_VERSION_TAG, DataVersion
 from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX, SYSTEM_TAG_PREFIX
+from dagster._core.definitions.data_version import DataVersion
+from dagster._core.storage.tags import (
+    MULTIDIMENSIONAL_PARTITION_PREFIX,
+    is_system_tag,
+)
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import NamedTupleSerializer
 
@@ -458,7 +463,7 @@ class AssetObservation(
             asset_key = AssetKey(asset_key)
 
         tags = check.opt_mapping_param(tags, "tags", key_type=str, value_type=str)
-        if any([not tag.startswith(SYSTEM_TAG_PREFIX) for tag in tags or {}]):
+        if any([not is_system_tag(tag) for tag in tags or {}]):
             check.failed(
                 "Users should not pass values into the tags argument for AssetMaterializations. "
                 "The tags argument is reserved for system-populated tags."
@@ -562,7 +567,7 @@ class AssetMaterialization(
             asset_key = AssetKey(asset_key)
 
         check.opt_mapping_param(tags, "tags", key_type=str, value_type=str)
-        invalid_tags = [tag for tag in tags or {} if not tag.startswith(SYSTEM_TAG_PREFIX)]
+        invalid_tags = [tag for tag in tags or {} if not is_system_tag(tag)]
         if len(invalid_tags) > 0:
             check.failed(
                 f"Invalid tags: {tags} Users should not pass values into the tags argument for"

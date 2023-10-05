@@ -109,3 +109,7 @@ def check_reserved_tags(tags):
                 not tag.startswith(SYSTEM_TAG_PREFIX),
                 desc=f"Attempted to set tag with reserved system prefix: {tag}",
             )
+
+
+def is_system_tag(tag):
+    return tag.startswith(SYSTEM_TAG_PREFIX) or tag.startswith(HIDDEN_TAG_PREFIX) or tag == USER_TAG
