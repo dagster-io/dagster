@@ -129,6 +129,8 @@ def test_with_asset_checks() -> None:
             AssetCheckSpec(name="check_two", asset="an_asset"),
         ]
     )
+    # Bug in MaterializeResult type inference
+    # def an_asset(context: AssetExecutionContext, inprocess_client: InProcessPipesClient) -> MaterializeResult:
     def an_asset(context: AssetExecutionContext, inprocess_client: InProcessPipesClient):
         mat_result = inprocess_client.run(context=context, fn=_impl).get_materialize_result()
         assert len(mat_result.check_results) == 2
