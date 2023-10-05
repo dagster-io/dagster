@@ -1057,6 +1057,36 @@ def execute_asset_backfill_iteration_inner(
 
         yield None
 
+    if len(initial_candidates) == 0:
+        in_progress_subset = (
+            asset_backfill_data.requested_subset
+            - (  # maybe check for run ids instead?
+                updated_materialized_subset | failed_and_downstream_subset
+            )
+        )
+
+        # check for any unrequested assets
+        unrequested_asset_keys = asset_backfill_data.target_subset.asset_keys - (
+            asset_backfill_data.failed_and_downstream_subset.asset_keys  # edge case that can happen where certain partitions are materialized?
+            | asset_backfill_data.materialized_subset.asset_keys
+            | asset_backfill_data.requested_subset.asset_keys
+        )
+
+        if len(in_progress_subset.asset_keys) == 0 and unrequested_asset_keys:
+            # Re-request next roots
+            root_unrequested_asset_keys = (
+                AssetSelection.keys(*unrequested_asset_keys)
+                .sources()
+                .resolve(asset_backfill_data.target_subset.asset_graph)
+            )
+            initial_candidates.update(
+                list(
+                    asset_backfill_data.target_subset.filter_asset_keys(
+                        root_unrequested_asset_keys
+                    ).iterate_asset_partitions()
+                )
+            )
+
     asset_partitions_to_request = asset_graph.bfs_filter_asset_partitions(
         instance_queryer,
         lambda unit, visited: should_backfill_atomic_asset_partitions_unit(
