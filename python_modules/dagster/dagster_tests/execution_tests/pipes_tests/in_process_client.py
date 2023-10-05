@@ -65,6 +65,9 @@ class InProcessContextInjector(PipesContextInjector):
     def inject_context(self, context_data: "PipesContextData") -> Iterator[PipesParams]:
         yield {}
 
+    def no_messages_debug_text(self) -> str:
+        return "In-process context injection."
+
 
 class InProcessMessageReader(PipesMessageReader):
     def __init__(
@@ -80,6 +83,9 @@ class InProcessMessageReader(PipesMessageReader):
         yield {}
         for pipes_message in self.message_writer.write_channel.messages:
             handler.handle_message(pipes_message)
+
+    def no_messages_debug_text(self) -> str:
+        return "In-process message reader."
 
 
 class _InProcessPipesClient(PipesClient):
