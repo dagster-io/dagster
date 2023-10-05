@@ -464,6 +464,7 @@ export type AutoMaterializeAssetEvaluationNeedsMigrationError = Error & {
 
 export type AutoMaterializeAssetEvaluationRecord = {
   __typename: 'AutoMaterializeAssetEvaluationRecord';
+  assetKey: AssetKey;
   evaluationId: Scalars['Int'];
   id: Scalars['ID'];
   numDiscarded: Scalars['Int'];
@@ -5208,6 +5209,12 @@ export const buildAutoMaterializeAssetEvaluationRecord = (
   relationshipsToOmit.add('AutoMaterializeAssetEvaluationRecord');
   return {
     __typename: 'AutoMaterializeAssetEvaluationRecord',
+    assetKey:
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKey')
+        ? ({} as AssetKey)
+        : buildAssetKey({}, relationshipsToOmit),
     evaluationId:
       overrides && overrides.hasOwnProperty('evaluationId') ? overrides.evaluationId! : 9286,
     id:
