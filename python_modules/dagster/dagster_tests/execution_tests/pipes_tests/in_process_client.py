@@ -83,6 +83,12 @@ class InProcessMessageReader(PipesMessageReader):
 
 
 class _InProcessPipesClient(PipesClient):
+    """An in-process pipes clients unusable in test cases. A function inside the orchestration
+    process actually serves as the "external" execution. This allows us to test the inner machinery
+    of pipes without actually launching subprocesses, which makes the tests much more lightweight
+    and repeatable.
+    """
+
     @public
     def run(
         self,
