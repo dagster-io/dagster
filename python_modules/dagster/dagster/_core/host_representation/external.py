@@ -52,6 +52,7 @@ from dagster._utils.schedules import schedule_execution_time_iterator
 from .external_data import (
     DEFAULT_MODE_NAME,
     EnvVarConsumer,
+    ExternalAssetCheck,
     ExternalAssetNode,
     ExternalJobData,
     ExternalJobRef,
@@ -280,6 +281,9 @@ class ExternalRepository:
             if asset_node.asset_key == asset_key
         ]
         return matching[0] if matching else None
+
+    def get_external_asset_checks(self) -> Sequence[ExternalAssetCheck]:
+        return self.external_repository_data.external_asset_checks or []
 
     def get_display_metadata(self) -> Mapping[str, str]:
         return self.handle.display_metadata

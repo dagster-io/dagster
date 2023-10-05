@@ -78,7 +78,6 @@ class AssetGraph:
         freshness_policies_by_key: Mapping[AssetKey, Optional[FreshnessPolicy]],
         auto_materialize_policies_by_key: Mapping[AssetKey, Optional[AutoMaterializePolicy]],
         backfill_policies_by_key: Mapping[AssetKey, Optional[BackfillPolicy]],
-        required_multi_asset_sets_by_key: Mapping[AssetKey, AbstractSet[AssetKey]],
         code_versions_by_key: Mapping[AssetKey, Optional[str]],
         is_observable_by_key: Mapping[AssetKey, bool],
         auto_observe_interval_minutes_by_key: Mapping[AssetKey, Optional[float]],
@@ -94,7 +93,6 @@ class AssetGraph:
         self._freshness_policies_by_key = freshness_policies_by_key
         self._auto_materialize_policies_by_key = auto_materialize_policies_by_key
         self._backfill_policies_by_key = backfill_policies_by_key
-        self._required_multi_asset_sets_by_key = required_multi_asset_sets_by_key
         self._code_versions_by_key = code_versions_by_key
         self._is_observable_by_key = is_observable_by_key
         self._auto_observe_interval_minutes_by_key = auto_observe_interval_minutes_by_key
@@ -167,7 +165,6 @@ class AssetGraph:
         freshness_policies_by_key: Dict[AssetKey, Optional[FreshnessPolicy]] = {}
         auto_materialize_policies_by_key: Dict[AssetKey, Optional[AutoMaterializePolicy]] = {}
         backfill_policies_by_key: Dict[AssetKey, Optional[BackfillPolicy]] = {}
-        required_multi_asset_sets_by_key: Dict[AssetKey, AbstractSet[AssetKey]] = {}
         code_versions_by_key: Dict[AssetKey, Optional[str]] = {}
         is_observable_by_key: Dict[AssetKey, bool] = {}
         auto_observe_interval_minutes_by_key: Dict[AssetKey, Optional[float]] = {}
@@ -197,10 +194,6 @@ class AssetGraph:
                 code_versions_by_key.update(asset.code_versions_by_key)
 
                 if not asset.can_subset:
-                    if len(asset.keys) > 1:
-                        for key in asset.keys:
-                            required_multi_asset_sets_by_key[key] = asset.keys
-
                     all_required_keys = {*asset.check_keys, *asset.keys}
                     if len(all_required_keys) > 1:
                         for key in all_required_keys:
@@ -215,7 +208,6 @@ class AssetGraph:
             freshness_policies_by_key=freshness_policies_by_key,
             auto_materialize_policies_by_key=auto_materialize_policies_by_key,
             backfill_policies_by_key=backfill_policies_by_key,
-            required_multi_asset_sets_by_key=required_multi_asset_sets_by_key,
             assets=assets_defs,
             asset_checks=asset_checks or [],
             source_assets=source_assets,
@@ -506,9 +498,11 @@ class AssetGraph:
 
     def get_required_multi_asset_keys(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
         """For a given asset_key, return the set of asset keys that must be materialized at the same time."""
-        if asset_key in self._required_multi_asset_sets_by_key:
-            return self._required_multi_asset_sets_by_key[asset_key]
-        return set()
+        return {
+            key
+            for key in self._required_assets_and_checks_by_key.get(asset_key, set())
+            if isinstance(key, AssetKey)
+        }
 
     def get_required_asset_and_check_keys(
         self, key: AssetKeyOrCheckKey
@@ -699,7 +693,6 @@ class InternalAssetGraph(AssetGraph):
         freshness_policies_by_key: Mapping[AssetKey, Optional[FreshnessPolicy]],
         auto_materialize_policies_by_key: Mapping[AssetKey, Optional[AutoMaterializePolicy]],
         backfill_policies_by_key: Mapping[AssetKey, Optional[BackfillPolicy]],
-        required_multi_asset_sets_by_key: Mapping[AssetKey, AbstractSet[AssetKey]],
         assets: Sequence[AssetsDefinition],
         source_assets: Sequence[SourceAsset],
         asset_checks: Sequence[AssetChecksDefinition],
@@ -719,7 +712,6 @@ class InternalAssetGraph(AssetGraph):
             freshness_policies_by_key=freshness_policies_by_key,
             auto_materialize_policies_by_key=auto_materialize_policies_by_key,
             backfill_policies_by_key=backfill_policies_by_key,
-            required_multi_asset_sets_by_key=required_multi_asset_sets_by_key,
             code_versions_by_key=code_versions_by_key,
             is_observable_by_key=is_observable_by_key,
             auto_observe_interval_minutes_by_key=auto_observe_interval_minutes_by_key,
