@@ -20,7 +20,7 @@ from dagster._core.host_representation.handle import RepositoryHandle
 from dagster._core.selector.subset_selector import DependencyGraph
 from dagster._core.workspace.workspace import IWorkspace
 
-from .asset_graph import AssetGraph
+from .asset_graph import AssetGraph, AssetKeyOrCheckKey
 from .backfill_policy import BackfillPolicy
 from .events import AssetKey
 from .freshness_policy import FreshnessPolicy
@@ -62,6 +62,7 @@ class ExternalAssetGraph(AssetGraph):
             code_versions_by_key=code_versions_by_key,
             is_observable_by_key=is_observable_by_key,
             auto_observe_interval_minutes_by_key=auto_observe_interval_minutes_by_key,
+            required_assets_and_checks_by_key={},
         )
         self._repo_handles_by_key = repo_handles_by_key
         self._materialization_job_names_by_key = job_names_by_key
@@ -300,3 +301,6 @@ class ExternalAssetGraph(AssetGraph):
                 asset_key
             )
         return list(asset_keys_by_repo.values())
+
+    def get_required_asset_and_check_keys(self, key: AssetKeyOrCheckKey):
+        raise NotImplementedError()

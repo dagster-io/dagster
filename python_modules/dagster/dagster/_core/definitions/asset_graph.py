@@ -51,6 +51,8 @@ from .time_window_partitions import (
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 
+AssetKeyOrCheckKey = Union[AssetKey, AssetCheckKey]
+
 
 class ParentsPartitionsResult(NamedTuple):
     """Represents the result of mapping an asset partition to its upstream parent partitions.
@@ -80,6 +82,9 @@ class AssetGraph:
         code_versions_by_key: Mapping[AssetKey, Optional[str]],
         is_observable_by_key: Mapping[AssetKey, bool],
         auto_observe_interval_minutes_by_key: Mapping[AssetKey, Optional[float]],
+        required_assets_and_checks_by_key: Mapping[
+            AssetKeyOrCheckKey, AbstractSet[AssetKeyOrCheckKey]
+        ],
     ):
         self._asset_dep_graph = asset_dep_graph
         self._source_asset_keys = source_asset_keys
@@ -97,6 +102,7 @@ class AssetGraph:
         self._materializable_asset_keys = (
             self._asset_dep_graph["upstream"].keys() - self.source_asset_keys
         )
+        self._required_assets_and_checks_by_key = required_assets_and_checks_by_key
 
     @property
     def asset_dep_graph(self) -> DependencyGraph[AssetKey]:
@@ -165,6 +171,9 @@ class AssetGraph:
         code_versions_by_key: Dict[AssetKey, Optional[str]] = {}
         is_observable_by_key: Dict[AssetKey, bool] = {}
         auto_observe_interval_minutes_by_key: Dict[AssetKey, Optional[float]] = {}
+        required_assets_and_checks_by_key: Dict[
+            AssetKeyOrCheckKey, AbstractSet[AssetKeyOrCheckKey]
+        ] = {}
 
         for asset in all_assets:
             if isinstance(asset, SourceAsset):
@@ -185,10 +194,17 @@ class AssetGraph:
                 freshness_policies_by_key.update(asset.freshness_policies_by_key)
                 auto_materialize_policies_by_key.update(asset.auto_materialize_policies_by_key)
                 backfill_policies_by_key.update({key: asset.backfill_policy for key in asset.keys})
-                if len(asset.keys) > 1 and not asset.can_subset:
-                    for key in asset.keys:
-                        required_multi_asset_sets_by_key[key] = asset.keys
                 code_versions_by_key.update(asset.code_versions_by_key)
+
+                if not asset.can_subset:
+                    if len(asset.keys) > 1:
+                        for key in asset.keys:
+                            required_multi_asset_sets_by_key[key] = asset.keys
+
+                    all_required_keys = {*asset.check_keys, *asset.keys}
+                    if len(all_required_keys) > 1:
+                        for key in all_required_keys:
+                            required_assets_and_checks_by_key[key] = all_required_keys
 
         return InternalAssetGraph(
             asset_dep_graph=generate_asset_dep_graph(assets_defs, source_assets),
@@ -206,6 +222,7 @@ class AssetGraph:
             code_versions_by_key=code_versions_by_key,
             is_observable_by_key=is_observable_by_key,
             auto_observe_interval_minutes_by_key=auto_observe_interval_minutes_by_key,
+            required_assets_and_checks_by_key=required_assets_and_checks_by_key,
         )
 
     @property
@@ -493,6 +510,11 @@ class AssetGraph:
             return self._required_multi_asset_sets_by_key[asset_key]
         return set()
 
+    def get_required_asset_and_check_keys(
+        self, key: AssetKeyOrCheckKey
+    ) -> AbstractSet[AssetKeyOrCheckKey]:
+        return self._required_assets_and_checks_by_key.get(key, set())
+
     def get_code_version(self, asset_key: AssetKey) -> Optional[str]:
         return self._code_versions_by_key.get(asset_key)
 
@@ -684,6 +706,9 @@ class InternalAssetGraph(AssetGraph):
         code_versions_by_key: Mapping[AssetKey, Optional[str]],
         is_observable_by_key: Mapping[AssetKey, bool],
         auto_observe_interval_minutes_by_key: Mapping[AssetKey, Optional[float]],
+        required_assets_and_checks_by_key: Mapping[
+            AssetKeyOrCheckKey, AbstractSet[AssetKeyOrCheckKey]
+        ],
     ):
         super().__init__(
             asset_dep_graph=asset_dep_graph,
@@ -698,6 +723,7 @@ class InternalAssetGraph(AssetGraph):
             code_versions_by_key=code_versions_by_key,
             is_observable_by_key=is_observable_by_key,
             auto_observe_interval_minutes_by_key=auto_observe_interval_minutes_by_key,
+            required_assets_and_checks_by_key=required_assets_and_checks_by_key,
         )
         self._assets = assets
         self._source_assets = source_assets
