@@ -61,7 +61,7 @@ const _assetLayoutCacheKey = (graphData: GraphData) => {
   return JSON.stringify({
     downstream: recreateObjectWithKeysSorted(graphData.downstream),
     upstream: recreateObjectWithKeysSorted(graphData.upstream),
-    nodes: Object.keys(graphData).sort(),
+    nodes: Object.keys(graphData.nodes).sort(),
   });
 };
 
