@@ -56,6 +56,7 @@ import {DimensionRangeWizard} from '../partitions/DimensionRangeWizard';
 import {assembleIntoSpans, stringForSpan} from '../partitions/SpanRepresentation';
 import {DagsterTag} from '../runs/RunTag';
 import {testId} from '../testing/testId';
+import {useFeatureFlagForCodeLocation} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 
 import {partitionCountString} from './AssetNodePartitionCounts';
@@ -148,6 +149,11 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
 
   const [previewCount, setPreviewCount] = React.useState(0);
   const morePreviewsCount = partitionedAssets.length - previewCount;
+
+  const showSingleRunBackfillToggle = useFeatureFlagForCodeLocation(
+    repoAddress.location,
+    'SHOW_SINGLE_RUN_BACKFILL_TOGGLE',
+  );
 
   const [lastRefresh, setLastRefresh] = React.useState(Date.now());
 
@@ -586,40 +592,42 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
                 disabled={launchWithRangesAsTags}
                 onChange={() => setMissingFailedOnly(!missingFailedOnly)}
               />
-              <RadioContainer>
-                <Subheading>Launch as...</Subheading>
-                <Radio
-                  data-testid={testId('ranges-as-tags-true-radio')}
-                  checked={canLaunchWithRangesAsTags && launchWithRangesAsTags}
-                  disabled={!canLaunchWithRangesAsTags}
-                  onChange={() => setLaunchWithRangesAsTags(!launchWithRangesAsTags)}
-                >
-                  <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
-                    <span>Single run</span>
-                    <Tooltip
-                      targetTagName="div"
-                      position="top-left"
-                      content={
-                        <div style={{maxWidth: 300}}>
-                          This option requires that your assets are written to operate on a
-                          partition key range via context.asset_partition_key_range_for_output or
-                          context.asset_partitions_time_window_for_output.
-                        </div>
-                      }
-                    >
-                      <Icon name="info" color={Colors.Gray500} />
-                    </Tooltip>
-                  </Box>
-                </Radio>
-                <Radio
-                  data-testid={testId('ranges-as-tags-false-radio')}
-                  checked={!canLaunchWithRangesAsTags || !launchWithRangesAsTags}
-                  disabled={!canLaunchWithRangesAsTags}
-                  onChange={() => setLaunchWithRangesAsTags(!launchWithRangesAsTags)}
-                >
-                  Multiple runs (One per selected partition)
-                </Radio>
-              </RadioContainer>
+              {showSingleRunBackfillToggle ? (
+                <RadioContainer>
+                  <Subheading>Launch as...</Subheading>
+                  <Radio
+                    data-testid={testId('ranges-as-tags-true-radio')}
+                    checked={canLaunchWithRangesAsTags && launchWithRangesAsTags}
+                    disabled={!canLaunchWithRangesAsTags}
+                    onChange={() => setLaunchWithRangesAsTags(!launchWithRangesAsTags)}
+                  >
+                    <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+                      <span>Single run</span>
+                      <Tooltip
+                        targetTagName="div"
+                        position="top-left"
+                        content={
+                          <div style={{maxWidth: 300}}>
+                            This option requires that your assets are written to operate on a
+                            partition key range via context.asset_partition_key_range_for_output or
+                            context.asset_partitions_time_window_for_output.
+                          </div>
+                        }
+                      >
+                        <Icon name="info" color={Colors.Gray500} />
+                      </Tooltip>
+                    </Box>
+                  </Radio>
+                  <Radio
+                    data-testid={testId('ranges-as-tags-false-radio')}
+                    checked={!canLaunchWithRangesAsTags || !launchWithRangesAsTags}
+                    disabled={!canLaunchWithRangesAsTags}
+                    onChange={() => setLaunchWithRangesAsTags(!launchWithRangesAsTags)}
+                  >
+                    Multiple runs (One per selected partition)
+                  </Radio>
+                </RadioContainer>
+              ) : null}
             </Box>
           )}
         </ToggleableSection>
