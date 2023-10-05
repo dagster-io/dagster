@@ -18,8 +18,8 @@ from dagster._core.events import DagsterEventType
 from dagster._serdes import unpack_value
 from dagster._seven import json
 from dagster._utils.error import SerializableErrorInfo
-from dagster_ext import ExtContext
 from dagster_graphql.version import __version__ as dagster_graphql_version
+from dagster_pipes import PipesContext
 from dagster_webserver.graphql import GraphQLWS
 from dagster_webserver.version import __version__ as dagster_webserver_version
 from dagster_webserver.webserver import ReportAssetMatParam
@@ -446,11 +446,10 @@ def test_report_asset_materialization_apis_consistent(
             ), "need to add validation that sample payload content was written successfully"
 
     # all ext report_asset_materialization kwargs should be in sample payload
-    sig = inspect.signature(ExtContext.report_asset_materialization)
+    sig = inspect.signature(PipesContext.report_asset_materialization)
     skip_set = {"self"}
     params = [p for p in sig.parameters if p not in skip_set]
 
-    # things that are missing on ExtContext.report_asset_materialization
     KNOWN_DIFF = {"partition", "description"}
 
     assert set(sample_payload.keys()).difference(set(params)) == KNOWN_DIFF

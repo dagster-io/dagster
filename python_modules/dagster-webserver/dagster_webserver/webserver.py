@@ -200,7 +200,7 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
         filebase = "__".join(log_key)
         return FileResponse(location, filename=f"{filebase}.{file_extension}")
 
-    async def report_asset_materialization_endpoint(self, request: Request) -> Response:
+    async def report_asset_materialization_endpoint(self, request: Request) -> JSONResponse:
         # Record a runless asset materialization event.
         # The asset key is passed as url path with / delimiting parts or as a query param.
         # Properties can be passed as json post body or query params, with that order of precedence.
