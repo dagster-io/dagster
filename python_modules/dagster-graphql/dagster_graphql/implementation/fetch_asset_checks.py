@@ -27,41 +27,6 @@ if TYPE_CHECKING:
     from ..schema.util import ResolveInfo
 
 
-# def _fetch_asset_checks(
-#     graphene_info: "ResolveInfo",
-#     asset_key: AssetKey,
-#     check_name: Optional[str] = None,
-# ) -> GrapheneAssetChecks:
-#     asset_graph = ExternalAssetGraph.from_workspace(graphene_info.context)
-
-#     external_asset_checks = []
-#     for location in graphene_info.context.code_locations:
-#         for repository in location.get_repositories().values():
-#             for external_check in repository.external_repository_data.external_asset_checks or []:
-#                 if external_check.asset_key == asset_key:
-#                     if not check_name or check_name == external_check.name:
-#                         if (
-#                             len(asset_graph.get_required_asset_and_check_keys(external_check.key))
-#                             > 1
-#                         ):
-#                             can_execute_individually = (
-#                                 GrapheneAssetCheckCanExecuteIndividually.REQUIRES_MATERIALIZATION
-#                             )
-#                         else:
-#                             can_execute_individually = (
-#                                 GrapheneAssetCheckCanExecuteIndividually.CAN_EXECUTE
-#                             )
-
-#                         external_asset_checks.append((external_check, can_execute_individually))
-
-#     return GrapheneAssetChecks(
-#         checks=[
-#             GrapheneAssetCheck(asset_check=check, can_execute_individually=can_execute_individually)
-#             for check, can_execute_individually in external_asset_checks
-#         ]
-#     )
-
-
 def has_asset_checks(
     graphene_info: "ResolveInfo",
     asset_key: AssetKey,
