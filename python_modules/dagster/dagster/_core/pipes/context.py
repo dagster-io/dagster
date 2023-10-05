@@ -1,7 +1,7 @@
 from contextlib import contextmanager
 from dataclasses import dataclass
 from queue import Queue
-from typing import Any, Dict, Iterator, List, Mapping, Optional, Set, Union
+from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence, Set, Union
 
 from dagster_pipes import (
     DAGSTER_PIPES_BOOTSTRAP_PARAM_NAMES,
@@ -18,7 +18,6 @@ from dagster_pipes import (
     PipesTimeWindow,
     encode_env_var,
 )
-from git import Sequence
 from typing_extensions import TypeAlias
 
 import dagster._check as check
