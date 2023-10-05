@@ -126,10 +126,7 @@ class AutoMaterializeLaunchContext:
         # Log the error if the failure wasn't an interrupt or the daemon generator stopping
         if exception_value and not isinstance(exception_value, GeneratorExit):
             error_data = serializable_error_info_from_exc_info(sys.exc_info())
-            tick_finish_timestamp = pendulum.now("UTC").timestamp()
-            self.update_state(
-                TickStatus.FAILURE, error=error_data, end_timestamp=tick_finish_timestamp
-            )
+            self.update_state(TickStatus.FAILURE, error=error_data)
 
         self._write()
 
@@ -317,12 +314,9 @@ class AssetDaemon(IntervalDaemon):
                             run_ids=evaluation.run_ids | {run.run_id}
                         )
 
-            tick_finish_timestamp = pendulum.now("UTC").timestamp()
-
             instance.daemon_cursor_storage.set_cursor_values({CURSOR_KEY: new_cursor.serialize()})
             tick_context.update_state(
                 TickStatus.SUCCESS if len(run_requests) > 0 else TickStatus.SKIPPED,
-                end_timestamp=tick_finish_timestamp,
             )
 
         # We enforce uniqueness per (asset key, evaluation id). Store the evaluations after the cursor,

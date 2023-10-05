@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import AbstractSet, Any, List, NamedTuple, Optional, Sequence, Union
 
+import pendulum
 from typing_extensions import TypeAlias
 
 import dagster._check as check
@@ -273,7 +274,10 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
 
     def with_status(self, status: TickStatus, **kwargs: Any):
         check.inst_param(status, "status", TickStatus)
-        return self._replace(tick_data=self.tick_data.with_status(status, **kwargs))
+        end_timestamp = pendulum.now("UTC").timestamp() if status != TickStatus.STARTED else None
+        return self._replace(
+            tick_data=self.tick_data.with_status(status, end_timestamp=end_timestamp, **kwargs)
+        )
 
     def with_run_requests(self, run_requests: Sequence[RunRequest]) -> "InstigatorTick":
         return self._replace(tick_data=self.tick_data.with_run_requests(run_requests))
