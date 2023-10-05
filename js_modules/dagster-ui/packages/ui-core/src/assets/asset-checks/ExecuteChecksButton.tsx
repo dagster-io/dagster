@@ -41,7 +41,7 @@ export const ExecuteChecksButton = ({
   const disabledReason = !permissions.canLaunchPipelineExecution
     ? disabledReasons.canLaunchPipelineExecution
     : checks.length > 0 && launchable.length === 0
-    ? 'Invidiual launch is not supported. Upgrade your user code version of dagster.'
+    ? 'This check cannot execute without materializing the asset.'
     : checks.length === 0
     ? 'No checks are defined on this asset.'
     : '';
