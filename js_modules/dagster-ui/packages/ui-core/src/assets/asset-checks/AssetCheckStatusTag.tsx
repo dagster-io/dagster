@@ -51,7 +51,7 @@ export const AssetCheckStatusTag = ({
       case AssetCheckExecutionResolvedStatus.FAILED:
         return isWarn ? (
           <Tag icon="warning_outline" intent="warning">
-            Warning
+            Failed
           </Tag>
         ) : (
           <Tag icon="cancel" intent="danger">
