@@ -104,6 +104,9 @@ export const Node = ({
 
   const {onClick, loading, launchpadElement} = useMaterializationAction();
 
+  const showArrow =
+    !isAssetNode || (viewType === 'tree' && downstream.filter((id) => graphData.nodes[id]).length);
+
   return (
     <>
       {launchpadElement}
@@ -117,22 +120,23 @@ export const Node = ({
       />
       <Box ref={elementRef} onClick={selectThisNode} padding={{left: 8}}>
         <BoxWrapper level={level}>
-          <Box padding={{right: 12}} flex={{direction: 'row', gap: 2, alignItems: 'center'}}>
-            {!isAssetNode ||
-            (viewType === 'tree' && downstream.filter((id) => graphData.nodes[id]).length) ? (
+          <Box padding={{right: 12}} flex={{direction: 'row', alignItems: 'center'}}>
+            {showArrow ? (
               <div
                 onClick={(e) => {
                   e.stopPropagation();
                   toggleOpen();
                 }}
-                style={{cursor: 'pointer'}}
+                style={{cursor: 'pointer', width: 18}}
               >
                 <Icon
                   name="arrow_drop_down"
                   style={{transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)'}}
                 />
               </div>
-            ) : null}
+            ) : (
+              <div style={{width: 18}} />
+            )}
             <GrayOnHoverBox
               flex={{
                 direction: 'row',
@@ -321,7 +325,7 @@ const BoxWrapper = ({level, children}: {level: number; children: React.ReactNode
         <Box
           padding={{left: 8}}
           margin={{left: 8}}
-          border={{side: 'left', width: 1, color: Colors.KeylineGray}}
+          border={i < level - 1 ? {side: 'left', width: 1, color: Colors.KeylineGray} : undefined}
           style={{position: 'relative'}}
         >
           {sofar}
