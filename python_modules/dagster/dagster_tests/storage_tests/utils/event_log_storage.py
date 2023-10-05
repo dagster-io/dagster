@@ -4122,6 +4122,16 @@ class TestEventLogStorage:
         assert checks[1].status == AssetCheckExecutionRecordStatus.SUCCEEDED
         assert checks[1].run_id == "foo"
 
+        checks = storage.get_asset_check_execution_history(check_key_1, limit=1)
+        assert len(checks) == 1
+        assert checks[0].run_id == "foobar"
+
+        checks = storage.get_asset_check_execution_history(
+            check_key_1, limit=1, cursor=checks[0].id
+        )
+        assert len(checks) == 1
+        assert checks[0].run_id == "foo"
+
         latest_checks = storage.get_latest_asset_check_execution_by_key([check_key_1, check_key_2])
         assert len(latest_checks) == 1
         assert latest_checks[check_key_1].status == AssetCheckExecutionRecordStatus.PLANNED
