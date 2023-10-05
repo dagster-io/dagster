@@ -1,6 +1,7 @@
 import enum
 from typing import NamedTuple, Optional
 
+import dagster._check as check
 from dagster import EventLogEntry
 from dagster._serdes import deserialize_value
 from dagster._utils import datetime_as_float
@@ -24,12 +25,36 @@ class AssetCheckExecutionResolvedStatus(enum.Enum):
     SKIPPED = "SKIPPED"  # the run finished, didn't fail, but the check didn't execute
 
 
-class AssetCheckExecutionRecord(NamedTuple):
-    id: int
-    run_id: str
-    status: AssetCheckExecutionRecordStatus
-    evaluation_event: Optional[EventLogEntry]
-    create_timestamp: float
+class AssetCheckExecutionRecord(
+    NamedTuple(
+        "_AssetCheckExecutionRecord",
+        [
+            ("id", int),
+            ("run_id", str),
+            ("status", AssetCheckExecutionRecordStatus),
+            ("evaluation_event", Optional[EventLogEntry]),
+            ("create_timestamp", float),
+        ],
+    )
+):
+    def __new__(
+        cls,
+        id: int,
+        run_id: str,
+        status: AssetCheckExecutionRecordStatus,
+        evaluation_event: Optional[EventLogEntry],
+        create_timestamp: float,
+    ):
+        return super().__new__(
+            cls,
+            id=check.int_param(id, "id"),
+            run_id=check.str_param(run_id, "run_id"),
+            status=check.inst_param(status, "status", AssetCheckExecutionRecordStatus),
+            evaluation_event=check.opt_inst_param(
+                evaluation_event, "evaluation_event", EventLogEntry
+            ),
+            create_timestamp=check.float_param(create_timestamp, "create_timestamp"),
+        )
 
     @classmethod
     def from_db_row(cls, row) -> "AssetCheckExecutionRecord":
