@@ -80,7 +80,7 @@ export const AssetGraphExplorerSidebar = React.memo(
       null | {id: string; path: string} | {id: string}
     >(null);
 
-    const [viewType, setViewType] = React.useState<'tree' | 'group'>('tree');
+    const [viewType, setViewType] = React.useState<'tree' | 'group'>('group');
 
     const rootNodes = React.useMemo(
       () =>
@@ -306,6 +306,7 @@ export const AssetGraphExplorerSidebar = React.memo(
             gridTemplateColumns: '1fr auto',
             gap: '6px',
             padding: '12px 24px',
+            paddingRight: 12,
             borderBottom: `1px solid ${Colors.KeylineGray}`,
           }}
         >
@@ -313,8 +314,8 @@ export const AssetGraphExplorerSidebar = React.memo(
             <ButtonGroup
               activeItems={new Set([viewType])}
               buttons={[
-                {id: 'tree', label: 'Tree view', icon: 'gantt_flat'},
                 {id: 'group', label: 'Group view', icon: 'asset_group'},
+                {id: 'tree', label: 'Tree view', icon: 'gantt_flat'},
               ]}
               onClick={(id: 'tree' | 'group') => {
                 setViewType(id);
@@ -325,7 +326,7 @@ export const AssetGraphExplorerSidebar = React.memo(
             <Button icon={<Icon name="panel_show_right" />} onClick={hideSidebar} />
           </Tooltip>
         </div>
-        <Box padding={{vertical: 8, horizontal: 24}}>
+        <Box padding={{vertical: 8, left: 24, right: 12}}>
           <SearchFilter
             values={React.useMemo(() => {
               return allAssetKeys.map((key) => ({

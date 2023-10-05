@@ -604,7 +604,7 @@ const TopbarWrapper = styled.div`
   grid-template-columns: auto auto 1fr auto auto auto auto;
   gap: 12px;
   align-items: center;
-  padding: 12px 15px;
+  padding: 12px;
   border-bottom: 1px solid ${Colors.KeylineGray};
   ${TextInputContainer} {
     width: 100%;
