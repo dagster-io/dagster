@@ -513,20 +513,37 @@ def _resolve_output_defs_from_outs(
             for (name, out) in outs.items()
         ]
 
-    # ... otherwise we expect to have a tuple with entries for each output
+    # ... otherwise we expect to have a tuple with entries...
     if get_origin(annotation) != tuple:
         raise DagsterInvariantViolationError(
             "Expected Tuple annotation for multiple outputs, but received non-tuple annotation."
         )
-    if not len(get_args(annotation)) == len(outs):
+    subtypes = get_args(annotation)
+
+    # ... if they are all result object entries use None
+    if len(subtypes) > 0 and all(_is_result_object_type(t) for t in subtypes):
+        # the counts of subtypes and outputs may not align due to checks results
+        # being passed via MaterializeResult similar to above.
+        return [
+            out.to_definition(
+                annotation_type=type(None),
+                name=name,
+                description=None,
+                code_version=default_code_version,
+            )
+            for (name, out) in outs.items()
+        ]
+
+    # ... otherwise they should align with outputs
+    if len(subtypes) != len(outs):
         raise DagsterInvariantViolationError(
             "Expected Tuple annotation to have number of entries matching the "
             f"number of outputs for more than one output. Expected {len(outs)} "
-            f"outputs but annotation has {len(get_args(annotation))}."
+            f"outputs but annotation has {len(subtypes)}."
         )
     return [
         cur_out.to_definition(
-            annotation_type=get_args(annotation)[idx],
+            annotation_type=subtypes[idx],
             name=name,
             description=None,
             code_version=default_code_version,
