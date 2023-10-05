@@ -111,5 +111,5 @@ def check_reserved_tags(tags):
             )
 
 
-def is_system_tag(tag):
+def is_system_tag(tag: str) -> bool:
     return tag.startswith(SYSTEM_TAG_PREFIX) or tag.startswith(HIDDEN_TAG_PREFIX) or tag == USER_TAG
