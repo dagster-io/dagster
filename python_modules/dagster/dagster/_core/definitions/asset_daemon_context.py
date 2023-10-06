@@ -334,6 +334,7 @@ class AssetDaemonContext:
             will_materialize_mapping=will_materialize_mapping,
             expected_data_time_mapping=expected_data_time_mapping,
             candidates=set(),
+            new_candidates=set(),
             daemon_context=self,
         )
 
@@ -356,7 +357,9 @@ class AssetDaemonContext:
                 to_materialize.update(asset_partitions)
             self._verbose_log_fn("Done evaluating materialize rule")
 
-        skip_context = materialize_context._replace(candidates=to_materialize)
+        skip_context = materialize_context._replace(
+            candidates=to_materialize, new_candidates=new_candidates
+        )
 
         for skip_rule in auto_materialize_policy.skip_rules:
             rule_snapshot = skip_rule.to_snapshot()
