@@ -246,7 +246,7 @@ class AssetDaemon(IntervalDaemon):
         with AutoMaterializeLaunchContext(
             tick, instance, self._logger, tick_retention_settings
         ) as tick_context:
-            run_requests, new_cursor, evaluations = AssetDaemonContext(
+            asset_daemon_context = AssetDaemonContext(
                 asset_graph=asset_graph,
                 target_asset_keys=target_asset_keys,
                 instance=instance,
@@ -258,7 +258,8 @@ class AssetDaemon(IntervalDaemon):
                 auto_observe=True,
                 respect_materialization_data_versions=instance.auto_materialize_respect_materialization_data_versions,
                 logger=self._logger,
-            ).evaluate()
+            )
+            run_requests, new_cursor, evaluations = asset_daemon_context.evaluate()
 
             self._logger.info(
                 f"Tick produced {len(run_requests)} run{'s' if len(run_requests) != 1 else ''} and"
@@ -330,7 +331,9 @@ class AssetDaemon(IntervalDaemon):
                             run_ids=evaluation.run_ids | {run.run_id}
                         )
 
-            instance.daemon_cursor_storage.set_cursor_values({CURSOR_KEY: new_cursor.serialize()})
+            instance.daemon_cursor_storage.set_cursor_values(
+                {CURSOR_KEY: new_cursor.serialize(asset_daemon_context.instance_queryer)}
+            )
             tick_context.update_state(
                 TickStatus.SUCCESS if len(run_requests) > 0 else TickStatus.SKIPPED,
             )

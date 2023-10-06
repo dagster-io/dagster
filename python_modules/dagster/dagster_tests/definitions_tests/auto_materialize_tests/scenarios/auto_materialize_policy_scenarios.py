@@ -14,7 +14,7 @@ from dagster._core.definitions.auto_materialize_rule import (
     ParentUpdatedRuleEvaluationData,
     WaitingOnAssetsRuleEvaluationData,
 )
-from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._seven.compat.pendulum import create_pendulum_time
 
@@ -68,6 +68,11 @@ vee = [
     asset_def("A"),
     asset_def("B"),
     asset_def("C", ["A", "B"]),
+]
+partitioned_vee = [
+    asset_def("A", partitions_def=two_partitions_partitions_def),
+    asset_def("B", partitions_def=two_partitions_partitions_def),
+    asset_def("C", ["A", "B"], partitions_def=two_partitions_partitions_def),
 ]
 lopsided_vee = [
     asset_def("root1"),
