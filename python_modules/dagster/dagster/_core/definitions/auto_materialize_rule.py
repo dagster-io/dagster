@@ -499,20 +499,6 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
         return self._get_merged_results(context, asset_partitions_by_evaluation_data)
 
 
-def fun_function(x: Mapping[Optional[int], str]):
-    pass
-
-
-def call_function(foo: bool):
-    my_dictionary: Dict[Optional[int], str] = {1: "hello"}
-    fun_function(my_dictionary)
-
-
-def call_function2(foo: bool):
-    my_dictionary = {None: "hello", 1: "world"}
-    fun_function(my_dictionary)
-
-
 @whitelist_for_serdes
 class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOutdatedRule", [])):
     @property

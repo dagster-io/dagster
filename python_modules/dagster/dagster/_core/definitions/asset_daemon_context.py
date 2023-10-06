@@ -457,11 +457,11 @@ class AssetDaemonContext:
                 after_cursor=self.latest_storage_id,
                 respect_materialization_data_versions=False,
             )
-            # ensure we only operate on partitions that are valid for this asset
             subset -= {
                 ap
                 for ap in new_asset_partitions
                 if partitions_def is None
+                # ignore partitions which are invalid
                 or (
                     ap.partition_key is not None
                     and partitions_def.has_partition_key(ap.partition_key)
@@ -511,14 +511,8 @@ class AssetDaemonContext:
             (evaluation, to_materialize_for_asset, to_skip_for_asset, to_discard_for_asset) = (
                 self.evaluate_asset(asset_key, will_materialize_mapping, expected_data_time_mapping)
             )
-            # if an asset partition is skipped, then we want to keep track of it in our "unhandled"
-            # set, which will cause us to pull this tick's evaluation into the next tick to re-evaluate
-            # all of those unhandled materialization reasons and see if we can now proceed
             skipped_asset_graph_subset |= to_skip_for_asset
-            # similarly, if an asset partition is requested to be materialized this tick, or discarded
-            # this means that we should no longer consider it to be unhandled -- we kicked off a run
-            # to solve the materialize rule issues that we brought up (or decided we shouldn't), so
-            # next tick we should no longer care about it
+            # any discarded or materialized asset partitions are no longer considered "skipped"
             skipped_asset_graph_subset -= to_discard_for_asset | to_materialize_for_asset
 
             log_fn = (
