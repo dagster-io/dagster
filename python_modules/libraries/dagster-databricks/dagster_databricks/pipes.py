@@ -5,7 +5,7 @@ import random
 import string
 import time
 from contextlib import contextmanager
-from typing import Iterator, Mapping, Optional
+from typing import Iterator, Literal, Mapping, Optional
 
 import dagster._check as check
 from dagster._annotations import experimental
@@ -23,6 +23,7 @@ from dagster._core.pipes.utils import (
     open_pipes_session,
 )
 from dagster_pipes import (
+    DAGSTER_PIPES_BOOTSTRAP_PARAM_NAMES,
     PipesContextData,
     PipesExtras,
     PipesParams,
@@ -109,6 +110,12 @@ class _PipesDatabricksClient(PipesClient):
                 **(self.env or {}),
                 **pipes_session.get_bootstrap_env_vars(),
             }
+            cluster_log_root = pipes_session.get_bootstrap_params()[
+                DAGSTER_PIPES_BOOTSTRAP_PARAM_NAMES["messages"]
+            ]["cluster_log_root"]
+            submit_task_dict["new_cluster"]["cluster_log_conf"] = {
+                "dbfs": {"destination": f"dbfs:{cluster_log_root}"}
+            }
             task = jobs.SubmitTask.from_dict(submit_task_dict)
             run_id = self.client.jobs.submit(
                 tasks=[task],
@@ -135,6 +142,7 @@ class _PipesDatabricksClient(PipesClient):
                         f"Error running Databricks job: {run.state.state_message}"
                     )
                 time.sleep(5)
+            time.sleep(30)  # 30 seconds to make sure logs are flushed
         return PipesClientCompletedInvocation(tuple(pipes_session.get_results()))
 
 
@@ -200,22 +208,35 @@ class PipesDbfsMessageReader(PipesBlobStoreMessageReader):
     Args:
         interval (float): interval in seconds between attempts to download a chunk
         client (WorkspaceClient): A databricks `WorkspaceClient` object.
+        cluster_log_root (Optional[str]): The root path on DBFS where the cluster logs are written.
+            If set, this will be used to read stderr/stdout logs.
     """
 
-    def __init__(self, *, interval: int = 10, client: WorkspaceClient):
-        super().__init__(interval=interval)
+    def __init__(
+        self,
+        *,
+        interval: int = 10,
+        client: WorkspaceClient,
+        forward_stdout: bool = False,
+        forward_stderr: bool = False,
+    ):
+        super().__init__(
+            interval=interval, forward_stdout=forward_stdout, forward_stderr=forward_stderr
+        )
         self.dbfs_client = files.DbfsAPI(client.api_client)
+        self.stdio_position = {"stdout": 0, "stderr": 0}
 
     @contextmanager
     def get_params(self) -> Iterator[PipesParams]:
-        with dbfs_tempdir(self.dbfs_client) as tempdir:
-            yield {"path": tempdir}
+        with dbfs_tempdir(self.dbfs_client) as messages_tempdir, dbfs_tempdir(
+            self.dbfs_client
+        ) as logs_tempdir:
+            yield {"path": messages_tempdir, "cluster_log_root": logs_tempdir}
 
     def download_messages_chunk(self, index: int, params: PipesParams) -> Optional[str]:
         message_path = os.path.join(params["path"], f"{index}.json")
         try:
             raw_message = self.dbfs_client.read(message_path)
-
             # Files written to dbfs using the Python IO interface used in PipesDbfsMessageWriter are
             # base64-encoded.
             return base64.b64decode(raw_message.data).decode("utf-8")
@@ -223,6 +244,47 @@ class PipesDbfsMessageReader(PipesBlobStoreMessageReader):
         # chunk doesn't yet exist. Swallowing the error here is equivalent to doing a no-op on a
         # status check showing a non-existent file.
         except IOError:
+            return None
+
+    def download_stdout_chunk(self, params: PipesParams) -> Optional[str]:
+        return self._download_stdio_chunk(params, "stdout")
+
+    def stdout_log_exists(self, params) -> bool:
+        return self._get_stdio_log_path(params, "stdout") is not None
+
+    def download_stderr_chunk(self, params: PipesParams) -> Optional[str]:
+        return self._download_stdio_chunk(params, "stderr")
+
+    def stderr_log_exists(self, params) -> bool:
+        return self._get_stdio_log_path(params, "stderr") is not None
+
+    def _download_stdio_chunk(
+        self, params: PipesParams, stream: Literal["stdout", "stderr"]
+    ) -> Optional[str]:
+        log_path = self._get_stdio_log_path(params, stream)
+        if log_path is None:
+            return None
+        else:
+            try:
+                read_response = self.dbfs_client.read(log_path)
+                assert read_response.data
+                content = base64.b64decode(read_response.data).decode("utf-8")
+                chunk = content[self.stdio_position[stream] :]
+                self.stdio_position[stream] = len(content)
+                return chunk
+            except IOError:
+                return None
+
+    # The directory containing logs will not exist until either 5 minutes have elapsed or the
+    # job has finished.
+    def _get_stdio_log_path(
+        self, params: PipesParams, stream: Literal["stdout", "stderr"]
+    ) -> Optional[str]:
+        log_root_path = os.path.join(params["cluster_log_root"])
+        child_dirs = list(self.dbfs_client.list(log_root_path))
+        if len(child_dirs) > 0:
+            return f"dbfs:{child_dirs[0].path}/driver/{stream}"
+        else:
             return None
 
     def no_messages_debug_text(self) -> str:

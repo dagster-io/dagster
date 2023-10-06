@@ -11,7 +11,8 @@ import zlib
 from abc import ABC, abstractmethod
 from contextlib import ExitStack, contextmanager
 from io import StringIO
-from threading import Event, Lock, Thread
+from queue import Queue
+from threading import Event, Thread
 from typing import (
     IO,
     TYPE_CHECKING,
@@ -81,7 +82,7 @@ PIPES_PROTOCOL_VERSION_FIELD = "__dagster_pipes_version"
 
 
 class PipesMessage(TypedDict):
-    """A message sent from the orchestration process to the external process."""
+    """A message sent from the external process to the orchestration process."""
 
     __dagster_pipes_version: str
     method: str
@@ -534,19 +535,17 @@ class PipesBlobStoreMessageWriterChannel(PipesMessageWriterChannel):
 
     def __init__(self, *, interval: float = 10):
         self._interval = interval
-        self._lock = Lock()
-        self._buffer = []
+        self._buffer: Queue[PipesMessage] = Queue()
         self._counter = 1
 
     def write_message(self, message: PipesMessage) -> None:
-        with self._lock:
-            self._buffer.append(message)
+        self._buffer.put(message)
 
     def flush_messages(self) -> Sequence[PipesMessage]:
-        with self._lock:
-            messages = list(self._buffer)
-            self._buffer.clear()
-            return messages
+        items = []
+        while not self._buffer.empty():
+            items.append(self._buffer.get())
+        return items
 
     @abstractmethod
     def upload_messages_chunk(self, payload: StringIO, index: int) -> None: ...
@@ -567,15 +566,15 @@ class PipesBlobStoreMessageWriterChannel(PipesMessageWriterChannel):
     def _upload_loop(self, is_task_complete: Event) -> None:
         start_or_last_upload = datetime.datetime.now()
         while True:
-            num_pending = len(self._buffer)
             now = datetime.datetime.now()
-            if num_pending == 0 and is_task_complete.is_set():
+            if self._buffer.empty() and is_task_complete.is_set():
                 break
             elif is_task_complete.is_set() or (now - start_or_last_upload).seconds > self._interval:
                 payload = "\n".join([json.dumps(message) for message in self.flush_messages()])
-                self.upload_messages_chunk(StringIO(payload), self._counter)
-                start_or_last_upload = now
-                self._counter += 1
+                if len(payload) > 0:
+                    self.upload_messages_chunk(StringIO(payload), self._counter)
+                    start_or_last_upload = now
+                    self._counter += 1
             time.sleep(1)
 
 

@@ -144,7 +144,7 @@ class PipesFileMessageReader(PipesMessageReader):
         self,
         handler: "PipesMessageHandler",
     ) -> Iterator[PipesParams]:
-        """Set up a thread to read streaming messages from teh external process by tailing the
+        """Set up a thread to read streaming messages from the external process by tailing the
         target file.
 
         Args:
@@ -208,6 +208,11 @@ class PipesTempFileMessageReader(PipesMessageReader):
         return "Attempted to read messages from a local temporary file."
 
 
+# Number of seconds to wait after an external process has completed for stdio logs to become
+# available. If this is exceeded, proceed with exiting without picking up logs.
+WAIT_FOR_STDIO_LOGS_TIMEOUT = 60
+
+
 class PipesBlobStoreMessageReader(PipesMessageReader):
     """Message reader that reads a sequence of message chunks written by an external process into a
     blob store such as S3, Azure blob storage, or GCS.
@@ -223,14 +228,22 @@ class PipesBlobStoreMessageReader(PipesMessageReader):
 
     Args:
         interval (float): interval in seconds between attempts to download a chunk
+        forward_stdout (bool): whether to forward stdout from the pipes process to Dagster.
+        forward_stderr (bool): whether to forward stderr from the pipes process to Dagster.
     """
 
     interval: float
     counter: int
+    forward_stdout: bool
+    forward_stderr: bool
 
-    def __init__(self, interval: float = 10):
+    def __init__(
+        self, interval: float = 10, forward_stdout: bool = False, forward_stderr: bool = False
+    ):
         self.interval = interval
         self.counter = 1
+        self.forward_stdout = forward_stdout
+        self.forward_stderr = forward_stderr
 
     @contextmanager
     def read_messages(
@@ -249,23 +262,46 @@ class PipesBlobStoreMessageReader(PipesMessageReader):
         """
         with self.get_params() as params:
             is_task_complete = Event()
-            thread = None
+            messages_thread = None
+            stdout_thread = None
+            stderr_thread = None
             try:
-                thread = Thread(
-                    target=self._reader_thread,
-                    args=(
-                        handler,
-                        params,
-                        is_task_complete,
-                    ),
-                    daemon=True,
+                messages_thread = Thread(
+                    target=self._messages_thread, args=(handler, params, is_task_complete)
                 )
-                thread.start()
+                messages_thread.start()
+                if self.forward_stdout:
+                    stdout_thread = Thread(
+                        target=self._stdout_thread, args=(params, is_task_complete)
+                    )
+                    stdout_thread.start()
+                if self.forward_stderr:
+                    stderr_thread = Thread(
+                        target=self._stderr_thread, args=(params, is_task_complete)
+                    )
+                    stderr_thread.start()
                 yield params
             finally:
+                self.wait_for_stdio_logs(params)
                 is_task_complete.set()
-                if thread:
-                    thread.join()
+                if messages_thread:
+                    messages_thread.join()
+                if stdout_thread:
+                    stdout_thread.join()
+                if stderr_thread:
+                    stderr_thread.join()
+
+    # In cases where we are forwarding logs, in some cases the logs might not be written out until
+    # after the run completes. We wait for them to exist.
+    def wait_for_stdio_logs(self, params):
+        start_or_last_download = datetime.datetime.now()
+        while (
+            datetime.datetime.now() - start_or_last_download
+        ).seconds <= WAIT_FOR_STDIO_LOGS_TIMEOUT and (
+            (self.forward_stdout and not self.stdout_log_exists(params))
+            or (self.forward_stderr and not self.stderr_log_exists(params))
+        ):
+            time.sleep(5)
 
     @abstractmethod
     @contextmanager
@@ -280,15 +316,30 @@ class PipesBlobStoreMessageReader(PipesMessageReader):
     @abstractmethod
     def download_messages_chunk(self, index: int, params: PipesParams) -> Optional[str]: ...
 
-    def _reader_thread(
-        self, handler: "PipesMessageHandler", params: PipesParams, is_task_complete: Event
+    def download_stdout_chunk(self, params: PipesParams) -> Optional[str]:
+        raise NotImplementedError()
+
+    def stdout_log_exists(self, params: PipesParams) -> bool:
+        raise NotImplementedError()
+
+    def download_stderr_chunk(self, params: PipesParams) -> Optional[str]:
+        raise NotImplementedError()
+
+    def stderr_log_exists(self, params: PipesParams) -> bool:
+        raise NotImplementedError()
+
+    def _messages_thread(
+        self,
+        handler: "PipesMessageHandler",
+        params: PipesParams,
+        is_task_complete: Event,
     ) -> None:
         start_or_last_download = datetime.datetime.now()
         while True:
             now = datetime.datetime.now()
             if (now - start_or_last_download).seconds > self.interval or is_task_complete.is_set():
-                chunk = self.download_messages_chunk(self.counter, params)
                 start_or_last_download = now
+                chunk = self.download_messages_chunk(self.counter, params)
                 if chunk:
                     for line in chunk.split("\n"):
                         message = json.loads(line)
@@ -298,6 +349,40 @@ class PipesBlobStoreMessageReader(PipesMessageReader):
                     break
             time.sleep(1)
 
+    def _stdout_thread(
+        self,
+        params: PipesParams,
+        is_task_complete: Event,
+    ) -> None:
+        start_or_last_download = datetime.datetime.now()
+        while True:
+            now = datetime.datetime.now()
+            if (now - start_or_last_download).seconds > self.interval or is_task_complete.is_set():
+                start_or_last_download = now
+                chunk = self.download_stdout_chunk(params)
+                if chunk:
+                    sys.stdout.write(chunk)
+                elif is_task_complete.is_set():
+                    break
+            time.sleep(10)
+
+    def _stderr_thread(
+        self,
+        params: PipesParams,
+        is_task_complete: Event,
+    ) -> None:
+        start_or_last_download = datetime.datetime.now()
+        while True:
+            now = datetime.datetime.now()
+            if (now - start_or_last_download).seconds > self.interval or is_task_complete.is_set():
+                start_or_last_download = now
+                chunk = self.download_stderr_chunk(params)
+                if chunk:
+                    sys.stderr.write(chunk)
+                elif is_task_complete.is_set():
+                    break
+            time.sleep(10)
+
 
 def extract_message_or_forward_to_stdout(handler: "PipesMessageHandler", log_line: str):
     # exceptions as control flow, you love to see it
@@ -305,6 +390,8 @@ def extract_message_or_forward_to_stdout(handler: "PipesMessageHandler", log_lin
         message = json.loads(log_line)
         if PIPES_PROTOCOL_VERSION_FIELD in message.keys():
             handler.handle_message(message)
+        else:
+            sys.stdout.writelines((log_line, "\n"))
     except Exception:
         # move non-message logs in to stdout for compute log capture
         sys.stdout.writelines((log_line, "\n"))
