@@ -115,11 +115,7 @@ class AssetDaemonContext:
 
         # fetch some data in advance to batch some queries
         self.instance_queryer.prefetch_asset_records(
-            [
-                key
-                for key in self.target_asset_keys_and_parents
-                if not self.asset_graph.is_source(key)
-            ]
+            [key for key in self.target_asset_keys_and_parents]
         )
 
     @property
