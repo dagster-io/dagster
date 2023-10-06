@@ -273,9 +273,14 @@ const ConfigEditorPartitionPicker: React.FC<ConfigEditorPartitionPickerProps> = 
       });
     }
 
+    // Note: We don't want this Suggest to be a fully "controlled" React component.
+    // Keeping it's state is annoyign and we only want to update our data model on
+    // selection change. However, we need to set an initial value (defaultSelectedItem)
+    // and ensure it is re-applied to the internal state when it changes (via `key` below).
     return (
       <>
         <Suggest<Partition>
+          key={selected ? selected.name : 'none'}
           defaultSelectedItem={selected}
           items={partitions}
           inputProps={inputProps}
@@ -303,21 +308,24 @@ const ConfigEditorPartitionPicker: React.FC<ConfigEditorPartitionPickerProps> = 
             Add new partition
           </Button>
         ) : null}
-        <CreatePartitionDialog
-          key={showCreatePartition ? '1' : '0'}
-          isOpen={showCreatePartition}
-          partitionDefinitionName={partitionDefinitionName}
-          repoAddress={repoAddress}
-          close={() => {
-            setShowCreatePartition(false);
-          }}
-          refetch={async () => {
-            await refetch();
-          }}
-          onCreated={(partitionName) => {
-            onSelect(repositorySelector, partitionSetName, partitionName);
-          }}
-        />
+        {/* Wrapper div to avoid any key conflicts with the key on the Suggestion component */}
+        <div>
+          <CreatePartitionDialog
+            key={showCreatePartition ? '1' : '0'}
+            isOpen={showCreatePartition}
+            partitionDefinitionName={partitionDefinitionName}
+            repoAddress={repoAddress}
+            close={() => {
+              setShowCreatePartition(false);
+            }}
+            refetch={async () => {
+              await refetch();
+            }}
+            onCreated={(partitionName) => {
+              onSelect(repositorySelector, partitionSetName, partitionName);
+            }}
+          />
+        </div>
       </>
     );
   },
