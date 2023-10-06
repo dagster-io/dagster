@@ -20,9 +20,9 @@ from typing import (
 )
 
 import pendulum
-from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 
 import dagster._check as check
+from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey

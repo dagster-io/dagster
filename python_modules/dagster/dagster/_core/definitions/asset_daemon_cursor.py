@@ -3,7 +3,6 @@ import itertools
 import json
 from collections import defaultdict
 from typing import (
-    TYPE_CHECKING,
     AbstractSet,
     Dict,
     Iterable,
@@ -14,28 +13,21 @@ from typing import (
     Set,
     cast,
 )
-from dagster import deserialize_value
-from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
-from dagster._core.definitions.auto_materialize_rule import AutoMaterializeAssetEvaluation
 
 import dagster._check as check
+from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
 )
 from dagster._core.instance import DynamicPartitionsStore
-from dagster._serdes.serdes import serialize_value
-from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 from .asset_graph import AssetGraph
 from .partition import (
     PartitionsDefinition,
     PartitionsSubset,
 )
-
-if TYPE_CHECKING:
-    from dagster._core.instance import DynamicPartitionsStore
 
 
 class AssetDaemonCursor(NamedTuple):
