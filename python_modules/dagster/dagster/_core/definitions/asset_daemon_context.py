@@ -586,6 +586,9 @@ class AssetDaemonContext:
                 for evaluation in evaluations_by_asset_key.values()
                 if sum([evaluation.num_requested, evaluation.num_skipped, evaluation.num_discarded])
                 > 0
+                and not evaluation.equivalent_to_stored_evaluation(
+                    self.cursor.latest_evaluation_by_asset_key.get(evaluation.asset_key)
+                )
             ],
         )
 
