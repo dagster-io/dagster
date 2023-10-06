@@ -20,7 +20,6 @@ class Permissions(str, Enum):
     EDIT_DYNAMIC_PARTITIONS = "edit_dynamic_partitions"
     TOGGLE_AUTO_MATERIALIZE = "toggle_auto_materialize"
     EDIT_CONCURRENCY_LIMIT = "edit_concurrency_limit"
-    CREATE_EXTERNAL_ASSET_MATERIALIZATION = "create_external_asset_materialization"
 
     def __str__(self) -> str:
         return str.__str__(self)
@@ -43,7 +42,6 @@ VIEWER_PERMISSIONS: Dict[str, bool] = {
     Permissions.EDIT_DYNAMIC_PARTITIONS: False,
     Permissions.TOGGLE_AUTO_MATERIALIZE: False,
     Permissions.EDIT_CONCURRENCY_LIMIT: False,
-    Permissions.CREATE_EXTERNAL_ASSET_MATERIALIZATION: False,
 }
 
 EDITOR_PERMISSIONS: Dict[str, bool] = {
@@ -63,7 +61,6 @@ EDITOR_PERMISSIONS: Dict[str, bool] = {
     Permissions.EDIT_DYNAMIC_PARTITIONS: True,
     Permissions.TOGGLE_AUTO_MATERIALIZE: True,
     Permissions.EDIT_CONCURRENCY_LIMIT: True,
-    Permissions.CREATE_EXTERNAL_ASSET_MATERIALIZATION: True,
 }
 
 LOCATION_SCOPED_PERMISSIONS = {
@@ -79,7 +76,6 @@ LOCATION_SCOPED_PERMISSIONS = {
     Permissions.LAUNCH_PARTITION_BACKFILL,
     Permissions.CANCEL_PARTITION_BACKFILL,
     Permissions.EDIT_DYNAMIC_PARTITIONS,
-    Permissions.CREATE_EXTERNAL_ASSET_MATERIALIZATION,
 }
 
 
