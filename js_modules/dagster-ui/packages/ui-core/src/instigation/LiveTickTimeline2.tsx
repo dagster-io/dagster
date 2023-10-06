@@ -1,21 +1,23 @@
-import {Caption, Colors, Tooltip, useViewport} from '@dagster-io/ui-components';
+import {Caption, Colors, Tooltip, ifPlural, useViewport} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import memoize from 'lodash/memoize';
 import * as React from 'react';
 import styled from 'styled-components';
 
+import {TimeContext} from '../app/time/TimeContext';
+import {browserTimezone} from '../app/time/browserTimezone';
 import {InstigationTickStatus, InstigationType} from '../graphql/types';
 
-dayjs.extend(relativeTime);
-
 import {HistoryTickFragment} from './types/TickHistory.types';
+
+dayjs.extend(relativeTime);
 
 const COLOR_MAP = {
   [InstigationTickStatus.SUCCESS]: Colors.Green500,
   [InstigationTickStatus.FAILURE]: Colors.Red500,
   [InstigationTickStatus.STARTED]: Colors.LightPurple,
   [InstigationTickStatus.SKIPPED]: Colors.Olive200,
-  ['future']: Colors.Gray400,
 };
 
 const HoverColorMap = {
@@ -23,18 +25,29 @@ const HoverColorMap = {
   [InstigationTickStatus.FAILURE]: Colors.Red700,
   [InstigationTickStatus.STARTED]: Colors.Blue500,
   [InstigationTickStatus.SKIPPED]: Colors.Olive500,
-  ['future']: Colors.Gray700,
 };
 
 const REFRESH_INTERVAL = 100;
 
 const MIN_WIDTH = 8; // At least 8px wide
 
+const MINUTE = 60000;
+
+const timestampFormat = memoize((timezone: string) => {
+  return new Intl.DateTimeFormat(navigator.language, {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hourCycle: 'h23',
+    timeZone: timezone === 'Automatic' ? browserTimezone() : timezone,
+  });
+});
+
 type StrippedDownTickFragment = Pick<
   HistoryTickFragment,
   'id' | 'timestamp' | 'instigationType'
 > & {
-  status: 'future' | InstigationTickStatus;
+  status: InstigationTickStatus;
   runs?: HistoryTickFragment['runs'];
   endTimestamp?: number | null;
   requestedAssetMaterializationCount?: number;
@@ -44,9 +57,9 @@ export const LiveTickTimeline = <T extends StrippedDownTickFragment>({
   ticks,
   onHoverTick,
   onSelectTick,
-  timeRange = 60000 * 5, // 5 minutes,
-  tickGrid = 60000, // 1 minute
-  timeAfter = 60000, // 1 minute
+  timeRange = MINUTE * 5, // 5 minutes,
+  tickGrid = MINUTE, // 1 minute
+  timeAfter = MINUTE, // 1 minute
 }: {
   ticks: T[];
   onHoverTick: (InstigationTick?: T) => void;
@@ -112,6 +125,10 @@ export const LiveTickTimeline = <T extends StrippedDownTickFragment>({
     return ticks;
   }, [startTickGridX, maxX, tickGrid, viewport.width, minX, fullRange]);
 
+  const {
+    timezone: [timezone],
+  } = React.useContext(TimeContext);
+
   return (
     <div {...containerProps}>
       <TicksWrapper>
@@ -125,12 +142,7 @@ export const LiveTickTimeline = <T extends StrippedDownTickFragment>({
             <GridTickLine />
             {tick.showLabel ? (
               <GridTickTime>
-                <Caption>
-                  {new Date(tick.time).toLocaleTimeString([], {
-                    hour: 'numeric',
-                    minute: '2-digit',
-                  })}
-                </Caption>
+                <Caption>{timestampFormat(timezone).format(new Date(tick.time))}</Caption>
               </GridTickTime>
             ) : null}
           </GridTick>
@@ -154,7 +166,7 @@ export const LiveTickTimeline = <T extends StrippedDownTickFragment>({
                 setPaused(false);
               }}
               onClick={() => {
-                onSelectTick(tick as any);
+                onSelectTick(tick);
               }}
             >
               <Tooltip content={<TickTooltip tick={tick} />}>
@@ -185,9 +197,12 @@ const TickTooltip = React.memo(({tick}: {tick: StrippedDownTickFragment}) => {
       return 'Evaluating…';
     }
     if (tick.instigationType === InstigationType.AUTO_MATERIALIZE) {
-      return `${tick.requestedAssetMaterializationCount} materializations requested`;
+      return `${tick.requestedAssetMaterializationCount} materialization${ifPlural(
+        tick.requestedAssetMaterializationCount,
+        's',
+      )} requested`;
     } else {
-      return `${tick.runs?.length} runs requested`;
+      return `${tick.runs?.length || 0} run${ifPlural(tick.runs?.length, 's')} requested`;
     }
   }, [tick]);
   const startTime = dayjs(1000 * tick.timestamp!);
@@ -216,7 +231,7 @@ const TimeAxisWrapper = styled.div`
   height: 24px;
 `;
 
-const Tick = styled.div<{status: InstigationTickStatus | 'future'}>`
+const Tick = styled.div<{status: InstigationTickStatus}>`
   cursor: pointer;
   position: absolute;
   top: 10px;

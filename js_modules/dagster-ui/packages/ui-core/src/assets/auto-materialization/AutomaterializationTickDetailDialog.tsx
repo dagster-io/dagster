@@ -138,7 +138,7 @@ export const AutomaterializationTickDetailDialog = React.memo(
             title={
               tick ? (
                 <div>
-                  <Timestamp timestamp={{unix: tick.timestamp}} dateTimeSeparator=" at " />
+                  <Timestamp timestamp={{unix: tick.timestamp}} />
                 </div>
               ) : (
                 ''
@@ -168,9 +168,7 @@ export const AutomaterializationTickDetailDialog = React.memo(
                 style={{width: '80vw'}}
               >
                 <DialogBody>
-                  <Box padding={{vertical: 12, horizontal: 24}}>
-                    <PythonErrorInfo error={showPythonError} />
-                  </Box>
+                  <PythonErrorInfo error={showPythonError} />
                 </DialogBody>
                 <DialogFooter topBorder>
                   <Button
@@ -207,13 +205,7 @@ export const AutomaterializationTickDetailDialog = React.memo(
                 </Box>
                 <Box flex={{direction: 'column', gap: 4}}>
                   <Subtitle2>Timestamp</Subtitle2>
-                  <div>
-                    {tick ? (
-                      <Timestamp timestamp={{unix: tick.timestamp}} dateTimeSeparator=" at " />
-                    ) : (
-                      '–'
-                    )}
-                  </div>
+                  <div>{tick ? <Timestamp timestamp={{unix: tick.timestamp}} /> : '–'}</div>
                 </Box>
                 <Box flex={{direction: 'column', gap: 4}}>
                   <Subtitle2>Duration</Subtitle2>

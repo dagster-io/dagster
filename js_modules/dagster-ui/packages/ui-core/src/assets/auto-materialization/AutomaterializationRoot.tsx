@@ -32,6 +32,11 @@ import {
   AssetDaemonTickFragment,
 } from './types/AutomaterializationRoot.types';
 
+const MINUTE = 60 * 1000;
+const THREE_MINUTES = 3 * MINUTE;
+const FIVE_MINUTES = 5 * MINUTE;
+const TWENTY_MINUTES = 20 * MINUTE;
+
 export const AutomaterializationRoot = () => {
   useTrackPageView();
   const automaterialize = useAutomaterializeDaemonStatus();
@@ -68,7 +73,7 @@ export const AutomaterializationRoot = () => {
 
   const onHoverTick = React.useCallback(
     (tick: AssetDaemonTickFragment | undefined) => {
-      setIsPaused(tick ? true : false);
+      setIsPaused(!!tick);
     },
     [setIsPaused],
   );
@@ -133,9 +138,9 @@ export const AutomaterializationRoot = () => {
             ticks={ticks}
             onHoverTick={onHoverTick}
             onSelectTick={setSelectedTick}
-            timeRange={20 * 60 * 1000}
-            tickGrid={5 * 60000}
-            timeAfter={3 * 60000}
+            timeRange={TWENTY_MINUTES}
+            tickGrid={FIVE_MINUTES}
+            timeAfter={THREE_MINUTES}
           />
           <AutomaterializationTickDetailDialog
             key={selectedTick?.id}
