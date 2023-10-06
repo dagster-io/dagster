@@ -7,6 +7,7 @@ import styled from 'styled-components';
 
 import {TimeContext} from '../app/time/TimeContext';
 import {browserTimezone} from '../app/time/browserTimezone';
+import {AssetDaemonTickFragment} from '../assets/auto-materialization/types/AssetDaemonTicksQuery.types';
 import {InstigationTickStatus, InstigationType} from '../graphql/types';
 
 import {HistoryTickFragment} from './types/TickHistory.types';
@@ -51,7 +52,7 @@ type StrippedDownTickFragment = Pick<
   runs?: HistoryTickFragment['runs'];
   endTimestamp?: number | null;
   requestedAssetMaterializationCount?: number;
-};
+} & Pick<AssetDaemonTickFragment, 'requestedMaterializationsForAssets'>;
 
 export const LiveTickTimeline = <T extends StrippedDownTickFragment>({
   ticks,
