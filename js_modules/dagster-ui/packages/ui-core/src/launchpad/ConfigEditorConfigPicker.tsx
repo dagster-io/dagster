@@ -280,7 +280,6 @@ const ConfigEditorPartitionPicker: React.FC<ConfigEditorPartitionPickerProps> = 
     return (
       <>
         <Suggest<Partition>
-          key={selected ? selected.name : 'none'}
           defaultSelectedItem={selected}
           items={partitions}
           inputProps={inputProps}
@@ -309,7 +308,7 @@ const ConfigEditorPartitionPicker: React.FC<ConfigEditorPartitionPickerProps> = 
           </Button>
         ) : null}
         <CreatePartitionDialog
-          key={showCreatePartition ? 'showCreatePartition::1' : 'showCreatePartition::0'}
+          key={showCreatePartition ? '1' : '0'}
           isOpen={showCreatePartition}
           partitionDefinitionName={partitionDefinitionName}
           repoAddress={repoAddress}
