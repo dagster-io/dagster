@@ -818,7 +818,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
 
     def _test_current_evaluation_id(self, graphql_context: WorkspaceRequestContext):
         graphql_context.instance.daemon_cursor_storage.set_cursor_values(
-            {CURSOR_KEY: AssetDaemonCursor.empty().serialize()}
+            {CURSOR_KEY: AssetDaemonCursor.empty().serialize(graphql_context.instance)}
         )
 
         results = execute_dagster_graphql(
