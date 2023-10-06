@@ -157,7 +157,9 @@ export const AutomaterializationEvaluationHistoryTable = ({
                 />
               </td>
               <td>
-                {tick.requestedAssetMaterializationCount ? (
+                {[InstigationTickStatus.SKIPPED, InstigationTickStatus.SUCCESS].includes(
+                  tick.status,
+                ) ? (
                   <ButtonLink
                     onClick={() => {
                       setSelectedTick(tick);
@@ -168,7 +170,7 @@ export const AutomaterializationEvaluationHistoryTable = ({
                     </Body2>
                   </ButtonLink>
                 ) : (
-                  <Body2 color={Colors.Gray700}>No runs launched</Body2>
+                  ' - '
                 )}
               </td>
               <td>
