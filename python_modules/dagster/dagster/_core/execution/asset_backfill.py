@@ -1010,7 +1010,6 @@ def execute_asset_backfill_iteration_inner(
     request_roots = not asset_backfill_data.requested_runs_for_target_roots
     if request_roots:
         initial_candidates.update(asset_backfill_data.get_target_root_asset_partitions())
-
         next_latest_storage_id = instance_queryer.get_latest_storage_id_for_event_type(
             event_type=DagsterEventType.ASSET_MATERIALIZATION
         )
@@ -1035,7 +1034,6 @@ def execute_asset_backfill_iteration_inner(
             latest_storage_id=asset_backfill_data.latest_storage_id,
         )
         initial_candidates.update(parent_materialized_asset_partitions)
-        print(f"initial_candidates: {initial_candidates}")
 
         yield None
 
@@ -1057,37 +1055,37 @@ def execute_asset_backfill_iteration_inner(
 
         yield None
 
-    if len(initial_candidates) == 0:
-        in_progress_subset = (
-            asset_backfill_data.requested_subset
-            - (  # maybe check for run ids instead?
-                updated_materialized_subset | failed_and_downstream_subset
-            )
-        )
+    # if len(initial_candidates) == 0:
+    #     in_progress_subset = (
+    #         asset_backfill_data.requested_subset
+    #         - (  # maybe check for run ids instead?
+    #             updated_materialized_subset | failed_and_downstream_subset
+    #         )
+    #     )
 
-        # check for any unrequested assets
-        unrequested_asset_keys = asset_backfill_data.target_subset.asset_keys - (
-            asset_backfill_data.failed_and_downstream_subset.asset_keys  # edge case that can happen where certain partitions are materialized?
-            | asset_backfill_data.materialized_subset.asset_keys
-            | asset_backfill_data.requested_subset.asset_keys
-        )
+    #     # check for any unrequested assets
+    #     unrequested_asset_keys = asset_backfill_data.target_subset.asset_keys - (
+    #         asset_backfill_data.failed_and_downstream_subset.asset_keys  # edge case that can happen where certain partitions are materialized?
+    #         | asset_backfill_data.materialized_subset.asset_keys
+    #         | asset_backfill_data.requested_subset.asset_keys
+    #     )
 
-        if len(in_progress_subset.asset_keys) == 0 and unrequested_asset_keys:
-            # Re-request next roots
-            root_unrequested_asset_keys = (
-                AssetSelection.keys(*unrequested_asset_keys)
-                .sources()
-                .resolve(asset_backfill_data.target_subset.asset_graph)
-            )
-            initial_candidates.update(
-                list(
-                    asset_backfill_data.target_subset.filter_asset_keys(
-                        root_unrequested_asset_keys
-                    ).iterate_asset_partitions()
-                )
-            )
+    #     if len(in_progress_subset.asset_keys) == 0 and unrequested_asset_keys:
+    #         # Re-request next roots
+    #         root_unrequested_asset_keys = (
+    #             AssetSelection.keys(*unrequested_asset_keys)
+    #             .sources()
+    #             .resolve(asset_backfill_data.target_subset.asset_graph)
+    #         )
+    #         initial_candidates.update(
+    #             list(
+    #                 asset_backfill_data.target_subset.filter_asset_keys(
+    #                     root_unrequested_asset_keys
+    #                 ).iterate_asset_partitions()
+    #             )
+    #         )
 
-    asset_partitions_to_request = asset_graph.bfs_filter_asset_partitions(
+    asset_partitions_to_request = asset_graph.bfs_filter_asset_partitions_in_target_subset(
         instance_queryer,
         lambda unit, visited: should_backfill_atomic_asset_partitions_unit(
             candidates_unit=unit,
@@ -1102,6 +1100,7 @@ def execute_asset_backfill_iteration_inner(
         ),
         initial_asset_partitions=initial_candidates,
         evaluation_time=backfill_start_time,
+        target_subset=asset_backfill_data.target_subset,
     )
 
     # check if all assets have backfill policies if any of them do, otherwise, raise error

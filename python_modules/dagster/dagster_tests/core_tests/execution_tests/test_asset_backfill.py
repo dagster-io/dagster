@@ -519,7 +519,12 @@ def run_backfill_to_completion(
     backfill_data: AssetBackfillData,
     fail_asset_partitions: Iterable[AssetKeyPartitionKey],
     instance: DagsterInstance,
-) -> Tuple[AssetBackfillData, AbstractSet[AssetKeyPartitionKey], AbstractSet[AssetKeyPartitionKey]]:
+) -> Tuple[
+    AssetBackfillData,
+    AbstractSet[AssetKeyPartitionKey],
+    AbstractSet[AssetKeyPartitionKey],
+    Sequence[RunRequest],
+]:
     iteration_count = 0
     instance = instance or DagsterInstance.ephemeral()
     backfill_id = "backfillid_x"
@@ -533,6 +538,8 @@ def run_backfill_to_completion(
         fail_asset_partitions,
         evaluation_time=backfill_data.backfill_start_time,
     )
+
+    run_requests = []
 
     while not backfill_data.is_complete():
         iteration_count += 1
@@ -576,6 +583,7 @@ def run_backfill_to_completion(
                         f" {parent_asset_partition},"
                     )
 
+        run_requests.extend(result1.run_requests)
         for run_request in result1.run_requests:
             asset_keys = run_request.asset_selection
             assert asset_keys is not None
@@ -607,7 +615,12 @@ def run_backfill_to_completion(
             )
 
         assert iteration_count <= len(requested_asset_partitions) + 1
-    return backfill_data, requested_asset_partitions, fail_and_downstream_asset_partitions
+    return (
+        backfill_data,
+        requested_asset_partitions,
+        fail_and_downstream_asset_partitions,
+        run_requests,
+    )
 
 
 def _requested_asset_partitions_in_run_request(
@@ -824,6 +837,7 @@ def test_asset_backfill_status_counts():
         completed_backfill_data,
         requested_asset_partitions,
         fail_and_downstream_asset_partitions,
+        run_requests,
     ) = run_backfill_to_completion(
         instance=instance,
         asset_graph=asset_graph,
@@ -1058,7 +1072,59 @@ def test_asset_backfill_cancellation():
     )
 
 
-def test_asset_backfill_target_asset_and_grandchild():
+def test_asset_backfill_target_asset_and_same_partitioning_grandchild():
+    instance = DagsterInstance.ephemeral()
+
+    @asset(partitions_def=DailyPartitionsDefinition("2023-10-01"))
+    def foo():
+        pass
+
+    @asset(partitions_def=DailyPartitionsDefinition("2023-10-01"), deps=[foo])
+    def foo_child():
+        pass
+
+    @asset(partitions_def=DailyPartitionsDefinition("2023-10-01"), deps=[foo_child])
+    def foo_grandchild():
+        pass
+
+    assets_by_repo_name = {
+        "repo": [
+            foo,
+            foo_child,
+            foo_grandchild,
+        ]
+    }
+    asset_graph = get_asset_graph(assets_by_repo_name)
+
+    asset_selection = [
+        foo.key,
+        foo_grandchild.key,
+    ]
+
+    asset_backfill_data = AssetBackfillData.from_asset_partitions(
+        asset_graph=asset_graph,
+        partition_names=None,
+        asset_selection=asset_selection,
+        dynamic_partitions_store=MagicMock(),
+        all_partitions=True,
+        backfill_start_time=pendulum.datetime(2023, 10, 5, 0, 0, 0),
+    )
+    assert set(asset_backfill_data.target_subset.iterate_asset_partitions()) == {
+        AssetKeyPartitionKey(asset_key, partition_key)
+        for asset_key in [foo.key, foo_grandchild.key]
+        for partition_key in [f"2023-10-0{x}" for x in range(1, 6)]
+    }
+
+    asset_backfill_data, _, _, run_requests = run_backfill_to_completion(
+        asset_graph, assets_by_repo_name, asset_backfill_data, [], instance
+    )
+    assert asset_backfill_data.materialized_subset == asset_backfill_data.target_subset
+    assert len(run_requests) == 5
+    for run_request in run_requests:
+        assert set(run_request.asset_selection) == {foo.key, foo_grandchild.key}
+
+
+def test_asset_backfill_target_asset_and_differently_partitioned_grandchild():
     instance = DagsterInstance.ephemeral()
 
     @asset(partitions_def=DailyPartitionsDefinition("2023-09-20"))
