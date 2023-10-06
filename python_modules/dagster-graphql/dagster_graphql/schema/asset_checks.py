@@ -192,6 +192,14 @@ class GrapheneAssetCheckNeedsMigrationError(graphene.ObjectType):
         name = "AssetCheckNeedsMigrationError"
 
 
+class GrapheneAssetCheckNeedsAgentUpgradeError(graphene.ObjectType):
+    message = graphene.NonNull(graphene.String)
+
+    class Meta:
+        interfaces = (GrapheneError,)
+        name = "AssetCheckNeedsAgentUpgradeError"
+
+
 class GrapheneAssetCheckNeedsUserCodeUpgrade(graphene.ObjectType):
     message = graphene.NonNull(graphene.String)
 
@@ -206,6 +214,7 @@ class GrapheneAssetChecksOrError(graphene.Union):
             GrapheneAssetChecks,
             GrapheneAssetCheckNeedsMigrationError,
             GrapheneAssetCheckNeedsUserCodeUpgrade,
+            GrapheneAssetCheckNeedsAgentUpgradeError,
         )
         name = "AssetChecksOrError"
 

@@ -10,6 +10,7 @@ from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,
     AssetCheckExecutionRecordStatus,
     AssetCheckExecutionResolvedStatus,
+    AssetCheckInstanceSupport,
 )
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from packaging import version
@@ -18,6 +19,7 @@ from ..schema.asset_checks import (
     GrapheneAssetCheck,
     GrapheneAssetCheckCanExecuteIndividually,
     GrapheneAssetCheckExecution,
+    GrapheneAssetCheckNeedsAgentUpgradeError,
     GrapheneAssetCheckNeedsMigrationError,
     GrapheneAssetCheckNeedsUserCodeUpgrade,
     GrapheneAssetChecks,
@@ -46,11 +48,22 @@ def fetch_asset_checks(
 ) -> Union[
     GrapheneAssetCheckNeedsMigrationError,
     GrapheneAssetCheckNeedsUserCodeUpgrade,
+    GrapheneAssetCheckNeedsAgentUpgradeError,
     GrapheneAssetChecks,
 ]:
-    if not graphene_info.context.instance.event_log_storage.supports_asset_checks:
+    asset_check_support = graphene_info.context.instance.get_asset_check_support()
+    if asset_check_support == AssetCheckInstanceSupport.NEEDS_MIGRATION:
         return GrapheneAssetCheckNeedsMigrationError(
             message="Asset checks require an instance migration. Run `dagster instance migrate`."
+        )
+    elif asset_check_support == AssetCheckInstanceSupport.NEEDS_AGENT_UPGRADE:
+        return GrapheneAssetCheckNeedsAgentUpgradeError(
+            "Asset checks require an agent upgrade to 1.5.0 or greater."
+        )
+    else:
+        check.invariant(
+            asset_check_support == AssetCheckInstanceSupport.SUPPORTED,
+            f"Unexpected asset check support status {asset_check_support}",
         )
 
     external_asset_checks = []

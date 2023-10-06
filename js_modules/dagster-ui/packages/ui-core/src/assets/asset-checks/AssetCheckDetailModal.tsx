@@ -82,21 +82,13 @@ const AssetCheckDetailModalImpl = ({
       checkName,
     },
     nextCursorForResult: (data) => {
-      if (
-        !data ||
-        data.assetChecksOrError.__typename === 'AssetCheckNeedsMigrationError' ||
-        data.assetChecksOrError.__typename === 'AssetCheckNeedsUserCodeUpgrade'
-      ) {
+      if (!data || data.assetChecksOrError.__typename !== 'AssetChecks') {
         return undefined;
       }
       return data.assetChecksOrError.checks[0]?.executions[PAGE_SIZE - 1]?.id.toString();
     },
     getResultArray: (data) => {
-      if (
-        !data ||
-        data.assetChecksOrError.__typename === 'AssetCheckNeedsMigrationError' ||
-        data.assetChecksOrError.__typename === 'AssetCheckNeedsUserCodeUpgrade'
-      ) {
+      if (!data || data.assetChecksOrError.__typename !== 'AssetChecks') {
         return [];
       }
       return data.assetChecksOrError.checks[0]?.executions || [];
@@ -142,8 +134,12 @@ const AssetCheckDetailModalImpl = ({
       return <MigrationRequired />;
     }
     if (executionHistoryData.assetChecksOrError.__typename === 'AssetCheckNeedsUserCodeUpgrade') {
-      return <MigrationRequired />;
+      return <NeedsUserCodeUpgrade />;
     }
+    if (executionHistoryData.assetChecksOrError.__typename === 'AssetCheckNeedsAgentUpgradeError') {
+      return <AgentUpgradeRequired />;
+    }
+
     const check = executionHistoryData.assetChecksOrError.checks[0];
     if (!check) {
       showCustomAlert({
@@ -310,6 +306,25 @@ export function MigrationRequired() {
             <Body2 color={Colors.Gray700} style={{padding: '6px 0'}}>
               A database schema migration is required to use asset checks. Run{' '}
               <Mono>dagster instance migrate</Mono>.
+            </Body2>
+          </Box>
+        }
+      />
+    </Box>
+  );
+}
+
+export function AgentUpgradeRequired() {
+  return (
+    <Box padding={24}>
+      <NonIdealState
+        icon="warning"
+        title="Agent upgrade required"
+        description={
+          <Box flex={{direction: 'column'}}>
+            <Body2 color={Colors.Gray700} style={{padding: '6px 0'}}>
+              Checks require Dagster Cloud Agent version 1.5 or higher. Upgrade your agent(s) to use
+              checks.
             </Body2>
           </Box>
         }

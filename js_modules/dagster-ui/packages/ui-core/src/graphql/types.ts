@@ -202,6 +202,11 @@ export type AssetCheckHandleInput = {
   name: Scalars['String'];
 };
 
+export type AssetCheckNeedsAgentUpgradeError = Error & {
+  __typename: 'AssetCheckNeedsAgentUpgradeError';
+  message: Scalars['String'];
+};
+
 export type AssetCheckNeedsMigrationError = Error & {
   __typename: 'AssetCheckNeedsMigrationError';
   message: Scalars['String'];
@@ -229,6 +234,7 @@ export type AssetChecks = {
 };
 
 export type AssetChecksOrError =
+  | AssetCheckNeedsAgentUpgradeError
   | AssetCheckNeedsMigrationError
   | AssetCheckNeedsUserCodeUpgrade
   | AssetChecks;
@@ -4673,6 +4679,18 @@ export const buildAssetCheckHandleInput = (
         ? ({} as AssetKeyInput)
         : buildAssetKeyInput({}, relationshipsToOmit),
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'aliquam',
+  };
+};
+
+export const buildAssetCheckNeedsAgentUpgradeError = (
+  overrides?: Partial<AssetCheckNeedsAgentUpgradeError>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetCheckNeedsAgentUpgradeError'} & AssetCheckNeedsAgentUpgradeError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetCheckNeedsAgentUpgradeError');
+  return {
+    __typename: 'AssetCheckNeedsAgentUpgradeError',
+    message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'quia',
   };
 };
 
@@ -9788,9 +9806,9 @@ export const buildQuery = (
     assetChecksOrError:
       overrides && overrides.hasOwnProperty('assetChecksOrError')
         ? overrides.assetChecksOrError!
-        : relationshipsToOmit.has('AssetCheckNeedsMigrationError')
-        ? ({} as AssetCheckNeedsMigrationError)
-        : buildAssetCheckNeedsMigrationError({}, relationshipsToOmit),
+        : relationshipsToOmit.has('AssetCheckNeedsAgentUpgradeError')
+        ? ({} as AssetCheckNeedsAgentUpgradeError)
+        : buildAssetCheckNeedsAgentUpgradeError({}, relationshipsToOmit),
     assetNodeDefinitionCollisions:
       overrides && overrides.hasOwnProperty('assetNodeDefinitionCollisions')
         ? overrides.assetNodeDefinitionCollisions!

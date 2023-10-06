@@ -23,6 +23,7 @@ export type AssetChecksQuery = {
       }
     | {__typename: 'AssetNotFoundError'};
   assetChecksOrError:
+    | {__typename: 'AssetCheckNeedsAgentUpgradeError'}
     | {__typename: 'AssetCheckNeedsMigrationError'; message: string}
     | {__typename: 'AssetCheckNeedsUserCodeUpgrade'}
     | {

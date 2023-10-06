@@ -15,6 +15,7 @@ import {
   AssetCheckDetailModal,
   MigrationRequired,
   NeedsUserCodeUpgrade,
+  AgentUpgradeRequired,
   NoChecks,
 } from './AssetCheckDetailModal';
 import {
@@ -53,6 +54,9 @@ export const AssetChecks = ({
     }
     if (result.__typename === 'AssetCheckNeedsUserCodeUpgrade') {
       return <NeedsUserCodeUpgrade />;
+    }
+    if (result.__typename === 'AssetCheckNeedsAgentUpgradeError') {
+      return <AgentUpgradeRequired />;
     }
     const checks = result.checks;
     if (!checks.length) {
