@@ -47,7 +47,7 @@ export const AssetGraphExplorerSidebar = React.memo(
       : false;
 
     React.useEffect(() => {
-      if (selectWhenDataAvailable) {
+      if (selectWhenDataAvailable && selectedNodeHasDataAvailable) {
         const [e, id] = selectWhenDataAvailable;
         _selectNode(e, id);
       }
