@@ -8,7 +8,10 @@ from dagster._core.definitions.asset_spec import (
 )
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.decorators.asset_decorator import asset, multi_asset
-from dagster._core.definitions.source_asset import SourceAsset
+from dagster._core.definitions.source_asset import (
+    SourceAsset,
+    wrap_source_asset_observe_fn_in_op_compute_fn,
+)
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.context.compute import AssetExecutionContext
 
@@ -124,19 +127,22 @@ def external_assets_from_specs(specs: Sequence[AssetSpec]) -> List[AssetsDefinit
 
 def create_external_asset_from_source_asset(source_asset: SourceAsset) -> AssetsDefinition:
     check.invariant(
-        source_asset.observe_fn is None,
-        "Observable source assets not supported yet: observe_fn should be None",
-    )
-    check.invariant(
         source_asset.auto_observe_interval_minutes is None,
-        "Observable source assets not supported yet: auto_observe_interval_minutes should be None",
+        "Automatically observed external assets not supported yet: auto_observe_interval_minutes"
+        " should be None",
+    )
+
+    injected_metadata = (
+        {SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.UNEXECUTABLE.value}
+        if source_asset.observe_fn is None
+        else {}
     )
 
     kwargs = {
         "key": source_asset.key,
         "metadata": {
             **source_asset.metadata,
-            **{SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.UNEXECUTABLE.value},
+            **injected_metadata,
         },
         "group_name": source_asset.group_name,
         "description": source_asset.description,
@@ -149,10 +155,19 @@ def create_external_asset_from_source_asset(source_asset: SourceAsset) -> Assets
         kwargs["io_manager_key"] = source_asset.io_manager_key
 
     @asset(**kwargs)
-    def _external_assets_def() -> None:
-        raise NotImplementedError(f"Asset {source_asset.key} is not executable")
+    def _shim_assets_def(context: AssetExecutionContext):
+        if not source_asset.observe_fn:
+            raise NotImplementedError(f"Asset {source_asset.key} is not executable")
 
-    check.invariant(isinstance(_external_assets_def, AssetsDefinition))
-    assert isinstance(_external_assets_def, AssetsDefinition)  # appese pyright
+        op_function = wrap_source_asset_observe_fn_in_op_compute_fn(source_asset)
+        return_value = op_function.decorated_fn(context)
+        check.invariant(
+            return_value is None,
+            "The wrapped decorated_fn should return a value. If this changes, this code path must"
+            " changed to process the events appopriately.",
+        )
 
-    return _external_assets_def
+    check.invariant(isinstance(_shim_assets_def, AssetsDefinition))
+    assert isinstance(_shim_assets_def, AssetsDefinition)  # appease pyright
+
+    return _shim_assets_def
