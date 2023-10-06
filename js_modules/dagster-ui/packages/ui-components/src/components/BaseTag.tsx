@@ -38,6 +38,9 @@ export const BaseTag = (props: Props) => {
     label,
     tooltipText,
   } = props;
+  try {
+    console.log(JSON.stringify(label), typeof label);
+  } catch (e) {}
   return (
     <StyledTag $fillColor={fillColor} $interactive={interactive} $textColor={textColor}>
       {icon || null}
