@@ -1,4 +1,5 @@
 import datetime
+import functools
 import itertools
 import logging
 from collections import defaultdict
@@ -19,6 +20,7 @@ from typing import (
 )
 
 import pendulum
+from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 
 import dagster._check as check
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy

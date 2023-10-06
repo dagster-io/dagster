@@ -14,7 +14,7 @@ from dagster._core.definitions.auto_materialize_rule import (
     ParentUpdatedRuleEvaluationData,
     WaitingOnAssetsRuleEvaluationData,
 )
-from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._seven.compat.pendulum import create_pendulum_time
 
@@ -988,7 +988,8 @@ auto_materialize_policy_scenarios = {
             # C must wait for B to be materialized
             expected_run_requests=[],
         ),
+        # manually run C
+        unevaluated_runs=[run(["C"], partition_key="a")],
         expected_run_requests=[],
-        unevaluated_runs=[],
     ),
 }
