@@ -86,6 +86,23 @@ query GetAssetChecksQuery($assetKey: AssetKeyInput!, $checkName: String, $limit:
 }
 """
 
+GET_ASSET_CHECK_HISTORY_WITH_STEP_KEY = """
+query GetAssetChecksQuery($assetKey: AssetKeyInput!, $checkName: String) {
+    assetChecksOrError(assetKey: $assetKey, checkName: $checkName) {
+        ... on AssetChecks {
+            checks {
+                name
+                executions(limit: 10) {
+                    runId
+                    status
+                    stepKey
+                }
+            }
+        }
+    }
+}
+"""
+
 GET_LOGS_FOR_RUN = """
 query GetLogsForRun($runId: ID!) {
   logsForRun(runId: $runId) {
@@ -1144,3 +1161,56 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
             and log.dagster_event.event_type == DagsterEventType.ASSET_MATERIALIZATION
         ]
         assert len(materializations) == 0
+
+    def test_step_key(self, graphql_context: WorkspaceRequestContext):
+        selector = infer_job_or_pipeline_selector(
+            graphql_context,
+            "checked_multi_asset_job",
+            asset_selection=[],
+            asset_check_selection=[
+                {"assetKey": {"path": ["one"]}, "name": "my_check"},
+            ],
+        )
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
+            variables={
+                "executionParams": {
+                    "selector": selector,
+                    "mode": "default",
+                    "stepKeys": None,
+                }
+            },
+        )
+        print(result.data)  # noqa: T201
+        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
+
+        run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+        run = poll_for_finished_run(graphql_context.instance, run_id, timeout=10000000000)
+
+        logs = graphql_context.instance.all_logs(run_id)
+        print(logs)  # noqa: T201
+        assert run.is_success
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_CHECK_HISTORY_WITH_STEP_KEY,
+            variables={"assetKey": {"path": ["one"]}, "checkName": "my_check", "limit": 10},
+        )
+        print(result.data)  # noqa: T201
+        assert result.data == {
+            "assetChecksOrError": {
+                "checks": [
+                    {
+                        "name": "my_check",
+                        "executions": [
+                            {
+                                "runId": run_id,
+                                "status": "SUCCEEDED",
+                                "stepKey": "subsettable_checked_multi_asset",
+                            }
+                        ],
+                    }
+                ],
+            }
+        }

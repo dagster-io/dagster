@@ -186,6 +186,7 @@ export type AssetCheckExecution = {
   id: Scalars['String'];
   runId: Scalars['String'];
   status: AssetCheckExecutionResolvedStatus;
+  stepKey: Maybe<Scalars['String']>;
   timestamp: Scalars['Float'];
 };
 
@@ -4655,6 +4656,7 @@ export const buildAssetCheckExecution = (
       overrides && overrides.hasOwnProperty('status')
         ? overrides.status!
         : AssetCheckExecutionResolvedStatus.EXECUTION_FAILED,
+    stepKey: overrides && overrides.hasOwnProperty('stepKey') ? overrides.stepKey! : 'aspernatur',
     timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 2.57,
   };
 };

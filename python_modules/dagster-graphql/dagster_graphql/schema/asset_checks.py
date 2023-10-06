@@ -90,6 +90,7 @@ class GrapheneAssetCheckExecution(graphene.ObjectType):
     timestamp = graphene.Field(
         graphene.NonNull(graphene.Float), description="When the check run started"
     )
+    stepKey = graphene.Field(graphene.String)
 
     class Meta:
         name = "AssetCheckExecution"
@@ -110,6 +111,7 @@ class GrapheneAssetCheckExecution(graphene.ObjectType):
             else None
         )
         self.timestamp = execution.create_timestamp
+        self.stepKey = execution.event.step_key if execution.event else None
 
 
 class GrapheneAssetCheckCanExecuteIndividually(graphene.Enum):
