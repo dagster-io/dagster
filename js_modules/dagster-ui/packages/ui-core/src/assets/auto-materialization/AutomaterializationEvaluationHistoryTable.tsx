@@ -192,8 +192,8 @@ export const AutomaterializationEvaluationHistoryTable = ({
 };
 
 const StatusTag = ({tick}: {tick: AssetDaemonTickFragment}) => {
-  const {status, error, requestedMaterializationsForAssets} = tick;
-  const count = Object.keys(requestedMaterializationsForAssets).length;
+  const {status, error, requestedAssetMaterializationCount} = tick;
+  const count = requestedAssetMaterializationCount;
   const [showErrors, setShowErrors] = React.useState(false);
   const tag = React.useMemo(() => {
     switch (status) {
