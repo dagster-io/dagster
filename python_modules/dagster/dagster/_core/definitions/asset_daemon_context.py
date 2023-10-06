@@ -553,7 +553,7 @@ class AssetDaemonContext:
             else []
         )
 
-        evaluations, to_materialize, to_skip, to_discard = (
+        evaluations_by_asset_key, to_materialize, to_skip, to_discard = (
             self.get_auto_materialize_asset_evaluations()
         )
 
@@ -590,11 +590,12 @@ class AssetDaemonContext:
                 skipped_on_last_tick_subset=AssetGraphSubset.from_asset_partition_set(
                     to_skip, self.asset_graph
                 ),
+                evaluations=list(evaluations_by_asset_key.values()),
             ),
             # only record evaluations where something happened
             [
                 evaluation
-                for evaluation in evaluations.values()
+                for evaluation in evaluations_by_asset_key.values()
                 if sum([evaluation.num_requested, evaluation.num_skipped, evaluation.num_discarded])
                 > 0
             ],
