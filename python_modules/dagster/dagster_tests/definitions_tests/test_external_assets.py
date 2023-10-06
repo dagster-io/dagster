@@ -30,7 +30,7 @@ from dagster._core.definitions.external_asset import (
     create_external_asset_from_source_asset,
     external_assets_from_specs,
     get_auto_sensor_name,
-    sensor_def_from_observable_source_asset,
+    sensor_def_from_observable_source_assets,
 )
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.sensor_definition import (
@@ -338,8 +338,8 @@ def test_framework_support_for_observable_source_assets_on_assets_def() -> None:
         == "data_version"
     )
 
-    observing_only_asset_sensor = sensor_def_from_observable_source_asset(
-        observable_source_asset=observing_only_source_asset,
+    observing_only_asset_sensor = sensor_def_from_observable_source_assets(
+        [observing_only_source_asset]
     )
 
     sensor_instance = DagsterInstance.ephemeral()
@@ -363,7 +363,7 @@ def test_observable_source_adapter_ergonomics() -> None:
     # calling these helpers could be in the Definitions object itself
     defs = Definitions(
         assets=[create_external_asset_from_source_asset(an_asset)],
-        sensors=[sensor_def_from_observable_source_asset(an_asset)],
+        sensors=[sensor_def_from_observable_source_assets([an_asset])],
     )
 
     instance = DagsterInstance.ephemeral()
@@ -380,3 +380,47 @@ def test_observable_source_adapter_ergonomics() -> None:
     asset_observation = sensor_result.asset_events[0]
     assert isinstance(asset_observation, AssetObservation)
     assert asset_observation.asset_key == an_asset.key
+
+
+def test_multi_observable_source_adapter() -> None:
+    @observable_source_asset
+    def asset_one() -> DataVersion:
+        return DataVersion("data_version_one")
+
+    @observable_source_asset
+    def asset_two() -> DataVersion:
+        return DataVersion("data_version_two")
+
+    # calling these helpers could be in the Definitions object itself
+    defs = Definitions(
+        assets=[create_external_asset_from_source_asset(sa) for sa in [asset_one, asset_two]],
+        sensors=[
+            sensor_def_from_observable_source_assets(
+                [asset_one, asset_two], sensor_name="observe_all"
+            )
+        ],
+    )
+
+    instance = DagsterInstance.ephemeral()
+
+    result = defs.get_implicit_global_asset_job_def().execute_in_process(instance=instance)
+    assert result.success
+
+    assert get_latest_asset_observation(instance, asset_one.key).data_version == "data_version_one"
+    assert get_latest_asset_observation(instance, asset_two.key).data_version == "data_version_two"
+
+    sensor_def = defs.get_sensor_def("observe_all")
+
+    sensor_result = sensor_def.evaluate_tick(build_sensor_context(instance=instance))
+
+    assert len(sensor_result.asset_events) == 2
+
+    def _get_observation_for(asset_key: AssetKey) -> AssetObservation:
+        for asset_observation in sensor_result.asset_events:
+            assert isinstance(asset_observation, AssetObservation)
+            if asset_observation.asset_key == asset_key:
+                return asset_observation
+        check.failed("not found")
+
+    assert _get_observation_for(asset_one.key).data_version == "data_version_one"
+    assert _get_observation_for(asset_two.key).data_version == "data_version_two"
