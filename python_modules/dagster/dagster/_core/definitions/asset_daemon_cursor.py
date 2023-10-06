@@ -16,12 +16,12 @@ from typing import (
 
 import dagster._check as check
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
+from dagster._core.definitions.auto_materialize_rule import AutoMaterializeAssetEvaluation
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
 )
-from dagster._core.definitions.auto_materialize_rule import AutoMaterializeAssetEvaluation
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._serdes.serdes import deserialize_value, serialize_value
 
