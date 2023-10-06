@@ -178,6 +178,33 @@ class RuleEvaluationContext(NamedTuple):
             or not self.materializable_in_same_run(asset_partition.asset_key, parent.asset_key)
         }
 
+    def get_asset_partitions_with_updated_parents(
+        self,
+    ) -> Tuple[AbstractSet[AssetKeyPartitionKey], Mapping[AssetKeyPartitionKey, Set[AssetKey]]]:
+        """Returns the set of asset partitions whose parents have been updated since the last tick
+        or will be updated on this tick, along with a mapping from each asset partition to the set
+        of parent keys which will update on this tick.
+        """
+        will_update_parents_by_asset_partition = defaultdict(set)
+        has_parents_that_will_update = set()
+        for parent_key in self.asset_graph.get_parents(self.asset_key):
+            if not self.materializable_in_same_run(self.asset_key, parent_key):
+                continue
+            for parent_partition in self.will_materialize_mapping.get(parent_key, set()):
+                asset_partition = AssetKeyPartitionKey(
+                    self.asset_key, parent_partition.partition_key
+                )
+                will_update_parents_by_asset_partition[asset_partition].add(parent_key)
+                has_parents_that_will_update.add(asset_partition)
+
+        has_or_will_update = (
+            self.daemon_context.get_asset_partitions_with_newly_updated_parents_for_key(
+                self.asset_key
+            )
+            | has_parents_that_will_update
+        )
+        return has_or_will_update, will_update_parents_by_asset_partition
+
     def get_asset_partitions_by_asset_key(
         self,
         asset_partitions: AbstractSet[AssetKeyPartitionKey],
@@ -187,6 +214,18 @@ class RuleEvaluationContext(NamedTuple):
             asset_partitions_by_asset_key[parent.asset_key].add(parent)
 
         return asset_partitions_by_asset_key
+
+    def get_candidates_with_updated_parents(
+        self,
+    ) -> AbstractSet[AssetKeyPartitionKey]:
+        """Returns the set of candidate asset partitions whose parents have been updated since the
+        last tick.
+
+        As many rules depend on the state of the asset's parents, this function is useful for
+        finding asset partitions that should be re-evaluated.
+        """
+        updated_parents, _ = self.get_asset_partitions_with_updated_parents()
+        return self.candidates & updated_parents
 
 
 RuleEvaluationResults = Sequence[Tuple[Optional[AutoMaterializeRuleEvaluationData], AbstractSet]]
@@ -220,55 +259,53 @@ class AutoMaterializeRule(ABC):
         self, context: RuleEvaluationContext
     ) -> RuleEvaluationResults:
         """Return the previous evaluation results for this rule, if any."""
-        # this line ensures that if a materialize rule is "handled" (i.e. a materialization was
-        # kicked off after it was discovered, or the asset was discarded), then we don't resurrect
-        # the previous evaluation results
-        if context.asset_key not in context.daemon_context.skipped_asset_graph_subset:
-            return []
-
-        # here, we query the instance for the last recorded evaluation record
+        # first, get the evaluation results for this rule from the previous tick
         previous_evaluation = context.cursor.latest_evaluation_by_asset_key.get(context.asset_key)
         if previous_evaluation is None:
             return []
 
         return previous_evaluation.get_rule_evaluation_results(
-            rule_snapshot=self.to_snapshot(),
-            asset_graph=context.asset_graph,
+            rule_snapshot=self.to_snapshot(), asset_graph=context.asset_graph
         )
 
     def _get_merged_results(
         self,
         context: RuleEvaluationContext,
-        new_results: RuleEvaluationResults,
-    ) -> Tuple[AbstractSet[AssetKeyPartitionKey], RuleEvaluationResults]:
+        asset_partitions_by_evaluation_data: Mapping[
+            Optional[AutoMaterializeRuleEvaluationData], AbstractSet[AssetKeyPartitionKey]
+        ],
+        evaluated_candidates: Optional[AbstractSet[AssetKeyPartitionKey]] = None,
+    ) -> RuleEvaluationResults:
         """Merge the new results of an evaluation with any previous results which are still valid,
         along with the set of asset partitions which have new evaluations.
         """
-        new_asset_partitions = set().union(*[v for _, v in new_results])
+        newly_evaluated_asset_partitions = set().union(
+            *asset_partitions_by_evaluation_data.values()
+        )
+        merged_results = defaultdict(set)
+        # first, carry forward any results from the previous tick that are still valid
+        for evaluation_data, asset_partitions in self._get_previous_evaluation_results(context):
+            for ap in asset_partitions:
+                # ignore any stored information for asset partitions that were re-evaluated this
+                # tick or were not skipped on the previous tick
+                if (
+                    ap in (evaluated_candidates or set()) | newly_evaluated_asset_partitions
+                    or ap not in context.daemon_context.skipped_asset_graph_subset
+                ):
+                    continue
+                merged_results[evaluation_data].add(ap)
 
-        previous_results_filtered = [
-            (
-                evaluation_data,
-                {
-                    ap
-                    for ap in asset_partitions
-                    # only include asset partitions that are still unhandled from a previous tick
-                    # and which do not have new evaluation data
-                    if ap in context.daemon_context.skipped_asset_graph_subset
-                    and ap not in new_asset_partitions
-                },
-            )
-            for evaluation_data, asset_partitions in self._get_previous_evaluation_results(context)
-        ]
-        return new_asset_partitions, [*previous_results_filtered, *new_results]
+        # then, add in the newly-calculated results
+        for evaluation_data, asset_partitions in asset_partitions_by_evaluation_data.items():
+            for ap in asset_partitions:
+                merged_results[evaluation_data].add(ap)
+
+        return list(merged_results.items())
 
     @abstractmethod
-    def evaluate_for_asset(
-        self, context: RuleEvaluationContext
-    ) -> Tuple[Optional[AbstractSet[AssetKeyPartitionKey]], RuleEvaluationResults]:
+    def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
         """The core evaluation function for the rule. This function takes in a context object and
-        returns the set of asset partitions which have new evaluations, alongside the total set of
-        evaluations that currently apply to the asset.
+        returns the set of evaluations that currently apply to the asset.
         """
 
     @public
@@ -359,9 +396,7 @@ class MaterializeOnRequiredForFreshnessRule(
     def decision_type(self) -> AutoMaterializeDecisionType:
         return AutoMaterializeDecisionType.MATERIALIZE
 
-    def evaluate_for_asset(
-        self, context: RuleEvaluationContext
-    ) -> Tuple[Optional[AbstractSet[AssetKeyPartitionKey]], RuleEvaluationResults]:
+    def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
         freshness_conditions = freshness_evaluation_results_for_asset_key(
             asset_key=context.asset_key,
             data_time_resolver=context.data_time_resolver,
@@ -370,7 +405,7 @@ class MaterializeOnRequiredForFreshnessRule(
             will_materialize_mapping=context.will_materialize_mapping,
             expected_data_time_mapping=context.expected_data_time_mapping,
         )
-        return None, freshness_conditions
+        return freshness_conditions
 
 
 @whitelist_for_serdes
@@ -385,35 +420,14 @@ class MaterializeOnParentUpdatedRule(
     def decision_type(self) -> AutoMaterializeDecisionType:
         return AutoMaterializeDecisionType.MATERIALIZE
 
-    def evaluate_for_asset(
-        self, context: RuleEvaluationContext
-    ) -> Tuple[Optional[AbstractSet[AssetKeyPartitionKey]], RuleEvaluationResults]:
+    def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
         """Evaluates the set of asset partitions of this asset whose parents have been updated,
         or will update on this tick.
         """
-        conditions = defaultdict(set)
-        has_parents_that_will_update = set()
+        asset_partitions_by_evaluation_data = defaultdict(set)
 
-        # first, get the set of parents that will be materialized this tick, and see if we
-        # can materialize this asset with those parents
-        will_update_parents_by_asset_partition = defaultdict(set)
-        for parent_key in context.asset_graph.get_parents(context.asset_key):
-            if not context.materializable_in_same_run(context.asset_key, parent_key):
-                continue
-            for parent_partition in context.will_materialize_mapping.get(parent_key, set()):
-                asset_partition = AssetKeyPartitionKey(
-                    context.asset_key, parent_partition.partition_key
-                )
-                will_update_parents_by_asset_partition[asset_partition].add(parent_key)
-                has_parents_that_will_update.add(asset_partition)
-
-        # next, for each asset partition of this asset which has newly-updated parents, or
-        # has a parent that will update, create a ParentUpdatedRuleEvaluationData
-        has_or_will_update = (
-            context.daemon_context.get_asset_partitions_with_newly_updated_parents_for_key(
-                context.asset_key
-            )
-            | has_parents_that_will_update
+        has_or_will_update, will_update_parents_by_asset_partition = (
+            context.get_asset_partitions_with_updated_parents()
         )
         for asset_partition in has_or_will_update:
             parent_asset_partitions = context.asset_graph.get_parents_partitions(
@@ -438,14 +452,13 @@ class MaterializeOnParentUpdatedRule(
             will_update_parents = will_update_parents_by_asset_partition[asset_partition]
 
             if updated_parents or will_update_parents:
-                conditions[
+                asset_partitions_by_evaluation_data[
                     ParentUpdatedRuleEvaluationData(
                         updated_asset_keys=frozenset(updated_parents),
                         will_update_asset_keys=frozenset(will_update_parents),
                     )
                 ].add(asset_partition)
-        net_new_results = [(k, v) for k, v in conditions.items()] if conditions else []
-        return self._get_merged_results(context, net_new_results)
+        return self._get_merged_results(context, asset_partitions_by_evaluation_data)
 
 
 @whitelist_for_serdes
@@ -458,9 +471,7 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
     def decision_type(self) -> AutoMaterializeDecisionType:
         return AutoMaterializeDecisionType.MATERIALIZE
 
-    def evaluate_for_asset(
-        self, context: RuleEvaluationContext
-    ) -> Tuple[Optional[AbstractSet[AssetKeyPartitionKey]], RuleEvaluationResults]:
+    def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
         """Evaluates the set of asset partitions for this asset which are missing and were not
         previously discarded. Currently only applies to root asset partitions and asset partitions
         with updated parents.
@@ -481,8 +492,25 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
                 candidate
             ):
                 missing_asset_partitions |= {candidate}
-        results = [(None, missing_asset_partitions)] if missing_asset_partitions else []
-        return self._get_merged_results(context, results)
+
+        asset_partitions_by_evaluation_data: Dict[
+            Optional[AutoMaterializeRuleEvaluationData], AbstractSet[AssetKeyPartitionKey]
+        ] = ({None: missing_asset_partitions} if missing_asset_partitions else {})
+        return self._get_merged_results(context, asset_partitions_by_evaluation_data)
+
+
+def fun_function(x: Mapping[Optional[int], str]):
+    pass
+
+
+def call_function(foo: bool):
+    my_dictionary: Dict[Optional[int], str] = {1: "hello"}
+    fun_function(my_dictionary)
+
+
+def call_function2(foo: bool):
+    my_dictionary = {None: "hello", 1: "world"}
+    fun_function(my_dictionary)
 
 
 @whitelist_for_serdes
@@ -495,21 +523,15 @@ class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOut
     def decision_type(self) -> AutoMaterializeDecisionType:
         return AutoMaterializeDecisionType.SKIP
 
-    def evaluate_for_asset(
-        self, context: RuleEvaluationContext
-    ) -> Tuple[Optional[AbstractSet[AssetKeyPartitionKey]], RuleEvaluationResults]:
-        asset_partitions_by_waiting_on_asset_keys = defaultdict(set)
+    def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
+        asset_partitions_by_evaluation_data = defaultdict(set)
 
         # we only need to evaluate net-new candidates and candidates whose parents have been updated
         # since the previous tick. if a candidate's parents have not been updated since the previous
         # tick, then this rule value cannot have updated
-        candidates_to_evaluate = context.new_candidates | {
-            ap
-            for ap in context.daemon_context.get_asset_partitions_with_newly_updated_parents_for_key(
-                context.asset_key
-            )
-            if ap in context.daemon_context.skipped_asset_graph_subset
-        }
+        candidates_to_evaluate = (
+            context.new_candidates | context.get_candidates_with_updated_parents()
+        )
         for candidate in candidates_to_evaluate:
             outdated_ancestors = set()
             # find the root cause of why this asset partition's parents are outdated (if any)
@@ -520,18 +542,15 @@ class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOut
                     context.instance_queryer.get_outdated_ancestors(asset_partition=parent)
                 )
             if outdated_ancestors:
-                asset_partitions_by_waiting_on_asset_keys[frozenset(outdated_ancestors)].add(
-                    candidate
-                )
-        results = (
-            [
-                (WaitingOnAssetsRuleEvaluationData(waiting_on_asset_keys=k), v)
-                for k, v in asset_partitions_by_waiting_on_asset_keys.items()
-            ]
-            if asset_partitions_by_waiting_on_asset_keys
-            else []
+                asset_partitions_by_evaluation_data[
+                    WaitingOnAssetsRuleEvaluationData(frozenset(outdated_ancestors))
+                ].add(candidate)
+
+        return self._get_merged_results(
+            context,
+            asset_partitions_by_evaluation_data,
+            evaluated_candidates=candidates_to_evaluate,
         )
-        return self._get_merged_results(context, results)
 
 
 @whitelist_for_serdes
@@ -544,21 +563,15 @@ class SkipOnParentMissingRule(AutoMaterializeRule, NamedTuple("_SkipOnParentMiss
     def decision_type(self) -> AutoMaterializeDecisionType:
         return AutoMaterializeDecisionType.SKIP
 
-    def evaluate_for_asset(
-        self, context: RuleEvaluationContext
-    ) -> Tuple[Optional[AbstractSet[AssetKeyPartitionKey]], RuleEvaluationResults]:
-        asset_partitions_by_waiting_on_asset_keys = defaultdict(set)
+    def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
+        asset_partitions_by_evaluation_data = defaultdict(set)
 
         # we only need to evaluate net-new candidates and candidates whose parents have been updated
         # since the previous tick. if a candidate's parents have not been updated since the previous
         # tick, then this rule value cannot have updated
-        candidates_to_evaluate = context.new_candidates | {
-            ap
-            for ap in context.daemon_context.get_asset_partitions_with_newly_updated_parents_for_key(
-                context.asset_key
-            )
-            if ap in context.daemon_context.skipped_asset_graph_subset
-        }
+        candidates_to_evaluate = (
+            context.new_candidates | context.get_candidates_with_updated_parents()
+        )
         for candidate in candidates_to_evaluate:
             missing_parent_asset_keys = set()
             for parent in context.get_parents_that_will_not_be_materialized_on_current_tick(
@@ -574,18 +587,15 @@ class SkipOnParentMissingRule(AutoMaterializeRule, NamedTuple("_SkipOnParentMiss
                 ):
                     missing_parent_asset_keys.add(parent.asset_key)
             if missing_parent_asset_keys:
-                asset_partitions_by_waiting_on_asset_keys[frozenset(missing_parent_asset_keys)].add(
-                    candidate
-                )
-        results = (
-            [
-                (WaitingOnAssetsRuleEvaluationData(waiting_on_asset_keys=k), v)
-                for k, v in asset_partitions_by_waiting_on_asset_keys.items()
-            ]
-            if asset_partitions_by_waiting_on_asset_keys
-            else []
+                asset_partitions_by_evaluation_data[
+                    WaitingOnAssetsRuleEvaluationData(frozenset(missing_parent_asset_keys))
+                ].add(candidate)
+
+        return self._get_merged_results(
+            context,
+            asset_partitions_by_evaluation_data,
+            evaluated_candidates=candidates_to_evaluate,
         )
-        return self._get_merged_results(context, results)
 
 
 @whitelist_for_serdes
@@ -618,11 +628,12 @@ class SkipOnNotAllParentsUpdatedRule(
     def decision_type(self) -> AutoMaterializeDecisionType:
         return AutoMaterializeDecisionType.SKIP
 
-    def evaluate_for_asset(
-        self, context: RuleEvaluationContext
-    ) -> Tuple[Optional[AbstractSet[AssetKeyPartitionKey]], RuleEvaluationResults]:
-        asset_partitions_by_waiting_on_asset_keys = defaultdict(set)
-        for candidate in context.candidates:
+    def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
+        asset_partitions_by_rule_evaluation_data = defaultdict(set)
+        candidates_to_evaluate = (
+            context.new_candidates | context.get_candidates_with_updated_parents()
+        )
+        for candidate in candidates_to_evaluate:
             parent_partitions = context.asset_graph.get_parents_partitions(
                 context.instance_queryer,
                 context.instance_queryer.evaluation_time,
@@ -667,19 +678,15 @@ class SkipOnNotAllParentsUpdatedRule(
             non_updated_parent_keys -= {context.asset_key}
 
             if non_updated_parent_keys:
-                asset_partitions_by_waiting_on_asset_keys[frozenset(non_updated_parent_keys)].add(
-                    candidate
-                )
+                asset_partitions_by_rule_evaluation_data[
+                    WaitingOnAssetsRuleEvaluationData(frozenset(non_updated_parent_keys))
+                ].add(candidate)
 
-        results = (
-            [
-                (WaitingOnAssetsRuleEvaluationData(waiting_on_asset_keys=k), v)
-                for k, v in asset_partitions_by_waiting_on_asset_keys.items()
-            ]
-            if asset_partitions_by_waiting_on_asset_keys
-            else []
+        return self._get_merged_results(
+            context,
+            asset_partitions_by_rule_evaluation_data,
+            evaluated_candidates=candidates_to_evaluate,
         )
-        return self._get_merged_results(context, results)
 
 
 @whitelist_for_serdes
@@ -694,9 +701,7 @@ class DiscardOnMaxMaterializationsExceededRule(
     def description(self) -> str:
         return f"exceeds {self.limit} materialization(s) per minute"
 
-    def evaluate_for_asset(
-        self, context: RuleEvaluationContext
-    ) -> Tuple[Optional[AbstractSet[AssetKeyPartitionKey]], RuleEvaluationResults]:
+    def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
         # the set of asset partitions which exceed the limit
         rate_limited_asset_partitions = set(
             sorted(
@@ -704,9 +709,7 @@ class DiscardOnMaxMaterializationsExceededRule(
                 key=lambda x: sort_key_for_asset_partition(context.asset_graph, x),
             )[self.limit :]
         )
-        if rate_limited_asset_partitions:
-            return None, [(None, rate_limited_asset_partitions)]
-        return None, []
+        return [(None, rate_limited_asset_partitions)] if rate_limited_asset_partitions else []
 
 
 @whitelist_for_serdes

@@ -320,7 +320,6 @@ class AssetDaemonContext:
         ] = []
         # a set of asset partitions that should be materialized, skipped, or discarded
         to_materialize: Set[AssetKeyPartitionKey] = set()
-        new_candidates: Set[AssetKeyPartitionKey] = set()
         to_skip: Set[AssetKeyPartitionKey] = set()
         to_discard: Set[AssetKeyPartitionKey] = set()
 
@@ -340,11 +339,9 @@ class AssetDaemonContext:
             rule_snapshot = materialize_rule.to_snapshot()
 
             self._logger.debug(f"Evaluating materialize rule: {rule_snapshot}")
-            new_candidates_for_rule, rule_evaluation_results = materialize_rule.evaluate_for_asset(
+            for evaluation_data, asset_partitions in materialize_rule.evaluate_for_asset(
                 materialize_context
-            )
-            all_candidates_for_rule = set()
-            for evaluation_data, asset_partitions in rule_evaluation_results:
+            ):
                 all_results.append(
                     (
                         AutoMaterializeRuleEvaluation(
@@ -354,15 +351,13 @@ class AssetDaemonContext:
                     )
                 )
                 self._logger.debug(f"Rule returned {len(asset_partitions)} partitions")
-                all_candidates_for_rule.update(asset_partitions)
-
-            if new_candidates_for_rule is not None:
-                new_candidates.update(new_candidates_for_rule)
-            else:
-                new_candidates.update(all_candidates_for_rule)
-            to_materialize.update(all_candidates_for_rule)
+                to_materialize.update(asset_partitions)
 
             self._logger.debug("Done evaluating materialize rule")
+
+        # these are the set of asset partitions which should be materialized, but which did not
+        # need to be materialized last tick
+        new_candidates = {ap for ap in to_materialize if ap not in self.skipped_asset_graph_subset}
 
         # These should be conditions, but aren't currently, so we just manually strip out things
         # from our materialization set
@@ -394,8 +389,7 @@ class AssetDaemonContext:
         for skip_rule in auto_materialize_policy.skip_rules:
             rule_snapshot = skip_rule.to_snapshot()
             self._logger.debug(f"Evaluating skip rule: {rule_snapshot}")
-            _, rule_evaluation_results = skip_rule.evaluate_for_asset(skip_context)
-            for evaluation_data, asset_partitions in rule_evaluation_results:
+            for evaluation_data, asset_partitions in skip_rule.evaluate_for_asset(skip_context):
                 all_results.append(
                     (
                         AutoMaterializeRuleEvaluation(
@@ -418,10 +412,9 @@ class AssetDaemonContext:
 
             self._logger.debug(f"Evaluating discard rule: {rule_snapshot}")
 
-            _, rule_evaluation_results = rule.evaluate_for_asset(
+            for evaluation_data, asset_partitions in rule.evaluate_for_asset(
                 skip_context._replace(candidates=to_materialize)
-            )
-            for evaluation_data, asset_partitions in rule_evaluation_results:
+            ):
                 all_results.append(
                     (
                         AutoMaterializeRuleEvaluation(
