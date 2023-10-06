@@ -273,10 +273,6 @@ const ConfigEditorPartitionPicker: React.FC<ConfigEditorPartitionPickerProps> = 
       });
     }
 
-    // Note: We don't want this Suggest to be a fully "controlled" React component.
-    // Keeping it's state is annoyign and we only want to update our data model on
-    // selection change. However, we need to set an initial value (defaultSelectedItem)
-    // and ensure it is re-applied to the internal state when it changes (via `key` below).
     return (
       <>
         <Suggest<Partition>
