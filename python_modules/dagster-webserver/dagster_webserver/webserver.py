@@ -22,6 +22,7 @@ from dagster._core.storage.event_log.base import (
     EventRecordsFilter,
 )
 from dagster._core.storage.local_compute_log_manager import LocalComputeLogManager
+from dagster._core.storage.tags import EXTERNAL_ASSET_IDEMPOTENCY_TAG
 from dagster._core.workspace.context import BaseWorkspaceRequestContext, IWorkspaceProcessContext
 from dagster._seven import json
 from dagster._utils import Counter, traced_counter
@@ -295,14 +296,14 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                     asset_key=asset_key,
                     asset_partitions=[partition] if partition else None,
                     tags={
-                        "external-asset-idempotency-key": idempotency_key,
+                        EXTERNAL_ASSET_IDEMPOTENCY_TAG: idempotency_key,
                     },
                 ),
                 limit=1,
             )
             if len(existing_materialization) > 0:
                 return JSONResponse({})
-            tags["external-asset-idempotency-key"] = idempotency_key
+            tags[EXTERNAL_ASSET_IDEMPOTENCY_TAG] = idempotency_key
 
         try:
             mat = AssetMaterialization(
