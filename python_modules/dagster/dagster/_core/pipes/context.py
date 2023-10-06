@@ -1,7 +1,7 @@
 from contextlib import contextmanager
 from dataclasses import dataclass
 from queue import Queue
-from typing import Any, Dict, Iterator, Mapping, Optional, Set, Union
+from typing import TYPE_CHECKING, Any, Dict, Iterator, Mapping, Optional, Set, Union
 
 from dagster_pipes import (
     DAGSTER_PIPES_BOOTSTRAP_PARAM_NAMES,
@@ -35,7 +35,9 @@ from dagster._core.definitions.time_window_partitions import (
 from dagster._core.errors import DagsterPipesExecutionError
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.execution.context.invocation import BoundOpExecutionContext
-from dagster._core.pipes.client import PipesMessageReader
+
+if TYPE_CHECKING:
+    from dagster._core.pipes.client import PipesMessageReader
 
 PipesExecutionResult: TypeAlias = Union[MaterializeResult, AssetCheckResult]
 
@@ -58,7 +60,7 @@ class PipesMessageHandler:
         self._received_closed_msg = False
 
     @contextmanager
-    def handle_messages(self, message_reader: PipesMessageReader) -> Iterator[PipesParams]:
+    def handle_messages(self, message_reader: "PipesMessageReader") -> Iterator[PipesParams]:
         with message_reader.read_messages(self) as params:
             yield params
         for key in self._unmaterialized_assets:
