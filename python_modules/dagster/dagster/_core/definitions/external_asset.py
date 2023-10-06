@@ -1,4 +1,4 @@
-from typing import List, Sequence
+from typing import List, Optional, Sequence
 
 from dagster import _check as check
 from dagster._core.definitions.asset_spec import (
@@ -7,7 +7,14 @@ from dagster._core.definitions.asset_spec import (
     AssetSpec,
 )
 from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.data_version import DATA_VERSION_TAG, DataVersion
 from dagster._core.definitions.decorators.asset_decorator import asset, multi_asset
+from dagster._core.definitions.decorators.sensor_decorator import sensor
+from dagster._core.definitions.events import AssetKey, AssetObservation
+from dagster._core.definitions.run_request import SensorResult
+from dagster._core.definitions.sensor_definition import (
+    SensorDefinition,
+)
 from dagster._core.definitions.source_asset import (
     SourceAsset,
     wrap_source_asset_observe_fn_in_op_compute_fn,
@@ -171,3 +178,48 @@ def create_external_asset_from_source_asset(source_asset: SourceAsset) -> Assets
     assert isinstance(_shim_assets_def, AssetsDefinition)  # appease pyright
 
     return _shim_assets_def
+
+
+def create_observation_with_version(
+    asset_key: AssetKey, data_version: DataVersion
+) -> AssetObservation:
+    return AssetObservation(
+        asset_key=asset_key,
+        tags={DATA_VERSION_TAG: data_version.value},
+    )
+
+
+def get_auto_sensor_name(asset_key: AssetKey) -> str:
+    return f"__auto_observe_sensor{asset_key.to_python_identifier()}"
+
+
+def sensor_def_from_observable_source_asset(
+    observable_source_asset: SourceAsset,
+    sensor_name: Optional[str] = None,
+) -> SensorDefinition:
+    """Given an existing observable source asset, generate a sensor that observes it on a regular
+    interval as specified by `SourceAsset.auto_observe_internal_minutes`.
+    """
+    sensor_name = sensor_name if sensor_name else get_auto_sensor_name(observable_source_asset.key)
+
+    @sensor(
+        name=sensor_name,
+        minimum_interval_seconds=(
+            int(observable_source_asset.auto_observe_interval_minutes * 60)
+            if observable_source_asset.auto_observe_interval_minutes is not None
+            else 5
+            * 60  # I could not find the default value (undocumented) so guessing it is 5 minutes?
+        ),
+    )
+    def _sensor(context, **kwargs) -> SensorResult:
+        assert observable_source_asset.observe_fn
+        return SensorResult(
+            asset_events=[
+                create_observation_with_version(
+                    observable_source_asset.key,
+                    observable_source_asset.observe_fn(**kwargs),
+                ),
+            ]
+        )
+
+    return _sensor
