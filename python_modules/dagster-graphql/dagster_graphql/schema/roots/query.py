@@ -668,7 +668,7 @@ class GrapheneQuery(graphene.ObjectType):
 
     @capture_error
     def resolve_unloadableInstigationStatesOrError(
-        self, graphene_info: ResolveInfo, instigationType: Optional[GrapheneInstigationType] = None # type: ignore (idk)
+        self, graphene_info: ResolveInfo, instigationType: Optional[GrapheneInstigationType] = None  # type: ignore (idk)
     ):
         instigation_type = InstigatorType(instigationType) if instigationType else None
         return get_unloadable_instigator_states_or_error(graphene_info, instigation_type)
