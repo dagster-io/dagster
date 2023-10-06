@@ -10,6 +10,7 @@ from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,
     AssetCheckExecutionRecordStatus,
     AssetCheckExecutionResolvedStatus,
+    AssetCheckInstanceSupport,
 )
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from packaging import version
@@ -18,6 +19,7 @@ from ..schema.asset_checks import (
     GrapheneAssetCheck,
     GrapheneAssetCheckCanExecuteIndividually,
     GrapheneAssetCheckExecution,
+    GrapheneAssetCheckNeedsAgentUpgradeError,
     GrapheneAssetCheckNeedsMigrationError,
     GrapheneAssetCheckNeedsUserCodeUpgrade,
     GrapheneAssetChecks,
@@ -46,29 +48,43 @@ def fetch_asset_checks(
 ) -> Union[
     GrapheneAssetCheckNeedsMigrationError,
     GrapheneAssetCheckNeedsUserCodeUpgrade,
+    GrapheneAssetCheckNeedsAgentUpgradeError,
     GrapheneAssetChecks,
 ]:
-    if not graphene_info.context.instance.event_log_storage.supports_asset_checks:
+    asset_check_support = graphene_info.context.instance.get_asset_check_support()
+    if asset_check_support == AssetCheckInstanceSupport.NEEDS_MIGRATION:
         return GrapheneAssetCheckNeedsMigrationError(
             message="Asset checks require an instance migration. Run `dagster instance migrate`."
+        )
+    elif asset_check_support == AssetCheckInstanceSupport.NEEDS_AGENT_UPGRADE:
+        return GrapheneAssetCheckNeedsAgentUpgradeError(
+            "Asset checks require an agent upgrade to 1.5.0 or greater."
+        )
+    else:
+        check.invariant(
+            asset_check_support == AssetCheckInstanceSupport.SUPPORTED,
+            f"Unexpected asset check support status {asset_check_support}",
         )
 
     external_asset_checks = []
     for location in graphene_info.context.code_locations:
-        # check if the code location is too old to support executing asset checks individually
-        code_location_version = (location.get_dagster_library_versions() or {}).get("dagster")
-        if code_location_version and version.parse(code_location_version) < version.parse("1.5"):
-            return GrapheneAssetCheckNeedsUserCodeUpgrade(
-                message=(
-                    "Asset checks require dagster>=1.5. Upgrade your dagster version for this code"
-                    " location."
-                )
-            )
-
         for repository in location.get_repositories().values():
             for external_check in repository.external_repository_data.external_asset_checks or []:
                 if external_check.asset_key == asset_key:
                     if not check_name or check_name == external_check.name:
+                        # check if the code location is too old to support executing asset checks individually
+                        code_location_version = (location.get_dagster_library_versions() or {}).get(
+                            "dagster"
+                        )
+                        if code_location_version and version.parse(
+                            code_location_version
+                        ) < version.parse("1.5"):
+                            return GrapheneAssetCheckNeedsUserCodeUpgrade(
+                                message=(
+                                    "Asset checks require dagster>=1.5. Upgrade your dagster"
+                                    " version for this code location."
+                                )
+                            )
                         external_asset_checks.append((external_check))
 
     asset_graph = ExternalAssetGraph.from_workspace(graphene_info.context)

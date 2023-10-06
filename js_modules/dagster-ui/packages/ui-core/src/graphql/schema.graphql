@@ -2391,6 +2391,7 @@ type InstigationTick {
   endTimestamp: Float
   requestedAssetKeys: [AssetKey!]!
   requestedAssetMaterializationCount: Int!
+  requestedMaterializationsForAssets: [RequestedMaterializationsForAsset!]!
   autoMaterializeAssetEvaluationId: Int
 }
 
@@ -2411,6 +2412,11 @@ type DynamicPartitionsRequestResult {
   partitionsDefName: String!
   type: DynamicPartitionsRequestType!
   skippedPartitionKeys: [String!]!
+}
+
+type RequestedMaterializationsForAsset {
+  assetKey: AssetKey!
+  partitionKeys: [String!]!
 }
 
 type ScheduleData {
@@ -3266,6 +3272,7 @@ union AssetChecksOrError =
     AssetChecks
   | AssetCheckNeedsMigrationError
   | AssetCheckNeedsUserCodeUpgrade
+  | AssetCheckNeedsAgentUpgradeError
 
 type AssetChecks {
   checks: [AssetCheck!]!
@@ -3276,6 +3283,10 @@ type AssetCheckNeedsMigrationError implements Error {
 }
 
 type AssetCheckNeedsUserCodeUpgrade implements Error {
+  message: String!
+}
+
+type AssetCheckNeedsAgentUpgradeError implements Error {
   message: String!
 }
 

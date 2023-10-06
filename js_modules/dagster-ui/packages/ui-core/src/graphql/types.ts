@@ -202,6 +202,11 @@ export type AssetCheckHandleInput = {
   name: Scalars['String'];
 };
 
+export type AssetCheckNeedsAgentUpgradeError = Error & {
+  __typename: 'AssetCheckNeedsAgentUpgradeError';
+  message: Scalars['String'];
+};
+
 export type AssetCheckNeedsMigrationError = Error & {
   __typename: 'AssetCheckNeedsMigrationError';
   message: Scalars['String'];
@@ -229,6 +234,7 @@ export type AssetChecks = {
 };
 
 export type AssetChecksOrError =
+  | AssetCheckNeedsAgentUpgradeError
   | AssetCheckNeedsMigrationError
   | AssetCheckNeedsUserCodeUpgrade
   | AssetChecks;
@@ -1551,6 +1557,7 @@ export type InstigationTick = {
   originRunIds: Array<Scalars['String']>;
   requestedAssetKeys: Array<AssetKey>;
   requestedAssetMaterializationCount: Scalars['Int'];
+  requestedMaterializationsForAssets: Array<RequestedMaterializationsForAsset>;
   runIds: Array<Scalars['String']>;
   runKeys: Array<Scalars['String']>;
   runs: Array<Run>;
@@ -3225,6 +3232,12 @@ export type RepositorySelector = {
   repositoryName: Scalars['String'];
 };
 
+export type RequestedMaterializationsForAsset = {
+  __typename: 'RequestedMaterializationsForAsset';
+  assetKey: AssetKey;
+  partitionKeys: Array<Scalars['String']>;
+};
+
 export type Resource = {
   __typename: 'Resource';
   configField: Maybe<ConfigTypeField>;
@@ -4666,6 +4679,18 @@ export const buildAssetCheckHandleInput = (
         ? ({} as AssetKeyInput)
         : buildAssetKeyInput({}, relationshipsToOmit),
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'aliquam',
+  };
+};
+
+export const buildAssetCheckNeedsAgentUpgradeError = (
+  overrides?: Partial<AssetCheckNeedsAgentUpgradeError>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetCheckNeedsAgentUpgradeError'} & AssetCheckNeedsAgentUpgradeError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetCheckNeedsAgentUpgradeError');
+  return {
+    __typename: 'AssetCheckNeedsAgentUpgradeError',
+    message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'quia',
   };
 };
 
@@ -7271,6 +7296,10 @@ export const buildInstigationTick = (
       overrides && overrides.hasOwnProperty('requestedAssetMaterializationCount')
         ? overrides.requestedAssetMaterializationCount!
         : 412,
+    requestedMaterializationsForAssets:
+      overrides && overrides.hasOwnProperty('requestedMaterializationsForAssets')
+        ? overrides.requestedMaterializationsForAssets!
+        : [],
     runIds: overrides && overrides.hasOwnProperty('runIds') ? overrides.runIds! : [],
     runKeys: overrides && overrides.hasOwnProperty('runKeys') ? overrides.runKeys! : [],
     runs: overrides && overrides.hasOwnProperty('runs') ? overrides.runs! : [],
@@ -9777,9 +9806,9 @@ export const buildQuery = (
     assetChecksOrError:
       overrides && overrides.hasOwnProperty('assetChecksOrError')
         ? overrides.assetChecksOrError!
-        : relationshipsToOmit.has('AssetCheckNeedsMigrationError')
-        ? ({} as AssetCheckNeedsMigrationError)
-        : buildAssetCheckNeedsMigrationError({}, relationshipsToOmit),
+        : relationshipsToOmit.has('AssetCheckNeedsAgentUpgradeError')
+        ? ({} as AssetCheckNeedsAgentUpgradeError)
+        : buildAssetCheckNeedsAgentUpgradeError({}, relationshipsToOmit),
     assetNodeDefinitionCollisions:
       overrides && overrides.hasOwnProperty('assetNodeDefinitionCollisions')
         ? overrides.assetNodeDefinitionCollisions!
@@ -10342,6 +10371,25 @@ export const buildRepositorySelector = (
         : 'facere',
     repositoryName:
       overrides && overrides.hasOwnProperty('repositoryName') ? overrides.repositoryName! : 'ipsam',
+  };
+};
+
+export const buildRequestedMaterializationsForAsset = (
+  overrides?: Partial<RequestedMaterializationsForAsset>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'RequestedMaterializationsForAsset'} & RequestedMaterializationsForAsset => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RequestedMaterializationsForAsset');
+  return {
+    __typename: 'RequestedMaterializationsForAsset',
+    assetKey:
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKey')
+        ? ({} as AssetKey)
+        : buildAssetKey({}, relationshipsToOmit),
+    partitionKeys:
+      overrides && overrides.hasOwnProperty('partitionKeys') ? overrides.partitionKeys! : [],
   };
 };
 

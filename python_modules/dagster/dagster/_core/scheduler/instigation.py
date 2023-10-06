@@ -1,6 +1,7 @@
 from enum import Enum
-from typing import AbstractSet, Any, List, NamedTuple, Optional, Sequence, Union
+from typing import AbstractSet, Any, List, Mapping, NamedTuple, Optional, Sequence, Union
 
+import pendulum
 from typing_extensions import TypeAlias
 
 import dagster._check as check
@@ -273,7 +274,10 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
 
     def with_status(self, status: TickStatus, **kwargs: Any):
         check.inst_param(status, "status", TickStatus)
-        return self._replace(tick_data=self.tick_data.with_status(status, **kwargs))
+        end_timestamp = pendulum.now("UTC").timestamp() if status != TickStatus.STARTED else None
+        return self._replace(
+            tick_data=self.tick_data.with_status(status, end_timestamp=end_timestamp, **kwargs)
+        )
 
     def with_run_requests(self, run_requests: Sequence[RunRequest]) -> "InstigatorTick":
         return self._replace(tick_data=self.tick_data.with_run_requests(run_requests))
@@ -392,6 +396,9 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
             self.tick_data.instigator_type == InstigatorType.AUTO_MATERIALIZE,
             "Only auto-materialize ticks set requested_asset_materialization_count",
         )
+        if self.tick_data.status != TickStatus.SUCCESS:
+            return 0
+
         asset_partitions = set()
         for run_request in self.tick_data.run_requests or []:
             for asset_key in run_request.asset_selection or []:
@@ -399,16 +406,37 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
         return len(asset_partitions)
 
     @property
+    def requested_assets_and_partitions(self) -> Mapping[AssetKey, AbstractSet[str]]:
+        check.invariant(
+            self.tick_data.instigator_type == InstigatorType.AUTO_MATERIALIZE,
+            "Only auto-materialize ticks set requested_asset_keys",
+        )
+
+        if self.tick_data.status != TickStatus.SUCCESS:
+            return {}
+
+        partitions_by_asset_key = {}
+        for run_request in self.tick_data.run_requests or []:
+            for asset_key in run_request.asset_selection or []:
+                if asset_key not in partitions_by_asset_key:
+                    partitions_by_asset_key[asset_key] = set()
+
+                if run_request.partition_key:
+                    partitions_by_asset_key[asset_key].add(run_request.partition_key)
+
+        return partitions_by_asset_key
+
+    @property
     def requested_asset_keys(self) -> AbstractSet[AssetKey]:
         check.invariant(
             self.tick_data.instigator_type == InstigatorType.AUTO_MATERIALIZE,
             "Only auto-materialize ticks set requested_asset_keys",
         )
-        asset_keys = set()
-        for run_request in self.tick_data.run_requests or []:
-            for asset_key in run_request.asset_selection or []:
-                asset_keys.add(asset_key)
-        return asset_keys
+
+        if self.tick_data.status != TickStatus.SUCCESS:
+            return set()
+
+        return set(self.requested_assets_and_partitions.keys())
 
 
 @whitelist_for_serdes(

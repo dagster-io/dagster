@@ -27,6 +27,7 @@ export type RootWorkspaceQuery = {
           loadStatus: Types.RepositoryLocationLoadStatus;
           updatedTimestamp: number;
           displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
+          featureFlags: Array<{__typename: 'FeatureFlag'; name: string; enabled: boolean}>;
           locationOrLoadError:
             | {
                 __typename: 'PythonError';
@@ -125,6 +126,7 @@ export type WorkspaceLocationNodeFragment = {
   loadStatus: Types.RepositoryLocationLoadStatus;
   updatedTimestamp: number;
   displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
+  featureFlags: Array<{__typename: 'FeatureFlag'; name: string; enabled: boolean}>;
   locationOrLoadError:
     | {
         __typename: 'PythonError';
