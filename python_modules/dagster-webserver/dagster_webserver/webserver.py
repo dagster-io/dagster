@@ -13,8 +13,14 @@ from dagster._core.definitions.data_version import (
     DATA_VERSION_TAG,
 )
 from dagster._core.definitions.events import AssetKey, AssetMaterialization
+from dagster._core.events import (
+    DagsterEventType,
+)
 from dagster._core.storage.cloud_storage_compute_log_manager import CloudStorageComputeLogManager
 from dagster._core.storage.compute_log_manager import ComputeIOType
+from dagster._core.storage.event_log.base import (
+    EventRecordsFilter,
+)
 from dagster._core.storage.local_compute_log_manager import LocalComputeLogManager
 from dagster._core.workspace.context import BaseWorkspaceRequestContext, IWorkspaceProcessContext
 from dagster._seven import json
@@ -243,7 +249,7 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                 status_code=400,
             )
 
-        tags = None
+        tags = {}
         if ReportAssetMatParam.data_version in json_body:
             tags = {
                 DATA_VERSION_TAG: json_body[ReportAssetMatParam.data_version],
@@ -280,6 +286,23 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                     },
                     status_code=400,
                 )
+
+        idempotency_key = request.headers.get("idempotency-key")
+        if idempotency_key:
+            existing_materialization = context.instance.get_event_records(
+                EventRecordsFilter(
+                    event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                    asset_key=asset_key,
+                    asset_partitions=[partition] if partition else None,
+                    tags={
+                        "external-asset-idempotency-key": idempotency_key,
+                    },
+                ),
+                limit=1,
+            )
+            if len(existing_materialization) > 0:
+                return JSONResponse({})
+            tags["external-asset-idempotency-key"] = idempotency_key
 
         try:
             mat = AssetMaterialization(
