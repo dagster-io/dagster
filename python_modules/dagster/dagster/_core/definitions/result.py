@@ -51,10 +51,9 @@ class MaterializeResult(
                 "metadata",
                 key_type=str,
             ),
-            check_results=check.opt_nullable_sequence_param(
+            check_results=check.opt_sequence_param(
                 check_results, "check_results", of_type=AssetCheckResult
-            )
-            or [],
+            ),
             data_version=check.opt_inst_param(data_version, "data_version", DataVersion),
         )
 

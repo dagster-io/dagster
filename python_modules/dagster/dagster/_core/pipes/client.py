@@ -57,9 +57,24 @@ class PipesClientCompletedInvocation:
         self._results = results
 
     def get_results(self) -> Sequence["PipesExecutionResult"]:
+        """Get the stream of results as a Sequence of a completed pipes
+        client invocation. For each "report" call in the external process,
+        one result object will be in the list.
+
+        Returns: Sequence[PipesExecutionResult]
+        """
         return tuple(self._results)
 
     def get_materialize_result(self) -> MaterializeResult:
+        """Get a single materialize result for a pipes invocation. This coalesces
+        the materialization result and any separately reported asset check results from
+        the external process.
+
+        This does not work on invocations that materialize multiple assets and will fail
+        in that case. For multiple assets use `get_results` instead to get the result stream.
+
+        Returns: MaterializeResult
+        """
         return materialize_result_from_pipes_results(self.get_results())
 
 
