@@ -894,6 +894,13 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     def is_auto_observable(self, key: AssetKey) -> bool:
         return SYSTEM_METADATA_KEY_AUTO_OBSERVE_INTERVAL_MINUTES in self._metadata_by_key[key]
 
+    def get_auto_observe_interval_minutes(self, key: AssetKey):
+        check.invariant(self.asset_execution_type_for_asset(key) == AssetExecutionType.OBSERVATION)
+        # TODO: What is the default?
+        return self._metadata_by_key[key].get(
+            SYSTEM_METADATA_KEY_AUTO_OBSERVE_INTERVAL_MINUTES, 5.0
+        )
+
     def is_asset_executable(self, asset_key: AssetKey) -> bool:
         """Returns True if the asset key is materializable by this AssetsDefinition.
 

@@ -155,8 +155,6 @@ class AssetGraph:
         all_assets: Iterable[Union[AssetsDefinition, SourceAsset]],
         asset_checks: Optional[Sequence[AssetChecksDefinition]] = None,
     ) -> "InternalAssetGraph":
-        from dagster._core.definitions.external_asset import get_auto_observe_interval_minutes
-
         assets_defs: List[AssetsDefinition] = []
         source_assets: List[SourceAsset] = []
         partitions_defs_by_key: Dict[AssetKey, Optional[PartitionsDefinition]] = {}
@@ -204,7 +202,7 @@ class AssetGraph:
                 for key in asset.keys:
                     if asset.is_auto_observable(key):
                         auto_observe_interval_minutes_by_key[key] = (
-                            get_auto_observe_interval_minutes(asset, key)
+                            asset.get_auto_observe_interval_minutes(key)
                         )
 
         return InternalAssetGraph(
