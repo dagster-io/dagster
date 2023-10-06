@@ -40,7 +40,7 @@ export const LaunchpadStoredSessionsContainer = (props: Props) => {
   const [data, onSave] = useExecutionSessionStorage(repoAddress, pipeline.name, initialDataForMode);
 
   const onCreateSession = () => {
-    onSave(applyCreateSession(data, initialDataForMode));
+    onSave((data) => applyCreateSession(data, initialDataForMode));
   };
 
   const currentSession = data.sessions[data.current]!;
@@ -48,7 +48,7 @@ export const LaunchpadStoredSessionsContainer = (props: Props) => {
   const onSaveSession = useSetStateUpdateCallback<IExecutionSessionChanges>(
     currentSession,
     (changes: IExecutionSessionChanges) => {
-      onSave(applyChangesToSession(data, data.current, changes));
+      onSave((data) => applyChangesToSession(data, data.current, changes));
     },
   );
 
