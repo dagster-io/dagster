@@ -3,6 +3,7 @@ import json
 from dagster import AssetKey, StaticPartitionsDefinition, asset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 
 partitions = StaticPartitionsDefinition(partition_keys=["a", "b", "c"])
 
@@ -28,6 +29,7 @@ def test_asset_reconciliation_cursor_evaluation_id_backcompat():
         {AssetKey("my_asset"): partitions.empty_subset().with_partition_keys(["a"])},
         0,
         {},
+        None,
     )
 
     c2 = c.with_updates(
@@ -38,15 +40,16 @@ def test_asset_reconciliation_cursor_evaluation_id_backcompat():
         {AssetKey("my_asset"): {"a"}},
         1,
         asset_graph,
-        {},
+        [],
         0,
+        AssetGraphSubset(asset_graph),
     )
 
-    serdes_c2 = AssetDaemonCursor.from_serialized(c2.serialize(), asset_graph)
+    serdes_c2 = AssetDaemonCursor.from_serialized(c2.serialize(None), asset_graph)
     assert serdes_c2 == c2
     assert serdes_c2.evaluation_id == 1
 
-    assert AssetDaemonCursor.get_evaluation_id_from_serialized(c2.serialize()) == 1
+    assert AssetDaemonCursor.get_evaluation_id_from_serialized(c2.serialize(None)) == 1
 
 
 def test_asset_reconciliation_cursor_auto_observe_backcompat():
