@@ -33,6 +33,7 @@ from dagster._core.definitions import (
     StaticPartitionsDefinition,
 )
 from dagster._core.definitions.backfill_policy import BackfillPolicy
+from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.partition import PartitionedConfig
 from dagster._core.definitions.selector import (
@@ -1176,7 +1177,7 @@ def test_asset_backfill_with_single_run_backfill_policy(
 def test_asset_backfill_with_multi_run_backfill_policy(
     instance: DagsterInstance, workspace_context: WorkspaceProcessContext
 ):
-    partitions = ["2023-01-01", "2023-01-02", "2023-01-03"]
+    partitions = ["2023-01-01", "2023-01-02", "2023-01-03", "2023-01-04"]
     asset_graph = ExternalAssetGraph.from_workspace(workspace_context.create_request_context())
 
     backfill_id = "asset_backfill_with_multi_run_backfill_policy"
@@ -1206,9 +1207,19 @@ def test_asset_backfill_with_multi_run_backfill_policy(
         )
     )
 
-    assert instance.get_runs_count() == 1
-    assert instance.get_runs()[0].tags.get(ASSET_PARTITION_RANGE_START_TAG) == partitions[0]
-    assert instance.get_runs()[0].tags.get(ASSET_PARTITION_RANGE_END_TAG) == partitions[-1]
+    assert instance.get_runs_count() == 4
+
+    updated_backfill = instance.get_backfill(backfill_id)
+    assert updated_backfill
+    updated_asset_backfill_data = AssetBackfillData.from_serialized(
+        cast(str, updated_backfill.serialized_asset_backfill_data),
+        asset_graph,
+        backfill.backfill_timestamp,
+    )
+    assert list(updated_asset_backfill_data.requested_subset.iterate_asset_partitions()) == [
+        AssetKeyPartitionKey(asset_with_multi_run_backfill_policy.key, partition)
+        for partition in partitions
+    ]
 
 
 def test_error_code_location(

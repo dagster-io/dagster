@@ -756,7 +756,7 @@ def _build_run_requests_for_partition_key_range(
 
     partition_chunk_start_index = partition_range_start_index
     run_requests = []
-    while partition_chunk_start_index < partition_range_end_index:
+    while partition_chunk_start_index <= partition_range_end_index:
         partition_chunk_end_index = partition_chunk_start_index + max_partitions_per_run - 1
         if partition_chunk_end_index > partition_range_end_index:
             partition_chunk_end_index = partition_range_end_index
