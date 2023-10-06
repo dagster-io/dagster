@@ -21,7 +21,9 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
 )
+from dagster._core.definitions.auto_materialize_rule import AutoMaterializeAssetEvaluation
 from dagster._core.instance import DynamicPartitionsStore
+from dagster._serdes.serdes import deserialize_value, serialize_value
 
 from .asset_graph import AssetGraph
 from .partition import (
@@ -55,6 +57,7 @@ class AssetDaemonCursor(NamedTuple):
     evaluation_id: int
     last_observe_request_timestamp_by_asset_key: Mapping[AssetKey, float]
     skipped_on_last_tick_subset: Optional[AssetGraphSubset]
+    latest_evaluation_by_asset_key: Mapping[AssetKey, AutoMaterializeAssetEvaluation]
 
     def was_previously_handled(self, asset_key: AssetKey) -> bool:
         return asset_key in self.handled_root_asset_keys
@@ -89,6 +92,7 @@ class AssetDaemonCursor(NamedTuple):
         newly_observe_requested_asset_keys: Sequence[AssetKey],
         observe_request_timestamp: float,
         skipped_on_last_tick_subset: AssetGraphSubset,
+        evaluations: Sequence[AutoMaterializeAssetEvaluation],
     ) -> "AssetDaemonCursor":
         """Returns a cursor that represents this cursor plus the updates that have happened within the
         tick.
@@ -146,6 +150,10 @@ class AssetDaemonCursor(NamedTuple):
                 "Latest storage ID should be >= previous latest storage ID",
             )
 
+        result_latest_evaluation_by_asset_key = {**self.latest_evaluation_by_asset_key}
+        for evaluation in evaluations:
+            result_latest_evaluation_by_asset_key[evaluation.asset_key] = evaluation
+
         return AssetDaemonCursor(
             latest_storage_id=latest_storage_id or self.latest_storage_id,
             handled_root_asset_keys=result_handled_root_asset_keys,
@@ -153,6 +161,7 @@ class AssetDaemonCursor(NamedTuple):
             evaluation_id=evaluation_id,
             last_observe_request_timestamp_by_asset_key=result_last_observe_request_timestamp_by_asset_key,
             skipped_on_last_tick_subset=skipped_on_last_tick_subset,
+            latest_evaluation_by_asset_key=result_latest_evaluation_by_asset_key,
         )
 
     @classmethod
@@ -164,6 +173,7 @@ class AssetDaemonCursor(NamedTuple):
             evaluation_id=0,
             last_observe_request_timestamp_by_asset_key={},
             skipped_on_last_tick_subset=None,
+            latest_evaluation_by_asset_key={},
         )
 
     @classmethod
@@ -181,6 +191,7 @@ class AssetDaemonCursor(NamedTuple):
             evaluation_id = data[3] if len(data) == 4 else 0
             serialized_last_observe_request_timestamp_by_asset_key = {}
             serialized_skipped_on_last_tick_subset = {}
+            serialized_latest_evaluation_by_asset_key = {}
         else:
             latest_storage_id = data["latest_storage_id"]
             serialized_handled_root_asset_keys = data["handled_root_asset_keys"]
@@ -192,6 +203,9 @@ class AssetDaemonCursor(NamedTuple):
                 "last_observe_request_timestamp_by_asset_key", {}
             )
             serialized_skipped_on_last_tick_subset = data.get("skipped_on_last_tick_subset", {})
+            serialized_latest_evaluation_by_asset_key = data.get(
+                "latest_evaluation_by_asset_key", {}
+            )
 
         handled_root_partitions_by_asset_key = {}
         for (
@@ -225,6 +239,15 @@ class AssetDaemonCursor(NamedTuple):
             except:
                 subset = partitions_def.empty_subset()
             handled_root_partitions_by_asset_key[key] = subset
+
+        latest_evaluation_by_asset_key = {}
+        for key_str, serialized_evaluation in serialized_latest_evaluation_by_asset_key.items():
+            key = AssetKey.from_user_string(key_str)
+            evaluation = deserialize_value(serialized_evaluation)
+            if not isinstance(evaluation, AutoMaterializeAssetEvaluation):
+                continue
+            latest_evaluation_by_asset_key[key] = evaluation
+
         return cls(
             latest_storage_id=latest_storage_id,
             handled_root_asset_keys={
@@ -245,6 +268,7 @@ class AssetDaemonCursor(NamedTuple):
                 if serialized_skipped_on_last_tick_subset
                 else None
             ),
+            latest_evaluation_by_asset_key=latest_evaluation_by_asset_key,
         )
 
     @classmethod
@@ -280,6 +304,10 @@ class AssetDaemonCursor(NamedTuple):
                     if self.skipped_on_last_tick_subset
                     else None
                 ),
+                "latest_evaluation_by_asset_key": {
+                    key.to_user_string(): serialize_value(evaluation)
+                    for key, evaluation in self.latest_evaluation_by_asset_key.items()
+                },
             }
         )
         return serialized
