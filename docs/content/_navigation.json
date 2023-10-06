@@ -573,6 +573,11 @@
             ]
           },
           {
+            "title": "Insights",
+            "path": "/dagster-cloud/insights"
+          },
+
+          {
             "title": "dagster-cloud CLI",
             "path": "/dagster-cloud/managing-deployments/dagster-cloud-cli"
           }
