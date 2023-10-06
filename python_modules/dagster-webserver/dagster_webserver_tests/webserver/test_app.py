@@ -15,6 +15,9 @@ from dagster._core.definitions.data_version import (
 )
 from dagster._core.definitions.events import AssetKey, AssetMaterialization
 from dagster._core.events import DagsterEventType
+from dagster._core.storage.event_log.base import (
+    EventRecordsFilter,
+)
 from dagster._serdes import unpack_value
 from dagster._seven import json
 from dagster._utils.error import SerializableErrorInfo
@@ -453,3 +456,27 @@ def test_report_asset_materialization_apis_consistent(
     KNOWN_DIFF = {"partition", "description"}
 
     assert set(sample_payload.keys()).difference(set(params)) == KNOWN_DIFF
+
+
+def test_runless_events_idempotency(instance: DagsterInstance, test_client: TestClient):
+    my_asset_key = "idempotent_asset_key"
+    idempotency_headers = {"Idempotency-Key": "key/dt=2021-09-23"}
+    response = test_client.post(
+        f"/report_asset_materialization/{my_asset_key}",
+        headers=idempotency_headers,
+    )
+    assert response.status_code == 200
+    response = test_client.post(
+        f"/report_asset_materialization/{my_asset_key}",
+        headers=idempotency_headers,
+    )
+    assert response.status_code == 200
+    evt = instance.get_latest_materialization_event(AssetKey(my_asset_key))
+    evt = instance.get_event_records(
+        EventRecordsFilter(
+            event_type=DagsterEventType.ASSET_MATERIALIZATION,
+            asset_key=AssetKey.from_user_string(my_asset_key),
+        ),
+        limit=2,
+    )
+    assert len(evt) == 1
