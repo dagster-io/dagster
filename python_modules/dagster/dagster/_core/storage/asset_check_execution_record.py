@@ -6,6 +6,14 @@ from dagster._serdes import deserialize_value
 from dagster._utils import datetime_as_float
 
 
+class AssetCheckInstanceSupport(enum.Enum):
+    """Reasons why a dagster instance might not support checks."""
+
+    SUPPORTED = "SUPPORTED"
+    NEEDS_MIGRATION = "NEEDS_MIGRATION"
+    NEEDS_AGENT_UPGRADE = "NEEDS_AGENT_UPGRADE"
+
+
 # We store a limit set of statuses in the database, and then resolve them to the actual status
 # at read time. This is because the write path is to store a planned event (which creates a row
 # with PLANNED status) then update the row when we get the check result. But if the check never
