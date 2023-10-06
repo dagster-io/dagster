@@ -314,8 +314,9 @@ _FAIL_TO_YIELD_ERROR_MESSAGE = (
     "Did you forget to `yield from pipes_session.get_results()` or `return"
     " <PipesClient>.run(...).get_results`? If using `open_pipes_session`,"
     " `pipes_session.get_results` should be called once after the `open_pipes_session` block has"
-    " exited to yield any remaining buffered results. If using `<PipesClient>.run`, you should"
-    " always return `<PipesClient>.run(...).get_results()`."
+    " exited to yield any remaining buffered results via `<PipesSession>.get_results()`."
+    " If using `<PipesClient>.run`, you should always return"
+    " `<PipesClient>.run(...).get_results()` or `<PipesClient>.run(...).get_materialize_result()`."
 )
 
 

@@ -1,13 +1,12 @@
 from contextlib import contextmanager
 from dataclasses import dataclass
 from queue import Queue
-from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence, Set, Union
+from typing import TYPE_CHECKING, Any, Dict, Iterator, Mapping, Optional, Set, Union
 
 from dagster_pipes import (
     DAGSTER_PIPES_BOOTSTRAP_PARAM_NAMES,
     IS_DAGSTER_PIPES_PROCESS,
     PIPES_METADATA_TYPE_INFER,
-    DagsterPipesError,
     PipesContextData,
     PipesDataProvenance,
     PipesExtras,
@@ -36,7 +35,9 @@ from dagster._core.definitions.time_window_partitions import (
 from dagster._core.errors import DagsterPipesExecutionError
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.execution.context.invocation import BoundOpExecutionContext
-from dagster._core.pipes.client import PipesMessageReader
+
+if TYPE_CHECKING:
+    from dagster._core.pipes.client import PipesMessageReader
 
 PipesExecutionResult: TypeAlias = Union[MaterializeResult, AssetCheckResult]
 
@@ -59,7 +60,7 @@ class PipesMessageHandler:
         self._received_closed_msg = False
 
     @contextmanager
-    def handle_messages(self, message_reader: PipesMessageReader) -> Iterator[PipesParams]:
+    def handle_messages(self, message_reader: "PipesMessageReader") -> Iterator[PipesParams]:
         with message_reader.read_messages(self) as params:
             yield params
         for key in self._unmaterialized_assets:
@@ -273,45 +274,6 @@ class PipesSession:
             ExtResult: Result reported by external process.
         """
         yield from self.message_handler.clear_result_queue()
-
-    @public
-    def get_materialize_result(self) -> MaterializeResult:
-        return materialize_result_from_pipes_results(list(self.get_results()))
-
-
-def materialize_result_from_pipes_results(
-    all_results: Sequence[PipesExecutionResult],
-) -> MaterializeResult:
-    mat_results: List[MaterializeResult] = [
-        mat_result for mat_result in all_results if isinstance(mat_result, MaterializeResult)
-    ]
-    check_results: List[AssetCheckResult] = [
-        check_result for check_result in all_results if isinstance(check_result, AssetCheckResult)
-    ]
-
-    check.invariant(len(mat_results) > 0, "No materialization results received. Internal error?")
-    if len(mat_results) > 1:
-        raise DagsterPipesError(
-            "Multiple materialize results returned with asset keys"
-            f" {sorted([check.not_none(mr.asset_key).to_user_string() for mr in mat_results])}."
-            " If you are materializing multiple assets in a pipes invocation, use"
-            " get_results() instead.",
-        )
-    mat_result = next(iter(mat_results))
-    for check_result in check_results:
-        if check_result.asset_key:
-            check.invariant(
-                mat_result.asset_key == check_result.asset_key,
-                "Check result specified an asset key that is not part of the returned"
-                " materialization. If this was deliberate, use get_results() instead.",
-            )
-
-    if check_results:
-        return mat_result._replace(
-            check_results=[*(mat_result.check_results or []), *check_results]
-        )
-    else:
-        return mat_result
 
 
 def build_external_execution_context_data(

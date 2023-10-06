@@ -1,19 +1,24 @@
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Iterator, Optional, Sequence
+from typing import TYPE_CHECKING, Iterator, List, Optional, Sequence
 
 from dagster_pipes import (
+    DagsterPipesError,
     PipesContextData,
     PipesExtras,
     PipesParams,
 )
 
+import dagster._check as check
 from dagster._annotations import experimental, public
+from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.execution.context.compute import OpExecutionContext
 
+from .context import PipesExecutionResult
+
 if TYPE_CHECKING:
-    from .context import PipesExecutionResult, PipesMessageHandler
+    from .context import PipesMessageHandler
 
 
 @experimental
@@ -55,8 +60,6 @@ class PipesClientCompletedInvocation:
         return tuple(self._results)
 
     def get_materialize_result(self) -> MaterializeResult:
-        from .context import materialize_result_from_pipes_results
-
         return materialize_result_from_pipes_results(self.get_results())
 
 
@@ -116,3 +119,38 @@ class PipesMessageReader(ABC):
         Example: "Attempted to read messages using a magic portal. Expected PipesMagicPortalMessageWriter
         to be explicitly passed to open_dagster_pipes in the external process."
         """
+
+
+def materialize_result_from_pipes_results(
+    all_results: Sequence[PipesExecutionResult],
+) -> MaterializeResult:
+    mat_results: List[MaterializeResult] = [
+        mat_result for mat_result in all_results if isinstance(mat_result, MaterializeResult)
+    ]
+    check_results: List[AssetCheckResult] = [
+        check_result for check_result in all_results if isinstance(check_result, AssetCheckResult)
+    ]
+
+    check.invariant(len(mat_results) > 0, "No materialization results received. Internal error?")
+    if len(mat_results) > 1:
+        raise DagsterPipesError(
+            "Multiple materialize results returned with asset keys"
+            f" {sorted([check.not_none(mr.asset_key).to_user_string() for mr in mat_results])}."
+            " If you are materializing multiple assets in a pipes invocation, use"
+            " get_results() instead.",
+        )
+    mat_result = next(iter(mat_results))
+    for check_result in check_results:
+        if check_result.asset_key:
+            check.invariant(
+                mat_result.asset_key == check_result.asset_key,
+                "Check result specified an asset key that is not part of the returned"
+                " materialization. If this was deliberate, use get_results() instead.",
+            )
+
+    if check_results:
+        return mat_result._replace(
+            check_results=[*(mat_result.check_results or []), *check_results]
+        )
+    else:
+        return mat_result

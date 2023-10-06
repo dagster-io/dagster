@@ -10,22 +10,14 @@ from dagster import (
     multi_asset,
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
-from dagster._core.definitions.metadata import TextMetadataValue
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.pipes.context import build_external_execution_context_data
-from dagster._core.pipes.utils import open_pipes_session
 from dagster_pipes import (
     DagsterPipesError,
     PipesContext,
 )
 
 from .in_process_client import (
-    InProcessContextInjector,
-    InProcessMessageReader,
     InProcessPipesClient,
-    InProcessPipesContextLoader,
-    InProcessPipesMessageWriter,
-    InProcessPipesParamLoader,
 )
 
 
@@ -197,7 +189,7 @@ def test_wrong_asset_check_name() -> None:
     assert called["yes"]
 
 
-def test_open_pipes_session_get_materialize_result() -> None:
+def test_forget_to_return_materialize_result() -> None:
     called = {}
 
     def _impl(context: PipesContext):
@@ -205,38 +197,18 @@ def test_open_pipes_session_get_materialize_result() -> None:
         called["yes"] = True
 
     @asset
-    def an_asset(context: AssetExecutionContext):
-        pipes_context_data = build_external_execution_context_data(context=context, extras={})
-        pipes_context_loader = InProcessPipesContextLoader(pipes_context_data)
-        pipes_message_writer = InProcessPipesMessageWriter()
-        with PipesContext(  # construct PipesContext directly to avoid env var check in open_dagster_pipes
-            context_loader=pipes_context_loader,
-            message_writer=pipes_message_writer,
-            params_loader=InProcessPipesParamLoader(),
-        ) as pipes_context:
-            with open_pipes_session(
-                context=context,
-                context_injector=InProcessContextInjector(),
-                message_reader=InProcessMessageReader(
-                    pipes_message_writer,
-                    pipes_context=pipes_context,
-                ),
-            ) as session:
-                _impl(pipes_context)
+    def an_asset(context: AssetExecutionContext, inprocess_client: InProcessPipesClient):
+        inprocess_client.run(context=context, fn=_impl).get_materialize_result()
 
-            mat_result = session.get_materialize_result()
-            assert mat_result.asset_key
-            assert mat_result.asset_key.to_user_string() == "an_asset"
-            assert mat_result.metadata
-            assert isinstance(mat_result.metadata["some_key"], TextMetadataValue)
-            assert mat_result.metadata["some_key"].value == "some_value"
-            return mat_result
+    with pytest.raises(DagsterInvariantViolationError) as exc_info:
+        execute_asset_through_def(an_asset, resources={"inprocess_client": InProcessPipesClient()})
 
-    result = execute_asset_through_def(
-        an_asset, resources={"inprocess_client": InProcessPipesClient()}
+    assert "op 'an_asset' did not yield or return expected outputs {'result'}" in str(
+        exc_info.value
     )
-    assert called["yes"]
-    assert result.success
-    mat_events = result.get_asset_materialization_events()
-    assert len(mat_events) == 1
-    assert mat_events[0].materialization.metadata["some_key"].value == "some_value"
+    assert (
+        "If using `<PipesClient>.run`, you should always return"
+        " `<PipesClient>.run(...).get_results()` or"
+        " `<PipesClient>.run(...).get_materialize_result()"
+        in str(exc_info.value)
+    )
