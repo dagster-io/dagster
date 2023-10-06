@@ -330,6 +330,7 @@ class AssetDaemonContext:
             will_materialize_mapping=will_materialize_mapping,
             expected_data_time_mapping=expected_data_time_mapping,
             candidates=set(),
+            new_candidates=set(),
             daemon_context=self,
         )
 
@@ -352,16 +353,23 @@ class AssetDaemonContext:
                 to_materialize.update(asset_partitions)
             self._logger.debug("Done evaluating materialize rule")
 
-        # These should be conditions, but aren't currently, so we just manually strip out things
+        # these are the set of asset partitions which should be materialized, but which did not
+        # need to be materialized last tick
+        new_candidates = {ap for ap in to_materialize if ap not in self.skipped_asset_graph_subset}
+
+        # these should be conditions, but aren't currently, so we just manually strip out things
         # from our materialization set
         for candidate in list(to_materialize):
             if candidate in self.instance_queryer.get_active_backfill_target_asset_graph_subset():
                 to_materialize.remove(candidate)
+                new_candidates.remove(candidate)
                 for rule_evaluation_data, asset_partitions in all_results:
                     all_results.remove((rule_evaluation_data, asset_partitions))
                     all_results.append((rule_evaluation_data, asset_partitions - {candidate}))
 
-        skip_context = materialize_context._replace(candidates=to_materialize)
+        skip_context = materialize_context._replace(
+            candidates=to_materialize, new_candidates=new_candidates
+        )
 
         for skip_rule in auto_materialize_policy.skip_rules:
             rule_snapshot = skip_rule.to_snapshot()
