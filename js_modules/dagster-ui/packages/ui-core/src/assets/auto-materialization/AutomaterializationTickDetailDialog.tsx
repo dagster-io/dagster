@@ -219,7 +219,11 @@ export const AutomaterializationTickDetailDialog = React.memo(
                   <Subtitle2>Status</Subtitle2>
                   <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
                     <Tag intent={intent}>
-                      {tick?.requestedAssetMaterializationCount ?? 0} requested
+                      {tick?.status === InstigationTickStatus.STARTED ? (
+                        'Evaluating…'
+                      ) : (
+                        <>{tick?.requestedAssetMaterializationCount ?? 0} requested</>
+                      )}
                     </Tag>
                     {tick?.error ? (
                       <ButtonLink
@@ -246,13 +250,17 @@ export const AutomaterializationTickDetailDialog = React.memo(
                 </Box>
               </div>
             </Box>
-            <Box
-              padding={{vertical: 12, horizontal: 24}}
-              border={filteredAssetKeys.length > 0 ? undefined : 'bottom'}
-            >
-              <Subtitle2>Materializations requested</Subtitle2>
-            </Box>
-            {content}
+            {tick?.status === InstigationTickStatus.STARTED ? null : (
+              <>
+                <Box
+                  padding={{vertical: 12, horizontal: 24}}
+                  border={filteredAssetKeys.length > 0 ? undefined : 'bottom'}
+                >
+                  <Subtitle2>Materializations requested</Subtitle2>
+                </Box>
+                {content}
+              </>
+            )}
           </div>
         }
       />

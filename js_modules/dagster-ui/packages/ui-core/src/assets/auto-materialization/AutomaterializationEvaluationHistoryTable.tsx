@@ -137,7 +137,6 @@ export const AutomaterializationEvaluationHistoryTable = ({
             <th>Status</th>
             <th>Duration</th>
             <th>Result</th>
-            <th></th>
           </tr>
         </thead>
         <tbody>
@@ -172,15 +171,6 @@ export const AutomaterializationEvaluationHistoryTable = ({
                 ) : (
                   ' - '
                 )}
-              </td>
-              <td>
-                <Button
-                  onClick={() => {
-                    setSelectedTick(tick);
-                  }}
-                >
-                  View details
-                </Button>
               </td>
             </tr>
           ))}
