@@ -1,7 +1,7 @@
 import ast
 import datetime
 import tempfile
-from typing import Sequence
+from typing import Any, List, Sequence
 
 import pytest
 from dagster import (
@@ -2006,3 +2006,49 @@ def test_graph_asset_cannot_use_key_prefix_name_and_key() -> None:
             return my_op()
 
         assert _specified_elsewhere  # appease linter
+
+
+def test_multi_asset_specs_no_loop_construction() -> None:
+    upstream_asset = AssetSpec("upstream_asset")
+    downstream_asset = AssetSpec("downstream_asset", deps=[upstream_asset])
+
+    @multi_asset(specs=[upstream_asset])
+    def _upstream_op() -> Any:
+        raise NotImplementedError()
+
+    @multi_asset(specs=[downstream_asset])
+    def _downstream_op() -> Any:
+        raise NotImplementedError()
+
+    defs = Definitions(assets=[_upstream_op, _downstream_op])
+
+    assert defs.get_implicit_global_asset_job_def().asset_layer.asset_deps[
+        AssetKey("downstream_asset")
+    ] == {AssetKey("upstream_asset")}
+
+
+@pytest.mark.xfail(
+    reason="""Demonstration of bug. Fails with Error:
+dagster._core.errors.DagsterInvalidDefinitionError: Invalid dependencies: node "_an_asset_op_2"
+does not have output "upstream_asset". Listed as dependency for node "_an_asset_op
+input "upstream_asset"""
+)
+def test_multi_asset_specs_factory_esque_code() -> None:
+    upstream_asset = AssetSpec("upstream_asset")
+    downstream_asset = AssetSpec("downstream_asset", deps=[upstream_asset])
+
+    assets_defs: List[AssetsDefinition] = []
+
+    for spec in [upstream_asset, downstream_asset]:
+
+        @multi_asset(specs=[spec])
+        def _an_asset_op() -> Any:
+            raise NotImplementedError()
+
+        assets_defs.append(_an_asset_op)
+
+    defs = Definitions(assets=assets_defs)
+
+    assert defs.get_implicit_global_asset_job_def().asset_layer.asset_deps[
+        AssetKey("downstream_asset")
+    ] == {AssetKey("upstream_asset")}
