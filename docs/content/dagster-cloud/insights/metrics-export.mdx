@@ -1,0 +1,124 @@
+---
+title: Metrics Export
+description: "Exporting metrics from Dagster Cloud Insights."
+
+platform_type: "cloud"
+---
+
+# Exporting Metrics from Dagster Cloud Insights
+
+Metrics avaialable in [Dagster Cloud Insights](/dagster-cloud/insights) can be exported using a GraphQL API.
+
+## Example
+
+This examples uses the [GraphQL Python Client](concepts/webserver/graphql-client) to export the Dagster Credits metric for all assets for the month of September 2023:
+
+```python
+from datetime import datetime
+from dagster_graphql import DagsterGraphQLClient
+
+ASSET_METRICS_QUERY = """
+query AssetMetrics($metricName: String, $after: Float, $before: Float) {
+  reportingMetricsByAsset(
+    metricsSelector: {
+      metricName: $metricName
+      after: $after
+      before: $before
+      sortAggregationFunction: SUM
+      granularity: DAILY
+    }
+  ) {
+    __typename
+    ... on ReportingMetrics {
+      metrics {
+        values
+        entity {
+          ... on ReportingAsset {
+            assetKey {
+              path
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+"""
+
+
+def get_client():
+    url = "YOUR_ORG.dagster.cloud/prod"  # Your deployment-scoped url
+    user_token = "YOUR_TOKEN"  # A token generated from Cloud Settings -> Tokens
+    return DagsterGraphQLClient(url, headers={"Dagster-Cloud-Api-Token": user_token})
+
+
+if __name__ == "__main__":
+    client = get_client()
+    result = client._execute(
+        ASSET_METRICS_QUERY,
+        {
+            "metricName": "__dagster_dagster_credits",
+            "after": datetime(2023, 9, 1).timestamp(),
+            "before": datetime(2023, 10, 1).timestamp(),
+        },
+    )
+
+    for asset_series in result["reportingMetricsByAsset"]["metrics"]:
+        print("Asset key:", asset_series["entity"]["assetKey"]["path"])
+        print("Daily values:", asset_series["values"])
+
+```
+
+## Reference
+
+A condensed reference is provided below. For the full reference go to <https://YOUR_ORG.dagster.cloud/prod/graphql> and click on the Schema tab.
+
+The top level GraphQL queries available are:
+
+```graphql
+reportingMetricsByJob(
+  metricsFilter: JobReportingMetricsFilter
+  metricsSelector: ReportingMetricsSelector!
+): ReportingMetricsOrError!
+
+reportingMetricsByAsset(
+  metricsFilter: AssetReportingMetricsFilter
+  metricsSelector: ReportingMetricsSelector!
+): ReportingMetricsOrError!
+
+reportingMetricsByAssetGroup(
+  metricsFilter: AssetGroupReportingMetricsFilter
+  metricsSelector: ReportingMetricsSelector!
+): ReportingMetricsOrError!
+```
+
+The `metricsSelector` specifies the metric name and time granularity.
+
+```graphql
+input ReportingMetricsSelector {
+  after: Float # timestamp
+  before: Float # timestamp
+  metricName: String # see below for valid values
+  granularity: ReportingMetricsGranularity
+}
+
+enum ReportingMetricsGranularity {
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+# The valid metric names are:
+# "__dagster_dagster_credits"
+# "__dagster_execution_time_ms"
+# "__dagster_materializations"
+# "__dagster_step_failures"
+# "__dagster_step_retries"
+# "__dagster_asset_check_errors"
+# "__dagster_asset_check_warnings"
+```
+
+## Automation
+
+We do not recommend doing frequent queries over large time windows that may download large amounts of data. After an initial data load, we recommend loading data daily for the most recent week or less. Note that the metrics data is currently computed once daily.
