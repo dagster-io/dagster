@@ -10,6 +10,7 @@ from dagster import (
     AssetOut,
     AssetsDefinition,
     DailyPartitionsDefinition,
+    DataVersion,
     GraphOut,
     HourlyPartitionsDefinition,
     LastPartitionMapping,
@@ -20,6 +21,7 @@ from dagster import (
     asset,
     graph,
     multi_asset,
+    observable_source_asset,
     op,
     repository,
 )
@@ -28,6 +30,7 @@ from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.decorators.asset_check_decorator import asset_check
 from dagster._core.definitions.events import AssetKeyPartitionKey
+from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
@@ -751,3 +754,21 @@ def test_required_assets_and_checks_by_key_multi_asset_single_asset(asset_graph_
 
     for key in [AssetKey(["asset0"]), foo_check, bar_check]:
         assert asset_graph.get_required_asset_and_check_keys(key) == set()
+
+
+def test_unexecutable_assets_in_asset_graph() -> None:
+    @observable_source_asset(auto_observe_interval_minutes=2)
+    def an_asset() -> DataVersion:
+        return DataVersion("data_version")
+
+    assert isinstance(an_asset, SourceAsset)
+
+    asset_graph_with_source_asset_object = AssetGraph.from_assets([an_asset])
+    assert asset_graph_with_source_asset_object.get_auto_observe_interval_minutes(an_asset.key) == 2
+
+    assets_def = create_external_asset_from_source_asset(an_asset)
+
+    assert isinstance(assets_def, AssetsDefinition)
+
+    asset_graph_with_adapter = AssetGraph.from_assets([assets_def])
+    assert asset_graph_with_adapter.get_auto_observe_interval_minutes(an_asset.key) == 2

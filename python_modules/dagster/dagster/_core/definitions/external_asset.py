@@ -3,6 +3,7 @@ from typing import List, Optional, Sequence
 from dagster import _check as check
 from dagster._core.definitions.asset_spec import (
     SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
+    SYSTEM_METADATA_KEY_AUTO_OBSERVE_INTERVAL_MINUTES,
     AssetExecutionType,
     AssetSpec,
 )
@@ -132,6 +133,36 @@ def external_assets_from_specs(specs: Sequence[AssetSpec]) -> List[AssetsDefinit
     return assets_defs
 
 
+def get_auto_observe_interval_minutes(assets_def: AssetsDefinition, asset_key: AssetKey) -> float:
+    check.invariant(
+        assets_def.asset_execution_type_for_asset(asset_key) == AssetExecutionType.OBSERVATION
+    )
+    # TODO: What is the default?
+    return assets_def.metadata_by_key[asset_key].get(
+        SYSTEM_METADATA_KEY_AUTO_OBSERVE_INTERVAL_MINUTES, 5.0
+    )
+
+
+def _metadata_for_autoobserve(source_asset: SourceAsset) -> dict:
+    return (
+        {
+            SYSTEM_METADATA_KEY_AUTO_OBSERVE_INTERVAL_MINUTES: (
+                source_asset.auto_observe_interval_minutes
+            )
+        }
+        if source_asset.auto_observe_interval_minutes is not None
+        else {}
+    )
+
+
+def _metadata_for_actively_observable(source_asset: SourceAsset) -> dict:
+    check.invariant(source_asset.observe_fn)
+    return {
+        **{SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.OBSERVATION.value},
+        **_metadata_for_autoobserve(source_asset),
+    }
+
+
 def create_external_asset_from_source_asset(source_asset: SourceAsset) -> AssetsDefinition:
     check.invariant(
         source_asset.auto_observe_interval_minutes is None,
@@ -142,7 +173,7 @@ def create_external_asset_from_source_asset(source_asset: SourceAsset) -> Assets
     injected_metadata = (
         {SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.UNEXECUTABLE.value}
         if source_asset.observe_fn is None
-        else {SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.OBSERVATION.value}
+        else _metadata_for_actively_observable(source_asset)
     )
 
     kwargs = {

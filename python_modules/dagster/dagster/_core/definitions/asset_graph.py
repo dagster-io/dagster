@@ -199,6 +199,12 @@ class AssetGraph:
                         for key in all_required_keys:
                             required_assets_and_checks_by_key[key] = all_required_keys
 
+                for key in asset.keys:
+                    if asset.is_auto_observable(key):
+                        auto_observe_interval_minutes_by_key[key] = (
+                            asset.get_auto_observe_interval_minutes(key)
+                        )
+
         return InternalAssetGraph(
             asset_dep_graph=generate_asset_dep_graph(assets_defs, source_assets),
             source_asset_keys={source_asset.key for source_asset in source_assets},
