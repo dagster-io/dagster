@@ -44,6 +44,7 @@ def dbt_assets(
     manifest: DbtManifestParam,
     select: str = "fqn:*",
     exclude: Optional[str] = None,
+    name: Optional[str] = None,
     io_manager_key: Optional[str] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     dagster_dbt_translator: DagsterDbtTranslator = DagsterDbtTranslator(),
@@ -64,6 +65,7 @@ def dbt_assets(
             to include. Defaults to ``fqn:*``.
         exclude (Optional[str]): A dbt selection string for the models in a project that you want
             to exclude. Defaults to "".
+        name (Optional[str]): The name of the op.
         io_manager_key (Optional[str]): The IO manager key that will be set on each of the returned
             assets. When other ops are downstream of the loaded assets, the IOManager specified
             here determines how the inputs to those ops are loaded. Defaults to "io_manager".
@@ -294,6 +296,7 @@ def dbt_assets(
     def inner(fn) -> AssetsDefinition:
         asset_definition = multi_asset(
             outs=outs,
+            name=name,
             internal_asset_deps=internal_asset_deps,
             deps=non_argument_deps,
             compute_kind="dbt",
