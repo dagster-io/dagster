@@ -1231,7 +1231,7 @@ def test_external_launch_type(
     job,
 ):
     container_name = "external"
-  
+
     task_definition = ecs.register_task_definition(
         family="external",
         containerDefinitions=[{"name": container_name, "image": "dagster:first"}],
@@ -1241,14 +1241,14 @@ def test_external_launch_type(
     )["taskDefinition"]
 
     assert task_definition["networkMode"] == "bridge"
-    
+
     task_definition_arn = task_definition["taskDefinitionArn"]
 
     # You can provide a family or a task definition ARN
     with instance_cm(
         {
             "task_definition": task_definition_arn,
-            "container_name": container_name, 
+            "container_name": container_name,
             "run_task_kwargs": {
                 "launchType": "EXTERNAL",
             },
