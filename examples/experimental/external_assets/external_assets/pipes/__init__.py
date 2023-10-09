@@ -16,7 +16,7 @@ config_file = os.path.expanduser("~/.kube/config")
 
 
 @asset(
-    key=AssetKey(["cdn", "scrubbed-cdn-logs"]),
+    key=AssetKey(["cdn", "scrubbed_logs"]),
     deps=[AssetKey(["cdn", "processed_logs"])],
     group_name="pipes",
 )
