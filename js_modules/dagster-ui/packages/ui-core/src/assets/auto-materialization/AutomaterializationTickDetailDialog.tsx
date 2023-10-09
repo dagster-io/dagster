@@ -1,3 +1,4 @@
+import {gql, useQuery} from '@apollo/client';
 import {
   Box,
   Colors,
@@ -9,25 +10,36 @@ import {
   DialogBody,
   DialogFooter,
   ButtonLink,
+  Icon,
+  Spinner,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React from 'react';
+import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
 import {formatElapsedTime} from '../../app/Util';
 import {Timestamp} from '../../app/time/Timestamp';
 import {PythonErrorFragment} from '../../app/types/PythonErrorFragment.types';
+import {tokenForAssetKey} from '../../asset-graph/Utils';
 import {AssetKeyInput, InstigationTickStatus} from '../../graphql/types';
 import {HeaderCell, Inner, Row, RowCell} from '../../ui/VirtualizedTable';
+import {buildRepoAddress} from '../../workspace/buildRepoAddress';
+import {workspacePathFromAddress} from '../../workspace/workspacePath';
 import {AssetLink} from '../AssetLink';
 import {
   AssetKeysDialog,
   AssetKeysDialogHeader,
   AssetKeysDialogEmptyState,
 } from '../AutoMaterializePolicyPage/AssetKeysDialog';
+import {assetDetailsPathForKey} from '../assetDetailsPathForKey';
 
-import {AssetDaemonTickFragment} from './types/AutomaterializationRoot.types';
+import {AssetDaemonTickFragment} from './types/AssetDaemonTicksQuery.types';
+import {
+  AssetGroupAndLocationQuery,
+  AssetGroupAndLocationQueryVariables,
+} from './types/AutomaterializationTickDetailDialog.types';
 const TEMPLATE_COLUMNS = '30% 17% 53%';
 
 export const AutomaterializationTickDetailDialog = React.memo(
@@ -63,6 +75,14 @@ export const AutomaterializationTickDetailDialog = React.memo(
     });
     const totalHeight = rowVirtualizer.getTotalSize();
     const items = rowVirtualizer.getVirtualItems();
+
+    const assetKeyToPartitionsMap = React.useMemo(() => {
+      const map: Record<string, string[]> = {};
+      tick?.requestedMaterializationsForAssets.forEach(({assetKey, partitionKeys}) => {
+        map[tokenForAssetKey(assetKey)] = partitionKeys;
+      });
+      return map;
+    }, [tick?.requestedMaterializationsForAssets]);
 
     const content = React.useMemo(() => {
       if (queryString && !filteredAssetKeys.length) {
@@ -107,12 +127,21 @@ export const AutomaterializationTickDetailDialog = React.memo(
           <Inner $totalHeight={totalHeight}>
             {items.map(({index, key, size, start}) => {
               const assetKey = filteredAssetKeys[index]!;
-              return <AssetDetailRow key={key} $height={size} $start={start} assetKey={assetKey} />;
+              return (
+                <AssetDetailRow
+                  key={key}
+                  $height={size}
+                  $start={start}
+                  assetKey={assetKey}
+                  partitionKeys={assetKeyToPartitionsMap[tokenForAssetKey(assetKey)]}
+                  evaluationId={tick.autoMaterializeAssetEvaluationId!}
+                />
+              );
             })}
           </Inner>
         </div>
       );
-    }, [filteredAssetKeys, items, queryString, tick, totalHeight]);
+    }, [assetKeyToPartitionsMap, filteredAssetKeys, items, queryString, tick, totalHeight]);
 
     const intent = React.useMemo(() => {
       switch (tick?.status) {
@@ -190,7 +219,11 @@ export const AutomaterializationTickDetailDialog = React.memo(
                   <Subtitle2>Status</Subtitle2>
                   <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
                     <Tag intent={intent}>
-                      {tick?.requestedAssetMaterializationCount || 0} requested
+                      {tick?.status === InstigationTickStatus.STARTED ? (
+                        'Evaluating…'
+                      ) : (
+                        <>{tick?.requestedAssetMaterializationCount ?? 0} requested</>
+                      )}
                     </Tag>
                     {tick?.error ? (
                       <ButtonLink
@@ -217,13 +250,17 @@ export const AutomaterializationTickDetailDialog = React.memo(
                 </Box>
               </div>
             </Box>
-            <Box
-              padding={{vertical: 12, horizontal: 24}}
-              border={filteredAssetKeys.length > 0 ? undefined : 'bottom'}
-            >
-              <Subtitle2>Materializations requested</Subtitle2>
-            </Box>
-            {content}
+            {tick?.status === InstigationTickStatus.STARTED ? null : (
+              <>
+                <Box
+                  padding={{vertical: 12, horizontal: 24}}
+                  border={filteredAssetKeys.length > 0 ? undefined : 'bottom'}
+                >
+                  <Subtitle2>Materializations requested</Subtitle2>
+                </Box>
+                {content}
+              </>
+            )}
           </div>
         }
       />
@@ -235,20 +272,64 @@ const AssetDetailRow = ({
   $start,
   $height,
   assetKey,
+  partitionKeys,
+  evaluationId,
 }: {
   $start: number;
   $height: number;
   assetKey: AssetKeyInput;
+  partitionKeys?: string[];
+  evaluationId: number;
 }) => {
-  // TODO (after daniel adds new fields)
+  const numMaterializations = partitionKeys?.length || 1;
+  const {data} = useQuery<AssetGroupAndLocationQuery, AssetGroupAndLocationQueryVariables>(
+    ASSET_GROUP_QUERY,
+    {
+      fetchPolicy: 'cache-and-network',
+      variables: {
+        assetKey: {path: assetKey.path},
+      },
+    },
+  );
+  const asset = data?.assetOrError.__typename === 'Asset' ? data.assetOrError : null;
+  const definition = asset?.definition;
+  const repoAddress = definition
+    ? buildRepoAddress(definition.repository.name, definition.repository.location.name)
+    : null;
   return (
     <Row $start={$start} $height={$height}>
       <RowGrid border="bottom">
         <RowCell>
           <AssetLink path={assetKey.path} icon="asset" textStyle="middle-truncate" />
         </RowCell>
-        <RowCell></RowCell>
-        <RowCell></RowCell>
+        <RowCell>
+          {data ? (
+            definition && definition.groupName && repoAddress ? (
+              <Link
+                to={workspacePathFromAddress(repoAddress, `/asset-groups/${definition.groupName}`)}
+              >
+                <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+                  <Icon color={Colors.Gray400} name="asset_group" />
+                  {definition.groupName}
+                </Box>
+              </Link>
+            ) : (
+              <Caption color={Colors.Gray400}>Asset not found</Caption>
+            )
+          ) : (
+            <Spinner purpose="body-text" />
+          )}
+        </RowCell>
+        <RowCell>
+          <Link
+            to={assetDetailsPathForKey(assetKey, {
+              view: 'auto-materialize-history',
+              evaluation: `${evaluationId}`,
+            })}
+          >
+            {numMaterializations} materialization{numMaterializations === 1 ? '' : 's'} requested
+          </Link>
+        </RowCell>
       </RowGrid>
     </Row>
   );
@@ -260,5 +341,27 @@ const RowGrid = styled(Box)`
   height: 100%;
   > * {
     padding-top: 26px 0px;
+  }
+`;
+
+const ASSET_GROUP_QUERY = gql`
+  query AssetGroupAndLocationQuery($assetKey: AssetKeyInput!) {
+    assetOrError(assetKey: $assetKey) {
+      ... on Asset {
+        id
+        definition {
+          id
+          groupName
+          repository {
+            id
+            name
+            location {
+              id
+              name
+            }
+          }
+        }
+      }
+    }
   }
 `;

@@ -1,4 +1,4 @@
-import {gql, useQuery} from '@apollo/client';
+import {useQuery} from '@apollo/client';
 import {
   Alert,
   Box,
@@ -10,27 +10,27 @@ import {
   Heading,
   PageHeader,
   Table,
-  ButtonGroup,
 } from '@dagster-io/ui-components';
 import React from 'react';
 
 import {useConfirmation} from '../../app/CustomConfirmationProvider';
 import {useUnscopedPermissions} from '../../app/Permissions';
-import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
 import {useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {useTrackPageView} from '../../app/analytics';
+import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {LiveTickTimeline} from '../../instigation/LiveTickTimeline2';
 import {OverviewTabs} from '../../overview/OverviewTabs';
 import {useAutomaterializeDaemonStatus} from '../AutomaterializeDaemonStatusTag';
 
+import {ASSET_DAMEON_TICKS_QUERY} from './AssetDaemonTicksQuery';
 import {AutomaterializationEvaluationHistoryTable} from './AutomaterializationEvaluationHistoryTable';
 import {AutomaterializationTickDetailDialog} from './AutomaterializationTickDetailDialog';
 import {AutomaterializeRunHistoryTable} from './AutomaterializeRunHistoryTable';
 import {
-  AssetDameonTicksQuery,
-  AssetDameonTicksQueryVariables,
+  AssetDaemonTicksQuery,
+  AssetDaemonTicksQueryVariables,
   AssetDaemonTickFragment,
-} from './types/AutomaterializationRoot.types';
+} from './types/AssetDaemonTicksQuery.types';
 
 const MINUTE = 60 * 1000;
 const THREE_MINUTES = 3 * MINUTE;
@@ -44,7 +44,7 @@ export const AutomaterializationRoot = () => {
 
   const {permissions: {canToggleAutoMaterialize} = {}} = useUnscopedPermissions();
 
-  const queryResult = useQuery<AssetDameonTicksQuery, AssetDameonTicksQueryVariables>(
+  const queryResult = useQuery<AssetDaemonTicksQuery, AssetDaemonTicksQueryVariables>(
     ASSET_DAMEON_TICKS_QUERY,
   );
   const [isPaused, setIsPaused] = React.useState(false);
@@ -52,7 +52,18 @@ export const AutomaterializationRoot = () => {
 
   const [selectedTick, setSelectedTick] = React.useState<AssetDaemonTickFragment | null>(null);
 
-  const [tableView, setTableView] = React.useState<'evaluations' | 'runs'>('evaluations');
+  const [tableView, setTableView] = useQueryPersistedState<'evaluations' | 'runs'>(
+    React.useMemo(
+      () => ({
+        queryKey: 'view',
+        decode: ({view}) => (view === 'runs' ? 'runs' : 'evaluations'),
+        encode: (raw) => {
+          return {view: raw, cursor: undefined, statuses: undefined};
+        },
+      }),
+      [],
+    ),
+  );
 
   const ids = queryResult.data
     ? queryResult.data.autoMaterializeTicks.map((tick) => `${tick.id}:${tick.status}`)
@@ -150,63 +161,16 @@ export const AutomaterializationRoot = () => {
               setSelectedTick(null);
             }}
           />
-          <Box padding={{vertical: 12, horizontal: 24}} margin={{top: 32}} border="top">
-            <ButtonGroup
-              activeItems={new Set([tableView])}
-              buttons={[
-                {id: 'evaluations', label: 'Evaluations'},
-                {id: 'runs', label: 'Runs'},
-              ]}
-              onClick={(id: 'evaluations' | 'runs') => {
-                setTableView(id);
-              }}
-            />
-          </Box>
           {tableView === 'evaluations' ? (
-            <AutomaterializationEvaluationHistoryTable />
+            <AutomaterializationEvaluationHistoryTable
+              setSelectedTick={setSelectedTick}
+              setTableView={setTableView}
+            />
           ) : (
-            <AutomaterializeRunHistoryTable />
+            <AutomaterializeRunHistoryTable setTableView={setTableView} />
           )}
         </>
       )}
     </Page>
   );
 };
-
-const ASSET_DAMEON_TICKS_QUERY = gql`
-  query AssetDameonTicksQuery(
-    $dayRange: Int
-    $dayOffset: Int
-    $statuses: [InstigationTickStatus!]
-    $limit: Int
-    $cursor: String
-  ) {
-    autoMaterializeTicks(
-      dayRange: $dayRange
-      dayOffset: $dayOffset
-      statuses: $statuses
-      limit: $limit
-      cursor: $cursor
-    ) {
-      id
-      ...AssetDaemonTickFragment
-    }
-  }
-
-  fragment AssetDaemonTickFragment on InstigationTick {
-    id
-    timestamp
-    endTimestamp
-    status
-    instigationType
-    error {
-      ...PythonErrorFragment
-    }
-    requestedAssetMaterializationCount
-    requestedAssetKeys {
-      path
-    }
-    autoMaterializeAssetEvaluationId
-  }
-  ${PYTHON_ERROR_FRAGMENT}
-`;

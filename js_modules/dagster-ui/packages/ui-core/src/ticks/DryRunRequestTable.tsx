@@ -46,11 +46,9 @@ export const RunRequestTable: React.FC<Props> = ({
               </Box>
             </td>
             <td>
-              <Box flex={{direction: 'row', gap: 8}}>
+              <Box flex={{direction: 'row', gap: 8, wrap: 'wrap'}}>
                 {filterTags(request.tags).map(({key, value}) => (
-                  <Tag key={key}>
-                    {key}: {value}
-                  </Tag>
+                  <Tag key={key}>{`${key}: ${value}`}</Tag>
                 ))}
               </Box>
             </td>
@@ -80,7 +78,7 @@ export const RunRequestTable: React.FC<Props> = ({
   );
   return (
     <div>
-      <Table style={{borderRight: `1px solid ${Colors.KeylineGray}`}}>
+      <Table style={{borderRight: `1px solid ${Colors.KeylineGray}`, tableLayout: 'fixed'}}>
         <thead>
           <tr>
             <th>{isJob ? 'Job' : 'Pipeline'} name</th>
