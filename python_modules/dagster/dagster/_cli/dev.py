@@ -83,7 +83,7 @@ def dev_command_options(f):
 )
 @click.option(
     "--live-data-poll-rate",
-    help="Rate at which the dagster UI polls for updated asset data ",
+    help="Rate at which the dagster UI polls for updated asset data (in milliseconds)",
     default="2000",
     show_default=True,
     required=False,

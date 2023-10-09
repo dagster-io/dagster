@@ -164,7 +164,7 @@ DEFAULT_POOL_RECYCLE = 3600  # 1 hr
 )
 @click.option(
     "--live-data-poll-rate",
-    help="Rate at which the dagster UI polls for updated asset data (defaults to 2 seconds)",
+    help="Rate at which the dagster UI polls for updated asset data (in milliseconds)",
     type=click.INT,
     required=False,
     default=2000,
