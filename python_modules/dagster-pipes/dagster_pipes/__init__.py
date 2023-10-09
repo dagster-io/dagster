@@ -67,7 +67,7 @@ def _make_message(method: str, params: Optional[Mapping[str, Any]]) -> "PipesMes
 
 # ##### PARAMETERS
 
-IS_DAGSTER_PIPES_PROCESS = "IS_DAGSTER_PIPED_PROCESS"
+IS_DAGSTER_PIPES_PROCESS = "IS_DAGSTER_PIPES_PROCESS"
 
 DAGSTER_PIPES_BOOTSTRAP_PARAM_NAMES = {
     k: _param_name_to_env_key(k) for k in (IS_DAGSTER_PIPES_PROCESS, "context", "messages")
