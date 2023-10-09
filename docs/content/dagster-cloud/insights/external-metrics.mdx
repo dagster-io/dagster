@@ -46,7 +46,6 @@ This adds a comment to each query recorded in the `query_history` table in Snowf
 Create a Dagster pipeline that joins asset observation events with the Snowflake query history and calls the Dagster Cloud ingestion API. This needs a Snowflake resource that can query `query_history`. You can use a pre-defined pipeline as below:
 
 ```python
-from datetime import date
 from dagster_snowflake import SnowflakeResource
 from dagster import Definition, EnvVar
 
@@ -55,9 +54,7 @@ from dagster_cloud.dagster_insights import (
 )
 
 snowflake_insights_definitions = create_snowflake_insights_asset_and_schedule(
-    date(2023, 10, 5),
-    allow_partial_partitions=True,
-    dry_run=False,
+    "2023-10-5",
     snowflake_resource_key="snowflake_insights",
 )
 
