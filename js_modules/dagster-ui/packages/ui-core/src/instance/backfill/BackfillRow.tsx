@@ -13,6 +13,7 @@ import {BulkActionStatus, RunStatus} from '../../graphql/types';
 import {PartitionStatus, PartitionStatusHealthSourceOps} from '../../partitions/PartitionStatus';
 import {PipelineReference} from '../../pipelines/PipelineReference';
 import {AssetKeyTagCollection} from '../../runs/AssetTagCollections';
+import {RunCreatedByCell} from '../../runs/RunCreatedByCell';
 import {inProgressStatuses} from '../../runs/RunStatuses';
 import {RunStatusTagsWithCounts} from '../../runs/RunTimeline';
 import {runsPathWithFilters} from '../../runs/RunsFilterInput';
@@ -21,6 +22,7 @@ import {LoadingOrNone, useDelayedRowQuery} from '../../workspace/VirtualizedWork
 import {isThisThingAJob, useRepository} from '../../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../../workspace/repoAddressAsString';
+import {RepoAddress} from '../../workspace/types';
 import {workspacePathFromAddress, workspacePipelinePath} from '../../workspace/workspacePath';
 
 import {BackfillActionsMenu, backfillCanCancelRuns} from './BackfillActionsMenu';
@@ -52,6 +54,13 @@ export const BackfillRow = ({
   onShowPartitionsRequested: (backfill: BackfillTableFragment) => void;
   refetch: () => void;
 }) => {
+  const repoAddress = backfill.partitionSet
+    ? buildRepoAddress(
+        backfill.partitionSet.repositoryOrigin.repositoryName,
+        backfill.partitionSet.repositoryOrigin.repositoryLocationName,
+      )
+    : null;
+
   const statusDetails = useLazyQuery<SingleBackfillQuery, SingleBackfillQueryVariables>(
     SINGLE_BACKFILL_STATUS_DETAILS_QUERY,
     {
@@ -128,7 +137,7 @@ export const BackfillRow = ({
       </td>
       {showBackfillTarget ? (
         <td style={{width: '20%'}}>
-          <BackfillTarget backfill={backfill} />
+          <BackfillTarget backfill={backfill} repoAddress={repoAddress} />
         </td>
       ) : null}
       <td style={{width: allPartitions ? 300 : 140}}>
@@ -137,6 +146,9 @@ export const BackfillRow = ({
           allPartitions={allPartitions}
           onExpand={() => onShowPartitionsRequested(backfill)}
         />
+      </td>
+      <td style={{width: 160}}>
+        <RunCreatedByCell tags={backfill.tags} repoAddress={repoAddress} />
       </td>
       <td style={{width: 140}}>
         {counts || statusUnsupported ? (
@@ -218,17 +230,11 @@ const BackfillRunStatus = ({
 
 const BackfillTarget: React.FC<{
   backfill: BackfillTableFragment;
-}> = ({backfill}) => {
+  repoAddress: RepoAddress | null;
+}> = ({backfill, repoAddress}) => {
+  const repo = useRepository(repoAddress);
   const {assetSelection, partitionSet, partitionSetName} = backfill;
 
-  const repoAddress = partitionSet
-    ? buildRepoAddress(
-        partitionSet.repositoryOrigin.repositoryName,
-        partitionSet.repositoryOrigin.repositoryLocationName,
-      )
-    : null;
-
-  const repo = useRepository(repoAddress);
   const isHiddenAssetPartitionSet = isHiddenAssetGroupJob(partitionSetName || '');
 
   const buildHeader = () => {

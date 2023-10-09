@@ -2360,6 +2360,7 @@ export type PartitionBackfill = {
   reexecutionSteps: Maybe<Array<Scalars['String']>>;
   runs: Array<Run>;
   status: BulkActionStatus;
+  tags: Maybe<Array<PipelineTag>>;
   timestamp: Scalars['Float'];
   unfinishedRuns: Array<Run>;
   user: Maybe<Scalars['String']>;
@@ -8885,6 +8886,7 @@ export const buildPartitionBackfill = (
       overrides && overrides.hasOwnProperty('status')
         ? overrides.status!
         : BulkActionStatus.CANCELED,
+    tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
     timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 8.28,
     unfinishedRuns:
       overrides && overrides.hasOwnProperty('unfinishedRuns') ? overrides.unfinishedRuns! : [],
