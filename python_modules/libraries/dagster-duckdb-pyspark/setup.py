@@ -33,8 +33,8 @@ setup(
     packages=find_packages(exclude=["dagster_duckdb_pyspark_tests*"]),
     include_package_data=True,
     install_requires=[
-        "dagster==1.5.1",
-        "dagster-duckdb==0.21.1",
+        "dagster==1.5.2",
+        "dagster-duckdb==0.21.2",
         "pyspark>=3",
         # Pinned pending duckdb removal of broken pandas import. Pin can be
         # removed as soon as it produces a working build.

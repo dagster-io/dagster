@@ -32,7 +32,7 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_embedded_elt_tests*"]),
-    install_requires=["dagster==1.5.1", "sling>=1.0.20"],
+    install_requires=["dagster==1.5.2", "sling>=1.0.20"],
     zip_safe=False,
     extras_require={},
 )

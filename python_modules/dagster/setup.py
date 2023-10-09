@@ -107,7 +107,7 @@ setup(
         "universal_pathlib",
         # https://github.com/pydantic/pydantic/issues/5821
         "pydantic != 1.10.7,<2.0.0",
-        "dagster-pipes==1.5.1",
+        "dagster-pipes==1.5.2",
     ],
     extras_require={
         "docker": ["docker"],

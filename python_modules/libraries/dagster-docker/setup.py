@@ -32,6 +32,6 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_docker_tests*"]),
-    install_requires=["dagster==1.5.1", "docker", "docker-image-py"],
+    install_requires=["dagster==1.5.2", "docker", "docker-image-py"],
     zip_safe=False,
 )

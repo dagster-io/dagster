@@ -45,5 +45,5 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_pandas_tests*"]),
     include_package_data=True,
-    install_requires=["dagster==1.5.1", "pandas"],
+    install_requires=["dagster==1.5.2", "pandas"],
 )
