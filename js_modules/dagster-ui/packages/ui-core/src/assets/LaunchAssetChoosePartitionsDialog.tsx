@@ -30,7 +30,7 @@ import {
   itemWithAssetKey,
 } from '../asset-graph/Utils';
 import {AssetKey} from '../assets/types';
-import {LaunchBackfillParams, PartitionDefinitionType} from '../graphql/types';
+import {AssetCheck, LaunchBackfillParams, PartitionDefinitionType} from '../graphql/types';
 import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/backfill/BackfillUtils';
 import {
   LaunchPartitionBackfillMutation,
@@ -72,6 +72,7 @@ import {
 } from './MultipartitioningSupport';
 import {PartitionHealthSummary} from './PartitionHealthSummary';
 import {RunningBackfillsNotice} from './RunningBackfillsNotice';
+import {asAssetKeyInput} from './asInput';
 import {
   LaunchAssetWarningsQuery,
   LaunchAssetWarningsQueryVariables,
@@ -93,6 +94,7 @@ interface Props {
   target: LaunchAssetsChoosePartitionsTarget;
   assets: {
     assetKey: AssetKey;
+    assetChecks: Pick<AssetCheck, 'name'>[];
     opNames: string[];
     partitionDefinition: PartitionDefinitionForLaunchAssetFragment | null;
   }[];
@@ -348,7 +350,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
       target.type === 'job' && !isHiddenAssetGroupJob(target.jobName)
         ? {
             tags,
-            assetSelection: assets.map((a) => ({path: a.assetKey.path})),
+            assetSelection: assets.map(asAssetKeyInput),
             partitionNames: keysFiltered,
             fromFailure: false,
             selector: {
@@ -362,12 +364,12 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
         : target.type === 'pureAll'
         ? {
             tags,
-            assetSelection: assets.map((a) => ({path: a.assetKey.path})),
+            assetSelection: assets.map(asAssetKeyInput),
             allPartitions: true,
           }
         : {
             tags,
-            assetSelection: assets.map((a) => ({path: a.assetKey.path})),
+            assetSelection: assets.map(asAssetKeyInput),
             partitionNames: keysFiltered,
             fromFailure: false,
           };
