@@ -17,7 +17,9 @@ With Dagster Pipes, you can:
 
 - Incorporate existing code into Dagster without huge refactors
 - Onboard stakeholder teams onto Dagster incrementally
-- Run code in external environments (with minimal dependencies) and stream log and structured metadata back to Dagster
+- Run code in external environments, and:
+  - Easily pass parameters to the code
+  - Stream unstructured logs and structured metadata back to Dagster
 - Separate orchestration and business logic environments
 - Use languages other than Python with Dagster
 
@@ -33,6 +35,7 @@ Let’s take a look at how Dagster Pipes would work with the following assumptio
 - Our code also calculates the number of records it processes at a given time. We want to send this metadata back to Dagster.
 - We have a Dagster asset that:
   - Provides access to asset context data, such as logging, via <PyObject object="AssetExecutionContext" />
+  - Passes some parameter, such as a date, to the external code
   - Invokes the external code
 
 Refer to the following diagram and explanation for how Dagster Pipes would accomplish this, step-by-step. **Note:** Depending on the technology you use (ex: Databricks, Docker), this implementation of the protocol may vary. Refer to the [Understanding Dagster Pipes process guide](/guides/dagster-pipes/understanding-dagster-pipes) for more info.
