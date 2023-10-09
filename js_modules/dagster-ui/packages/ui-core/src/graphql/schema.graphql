@@ -854,6 +854,7 @@ type AssetCheckExecution {
   status: AssetCheckExecutionResolvedStatus!
   evaluation: AssetCheckEvaluation
   timestamp: Float!
+  stepKey: String
 }
 
 enum AssetCheckExecutionResolvedStatus {
