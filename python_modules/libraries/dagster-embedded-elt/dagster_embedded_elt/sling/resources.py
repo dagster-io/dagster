@@ -9,7 +9,7 @@ from dagster import ConfigurableResource, PermissiveConfig, get_dagster_logger
 from dagster._annotations import experimental
 from dagster._utils.env import environ
 from pydantic import Field
-from sling import Sling  # type: ignore
+from sling import Sling
 
 logger = get_dagster_logger()
 
