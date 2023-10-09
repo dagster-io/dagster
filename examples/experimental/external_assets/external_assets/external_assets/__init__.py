@@ -1,6 +1,4 @@
-import datetime
-
-from dagster import AssetCheckResult, AssetKey, TimeWindowPartitionsDefinition, asset_check
+from dagster import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.external_asset import (
     external_assets_from_specs,
@@ -9,32 +7,54 @@ from dagster._core.definitions.external_asset import (
 external_asset_defs = external_assets_from_specs(
     specs=[
         AssetSpec(
-            key=AssetKey(["cdn", "raw_logs"]),
+            key=AssetKey(["s3", "iot_raw_telem_eu"]),
             group_name="external_assets",
-            partitions_def=TimeWindowPartitionsDefinition(
-                start=datetime.datetime.today() - datetime.timedelta(days=100),
-                end=datetime.datetime.today(),
-                cron_schedule="0 0 * * *",
-                fmt="%Y-%m-%d",
-            ),
         ),
         AssetSpec(
-            key=AssetKey(["cdn", "processed_logs"]),
-            deps=[AssetKey(["cdn", "raw_logs"])],
+            key=AssetKey(["s3", "iot_scrubbed_telem_eu"]),
+            deps=[AssetKey(["s3", "iot_raw_telem_eu"])],
             group_name="external_assets",
-            partitions_def=TimeWindowPartitionsDefinition(
-                start=datetime.datetime.today() - datetime.timedelta(days=100),
-                end=datetime.datetime.today(),
-                cron_schedule="0 0 * * *",
-                fmt="%Y-%m-%d",
-            ),
+        ),
+        AssetSpec(
+            key=AssetKey(["s3", "iot_raw_telem_americas"]),
+            group_name="external_assets",
+        ),
+        AssetSpec(
+            key=AssetKey(["s3", "iot_scrubbed_telem_americas"]),
+            deps=[AssetKey(["s3", "iot_raw_telem_americas"])],
+            group_name="external_assets",
+        ),
+        AssetSpec(
+            key=AssetKey(["s3", "iot_raw_telem_apac"]),
+            group_name="external_assets",
+        ),
+        AssetSpec(
+            key=AssetKey(["s3", "iot_scrubbed_telem_apac"]),
+            deps=[AssetKey(["s3", "iot_raw_telem_apac"])],
+            group_name="external_assets",
+        ),
+        AssetSpec(
+            key=AssetKey(["vendors", "telem_vendor_foo"]),
+            group_name="external_assets",
+        ),
+        AssetSpec(
+            key=AssetKey(["vendors", "telem_vendor_bar"]),
+            group_name="external_assets",
+        ),
+        AssetSpec(
+            key=AssetKey(["s3", "joined_sensor_telem"]),
+            deps=[
+                AssetKey(["vendors", "telem_vendor_foo"]),
+                AssetKey(["vendors", "telem_vendor_bar"]),
+                AssetKey(["s3", "iot_scrubbed_telem_apac"]),
+                AssetKey(["s3", "iot_scrubbed_telem_americas"]),
+                AssetKey(["s3", "iot_scrubbed_telem_eu"]),
+            ],
+            group_name="external_assets",
+        ),
+        AssetSpec(
+            key=AssetKey(["static", "admin_boundaries"]),
+            group_name="external_assets",
         ),
     ]
 )
-
-
-@asset_check(
-    asset=AssetKey(["cdn", "processed_logs"]), description="Check that my cdn logs asset is valid"
-)
-def external_asset_check() -> AssetCheckResult:
-    return AssetCheckResult(passed=True, metadata={"valid": True})

@@ -32,30 +32,126 @@ def create_external_asset_materialization(data):
 
 def main():
     today = datetime.datetime.today() - datetime.timedelta(days=100)
+
+    create_external_asset_materialization(
+        {
+            "uri": "s3://iot-s3-bucket/admin_boundaries/boundaries.geojson",
+            "asset_key": ["static", "admin_boundaries"],
+            "data_version": "60bc881",
+            "description": "boundary data for administrative regions for iot processing",
+            "metadata": {
+                "uri": "s3://iot-s3-bucket/admin_boundaries/boundaries.geojson",
+                "size": random.randint(10000 * 1000, 5 * 10000 * 1000),
+            },
+        }
+    )
     while True:
         synthetic_s3_data = [
             {
-                "uri": f"s3://cdn-logs-s3-bucket/cdn_raw_logs/dt={today.strftime('%d-%m-%Y')}/{uuid.uuid4()}.log",
-                "asset_key": ["cdn", "raw_logs"],
+                "uri": f"s3://iot-s3-bucket-apac/raw_traces/dt={today.strftime('%d-%m-%Y')}/{uuid.uuid4()}.pbf",
+                "asset_key": ["s3", "iot_raw_telem_apac"],
                 "partition": today.strftime("%Y-%m-%d"),
                 "data_version": "60bc881",
-                "description": "raw cdn logs from cloudfront",
-                "metadata": {"size": random.randint(10000 * 1000, 5 * 10000 * 1000)},
+                "description": "iot device traces from apac",
+                "metadata": {
+                    "uri": f"s3://iot-s3-bucket-apac/raw_traces/dt={today.strftime('%d-%m-%Y')}/{uuid.uuid4()}.pbf",
+                    "size": random.randint(10000 * 1000, 5 * 10000 * 1000),
+                },
             },
             {
-                "uri": f"s3://cdn-logs-s3-bucket/cdn_processed_logs/dt={today.strftime('%d-%m-%Y')}/{uuid.uuid4()}.log.gz",
-                "asset_key": ["cdn", "processed_logs"],
+                "uri": f"s3://iot-s3-bucket-eu/raw_traces/dt={today.strftime('%d-%m-%Y')}/{uuid.uuid4()}.pbf",
+                "asset_key": ["s3", "iot_raw_telem_eu"],
                 "partition": today.strftime("%Y-%m-%d"),
                 "data_version": "60bc881",
-                "description": "processed cdn logs from cloudfront",
-                "metadata": {"size": random.randint(1000 * 1000, 5 * 1000 * 1000)},
+                "description": "iot device traces from eu",
+                "metadata": {
+                    "uri": f"s3://iot-s3-bucket-eu/raw_traces/dt={today.strftime('%d-%m-%Y')}/{uuid.uuid4()}.pbf",
+                    "size": random.randint(10000 * 1000, 5 * 10000 * 1000),
+                },
+            },
+            {
+                "uri": f"s3://iot-s3-bucket-americas/raw_traces/dt={today.strftime('%d-%m-%Y')}/{uuid.uuid4()}.pbf",
+                "asset_key": ["s3", "iot_raw_telem_americas"],
+                "partition": today.strftime("%Y-%m-%d"),
+                "data_version": "60bc881",
+                "description": "iot device traces from americas",
+                "metadata": {
+                    "uri": f"s3://iot-s3-bucket-americas/raw_traces/dt={today.strftime('%d-%m-%Y')}/{uuid.uuid4()}.pbf",
+                    "size": random.randint(10000 * 1000, 5 * 10000 * 1000),
+                },
+            },
+            {
+                "uri": f"s3://iot-s3-bucket-apac/scrubbed_traces/dt={today.strftime('%d-%m-%Y')}/{uuid.uuid4()}.pbf",
+                "asset_key": ["s3", "iot_scrubbed_telem_apac"],
+                "partition": today.strftime("%Y-%m-%d"),
+                "data_version": "60bc881",
+                "description": "scrubbed iot device traces from apac",
+                "metadata": {
+                    "uri": f"s3://iot-s3-bucket-apac/scrubbed_traces/dt={today.strftime('%d-%m-%Y')}/{uuid.uuid4()}.pbf",
+                    "size": random.randint(10000 * 1000, 5 * 10000 * 1000),
+                },
+            },
+            {
+                "uri": f"s3://iot-s3-bucket-eu/scrubbed_traces/dt={today.strftime('%d-%m-%Y')}/{uuid.uuid4()}.pbf",
+                "asset_key": ["s3", "iot_scrubbed_telem_eu"],
+                "partition": today.strftime("%Y-%m-%d"),
+                "data_version": "60bc881",
+                "description": "scrubbed iot device traces from eu",
+                "metadata": {
+                    "uri": f"s3://iot-s3-bucket-eu/scrubbed_traces/dt={today.strftime('%d-%m-%Y')}/{uuid.uuid4()}.pbf",
+                    "size": random.randint(10000 * 1000, 5 * 10000 * 1000),
+                },
+            },
+            {
+                "uri": f"s3://iot-s3-bucket-americas/scrubbed_traces/dt={today.strftime('%d-%m-%Y')}/{uuid.uuid4()}.pbf",
+                "asset_key": ["s3", "iot_scrubbed_telem_americas"],
+                "partition": today.strftime("%Y-%m-%d"),
+                "data_version": "60bc881",
+                "description": "scrubbed iot device traces from americas",
+                "metadata": {
+                    "uri": f"s3://iot-s3-bucket-americas/scrubbed_traces/dt={today.strftime('%d-%m-%Y')}/{uuid.uuid4()}.pbf",
+                    "size": random.randint(10000 * 1000, 5 * 10000 * 1000),
+                },
+            },
+            {
+                "uri": f"s3://vendor-foo-bucket/traces/dt={today.strftime('%d-%m-%Y')}/{uuid.uuid4()}.json",
+                "asset_key": ["vendors", "telem_vendor_foo"],
+                "partition": today.strftime("%Y-%m-%d"),
+                "data_version": "60bc881",
+                "description": "vendor trace data",
+                "metadata": {
+                    "uri": f"s3://vendor-foo-bucket/traces/dt={today.strftime('%d-%m-%Y')}/{uuid.uuid4()}.json",
+                    "size": random.randint(10000 * 1000, 5 * 10000 * 1000),
+                },
+            },
+            {
+                "uri": f"s3://vendor-bar-bucket/traces/dt={today.strftime('%d-%m-%Y')}/{uuid.uuid4()}.json",
+                "asset_key": ["vendors", "telem_vendor_bar"],
+                "partition": today.strftime("%Y-%m-%d"),
+                "data_version": "60bc881",
+                "description": "vendor trace data",
+                "metadata": {
+                    "uri": f"s3://vendor-bar-bucket/traces/dt={today.strftime('%d-%m-%Y')}/{uuid.uuid4()}.json",
+                    "size": random.randint(10000 * 1000, 5 * 10000 * 1000),
+                },
+            },
+            {
+                "uri": f"s3://iot-s3-bucket/joined_traces/dt={today.strftime('%d-%m-%Y')}/{uuid.uuid4()}.json",
+                "asset_key": ["s3", "joined_sensor_telem"],
+                "partition": today.strftime("%Y-%m-%d"),
+                "data_version": "60bc881",
+                "description": "joined trace data",
+                "metadata": {
+                    "uri": f"s3://iot-s3-bucket/joined_traces/dt={today.strftime('%d-%m-%Y')}/{uuid.uuid4()}.json",
+                    "size": random.randint(10000 * 1000, 5 * 10000 * 1000) * 10,
+                },
             },
         ]
         for data in synthetic_s3_data:
             print(f"Creating asset materialization for s3 object put event ({data['uri']})")
             create_external_asset_materialization(data)
-            time.sleep(2)
-        time.sleep(2)
+            time.sleep(1)
+        time.sleep(30)
         today = today + datetime.timedelta(days=1)
 
 

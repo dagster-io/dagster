@@ -1,7 +1,8 @@
 import os
 
-import kubernetes
 from dagster import (
+    AssetCheckSpec,
+    AssetExecutionContext,
     AssetKey,
     EventLogEntry,
     RunRequest,
@@ -16,14 +17,16 @@ config_file = os.path.expanduser("~/.kube/config")
 
 
 @asset(
-    key=AssetKey(["cdn", "scrubbed_logs"]),
-    deps=[AssetKey(["cdn", "processed_logs"])],
+    key="telem_post_processing",
+    deps=[
+        AssetKey(["static", "admin_boundaries"]),
+        AssetKey(["s3", "joined_sensor_telem"]),
+    ],
     group_name="pipes",
+    check_specs=[AssetCheckSpec("telem_post_processing_check", asset="telem_post_processing")],
 )
-def scrubbed_cdn_logs(context):
-    kubernetes.config.load_kube_config(config_file)  # type: ignore
-    client = PipesK8sClient()
-    yield from client.run(
+def telem_post_processing(context: AssetExecutionContext, k8s_pipes_client: PipesK8sClient):
+    yield from k8s_pipes_client.run(
         context=context,
         namespace="default",
         image="pipes-dogfood:latest",
@@ -37,13 +40,18 @@ def scrubbed_cdn_logs(context):
     ).get_results()
 
 
-cdn_asset_job = define_asset_job(
-    name="cdn_asset_job", selection=[AssetKey(["cdn", "scrubbed-cdn-logs"])]
+# @asset_check(asset="telem_post_processing", description="Check that traces are valid")
+# def telem_post_processing_check() -> AssetCheckResult:
+#     return AssetCheckResult(passed=True, metadata={"valid": True})
+
+
+telem_post_processing_job = define_asset_job(
+    name="telem_post_processing_job", selection="telem_post_processing"
 )
 
 
-@asset_sensor(asset_key=AssetKey(["cdn", "processed_logs"]), job=cdn_asset_job)
-def cdn_logs_sensor(context: SensorEvaluationContext, asset_event: EventLogEntry):
+@asset_sensor(asset_key=AssetKey(["s3", "joined_sensor_telem"]), job=telem_post_processing_job)
+def telem_post_processing_sensor(context: SensorEvaluationContext, asset_event: EventLogEntry):
     return RunRequest(
         run_key=context.cursor,
         run_config={},
