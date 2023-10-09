@@ -14,15 +14,15 @@ type Props = {
   tags: RunTagsFragment[];
 };
 
-export const RunCreatedByCell = React.memo(({repoAddress, tags}: Props) => {
+export const CreatedByTagCell = React.memo(({repoAddress, tags}: Props) => {
   return (
     <Box flex={{direction: 'column', alignItems: 'flex-start'}}>
-      <RunCreatedByTag repoAddress={repoAddress} tags={tags} />
+      <CreatedByTag repoAddress={repoAddress} tags={tags} />
     </Box>
   );
 });
 
-export const RunCreatedByTag = ({repoAddress, tags}: Props) => {
+export const CreatedByTag = ({repoAddress, tags}: Props) => {
   const {UserDisplay} = useLaunchPadHooks();
 
   const user = tags.find((tag) => tag.key === DagsterTag.User);

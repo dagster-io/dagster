@@ -33,8 +33,8 @@ import {useRepositoryForRunWithoutSnapshot} from '../workspace/useRepositoryForR
 import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
 
 import {AssetKeyTagCollection, AssetCheckTagCollection} from './AssetTagCollections';
+import {CreatedByTagCell} from './CreatedByTag';
 import {RunActionsMenu, RunBulkActionsMenu} from './RunActionsMenu';
-import {RunCreatedByCell} from './RunCreatedByCell';
 import {RunStatusTagWithStats} from './RunStatusTag';
 import {DagsterTag, TagType} from './RunTag';
 import {RunTags} from './RunTags';
@@ -483,7 +483,7 @@ const RunRow: React.FC<{
       </td>
       {hideCreatedBy ? null : (
         <td>
-          <RunCreatedByCell repoAddress={repoAddressGuess} tags={run.tags || []} />
+          <CreatedByTagCell repoAddress={repoAddressGuess} tags={run.tags || []} />
         </td>
       )}
       <td>
