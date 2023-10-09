@@ -1,0 +1,174 @@
+---
+title: "Modifying existing code to work with Dagster Pipes | Dagster Docs"
+description: "With Dagster Pipes, you can incorporate existing code into Dagster without huge refactors. This guide shows you how to modify existing code to work with Dagster Pipes."
+---
+
+# Reference
+
+This reference shows usage of Dagster Pipes with other entities in the Dagster system. For a step-by-step walkthrough, refer to the [Dagster Pipes tutorial](/guides/dagster-pipes/tutorial).
+
+## Specifying extras
+
+Extras are arbitrary, user-defined parameters made available on the context object in the pipes process.
+
+<TabGroup>
+<TabItem name="Provide in the Dagster code">
+
+The `run` method to the `PipesSubprocessClient` resource also accepts `env` and `extras` , which allow you to specify environment variables and extra arguments when executing the subprocess:
+
+```python
+import os
+import shutil
+
+from dagster import (
+    AssetExecutionContext,
+    PipesSubprocessClient,
+    asset,
+    file_relative_path,
+)
+
+
+@asset
+def subprocess_asset(
+    context: AssetExecutionContext, pipes_subprocess_client: PipesSubprocessClient
+):
+    cmd = [shutil.which("python"), file_relative_path(__file__, "external_code.py")]
+    return pipes_subprocess_client.run(
+        command=cmd,
+        context=context,
+        extras={"foo": "bar"},
+        env={
+            "MY_ENV_VAR_IN_SUBPROCESS": os.environ["MY_ENV_VAR"],
+        },
+    ).get_materialize_result()
+```
+
+</TabItem>
+<TabItem name="Access in the external code">
+
+In the external code, you can access extras via the `PipesContext` object:
+
+```python
+import pandas as pd
+from dagster_pipes import PipesContext, open_dagster_pipes
+
+
+def main():
+    orders_df = pd.DataFrame({"order_id": [1, 2], "item_id": [432, 878]})
+    total_orders = len(orders_df)
+    # get the Dagster Pipes context
+    context = PipesContext.get()
+    # Get all extras provided by Dagster asset
+    print(context.extras)
+    # Get the value of an extra
+    print(context.get_extra("foo"))
+
+
+if __name__ == "__main__":
+    # connect to Dagster Pipes
+    with open_dagster_pipes() as context:
+        main()
+```
+
+</TabItem>
+</TabGroup>
+
+## Working with @asset_check
+
+Dagster allows you to define and execute data quality checks on assets. Refer to the [Asset Checks](/concepts/assets/asset-checks) documentation for more information.
+
+If your asset has data quality checks defined in `@asset_check`, you can report to Dagster that an asset check has been performed via <PyObject module="dagster_pipes" object="PipesContext" method="report_asset_check" />:
+
+<TabGroup>
+<TabItem name="Define in the Dagster code">
+
+The `PipesClientCompletedInvocation` object returned from `PipesSubprocessClient` provides a `get_asset_check_result` method, which you can use to access the <PyObject object="AssetCheckResult" /> event reported by the subprocess.
+
+```python
+import os
+import shutil
+
+from dagster import (
+    AssetExecutionContext,
+    PipesSubprocessClient,
+    asset,
+    file_relative_path,
+)
+
+
+@asset
+def subprocess_asset(
+    context: AssetExecutionContext, pipes_subprocess_client: PipesSubprocessClient
+) -> AssetCheckResult:
+    cmd = [shutil.which("python"), file_relative_path(__file__, "external_code.py")]
+    return pipes_subprocess_client.run(
+        command=cmd,
+        context=context,
+    ).get_asset_check_result()
+```
+
+</TabItem>
+<TabItem name="Report from the external code">
+
+In the external code, you can access extras via the `PipesContext` object:
+
+```python
+import pandas as pd
+from dagster_pipes import PipesContext, open_dagster_pipes
+
+
+def main():
+    orders_df = pd.DataFrame({"order_id": [1, 2], "item_id": [432, 878]})
+    total_orders = len(orders_df)
+    # get the Dagster Pipes context
+    context = PipesContext.get()
+    context.report_asset_check(
+        success=True,
+        metadata={
+            "total_orders": total_orders,
+        },
+    )
+
+
+if __name__ == "__main__":
+    # connect to Dagster Pipes
+    with open_dagster_pipes() as context:
+        main()
+```
+
+</TabItem>
+</TabGroup>
+
+## Working with @multi_asset
+
+<TabGroup>
+<TabItem name="Define in the Dagster code">
+
+TODO: Add example
+
+```python
+# dagster side code about @multi_asset
+```
+
+</TabItem>
+<TabItem name="Report from the external code">
+
+When working with multi_asset, `PipesContext.report_asset_materialization` may only be called once per unique asset key. If called more than once, an error similar to the following will surface:
+
+```bash
+Calling {method} with asset key {asset_key} is undefined. Asset has already been materialized, so no additional data can be reported for it
+```
+
+Instead, you’ll need to set the `asset_key` parameter for each instance of <PyObject module="dagster_pipes" object="PipesContext" method="report_asset_materialization" />:
+
+```python file=/guides/dagster/dagster_pipes/subprocess/external_code_with_multi_assets.py startafter=start_events_marker endbefore=end_events_marker
+# get the Dagster Pipes context
+    context = PipesContext.get()
+    # send structured metadata back to Dagster
+    context.report_asset_materialization(
+        asset_key="orders", metadata={"total_orders": total_orders}
+    )
+```
+
+</TabItem>
+</TabGroup>

@@ -1,0 +1,58 @@
+---
+title: "Dagster Pipes tutorial | Dagster Docs"
+description: "With Dagster Pipes, you can incorporate existing code into Dagster without huge refactors. This guide shows you how to modify existing code to work with Dagster Pipes."
+---
+
+# Dagster Pipes + subprocess
+
+In this guide, we’ll show you how to use [Dagster Pipes](/guides/dagster-pipes) with Dagster’s built-in subprocess implementation to run a subprocess with the given command and environment. You can then send information such as structured metadata and logging back to Dagster from the subprocess, where it will be visible in the Dagster UI.
+
+To get there, you'll
+
+- [Create a Dagster asset that invokes a subprocess](/guides/dagster-pipes/subprocess/create-subprocess-asset)
+- [Modify existing code to work with Dagster Pipes to send information back to Dagster](/guides/dagster-pipes/subprocess/modify-external-code)
+- Learn about other usage of Dagster Pipes with other entities in the Dagster system in the [Reference](/guides/dagster-pipes/subprocess/reference) section
+
+<Note>
+
+This guide focuses on using an out-of-the-box `PipesSubprocessClient` resource. For further customization with the subprocess invocation, use <PyObject module="dagster_pipes" object="open_dagster_pipes"/> approach instead. Refer to [Customizing Dagster Pipes protocols](/guides/dagster-pipes/customizing-dagster-pipes-protocols) for more info.
+
+</Note>
+
+---
+
+## Prerequisites
+
+To use Dagster Pipes to run a subprocess , you’ll need:
+
+- To have Dagster (`dagster`) and the Dagster UI (`dagster-webserver`) installed. Refer to the [Installation guide](/getting-started/install) for more info.
+
+- To install the dagster-pipes library:
+
+```bash
+pipe install dagster-pipes
+```
+
+- **An existing Python script**. We’ll use the following Python script to demonstrate. This file will be invoked by the Dagster asset that you’ll create later in this tutorial.
+  1. Create a standalone file named `external_code.py`.
+  2. Then, copy and paste the following into the file:
+
+```python file=/guides/dagster/dagster_pipes/subprocess/external_code_original.py lines=1-
+# ruff: noqa: T201
+
+import pandas as pd
+
+
+def main():
+    orders_df = pd.DataFrame({"order_id": [1, 2], "item_id": [432, 878]})
+    total_orders = len(orders_df)
+    print(f"processing total {total_orders} orders")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+## Ready to get started?
+
+When you've fulfilled all the prerequisites for the tutorial, you can get started by [creating a Dagster asset that executes a subprocess](/guides/dagster-pipes/subprocess/create-subprocess-asset).
