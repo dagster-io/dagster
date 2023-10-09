@@ -7,6 +7,10 @@
 
 - Previously, asset backfills targeting assets with multi-run backfill policies would raise a "did not submit all run requests" error. This has been fixed.
 
+### Dagster Cloud
+
+- The experimental dagster-insights package has receieved some API surface area updates and bugfixes.
+
 # 1.5.1 / 0.21.1 (libraries)
 
 ### New
