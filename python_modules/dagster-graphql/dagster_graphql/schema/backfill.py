@@ -166,7 +166,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     hasCancelPermission = graphene.NonNull(graphene.Boolean)
     hasResumePermission = graphene.NonNull(graphene.Boolean)
     user = graphene.Field(graphene.String)
-    tags = graphene.List(graphene.NonNull("dagster_graphql.schema.tags.GraphenePipelineTag"))
+    tags = non_null_list("dagster_graphql.schema.tags.GraphenePipelineTag")
 
     def __init__(self, backfill_job: PartitionBackfill):
         self._backfill_job = check.inst_param(backfill_job, "backfill_job", PartitionBackfill)

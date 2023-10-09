@@ -2360,7 +2360,7 @@ export type PartitionBackfill = {
   reexecutionSteps: Maybe<Array<Scalars['String']>>;
   runs: Array<Run>;
   status: BulkActionStatus;
-  tags: Maybe<Array<PipelineTag>>;
+  tags: Array<PipelineTag>;
   timestamp: Scalars['Float'];
   unfinishedRuns: Array<Run>;
   user: Maybe<Scalars['String']>;

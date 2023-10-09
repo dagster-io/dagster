@@ -29,7 +29,7 @@ export type BackfillTableFragment = {
     };
   } | null;
   assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
-  tags: Array<{__typename: 'PipelineTag'; key: string; value: string}> | null;
+  tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
   error: {
     __typename: 'PythonError';
     message: string;

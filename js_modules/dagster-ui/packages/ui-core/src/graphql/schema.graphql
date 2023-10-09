@@ -2613,7 +2613,7 @@ type PartitionBackfill {
   hasCancelPermission: Boolean!
   hasResumePermission: Boolean!
   user: String
-  tags: [PipelineTag!]
+  tags: [PipelineTag!]!
 }
 
 enum BulkActionStatus {
