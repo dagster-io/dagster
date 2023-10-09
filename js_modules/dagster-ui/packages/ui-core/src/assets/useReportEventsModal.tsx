@@ -50,7 +50,7 @@ export function useReportEventsModal(asset: Asset | null, onEventReported: () =>
     () => [
       {
         label: 'Report materialization event',
-        icon: <Icon name="materialization" />,
+        icon: <Icon name="asset_non_sda" />,
         onClick: () => setIsOpen(true),
       },
     ],
@@ -171,10 +171,14 @@ const ReportEventDialogBody: React.FC<{
           asset.isPartitioned ? 'Report materialization events' : 'Report materialization event'
         }
       />
-      <Box padding={{horizontal: 20, top: 16, bottom: 24}}>
+      <Box
+        padding={{horizontal: 20, top: 16, bottom: 24}}
+        border={asset.isPartitioned ? {side: 'bottom'} : undefined}
+      >
         <Body2>
-          Let Dagster know about a materialization that happened outside of Dagster. This is
-          typically only needed in exceptional circumstances.
+          Let Dagster know about a materialization that happened outside of Dagster. Typically used
+          for testing or for manually fixing incorrect information in the asset catalog, not for
+          normal operations.
         </Body2>
       </Box>
 
