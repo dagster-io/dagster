@@ -38,6 +38,7 @@ import {MULTIPLE_DEFINITIONS_WARNING} from './AssetDefinedInMultipleReposNotice'
 import {LaunchAssetChoosePartitionsDialog} from './LaunchAssetChoosePartitionsDialog';
 import {partitionDefinitionsEqual} from './MultipartitioningSupport';
 import {isAssetMissing, isAssetStale} from './Stale';
+import {asAssetKeyInput, getAssetCheckHandleInputs} from './asInput';
 import {AssetKey} from './types';
 import {
   LaunchAssetExecutionAssetNodeFragment,
@@ -289,7 +290,7 @@ export const useMaterializationAction = (preferredJobName?: string) => {
 
     const result = await client.query<LaunchAssetLoaderQuery, LaunchAssetLoaderQueryVariables>({
       query: LAUNCH_ASSET_LOADER_QUERY,
-      variables: {assetKeys: assetKeys.map(({path}) => ({path}))},
+      variables: {assetKeys: assetKeys.map(asAssetKeyInput)},
     });
 
     if (result.data.assetNodeDefinitionCollisions.length) {
@@ -373,7 +374,7 @@ export const useMaterializationAction = (preferredJobName?: string) => {
               LaunchAssetLoaderQueryVariables
             >({
               query: LAUNCH_ASSET_LOADER_QUERY,
-              variables: {assetKeys: state.assets.map(({assetKey}) => ({path: assetKey.path}))},
+              variables: {assetKeys: state.assets.map(asAssetKeyInput)},
             });
             const assets = result.data.assetNodes;
             const next = await stateForLaunchingAssets(client, assets, false, preferredJobName);
@@ -502,6 +503,10 @@ async function stateForLaunchingAssets(
       sessionPresets: {
         flattenGraphs: true,
         assetSelection: assets.map((a) => ({assetKey: a.assetKey, opNames: a.opNames})),
+        assetChecksAvailable: assets.flatMap((a) =>
+          a.assetChecks.map((check) => ({...check, assetKey: a.assetKey})),
+        ),
+        includeSeparatelyExecutableChecks: true,
         solidSelectionQuery: assetOpNames.map((name) => `"${name}"`).join(', '),
         base: partitionSetName
           ? {partitionsSetName: partitionSetName, partitionName: null, tags: []}
@@ -600,7 +605,7 @@ async function upstreamAssetsWithNoMaterializations(
 export function executionParamsForAssetJob(
   repoAddress: RepoAddress,
   jobName: string,
-  assets: {assetKey: AssetKey; opNames: string[]}[],
+  assets: {assetKey: AssetKey; opNames: string[]; assetChecks: {name: string}[]}[],
   tags: {key: string; value: string}[],
 ): LaunchPipelineExecutionMutationVariables['executionParams'] {
   return {
@@ -613,9 +618,8 @@ export function executionParamsForAssetJob(
       repositoryLocationName: repoAddress.location,
       repositoryName: repoAddress.name,
       pipelineName: jobName,
-      assetSelection: assets.map((asset) => ({
-        path: asset.assetKey.path,
-      })),
+      assetSelection: assets.map(asAssetKeyInput),
+      assetCheckSelection: getAssetCheckHandleInputs(assets),
     },
   };
 }
@@ -673,6 +677,10 @@ const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = gql`
     isSource
     assetKey {
       path
+    }
+    assetChecks {
+      name
+      canExecuteIndividually
     }
     dependencyKeys {
       path

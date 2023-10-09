@@ -1,15 +1,15 @@
 import {useQuery} from '@apollo/client';
 import {
   Box,
-  Spinner,
+  Caption,
   Colors,
   Icon,
-  Tag,
-  useViewport,
-  Select,
   MenuItem,
-  Caption,
+  Select,
+  Spinner,
+  Tag,
   TextInput,
+  useViewport,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
@@ -24,6 +24,7 @@ import {StatusCase, buildAssetNodeStatusContent} from '../asset-graph/AssetNodeS
 import {displayNameForAssetKey, tokenForAssetKey} from '../asset-graph/Utils';
 import {partitionCountString} from '../assets/AssetNodePartitionCounts';
 import {ASSET_CATALOG_TABLE_QUERY} from '../assets/AssetsCatalogTable';
+import {asAssetKeyInput} from '../assets/asInput';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {
   AssetCatalogTableQuery,
@@ -218,10 +219,7 @@ type RowProps = {
   group: ReturnType<typeof groupAssets>[0];
 };
 function VirtualRow({height, start, group}: RowProps) {
-  const assetKeys = React.useMemo(
-    () => group.assets.map((asset) => ({path: asset.key.path})),
-    [group.assets],
-  );
+  const assetKeys = React.useMemo(() => group.assets.map(asAssetKeyInput), [group.assets]);
 
   const {liveDataByNode} = useAssetsLiveData(assetKeys);
 
