@@ -6,12 +6,14 @@ from dagster._annotations import PublicAttr, experimental
 from dagster._core.errors import DagsterInvariantViolationError
 
 from .auto_materialize_policy import AutoMaterializePolicy
+from .backfill_policy import BackfillPolicy
 from .events import (
     AssetKey,
     CoercibleToAssetKey,
 )
 from .freshness_policy import FreshnessPolicy
 from .metadata import MetadataUserInput
+from .partition import PartitionsDefinition
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
@@ -60,6 +62,8 @@ class AssetSpec(
             ("code_version", PublicAttr[Optional[str]]),
             ("freshness_policy", PublicAttr[Optional[FreshnessPolicy]]),
             ("auto_materialize_policy", PublicAttr[Optional[AutoMaterializePolicy]]),
+            ("backfill_policy", PublicAttr[Optional[BackfillPolicy]]),
+            ("partitions_def", PublicAttr[Optional[PartitionsDefinition]]),
         ],
     )
 ):
@@ -85,6 +89,7 @@ class AssetSpec(
         auto_materialize_policy (Optional[AutoMaterializePolicy]): AutoMaterializePolicy to apply to
             the specified asset.
         backfill_policy (Optional[BackfillPolicy]): BackfillPolicy to apply to the specified asset.
+        partitions_def (Optional[PartitionsDefinition]): PartitionsDefinition to apply to the specified asset.
     """
 
     def __new__(
@@ -99,6 +104,8 @@ class AssetSpec(
         code_version: Optional[str] = None,
         freshness_policy: Optional[FreshnessPolicy] = None,
         auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
+        backfill_policy: Optional[BackfillPolicy] = None,
+        partitions_def: Optional[PartitionsDefinition] = None,
     ):
         from dagster._core.definitions.asset_dep import AssetDep
 
@@ -135,5 +142,11 @@ class AssetSpec(
                 auto_materialize_policy,
                 "auto_materialize_policy",
                 AutoMaterializePolicy,
+            ),
+            backfill_policy=check.opt_inst_param(
+                backfill_policy, "backfill_policy", BackfillPolicy
+            ),
+            partitions_def=check.opt_inst_param(
+                partitions_def, "partitions_def", PartitionsDefinition
             ),
         )
