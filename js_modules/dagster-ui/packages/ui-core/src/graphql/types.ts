@@ -1553,6 +1553,7 @@ export type InstigationTick = {
   endTimestamp: Maybe<Scalars['Float']>;
   error: Maybe<PythonError>;
   id: Scalars['ID'];
+  instigationType: InstigationType;
   logEvents: InstigationEventConnection;
   logKey: Maybe<Array<Scalars['String']>>;
   originRunIds: Array<Scalars['String']>;
@@ -1575,6 +1576,7 @@ export enum InstigationTickStatus {
 }
 
 export enum InstigationType {
+  AUTO_MATERIALIZE = 'AUTO_MATERIALIZE',
   SCHEDULE = 'SCHEDULE',
   SENSOR = 'SENSOR',
 }
@@ -7182,7 +7184,7 @@ export const buildInstigationState = (
     instigationType:
       overrides && overrides.hasOwnProperty('instigationType')
         ? overrides.instigationType!
-        : InstigationType.SCHEDULE,
+        : InstigationType.AUTO_MATERIALIZE,
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'praesentium',
     nextTick:
       overrides && overrides.hasOwnProperty('nextTick')
@@ -7281,6 +7283,10 @@ export const buildInstigationTick = (
       overrides && overrides.hasOwnProperty('id')
         ? overrides.id!
         : 'd7be0ce0-364e-498b-98ec-cc8b0f746723',
+    instigationType:
+      overrides && overrides.hasOwnProperty('instigationType')
+        ? overrides.instigationType!
+        : InstigationType.AUTO_MATERIALIZE,
     logEvents:
       overrides && overrides.hasOwnProperty('logEvents')
         ? overrides.logEvents!

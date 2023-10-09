@@ -54,7 +54,7 @@ export function useAutomaterializeDaemonStatus() {
   );
 
   return {
-    loading,
+    loading: !data && loading,
     setPaused,
     paused: data?.instance?.autoMaterializePaused,
     refetch,
