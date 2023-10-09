@@ -46,6 +46,7 @@ export type PermissionsFromJSON = {
   reload_repository_location?: PermissionResult;
   reload_workspace?: PermissionResult;
   wipe_assets?: PermissionResult;
+  report_runless_asset_events?: PermissionResult;
   launch_partition_backfill?: PermissionResult;
   cancel_partition_backfill?: PermissionResult;
   toggle_auto_materialize?: PermissionResult;
@@ -95,6 +96,7 @@ export const extractPermissions = (
     canReloadRepositoryLocation: permissionOrFallback('reload_repository_location'),
     canReloadWorkspace: permissionOrFallback('reload_workspace'),
     canWipeAssets: permissionOrFallback('wipe_assets'),
+    canReportRunlessAssetEvents: permissionOrFallback('report_runless_asset_events'),
     canLaunchPartitionBackfill: permissionOrFallback('launch_partition_backfill'),
     canCancelPartitionBackfill: permissionOrFallback('cancel_partition_backfill'),
     canToggleAutoMaterialize: permissionOrFallback('toggle_auto_materialize'),

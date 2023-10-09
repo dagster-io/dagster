@@ -16,7 +16,7 @@ from dagster._core.execution.backfill import (
 )
 from dagster._core.host_representation.external import ExternalPartitionSet
 from dagster._core.storage.dagster_run import RunPartitionData, RunRecord, RunsFilter
-from dagster._core.storage.tags import BACKFILL_ID_TAG
+from dagster._core.storage.tags import BACKFILL_ID_TAG, TagType, get_tag_type
 from dagster._core.workspace.permissions import Permissions
 
 from ..implementation.fetch_partition_sets import (
@@ -166,6 +166,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     hasCancelPermission = graphene.NonNull(graphene.Boolean)
     hasResumePermission = graphene.NonNull(graphene.Boolean)
     user = graphene.Field(graphene.String)
+    tags = non_null_list("dagster_graphql.schema.tags.GraphenePipelineTag")
 
     def __init__(self, backfill_job: PartitionBackfill):
         self._backfill_job = check.inst_param(backfill_job, "backfill_job", PartitionBackfill)
@@ -240,6 +241,15 @@ class GraphenePartitionBackfill(graphene.ObjectType):
 
         records = self._get_records(graphene_info)
         return [GrapheneRun(record) for record in records]
+
+    def resolve_tags(self, _graphene_info: ResolveInfo):
+        from .tags import GraphenePipelineTag
+
+        return [
+            GraphenePipelineTag(key=key, value=value)
+            for key, value in self._backfill_job.tags.items()
+            if get_tag_type(key) != TagType.HIDDEN
+        ]
 
     def resolve_endTimestamp(self, graphene_info: ResolveInfo) -> Optional[float]:
         if self._backfill_job.status == BulkActionStatus.REQUESTED:

@@ -717,12 +717,15 @@ class GrapheneReportRunlessAssetEventsMutation(graphene.Mutation):
         partition_keys = eventParams.get("partitionKeys", None)
         description = eventParams.get("description", None)
 
+        reporting_user_tags = {**graphene_info.context.get_reporting_user_tags()}
+
         return report_runless_asset_events(
             graphene_info,
             event_type=event_type,
             asset_key=asset_key,
             partition_keys=partition_keys,
             description=description,
+            tags=reporting_user_tags,
         )
 
 

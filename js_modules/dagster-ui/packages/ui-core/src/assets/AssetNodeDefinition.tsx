@@ -298,7 +298,7 @@ const DescriptionAnnotations: React.FC<{
     {assetNode.isSource ? (
       <Caption style={{lineHeight: '16px'}}>Source Asset</Caption>
     ) : !assetNode.isExecutable ? (
-      <Caption style={{lineHeight: '16px'}}>Non-executable Asset</Caption>
+      <Caption style={{lineHeight: '16px'}}>External Asset</Caption>
     ) : undefined}
   </Box>
 );

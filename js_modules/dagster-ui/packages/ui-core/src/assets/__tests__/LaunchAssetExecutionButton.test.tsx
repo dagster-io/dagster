@@ -129,7 +129,7 @@ describe('LaunchAssetExecutionButton', () => {
       expect(button).toBeDisabled();
 
       userEvent.hover(button);
-      expect(await screen.findByText('Non-executable assets cannot be materialized')).toBeDefined();
+      expect(await screen.findByText('External assets cannot be materialized')).toBeDefined();
     });
   });
 
@@ -146,6 +146,7 @@ describe('LaunchAssetExecutionButton', () => {
           repositoryName: 'repo',
           pipelineName: 'my_asset_job',
           assetSelection: [{path: ['unpartitioned_asset']}],
+          assetCheckSelection: [],
         },
       });
       renderButton({
@@ -184,6 +185,7 @@ describe('LaunchAssetExecutionButton', () => {
           repositoryName: 'repo',
           pipelineName: '__ASSET_JOB_7',
           assetSelection: [{path: ['unpartitioned_asset']}],
+          assetCheckSelection: [],
         },
       });
       renderButton({
@@ -233,6 +235,7 @@ describe('LaunchAssetExecutionButton', () => {
         runConfigData: '{}\n',
         selector: {
           assetSelection: [{path: ['asset_daily']}],
+          assetCheckSelection: [],
           pipelineName: 'my_asset_job',
           repositoryLocationName: 'test.py',
           repositoryName: 'repo',
@@ -293,6 +296,7 @@ describe('LaunchAssetExecutionButton', () => {
         runConfigData: '{}\n',
         selector: {
           assetSelection: [{path: ['asset_daily']}],
+          assetCheckSelection: [],
           pipelineName: '__ASSET_JOB_7',
           repositoryLocationName: 'test.py',
           repositoryName: 'repo',
@@ -357,6 +361,7 @@ describe('LaunchAssetExecutionButton', () => {
             repositoryName: 'repo',
             pipelineName: 'my_asset_job',
             assetSelection: [{path: ['asset_daily']}],
+            assetCheckSelection: [],
           },
         });
         renderButton({
@@ -390,6 +395,7 @@ describe('LaunchAssetExecutionButton', () => {
             repositoryName: 'repo',
             pipelineName: 'my_asset_job',
             assetSelection: [{path: ['asset_daily']}],
+            assetCheckSelection: [],
           },
         });
         renderButton({

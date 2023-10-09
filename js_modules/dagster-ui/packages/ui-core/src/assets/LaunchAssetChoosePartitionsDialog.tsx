@@ -19,7 +19,6 @@ import {
 import reject from 'lodash/reject';
 import React from 'react';
 import {useHistory} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PipelineRunTag} from '../app/ExecutionSessionStorage';
@@ -31,7 +30,7 @@ import {
   itemWithAssetKey,
 } from '../asset-graph/Utils';
 import {AssetKey} from '../assets/types';
-import {LaunchBackfillParams, PartitionDefinitionType} from '../graphql/types';
+import {AssetCheck, LaunchBackfillParams, PartitionDefinitionType} from '../graphql/types';
 import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/backfill/BackfillUtils';
 import {
   LaunchPartitionBackfillMutation,
@@ -56,6 +55,7 @@ import {DimensionRangeWizard} from '../partitions/DimensionRangeWizard';
 import {assembleIntoSpans, stringForSpan} from '../partitions/SpanRepresentation';
 import {DagsterTag} from '../runs/RunTag';
 import {testId} from '../testing/testId';
+import {ToggleableSection} from '../ui/ToggleableSection';
 import {useFeatureFlagForCodeLocation} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 
@@ -72,6 +72,7 @@ import {
 } from './MultipartitioningSupport';
 import {PartitionHealthSummary} from './PartitionHealthSummary';
 import {RunningBackfillsNotice} from './RunningBackfillsNotice';
+import {asAssetKeyInput} from './asInput';
 import {
   LaunchAssetWarningsQuery,
   LaunchAssetWarningsQueryVariables,
@@ -93,6 +94,7 @@ interface Props {
   target: LaunchAssetsChoosePartitionsTarget;
   assets: {
     assetKey: AssetKey;
+    assetChecks: Pick<AssetCheck, 'name'>[];
     opNames: string[];
     partitionDefinition: PartitionDefinitionForLaunchAssetFragment | null;
   }[];
@@ -348,7 +350,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
       target.type === 'job' && !isHiddenAssetGroupJob(target.jobName)
         ? {
             tags,
-            assetSelection: assets.map((a) => ({path: a.assetKey.path})),
+            assetSelection: assets.map(asAssetKeyInput),
             partitionNames: keysFiltered,
             fromFailure: false,
             selector: {
@@ -362,12 +364,12 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
         : target.type === 'pureAll'
         ? {
             tags,
-            assetSelection: assets.map((a) => ({path: a.assetKey.path})),
+            assetSelection: assets.map(asAssetKeyInput),
             allPartitions: true,
           }
         : {
             tags,
-            assetSelection: assets.map((a) => ({path: a.assetKey.path})),
+            assetSelection: assets.map(asAssetKeyInput),
             partitionNames: keysFiltered,
             fromFailure: false,
           };
@@ -868,39 +870,3 @@ const Warnings: React.FC<{
     </ToggleableSection>
   );
 };
-
-const ToggleableSection = ({
-  isInitiallyOpen,
-  title,
-  children,
-  background,
-}: {
-  isInitiallyOpen: boolean;
-  title: React.ReactNode;
-  children: React.ReactNode;
-  background?: string;
-}) => {
-  const [isOpen, setIsOpen] = React.useState(isInitiallyOpen);
-  return (
-    <Box>
-      <Box
-        onClick={() => setIsOpen(!isOpen)}
-        background={background ?? Colors.Gray50}
-        border="bottom"
-        flex={{alignItems: 'center', direction: 'row'}}
-        padding={{vertical: 12, horizontal: 24}}
-        style={{cursor: 'pointer'}}
-      >
-        <Rotateable $rotate={!isOpen}>
-          <Icon name="arrow_drop_down" />
-        </Rotateable>
-        <div style={{flex: 1}}>{title}</div>
-      </Box>
-      {isOpen && <Box>{children}</Box>}
-    </Box>
-  );
-};
-
-const Rotateable = styled.span<{$rotate: boolean}>`
-  ${({$rotate}) => ($rotate ? 'transform: rotate(-90deg);' : '')}
-`;

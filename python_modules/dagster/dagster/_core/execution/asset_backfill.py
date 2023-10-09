@@ -629,10 +629,17 @@ def _submit_runs_and_update_backfill_in_chunks(
         instance.update_backfill(updated_backfill)
 
     if not mid_iteration_cancel_requested:
-        check.invariant(
-            submitted_partitions == asset_backfill_iteration_result.backfill_data.requested_subset,
-            "Did not submit run requests for all expected partitions",
-        )
+        if submitted_partitions != asset_backfill_iteration_result.backfill_data.requested_subset:
+            missing_partitions = list(
+                (
+                    asset_backfill_iteration_result.backfill_data.requested_subset
+                    - submitted_partitions
+                ).iterate_asset_partitions()
+            )
+            check.failed(
+                "Did not submit run requests for all expected partitions. \n\nPartitions not"
+                f" submitted: {missing_partitions}",
+            )
 
     yield backfill_data_with_submitted_runs
 

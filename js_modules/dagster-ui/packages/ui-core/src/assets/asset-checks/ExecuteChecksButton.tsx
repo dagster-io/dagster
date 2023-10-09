@@ -3,7 +3,7 @@ import {Button, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
 import React, {useState} from 'react';
 
 import {usePermissionsForLocation} from '../../app/Permissions';
-import {AssetCheckCanExecuteIndividually} from '../../graphql/types';
+import {AssetCheckCanExecuteIndividually, ExecutionParams} from '../../graphql/types';
 import {useLaunchPadHooks} from '../../launchpad/LaunchpadHooksContext';
 
 import {
@@ -68,24 +68,23 @@ export const ExecuteChecksButton = ({
   }
 
   const onClick = async () => {
-    const params = {
-      executionParams: {
-        mode: 'default',
-        executionMetadata: {},
-        runConfigData: '{}',
-        selector: {
-          repositoryLocationName: repository.location.name,
-          repositoryName: repository.name,
-          jobName,
-          assetCheckSelection: launchable.map((c) => ({
-            assetKey: {path: assetKey.path},
-            name: c.name,
-          })),
-        },
+    const executionParams: ExecutionParams = {
+      mode: 'default',
+      executionMetadata: {},
+      runConfigData: '{}',
+      selector: {
+        jobName,
+        repositoryLocationName: repository.location.name,
+        repositoryName: repository.name,
+        assetSelection: [],
+        assetCheckSelection: launchable.map((c) => ({
+          assetKey: {path: assetKey.path},
+          name: c.name,
+        })),
       },
     };
     setLaunching(true);
-    await launchWithTelemetry(params, 'toast');
+    await launchWithTelemetry({executionParams}, 'toast');
     setLaunching(false);
   };
 
