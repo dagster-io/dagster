@@ -21,6 +21,7 @@ import dagster._check as check
 from dagster._annotations import experimental_param, public
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
 from dagster._core.definitions.asset_layer import get_dep_node_handles_of_graph_backed_asset
+from dagster._core.definitions.asset_spec import AssetExecutionType
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPolicyType
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
@@ -902,6 +903,16 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         )
 
         return AssetExecutionType.is_executable(
+            self._metadata_by_key.get(asset_key, {}).get(SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE)
+        )
+
+    def asset_execution_type_for_asset(self, asset_key: AssetKey) -> AssetExecutionType:
+        from dagster._core.definitions.asset_spec import (
+            SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
+            AssetExecutionType,
+        )
+
+        return AssetExecutionType.str_to_enum(
             self._metadata_by_key.get(asset_key, {}).get(SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE)
         )
 

@@ -211,7 +211,9 @@ def test_observable_source_asset_decorator() -> None:
     def an_observable_source_asset() -> DataVersion:
         return DataVersion("foo")
 
-    defs = Definitions(assets=[create_external_asset_from_source_asset(an_observable_source_asset)])
+    assets_def = create_external_asset_from_source_asset(an_observable_source_asset)
+    assert assets_def.is_asset_executable(an_observable_source_asset.key)
+    defs = Definitions(assets=[assets_def])
 
     instance = DagsterInstance.ephemeral()
     result = defs.get_implicit_global_asset_job_def().execute_in_process(instance=instance)
@@ -225,6 +227,4 @@ def test_observable_source_asset_decorator() -> None:
     assert observation_event.asset_observation_data.asset_observation.data_version == "foo"
 
     all_materializations = result.get_asset_materialization_events()
-    # Note this does not make sense. We need to make framework changes to allow for the omission of
-    # a materialzation event
-    assert len(all_materializations) == 1
+    assert len(all_materializations) == 0
