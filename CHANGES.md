@@ -1,5 +1,12 @@
 # Changelog
 
+
+# 1.5.2 / 0.21.2 (libraries)
+
+### Bugfixes
+
+- Previously, asset backfills targeting assets with multi-run backfill policies would raise a "did not submit all run requests" error. This has been fixed.
+
 # 1.5.1 / 0.21.1 (libraries)
 
 ### New
