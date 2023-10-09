@@ -38,16 +38,13 @@ While Dagster Pipes is lightweight and flexible, there are a few limitations to 
 
 Dagster Pipes provides a protocol between the orchestration environment (Dagster) and external execution (ex: Databricks) and a toolkit for building implementations of that protocol.
 
-Let’s take a look at how Dagster Pipes would work with the following assumptions:
+When Dagster Pipes is invoked, several steps will be carried out both in the **orchestration process**, or Dagster, and in the **external process**, such as Databricks.
 
-- We have some external code that contains some business logic.
-- Our code also calculates the number of records it processes at a given time. We want to send this metadata back to Dagster.
-- We have a Dagster asset that:
-  - Provides access to asset context data, such as logging, via <PyObject object="AssetExecutionContext" />
-  - Passes some parameter, such as a date, to the external code
-  - Invokes the external code
+### In the orchestration process (Dagster)
 
-Refer to the following diagram and explanation for how Dagster Pipes would accomplish this, step-by-step. **Note:** Depending on the technology you use (ex: Databricks, Docker), this implementation of the protocol may vary. Refer to the [Understanding Dagster Pipes process guide](/guides/dagster-pipes/understanding-dagster-pipes) for more info.
+When the execution of a Dagster asset begins, Dagster makes context information (ex: `partition_key`, `asset_key`, etc.) available for the external process to consume.
+
+Next, Dagster launches the external process and passes in any provided parameters.
 
 <Image
 alt="Diagram explaining the Dagster Pipes process"
@@ -56,18 +53,13 @@ width={1000}
 height={393}
 />
 
-### In the orchestration process (Dagster)
-
-1. The Dagster asset is executed.
-2. A connection to the external process, such as Databricks, is established.
-3. Dagster sends context info (ex: `partition_key`, `asset_key`, etc.) and any provided parameters to the external process.
-
 ### In the external process
 
-1. The external process is invoked.
-2. The external process sends information about its execution, and any specified metadata, to Dagster.
+The process starts and loads the context info provided by Dagster. When finished, the process sends execution data, logs, and any specified metadata, back to Dagster.
 
 After Dagster receives the data from the external process, it’ll be visible in the [Dagster UI](/concepts/webserver/ui).
+
+**Note:** Depending on the technology you use (ex: Databricks, Docker), this implementation of the protocol may vary. Refer to the [Understanding Dagster Pipes process guide](/guides/dagster-pipes/understanding-dagster-pipes) for more info.
 
 ---
 
