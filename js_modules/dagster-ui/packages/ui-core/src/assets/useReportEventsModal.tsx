@@ -10,11 +10,13 @@ import {
   Icon,
   Subheading,
   TextInput,
+  Tooltip,
 } from '@dagster-io/ui-components';
 import React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {showSharedToaster} from '../app/DomUtils';
+import {usePermissionsForLocation} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {AssetEventType, AssetKeyInput, PartitionDefinitionType} from '../graphql/types';
@@ -77,6 +79,10 @@ const ReportEventDialogBody: React.FC<{
   onEventReported: () => void;
 }> = ({asset, repoAddress, isOpen, setIsOpen, onEventReported}) => {
   const [description, setDescription] = React.useState('');
+  const {
+    permissions: {canReportRunlessAssetEvents},
+    disabledReasons,
+  } = usePermissionsForLocation(repoAddress.location);
 
   const [mutation] = useMutation<ReportEventMutation, ReportEventMutationVariables>(
     REPORT_EVENT_MUTATION,
@@ -233,9 +239,14 @@ const ReportEventDialogBody: React.FC<{
       </Box>
       <DialogFooter topBorder>
         <Button onClick={() => setIsOpen(false)}>Cancel</Button>
-        <Button intent="primary" onClick={onReportEvent}>
-          Report event
-        </Button>
+        <Tooltip
+          content={disabledReasons.canReportRunlessAssetEvents}
+          canShow={!canReportRunlessAssetEvents}
+        >
+          <Button intent="primary" onClick={onReportEvent} disabled={!canReportRunlessAssetEvents}>
+            Report event
+          </Button>
+        </Tooltip>
       </DialogFooter>
     </Dialog>
   );

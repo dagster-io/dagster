@@ -248,7 +248,7 @@ export const AssetView = ({assetKey}: Props) => {
           repository: definition.repository,
         }
       : null,
-      refreshState.refetch,
+    refreshState.refetch,
   );
 
   return (
