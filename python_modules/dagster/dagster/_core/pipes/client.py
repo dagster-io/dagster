@@ -77,6 +77,16 @@ class PipesClientCompletedInvocation:
         """
         return materialize_result_from_pipes_results(self.get_results())
 
+    def get_asset_check_result(self) -> AssetCheckResult:
+        """Get a single asset check result for a pipes invocation.
+
+        This does not work on invocations that have anything except a single asset check result.
+        Use `get_results` instead to get the result stream in those cases.
+
+        Returns: AssetCheckResult
+        """
+        return _check_result_from_pipes_results(self.get_results())
+
 
 @experimental
 class PipesContextInjector(ABC):
@@ -169,3 +179,25 @@ def materialize_result_from_pipes_results(
         )
     else:
         return mat_result
+
+
+def _check_result_from_pipes_results(
+    all_results: Sequence[PipesExecutionResult],
+) -> AssetCheckResult:
+    mat_results: List[MaterializeResult] = [
+        mat_result for mat_result in all_results if isinstance(mat_result, MaterializeResult)
+    ]
+    check_results: List[AssetCheckResult] = [
+        check_result for check_result in all_results if isinstance(check_result, AssetCheckResult)
+    ]
+
+    # return the single asset check result if thats what we got
+    if len(mat_results) == 0 and len(check_results) == 1:
+        return next(iter(check_results))
+
+    # otherwise error
+    raise DagsterPipesError(
+        f"Did not find singular AssetCheckResult, got {len(mat_results)} MaterializeResults and"
+        f" {len(check_results)} AssetCheckResults. Correct the reported results or use"
+        " get_results() instead.",
+    )
