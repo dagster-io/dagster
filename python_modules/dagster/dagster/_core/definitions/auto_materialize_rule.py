@@ -5,6 +5,7 @@ from enum import Enum
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
+    Callable,
     Dict,
     FrozenSet,
     Mapping,
@@ -127,12 +128,37 @@ class RuleEvaluationContext(NamedTuple):
     will_materialize_mapping: Mapping[AssetKey, AbstractSet[AssetKeyPartitionKey]]
     expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]]
     candidates: AbstractSet[AssetKeyPartitionKey]
-    new_candidates: AbstractSet[AssetKeyPartitionKey]
     daemon_context: "AssetDaemonContext"
 
     @property
     def asset_graph(self) -> AssetGraph:
         return self.instance_queryer.asset_graph
+
+    @property
+    def new_candidates(self) -> AbstractSet[AssetKeyPartitionKey]:
+        """The set of candidates on this tick which were not candidates on the previous tick."""
+        return {c for c in self.candidates if c not in self.cursor.skipped_on_last_tick_subset}
+
+    def get_previous_tick_results(self, rule: "AutoMaterializeRule"):
+        """Returns the results that were calculated for a given rule on the previous tick."""
+        previous_evaluation = self.cursor.latest_evaluation_by_asset_key.get(self.asset_key)
+        if not previous_evaluation:
+            return []
+        return previous_evaluation.get_rule_evaluation_results(
+            rule_snapshot=rule.to_snapshot(), asset_graph=self.asset_graph
+        )
+
+    def skipped_on_last_tick_and_not_materialized_since(
+        self, asset_partition: AssetKeyPartitionKey
+    ) -> bool:
+        """Returns whether an asset partition was skipped on the last tick and has not been
+        materialized since that tick.
+        """
+        if asset_partition not in self.cursor.skipped_on_last_tick_subset:
+            return False
+        return not self.instance_queryer.asset_partition_has_materialization_or_observation(
+            asset_partition, after_cursor=self.cursor.latest_storage_id
+        )
 
     def materializable_in_same_run(self, child_key: AssetKey, parent_key: AssetKey) -> bool:
         """Returns whether a child asset can be materialized in the same run as a parent asset."""
@@ -257,52 +283,30 @@ class AutoMaterializeRule(ABC):
         """
         ...
 
-    def merge_with_past_results(
+    def add_evaluation_data_from_previous_tick(
         self,
         context: RuleEvaluationContext,
         asset_partitions_by_evaluation_data: Mapping[
-            Optional[AutoMaterializeRuleEvaluationData], AbstractSet[AssetKeyPartitionKey]
+            Optional[AutoMaterializeRuleEvaluationData], Set[AssetKeyPartitionKey]
         ],
-        evaluated_candidates: Optional[AbstractSet[AssetKeyPartitionKey]] = None,
-    ) -> RuleEvaluationResults:
-        """Merge the new results of an evaluation with any previous results which are still valid,
-        along with the set of asset partitions which have new evaluations.
+        should_include: Callable[[AssetKeyPartitionKey], bool],
+    ) -> "RuleEvaluationResults":
+        """Combines a given set of evaluation data with evaluation data from the previous tick.
+
+        Args:
+            context: The current RuleEvaluationContext.
+            asset_partitions_by_evaluation_data: A mapping from evaluation data to the set of asset
+                partitions that the rule applies to.
+            should_include: A function that returns whether a given asset partition from the
+                previous tick should be included in the results of this tick.
         """
-        # first, get the evaluation results for this rule from the previous tick
-        previous_evaluation = context.cursor.latest_evaluation_by_asset_key.get(context.asset_key)
-        previous_results = (
-            previous_evaluation.get_rule_evaluation_results(
-                rule_snapshot=self.to_snapshot(), asset_graph=context.asset_graph
-            )
-            if previous_evaluation
-            else []
-        )
-
-        # get the set of asset partitions that have a new evaluation this tick (this is unnecessary
-        # if evaluated_candidates is provided)
-        newly_evaluated_asset_partitions = set().union(
-            *asset_partitions_by_evaluation_data.values()
-        )
-
-        # now, carry forward any results from the previous tick that are still valid
-        merged_results = defaultdict(set)
-        for evaluation_data, asset_partitions in previous_results:
+        asset_partitions_by_evaluation_data = defaultdict(set, asset_partitions_by_evaluation_data)
+        for evaluation_data, asset_partitions in context.get_previous_tick_results(self):
             for ap in asset_partitions:
-                # ignore any stored information for asset partitions that were re-evaluated this
-                # tick or were not skipped on the previous tick
-                if (
-                    ap in (evaluated_candidates or set()) | newly_evaluated_asset_partitions
-                    or ap not in context.daemon_context.skipped_asset_graph_subset
-                ):
-                    continue
-                merged_results[evaluation_data].add(ap)
+                if should_include(ap):
+                    asset_partitions_by_evaluation_data[evaluation_data].add(ap)
 
-        # finally, add in the newly-calculated results
-        for evaluation_data, asset_partitions in asset_partitions_by_evaluation_data.items():
-            for ap in asset_partitions:
-                merged_results[evaluation_data].add(ap)
-
-        return list(merged_results.items())
+        return list(asset_partitions_by_evaluation_data.items())
 
     @abstractmethod
     def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
@@ -441,10 +445,10 @@ class MaterializeOnParentUpdatedRule(
         """
         asset_partitions_by_evaluation_data = defaultdict(set)
 
-        # next, for each asset partition of this asset which has newly-updated parents, or
-        # has a parent that will update, create a ParentUpdatedRuleEvaluationData
         will_update_parents_by_asset_partition = context.get_will_update_parent_mapping()
 
+        # the set of asset partitions whose parents have been updated since last tick, or will be
+        # requested this tick.
         has_or_will_update = context.get_asset_partitions_with_updated_parents() | set(
             will_update_parents_by_asset_partition.keys()
         )
@@ -478,7 +482,12 @@ class MaterializeOnParentUpdatedRule(
                     )
                 ].add(asset_partition)
 
-        return self.merge_with_past_results(context, asset_partitions_by_evaluation_data)
+        return self.add_evaluation_data_from_previous_tick(
+            context,
+            asset_partitions_by_evaluation_data,
+            should_include=lambda ap: ap not in has_or_will_update
+            and context.skipped_on_last_tick_and_not_materialized_since(ap),
+        )
 
 
 @whitelist_for_serdes
@@ -496,7 +505,9 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
         previously discarded. Currently only applies to root asset partitions and asset partitions
         with updated parents.
         """
-        missing_asset_partitions = (
+        asset_partitions_by_evaluation_data = defaultdict(set)
+
+        missing_asset_partitions = set(
             context.daemon_context.get_never_handled_root_asset_partitions_for_key(
                 context.asset_key
             )
@@ -512,10 +523,16 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
                 candidate
             ):
                 missing_asset_partitions |= {candidate}
-        asset_partitions_by_evaluation_data: Dict[
-            Optional[AutoMaterializeRuleEvaluationData], AbstractSet[AssetKeyPartitionKey]
-        ] = ({None: missing_asset_partitions} if missing_asset_partitions else {})
-        return self.merge_with_past_results(context, asset_partitions_by_evaluation_data)
+
+        if missing_asset_partitions:
+            asset_partitions_by_evaluation_data[None] = missing_asset_partitions
+
+        return self.add_evaluation_data_from_previous_tick(
+            context,
+            asset_partitions_by_evaluation_data,
+            should_include=lambda ap: ap not in missing_asset_partitions
+            and context.skipped_on_last_tick_and_not_materialized_since(ap),
+        )
 
 
 @whitelist_for_serdes
@@ -548,10 +565,12 @@ class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOut
                 asset_partitions_by_evaluation_data[
                     WaitingOnAssetsRuleEvaluationData(frozenset(outdated_ancestors))
                 ].add(candidate)
-        return self.merge_with_past_results(
+
+        return self.add_evaluation_data_from_previous_tick(
             context,
             asset_partitions_by_evaluation_data,
-            evaluated_candidates=candidates_to_evaluate,
+            should_include=lambda ap: ap not in candidates_to_evaluate
+            and context.skipped_on_last_tick_and_not_materialized_since(ap),
         )
 
 
@@ -594,10 +613,11 @@ class SkipOnParentMissingRule(AutoMaterializeRule, NamedTuple("_SkipOnParentMiss
                     WaitingOnAssetsRuleEvaluationData(frozenset(missing_parent_asset_keys))
                 ].add(candidate)
 
-        return self.merge_with_past_results(
+        return self.add_evaluation_data_from_previous_tick(
             context,
             asset_partitions_by_evaluation_data,
-            evaluated_candidates=candidates_to_evaluate,
+            should_include=lambda ap: ap not in candidates_to_evaluate
+            and context.skipped_on_last_tick_and_not_materialized_since(ap),
         )
 
 
@@ -690,10 +710,11 @@ class SkipOnNotAllParentsUpdatedRule(
                     WaitingOnAssetsRuleEvaluationData(frozenset(non_updated_parent_keys))
                 ].add(candidate)
 
-        return self.merge_with_past_results(
+        return self.add_evaluation_data_from_previous_tick(
             context,
             asset_partitions_by_evaluation_data,
-            evaluated_candidates=candidates_to_evaluate,
+            should_include=lambda ap: ap not in candidates_to_evaluate
+            and context.skipped_on_last_tick_and_not_materialized_since(ap),
         )
 
 

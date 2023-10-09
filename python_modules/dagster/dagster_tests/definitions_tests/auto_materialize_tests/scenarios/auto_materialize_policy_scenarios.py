@@ -958,7 +958,7 @@ auto_materialize_policy_scenarios = {
         # can now run C because the skip rule is no longer true
         expected_run_requests=[run_request(["C"])],
     ),
-    "skipped_subset_partitioned": AssetReconciliationScenario(
+    "skipped_on_last_tick_subset_partitioned": AssetReconciliationScenario(
         assets=partitioned_vee,
         asset_selection=AssetSelection.keys("C"),
         cursor_from=AssetReconciliationScenario(
@@ -975,7 +975,7 @@ auto_materialize_policy_scenarios = {
         # can now run C[a] because the skip rule is no longer true
         expected_run_requests=[run_request(["C"], partition_key="a")],
     ),
-    "skipped_subset_partitioned2": AssetReconciliationScenario(
+    "skipped_on_last_tick_subset_partitioned2": AssetReconciliationScenario(
         assets=partitioned_vee,
         asset_selection=AssetSelection.keys("C"),
         cursor_from=AssetReconciliationScenario(
