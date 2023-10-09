@@ -2536,6 +2536,8 @@ class SqlEventLogStorage(EventLogStorage):
                     check_name=planned.check_name,
                     run_id=event.run_id,
                     execution_status=AssetCheckExecutionRecordStatus.PLANNED.value,
+                    evaluation_event=serialize_value(event),
+                    evaluation_event_timestamp=datetime.utcfromtimestamp(event.timestamp),
                 )
             )
 
