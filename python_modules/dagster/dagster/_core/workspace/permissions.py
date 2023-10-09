@@ -15,6 +15,7 @@ class Permissions(str, Enum):
     RELOAD_REPOSITORY_LOCATION = "reload_repository_location"
     RELOAD_WORKSPACE = "reload_workspace"
     WIPE_ASSETS = "wipe_assets"
+    REPORT_RUNLESS_ASSET_EVENTS = "report_runless_asset_events"
     LAUNCH_PARTITION_BACKFILL = "launch_partition_backfill"
     CANCEL_PARTITION_BACKFILL = "cancel_partition_backfill"
     EDIT_DYNAMIC_PARTITIONS = "edit_dynamic_partitions"
@@ -37,6 +38,7 @@ VIEWER_PERMISSIONS: Dict[str, bool] = {
     Permissions.RELOAD_REPOSITORY_LOCATION: False,
     Permissions.RELOAD_WORKSPACE: False,
     Permissions.WIPE_ASSETS: False,
+    Permissions.REPORT_RUNLESS_ASSET_EVENTS: False,
     Permissions.LAUNCH_PARTITION_BACKFILL: False,
     Permissions.CANCEL_PARTITION_BACKFILL: False,
     Permissions.EDIT_DYNAMIC_PARTITIONS: False,
@@ -56,6 +58,7 @@ EDITOR_PERMISSIONS: Dict[str, bool] = {
     Permissions.RELOAD_REPOSITORY_LOCATION: True,
     Permissions.RELOAD_WORKSPACE: True,
     Permissions.WIPE_ASSETS: True,
+    Permissions.REPORT_RUNLESS_ASSET_EVENTS: True,
     Permissions.LAUNCH_PARTITION_BACKFILL: True,
     Permissions.CANCEL_PARTITION_BACKFILL: True,
     Permissions.EDIT_DYNAMIC_PARTITIONS: True,

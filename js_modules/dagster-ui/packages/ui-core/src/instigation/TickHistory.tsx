@@ -447,6 +447,7 @@ const JOB_TICK_HISTORY_QUERY = gql`
     status
     timestamp
     cursor
+    instigationType
     skipReason
     runIds
     runs {

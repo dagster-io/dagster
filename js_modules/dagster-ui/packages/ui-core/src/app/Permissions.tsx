@@ -21,6 +21,7 @@ export const EXPECTED_PERMISSIONS = {
   reload_repository_location: true,
   reload_workspace: true,
   wipe_assets: true,
+  report_runless_asset_events: true,
   launch_partition_backfill: true,
   cancel_partition_backfill: true,
   edit_dynamic_partitions: true,

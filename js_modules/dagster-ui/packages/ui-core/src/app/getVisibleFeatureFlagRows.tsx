@@ -57,4 +57,8 @@ export const getVisibleFeatureFlagRows = () => [
     key: 'Disable Asset Graph caching',
     flagType: FeatureFlag.flagDisableDAGCache,
   },
+  {
+    key: 'Experimental Auto-materialize policy timeline page',
+    flagType: FeatureFlag.flagEnableAMPTimeline,
+  },
 ];

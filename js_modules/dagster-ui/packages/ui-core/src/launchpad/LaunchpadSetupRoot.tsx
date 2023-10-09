@@ -43,7 +43,7 @@ const LaunchpadSetupAllowedRoot: React.FC<Props> = (props) => {
 
   useJobTitle(explorerPath, isJob);
 
-  const [data, onSave] = useExecutionSessionStorage(repoAddress, pipelineName);
+  const [_, onSave] = useExecutionSessionStorage(repoAddress, pipelineName);
   const queryString = qs.parse(window.location.search, {ignoreQueryPrefix: true});
 
   React.useEffect(() => {
@@ -78,7 +78,7 @@ const LaunchpadSetupAllowedRoot: React.FC<Props> = (props) => {
         newSession.assetSelection = queryString.assetSelection as any;
       }
 
-      onSave(applyCreateSession(data, newSession));
+      onSave((data) => applyCreateSession(data, newSession));
     }
   });
 

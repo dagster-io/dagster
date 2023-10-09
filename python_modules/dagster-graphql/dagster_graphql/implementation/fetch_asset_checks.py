@@ -181,9 +181,7 @@ def _execution_targets_latest_materialization(
     ]:
         evaluation = cast(
             AssetCheckEvaluation,
-            check.not_none(
-                check.not_none(execution.evaluation_event).dagster_event
-            ).event_specific_data,
+            check.not_none(check.not_none(execution.event).dagster_event).event_specific_data,
         )
         if not evaluation.target_materialization_data:
             # check ran before the materialization was created

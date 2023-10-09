@@ -7,12 +7,14 @@ from dagster import (
     AssetsDefinition,
     AutoMaterializePolicy,
     DagsterInstance,
+    DataVersion,
     Definitions,
     IOManager,
     JobDefinition,
     SourceAsset,
     _check as check,
     asset,
+    observable_source_asset,
 )
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.external_asset import (
@@ -202,3 +204,27 @@ def test_how_partitioned_source_assets_are_backwards_compatible() -> None:
 
     assert result_two.success
     assert result_two.output_for_node("an_asset") == "hardcoded-computed-2021-01-03"
+
+
+def test_observable_source_asset_decorator() -> None:
+    @observable_source_asset
+    def an_observable_source_asset() -> DataVersion:
+        return DataVersion("foo")
+
+    assets_def = create_external_asset_from_source_asset(an_observable_source_asset)
+    assert assets_def.is_asset_executable(an_observable_source_asset.key)
+    defs = Definitions(assets=[assets_def])
+
+    instance = DagsterInstance.ephemeral()
+    result = defs.get_implicit_global_asset_job_def().execute_in_process(instance=instance)
+
+    assert result.success
+    assert result.output_for_node("an_observable_source_asset") is None
+
+    all_observations = result.get_asset_observation_events()
+    assert len(all_observations) == 1
+    observation_event = all_observations[0]
+    assert observation_event.asset_observation_data.asset_observation.data_version == "foo"
+
+    all_materializations = result.get_asset_materialization_events()
+    assert len(all_materializations) == 0

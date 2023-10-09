@@ -80,7 +80,7 @@ type Preset = ConfigEditorPipelinePresetFragment;
 
 interface LaunchpadSessionProps {
   session: IExecutionSession;
-  onSave: (changes: IExecutionSessionChanges) => void;
+  onSave: (changes: React.SetStateAction<IExecutionSessionChanges>) => void;
   launchpadType: LaunchpadType;
   pipeline: LaunchpadSessionPipelineFragment;
   partitionSets: LaunchpadSessionPartitionSetsFragment;
@@ -166,7 +166,7 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
   const {
     launchpadType,
     session: currentSession,
-    onSave,
+    onSave: onSaveSession,
     partitionSets,
     pipeline,
     repoAddress,
@@ -212,10 +212,6 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
       mounted.current = false;
     };
   });
-
-  const onSaveSession = (changes: IExecutionSessionChanges) => {
-    onSave(changes);
-  };
 
   const onConfigChange = (config: any) => {
     onSaveSession({
@@ -487,7 +483,12 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
           body: <PythonErrorInfo error={partition.runConfigOrError} />,
         });
       } else {
-        runConfigYaml = partition.runConfigOrError.yaml;
+        runConfigYaml = yaml.stringify(
+          merge(
+            yaml.parse(sanitizeConfigYamlString(partition.runConfigOrError.yaml)),
+            yaml.parse(sanitizeConfigYamlString(currentSession.runConfigYaml)),
+          ),
+        );
       }
 
       const solidSelection = sessionSolidSelection || partition.solidSelection;

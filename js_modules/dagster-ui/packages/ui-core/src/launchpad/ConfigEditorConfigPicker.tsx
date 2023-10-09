@@ -308,21 +308,24 @@ const ConfigEditorPartitionPicker: React.FC<ConfigEditorPartitionPickerProps> = 
             Add new partition
           </Button>
         ) : null}
-        <CreatePartitionDialog
-          key={showCreatePartition ? '1' : '0'}
-          isOpen={showCreatePartition}
-          partitionDefinitionName={partitionDefinitionName}
-          repoAddress={repoAddress}
-          close={() => {
-            setShowCreatePartition(false);
-          }}
-          refetch={async () => {
-            await refetch();
-          }}
-          onCreated={(partitionName) => {
-            onSelect(repositorySelector, partitionSetName, partitionName);
-          }}
-        />
+        {/* Wrapper div to avoid any key conflicts with the key on the Suggestion component */}
+        <div>
+          <CreatePartitionDialog
+            key={showCreatePartition ? '1' : '0'}
+            isOpen={showCreatePartition}
+            partitionDefinitionName={partitionDefinitionName}
+            repoAddress={repoAddress}
+            close={() => {
+              setShowCreatePartition(false);
+            }}
+            refetch={async () => {
+              await refetch();
+            }}
+            onCreated={(partitionName) => {
+              onSelect(repositorySelector, partitionSetName, partitionName);
+            }}
+          />
+        </div>
       </>
     );
   },

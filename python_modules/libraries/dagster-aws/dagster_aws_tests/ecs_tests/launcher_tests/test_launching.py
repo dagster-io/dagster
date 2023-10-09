@@ -1221,3 +1221,59 @@ def test_custom_launcher(
         == WorkerStatus.RUNNING
     )
     ecs.stop_task(task=task_arn)
+
+
+def test_external_launch_type(
+    ecs,
+    instance_cm,
+    workspace,
+    external_job,
+    job,
+):
+    container_name = "external"
+
+    task_definition = ecs.register_task_definition(
+        family="external",
+        containerDefinitions=[{"name": container_name, "image": "dagster:first"}],
+        networkMode="bridge",
+        memory="512",
+        cpu="256",
+    )["taskDefinition"]
+
+    assert task_definition["networkMode"] == "bridge"
+
+    task_definition_arn = task_definition["taskDefinitionArn"]
+
+    # You can provide a family or a task definition ARN
+    with instance_cm(
+        {
+            "task_definition": task_definition_arn,
+            "container_name": container_name,
+            "run_task_kwargs": {
+                "launchType": "EXTERNAL",
+            },
+        }
+    ) as instance:
+        run = instance.create_run_for_job(
+            job,
+            external_job_origin=external_job.get_external_origin(),
+            job_code_origin=external_job.get_python_origin(),
+        )
+
+        initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
+        initial_tasks = ecs.list_tasks()["taskArns"]
+
+        instance.launch_run(run.run_id, workspace)
+
+        # A new task definition is not created
+        assert ecs.list_task_definitions()["taskDefinitionArns"] == initial_task_definitions
+
+        # A new task is launched
+        tasks = ecs.list_tasks()["taskArns"]
+
+        assert len(tasks) == len(initial_tasks) + 1
+        task_arn = next(iter(set(tasks).difference(initial_tasks)))
+        task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
+
+        assert task["taskDefinitionArn"] == task_definition["taskDefinitionArn"]
+        assert task["launchType"] == "EXTERNAL"

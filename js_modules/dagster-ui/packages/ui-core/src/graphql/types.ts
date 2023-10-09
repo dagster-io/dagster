@@ -186,6 +186,7 @@ export type AssetCheckExecution = {
   id: Scalars['String'];
   runId: Scalars['String'];
   status: AssetCheckExecutionResolvedStatus;
+  stepKey: Maybe<Scalars['String']>;
   timestamp: Scalars['Float'];
 };
 
@@ -249,6 +250,11 @@ export type AssetDependency = {
   asset: AssetNode;
   inputName: Scalars['String'];
 };
+
+export enum AssetEventType {
+  ASSET_MATERIALIZATION = 'ASSET_MATERIALIZATION',
+  ASSET_OBSERVATION = 'ASSET_OBSERVATION',
+}
 
 export type AssetFreshnessInfo = {
   __typename: 'AssetFreshnessInfo';
@@ -1552,6 +1558,7 @@ export type InstigationTick = {
   endTimestamp: Maybe<Scalars['Float']>;
   error: Maybe<PythonError>;
   id: Scalars['ID'];
+  instigationType: InstigationType;
   logEvents: InstigationEventConnection;
   logKey: Maybe<Array<Scalars['String']>>;
   originRunIds: Array<Scalars['String']>;
@@ -1574,6 +1581,7 @@ export enum InstigationTickStatus {
 }
 
 export enum InstigationType {
+  AUTO_MATERIALIZE = 'AUTO_MATERIALIZE',
   SCHEDULE = 'SCHEDULE',
   SENSOR = 'SENSOR',
 }
@@ -2022,6 +2030,7 @@ export type Mutation = {
   logTelemetry: LogTelemetryMutationResult;
   reloadRepositoryLocation: ReloadRepositoryLocationMutationResult;
   reloadWorkspace: ReloadWorkspaceMutationResult;
+  reportRunlessAssetEvents: ReportRunlessAssetEventsResult;
   resumePartitionBackfill: ResumeBackfillResult;
   scheduleDryRun: ScheduleDryRunResult;
   sensorDryRun: SensorDryRunResult;
@@ -2093,6 +2102,10 @@ export type MutationLogTelemetryArgs = {
 
 export type MutationReloadRepositoryLocationArgs = {
   repositoryLocationName: Scalars['String'];
+};
+
+export type MutationReportRunlessAssetEventsArgs = {
+  eventParams: ReportRunlessAssetEventsParams;
 };
 
 export type MutationResumePartitionBackfillArgs = {
@@ -3150,6 +3163,23 @@ export type ReloadWorkspaceMutation = {
 };
 
 export type ReloadWorkspaceMutationResult = PythonError | UnauthorizedError | Workspace;
+
+export type ReportRunlessAssetEventsParams = {
+  assetKey: AssetKeyInput;
+  description?: InputMaybe<Scalars['String']>;
+  eventType: AssetEventType;
+  partitionKeys?: InputMaybe<Array<InputMaybe<Scalars['String']>>>;
+};
+
+export type ReportRunlessAssetEventsResult =
+  | PythonError
+  | ReportRunlessAssetEventsSuccess
+  | UnauthorizedError;
+
+export type ReportRunlessAssetEventsSuccess = {
+  __typename: 'ReportRunlessAssetEventsSuccess';
+  assetKey: AssetKey;
+};
 
 export type RepositoriesOrError = PythonError | RepositoryConnection;
 
@@ -4661,6 +4691,7 @@ export const buildAssetCheckExecution = (
       overrides && overrides.hasOwnProperty('status')
         ? overrides.status!
         : AssetCheckExecutionResolvedStatus.EXECUTION_FAILED,
+    stepKey: overrides && overrides.hasOwnProperty('stepKey') ? overrides.stepKey! : 'aspernatur',
     timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 2.57,
   };
 };
@@ -7180,7 +7211,7 @@ export const buildInstigationState = (
     instigationType:
       overrides && overrides.hasOwnProperty('instigationType')
         ? overrides.instigationType!
-        : InstigationType.SCHEDULE,
+        : InstigationType.AUTO_MATERIALIZE,
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'praesentium',
     nextTick:
       overrides && overrides.hasOwnProperty('nextTick')
@@ -7279,6 +7310,10 @@ export const buildInstigationTick = (
       overrides && overrides.hasOwnProperty('id')
         ? overrides.id!
         : 'd7be0ce0-364e-498b-98ec-cc8b0f746723',
+    instigationType:
+      overrides && overrides.hasOwnProperty('instigationType')
+        ? overrides.instigationType!
+        : InstigationType.AUTO_MATERIALIZE,
     logEvents:
       overrides && overrides.hasOwnProperty('logEvents')
         ? overrides.logEvents!
@@ -8298,6 +8333,12 @@ export const buildMutation = (
     reloadWorkspace:
       overrides && overrides.hasOwnProperty('reloadWorkspace')
         ? overrides.reloadWorkspace!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
+    reportRunlessAssetEvents:
+      overrides && overrides.hasOwnProperty('reportRunlessAssetEvents')
+        ? overrides.reportRunlessAssetEvents!
         : relationshipsToOmit.has('PythonError')
         ? ({} as PythonError)
         : buildPythonError({}, relationshipsToOmit),
@@ -10198,6 +10239,47 @@ export const buildReloadWorkspaceMutation = (
         : relationshipsToOmit.has('PythonError')
         ? ({} as PythonError)
         : buildPythonError({}, relationshipsToOmit),
+  };
+};
+
+export const buildReportRunlessAssetEventsParams = (
+  overrides?: Partial<ReportRunlessAssetEventsParams>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): ReportRunlessAssetEventsParams => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ReportRunlessAssetEventsParams');
+  return {
+    assetKey:
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKeyInput')
+        ? ({} as AssetKeyInput)
+        : buildAssetKeyInput({}, relationshipsToOmit),
+    description:
+      overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'dolores',
+    eventType:
+      overrides && overrides.hasOwnProperty('eventType')
+        ? overrides.eventType!
+        : AssetEventType.ASSET_MATERIALIZATION,
+    partitionKeys:
+      overrides && overrides.hasOwnProperty('partitionKeys') ? overrides.partitionKeys! : [],
+  };
+};
+
+export const buildReportRunlessAssetEventsSuccess = (
+  overrides?: Partial<ReportRunlessAssetEventsSuccess>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'ReportRunlessAssetEventsSuccess'} & ReportRunlessAssetEventsSuccess => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ReportRunlessAssetEventsSuccess');
+  return {
+    __typename: 'ReportRunlessAssetEventsSuccess',
+    assetKey:
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKey')
+        ? ({} as AssetKey)
+        : buildAssetKey({}, relationshipsToOmit),
   };
 };
 
