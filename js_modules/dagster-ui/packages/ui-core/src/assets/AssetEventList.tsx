@@ -9,6 +9,7 @@ import {RunStatusWithStats} from '../runs/RunStatusDots';
 import {titleForRun} from '../runs/RunUtils';
 import {Container, Inner, Row} from '../ui/VirtualizedTable';
 
+import {RunlessEventTag} from './RunlessEventTag';
 import {AssetEventGroup} from './groupByPartition';
 
 // This component is on the feature-flagged AssetOverview page and replaces AssetEventTable
@@ -161,8 +162,8 @@ const AssetEventListEventRow: React.FC<{group: AssetEventGroup}> = ({group}) => 
               </Box>
             </AssetRunLink>
           </Tag>
-        ) : latest && latest.runId === '' ? (
-          <Tag>Reported</Tag>
+        ) : latest && !latest.runId ? (
+          <RunlessEventTag tags={latest.tags} />
         ) : undefined}
       </Box>
     </>
