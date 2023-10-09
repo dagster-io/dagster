@@ -2,7 +2,7 @@
 
 import * as Types from '../../../graphql/types';
 
-export type AssetDameonTicksQueryVariables = Types.Exact<{
+export type AssetDaemonTicksQueryVariables = Types.Exact<{
   dayRange?: Types.InputMaybe<Types.Scalars['Int']>;
   dayOffset?: Types.InputMaybe<Types.Scalars['Int']>;
   statuses?: Types.InputMaybe<Array<Types.InstigationTickStatus> | Types.InstigationTickStatus>;
@@ -10,7 +10,7 @@ export type AssetDameonTicksQueryVariables = Types.Exact<{
   cursor?: Types.InputMaybe<Types.Scalars['String']>;
 }>;
 
-export type AssetDameonTicksQuery = {
+export type AssetDaemonTicksQuery = {
   __typename: 'Query';
   autoMaterializeTicks: Array<{
     __typename: 'InstigationTick';
@@ -32,6 +32,11 @@ export type AssetDameonTicksQuery = {
       }>;
     } | null;
     requestedAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
+    requestedMaterializationsForAssets: Array<{
+      __typename: 'RequestedMaterializationsForAsset';
+      partitionKeys: Array<string>;
+      assetKey: {__typename: 'AssetKey'; path: Array<string>};
+    }>;
   }>;
 };
 
@@ -55,4 +60,9 @@ export type AssetDaemonTickFragment = {
     }>;
   } | null;
   requestedAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
+  requestedMaterializationsForAssets: Array<{
+    __typename: 'RequestedMaterializationsForAsset';
+    partitionKeys: Array<string>;
+    assetKey: {__typename: 'AssetKey'; path: Array<string>};
+  }>;
 };
