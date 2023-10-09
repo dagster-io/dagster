@@ -168,7 +168,7 @@ DEFAULT_POOL_RECYCLE = 3600  # 1 hr
     type=click.INT,
     required=False,
     default=2000,
-    show_default=True
+    show_default=True,
 )
 @click.version_option(version=__version__, prog_name="dagster-webserver")
 def dagster_webserver(
@@ -214,7 +214,12 @@ def dagster_webserver(
             code_server_log_level=code_server_log_level,
         ) as workspace_process_context:
             host_dagster_ui_with_workspace_process_context(
-                workspace_process_context, host, port, path_prefix, uvicorn_log_level, live_data_poll_rate
+                workspace_process_context,
+                host,
+                port,
+                path_prefix,
+                uvicorn_log_level,
+                live_data_poll_rate,
             )
 
 

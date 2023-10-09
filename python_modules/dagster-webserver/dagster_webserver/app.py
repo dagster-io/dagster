@@ -1,4 +1,5 @@
 from typing import Optional
+
 from dagster import (
     _check as check,
 )
