@@ -44,13 +44,14 @@ type Asset = {
 };
 
 export function useReportEventsModal(asset: Asset | null, onEventReported: () => void) {
-  const [recordEventOpen, setRecordEventOpen] = React.useState(false);
+  const [isOpen, setIsOpen] = React.useState(false);
+
   const dropdownOptions = React.useMemo(
     () => [
       {
-        label: 'Record materialization event',
+        label: 'Report materialization event',
         icon: <Icon name="materialization" />,
-        onClick: () => setRecordEventOpen(true),
+        onClick: () => setIsOpen(true),
       },
     ],
     [],
@@ -59,12 +60,13 @@ export function useReportEventsModal(asset: Asset | null, onEventReported: () =>
   const element = asset ? (
     <ReportEventDialogBody
       asset={asset}
-      isOpen={recordEventOpen}
-      setIsOpen={setRecordEventOpen}
+      isOpen={isOpen}
+      setIsOpen={setIsOpen}
       repoAddress={buildRepoAddress(asset.repository.name, asset.repository.location.name)}
       onEventReported={onEventReported}
     />
   ) : undefined;
+
   return {
     dropdownOptions,
     element,
@@ -123,7 +125,7 @@ const ReportEventDialogBody: React.FC<{
 
     if (!data || data.__typename === 'PythonError') {
       await showSharedToaster({
-        message: <div>An unexpected error occurred. This event was not recorded.</div>,
+        message: <div>An unexpected error occurred. This event was not reported.</div>,
         icon: 'error',
         intent: 'danger',
         action: data
@@ -143,9 +145,9 @@ const ReportEventDialogBody: React.FC<{
       await showSharedToaster({
         message:
           keysFiltered.length > 1 ? (
-            <div>Your events have been recorded.</div>
+            <div>Your events have been reported.</div>
           ) : (
-            <div>Your event has been recorded.</div>
+            <div>Your event has been reported.</div>
           ),
         icon: 'materialization',
         intent: 'success',
