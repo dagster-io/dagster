@@ -149,7 +149,7 @@ const AssetEventListEventRow: React.FC<{group: AssetEventGroup}> = ({group}) => 
       </Box>
       <Box flex={{gap: 4, direction: 'row'}}>
         {partition && <Tag>{partition}</Tag>}
-        {latest && run && (
+        {latest && run ? (
           <Tag>
             <AssetRunLink
               runId={run.id}
@@ -161,7 +161,9 @@ const AssetEventListEventRow: React.FC<{group: AssetEventGroup}> = ({group}) => 
               </Box>
             </AssetRunLink>
           </Tag>
-        )}
+        ) : latest && latest.runId === '' ? (
+          <Tag>Reported</Tag>
+        ) : undefined}
       </Box>
     </>
   );
