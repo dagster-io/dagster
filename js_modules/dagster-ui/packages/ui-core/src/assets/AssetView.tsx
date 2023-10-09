@@ -49,6 +49,7 @@ import {
   AssetViewDefinitionNodeFragment,
 } from './types/AssetView.types';
 import {healthRefreshHintFromLiveData} from './usePartitionHealthData';
+import {useReportEventsModal} from './useReportEventsModal';
 
 interface Props {
   assetKey: AssetKey;
@@ -239,6 +240,17 @@ export const AssetView = ({assetKey}: Props) => {
     }
   };
 
+  const reportEvents = useReportEventsModal(
+    definition
+      ? {
+          assetKey: definition.assetKey,
+          isPartitioned: definition.isPartitioned,
+          repository: definition.repository,
+        }
+      : null,
+    refreshState.refetch,
+  );
+
   return (
     <Box
       flex={{direction: 'column', grow: 1}}
@@ -271,8 +283,12 @@ export const AssetView = ({assetKey}: Props) => {
                 scope={{all: [definition], skipAllTerm: true}}
               />
             ) : definition && definition.jobNames.length > 0 && upstream ? (
-              <LaunchAssetExecutionButton scope={{all: [definition]}} />
+              <LaunchAssetExecutionButton
+                scope={{all: [definition]}}
+                additionalDropdownOptions={reportEvents.dropdownOptions}
+              />
             ) : undefined}
+            {reportEvents.element}
           </Box>
         }
       />

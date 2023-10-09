@@ -175,7 +175,18 @@ export const LaunchAssetExecutionButton: React.FC<{
   liveDataForStale?: LiveData; // For "stale" dropdown options
   intent?: 'primary' | 'none';
   preferredJobName?: string;
-}> = ({scope, liveDataForStale, preferredJobName, intent = 'primary'}) => {
+  additionalDropdownOptions?: {
+    label: string;
+    icon?: JSX.Element;
+    onClick: () => void;
+  }[];
+}> = ({
+  scope,
+  liveDataForStale,
+  preferredJobName,
+  additionalDropdownOptions,
+  intent = 'primary',
+}) => {
   const {onClick, loading, launchpadElement} = useMaterializationAction(preferredJobName);
   const [isOpen, setIsOpen] = React.useState(false);
 
@@ -251,6 +262,14 @@ export const LaunchAssetExecutionButton: React.FC<{
                   onClick(firstOption.assetKeys, e, true);
                 }}
               />
+              {additionalDropdownOptions?.map((option) => (
+                <MenuItem
+                  key={option.label}
+                  text={option.label}
+                  icon={option.icon}
+                  onClick={option.onClick}
+                />
+              ))}
             </Menu>
           }
         >
