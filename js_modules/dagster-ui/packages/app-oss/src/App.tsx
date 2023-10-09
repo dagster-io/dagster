@@ -14,7 +14,7 @@ import {CommunityNux} from './NUX/CommunityNux';
 import {extractInitializationData} from './extractInitializationData';
 import {telemetryLink} from './telemetryLink';
 
-const {pathPrefix, telemetryEnabled} = extractInitializationData();
+const {pathPrefix, telemetryEnabled, liveDataPollRate} = extractInitializationData();
 
 const apolloLinks = [logLink, errorLink, timeStartLink];
 
@@ -38,7 +38,7 @@ const appCache = createAppCache();
 // eslint-disable-next-line import/no-default-export
 export default function AppPage() {
   return (
-    <LiveDataPollRateContext.Provider value={2000}>
+    <LiveDataPollRateContext.Provider value={liveDataPollRate ?? 2000}>
       <AppProvider appCache={appCache} config={config}>
         <AppTopNav searchPlaceholder="Search…" allowGlobalReload>
           <UserSettingsButton />

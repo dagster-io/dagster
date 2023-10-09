@@ -2,7 +2,7 @@ import gzip
 import io
 import uuid
 from os import path, walk
-from typing import Generic, List, TypeVar
+from typing import Generic, List, Optional, TypeVar
 
 import dagster._check as check
 from dagster import __version__ as dagster_version
@@ -40,16 +40,15 @@ T_IWorkspaceProcessContext = TypeVar("T_IWorkspaceProcessContext", bound=IWorksp
 
 class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
     _process_context: T_IWorkspaceProcessContext
-    _uses_app_path_prefix: bool
 
     def __init__(
         self,
         process_context: T_IWorkspaceProcessContext,
         app_path_prefix: str = "",
-        uses_app_path_prefix: bool = True,
+        live_data_poll_rate: Optional[int] = None,
     ):
         self._process_context = process_context
-        self._uses_app_path_prefix = uses_app_path_prefix
+        self._live_data_poll_rate = live_data_poll_rate
         super().__init__(app_path_prefix)
 
     def build_graphql_schema(self) -> Schema:
@@ -209,7 +208,7 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                     **{"Content-Security-Policy": self.make_csp_header(nonce)},
                     **self.make_security_headers(),
                 }
-                return HTMLResponse(
+                content = (
                     rendered_template.replace(
                         "BUILDTIME_ASSETPREFIX_REPLACE_ME", f"{self._app_path_prefix}"
                     )
@@ -217,9 +216,14 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                     .replace(
                         '"__TELEMETRY_ENABLED__"', str(context.instance.telemetry_enabled).lower()
                     )
-                    .replace("NONCE-PLACEHOLDER", nonce),
-                    headers=headers,
+                    .replace("NONCE-PLACEHOLDER", nonce)
                 )
+
+                if self._live_data_poll_rate:
+                    content = content.replace(
+                        "__LIVE_DATA_POLL_RATE__", str(self._live_data_poll_rate)
+                    )
+                return HTMLResponse(content, headers=headers)
         except FileNotFoundError:
             raise Exception("""
                 Can't find webapp files.
