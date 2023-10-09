@@ -241,7 +241,7 @@ def host_dagster_ui_with_workspace_process_context(
     port: Optional[int],
     path_prefix: str,
     log_level: str,
-    live_data_poll_rate: int,
+    live_data_poll_rate: Optional[int] = None,
 ):
     check.inst_param(
         workspace_process_context, "workspace_process_context", IWorkspaceProcessContext
@@ -249,7 +249,7 @@ def host_dagster_ui_with_workspace_process_context(
     host = check.opt_str_param(host, "host", "127.0.0.1")
     check.opt_int_param(port, "port")
     check.str_param(path_prefix, "path_prefix")
-    check.int_param(live_data_poll_rate, "live_data_poll_rate")
+    check.opt_int_param(live_data_poll_rate, "live_data_poll_rate")
 
     logger = logging.getLogger(WEBSERVER_LOGGER_NAME)
 
