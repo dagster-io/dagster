@@ -30,6 +30,7 @@ setup(
         "dagster-gcp",
         "dagster-graphql",
         "dagster-k8s",
+        "dagster_pipes",
         "dagster-postgres",
         "dagster-slack",
         "dagster-gcp-pandas",

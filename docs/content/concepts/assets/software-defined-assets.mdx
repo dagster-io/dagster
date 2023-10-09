@@ -592,7 +592,7 @@ with defs.get_asset_value_loader() as loader:
 ## Examples
 
 - [Multi-component asset keys](#multi-component-asset-keys)
-- [Recording materialization metadata](#recording-materialization-metadata)
+- [Reporting materialization metadata](#reporting-materialization-metadata)
 - [Attaching definition metadata](#attaching-definition-metadata)
 
 ### Multi-component asset keys
@@ -613,7 +613,7 @@ def downstream_asset(upstream_asset):
     return upstream_asset + [4]
 ```
 
-### Recording materialization metadata
+### Reporting materialization metadata
 
 Dagster supports attaching arbitrary [metadata](/\_apidocs/ops#dagster.MetadataValue) to asset materializations. This metadata will be displayed on the "Activity" tab of the "Asset Details" page in the UI. If it's numeric, it will be plotted. To attach metadata, your asset's op can return an <PyObject object="Output" /> object that contains the output value and a dictionary of metadata:
 
