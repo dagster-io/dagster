@@ -415,10 +415,10 @@ const RunRow: React.FC<{
       <td style={{position: 'relative'}}>
         <Box flex={{direction: 'column', gap: 5}}>
           {isHiddenAssetGroupJob(run.pipelineName) ? (
-            <>
-              <AssetCheckTagCollection assetChecks={run.assetCheckSelection} />
+            <Box flex={{gap: 16}}>
               <AssetKeyTagCollection assetKeys={assetKeysForRun(run)} />
-            </>
+              <AssetCheckTagCollection assetChecks={run.assetCheckSelection} />
+            </Box>
           ) : (
             <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
               <PipelineReference
