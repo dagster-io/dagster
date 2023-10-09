@@ -63,9 +63,11 @@ AUTO_OBSERVE_TAG = f"{SYSTEM_TAG_PREFIX}auto_observe"
 RUN_WORKER_ID_TAG = f"{HIDDEN_TAG_PREFIX}run_worker"
 GLOBAL_CONCURRENCY_TAG = f"{SYSTEM_TAG_PREFIX}concurrency_key"
 
-# In cloud, we tag runs with the email of the user who triggered the run
-# This is used to display the user in the UI
+# This tag is used to tag runs and backfills with the email of the creator.
 USER_TAG = "user"
+
+# This tag is used to tag runless asset events reported via the UI with the email of the reporting user.
+REPORTING_USER_TAG = f"{SYSTEM_TAG_PREFIX}reporting_user"
 
 RUN_ISOLATION_TAG = f"{SYSTEM_TAG_PREFIX}isolation"
 
@@ -109,7 +111,3 @@ def check_reserved_tags(tags):
                 not tag.startswith(SYSTEM_TAG_PREFIX),
                 desc=f"Attempted to set tag with reserved system prefix: {tag}",
             )
-
-
-def is_system_tag(tag: str) -> bool:
-    return tag.startswith(SYSTEM_TAG_PREFIX) or tag.startswith(HIDDEN_TAG_PREFIX) or tag == USER_TAG
