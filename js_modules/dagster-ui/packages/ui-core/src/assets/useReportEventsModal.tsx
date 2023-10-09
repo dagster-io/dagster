@@ -165,7 +165,12 @@ const ReportEventDialogBody: React.FC<{
       canOutsideClickClose
       onClose={() => setIsOpen(false)}
     >
-      <DialogHeader icon="info" label="Report materialization event" />
+      <DialogHeader
+        icon="info"
+        label={
+          asset.isPartitioned ? 'Report materialization events' : 'Report materialization event'
+        }
+      />
       <Box padding={{horizontal: 20, top: 16, bottom: 24}}>
         <Body2>
           Let Dagster know about a materialization that happened outside of Dagster. This is
@@ -246,7 +251,9 @@ const ReportEventDialogBody: React.FC<{
           canShow={!canReportRunlessAssetEvents}
         >
           <Button intent="primary" onClick={onReportEvent} disabled={!canReportRunlessAssetEvents}>
-            Report event
+            {keysFiltered.length > 1
+              ? `Report ${keysFiltered.length.toLocaleString()} events`
+              : 'Report event'}
           </Button>
         </Tooltip>
       </DialogFooter>
