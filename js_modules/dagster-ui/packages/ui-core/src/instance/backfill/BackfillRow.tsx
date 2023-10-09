@@ -13,7 +13,7 @@ import {BulkActionStatus, RunStatus} from '../../graphql/types';
 import {PartitionStatus, PartitionStatusHealthSourceOps} from '../../partitions/PartitionStatus';
 import {PipelineReference} from '../../pipelines/PipelineReference';
 import {AssetKeyTagCollection} from '../../runs/AssetTagCollections';
-import {RunCreatedByCell} from '../../runs/RunCreatedByCell';
+import {CreatedByTagCell} from '../../runs/CreatedByTag';
 import {inProgressStatuses} from '../../runs/RunStatuses';
 import {RunStatusTagsWithCounts} from '../../runs/RunTimeline';
 import {runsPathWithFilters} from '../../runs/RunsFilterInput';
@@ -148,7 +148,7 @@ export const BackfillRow = ({
         />
       </td>
       <td style={{width: 160}}>
-        <RunCreatedByCell tags={backfill.tags} repoAddress={repoAddress} />
+        <CreatedByTagCell tags={backfill.tags} repoAddress={repoAddress} />
       </td>
       <td style={{width: 140}}>
         {counts || statusUnsupported ? (

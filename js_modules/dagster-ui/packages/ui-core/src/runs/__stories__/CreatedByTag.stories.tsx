@@ -3,14 +3,14 @@ import {Meta} from '@storybook/react';
 import * as React from 'react';
 
 import {buildPipelineTag} from '../../graphql/types';
-import {RunCreatedByTag} from '../RunCreatedByCell';
+import {CreatedByTag} from '../CreatedByTag';
 import {DagsterTag} from '../RunTag';
 import {RunTagsFragment} from '../types/RunTable.types';
 
 // eslint-disable-next-line import/no-default-export
 export default {
-  title: 'RunCreatedByTag',
-  component: RunCreatedByTag,
+  title: 'CreatedByTag',
+  component: CreatedByTag,
 } as Meta;
 
 export const Default = () => {
@@ -20,7 +20,7 @@ export const Default = () => {
         <tr>
           <td>User launched</td>
           <td>
-            <RunCreatedByTag
+            <CreatedByTag
               tags={
                 [
                   buildPipelineTag({
@@ -35,7 +35,7 @@ export const Default = () => {
         <tr>
           <td>Schedule</td>
           <td>
-            <RunCreatedByTag
+            <CreatedByTag
               tags={
                 [
                   buildPipelineTag({
@@ -50,7 +50,7 @@ export const Default = () => {
         <tr>
           <td>Sensor</td>
           <td>
-            <RunCreatedByTag
+            <CreatedByTag
               tags={
                 [
                   buildPipelineTag({
@@ -65,7 +65,7 @@ export const Default = () => {
         <tr>
           <td>Auto-materialize</td>
           <td>
-            <RunCreatedByTag
+            <CreatedByTag
               tags={
                 [
                   buildPipelineTag({
@@ -80,7 +80,7 @@ export const Default = () => {
         <tr>
           <td>Auto-observation</td>
           <td>
-            <RunCreatedByTag
+            <CreatedByTag
               tags={
                 [
                   buildPipelineTag({
@@ -95,7 +95,7 @@ export const Default = () => {
         <tr>
           <td>Manually launched</td>
           <td>
-            <RunCreatedByTag tags={[] as RunTagsFragment[]} />
+            <CreatedByTag tags={[] as RunTagsFragment[]} />
           </td>
         </tr>
       </tbody>

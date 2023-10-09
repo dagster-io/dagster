@@ -17,8 +17,6 @@ type LaunchpadHooksContextValue = {
     error: GenericError | PythonErrorFragment;
     fallback?: React.ReactNode;
   }>;
-  // TODO (salazarm): Remove this prop after cloud PR lands to override UserDisplay instead
-  RunCreatedByCell?: any;
 };
 
 export const LaunchpadHooksContext = React.createContext<LaunchpadHooksContextValue>({
