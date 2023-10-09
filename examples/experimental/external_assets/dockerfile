@@ -1,0 +1,12 @@
+FROM python:3.10-slim
+
+
+WORKDIR /app
+COPY pipes/run.py /app/pipes.py
+RUN chmod +x /app/pipes.py
+
+# install pipes
+RUN pip install dagster-pipes>=1.5.1
+
+# Run pipes.py when the container launches
+ENTRYPOINT ["python", "/app/pipes.py"]
