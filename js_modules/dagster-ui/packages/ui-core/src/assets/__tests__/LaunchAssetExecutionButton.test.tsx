@@ -129,7 +129,7 @@ describe('LaunchAssetExecutionButton', () => {
       expect(button).toBeDisabled();
 
       userEvent.hover(button);
-      expect(await screen.findByText('Non-executable assets cannot be materialized')).toBeDefined();
+      expect(await screen.findByText('External assets cannot be materialized')).toBeDefined();
     });
   });
 

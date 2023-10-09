@@ -166,7 +166,7 @@ export function executionDisabledMessageForAssets(
     : assets.every((a) => a.isSource)
     ? 'Source assets cannot be materialized'
     : assets.every((a) => !a.isExecutable)
-    ? 'Non-executable assets cannot be materialized'
+    ? 'External assets cannot be materialized'
     : null;
 }
 
@@ -412,7 +412,7 @@ async function stateForLaunchingAssets(
   if (assets.some((x) => !x.isExecutable)) {
     return {
       type: 'error',
-      error: 'One or more non-executable assets are selected.',
+      error: 'One or more external assets are selected.',
     };
   }
 
