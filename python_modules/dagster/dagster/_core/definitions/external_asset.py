@@ -16,6 +16,10 @@ from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.context.compute import AssetExecutionContext
 
 
+def external_asset_from_spec(spec: AssetSpec) -> AssetsDefinition:
+    return external_assets_from_specs([spec])[0]
+
+
 def external_assets_from_specs(specs: Sequence[AssetSpec]) -> List[AssetsDefinition]:
     """Create an external assets definition from a sequence of asset specs.
 
@@ -81,48 +85,42 @@ def external_assets_from_specs(specs: Sequence[AssetSpec]) -> List[AssetsDefinit
     Args:
             specs (Sequence[AssetSpec]): The specs for the assets.
     """
-    assets_defs = []
-    for spec in specs:
-        check.invariant(
-            spec.auto_materialize_policy is None,
-            "auto_materialize_policy must be None since it is ignored",
-        )
-        check.invariant(spec.code_version is None, "code_version must be None since it is ignored")
-        check.invariant(
-            spec.freshness_policy is None, "freshness_policy must be None since it is ignored"
-        )
-        check.invariant(
-            spec.skippable is False,
-            "skippable must be False since it is ignored and False is the default",
+
+    # Change this to produce multiple assets defs once
+    # bug described https://github.com/dagster-io/dagster/pull/17077 is fixed
+    @multi_asset(specs=list(map(create_spec_for_inner_assets_def, specs)))
+    def _external_assets_def(context: AssetExecutionContext):
+        raise DagsterInvariantViolationError(
+            "You have attempted to execute an unexecutable asset"
+            f" {context.asset_key.to_user_string()}."
         )
 
-        @multi_asset(
-            specs=[
-                AssetSpec(
-                    key=spec.key,
-                    description=spec.description,
-                    group_name=spec.group_name,
-                    metadata={
-                        **(spec.metadata or {}),
-                        **{
-                            SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: (
-                                AssetExecutionType.UNEXECUTABLE.value
-                            )
-                        },
-                    },
-                    deps=spec.deps,
-                )
-            ]
-        )
-        def _external_assets_def(context: AssetExecutionContext) -> None:
-            raise DagsterInvariantViolationError(
-                "You have attempted to execute an unexecutable asset"
-                f" {context.asset_key.to_user_string}."
-            )
+    return [_external_assets_def]
 
-        assets_defs.append(_external_assets_def)
 
-    return assets_defs
+def create_spec_for_inner_assets_def(spec: AssetSpec) -> AssetSpec:
+    check.invariant(
+        spec.auto_materialize_policy is None,
+        "auto_materialize_policy must be None since it is ignored",
+    )
+    check.invariant(spec.code_version is None, "code_version must be None since it is ignored")
+    check.invariant(
+        spec.freshness_policy is None, "freshness_policy must be None since it is ignored"
+    )
+    check.invariant(
+        spec.skippable is False,
+        "skippable must be False since it is ignored and False is the default",
+    )
+    return AssetSpec(
+        key=spec.key,
+        description=spec.description,
+        group_name=spec.group_name,
+        metadata={
+            **(spec.metadata or {}),
+            **{SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.UNEXECUTABLE.value},
+        },
+        deps=spec.deps,
+    )
 
 
 def create_external_asset_from_source_asset(source_asset: SourceAsset) -> AssetsDefinition:
