@@ -2,7 +2,7 @@ import {QueryResult} from '@apollo/client';
 import {Box, Colors, Spinner, Tabs} from '@dagster-io/ui-components';
 import * as React from 'react';
 
-import {useCloudFeatureFlag} from '../app/CloudFeatureFlag';
+import {useFeatureFlags} from '../app/Flags';
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
 import {useAutomaterializeDaemonStatus} from '../assets/AutomaterializeDaemonStatusTag';
 import {TabLink} from '../ui/TabLink';
@@ -17,7 +17,7 @@ export const OverviewTabs = <TData extends Record<string, any>>(props: Props<TDa
   const {refreshState, tab} = props;
 
   const automaterialize = useAutomaterializeDaemonStatus();
-  const {enableAMPTimeline} = useCloudFeatureFlag();
+  const {flagEnableAMPTimeline} = useFeatureFlags();
 
   return (
     <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}>
@@ -26,7 +26,7 @@ export const OverviewTabs = <TData extends Record<string, any>>(props: Props<TDa
         <TabLink id="jobs" title="Jobs" to="/overview/jobs" />
         <TabLink id="schedules" title="Schedules" to="/overview/schedules" />
         <TabLink id="sensors" title="Sensors" to="/overview/sensors" />
-        {enableAMPTimeline ? (
+        {flagEnableAMPTimeline ? (
           <TabLink
             id="amp"
             title={

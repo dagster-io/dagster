@@ -1,7 +1,7 @@
 import * as React from 'react';
 import {Redirect, Route, Switch} from 'react-router-dom';
 
-import {useCloudFeatureFlag} from '../app/CloudFeatureFlag';
+import {useFeatureFlags} from '../app/Flags';
 import {AutomaterializationRoot} from '../assets/auto-materialization/AutomaterializationRoot';
 import {InstanceBackfills} from '../instance/InstanceBackfills';
 import {BackfillPage} from '../instance/backfill/BackfillPage';
@@ -13,7 +13,7 @@ import {OverviewSchedulesRoot} from './OverviewSchedulesRoot';
 import {OverviewSensorsRoot} from './OverviewSensorsRoot';
 
 export const OverviewRoot = () => {
-  const {enableAMPTimeline} = useCloudFeatureFlag();
+  const {flagEnableAMPTimeline} = useFeatureFlags();
   return (
     <Switch>
       <Route path="/overview/activity">
@@ -28,7 +28,7 @@ export const OverviewRoot = () => {
       <Route path="/overview/sensors">
         <OverviewSensorsRoot />
       </Route>
-      {enableAMPTimeline ? (
+      {flagEnableAMPTimeline ? (
         <Route path="/overview/amp">
           <AutomaterializationRoot />
         </Route>
