@@ -99,6 +99,7 @@ def external_assets_from_specs(specs: Sequence[AssetSpec]) -> List[AssetsDefinit
         @multi_asset(
             specs=[
                 AssetSpec(
+                    name=spec.key.to_python_identifier(),
                     key=spec.key,
                     description=spec.description,
                     group_name=spec.group_name,
