@@ -25,6 +25,15 @@ With Dagster Pipes, you can:
 
 ---
 
+## Limitations
+
+While Dagster Pipes is lightweight and flexible, there are a few limitations to be aware of:
+
+- **Step launchers are incompatible.**
+- **I/O managers aren’t currently supported.** If you rely heavily on I/O managers in remote execution, we recommend using step launchers.
+
+---
+
 ## How it works
 
 Dagster Pipes provides a protocol between the orchestration environment (Dagster) and external execution (ex: Databricks) and a toolkit for building implementations of that protocol.
