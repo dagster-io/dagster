@@ -25,7 +25,6 @@ export const CreatedByTagCell = React.memo(({repoAddress, tags}: Props) => {
 export const CreatedByTag = ({repoAddress, tags}: Props) => {
   const {UserDisplay} = useLaunchPadHooks();
 
-  console.log(tags);
   const user = tags.find((tag) => tag.key === DagsterTag.User);
   if (user) {
     return <UserDisplay email={user.value} />;
