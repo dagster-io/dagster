@@ -1,7 +1,7 @@
 import operator
 from collections import defaultdict
-from typing import AbstractSet, Any, Callable, Dict, Iterable, Mapping, Optional, Set, Union, cast
 from datetime import datetime
+from typing import AbstractSet, Any, Callable, Dict, Iterable, Mapping, Optional, Set, Union, cast
 
 from dagster import _check as check
 from dagster._core.definitions.partition import (
@@ -56,6 +56,30 @@ class AssetGraphSubset:
             check.failed("Can only call get_partitions_subset on a partitioned asset")
 
         return self.partitions_subsets_by_asset_key.get(asset_key, partitions_def.empty_subset())
+
+    def get_connected_asset_keys_in_subset(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
+        """Returns the asset keys that are connected to the given asset key in the subset.
+        Each connecting asset must also be in the subset.
+        """
+
+        def _get_connected_assets(asset_key: AssetKey, upstream: bool) -> AbstractSet[AssetKey]:
+            connected_assets: Set[AssetKey] = {asset_key}
+            for connected_asset in (
+                self.asset_graph.get_parents(asset_key)
+                if upstream
+                else self.asset_graph.get_children(asset_key)
+            ):
+                if connected_asset in self.asset_keys:
+                    connected_assets.add(connected_asset)
+                    connected_assets |= _get_connected_assets(connected_asset, upstream)
+
+            return connected_assets
+
+        check.invariant(asset_key in self.asset_keys)
+
+        return _get_connected_assets(asset_key, upstream=True) | _get_connected_assets(
+            asset_key, upstream=False
+        )
 
     def iterate_asset_partitions(self) -> Iterable[AssetKeyPartitionKey]:
         for asset_key, partitions_subset in self.partitions_subsets_by_asset_key.items():
@@ -292,10 +316,16 @@ class AssetGraphSubset:
 
     @classmethod
     def all(
-        cls, asset_graph: AssetGraph, dynamic_partitions_store: DynamicPartitionsStore
+        cls,
+        asset_graph: AssetGraph,
+        dynamic_partitions_store: DynamicPartitionsStore,
+        current_time: datetime,
     ) -> "AssetGraphSubset":
         return cls.from_asset_keys(
-            asset_graph.materializable_asset_keys, asset_graph, dynamic_partitions_store
+            asset_graph.materializable_asset_keys,
+            asset_graph,
+            dynamic_partitions_store,
+            current_time,
         )
 
     @classmethod

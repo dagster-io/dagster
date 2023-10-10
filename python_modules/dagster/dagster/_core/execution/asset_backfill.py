@@ -176,14 +176,32 @@ class AssetBackfillData(NamedTuple):
         return True
 
     def get_target_root_asset_partitions(self) -> Iterable[AssetKeyPartitionKey]:
-        root_asset_keys = (
-            AssetSelection.keys(*self.target_subset.asset_keys)
-            .sources()
-            .resolve(self.target_subset.asset_graph)
-        )
-        return list(
-            self.target_subset.filter_asset_keys(root_asset_keys).iterate_asset_partitions()
-        )
+        connected_asset_sets = []
+        all_visited_asset_keys = set()
+
+        for asset_key in self.target_subset.asset_keys:
+            if asset_key in all_visited_asset_keys:
+                continue
+
+            connected_asset_set = self.target_subset.get_connected_asset_keys_in_subset(asset_key)
+            connected_asset_sets.append(connected_asset_set)
+            all_visited_asset_keys |= connected_asset_set
+
+        root_asset_partitions = []
+
+        for connected_asset_set in connected_asset_sets:
+            root_asset_keys = (
+                AssetSelection.keys(*connected_asset_set)
+                .sources()
+                .resolve(self.target_subset.asset_graph)
+            )
+            root_asset_partitions.extend(
+                list(
+                    self.target_subset.filter_asset_keys(root_asset_keys).iterate_asset_partitions()
+                )
+            )
+
+        return root_asset_partitions
 
     def get_target_root_partitions_subset(self) -> PartitionsSubset:
         """Returns the most upstream partitions subset that was targeted by the backfill."""
@@ -1010,6 +1028,7 @@ def execute_asset_backfill_iteration_inner(
     request_roots = not asset_backfill_data.requested_runs_for_target_roots
     if request_roots:
         initial_candidates.update(asset_backfill_data.get_target_root_asset_partitions())
+
         next_latest_storage_id = instance_queryer.get_latest_storage_id_for_event_type(
             event_type=DagsterEventType.ASSET_MATERIALIZATION
         )
@@ -1034,7 +1053,6 @@ def execute_asset_backfill_iteration_inner(
             latest_storage_id=asset_backfill_data.latest_storage_id,
         )
         initial_candidates.update(parent_materialized_asset_partitions)
-        print("initial candidates", initial_candidates)
 
         yield None
 
@@ -1056,52 +1074,6 @@ def execute_asset_backfill_iteration_inner(
 
         yield None
 
-    if len(initial_candidates) == 0:
-        # Get children of
-        in_progress_subset = (
-            asset_backfill_data.requested_subset
-            - (  # maybe check for run ids instead?
-                updated_materialized_subset | failed_and_downstream_subset
-            )
-        )
-
-        # check for any unrequested assets
-        unrequested_asset_keys = asset_backfill_data.target_subset.asset_keys - (
-            asset_backfill_data.failed_and_downstream_subset.asset_keys  # edge case that can happen where certain partitions are materialized?
-            | asset_backfill_data.materialized_subset.asset_keys
-            | asset_backfill_data.requested_subset.asset_keys
-        )
-
-        in_progress_asset_keys = [
-            asset_key
-            for asset_key in in_progress_subset.asset_keys
-            if (
-                asset_key not in in_progress_subset.non_partitioned_asset_keys
-                and len(in_progress_subset.get_partitions_subset(asset_key)) > 0
-            )
-        ]
-        print("no in progress asset keys", len(in_progress_asset_keys) == 0)
-        print(unrequested_asset_keys)
-
-        if len(in_progress_asset_keys) == 0 and unrequested_asset_keys:
-            # TODO this case only happens when all_partitions = True
-            print("nothing in progress and asset keys still unrequested")
-
-            # Re-request next roots
-            root_unrequested_asset_keys = (
-                AssetSelection.keys(*unrequested_asset_keys)
-                .sources()
-                .resolve(asset_backfill_data.target_subset.asset_graph)
-            )
-            initial_candidates.update(
-                list(
-                    asset_backfill_data.target_subset.filter_asset_keys(
-                        root_unrequested_asset_keys
-                    ).iterate_asset_partitions()
-                )
-            )
-    print("initial candidates", initial_candidates)
-
     asset_partitions_to_request = asset_graph.bfs_filter_asset_partitions(
         instance_queryer,
         lambda unit, visited: should_backfill_atomic_asset_partitions_unit(
@@ -1117,7 +1089,6 @@ def execute_asset_backfill_iteration_inner(
         ),
         initial_asset_partitions=initial_candidates,
         evaluation_time=backfill_start_time,
-        # target_subset=asset_backfill_data.target_subset,
     )
 
     # check if all assets have backfill policies if any of them do, otherwise, raise error
@@ -1171,21 +1142,6 @@ def execute_asset_backfill_iteration_inner(
     yield AssetBackfillIterationResult(run_requests, updated_asset_backfill_data)
 
 
-def can_backfill_asset_partitions_in_same_run(
-    asset_graph: ExternalAssetGraph, parent: AssetKeyPartitionKey, child: AssetKeyPartitionKey
-) -> bool:
-    print("parent", parent)
-    print("child", child)
-    return (
-        asset_graph.have_same_partitioning(parent.asset_key, child.asset_key)
-        and parent.partition_key == child.partition_key
-        and asset_graph.get_repository_handle(child.asset_key)
-        is asset_graph.get_repository_handle(parent.asset_key)
-        and asset_graph.get_backfill_policy(parent.asset_key)
-        == asset_graph.get_backfill_policy(child.asset_key)
-    )
-
-
 def should_backfill_atomic_asset_partitions_unit(
     asset_graph: ExternalAssetGraph,
     candidates_unit: Iterable[AssetKeyPartitionKey],
@@ -1221,12 +1177,15 @@ def should_backfill_atomic_asset_partitions_unit(
                 f" {parent_partitions_result.required_but_nonexistent_parents_partitions}"
             )
 
-        # Get ancestors of candidate that are in the target subset
-        # If ancestor in asset_partitions_to_request, check against it here:
         for parent in parent_partitions_result.parent_partitions:
             can_run_with_parent = (
                 parent in asset_partitions_to_request
-                and can_backfill_asset_partitions_in_same_run(asset_graph, parent, candidate)
+                and asset_graph.have_same_partitioning(parent.asset_key, candidate.asset_key)
+                and parent.partition_key == candidate.partition_key
+                and asset_graph.get_repository_handle(candidate.asset_key)
+                is asset_graph.get_repository_handle(parent.asset_key)
+                and asset_graph.get_backfill_policy(parent.asset_key)
+                == asset_graph.get_backfill_policy(candidate.asset_key)
             )
 
             if (
@@ -1235,24 +1194,6 @@ def should_backfill_atomic_asset_partitions_unit(
                 and parent not in materialized_subset
             ):
                 return False
-
-        # asset_partitions_to_request
-        # for partition_to_request in asset_partitions_to_request:
-        #     # Get the first ancestor of candidate that is in the target subset
-        #     # If ancestor is in asset_partitions_to_request, check if candidate
-        #     # can run with ancestor
-
-        #     if (
-        #         candidate.asset_key
-        #         in asset_graph._descendants_by_key[partition_to_request.asset_key]
-        #     ):
-
-        #         if  can_backfill_asset_partitions_in_same_run(
-        #             asset_graph, partition_to_request, candidate
-        #         ):
-        #             print("disqualifiied", candidate)
-        #             print()
-        #             return False
 
     return True
 

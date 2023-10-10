@@ -67,32 +67,6 @@ class ParentsPartitionsResult(NamedTuple):
     required_but_nonexistent_parents_partitions: AbstractSet[AssetKeyPartitionKey]
 
 
-def get_descendants_by_asset_key(
-    asset_dep_graph: DependencyGraph[AssetKey],
-) -> Mapping[AssetKey, Set[AssetKey]]:
-    descendants_by_key = {}
-
-    def _get_descendants(key: AssetKey) -> Set[AssetKey]:
-        if key in descendants_by_key:
-            return descendants_by_key[key]
-
-        descendants_for_key = set()
-        if (
-            key in asset_dep_graph["downstream"]
-        ):  # Have to add this check because we are iterating on a default dict
-            for downstream_key in asset_dep_graph["downstream"][key]:
-                if downstream_key != key:
-                    descendants_for_key.update(_get_descendants(downstream_key) | {downstream_key})
-
-        descendants_by_key[key] = descendants_for_key
-        return descendants_for_key
-
-    for key in asset_dep_graph["downstream"].keys():
-        _get_descendants(key)
-
-    return descendants_by_key
-
-
 class AssetGraph:
     def __init__(
         self,
@@ -127,10 +101,6 @@ class AssetGraph:
             self._asset_dep_graph["upstream"].keys() - self.source_asset_keys
         )
         self._required_assets_and_checks_by_key = required_assets_and_checks_by_key
-
-        self._descendants_by_key: Mapping[AssetKey, Set[AssetKey]] = get_descendants_by_asset_key(
-            asset_dep_graph
-        )
 
     @property
     def asset_dep_graph(self) -> DependencyGraph[AssetKey]:
@@ -697,75 +667,6 @@ class AssetGraph:
                         if child not in all_nodes:
                             queue.enqueue(child)
                             all_nodes.add(child)
-
-        return result
-
-    def bfs_filter_asset_partitions_in_target_subset(
-        self,
-        dynamic_partitions_store: DynamicPartitionsStore,
-        condition_fn: Callable[
-            [Iterable[AssetKeyPartitionKey], AbstractSet[AssetKeyPartitionKey]], bool
-        ],
-        initial_asset_partitions: Iterable[AssetKeyPartitionKey],
-        evaluation_time: datetime,
-        target_subset: "AssetGraphSubset",
-    ):
-        """Returns asset partitions within the graph that satisfy supplied criteria.
-
-        - Are >= initial_asset_partitions
-        - Match the condition_fn
-        - Any of their ancestors >= initial_asset_partitions match the condition_fn
-
-        Visits parents before children.
-
-        When asset partitions are part of the same non-subsettable multi-asset, they're provided all
-        at once to the condition_fn.
-
-        TODO add docstring
-
-        """
-        all_nodes = set(initial_asset_partitions)
-
-        # invariant: we never consider an asset partition before considering its ancestors
-        queue = ToposortedPriorityQueue(self, all_nodes, include_required_multi_assets=True)
-
-        result: Set[AssetKeyPartitionKey] = set()
-
-        while len(queue) > 0:
-            candidates_unit = queue.dequeue()
-
-            # Either:
-            # not in target
-            # in target and matches condition
-            matches_condition = condition_fn(candidates_unit, result)
-            if matches_condition:
-                result.update(candidates_unit)
-
-            # If not in target, we still need to enqueue children
-            # if in target, enqueue children if matches condition
-
-            # TODO test daily -> weekly -> daily case
-
-            for candidate in candidates_unit:
-                if (matches_condition and candidate in target_subset) or (
-                    candidate not in target_subset
-                ):
-                    if (
-                        any(
-                            target_asset in self._descendants_by_key[candidate.asset_key]
-                            for target_asset in target_subset.asset_keys
-                        )
-                        or candidate in target_subset
-                    ):  # Is targeted or parent of targeted partition)
-                        for child in self.get_children_partitions(
-                            dynamic_partitions_store,
-                            evaluation_time,
-                            candidate.asset_key,
-                            candidate.partition_key,
-                        ):
-                            if child not in all_nodes:
-                                queue.enqueue(child)
-                                all_nodes.add(child)
 
         return result
 
