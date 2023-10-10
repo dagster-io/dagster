@@ -97,6 +97,17 @@ class WaitingOnAssetsRuleEvaluationData(
 
 
 @whitelist_for_serdes
+class RequiredButNonexistentParentsRuleEvaluationData(
+    AutoMaterializeRuleEvaluationData,
+    NamedTuple(
+        "_RequiredButNonexistentParentsRuleEvaluationData",
+        [("nonexistent_required_partitions_asset_keys", FrozenSet[AssetKey])],
+    ),
+):
+    pass
+
+
+@whitelist_for_serdes
 class AutoMaterializeRuleSnapshot(NamedTuple):
     """A serializable snapshot of an AutoMaterializeRule for historical evaluations."""
 
@@ -295,6 +306,18 @@ class AutoMaterializeRule(ABC):
         Discards asset partitions that exceed the limit.
         """
         return DiscardOnMaxMaterializationsExceededRule(limit)
+
+    @public
+    @staticmethod
+    def discard_on_required_but_nonexistent_parents() -> (
+        "DiscardOnRequiredButNonexistentParentsRule"
+    ):
+        """Discard an asset partition if it depends on parent partitions that do not exist.
+
+        E.g. downstream asset B is partitioned starting 2022, but upstream asset A is partitioned
+        starting 2023. This rule will discard 2022 partitions in B.
+        """
+        return DiscardOnRequiredButNonexistentParentsRule()
 
     def to_snapshot(self) -> AutoMaterializeRuleSnapshot:
         """Returns a serializable snapshot of this rule for historical evaluations."""
@@ -641,6 +664,49 @@ class DiscardOnMaxMaterializationsExceededRule(
         )
         if rate_limited_asset_partitions:
             return [(None, rate_limited_asset_partitions)]
+        return []
+
+
+@whitelist_for_serdes
+class DiscardOnRequiredButNonexistentParentsRule(
+    AutoMaterializeRule, NamedTuple("_DiscardOnRequiredButNonexistentParentsRule", [])
+):
+    @property
+    def decision_type(self) -> AutoMaterializeDecisionType:
+        return AutoMaterializeDecisionType.DISCARD
+
+    @property
+    def description(self) -> str:
+        return "parents are required but do not exist"
+
+    def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
+        asset_partitions_by_nonexistent_but_required_parent_keys = defaultdict(set)
+
+        for candidate in context.candidates:
+            nonexistent_parent_partitions = context.asset_graph.get_parents_partitions(
+                context.instance_queryer,
+                context.instance_queryer.evaluation_time,
+                candidate.asset_key,
+                candidate.partition_key,
+            ).required_but_nonexistent_parents_partitions
+
+            nonexistent_parent_keys = {parent.asset_key for parent in nonexistent_parent_partitions}
+            if nonexistent_parent_keys:
+                asset_partitions_by_nonexistent_but_required_parent_keys[
+                    frozenset(nonexistent_parent_keys)
+                ].add(candidate)
+
+        if asset_partitions_by_nonexistent_but_required_parent_keys:
+            return [
+                (
+                    RequiredButNonexistentParentsRuleEvaluationData(
+                        nonexistent_required_partitions_asset_keys=k
+                    ),
+                    v,
+                )
+                for k, v in asset_partitions_by_nonexistent_but_required_parent_keys.items()
+            ]
+
         return []
 
 

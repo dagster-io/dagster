@@ -70,6 +70,7 @@ def get_implicit_auto_materialize_policy(
             AutoMaterializeRule.materialize_on_required_for_freshness(),
             AutoMaterializeRule.skip_on_parent_outdated(),
             AutoMaterializeRule.skip_on_parent_missing(),
+            AutoMaterializeRule.discard_on_required_but_nonexistent_parents(),
             *(
                 {
                     AutoMaterializeRule.discard_on_max_materializations_exceeded(
@@ -365,18 +366,8 @@ class AssetDaemonContext:
                 # We currently do a discard to temp ignore the backfilled partitions
                 # Do you care about the targeted partition or the whole asset?
                 # Skip on part of backfill
-                candidate in self.instance_queryer.get_active_backfill_target_asset_graph_subset()
-                # Discard rule
-                # must not have invalid parent partitions
-                or len(
-                    self.asset_graph.get_parents_partitions(
-                        self.instance_queryer,
-                        self.instance_queryer.evaluation_time,
-                        candidate.asset_key,
-                        candidate.partition_key,
-                    ).required_but_nonexistent_parents_partitions
-                )
-                > 0
+                candidate
+                in self.instance_queryer.get_active_backfill_target_asset_graph_subset()
             ):
                 to_materialize.remove(candidate)
                 for rule_evaluation_data, asset_partitions in all_results:

@@ -38,6 +38,7 @@ class AutoMaterializePolicySerializer(NamedTupleSerializer):
             rules = {
                 AutoMaterializeRule.skip_on_parent_outdated(),
                 AutoMaterializeRule.skip_on_parent_missing(),
+                AutoMaterializeRule.discard_on_required_but_nonexistent_parents(),
             }
             for backcompat_key, rule in backcompat_map.items():
                 unpacked_value = unpacked_dict.get(backcompat_key)
@@ -185,6 +186,7 @@ class AutoMaterializePolicy(
                 AutoMaterializeRule.materialize_on_required_for_freshness(),
                 AutoMaterializeRule.skip_on_parent_outdated(),
                 AutoMaterializeRule.skip_on_parent_missing(),
+                AutoMaterializeRule.discard_on_required_but_nonexistent_parents(),
                 *(
                     {
                         AutoMaterializeRule.discard_on_max_materializations_exceeded(
@@ -219,6 +221,7 @@ class AutoMaterializePolicy(
                 AutoMaterializeRule.materialize_on_required_for_freshness(),
                 AutoMaterializeRule.skip_on_parent_outdated(),
                 AutoMaterializeRule.skip_on_parent_missing(),
+                AutoMaterializeRule.discard_on_required_but_nonexistent_parents(),
                 *(
                     {
                         AutoMaterializeRule.discard_on_max_materializations_exceeded(
