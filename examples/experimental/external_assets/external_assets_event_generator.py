@@ -29,7 +29,8 @@ def create_external_asset_materialization(data):
 
     if response.status_code != 200:
         print(  # noqa: T201
-            f"Failed to create materialization. Status Code: {response.status_code}, Message: {response.text}"
+            f"Failed to create materialization. Status Code: {response.status_code}, Message:"
+            f" {response.text}"
         )
 
 
