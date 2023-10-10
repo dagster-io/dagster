@@ -286,6 +286,16 @@ class AutoMaterializeRule(ABC):
         """
         return SkipOnNotAllParentsUpdatedRule(require_update_for_all_parent_partitions)
 
+    @public
+    @staticmethod
+    def discard_on_max_materializations_exceeded(
+        limit: int,
+    ) -> "DiscardOnMaxMaterializationsExceededRule":
+        """Accepts a limit on the number of asset partitions that can be materialized per minute.
+        Discards asset partitions that exceed the limit.
+        """
+        return DiscardOnMaxMaterializationsExceededRule(limit)
+
     def to_snapshot(self) -> AutoMaterializeRuleSnapshot:
         """Returns a serializable snapshot of this rule for historical evaluations."""
         return AutoMaterializeRuleSnapshot.from_rule(self)
@@ -603,6 +613,16 @@ class SkipOnNotAllParentsUpdatedRule(
 class DiscardOnMaxMaterializationsExceededRule(
     AutoMaterializeRule, NamedTuple("_DiscardOnMaxMaterializationsExceededRule", [("limit", int)])
 ):
+    def __new__(cls, limit: int):
+        check.invariant(
+            limit > 0,
+            "Accepted limit to DiscardOnMaxMaterializationsExceededRule must be positive. To"
+            " disable rate-limiting, pass None to the max_materializations_per_minute field of"
+            " AutoMaterializePolicy.eager or AutoMaterializePolicy.lazy. To disable auto"
+            " materializing, remove the policy.",
+        )
+        return super().__new__(cls, limit=limit)
+
     @property
     def decision_type(self) -> AutoMaterializeDecisionType:
         return AutoMaterializeDecisionType.DISCARD

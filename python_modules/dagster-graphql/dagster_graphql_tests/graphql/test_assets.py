@@ -341,7 +341,6 @@ GET_AUTO_MATERIALIZE_POLICY = """
             id
             autoMaterializePolicy {
                 policyType
-                maxMaterializationsPerMinute
             }
         }
     }
@@ -2311,7 +2310,6 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         ]
         assert len(fresh_diamond_bottom) == 1
         assert fresh_diamond_bottom[0]["autoMaterializePolicy"]["policyType"] == "LAZY"
-        assert fresh_diamond_bottom[0]["autoMaterializePolicy"]["maxMaterializationsPerMinute"] == 1
 
     def test_has_asset_checks(self, graphql_context: WorkspaceRequestContext):
         result = execute_dagster_graphql(graphql_context, HAS_ASSET_CHECKS)

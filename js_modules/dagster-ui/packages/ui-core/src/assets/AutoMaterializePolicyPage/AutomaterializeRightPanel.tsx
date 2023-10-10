@@ -197,7 +197,6 @@ export const GET_POLICY_INFO_QUERY = gql`
         }
         autoMaterializePolicy {
           policyType
-          maxMaterializationsPerMinute
           rules {
             description
             decisionType

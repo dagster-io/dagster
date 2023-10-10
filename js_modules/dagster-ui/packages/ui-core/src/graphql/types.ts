@@ -506,7 +506,6 @@ export enum AutoMaterializeDecisionType {
 
 export type AutoMaterializePolicy = {
   __typename: 'AutoMaterializePolicy';
-  maxMaterializationsPerMinute: Maybe<Scalars['Int']>;
   policyType: AutoMaterializePolicyType;
   rules: Array<AutoMaterializeRule>;
 };
@@ -5319,10 +5318,6 @@ export const buildAutoMaterializePolicy = (
   relationshipsToOmit.add('AutoMaterializePolicy');
   return {
     __typename: 'AutoMaterializePolicy',
-    maxMaterializationsPerMinute:
-      overrides && overrides.hasOwnProperty('maxMaterializationsPerMinute')
-        ? overrides.maxMaterializationsPerMinute!
-        : 9783,
     policyType:
       overrides && overrides.hasOwnProperty('policyType')
         ? overrides.policyType!

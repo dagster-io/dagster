@@ -21,7 +21,6 @@ export type GetPolicyInfoQuery = {
         autoMaterializePolicy: {
           __typename: 'AutoMaterializePolicy';
           policyType: Types.AutoMaterializePolicyType;
-          maxMaterializationsPerMinute: number | null;
           rules: Array<{
             __typename: 'AutoMaterializeRule';
             description: string;
