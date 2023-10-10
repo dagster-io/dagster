@@ -22,7 +22,7 @@ from dagster_pipes import encode_env_var
     group_name="pipes",
 )
 def telem_post_processing(context: AssetExecutionContext, k8s_pipes_client: PipesK8sClient):
-    yield from k8s_pipes_client.run(
+    return k8s_pipes_client.run(
         context=context,
         namespace="default",
         image="pipes-materialize:latest",
@@ -34,12 +34,12 @@ def telem_post_processing(context: AssetExecutionContext, k8s_pipes_client: Pipe
                 }
             ]
         },
-    ).get_results()
+    ).get_materialize_result()
 
 
 @asset_check(asset="telem_post_processing")
 def telem_post_processing_check(context, k8s_pipes_client: PipesK8sClient):
-    yield from k8s_pipes_client.run(
+    return k8s_pipes_client.run(
         context=context,
         namespace="default",
         image="pipes-check:latest",
@@ -51,7 +51,7 @@ def telem_post_processing_check(context, k8s_pipes_client: PipesK8sClient):
                 }
             ]
         },
-    ).get_results()
+    ).get_asset_check_result()
 
 
 telem_post_processing_job = define_asset_job(
