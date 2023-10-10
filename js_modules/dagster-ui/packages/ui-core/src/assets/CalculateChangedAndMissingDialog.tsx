@@ -20,7 +20,6 @@ import {showCustomAlert} from '../app/CustomAlertProvider';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {Container, Inner, Row} from '../ui/VirtualizedTable';
 
-import {useMaterializationAction} from './LaunchAssetExecutionButton';
 import {isAssetStale, isAssetMissing} from './Stale';
 import {asAssetKeyInput} from './asInput';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
@@ -35,14 +34,14 @@ export const CalculateChangedAndMissingDialog = React.memo(
     isOpen,
     onClose,
     assets,
-    preferredJobName,
+    onMaterializeAssets,
   }: {
     isOpen: boolean;
     assets: {
       assetKey: AssetKey;
     }[];
     onClose: () => void;
-    preferredJobName?: string;
+    onMaterializeAssets: (assets: AssetKey[], e: React.MouseEvent<any>) => void;
   }) => {
     const {data, loading, error} = useQuery<AssetStaleStatusQuery, AssetStaleStatusQueryVariables>(
       ASSET_STALE_STATUS_QUERY,
@@ -53,11 +52,6 @@ export const CalculateChangedAndMissingDialog = React.memo(
         skip: !isOpen,
       },
     );
-    const {
-      onClick,
-      loading: materializeActionLoading,
-      launchpadElement,
-    } = useMaterializationAction(preferredJobName);
 
     const staleOrMissing = React.useMemo(
       () =>
@@ -95,7 +89,7 @@ export const CalculateChangedAndMissingDialog = React.memo(
       if (!isOpen) {
         return null;
       }
-      if (loading || materializeActionLoading) {
+      if (loading) {
         return (
           <Box flex={{alignItems: 'center', gap: 8}}>
             <Spinner purpose="body-text" /> Fetching asset statuses
@@ -156,7 +150,6 @@ export const CalculateChangedAndMissingDialog = React.memo(
     };
     return (
       <>
-        {launchpadElement}
         <Dialog isOpen={isOpen} onClose={onClose} title="Materialize changed and missing assets">
           <DialogBody>{content()}</DialogBody>
           <DialogFooter topBorder>
@@ -166,7 +159,7 @@ export const CalculateChangedAndMissingDialog = React.memo(
               <Button
                 intent="primary"
                 onClick={(e) => {
-                  onClick(Array.from(checked), e);
+                  onMaterializeAssets(Array.from(checked), e);
                   onClose();
                 }}
               >

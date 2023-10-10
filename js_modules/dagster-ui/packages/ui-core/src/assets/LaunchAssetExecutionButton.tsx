@@ -19,9 +19,7 @@ import {IExecutionSession} from '../app/ExecutionSessionStorage';
 import {
   displayNameForAssetKey,
   isHiddenAssetGroupJob,
-  LiveData,
   sortAssetKeys,
-  toGraphId,
   tokenForAssetKey,
 } from '../asset-graph/Utils';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
@@ -38,7 +36,6 @@ import {MULTIPLE_DEFINITIONS_WARNING} from './AssetDefinedInMultipleReposNotice'
 import {CalculateChangedAndMissingDialog} from './CalculateChangedAndMissingDialog';
 import {LaunchAssetChoosePartitionsDialog} from './LaunchAssetChoosePartitionsDialog';
 import {partitionDefinitionsEqual} from './MultipartitioningSupport';
-import {isAssetMissing, isAssetStale} from './Stale';
 import {asAssetKeyInput, getAssetCheckHandleInputs} from './asInput';
 import {AssetKey} from './types';
 import {
@@ -116,7 +113,7 @@ export const ERROR_INVALID_ASSET_SELECTION =
   ` the same code location and share a partition space, or form a connected` +
   ` graph in which root assets share the same partitioning.`;
 
-function optionsForButton(scope: AssetsInScope, liveDataForStale?: LiveData): LaunchOption[] {
+function optionsForButton(scope: AssetsInScope): LaunchOption[] {
   // If you pass a set of selected assets, we always show just one option
   // to materialize that selection.
   if ('selected' in scope) {
@@ -143,20 +140,6 @@ function optionsForButton(scope: AssetsInScope, liveDataForStale?: LiveData): La
         : `Materialize${isAnyPartitioned(executable) ? '…' : ''}`,
   });
 
-  if (liveDataForStale) {
-    const missingOrStale = executable.filter(
-      (a) =>
-        isAssetMissing(liveDataForStale[toGraphId(a.assetKey)]) ||
-        isAssetStale(liveDataForStale[toGraphId(a.assetKey)]),
-    );
-
-    options.push({
-      assetKeys: missingOrStale.map((a) => a.assetKey),
-      label: `Materialize changed and missing${countOrBlank(missingOrStale)}`,
-      icon: <Icon name="changes_present" />,
-    });
-  }
-
   return options;
 }
 
@@ -174,7 +157,6 @@ export function executionDisabledMessageForAssets(
 
 export const LaunchAssetExecutionButton: React.FC<{
   scope: AssetsInScope;
-  liveDataForStale?: LiveData; // For "stale" dropdown options
   intent?: 'primary' | 'none';
   preferredJobName?: string;
   additionalDropdownOptions?: {
@@ -182,13 +164,7 @@ export const LaunchAssetExecutionButton: React.FC<{
     icon?: JSX.Element;
     onClick: () => void;
   }[];
-}> = ({
-  scope,
-  liveDataForStale,
-  preferredJobName,
-  additionalDropdownOptions,
-  intent = 'primary',
-}) => {
+}> = ({scope, preferredJobName, additionalDropdownOptions, intent = 'primary'}) => {
   const {onClick, loading, launchpadElement} = useMaterializationAction(preferredJobName);
   const [isOpen, setIsOpen] = React.useState(false);
 
@@ -197,7 +173,7 @@ export const LaunchAssetExecutionButton: React.FC<{
   const [showCalculatingChangedAndMissingDialog, setShowCalculatingChangedAndMissingDialog] =
     React.useState<boolean>(false);
 
-  const options = optionsForButton(scope, liveDataForStale);
+  const options = optionsForButton(scope);
   const firstOption = options[0]!;
   if (!firstOption) {
     return <span />;
@@ -229,7 +205,9 @@ export const LaunchAssetExecutionButton: React.FC<{
           setShowCalculatingChangedAndMissingDialog(false);
         }}
         assets={inScope}
-        preferredJobName={preferredJobName}
+        onMaterializeAssets={(assets: AssetKey[], e: React.MouseEvent<any>) => {
+          onClick(assets, e);
+        }}
       />
       <Box flex={{alignItems: 'center'}}>
         <Tooltip
@@ -268,7 +246,7 @@ export const LaunchAssetExecutionButton: React.FC<{
                   onClick={(e) => onClick(option.assetKeys, e)}
                 />
               ))}
-              {!liveDataForStale && inScope.length && 'all' in scope ? (
+              {inScope.length && 'all' in scope ? (
                 <MenuItem
                   text="Materialize changed and missing"
                   icon="changes_present"
