@@ -144,7 +144,7 @@ class RuleEvaluationContext(NamedTuple):
         """
         return {c for c in self.candidates if c not in self.cursor.skipped_on_last_tick_subset}
 
-    def get_candidates_with_updated_parents(
+    def get_candidates_with_updated_or_will_update_parents(
         self,
     ) -> AbstractSet[AssetKeyPartitionKey]:
         """Returns the set of candidate asset partitions whose parents have been updated since the
@@ -294,7 +294,7 @@ class AutoMaterializeRule(ABC):
         asset_partitions_by_evaluation_data: Mapping[
             Optional[AutoMaterializeRuleEvaluationData], Set[AssetKeyPartitionKey]
         ],
-        should_include: Callable[[AssetKeyPartitionKey], bool],
+        should_use_past_data_fn: Callable[[AssetKeyPartitionKey], bool],
     ) -> "RuleEvaluationResults":
         """Combines a given set of evaluation data with evaluation data from the previous tick.
 
@@ -302,7 +302,7 @@ class AutoMaterializeRule(ABC):
             context: The current RuleEvaluationContext.
             asset_partitions_by_evaluation_data: A mapping from evaluation data to the set of asset
                 partitions that the rule applies to.
-            should_include: A function that returns whether a given asset partition from the
+            should_use_past_data_fn: A function that returns whether a given asset partition from the
                 previous tick should be included in the results of this tick.
         """
         asset_partitions_by_evaluation_data = defaultdict(set, asset_partitions_by_evaluation_data)
@@ -312,7 +312,7 @@ class AutoMaterializeRule(ABC):
                 # evaluated data from this tick takes precedence over data from the previous tick
                 if ap in evaluated_asset_partitions:
                     continue
-                elif should_include(ap):
+                elif should_use_past_data_fn(ap):
                     asset_partitions_by_evaluation_data[evaluation_data].add(ap)
 
         return list(asset_partitions_by_evaluation_data.items())
@@ -508,7 +508,9 @@ class MaterializeOnParentUpdatedRule(
         return self.add_evaluation_data_from_previous_tick(
             context,
             asset_partitions_by_evaluation_data,
-            should_include=lambda ap: context.skipped_on_last_tick_and_not_materialized_since(ap),
+            should_use_past_data_fn=lambda ap: context.skipped_on_last_tick_and_not_materialized_since(
+                ap
+            ),
         )
 
 
@@ -552,7 +554,9 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
         return self.add_evaluation_data_from_previous_tick(
             context,
             asset_partitions_by_evaluation_data,
-            should_include=lambda ap: context.skipped_on_last_tick_and_not_materialized_since(ap),
+            should_use_past_data_fn=lambda ap: context.skipped_on_last_tick_and_not_materialized_since(
+                ap
+            ),
         )
 
 
@@ -572,7 +576,7 @@ class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOut
         # only need to evaluate net-new candidates and candidates whose parents have changed
         candidates_to_evaluate = (
             context.get_candidates_not_skipped_on_previous_tick()
-            | context.get_candidates_with_updated_parents()
+            | context.get_candidates_with_updated_or_will_update_parents()
         )
         for candidate in candidates_to_evaluate:
             outdated_ancestors = set()
@@ -595,7 +599,7 @@ class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOut
         return self.add_evaluation_data_from_previous_tick(
             context,
             asset_partitions_by_evaluation_data,
-            should_include=lambda ap: ap not in candidates_to_evaluate
+            should_use_past_data_fn=lambda ap: ap not in candidates_to_evaluate
             and context.skipped_on_last_tick_and_not_materialized_since(ap),
         )
 
@@ -619,7 +623,7 @@ class SkipOnParentMissingRule(AutoMaterializeRule, NamedTuple("_SkipOnParentMiss
         # only need to evaluate net-new candidates and candidates whose parents have changed
         candidates_to_evaluate = (
             context.get_candidates_not_skipped_on_previous_tick()
-            | context.get_candidates_with_updated_parents()
+            | context.get_candidates_with_updated_or_will_update_parents()
         )
         for candidate in candidates_to_evaluate:
             missing_parent_asset_keys = set()
@@ -643,7 +647,7 @@ class SkipOnParentMissingRule(AutoMaterializeRule, NamedTuple("_SkipOnParentMiss
         return self.add_evaluation_data_from_previous_tick(
             context,
             asset_partitions_by_evaluation_data,
-            should_include=lambda ap: ap not in candidates_to_evaluate
+            should_use_past_data_fn=lambda ap: ap not in candidates_to_evaluate
             and context.skipped_on_last_tick_and_not_materialized_since(ap),
         )
 
@@ -687,7 +691,7 @@ class SkipOnNotAllParentsUpdatedRule(
         # only need to evaluate net-new candidates and candidates whose parents have changed
         candidates_to_evaluate = (
             context.get_candidates_not_skipped_on_previous_tick()
-            | context.get_candidates_with_updated_parents()
+            | context.get_candidates_with_updated_or_will_update_parents()
         )
         for candidate in candidates_to_evaluate:
             parent_partitions = context.asset_graph.get_parents_partitions(
@@ -741,7 +745,7 @@ class SkipOnNotAllParentsUpdatedRule(
         return self.add_evaluation_data_from_previous_tick(
             context,
             asset_partitions_by_evaluation_data,
-            should_include=lambda ap: ap not in candidates_to_evaluate
+            should_use_past_data_fn=lambda ap: ap not in candidates_to_evaluate
             and context.skipped_on_last_tick_and_not_materialized_since(ap),
         )
 
