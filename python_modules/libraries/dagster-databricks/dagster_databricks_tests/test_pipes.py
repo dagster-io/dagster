@@ -10,7 +10,7 @@ from typing import Any, Callable, Iterator
 import pytest
 from dagster import AssetExecutionContext, asset, materialize
 from dagster._core.errors import DagsterPipesExecutionError
-from dagster_databricks.pipes import PipesDatabricksClient, PipesDbfsMessageReader, dbfs_tempdir
+from dagster_databricks.pipes import PipesDatabricksClient, dbfs_tempdir
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service import files, jobs
 
@@ -81,6 +81,8 @@ def get_repo_root() -> str:
     return path
 
 
+# Upload the Dagster Pipes wheel to DBFS. Use this fixture to avoid needing to manually reupload
+# dagster-pipes if it has changed between test runs.
 @contextmanager
 def upload_dagster_pipes_whl(client: WorkspaceClient) -> Iterator[None]:
     repo_root = get_repo_root()
@@ -129,11 +131,6 @@ def test_pipes_client(capsys, client: WorkspaceClient):
         resources={
             "pipes_client": PipesDatabricksClient(
                 client,
-                message_reader=PipesDbfsMessageReader(
-                    client=client,
-                    forward_stdout=True,
-                    forward_stderr=True,
-                ),
             )
         },
         raise_on_error=False,

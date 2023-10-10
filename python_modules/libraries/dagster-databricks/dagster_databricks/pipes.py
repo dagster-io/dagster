@@ -3,9 +3,10 @@ import json
 import os
 import random
 import string
+import sys
 import time
-from contextlib import contextmanager
-from typing import Iterator, Literal, Mapping, Optional
+from contextlib import ExitStack, contextmanager
+from typing import Iterator, Literal, Mapping, Optional, TextIO
 
 import dagster._check as check
 from dagster._annotations import experimental
@@ -20,6 +21,8 @@ from dagster._core.pipes.client import (
 )
 from dagster._core.pipes.utils import (
     PipesBlobStoreMessageReader,
+    PipesBlobStoreStdioReader,
+    PipesChunkedStdioReader,
     open_pipes_session,
 )
 from dagster_pipes import (
@@ -31,6 +34,10 @@ from dagster_pipes import (
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service import files, jobs
 from pydantic import Field
+
+# Number of seconds between status checks on Databricks jobs launched by the
+# `PipesDatabricksClient`.
+_RUN_POLL_INTERVAL = 5
 
 
 @experimental
@@ -70,7 +77,15 @@ class _PipesDatabricksClient(PipesClient):
             message_reader,
             "message_reader",
             PipesMessageReader,
-        ) or PipesDbfsMessageReader(client=self.client)
+        ) or PipesDbfsMessageReader(
+            client=self.client,
+            stdout_reader=PipesDbfsStdioReader(
+                client=self.client, remote_log_name="stdout", target_stream=sys.stdout
+            ),
+            stderr_reader=PipesDbfsStdioReader(
+                client=self.client, remote_log_name="stderr", target_stream=sys.stderr
+            ),
+        )
 
     def run(
         self,
@@ -112,10 +127,11 @@ class _PipesDatabricksClient(PipesClient):
             }
             cluster_log_root = pipes_session.get_bootstrap_params()[
                 DAGSTER_PIPES_BOOTSTRAP_PARAM_NAMES["messages"]
-            ]["cluster_log_root"]
-            submit_task_dict["new_cluster"]["cluster_log_conf"] = {
-                "dbfs": {"destination": f"dbfs:{cluster_log_root}"}
-            }
+            ].get("cluster_log_root")
+            if cluster_log_root is not None:
+                submit_task_dict["new_cluster"]["cluster_log_conf"] = {
+                    "dbfs": {"destination": f"dbfs:{cluster_log_root}"}
+                }
             task = jobs.SubmitTask.from_dict(submit_task_dict)
             run_id = self.client.jobs.submit(
                 tasks=[task],
@@ -141,8 +157,7 @@ class _PipesDatabricksClient(PipesClient):
                     raise DagsterPipesExecutionError(
                         f"Error running Databricks job: {run.state.state_message}"
                     )
-                time.sleep(5)
-            time.sleep(30)  # 30 seconds to make sure logs are flushed
+                time.sleep(_RUN_POLL_INTERVAL)
         return PipesClientCompletedInvocation(tuple(pipes_session.get_results()))
 
 
@@ -205,33 +220,40 @@ class PipesDbfsMessageReader(PipesBlobStoreMessageReader):
     """Message reader that reads messages by periodically reading message chunks from an
     automatically-generated temporary directory on DBFS.
 
+    If `stdout_reader` or `stderr_reader` are passed, this reader will also start them when
+    `read_messages` is called. If they are not passed, then the reader performs no stdout/stderr
+    forwarding.
+
     Args:
         interval (float): interval in seconds between attempts to download a chunk
         client (WorkspaceClient): A databricks `WorkspaceClient` object.
         cluster_log_root (Optional[str]): The root path on DBFS where the cluster logs are written.
             If set, this will be used to read stderr/stdout logs.
+        stdout_reader (Optional[PipesBlobStoreStdioReader]): A reader for reading stdout logs.
+        stderr_reader (Optional[PipesBlobStoreStdioReader]): A reader for reading stderr logs.
     """
 
     def __init__(
         self,
         *,
-        interval: int = 10,
+        interval: float = 10,
         client: WorkspaceClient,
-        forward_stdout: bool = False,
-        forward_stderr: bool = False,
+        stdout_reader: Optional[PipesBlobStoreStdioReader] = None,
+        stderr_reader: Optional[PipesBlobStoreStdioReader] = None,
     ):
         super().__init__(
-            interval=interval, forward_stdout=forward_stdout, forward_stderr=forward_stderr
+            interval=interval, stdout_reader=stdout_reader, stderr_reader=stderr_reader
         )
         self.dbfs_client = files.DbfsAPI(client.api_client)
-        self.stdio_position = {"stdout": 0, "stderr": 0}
 
     @contextmanager
     def get_params(self) -> Iterator[PipesParams]:
-        with dbfs_tempdir(self.dbfs_client) as messages_tempdir, dbfs_tempdir(
-            self.dbfs_client
-        ) as logs_tempdir:
-            yield {"path": messages_tempdir, "cluster_log_root": logs_tempdir}
+        with ExitStack() as stack:
+            params: PipesParams = {}
+            params["path"] = stack.enter_context(dbfs_tempdir(self.dbfs_client))
+            if self.stdout_reader or self.stderr_reader:
+                params["cluster_log_root"] = stack.enter_context(dbfs_tempdir(self.dbfs_client))
+            yield params
 
     def download_messages_chunk(self, index: int, params: PipesParams) -> Optional[str]:
         message_path = os.path.join(params["path"], f"{index}.json")
@@ -246,22 +268,41 @@ class PipesDbfsMessageReader(PipesBlobStoreMessageReader):
         except IOError:
             return None
 
-    def download_stdout_chunk(self, params: PipesParams) -> Optional[str]:
-        return self._download_stdio_chunk(params, "stdout")
+    def no_messages_debug_text(self) -> str:
+        return (
+            "Attempted to read messages from a temporary file in dbfs. Expected"
+            " PipesDbfsMessageWriter to be explicitly passed to open_dagster_pipes in the external"
+            " process."
+        )
 
-    def stdout_log_exists(self, params) -> bool:
-        return self._get_stdio_log_path(params, "stdout") is not None
 
-    def download_stderr_chunk(self, params: PipesParams) -> Optional[str]:
-        return self._download_stdio_chunk(params, "stderr")
+@experimental
+class PipesDbfsStdioReader(PipesChunkedStdioReader):
+    """Reader that reads stdout/stderr logs from DBFS.
 
-    def stderr_log_exists(self, params) -> bool:
-        return self._get_stdio_log_path(params, "stderr") is not None
+    Args:
+        interval (float): interval in seconds between attempts to download a log chunk
+        remote_log_name (Literal["stdout", "stderr"]): The name of the log file to read.
+        target_stream (TextIO): The stream to which to forward log chunk that have been read.
+        client (WorkspaceClient): A databricks `WorkspaceClient` object.
+    """
 
-    def _download_stdio_chunk(
-        self, params: PipesParams, stream: Literal["stdout", "stderr"]
-    ) -> Optional[str]:
-        log_path = self._get_stdio_log_path(params, stream)
+    def __init__(
+        self,
+        *,
+        interval: float = 10,
+        remote_log_name: Literal["stdout", "stderr"],
+        target_stream: TextIO,
+        client: WorkspaceClient,
+    ):
+        super().__init__(interval=interval, target_stream=target_stream)
+        self.dbfs_client = files.DbfsAPI(client.api_client)
+        self.remote_log_name = remote_log_name
+        self.log_position = 0
+        self.log_path = None
+
+    def download_log_chunk(self, params: PipesParams) -> Optional[str]:
+        log_path = self._get_log_path(params)
         if log_path is None:
             return None
         else:
@@ -269,27 +310,21 @@ class PipesDbfsMessageReader(PipesBlobStoreMessageReader):
                 read_response = self.dbfs_client.read(log_path)
                 assert read_response.data
                 content = base64.b64decode(read_response.data).decode("utf-8")
-                chunk = content[self.stdio_position[stream] :]
-                self.stdio_position[stream] = len(content)
+                chunk = content[self.log_position :]
+                self.log_position = len(content)
                 return chunk
             except IOError:
                 return None
 
+    def is_ready(self, params: PipesParams) -> bool:
+        return self._get_log_path(params) is not None
+
     # The directory containing logs will not exist until either 5 minutes have elapsed or the
     # job has finished.
-    def _get_stdio_log_path(
-        self, params: PipesParams, stream: Literal["stdout", "stderr"]
-    ) -> Optional[str]:
-        log_root_path = os.path.join(params["cluster_log_root"])
-        child_dirs = list(self.dbfs_client.list(log_root_path))
-        if len(child_dirs) > 0:
-            return f"dbfs:{child_dirs[0].path}/driver/{stream}"
-        else:
-            return None
-
-    def no_messages_debug_text(self) -> str:
-        return (
-            "Attempted to read messages from a temporary file in dbfs. Expected"
-            " PipesDbfsMessageWriter to be explicitly passed to open_dagster_pipes in the external"
-            " process."
-        )
+    def _get_log_path(self, params: PipesParams) -> Optional[str]:
+        if self.log_path is None:
+            log_root_path = os.path.join(params["cluster_log_root"])
+            child_dirs = list(self.dbfs_client.list(log_root_path))
+            if len(child_dirs) > 0:
+                self.log_path = f"dbfs:{child_dirs[0].path}/driver/{self.remote_log_name}"
+        return self.log_path

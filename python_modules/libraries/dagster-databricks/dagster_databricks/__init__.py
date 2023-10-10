@@ -28,6 +28,7 @@ from .pipes import (
     PipesDatabricksClient as PipesDatabricksClient,
     PipesDbfsContextInjector as PipesDbfsContextInjector,
     PipesDbfsMessageReader as PipesDbfsMessageReader,
+    PipesDbfsStdioReader as PipesDbfsStdioReader,
 )
 from .resources import (
     DatabricksClientResource as DatabricksClientResource,
