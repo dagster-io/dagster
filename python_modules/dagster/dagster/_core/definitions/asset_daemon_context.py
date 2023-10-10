@@ -38,7 +38,6 @@ from .auto_materialize_rule import (
     AutoMaterializeAssetEvaluation,
     AutoMaterializeRule,
     AutoMaterializeRuleEvaluation,
-    DiscardOnMaxMaterializationsExceededRule,
     RuleEvaluationContext,
 )
 from .backfill_policy import BackfillPolicy, BackfillPolicyType
@@ -71,12 +70,20 @@ def get_implicit_auto_materialize_policy(
             AutoMaterializeRule.materialize_on_required_for_freshness(),
             AutoMaterializeRule.skip_on_parent_outdated(),
             AutoMaterializeRule.skip_on_parent_missing(),
+            *(
+                {
+                    AutoMaterializeRule.discard_on_max_materializations_exceeded(
+                        max_materializations_per_minute
+                    )
+                }
+                if max_materializations_per_minute is not None
+                else {}
+            ),
         }
         if not bool(asset_graph.get_downstream_freshness_policies(asset_key=asset_key)):
             rules.add(AutoMaterializeRule.materialize_on_parent_updated())
         return AutoMaterializePolicy(
             rules=rules,
-            max_materializations_per_minute=max_materializations_per_minute,
         )
     return auto_materialize_policy
 
@@ -354,7 +361,12 @@ class AssetDaemonContext:
         for candidate in list(to_materialize):
             if (
                 # must not be part of an active asset backfill
+                # Consider this as a skip so that partitions are evaluated after backfill finishes
+                # We currently do a discard to temp ignore the backfilled partitions
+                # Do you care about the targeted partition or the whole asset?
+                # Skip on part of backfill
                 candidate in self.instance_queryer.get_active_backfill_target_asset_graph_subset()
+                # Discard rule
                 # must not have invalid parent partitions
                 or len(
                     self.asset_graph.get_parents_partitions(
@@ -390,16 +402,12 @@ class AssetDaemonContext:
             self._logger.debug("Done evaluating skip rule")
         to_materialize.difference_update(to_skip)
 
-        # this is treated separately from other rules, for now
-        if auto_materialize_policy.max_materializations_per_minute is not None:
-            rule = DiscardOnMaxMaterializationsExceededRule(
-                limit=auto_materialize_policy.max_materializations_per_minute
-            )
-            rule_snapshot = rule.to_snapshot()
+        for discard_rule in auto_materialize_policy.discard_rules:
+            rule_snapshot = discard_rule.to_snapshot()
 
             self._logger.debug(f"Evaluating discard rule: {rule_snapshot}")
 
-            for evaluation_data, asset_partitions in rule.evaluate_for_asset(
+            for evaluation_data, asset_partitions in discard_rule.evaluate_for_asset(
                 skip_context._replace(candidates=to_materialize)
             ):
                 all_results.append(

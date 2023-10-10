@@ -27,6 +27,9 @@ class AutoMaterializePolicySerializer(NamedTupleSerializer):
             "on_missing": AutoMaterializeRule.materialize_on_missing(),
             "on_new_parent_data": AutoMaterializeRule.materialize_on_parent_updated(),
             "for_freshness": AutoMaterializeRule.materialize_on_required_for_freshness(),
+            "max_materializations_per_minute": (
+                lambda limit: AutoMaterializeRule.discard_on_max_materializations_exceeded(limit)
+            ),
         }
 
         # determine if this namedtuple was serialized with the old format (booleans for rules)
@@ -37,8 +40,12 @@ class AutoMaterializePolicySerializer(NamedTupleSerializer):
                 AutoMaterializeRule.skip_on_parent_missing(),
             }
             for backcompat_key, rule in backcompat_map.items():
-                if unpacked_dict.get(backcompat_key):
-                    rules.add(rule)
+                unpacked_value = unpacked_dict.get(backcompat_key)
+                if unpacked_value:
+                    if callable(rule):
+                        rules.add(rule(unpacked_value))
+                    else:
+                        rules.add(rule)
             unpacked_dict["rules"] = frozenset(rules)
 
         return unpacked_dict
@@ -59,7 +66,6 @@ class AutoMaterializePolicy(
         "_AutoMaterializePolicy",
         [
             ("rules", FrozenSet["AutoMaterializeRule"]),
-            ("max_materializations_per_minute", Optional[int]),
         ],
     )
 ):
@@ -121,20 +127,12 @@ class AutoMaterializePolicy(
     def __new__(
         cls,
         rules: AbstractSet["AutoMaterializeRule"],
-        max_materializations_per_minute: Optional[int] = 1,
     ):
         from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
-
-        check.invariant(
-            max_materializations_per_minute is None or max_materializations_per_minute > 0,
-            "max_materializations_per_minute must be positive. To disable rate-limiting, set it"
-            " to None. To disable auto materializing, remove the policy.",
-        )
 
         return super(AutoMaterializePolicy, cls).__new__(
             cls,
             rules=frozenset(check.set_param(rules, "rules", of_type=AutoMaterializeRule)),
-            max_materializations_per_minute=max_materializations_per_minute,
         )
 
     @property
@@ -155,6 +153,14 @@ class AutoMaterializePolicy(
             rule for rule in self.rules if rule.decision_type == AutoMaterializeDecisionType.SKIP
         }
 
+    @property
+    def discard_rules(self) -> AbstractSet["AutoMaterializeRule"]:
+        from dagster._core.definitions.auto_materialize_rule import AutoMaterializeDecisionType
+
+        return {
+            rule for rule in self.rules if rule.decision_type == AutoMaterializeDecisionType.DISCARD
+        }
+
     @public
     @staticmethod
     def eager(max_materializations_per_minute: Optional[int] = 1) -> "AutoMaterializePolicy":
@@ -168,6 +174,10 @@ class AutoMaterializePolicy(
         """
         from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 
+        max_materializations_per_minute = check.opt_int_param(
+            max_materializations_per_minute, "max_materializations_per_minute"
+        )
+
         return AutoMaterializePolicy(
             rules={
                 AutoMaterializeRule.materialize_on_missing(),
@@ -175,10 +185,16 @@ class AutoMaterializePolicy(
                 AutoMaterializeRule.materialize_on_required_for_freshness(),
                 AutoMaterializeRule.skip_on_parent_outdated(),
                 AutoMaterializeRule.skip_on_parent_missing(),
+                *(
+                    {
+                        AutoMaterializeRule.discard_on_max_materializations_exceeded(
+                            max_materializations_per_minute
+                        )
+                    }
+                    if max_materializations_per_minute
+                    else {}
+                ),
             },
-            max_materializations_per_minute=check.opt_int_param(
-                max_materializations_per_minute, "max_materializations_per_minute"
-            ),
         )
 
     @public
@@ -194,15 +210,25 @@ class AutoMaterializePolicy(
         """
         from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 
+        max_materializations_per_minute = check.opt_int_param(
+            max_materializations_per_minute, "max_materializations_per_minute"
+        )
+
         return AutoMaterializePolicy(
             rules={
                 AutoMaterializeRule.materialize_on_required_for_freshness(),
                 AutoMaterializeRule.skip_on_parent_outdated(),
                 AutoMaterializeRule.skip_on_parent_missing(),
+                *(
+                    {
+                        AutoMaterializeRule.discard_on_max_materializations_exceeded(
+                            max_materializations_per_minute
+                        )
+                    }
+                    if max_materializations_per_minute
+                    else {}
+                ),
             },
-            max_materializations_per_minute=check.opt_int_param(
-                max_materializations_per_minute, "max_materializations_per_minute"
-            ),
         )
 
     @public
