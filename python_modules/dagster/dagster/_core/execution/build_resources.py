@@ -137,4 +137,5 @@ def wrap_resource_for_execution(resource: Any) -> ResourceDefinition:
     elif isinstance(resource, IOManager):
         return IOManagerDefinition.hardcoded_io_manager(resource)
     else:
+        # or here?
         return ResourceDefinition.hardcoded_resource(resource)

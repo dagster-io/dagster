@@ -102,6 +102,10 @@ class _PipesDockerClient(PipesClient):
             or PipesDockerLogsMessageReader()
         )
 
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
+
     def run(
         self,
         *,
