@@ -199,6 +199,9 @@ def _resolve_optionally_passed_asset_key(
 ) -> str:
     asset_key = _assert_opt_param_type(asset_key, str, method, "asset_key")
 
+    if asset_key:
+        return asset_key
+
     defined_asset_keys = data["asset_keys"]
     if defined_asset_keys:
         if asset_key and asset_key not in defined_asset_keys:
@@ -213,13 +216,10 @@ def _resolve_optionally_passed_asset_key(
                 )
             asset_key = defined_asset_keys[0]
 
-    if not asset_key:
-        raise DagsterPipesError(
-            f"Calling `{method}` without passing an asset key is undefined. Current step"
-            " does not target a specific asset."
-        )
-
-    return asset_key
+    raise DagsterPipesError(
+        f"Calling `{method}` without passing an asset key is undefined. Current step"
+        " does not target a specific asset."
+    )
 
 
 def _assert_defined_partition_property(value: Optional[_T], key: str) -> _T:
