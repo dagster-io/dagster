@@ -1,15 +1,17 @@
 ---
-title: "Modifying existing code to work with Dagster Pipes | Dagster Docs"
+title: "Dagster Pipes subprocess reference | Dagster Docs"
 description: "This page shows ways to execute external code with Dagster Pipes with different entities in the Dagster systen."
 ---
 
-# Reference
+# Dagster Pipes subprocess reference
 
 This reference shows usage of Dagster Pipes with other entities in the Dagster system. For a step-by-step walkthrough, refer to the [Dagster Pipes tutorial](/guides/dagster-pipes/subprocess).
 
+---
+
 ## Specifying environment variables and extras
 
-When launching the subprocess, you may want to make environment variables or additoional parameters available in the external process. Extras can be arbitrary, user-defined parameters made available on the context object in the external process.
+When launching the subprocess, you may want to make environment variables or additoional parameters available in the external process. Extras are arbitrary, user-defined parameters made available on the context object in the external process.
 
 <TabGroup>
 <TabItem name="Provide in the Dagster code">
@@ -84,7 +86,7 @@ Sometimes, you may not want to materialize an asset, but instead want to report 
 <TabGroup>
 <TabItem name="Define in the Dagster code">
 
-On the Dagster's side, the `PipesClientCompletedInvocation` object returned from `PipesSubprocessClient` includes a `get_asset_check_result` method, which you can use to access the <PyObject object="AssetCheckResult" /> event reported by the subprocess.
+On Dagster's side, the `PipesClientCompletedInvocation` object returned from `PipesSubprocessClient` includes a `get_asset_check_result` method, which you can use to access the <PyObject object="AssetCheckResult" /> event reported by the subprocess.
 
 ```python file=/guides/dagster/dagster_pipes/subprocess/asset_check_dagster_code.py
 import shutil
@@ -157,14 +159,16 @@ if __name__ == "__main__":
 </TabItem>
 </TabGroup>
 
-## Working with @multi_asset
+---
 
-Sometimes, you may invoke a single call to an API that results in multiple tables being updated, or you may have a single script that computes multiple assets. In these cases, you can use Dagster Pipes to report back to multiple asset at once.
+## Working with multi-assets
+
+Sometimes, you may invoke a single call to an API that results in multiple tables being updated, or you may have a single script that computes multiple assets. In these cases, you can use Dagster Pipes to report back on multiple assets at once.
 
 <TabGroup>
 <TabItem name="Define in the Dagster code">
 
-In the Dagster code, you can use `@multi_asset` to define a single asset that reprensents multiple assets. The `PipesClientCompletedInvocation` object returned from `PipesSubprocessClient` includes a `get_results` method, which you can use to access all the events, such as multiple <PyObject object="AssetMaterialization" />s and <PyObject object="AssetCheckResult" />s, reported by the subprocess:
+In the Dagster code, you can use <PyObject object="multi_asset" decorator /> to define a single asset that reprensents multiple assets. The `PipesClientCompletedInvocation` object returned from `PipesSubprocessClient` includes a `get_results` method, which you can use to access all the events, such as multiple <PyObject object="AssetMaterialization" pluralize /> and <PyObject object="AssetCheckResult" pluralize />, reported by the subprocess:
 
 ```python file=/guides/dagster/dagster_pipes/subprocess/multi_asset_dagster_code.py
 import shutil
@@ -199,7 +203,7 @@ defs = Definitions(
 </TabItem>
 <TabItem name="Report from the external code">
 
-Note: when working with multi_asset, `PipesContext.report_asset_materialization` may only be called once per unique asset key. If called more than once, an error similar to the following will surface:
+**Note**: when working with multi-assets, `<PyObject module="dagster_pipes" object="PipesContext" method="report_asset_materialization" /> may only be called once per unique asset key. If called more than once, an error similar to the following will surface:
 
 ```bash
 Calling {method} with asset key {asset_key} is undefined. Asset has already been materialized, so no additional data can be reported for it
@@ -238,5 +242,3 @@ if __name__ == "__main__":
 
 </TabItem>
 </TabGroup>
-
----

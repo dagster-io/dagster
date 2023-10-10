@@ -1,9 +1,9 @@
 ---
-title: "Using Dagster Pipes, Part 1: Define a Dagster asset to invoke subprocess | Dagster Docs"
+title: "Using Dagster Pipes, Part 1: Define a Dagster asset that invokes subprocess | Dagster Docs"
 description: "Learn how to create a Dagster asset that invokes a subprocess that executes external code."
 ---
 
-# Define a Dagster asset that invokes a subprocess
+# Using Dagster Pipes, part 1: Define a Dagster asset that invokes a subprocess
 
 <Note>
 
@@ -11,11 +11,12 @@ This is part one of the [Using Dagster Pipes](/guides/dagster-pipes/subprocess) 
 
 </Note>
 
-This part talks about how to create a Dagster asset that, in its execution function, opens a Dagster pipes session and invokes subprocess that executes some external code.
+In this part of the tutorial, you'll create a Dagster asset that, in its execution function, opens a Dagster pipes session and invokes a subprocess that executes some external code.
 
-## Step 1: Define a Dagster asset that executes a subprocess
+## Step 1: Define the Dagster asset
 
 1. Create a new file named `dagster_subprocess_pipes.py` in the same directory as the `external_code.py` file you created earlier in the [Prerequisites](/guides/dagster-pipes/subprocess#prerequisites) step.
+
 2. First, you’ll define the asset. Copy and paste the following into the file:
 
 ```python file=/guides/dagster/dagster_pipes/subprocess/dagster_subprocess_pipes.py startafter=start_asset_marker endbefore=end_asset_marker lines=-16
@@ -44,7 +45,7 @@ Here’s what we did in this example:
 - Specified a resource for the asset to use, `PipesSubprocessClient`. We’ll also come back to this in a little bit.
 - Declared a command list `cmd` to run the external script. In the list:
   - First, found the path to the Python executable on the system using `shutil.which("python")`.
-  - Then, provided the file path to the file that we want to execute. In this case, it’s the `external_code.py` file that you created earlier.
+  - Then, provided the file path to the file that we want to execute. In this case, it’s the `extern al_code.py` file that you created earlier.
 
 3. Then, invoke the subprocess from the asset using the `pipes_subprocess_client` resource:
 
@@ -72,10 +73,12 @@ def subprocess_asset(
 
 Let’s take a look at what this code does:
 
-- The `PipesSubprocessClient` resource used by the asset contains a `run` method.
-- When the asset is executed, this method will synchronously execute the subprocess with in a pipes session, and it will return a `PipesClientCompletedInvocation` object.
+- The `PipesSubprocessClient` resource used by the asset exposes a `run` method.
+- When the asset is executed, this method will synchronously execute the subprocess in in a pipes session, and it will return a `PipesClientCompletedInvocation` object.
 - This object contains a `get_materialize_result` method, which you can use to access the <PyObject object="MaterializeResult" /> event reported by the subprocess. We'll talk about how to report events from the subprocess in the next section.
 - Lastly, return the result of the subprocess.
+
+---
 
 ## Step 2: Define a Definitions object
 
@@ -134,48 +137,48 @@ In this step, you’ll execute the subprocess asset you created in earlier steps
 
 1. In a new command line session, run the following to start the UI:
 
-```bash
-dagster dev
-```
+   ```bash
+   dagster dev
+   ```
 
-2. Navigate to localhost:3000, where you should see the UI:
+2. Navigate to <`localhost:3000`>, where you should see the UI:
 
-<Image
-  alt="Asset in the UI"
-  src="/images/guides/dagster-pipes/subprocess-1-asset.png"
-  width={1264}
-  height={714}
-/>
+   <Image
+   alt="Asset in the UI"
+   src="/images/guides/dagster-pipes/subprocess-1-asset.png"
+   width={1264}
+   height={714}
+   />
 
 3. Click **Materialize** located in the top right to run your code:
 
-<Image
-  alt="Materialize asset"
-  src="/images/guides/dagster-pipes/subprocess-2-materialize.png"
-  width={1326}
-  height={744}
-/>
+   <Image
+   alt="Materialize asset"
+   src="/images/guides/dagster-pipes/subprocess-2-materialize.png"
+   width={1326}
+   height={744}
+   />
 
 4. Navigate to the [Run details](/concepts/webserver/ui#run-details) page, where you should see the logs for the run:
 
-<Image
-  alt="Logs in the run details page"
-  src="/images/guides/dagster-pipes/subprocess-3-1-events.png"
-  width={1272}
-  height={718}
-/>
+   <Image
+   alt="Logs in the run details page"
+   src="/images/guides/dagster-pipes/subprocess-3-1-events.png"
+   width={1272}
+   height={718}
+   />
 
-In the `external_code.py`, we've got a `print` statement which outputs to stdout. Dagster will display these in the UI's raw compute log view. To see the `stdout` log, toggle the log section to **stdout**:
+In `external_code.py`, we have a `print` statement that outputs to `stdout`. Dagster will display these in the UI's raw compute log view. To see the `stdout` log, toggle the log section to **stdout**:
 
 <Image
-  alt="Raw compute logs in the run details page"
-  src="/images/guides/dagster-pipes/subprocess-3-2-raw-compute-logs.png"
-  width={1272}
-  height={718}
+alt="Raw compute logs in the run details page"
+src="/images/guides/dagster-pipes/subprocess-3-2-raw-compute-logs.png"
+width={1272}
+height={718}
 />
 
 ---
 
 ## What's next?
 
-At this point, you've created a Dagster that invokes an external Python script, launched the code in a subprocess, and viewed the result in Dagster UI. Next, you'll learn how to [modify your external code to work with Dagster Pipes](/guides/dagster-pipes/subprocess/modify-external-code) in order to send information back to Dagster.
+At this point, you've created a Dagster asset that invokes an external Python script, launched the code in a subprocess, and viewed the result in Dagster UI. Next, you'll learn how to [modify your external code to work with Dagster Pipes](/guides/dagster-pipes/subprocess/modify-external-code) to send information back to Dagster.

@@ -867,7 +867,7 @@
                 "path": "/guides/dagster-pipes/subprocess/modify-external-code"
               },
               {
-                "title": "Dagster Pipes + Subprocess Reference",
+                "title": "Dagster Pipes + subprocess reference",
                 "path": "/guides/dagster-pipes/subprocess/reference"
               }
             ]

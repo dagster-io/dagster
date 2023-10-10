@@ -1,17 +1,17 @@
 ---
 title: "Dagster Pipes tutorial | Dagster Docs"
-description: "Learn how to use Dagster Pipes's built-in subprocess implementation to invoke a subprocess with the given command and environment"
+description: "Learn how to use Dagster Pipes's built-in subprocess implementation to invoke a subprocess with a given command and environment"
 ---
 
 # Dagster Pipes tutorial
 
-In this guide, we’ll show you how to use [Dagster Pipes](/guides/dagster-pipes) with Dagster’s built-in subprocess implementation to run a subprocess with the given command and environment. You can then send information such as structured metadata and logging back to Dagster from the subprocess, where it will be visible in the Dagster UI.
+In this guide, we’ll show you how to use [Dagster Pipes](/guides/dagster-pipes) with Dagster’s built-in subprocess implementation to run a subprocess with a given command and environment. You can then send information such as structured metadata and logging back to Dagster from the subprocess, where it will be visible in the Dagster UI.
 
-To get there, you'll
+To get there, you'll:
 
 - [Create a Dagster asset that invokes a subprocess](/guides/dagster-pipes/subprocess/create-subprocess-asset)
 - [Modify existing code to work with Dagster Pipes to send information back to Dagster](/guides/dagster-pipes/subprocess/modify-external-code)
-- Learn about other usage of Dagster Pipes with other entities in the Dagster system in the [Reference](/guides/dagster-pipes/subprocess/reference) section
+- Learn about using Dagster Pipes with other entities in the Dagster system in the [Reference](/guides/dagster-pipes/subprocess/reference) section
 
 <Note>
 
@@ -26,12 +26,6 @@ This guide focuses on using an out-of-the-box `PipesSubprocessClient` resource. 
 To use Dagster Pipes to run a subprocess , you’ll need:
 
 - To have Dagster (`dagster`) and the Dagster UI (`dagster-webserver`) installed. Refer to the [Installation guide](/getting-started/install) for more info.
-
-- To install the dagster-pipes library:
-
-```bash
-pipe install dagster-pipes
-```
 
 - **An existing Python script**. We’ll use the following Python script to demonstrate. This file will be invoked by the Dagster asset that you’ll create later in this tutorial.
   1. Create a standalone file named `external_code.py`.
@@ -50,6 +44,8 @@ def main():
 if __name__ == "__main__":
     main()
 ```
+
+---
 
 ## Ready to get started?
 

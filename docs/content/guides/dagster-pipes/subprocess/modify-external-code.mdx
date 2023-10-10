@@ -3,18 +3,18 @@ title: "Using Dagster Pipes, Part two: Modify external code | Dagster Docs"
 description: "With Dagster Pipes, you can incorporate existing code into Dagster without huge refactors. This guide shows you how to modify existing code to work with Dagster Pipes."
 ---
 
-# Modify external code to send information back to Dagster via Dagster Pipes
+# Using Dagster Pipes, part 2: Modify external code & send information to Dagster
 
 <Note>
 
-This is part two of the [Dagster Pipes + subprocess](/guides/dagster-pipes/subprocess) tutorial.
+This is part two of the [Using Dagster Pipes](/guides/dagster-pipes/subprocess) tutorial.
 
 </Note>
 
 At this point, you should have two files:
 
 - `external_code.py` which is a standalone Python script that you want to orchestrate with Dagster.
-- `dagster_subprocess_pipes.py` which includes a Dagster asset and a Dagster definitions.
+- `dagster_subprocess_pipes.py` which includes a Dagster asset and other Dagster definitions.
 
 In this section, you'll learn how to modify the standalone Python script to work with [Dagster Pipes](/guides/dagster-pipes) in order to stream information back to Dagster. To do this, you'll:
 
@@ -30,15 +30,11 @@ Getting external code to send information back to Dagster via Dagster Pipes requ
 
 - Imports from `dagster-pipes`
 
-- A call that connects to Dagster Pipes: <PyObject module="dagster_pipes" object="open_dagster_pipes"/> initializes the Dagster Pipes context that can be used to stream information back to Dagster. It is recommended to call this function near the entry point of a pipes session.
+- A call that connects to Dagster Pipes: <PyObject module="dagster_pipes" object="open_dagster_pipes"/> initializes the Dagster Pipes context that can be used to stream information back to Dagster. We recommend calling this function near the entry point of a pipes session.
 
-  <Note>
+  - The <code>with open_dagster_pipes():</code> is a context manager in Python, ensuring resource setup and cleanup for a specific segment of code. It's useful for tasks requiring initial setup and final teardown, like opening and closing connections. In this case, the context manager is used to initialize and close the Dagster Pipes connection.
 
-  The <code>with open_dagster_pipes():</code> is a context manager in Python, ensuring resource setup and cleanup for a specific segment of code. It's useful for tasks requiring initial setup and final teardown, like opening and closing connections. In this case, the context manager is used to initialize and close the Dagster Pipes connection.
-
-  </Note>
-
-- An instance of the Dagster Pipes context via <PyObject module="dagster_pipes" object="PipesContext" method="get"/>.
+- An instance of the Dagster Pipes context via <PyObject module="dagster_pipes" object="PipesContext" method="get"/>. You can access information like `partition_key` and `asset_key` via this context object. Refer to the [the API documentation](/_apidocs/libraries/dagster-pipes#dagster_pipes.PipesContext) for more information.
 
 In our sample Python script, the changes would look like the following:
 
@@ -65,7 +61,7 @@ if __name__ == "__main__":
 
 ## Step 2: Send log messages to Dagster
 
-Dagster Pipes context offers a built-in logging capability that enables you to stream log messages back to Dagster. Instead of printing to the standard output, you can use the `context.log` method on <PyObject module="dagster_pipes" object="PipesContext" /> to send log messages back to Dagster.
+Dagster Pipes context offers a built-in logging capability that enables you to stream log messages back to Dagster. Instead of printing to the standard output, you can use the `context.log` method on <PyObject module="dagster_pipes" object="PipesContext" /> to send log messages back to Dagster. In this case, we’re sending an `info` level log message:
 
 ```python file=/guides/dagster/dagster_pipes/subprocess/external_code_with_logs.py
 import pandas as pd
@@ -86,7 +82,7 @@ if __name__ == "__main__":
         main()
 ```
 
-Then, the log messages will show up in the Dagster UI. You can filter the log levels to only view `info` level messages:
+Then, the log messages will show up in the [**Run details**](/concepts/webserver/ui#run-details) page of the Dagster UI. You can filter the log levels to only view `info` level messages:
 
 1. Click the **Levels** filter next to the log filter field. This will present a dropdown of all log levels.
 2. Select the **info** checkbox and deselect the others. This will show only the logs marked as **info** level.
@@ -98,9 +94,11 @@ Then, the log messages will show up in the Dagster UI. You can filter the log le
   height={742}
 />
 
+---
+
 ## Step 3: Send structured metadata to Dagster
 
-Sometimes, you may want to log information from your external code to be structured metadata shown in the Dagster UI. Dagster Pipes context also comes the ability to log structured metadata back to Dagster.
+Sometimes, you may want to log information from your external code as structured metadata shown in the Dagster UI. Dagster Pipes context also comes with the ability to log structured metadata back to Dagster.
 
 #### Report asset materialization
 
@@ -115,7 +113,7 @@ context = PipesContext.get()
 context.report_asset_materialization(metadata={"total_orders": total_orders})
 ```
 
-Then, total_orders will show up in the UI as structured metadata:
+Then, `total_orders` will show up in the UI as structured metadata:
 
 <Image
   alt="Report asset materialization to Dagster"
@@ -124,7 +122,7 @@ Then, total_orders will show up in the UI as structured metadata:
   height={806}
 />
 
-This metadata will also be displayed on the Events tab of the Asset Details page in the UI:
+This metadata will also be displayed on the **Events** tab of the **Asset Details** page in the UI:
 
 <Image
   alt="View materialization events in asset details page"
@@ -156,7 +154,7 @@ When Dagster executes the code, you’ll see an asset check event with the check
   height={734}
 />
 
-This check result will also be displayed on the Checks tab of the Asset Details page in the UI:
+This check result will also be displayed on the **Checks** tab of the **Asset Details** page in the UI:
 
 <Image
   alt="View checks in asset details page"
@@ -167,10 +165,12 @@ This check result will also be displayed on the Checks tab of the Asset Details 
 
 ---
 
+## Finished code
+
 At this point, your two files should look like the following:
 
 <TabGroup>
-<TabItem name="Dagster code in `dagster_subprocess_pipes.py`">
+<TabItem name="Dagster code in dagster_subprocess_pipes.py">
 
 ```python file=/guides/dagster/dagster_pipes/subprocess/dagster_subprocess_pipes_finished.py
 import shutil
@@ -205,7 +205,7 @@ defs = Definitions(
 ```
 
 </TabItem>
-<TabItem name="External code in `external_code.py`">
+<TabItem name="External code in external_code.py">
 
 ```python file=/guides/dagster/dagster_pipes/subprocess/external_code_finished.py
 import pandas as pd
@@ -239,7 +239,7 @@ if __name__ == "__main__":
 
 ## What's next?
 
-Now, you've learned how to get access to Dagster Pipes context, report log messages events from the external process, and structured events back to Dagster.
+Now, you've learned how to get access to Dagster Pipes context, report log messages events from the external process, and send structured events back to Dagster.
 
 What's next? From here, you can:
 
