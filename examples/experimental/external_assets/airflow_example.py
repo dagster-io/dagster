@@ -19,4 +19,7 @@ with DAG(dag_id="example_kubernetes_pod", schedule="@daily", default_args=defaul
         config_file="/opt/airflow/.kube/config",
         is_delete_operator_pod=True,
         get_logs=True,
+        # If xcom_push is True, the content of the file /airflow/xcom/return.json in the container
+        # will also be pushed to an XCom when the container completes.
+        xcom_push=True,
     )
