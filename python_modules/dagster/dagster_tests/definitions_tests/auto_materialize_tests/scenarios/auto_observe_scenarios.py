@@ -5,8 +5,10 @@ from dagster import (
     DataVersion,
     DataVersionsByPartition,
     StaticPartitionsDefinition,
+    asset,
     observable_source_asset,
 )
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 
 from ..base_scenario import AssetReconciliationScenario, run_request
 
@@ -19,6 +21,15 @@ def asset1():
 @observable_source_asset(auto_observe_interval_minutes=30)
 def asset2():
     return DataVersion("5")
+
+
+@asset(
+    partitions_def=StaticPartitionsDefinition(["a", "b", "c"]),
+    # this is just a dummy policy, as we don't want this to actually impact the logic
+    auto_materialize_policy=AutoMaterializePolicy(rules=set()),
+)
+def partitioned_dummy_asset():
+    return 1
 
 
 @observable_source_asset(
@@ -86,6 +97,13 @@ auto_observe_scenarios = {
         expected_run_requests=[
             run_request(asset_keys=["partitioned_observable_source_asset"]),
             run_request(asset_keys=["partitioned_observable_source_asset2"]),
+        ],
+    ),
+    "auto_observe_unpartitioned_source_to_partitioned_asset": AssetReconciliationScenario(
+        unevaluated_runs=[],
+        assets=[asset1, partitioned_dummy_asset],
+        expected_run_requests=[
+            run_request(asset_keys=["asset1"]),
         ],
     ),
 }

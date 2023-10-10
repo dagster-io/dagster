@@ -1,18 +1,23 @@
 import {gql, useApolloClient, useQuery} from '@apollo/client';
 import {
+  Body,
   Box,
   Button,
+  ButtonLink,
+  Checkbox,
   Colors,
+  ConfigEditorHandle,
+  ConfigEditorHelp,
   ConfigEditorHelpContext,
+  Dialog,
+  DialogFooter,
   Group,
   Icon,
+  NewConfigEditor,
   SecondPanelToggle,
   SplitPanelContainer,
-  isHelpContextEqual,
-  ConfigEditorHelp,
   TextInput,
-  NewConfigEditor,
-  ConfigEditorHandle,
+  isHelpContextEqual,
 } from '@dagster-io/ui-components';
 import merge from 'deepmerge';
 import uniqBy from 'lodash/uniqBy';
@@ -30,27 +35,34 @@ import {
 import {usePermissionsForLocation} from '../app/Permissions';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {ShortcutHandler} from '../app/ShortcutHandler';
-import {tokenForAssetKey} from '../asset-graph/Utils';
+import {displayNameForAssetKey, tokenForAssetKey} from '../asset-graph/Utils';
+import {asAssetKeyInput, asAssetCheckHandleInput} from '../assets/asInput';
 import {
   CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT,
   CONFIG_EDITOR_VALIDATION_FRAGMENT,
   responseToYamlValidationResult,
 } from '../configeditor/ConfigEditorUtils';
-import {PipelineSelector, RepositorySelector} from '../graphql/types';
+import {
+  AssetCheckCanExecuteIndividually,
+  ExecutionParams,
+  PipelineSelector,
+  RepositorySelector,
+} from '../graphql/types';
 import {DagsterTag} from '../runs/RunTag';
+import {VirtualizedItemListForDialog} from '../ui/VirtualizedItemListForDialog';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
 import {
-  ConfigEditorConfigPicker,
   CONFIG_PARTITION_SELECTION_QUERY,
+  ConfigEditorConfigPicker,
 } from './ConfigEditorConfigPicker';
 import {ConfigEditorModePicker} from './ConfigEditorModePicker';
 import {useLaunchPadHooks} from './LaunchpadHooksContext';
 import {LoadingOverlay} from './LoadingOverlay';
 import {OpSelector} from './OpSelector';
-import {RunPreview, RUN_PREVIEW_VALIDATION_FRAGMENT} from './RunPreview';
+import {RUN_PREVIEW_VALIDATION_FRAGMENT, RunPreview} from './RunPreview';
 import {SessionSettingsBar} from './SessionSettingsBar';
 import {TagContainer, TagEditor} from './TagEditor';
 import {scaffoldPipelineConfig} from './scaffoldType';
@@ -80,7 +92,7 @@ type Preset = ConfigEditorPipelinePresetFragment;
 
 interface LaunchpadSessionProps {
   session: IExecutionSession;
-  onSave: (changes: IExecutionSessionChanges) => void;
+  onSave: (changes: React.SetStateAction<IExecutionSessionChanges>) => void;
   launchpadType: LaunchpadType;
   pipeline: LaunchpadSessionPipelineFragment;
   partitionSets: LaunchpadSessionPartitionSetsFragment;
@@ -142,11 +154,7 @@ const LaunchButtonContainer: React.FC<{
 }> = ({launchpadType, children}) => {
   if (launchpadType === 'asset') {
     return (
-      <Box
-        flex={{direction: 'row'}}
-        border={{side: 'top', width: 1, color: Colors.KeylineGray}}
-        padding={{right: 12, vertical: 8}}
-      >
+      <Box flex={{direction: 'row'}} border="top" padding={{right: 12, vertical: 8}}>
         <div style={{flexGrow: 1}} />
         {children}
       </Box>
@@ -170,7 +178,7 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
   const {
     launchpadType,
     session: currentSession,
-    onSave,
+    onSave: onSaveSession,
     partitionSets,
     pipeline,
     repoAddress,
@@ -197,9 +205,16 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
       ...repoAddressToSelector(repoAddress),
       pipelineName: pipeline.name,
       solidSelection: currentSession.solidSelection || undefined,
-      assetSelection: currentSession.assetSelection?.map(({assetKey: {path}}) => ({path})),
+      assetSelection: currentSession.assetSelection?.map(asAssetKeyInput) || [],
+      assetCheckSelection: currentSession.assetChecksAvailable?.map(asAssetCheckHandleInput) || [],
     };
-  }, [currentSession.assetSelection, currentSession.solidSelection, pipeline.name, repoAddress]);
+  }, [
+    currentSession.solidSelection,
+    currentSession.assetSelection,
+    currentSession.assetChecksAvailable,
+    pipeline.name,
+    repoAddress,
+  ]);
 
   const configResult = useQuery<
     PipelineExecutionConfigSchemaQuery,
@@ -216,10 +231,6 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
       mounted.current = false;
     };
   });
-
-  const onSaveSession = (changes: IExecutionSessionChanges) => {
-    onSave(changes);
-  };
 
   const onConfigChange = (config: any) => {
     onSaveSession({
@@ -306,6 +317,17 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
     }
   };
 
+  const [showChecks, setShowChecks] = React.useState<
+    typeof currentSession.assetChecksAvailable | null
+  >(null);
+  const includedChecks = currentSession.assetChecksAvailable.filter(
+    (a) => a.canExecuteIndividually === AssetCheckCanExecuteIndividually.REQUIRES_MATERIALIZATION,
+  );
+
+  const executableChecks = currentSession.assetChecksAvailable.filter(
+    (a) => a.canExecuteIndividually === AssetCheckCanExecuteIndividually.CAN_EXECUTE,
+  );
+
   const buildExecutionVariables = () => {
     if (!currentSession) {
       return;
@@ -320,49 +342,51 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
       return;
     }
 
-    return {
-      executionParams: {
-        runConfigData: configYamlOrEmpty,
-        selector: {
-          ...pipelineSelector,
-          assetSelection: currentSession.assetSelection
-            ? currentSession.assetSelection.map((a) => ({path: a.assetKey.path}))
-            : undefined,
-        },
-        mode: currentSession.mode || 'default',
-        executionMetadata: {
-          tags: uniqBy(
-            [
-              // pass solid selection query via tags
-              // clean up https://github.com/dagster-io/dagster/issues/2495
-              ...(currentSession.solidSelectionQuery
-                ? [
-                    {
-                      key: DagsterTag.SolidSelection,
-                      value: currentSession.solidSelectionQuery,
-                    },
-                  ]
-                : []),
-              ...(currentSession?.base && (currentSession?.base as any)['presetName']
-                ? [
-                    {
-                      key: DagsterTag.PresetName,
-                      value: (currentSession?.base as any)['presetName'],
-                    },
-                  ]
-                : []),
+    const executionParams: ExecutionParams = {
+      runConfigData: configYamlOrEmpty,
+      selector: {
+        ...pipelineSelector,
+        assetSelection: currentSession.assetSelection
+          ? currentSession.assetSelection.map(asAssetKeyInput)
+          : [],
+        assetCheckSelection: currentSession.includeSeparatelyExecutableChecks
+          ? [...includedChecks, ...executableChecks].map(asAssetCheckHandleInput)
+          : [...includedChecks].map(asAssetCheckHandleInput),
+      },
+      mode: currentSession.mode || 'default',
+      executionMetadata: {
+        tags: uniqBy(
+          [
+            // Include a dagster/solid_selection tag for non-asset jobs
+            // (asset jobs indicate elsewhere in the UI which assets were selected)
+            ...(currentSession.solidSelectionQuery && !pipeline.isAssetJob
+              ? [
+                  {
+                    key: DagsterTag.SolidSelection,
+                    value: currentSession.solidSelectionQuery,
+                  },
+                ]
+              : []),
+            ...(currentSession?.base && (currentSession?.base as any)['presetName']
+              ? [
+                  {
+                    key: DagsterTag.PresetName,
+                    value: (currentSession?.base as any)['presetName'],
+                  },
+                ]
+              : []),
 
-              ...tagsFromSession.map(onlyKeyAndValue),
+            ...tagsFromSession.map(onlyKeyAndValue),
 
-              // note, we apply these last - uniqBy uses the first value it sees for
-              // each key, so these can be overridden in the session
-              ...pipeline.tags.map(onlyKeyAndValue),
-            ],
-            (tag) => tag.key,
-          ),
-        },
+            // note, we apply these last - uniqBy uses the first value it sees for
+            // each key, so these can be overridden in the session
+            ...pipeline.tags.map(onlyKeyAndValue),
+          ],
+          (tag) => tag.key,
+        ),
       },
     };
+    return {executionParams};
   };
 
   const saveTags = (tags: PipelineRunTag[]) => {
@@ -491,7 +515,12 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
           body: <PythonErrorInfo error={partition.runConfigOrError} />,
         });
       } else {
-        runConfigYaml = partition.runConfigOrError.yaml;
+        runConfigYaml = yaml.stringify(
+          merge(
+            yaml.parse(sanitizeConfigYamlString(partition.runConfigOrError.yaml)),
+            yaml.parse(sanitizeConfigYamlString(currentSession.runConfigYaml)),
+          ),
+        );
       }
 
       const solidSelection = sessionSolidSelection || partition.solidSelection;
@@ -594,6 +623,28 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
 
   return (
     <>
+      <Dialog
+        isOpen={!!showChecks}
+        title={`Asset Checks (${showChecks?.length})`}
+        onClose={() => setShowChecks(null)}
+      >
+        <div style={{height: '340px', overflow: 'hidden'}}>
+          <VirtualizedItemListForDialog
+            items={showChecks || []}
+            renderItem={(check) => {
+              return (
+                <div key={`${check.name}-${tokenForAssetKey(check.assetKey)}`}>
+                  {`${check.name} on ${displayNameForAssetKey(check.assetKey)}`}
+                </div>
+              );
+            }}
+          />
+        </div>
+        <DialogFooter topBorder>
+          <Button onClick={() => setShowChecks(null)}>Close</Button>
+        </DialogFooter>
+      </Dialog>
+
       <SplitPanelContainer
         axis="vertical"
         identifier="execution"
@@ -615,16 +666,49 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
               />
               <SessionSettingsSpacer />
               {launchpadType === 'asset' ? (
-                <TextInput
-                  readOnly
-                  value={
-                    currentSession.assetSelection
-                      ? currentSession.assetSelection
-                          .map((a) => tokenForAssetKey(a.assetKey))
-                          .join(', ')
-                      : '*'
-                  }
-                />
+                <Box flex={{gap: 16, alignItems: 'center'}}>
+                  <TextInput
+                    readOnly
+                    value={
+                      currentSession.assetSelection
+                        ? currentSession.assetSelection
+                            .map((a) => tokenForAssetKey(a.assetKey))
+                            .join(', ')
+                        : '*'
+                    }
+                  />
+                  {includedChecks.length > 0 ? (
+                    <Body color={Colors.Dark}>
+                      {`Including `}
+                      <ButtonLink onClick={() => setShowChecks(includedChecks)}>
+                        {`${includedChecks.length.toLocaleString()} ${
+                          includedChecks.length > 1 ? 'checks' : 'check'
+                        }`}
+                      </ButtonLink>
+                    </Body>
+                  ) : undefined}
+                  {executableChecks.length > 0 ? (
+                    <Checkbox
+                      label={
+                        <span>
+                          {`Include `}
+                          <ButtonLink onClick={() => setShowChecks(executableChecks)}>
+                            {`${executableChecks.length.toLocaleString()} separately executable ${
+                              executableChecks.length > 1 ? 'checks' : 'check'
+                            }`}
+                          </ButtonLink>
+                        </span>
+                      }
+                      checked={currentSession.includeSeparatelyExecutableChecks}
+                      onChange={() =>
+                        onSaveSession({
+                          includeSeparatelyExecutableChecks:
+                            !currentSession.includeSeparatelyExecutableChecks,
+                        })
+                      }
+                    />
+                  ) : undefined}
+                </Box>
               ) : (
                 <OpSelector
                   serverProvidedSubsetError={
@@ -678,7 +762,7 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
             {pipeline.tags.length || tagsFromSession.length ? (
               <Box
                 padding={{vertical: 8, left: 12, right: 0}}
-                border={{side: 'bottom', width: 1, color: Colors.Gray200}}
+                border={{side: 'bottom', color: Colors.Gray200}}
               >
                 <TagContainer
                   tagsFromDefinition={pipeline.tags}
@@ -690,7 +774,7 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
             {refreshableSessionBase ? (
               <Box
                 padding={{vertical: 8, horizontal: 12}}
-                border={{side: 'bottom', width: 1, color: Colors.Gray200}}
+                border={{side: 'bottom', color: Colors.Gray200}}
               >
                 <Group direction="row" spacing={8} alignItems="center">
                   <Icon name="warning" color={Colors.Yellow500} />

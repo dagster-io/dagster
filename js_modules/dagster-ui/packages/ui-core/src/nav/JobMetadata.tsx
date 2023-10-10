@@ -170,11 +170,7 @@ const RelatedAssetsTag: React.FC<{relatedAssets: string[]}> = ({relatedAssets}) 
           <Box
             key={key}
             padding={{vertical: 12, horizontal: 20}}
-            border={
-              ii < relatedAssets.length - 1
-                ? {side: 'bottom', width: 1, color: Colors.KeylineGray}
-                : null
-            }
+            border={ii < relatedAssets.length - 1 ? 'bottom' : null}
           >
             <Link key={key} to={`/assets/${key}`} style={{wordBreak: 'break-word'}}>
               {key}

@@ -82,7 +82,15 @@ class inline_flag(nodes.Inline, nodes.TextElement):
 
 def visit_inline_flag(self, node: inline_flag):
     flag_type = node.attributes["flag_type"]
-    html = f'<span class="flag {flag_type}">{flag_type}</span>'
+    # The "hidden" elements are not visible on screen, but are picked up by the search
+    # crawler to provide better structure to search results.
+    html = f"""
+    <span class="flag {flag_type}">
+      <span class="hidden">(</span>
+      {flag_type}
+      <span class="hidden">)</span>
+    </span>
+    """
     self.body.append(html)
 
 
@@ -96,18 +104,24 @@ def visit_flag(self, node: flag):
     # all `references` with `<cite>` tags, which is what the HTML writer does
     # for parsed RST.
     message = re.sub(r"`(\S+?)`", r"<cite>\1</cite>", message)
+    # The "hidden" elements are not visible on screen, but are picked up by the search
+    # crawler to provide better structure to search results.
     html = f"""
     <div class="flag">
       <p>
-        <span class="flag {flag_type}">{flag_type}</span> {message}
-      </p>
+        <span class="flag {flag_type}">
+          <span class="hidden">(</span>
+          {flag_type}
+          <span class="hidden">)</span>
+        </span>
+        {message}
+      </>
     </div>
     """
     self.body.append(html)
 
 
-def depart_flag(self, node: flag):
-    ...
+def depart_flag(self, node: flag): ...
 
 
 class FlagDirective(SphinxDirective):

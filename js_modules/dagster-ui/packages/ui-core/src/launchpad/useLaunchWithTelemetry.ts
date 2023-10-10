@@ -1,6 +1,6 @@
 import {useMutation} from '@apollo/client';
 import * as React from 'react';
-import {useHistory} from 'react-router';
+import {useHistory} from 'react-router-dom';
 
 import {TelemetryAction, useTelemetryAction} from '../app/Telemetry';
 import {

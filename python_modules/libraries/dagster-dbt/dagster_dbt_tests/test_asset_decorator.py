@@ -7,18 +7,19 @@ import pytest
 from dagster import (
     AssetKey,
     AutoMaterializePolicy,
+    BackfillPolicy,
     DailyPartitionsDefinition,
     FreshnessPolicy,
     PartitionsDefinition,
     asset,
-    materialize,
 )
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
-from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster_dbt import DbtCliResource
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 from dagster_dbt.dbt_manifest import DbtManifestParam
+
+pytest.importorskip("dbt.version", minversion="1.4")
+
 
 manifest_path = Path(__file__).joinpath("..", "sample_manifest.json").resolve()
 manifest = json.loads(manifest_path.read_bytes())
@@ -31,21 +32,10 @@ test_dagster_metadata_manifest_path = (
 test_dagster_metadata_manifest = json.loads(test_dagster_metadata_manifest_path.read_bytes())
 
 
-def test_materialize(test_project_dir):
-    @dbt_assets(manifest=manifest)
-    def all_dbt_assets(context, dbt: DbtCliResource):
-        yield from dbt.cli(["build"], context=context).stream()
-
-    assert materialize(
-        [all_dbt_assets], resources={"dbt": DbtCliResource(project_dir=test_project_dir)}
-    ).success
-
-
 @pytest.mark.parametrize("manifest", [manifest, manifest_path, os.fspath(manifest_path)])
 def test_manifest_argument(manifest: DbtManifestParam):
     @dbt_assets(manifest=manifest)
-    def my_dbt_assets():
-        ...
+    def my_dbt_assets(): ...
 
     assert my_dbt_assets.keys == {
         AssetKey.from_user_string(key)
@@ -156,8 +146,7 @@ def test_selections(
         select=select or "fqn:*",
         exclude=exclude,
     )
-    def my_dbt_assets():
-        ...
+    def my_dbt_assets(): ...
 
     expected_asset_keys = {AssetKey(key.split("/")) for key in expected_asset_names}
     assert my_dbt_assets.keys == expected_asset_keys
@@ -172,8 +161,7 @@ def test_selections(
 )
 def test_partitions_def(partitions_def: Optional[PartitionsDefinition]) -> None:
     @dbt_assets(manifest=manifest, partitions_def=partitions_def)
-    def my_dbt_assets():
-        ...
+    def my_dbt_assets(): ...
 
     assert my_dbt_assets.partitions_def == partitions_def
 
@@ -181,13 +169,25 @@ def test_partitions_def(partitions_def: Optional[PartitionsDefinition]) -> None:
 @pytest.mark.parametrize("io_manager_key", [None, "my_io_manager_key"])
 def test_io_manager_key(io_manager_key: Optional[str]) -> None:
     @dbt_assets(manifest=manifest, io_manager_key=io_manager_key)
-    def my_dbt_assets():
-        ...
+    def my_dbt_assets(): ...
 
     expected_io_manager_key = DEFAULT_IO_MANAGER_KEY if io_manager_key is None else io_manager_key
 
     for output_def in my_dbt_assets.node_def.output_defs:
         assert output_def.io_manager_key == expected_io_manager_key
+
+
+def test_backfill_policy():
+    backfill_policy = BackfillPolicy.single_run()
+
+    @dbt_assets(
+        manifest=manifest,
+        partitions_def=DailyPartitionsDefinition(start_date="2023-01-01"),
+        backfill_policy=backfill_policy,
+    )
+    def my_dbt_assets(): ...
+
+    assert my_dbt_assets.backfill_policy == backfill_policy
 
 
 def test_with_asset_key_replacements() -> None:
@@ -197,8 +197,7 @@ def test_with_asset_key_replacements() -> None:
             return AssetKey(["prefix", *super().get_asset_key(dbt_resource_props).path])
 
     @dbt_assets(manifest=manifest, dagster_dbt_translator=CustomizedDagsterDbtTranslator())
-    def my_dbt_assets():
-        ...
+    def my_dbt_assets(): ...
 
     assert my_dbt_assets.keys_by_input_name == {}
     assert set(my_dbt_assets.keys_by_output_name.values()) == {
@@ -220,8 +219,7 @@ def test_with_description_replacements() -> None:
             return expected_description
 
     @dbt_assets(manifest=manifest, dagster_dbt_translator=CustomizedDagsterDbtTranslator())
-    def my_dbt_assets():
-        ...
+    def my_dbt_assets(): ...
 
     for description in my_dbt_assets.descriptions_by_key.values():
         assert description == expected_description
@@ -236,8 +234,7 @@ def test_with_metadata_replacements() -> None:
             return expected_metadata
 
     @dbt_assets(manifest=manifest, dagster_dbt_translator=CustomizedDagsterDbtTranslator())
-    def my_dbt_assets():
-        ...
+    def my_dbt_assets(): ...
 
     for metadata in my_dbt_assets.metadata_by_key.values():
         assert metadata["customized"] == "metadata"
@@ -252,8 +249,7 @@ def test_with_group_replacements() -> None:
             return expected_group
 
     @dbt_assets(manifest=manifest, dagster_dbt_translator=CustomizedDagsterDbtTranslator())
-    def my_dbt_assets():
-        ...
+    def my_dbt_assets(): ...
 
     for group in my_dbt_assets.group_names_by_key.values():
         assert group == expected_group
@@ -270,8 +266,7 @@ def test_with_freshness_policy_replacements() -> None:
             return expected_freshness_policy
 
     @dbt_assets(manifest=manifest, dagster_dbt_translator=CustomizedDagsterDbtTranslator())
-    def my_dbt_assets():
-        ...
+    def my_dbt_assets(): ...
 
     for freshness_policy in my_dbt_assets.freshness_policies_by_key.values():
         assert freshness_policy == expected_freshness_policy
@@ -288,8 +283,7 @@ def test_with_auto_materialize_policy_replacements() -> None:
             return expected_auto_materialize_policy
 
     @dbt_assets(manifest=manifest, dagster_dbt_translator=CustomizedDagsterDbtTranslator())
-    def my_dbt_assets():
-        ...
+    def my_dbt_assets(): ...
 
     for auto_materialize_policy in my_dbt_assets.auto_materialize_policies_by_key.values():
         assert auto_materialize_policy == expected_auto_materialize_policy
@@ -297,8 +291,7 @@ def test_with_auto_materialize_policy_replacements() -> None:
 
 def test_dbt_meta_auto_materialize_policy() -> None:
     @dbt_assets(manifest=test_dagster_metadata_manifest)
-    def my_dbt_assets():
-        ...
+    def my_dbt_assets(): ...
 
     auto_materialize_policies = my_dbt_assets.auto_materialize_policies_by_key.values()
     assert auto_materialize_policies
@@ -309,8 +302,7 @@ def test_dbt_meta_auto_materialize_policy() -> None:
 
 def test_dbt_meta_freshness_policy() -> None:
     @dbt_assets(manifest=test_dagster_metadata_manifest)
-    def my_dbt_assets():
-        ...
+    def my_dbt_assets(): ...
 
     freshness_policies = my_dbt_assets.freshness_policies_by_key.values()
     assert freshness_policies
@@ -323,8 +315,7 @@ def test_dbt_meta_freshness_policy() -> None:
 
 def test_dbt_meta_asset_key() -> None:
     @dbt_assets(manifest=test_dagster_metadata_manifest)
-    def my_dbt_assets():
-        ...
+    def my_dbt_assets(): ...
 
     # Assert that source asset keys are set properly.
     assert set(my_dbt_assets.keys_by_input_name.values()) == {
@@ -341,8 +332,7 @@ def test_dbt_meta_asset_key() -> None:
 
 def test_dbt_config_group() -> None:
     @dbt_assets(manifest=test_dagster_metadata_manifest)
-    def my_dbt_assets():
-        ...
+    def my_dbt_assets(): ...
 
     assert my_dbt_assets.group_names_by_key == {
         AssetKey(["customers"]): "default",
@@ -359,25 +349,22 @@ def test_dbt_config_group() -> None:
     }
 
 
-def test_dbt_with_downstream_asset_errors():
+def test_dbt_with_downstream_asset_via_definition():
     @dbt_assets(manifest=test_dagster_metadata_manifest)
-    def my_dbt_assets():
-        ...
+    def my_dbt_assets(): ...
 
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match="Cannot pass a multi_asset AssetsDefinition as an argument to deps.",
-    ):
+    @asset(deps=[my_dbt_assets])
+    def downstream_of_dbt():
+        return None
 
-        @asset(deps=[my_dbt_assets])
-        def downstream_of_dbt():
-            return None
+    assert len(downstream_of_dbt.input_names) == 8
+    for input_name in downstream_of_dbt.input_names:
+        assert downstream_of_dbt.op.ins[input_name].dagster_type.is_nothing
 
 
 def test_dbt_with_downstream_asset():
     @dbt_assets(manifest=test_dagster_metadata_manifest)
-    def my_dbt_assets():
-        ...
+    def my_dbt_assets(): ...
 
     @asset(deps=[AssetKey("orders"), AssetKey(["customized", "staging", "payments"])])
     def downstream_of_dbt():

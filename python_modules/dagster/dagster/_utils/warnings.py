@@ -46,11 +46,7 @@ def normalize_renamed_param(
     check.str_param(old_arg, "old_arg")
     check.opt_callable_param(coerce_old_to_new, "coerce_old_to_new")
     if new_val is not None and old_val is not None:
-        check.failed(
-            'Do not use deprecated "{old_arg}" now that you are using "{new_arg}".'.format(
-                old_arg=old_arg, new_arg=new_arg
-            )
-        )
+        check.failed(f'Do not use deprecated "{old_arg}" now that you are using "{new_arg}".')
     elif old_val is not None:
         return coerce_old_to_new(old_val) if coerce_old_to_new else old_val
     else:

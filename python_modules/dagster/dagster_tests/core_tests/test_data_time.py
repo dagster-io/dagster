@@ -197,16 +197,18 @@ def _get_record(instance):
         instance=instance,
     )
     assert result.success
-    return list(
-        instance.get_event_records(
-            EventRecordsFilter(
-                event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                asset_key=AssetKey("unpartitioned_asset"),
-            ),
-            ascending=False,
-            limit=1,
+    return next(
+        iter(
+            instance.get_event_records(
+                EventRecordsFilter(
+                    event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                    asset_key=AssetKey("unpartitioned_asset"),
+                ),
+                ascending=False,
+                limit=1,
+            )
         )
-    )[0]
+    )
 
 
 class PartitionedDataTimeScenario(NamedTuple):

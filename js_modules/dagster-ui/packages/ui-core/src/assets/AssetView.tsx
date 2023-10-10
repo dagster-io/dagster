@@ -1,13 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {
-  Alert,
-  Box,
-  Colors,
-  NonIdealState,
-  Spinner,
-  Tag,
-  ErrorBoundary,
-} from '@dagster-io/ui-components';
+import {Alert, Box, NonIdealState, Spinner, Tag, ErrorBoundary} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link, useLocation} from 'react-router-dom';
 
@@ -57,6 +49,7 @@ import {
   AssetViewDefinitionNodeFragment,
 } from './types/AssetView.types';
 import {healthRefreshHintFromLiveData} from './usePartitionHealthData';
+import {useReportEventsModal} from './useReportEventsModal';
 
 interface Props {
   assetKey: AssetKey;
@@ -67,14 +60,12 @@ export const AssetView = ({assetKey}: Props) => {
   const {tabBuilder, renderFeatureView} = React.useContext(AssetFeatureContext);
 
   // Load the asset definition
-  const {definition, definitionQueryResult, lastMaterialization} = useAssetViewAssetDefinition(
-    assetKey,
+  const {definition, definitionQueryResult, lastMaterialization} =
+    useAssetViewAssetDefinition(assetKey);
+  const tabList = React.useMemo(
+    () => tabBuilder({definition, params}),
+    [definition, params, tabBuilder],
   );
-  const tabList = React.useMemo(() => tabBuilder({definition, params}), [
-    definition,
-    params,
-    tabBuilder,
-  ]);
 
   const defaultTab = tabList.some((t) => t.id === 'partitions') ? 'partitions' : 'events';
   const selectedTab = params.view || defaultTab;
@@ -128,7 +119,6 @@ export const AssetView = ({assetKey}: Props) => {
         upstream={upstream}
         downstream={downstream}
         dependsOnSelf={node ? nodeDependsOnSelf(node) : false}
-        liveDataByNode={liveDataByNode}
       />
     );
   };
@@ -146,7 +136,6 @@ export const AssetView = ({assetKey}: Props) => {
         params={params}
         setParams={setParams}
         assetKey={assetKey}
-        liveDataByNode={liveDataByNode}
         requestedDepth={visible.requestedDepth}
         assetGraphData={visibleAssetGraph.assetGraphData}
         graphQueryItems={visibleAssetGraph.graphQueryItems}
@@ -250,6 +239,17 @@ export const AssetView = ({assetKey}: Props) => {
     }
   };
 
+  const reportEvents = useReportEventsModal(
+    definition
+      ? {
+          assetKey: definition.assetKey,
+          isPartitioned: definition.isPartitioned,
+          repository: definition.repository,
+        }
+      : null,
+    refreshState.refetch,
+  );
+
   return (
     <Box
       flex={{direction: 'column', grow: 1}}
@@ -282,8 +282,12 @@ export const AssetView = ({assetKey}: Props) => {
                 scope={{all: [definition], skipAllTerm: true}}
               />
             ) : definition && definition.jobNames.length > 0 && upstream ? (
-              <LaunchAssetExecutionButton scope={{all: [definition]}} />
+              <LaunchAssetExecutionButton
+                scope={{all: [definition]}}
+                additionalDropdownOptions={reportEvents.dropdownOptions}
+              />
             ) : undefined}
+            {reportEvents.element}
           </Box>
         }
       />
@@ -440,10 +444,7 @@ const HistoricalViewAlert = ({asOf, hasDefinition}: {asOf: string; hasDefinition
   searchParams.set('time', asOf);
 
   return (
-    <Box
-      padding={{vertical: 16, horizontal: 24}}
-      border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-    >
+    <Box padding={{vertical: 16, horizontal: 24}} border="bottom">
       <Alert
         intent="info"
         title={
@@ -500,11 +501,7 @@ const AssetViewPageHeaderTags: React.FC<{
       )}
       {definition && definition.autoMaterializePolicy && <AutomaterializeDaemonStatusTag />}
       {definition && definition.freshnessPolicy && (
-        <OverdueTag
-          liveData={liveData}
-          policy={definition.freshnessPolicy}
-          assetKey={definition.assetKey}
-        />
+        <OverdueTag policy={definition.freshnessPolicy} assetKey={definition.assetKey} />
       )}
       {definition && (
         <StaleReasonsTags

@@ -227,7 +227,7 @@ def get_inputs_field(
         elif (
             # if you have asset definitions, input will be loaded from the source asset
             asset_layer.has_assets_defs
-            or asset_layer.hash_asset_check_defs
+            or asset_layer.has_asset_check_defs
             and asset_layer.asset_key_for_input(handle, name)
             and not has_upstream
         ):
@@ -574,10 +574,8 @@ def construct_config_type_dictionary(
         if name and name in type_dict_by_name:
             if type(config_type) is not type(type_dict_by_name[name]):
                 raise DagsterInvalidDefinitionError(
-                    (
-                        "Type names must be unique. You have constructed two different "
-                        'instances of types with the same name "{name}".'
-                    ).format(name=name)
+                    "Type names must be unique. You have constructed two different "
+                    f'instances of types with the same name "{name}".'
                 )
         elif name:
             type_dict_by_name[name] = config_type

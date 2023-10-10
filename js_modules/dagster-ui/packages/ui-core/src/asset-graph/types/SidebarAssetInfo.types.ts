@@ -7,6 +7,7 @@ export type SidebarAssetFragment = {
   id: string;
   description: string | null;
   opVersion: string | null;
+  jobNames: Array<string>;
   metadataEntries: Array<
     | {
         __typename: 'AssetMetadataEntry';
@@ -119,7 +120,12 @@ export type SidebarAssetFragment = {
   autoMaterializePolicy: {
     __typename: 'AutoMaterializePolicy';
     policyType: Types.AutoMaterializePolicyType;
-    rules: Array<{__typename: 'AutoMaterializeRule'; description: string}>;
+    rules: Array<{
+      __typename: 'AutoMaterializeRule';
+      className: string;
+      decisionType: Types.AutoMaterializeDecisionType;
+      description: string;
+    }>;
   } | null;
   partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
@@ -15551,6 +15557,7 @@ export type SidebarAssetQuery = {
         id: string;
         description: string | null;
         opVersion: string | null;
+        jobNames: Array<string>;
         metadataEntries: Array<
           | {
               __typename: 'AssetMetadataEntry';
@@ -15678,7 +15685,12 @@ export type SidebarAssetQuery = {
         autoMaterializePolicy: {
           __typename: 'AutoMaterializePolicy';
           policyType: Types.AutoMaterializePolicyType;
-          rules: Array<{__typename: 'AutoMaterializeRule'; description: string}>;
+          rules: Array<{
+            __typename: 'AutoMaterializeRule';
+            className: string;
+            decisionType: Types.AutoMaterializeDecisionType;
+            description: string;
+          }>;
         } | null;
         partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
         assetKey: {__typename: 'AssetKey'; path: Array<string>};

@@ -133,7 +133,7 @@ class PythonPackages:
             logging.info("  - " + package.name)
             cls.all[package.name] = package
 
-        packages_with_changes = set()
+        packages_with_changes: Set[PythonPackage] = set()
 
         logging.info("Finding changed packages:")
         for package in packages:

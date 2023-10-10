@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Box, Colors, FontFamily} from '@dagster-io/ui-components';
+import {Box, FontFamily} from '@dagster-io/ui-components';
 import {Spacing} from '@dagster-io/ui-components/src/components/types';
 import * as React from 'react';
 import styled from 'styled-components';
@@ -63,11 +63,7 @@ export const DagsterTypeSummary: React.FC<{
         </Box>
       )}
       {tableSchemaEntry && (
-        <Box
-          border={{side: 'top', width: 1, color: Colors.KeylineGray}}
-          style={{overflowY: 'auto', marginBottom: -12}}
-          margin={{top: 4}}
-        >
+        <Box border="top" style={{overflowY: 'auto', marginBottom: -12}} margin={{top: 4}}>
           <TableSchema schema={tableSchemaEntry.schema} itemHorizontalPadding={horizontalPadding} />
         </Box>
       )}

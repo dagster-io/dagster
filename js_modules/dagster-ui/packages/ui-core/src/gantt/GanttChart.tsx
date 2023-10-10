@@ -695,13 +695,18 @@ const GanttChartContainer = styled.div`
     position: absolute;
     user-select: none;
     pointer-events: none;
-    transition: top ${CSS_DURATION}ms linear, left ${CSS_DURATION}ms linear,
-      width ${CSS_DURATION}ms linear, height ${CSS_DURATION}ms linear;
+    transition:
+      top ${CSS_DURATION}ms linear,
+      left ${CSS_DURATION}ms linear,
+      width ${CSS_DURATION}ms linear,
+      height ${CSS_DURATION}ms linear;
   }
 
   .chart-element {
     font-size: 12px;
-    transition: top ${CSS_DURATION}ms linear, left ${CSS_DURATION}ms linear;
+    transition:
+      top ${CSS_DURATION}ms linear,
+      left ${CSS_DURATION}ms linear;
     display: inline-block;
     position: absolute;
     color: white;
@@ -736,8 +741,11 @@ const GanttChartContainer = styled.div`
     font-weight: 700;
     line-height: 15px;
 
-    transition: top ${CSS_DURATION}ms linear, left ${CSS_DURATION}ms linear,
-      width ${CSS_DURATION}ms linear, height ${CSS_DURATION}ms linear;
+    transition:
+      top ${CSS_DURATION}ms linear,
+      left ${CSS_DURATION}ms linear,
+      width ${CSS_DURATION}ms linear,
+      height ${CSS_DURATION}ms linear;
 
     &.focused {
       border: 1px solid ${Colors.Gray900};
@@ -770,7 +778,9 @@ const GanttChartContainer = styled.div`
     background: rgba(27, 164, 206, 0.09);
     border-left: 1px solid rgba(27, 164, 206, 0.6);
     border-right: 1px solid rgba(27, 164, 206, 0.6);
-    transition: top ${CSS_DURATION}ms linear, left ${CSS_DURATION}ms linear,
+    transition:
+      top ${CSS_DURATION}ms linear,
+      left ${CSS_DURATION}ms linear,
       width ${CSS_DURATION}ms linear;
 
     & > div {

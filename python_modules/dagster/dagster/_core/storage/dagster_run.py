@@ -17,7 +17,7 @@ from typing_extensions import Self
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
-from dagster._core.definitions.asset_check_spec import AssetCheckHandle
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.origin import JobPythonOrigin
 from dagster._core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
@@ -237,7 +237,7 @@ class DagsterRun(
             ("run_id", str),
             ("run_config", Mapping[str, object]),
             ("asset_selection", Optional[AbstractSet[AssetKey]]),
-            ("asset_check_selection", Optional[AbstractSet[AssetCheckHandle]]),
+            ("asset_check_selection", Optional[AbstractSet[AssetCheckKey]]),
             ("op_selection", Optional[Sequence[str]]),
             ("resolved_op_selection", Optional[AbstractSet[str]]),
             ("step_keys_to_execute", Optional[Sequence[str]]),
@@ -263,7 +263,7 @@ class DagsterRun(
         run_id: Optional[str] = None,
         run_config: Optional[Mapping[str, object]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
-        asset_check_selection: Optional[AbstractSet[AssetCheckHandle]] = None,
+        asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
         op_selection: Optional[Sequence[str]] = None,
         resolved_op_selection: Optional[AbstractSet[str]] = None,
         step_keys_to_execute: Optional[Sequence[str]] = None,
@@ -296,7 +296,7 @@ class DagsterRun(
             asset_selection, "asset_selection", of_type=AssetKey
         )
         asset_check_selection = check.opt_nullable_set_param(
-            asset_check_selection, "asset_check_selection", of_type=AssetCheckHandle
+            asset_check_selection, "asset_check_selection", of_type=AssetCheckKey
         )
 
         # Placing this with the other imports causes a cyclic import

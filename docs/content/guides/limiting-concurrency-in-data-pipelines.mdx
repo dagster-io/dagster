@@ -202,10 +202,13 @@ With this configuration, each unique value of the `use-case` tag will be limited
 
 <Note>
   <strong>Looking for global op/asset concurrency?</strong> Check out Dagster's
-  experimental support for [global op/asset concurrency
-  limits](#limiting-opasset-concurrency-across-runs). For more fine-grained
-  control, you can also check out our{" "}
-  <a href="/deployment/guides/celery">integration with Celery</a>.
+  experimental support for{" "}
+  <a href="/guides/limiting-concurrency-in-data-pipelines#limiting-opasset-concurrency-across-runs">
+    global op/asset concurrency limits
+  </a>
+  . For more fine-grained control, you can also check out our <a href="/deployment/guides/celery">
+    integration with Celery
+  </a>.
 </Note>
 
 Utilizing op/asset-level concurrency provides fine-grained control for the maximum number of ops/assets that can be executed at once within a single run, ensuring that shared resources aren't overwhelmed.

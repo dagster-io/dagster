@@ -16,7 +16,7 @@ from typing import (
 
 import dagster._check as check
 from dagster._config.snap import ConfigFieldSnap, ConfigSchemaSnapshot
-from dagster._core.definitions.asset_check_spec import AssetCheckHandle
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import (
     MetadataValue,
@@ -52,6 +52,7 @@ from dagster._utils.schedules import schedule_execution_time_iterator
 from .external_data import (
     DEFAULT_MODE_NAME,
     EnvVarConsumer,
+    ExternalAssetCheck,
     ExternalAssetNode,
     ExternalJobData,
     ExternalJobRef,
@@ -281,6 +282,9 @@ class ExternalRepository:
         ]
         return matching[0] if matching else None
 
+    def get_external_asset_checks(self) -> Sequence[ExternalAssetCheck]:
+        return self.external_repository_data.external_asset_checks or []
+
     def get_display_metadata(self) -> Mapping[str, str]:
         return self.handle.display_metadata
 
@@ -387,7 +391,7 @@ class ExternalJob(RepresentedJob):
         )
 
     @property
-    def asset_check_selection(self) -> Optional[AbstractSet[AssetCheckHandle]]:
+    def asset_check_selection(self) -> Optional[AbstractSet[AssetCheckKey]]:
         return (
             self._job_index.job_snapshot.lineage_snapshot.asset_check_selection
             if self._job_index.job_snapshot.lineage_snapshot
@@ -592,6 +596,14 @@ class ExternalResource:
         return self._external_resource_data.job_ops_using
 
     @property
+    def schedules_using(self) -> List[str]:
+        return self._external_resource_data.schedules_using
+
+    @property
+    def sensors_using(self) -> List[str]:
+        return self._external_resource_data.sensors_using
+
+    @property
     def is_dagster_maintained(self) -> bool:
         return self._external_resource_data.dagster_maintained
 
@@ -755,7 +767,7 @@ class ExternalSensor:
 
     def _get_single_target(self) -> Optional[ExternalTargetData]:
         if self._external_sensor_data.target_dict:
-            return list(self._external_sensor_data.target_dict.values())[0]
+            return next(iter(self._external_sensor_data.target_dict.values()))
         else:
             return None
 

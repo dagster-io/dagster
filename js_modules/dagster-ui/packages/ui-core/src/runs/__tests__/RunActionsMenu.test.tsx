@@ -41,6 +41,7 @@ describe('RunActionsMenu', () => {
     },
     solidSelection: null,
     assetSelection: null,
+    assetCheckSelection: null,
     tags: [],
     startTime: 123,
     endTime: 456,

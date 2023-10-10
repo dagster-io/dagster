@@ -8,7 +8,10 @@ import {Link, useLocation} from 'react-router-dom';
 import {assertUnreachable} from '../app/Util';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
-import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
+import {
+  assetDetailsPathForAssetCheck,
+  assetDetailsPathForKey,
+} from '../assets/assetDetailsPathForKey';
 import {AssetKey} from '../assets/types';
 import {ErrorSource, DagsterEventType} from '../graphql/types';
 import {
@@ -430,20 +433,20 @@ const AssetCheckEvaluationContent: React.FC<{
 }> = ({node, eventType}) => {
   const {checkName, success, metadataEntries, targetMaterialization, assetKey} = node.evaluation;
 
-  const checkLink = assetDetailsPathForKey(assetKey, {
-    view: 'checks',
-    checkDetail: checkName,
-  });
-
+  const checkLink = assetDetailsPathForAssetCheck({assetKey, name: checkName});
   const matLink = assetDetailsPathForKey(assetKey, {
     view: 'events',
     asOf: targetMaterialization ? `${targetMaterialization.timestamp}` : undefined,
   });
 
   return (
-    <DefaultContent message="" eventType={eventType}>
+    <DefaultContent
+      message=""
+      eventType={eventType}
+      eventIntent={success ? Intent.SUCCESS : Intent.DANGER}
+    >
       <div>
-        <div>
+        <div style={{color: success ? 'inherit' : Colors.Red500}}>
           Check <MetadataEntryLink to={checkLink}>{checkName}</MetadataEntryLink>
           {` ${success ? 'succeeded' : 'failed'} for materialization of `}
           <MetadataEntryLink to={matLink}>{displayNameForAssetKey(assetKey)}</MetadataEntryLink>.

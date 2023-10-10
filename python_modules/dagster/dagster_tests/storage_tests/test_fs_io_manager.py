@@ -313,8 +313,7 @@ def test_fs_io_manager_partitioned_no_partitions():
         partitions_def = DailyPartitionsDefinition(start_date="2020-02-01")
 
         @asset(partitions_def=partitions_def)
-        def asset1():
-            ...
+        def asset1(): ...
 
         @asset(
             partitions_def=partitions_def,

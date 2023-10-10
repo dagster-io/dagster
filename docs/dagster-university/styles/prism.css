@@ -104,6 +104,7 @@ pre[class*='language-'] {
 .token.operator,
 .token.entity,
 .token.url {
+  background-color: transparent;
   color: #49c188;
 }
 

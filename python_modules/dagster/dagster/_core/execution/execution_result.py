@@ -22,18 +22,15 @@ from dagster._core.storage.dagster_run import DagsterRun
 class ExecutionResult(ABC):
     @property
     @abstractmethod
-    def job_def(self) -> JobDefinition:
-        ...
+    def job_def(self) -> JobDefinition: ...
 
     @property
     @abstractmethod
-    def dagster_run(self) -> DagsterRun:
-        ...
+    def dagster_run(self) -> DagsterRun: ...
 
     @property
     @abstractmethod
-    def all_events(self) -> Sequence[DagsterEvent]:
-        ...
+    def all_events(self) -> Sequence[DagsterEvent]: ...
 
     @property
     @abstractmethod
@@ -175,6 +172,9 @@ class ExecutionResult(ABC):
 
     def get_asset_materialization_events(self) -> Sequence[DagsterEvent]:
         return [event for event in self.all_events if event.is_step_materialization]
+
+    def get_asset_observation_events(self) -> Sequence[DagsterEvent]:
+        return [event for event in self.all_events if event.is_asset_observation]
 
     def get_asset_check_evaluations(self) -> Sequence[AssetCheckEvaluation]:
         return [

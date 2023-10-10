@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, cast
 
 from dagster import (
     AssetCheckSpec,
@@ -10,6 +10,8 @@ from dagster import (
     op,
     repository,
     resource,
+    schedule,
+    sensor,
 )
 from dagster._config.field_utils import EnvVar
 from dagster._config.pythonic_config import Config, ConfigurableResource
@@ -27,6 +29,7 @@ from dagster._core.host_representation import (
     external_repository_data_from_def,
 )
 from dagster._core.host_representation.external_data import (
+    ExternalResourceData,
     NestedResource,
     NestedResourceType,
     ResourceJobUsageEntry,
@@ -608,12 +611,10 @@ def test_asset_check():
         pass
 
     @asset_check(asset=my_asset)
-    def my_asset_check():
-        ...
+    def my_asset_check(): ...
 
     @asset_check(asset=my_asset)
-    def my_asset_check_2():
-        ...
+    def my_asset_check_2(): ...
 
     defs = Definitions(
         assets=[my_asset],
@@ -639,8 +640,7 @@ def test_asset_check_in_asset_op():
         pass
 
     @asset_check(asset=my_asset)
-    def my_asset_check():
-        ...
+    def my_asset_check(): ...
 
     defs = Definitions(
         assets=[my_asset],
@@ -666,8 +666,7 @@ def test_asset_check_multiple_jobs():
         pass
 
     @asset_check(asset=my_asset)
-    def my_asset_check():
-        ...
+    def my_asset_check(): ...
 
     my_job = build_assets_job("my_job", [my_asset])
 
@@ -683,3 +682,69 @@ def test_asset_check_multiple_jobs():
     assert len(external_repo_data.external_asset_checks) == 2
     assert external_repo_data.external_asset_checks[0].name == "my_asset_check"
     assert external_repo_data.external_asset_checks[1].name == "my_other_asset_check"
+
+
+def test_repository_snap_definitions_resources_schedule_sensor_usage():
+    class MyResource(ConfigurableResource):
+        a_str: str
+
+    @op
+    def my_op() -> None:
+        pass
+
+    @job
+    def my_job() -> None:
+        my_op()
+
+    @sensor(job=my_job)
+    def my_sensor(foo: MyResource):
+        pass
+
+    @sensor(job=my_job)
+    def my_sensor_two(foo: MyResource, bar: MyResource):
+        pass
+
+    @schedule(job=my_job, cron_schedule="* * * * *")
+    def my_schedule(foo: MyResource):
+        pass
+
+    @schedule(job=my_job, cron_schedule="* * * * *")
+    def my_schedule_two(foo: MyResource, baz: MyResource):
+        pass
+
+    defs = Definitions(
+        resources={
+            "foo": MyResource(a_str="foo"),
+            "bar": MyResource(a_str="bar"),
+            "baz": MyResource(a_str="baz"),
+        },
+        sensors=[my_sensor, my_sensor_two],
+        schedules=[my_schedule, my_schedule_two],
+    )
+
+    repo = resolve_pending_repo_if_required(defs)
+    external_repo_data = external_repository_data_from_def(repo)
+    assert external_repo_data.external_resource_data
+
+    assert len(external_repo_data.external_resource_data) == 3
+
+    foo = [data for data in external_repo_data.external_resource_data if data.name == "foo"]
+    assert len(foo) == 1
+
+    assert set(cast(ExternalResourceData, foo[0]).schedules_using) == {
+        "my_schedule",
+        "my_schedule_two",
+    }
+    assert set(cast(ExternalResourceData, foo[0]).sensors_using) == {"my_sensor", "my_sensor_two"}
+
+    bar = [data for data in external_repo_data.external_resource_data if data.name == "bar"]
+    assert len(bar) == 1
+
+    assert set(cast(ExternalResourceData, bar[0]).schedules_using) == set()
+    assert set(cast(ExternalResourceData, bar[0]).sensors_using) == {"my_sensor_two"}
+
+    baz = [data for data in external_repo_data.external_resource_data if data.name == "baz"]
+    assert len(baz) == 1
+
+    assert set(cast(ExternalResourceData, baz[0]).schedules_using) == set({"my_schedule_two"})
+    assert set(cast(ExternalResourceData, baz[0]).sensors_using) == set()

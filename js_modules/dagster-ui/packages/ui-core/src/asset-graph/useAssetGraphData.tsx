@@ -6,6 +6,7 @@ import React from 'react';
 
 import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
 import {AssetKey} from '../assets/types';
+import {asyncGetFullAssetLayoutIndexDB} from '../graph/asyncGraphLayout';
 import {AssetGroupSelector, PipelineSelector} from '../graphql/types';
 
 import {ASSET_NODE_FRAGMENT} from './AssetNode';
@@ -47,14 +48,32 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
 
   const nodes = fetchResult.data?.assetNodes;
 
-  const {
-    assetGraphData,
-    graphQueryItems,
-    graphAssetKeys,
-    allAssetKeys,
-    applyingEmptyDefault,
-  } = React.useMemo(() => {
-    if (nodes === undefined) {
+  const repoFilteredNodes = React.useMemo(() => {
+    // Apply any filters provided by the caller. This is where we do repo filtering
+    let matching = nodes;
+    if (options.hideNodesMatching) {
+      matching = reject(matching, options.hideNodesMatching);
+    }
+    return matching;
+  }, [nodes, options.hideNodesMatching]);
+
+  const graphQueryItems = React.useMemo(
+    () => (repoFilteredNodes ? buildGraphQueryItems(repoFilteredNodes) : []),
+    [repoFilteredNodes],
+  );
+
+  const fullGraphQueryItems = React.useMemo(
+    () => (nodes ? buildGraphQueryItems(nodes) : []),
+    [nodes],
+  );
+
+  const fullAssetGraphData = React.useMemo(
+    () => (fullGraphQueryItems ? buildGraphData(fullGraphQueryItems.map((n) => n.node)) : null),
+    [fullGraphQueryItems],
+  );
+
+  const {assetGraphData, graphAssetKeys, allAssetKeys, applyingEmptyDefault} = React.useMemo(() => {
+    if (repoFilteredNodes === undefined || graphQueryItems === undefined) {
       return {
         graphAssetKeys: [],
         graphQueryItems: [],
@@ -63,41 +82,77 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
       };
     }
 
-    // Apply any filters provided by the caller. This is where we do repo filtering
-    let matching = nodes;
-    if (options.hideNodesMatching) {
-      matching = reject(matching, options.hideNodesMatching);
-    }
-
     // Filter the set of all AssetNodes down to those matching the `opsQuery`.
     // In the future it might be ideal to move this server-side, but we currently
     // get to leverage the useQuery cache almost 100% of the time above, making this
     // super fast after the first load vs a network fetch on every page view.
-    const graphQueryItems = buildGraphQueryItems(matching);
     const {all, applyingEmptyDefault} = filterByQuery(graphQueryItems, opsQuery);
 
     // Assemble the response into the data structure used for layout, traversal, etc.
     const assetGraphData = buildGraphData(all.map((n) => n.node));
     if (options.hideEdgesToNodesOutsideQuery) {
-      removeEdgesToHiddenAssets(assetGraphData, nodes);
+      removeEdgesToHiddenAssets(assetGraphData, repoFilteredNodes);
     }
 
     return {
-      allAssetKeys: matching.map((n) => n.assetKey),
+      allAssetKeys: repoFilteredNodes.map((n) => n.assetKey),
       graphAssetKeys: all.map((n) => ({path: n.node.assetKey.path})),
       assetGraphData,
       graphQueryItems,
       applyingEmptyDefault,
     };
-  }, [nodes, opsQuery, options.hideEdgesToNodesOutsideQuery, options.hideNodesMatching]);
+  }, [repoFilteredNodes, graphQueryItems, opsQuery, options.hideEdgesToNodesOutsideQuery]);
+
+  // Used to avoid showing "query error"
+  const [isCalculating, setIsCalculating] = React.useState<boolean>(true);
+  const [isCached, setIsCached] = React.useState<boolean>(false);
+  const [assetGraphDataMaybeCached, setAssetGraphDataMaybeCached] =
+    React.useState<GraphData | null>(null);
+
+  React.useLayoutEffect(() => {
+    setAssetGraphDataMaybeCached(null);
+    setIsCached(false);
+    setIsCalculating(true);
+    (async () => {
+      let fullAssetGraphData = null;
+      if (applyingEmptyDefault && repoFilteredNodes) {
+        // build the graph data anyways to check if it's cached
+        const {all} = filterByQuery(graphQueryItems, '*');
+        fullAssetGraphData = buildGraphData(all.map((n) => n.node));
+        if (options.hideEdgesToNodesOutsideQuery) {
+          removeEdgesToHiddenAssets(fullAssetGraphData, repoFilteredNodes);
+        }
+        if (fullAssetGraphData) {
+          const isCached = await asyncGetFullAssetLayoutIndexDB.isCached(fullAssetGraphData);
+          if (isCached) {
+            setAssetGraphDataMaybeCached(fullAssetGraphData);
+            setIsCached(true);
+            setIsCalculating(false);
+            return;
+          }
+        }
+      }
+      setAssetGraphDataMaybeCached(assetGraphData);
+      setIsCached(false);
+      setIsCalculating(false);
+    })();
+  }, [
+    applyingEmptyDefault,
+    graphQueryItems,
+    options.hideEdgesToNodesOutsideQuery,
+    repoFilteredNodes,
+    assetGraphData,
+  ]);
 
   return {
     fetchResult,
-    assetGraphData,
+    assetGraphData: assetGraphDataMaybeCached,
+    fullAssetGraphData,
     graphQueryItems,
     graphAssetKeys,
     allAssetKeys,
-    applyingEmptyDefault,
+    applyingEmptyDefault: applyingEmptyDefault && !isCached,
+    isCalculating,
   };
 }
 
@@ -184,6 +239,7 @@ export const ASSET_GRAPH_QUERY = gql`
   fragment AssetNodeForGraphQuery on AssetNode {
     id
     groupName
+    isExecutable
     hasMaterializePermission
     repository {
       id

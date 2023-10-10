@@ -28,16 +28,14 @@ from dagster._core.workspace.workspace import (
 
 
 @asset
-def asset1():
-    ...
+def asset1(): ...
 
 
 defs1 = Definitions(assets=[asset1])
 
 
 @asset
-def asset2():
-    ...
+def asset2(): ...
 
 
 defs2 = Definitions(assets=[asset2])
@@ -55,8 +53,7 @@ downstream_defs = Definitions(assets=[asset1_source, downstream])
 
 
 @asset(deps=[asset1])
-def downstream_non_arg_dep():
-    ...
+def downstream_non_arg_dep(): ...
 
 
 downstream_defs_no_source = Definitions(assets=[downstream_non_arg_dep])
@@ -244,9 +241,9 @@ def test_get_implicit_job_name_for_assets():
 
     partitioned_defs_workspace = make_context(["partitioned_defs"])
     asset_graph = ExternalAssetGraph.from_workspace(partitioned_defs_workspace)
-    external_repo = list(partitioned_defs_workspace.code_locations[0].get_repositories().values())[
-        0
-    ]
+    external_repo = next(
+        iter(partitioned_defs_workspace.code_locations[0].get_repositories().values())
+    )
     assert (
         asset_graph.get_implicit_job_name_for_assets(
             [downstream_of_partitioned_source.key], external_repo=external_repo

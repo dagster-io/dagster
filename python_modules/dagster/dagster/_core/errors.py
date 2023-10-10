@@ -392,9 +392,9 @@ class DagsterUnknownResourceError(DagsterError, AttributeError):
     def __init__(self, resource_name, *args, **kwargs):
         self.resource_name = check.str_param(resource_name, "resource_name")
         msg = (
-            "Unknown resource `{resource_name}`. Specify `{resource_name}` as a required resource "
+            f"Unknown resource `{resource_name}`. Specify `{resource_name}` as a required resource "
             "on the compute / config function that accessed it."
-        ).format(resource_name=resource_name)
+        )
         super(DagsterUnknownResourceError, self).__init__(msg, *args, **kwargs)
 
 
@@ -421,9 +421,7 @@ class DagsterInvalidConfigError(DagsterError):
 
         for i_error, error in enumerate(self.errors):
             error_messages.append(error.message)
-            error_msg += "\n    Error {i_error}: {error_message}".format(
-                i_error=i_error + 1, error_message=error.message
-            )
+            error_msg += f"\n    Error {i_error + 1}: {error.message}"
 
         self.message = error_msg
         self.error_messages = error_messages
@@ -674,5 +672,5 @@ class DagsterDefinitionChangedDeserializationError(DagsterError):
     """
 
 
-class DagsterExternalExecutionError(DagsterError):
+class DagsterPipesExecutionError(DagsterError):
     """Indicates that an error occurred during the execution of an external process."""

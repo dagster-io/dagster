@@ -175,10 +175,13 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
       }
     }
 
-    const earliest = jobs.reduce((accum, job) => {
-      const startTimes = job.runs.map((job) => job.startTime);
-      return {...accum, [job.key]: Math.min(...startTimes)};
-    }, {} as {[jobKey: string]: number});
+    const earliest = jobs.reduce(
+      (accum, job) => {
+        const startTimes = job.runs.map((job) => job.startTime);
+        return {...accum, [job.key]: Math.min(...startTimes)};
+      },
+      {} as {[jobKey: string]: number},
+    );
 
     return jobs.sort((a, b) => earliest[a.key]! - earliest[b.key]!);
   }, [workspaceOrError, runsByJobKey, start, end]);

@@ -9,6 +9,7 @@ export type AssetTableDefinitionFragment = {
   opNames: Array<string>;
   isSource: boolean;
   isObservable: boolean;
+  isExecutable: boolean;
   computeKind: string | null;
   hasMaterializePermission: boolean;
   description: string | null;
@@ -32,6 +33,7 @@ export type AssetTableFragment = {
     opNames: Array<string>;
     isSource: boolean;
     isObservable: boolean;
+    isExecutable: boolean;
     computeKind: string | null;
     hasMaterializePermission: boolean;
     description: string | null;

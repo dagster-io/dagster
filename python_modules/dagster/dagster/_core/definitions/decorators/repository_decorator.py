@@ -93,14 +93,12 @@ class _Repository:
             Callable[[], Sequence[RepositoryListDefinition]],
             Callable[[], RepositoryDictSpec],
         ],
-    ) -> RepositoryDefinition:
-        ...
+    ) -> RepositoryDefinition: ...
 
     @overload
     def __call__(
         self, fn: Callable[[], Sequence[PendingRepositoryListDefinition]]
-    ) -> PendingRepositoryDefinition:
-        ...
+    ) -> PendingRepositoryDefinition: ...
 
     def __call__(
         self,
@@ -221,15 +219,13 @@ def repository(
     definitions_fn: Union[
         Callable[[], Sequence[RepositoryListDefinition]], Callable[[], RepositoryDictSpec]
     ],
-) -> RepositoryDefinition:
-    ...
+) -> RepositoryDefinition: ...
 
 
 @overload
 def repository(
     definitions_fn: Callable[..., Sequence[PendingRepositoryListDefinition]]
-) -> PendingRepositoryDefinition:
-    ...
+) -> PendingRepositoryDefinition: ...
 
 
 @overload
@@ -242,8 +238,7 @@ def repository(
     default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = ...,
     _top_level_resources: Optional[Mapping[str, ResourceDefinition]] = ...,
     _resource_key_mapping: Optional[Mapping[int, str]] = ...,
-) -> _Repository:
-    ...
+) -> _Repository: ...
 
 
 def repository(

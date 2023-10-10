@@ -308,21 +308,24 @@ const ConfigEditorPartitionPicker: React.FC<ConfigEditorPartitionPickerProps> = 
             Add new partition
           </Button>
         ) : null}
-        <CreatePartitionDialog
-          key={showCreatePartition ? '1' : '0'}
-          isOpen={showCreatePartition}
-          partitionDefinitionName={partitionDefinitionName}
-          repoAddress={repoAddress}
-          close={() => {
-            setShowCreatePartition(false);
-          }}
-          refetch={async () => {
-            await refetch();
-          }}
-          onCreated={(partitionName) => {
-            onSelect(repositorySelector, partitionSetName, partitionName);
-          }}
-        />
+        {/* Wrapper div to avoid any key conflicts with the key on the Suggestion component */}
+        <div>
+          <CreatePartitionDialog
+            key={showCreatePartition ? '1' : '0'}
+            isOpen={showCreatePartition}
+            partitionDefinitionName={partitionDefinitionName}
+            repoAddress={repoAddress}
+            close={() => {
+              setShowCreatePartition(false);
+            }}
+            refetch={async () => {
+              await refetch();
+            }}
+            onCreated={(partitionName) => {
+              onSelect(repositorySelector, partitionSetName, partitionName);
+            }}
+          />
+        </div>
       </>
     );
   },
@@ -334,8 +337,8 @@ interface ConfigEditorConfigGeneratorPickerProps {
   onSelect: (configGenerator: ConfigGenerator) => void;
 }
 
-const ConfigEditorConfigGeneratorPicker: React.FC<ConfigEditorConfigGeneratorPickerProps> = React.memo(
-  (props) => {
+const ConfigEditorConfigGeneratorPicker: React.FC<ConfigEditorConfigGeneratorPickerProps> =
+  React.memo((props) => {
     const {configGenerators, label, onSelect} = props;
     const button = React.useRef<HTMLButtonElement>(null);
 
@@ -411,8 +414,7 @@ const ConfigEditorConfigGeneratorPicker: React.FC<ConfigEditorConfigGeneratorPic
         </ShortcutHandler>
       </div>
     );
-  },
-);
+  });
 
 export const SortButton = styled.button`
   border: 0;

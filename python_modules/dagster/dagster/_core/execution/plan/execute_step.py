@@ -25,6 +25,7 @@ from dagster._core.definitions import (
     TypeCheck,
 )
 from dagster._core.definitions.asset_check_result import AssetCheckResult
+from dagster._core.definitions.asset_spec import AssetExecutionType
 from dagster._core.definitions.data_version import (
     CODE_VERSION_TAG,
     DATA_VERSION_IS_USER_PROVIDED_TAG,
@@ -91,52 +92,53 @@ def _process_asset_results_to_events(
          to create a full picture of the asset check's evaluation.
     """
     for user_event in user_event_sequence:
-        if isinstance(user_event, MaterializeResult):
-            assets_def = step_context.job_def.asset_layer.assets_def_for_node(
-                step_context.node_handle
-            )
-            if not assets_def:
-                raise DagsterInvariantViolationError(
-                    "MaterializeResult is only valid within asset computations, no backing"
-                    " AssetsDefinition found."
-                )
-            if user_event.asset_key:
-                asset_key = user_event.asset_key
-            else:
-                if len(assets_def.keys) != 1:
-                    raise DagsterInvariantViolationError(
-                        "MaterializeResult did not include asset_key and it can not be inferred."
-                        f" Specify which asset_key, options are: {assets_def.keys}."
-                    )
-                asset_key = assets_def.key
+        yield from _process_user_event(step_context, user_event)
 
-            output_name = assets_def.get_output_name_for_asset_key(asset_key)
-            output = Output(
-                value=None,
-                output_name=output_name,
-                metadata=user_event.metadata,
-            )
-            yield output
-        elif isinstance(user_event, AssetCheckResult):
-            asset_check_evaluation = user_event.to_asset_check_evaluation(step_context)
-            check.not_none(
-                step_context.job_def.asset_layer.get_spec_for_asset_check(
-                    step_context.node_handle, asset_check_evaluation.asset_check_handle
-                ),
-                "If we were able to create an AssetCheckEvaluation from the AssetCheckResult, then"
-                " there should be a spec for the check",
-            )
 
-            output_name = step_context.job_def.asset_layer.get_output_name_for_asset_check(
-                asset_check_evaluation.asset_check_handle
+def _process_user_event(
+    step_context: StepExecutionContext, user_event: OpOutputUnion
+) -> Iterator[OpOutputUnion]:
+    if isinstance(user_event, MaterializeResult):
+        assets_def = step_context.job_def.asset_layer.assets_def_for_node(step_context.node_handle)
+        if not assets_def:
+            raise DagsterInvariantViolationError(
+                "MaterializeResult is only valid within asset computations, no backing"
+                " AssetsDefinition found."
             )
-            output = Output(value=None, output_name=output_name)
-
-            yield asset_check_evaluation
-
-            yield output
+        if user_event.asset_key:
+            asset_key = user_event.asset_key
         else:
-            yield user_event
+            if len(assets_def.keys) != 1:
+                raise DagsterInvariantViolationError(
+                    "MaterializeResult did not include asset_key and it can not be inferred."
+                    f" Specify which asset_key, options are: {assets_def.keys}."
+                )
+            asset_key = assets_def.key
+
+        output_name = assets_def.get_output_name_for_asset_key(asset_key)
+
+        for check_result in user_event.check_results or []:
+            yield from _process_user_event(step_context, check_result)
+
+        yield Output(
+            value=None,
+            output_name=output_name,
+            metadata=user_event.metadata,
+            data_version=user_event.data_version,
+        )
+    elif isinstance(user_event, AssetCheckResult):
+        asset_check_evaluation = user_event.to_asset_check_evaluation(step_context)
+
+        output_name = step_context.job_def.asset_layer.get_output_name_for_asset_check(
+            asset_check_evaluation.asset_check_key
+        )
+        output = Output(value=None, output_name=output_name)
+
+        yield asset_check_evaluation
+
+        yield output
+    else:
+        yield user_event
 
 
 def _step_output_error_checked_user_event_sequence(
@@ -491,11 +493,7 @@ def core_dagster_event_sequence_for_step(
             elif isinstance(user_event, ExpectationResult):
                 yield DagsterEvent.step_expectation_result(step_context, user_event)
             else:
-                check.failed(
-                    "Unexpected event {event}, should have been caught earlier".format(
-                        event=user_event
-                    )
-                )
+                check.failed(f"Unexpected event {user_event}, should have been caught earlier")
 
     yield DagsterEvent.step_success_event(
         step_context, StepSuccessData(duration_ms=timer_result.millis)
@@ -701,7 +699,7 @@ def _store_output(
     # don't store asset check outputs
     if step_context.step.step_output_named(
         step_output_handle.output_name
-    ).properties.asset_check_handle:
+    ).properties.asset_check_key:
 
         def _no_op() -> Iterator[DagsterEvent]:
             yield from ()
@@ -782,15 +780,38 @@ def _store_output(
 
     asset_key, partitions = _asset_key_and_partitions_for_output(output_context)
     if asset_key:
-        for materialization in _get_output_asset_materializations(
-            asset_key,
-            partitions,
-            output,
-            output_def,
-            manager_metadata,
-            step_context,
-        ):
-            yield DagsterEvent.asset_materialization(step_context, materialization)
+        asset_layer = step_context.job_def.asset_layer
+        execution_type = (
+            asset_layer.assets_def_for_asset(asset_key).asset_execution_type_for_asset(asset_key)
+            if asset_layer.has_assets_def_for_asset(asset_key)
+            else AssetExecutionType.MATERIALIZATION
+        )
+
+        check.invariant(
+            execution_type != AssetExecutionType.UNEXECUTABLE,
+            "There should never be unexecutable assets here",
+        )
+
+        check.invariant(
+            execution_type in {AssetExecutionType.MATERIALIZATION, AssetExecutionType.OBSERVATION},
+            f"Unexpected asset execution type {execution_type}",
+        )
+
+        yield from (
+            (
+                DagsterEvent.asset_materialization(step_context, materialization)
+                for materialization in _get_output_asset_materializations(
+                    asset_key,
+                    partitions,
+                    output,
+                    output_def,
+                    manager_metadata,
+                    step_context,
+                )
+            )
+            if execution_type == AssetExecutionType.MATERIALIZATION
+            else ()
+        )
 
     yield DagsterEvent.handled_output(
         step_context,

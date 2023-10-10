@@ -19,7 +19,7 @@ Here’s an overview of the main concepts we’ll be using:
 - [Assets](/concepts/assets/software-defined-assets) - We'll define three assets that each persist a table to Snowflake.
 - [Ops](/concepts/ops-jobs-graphs/ops) - We'll define two ops that query Snowflake: the first will clone a database, and the second will drop database clones.
 - [Graphs](/concepts/ops-jobs-graphs/graphs) - We'll build graphs that define the order our ops should run.
-- [Jobs](/concepts/ops-jobs-graphs/jobs) - We'll define jobs by binding our graphs to resources.
+- [Jobs](/concepts/assets/asset-jobs) - We'll define jobs by binding our graphs to resources.
 - [Resources](/concepts/resources) - We'll use the [Snowflake resource](/\_apidocs/libraries/dagster-snowflake#dagster_snowflake.snowflake_resource) to swap in different Snowflake connections to our jobs depending on environment.
 - [I/O managers](/concepts/io-management/io-managers) - We'll use a Snowflake I/O manager to persist asset outputs to Snowflake.
 
@@ -267,7 +267,8 @@ defs = Definitions(
 
 <TabGroup>
   <TabItem name="Using GitHub Actions">
-    The `branch_deployments.yml` file located in `.github/workflows/branch_deployments.yml` defines a `dagster_cloud_build_push` job with a series of steps that launch a branch deployment. Because we want to queue a run of `clone_prod` within each deployment after it launches, we'll add an additional step at the end `dagster_cloud_build_push`. This job is triggered on multiple pull request events: `opened`, `synchronize`, `reopen`, and `closed`. This means that upon future pushes to the branch, we'll trigger a run of `clone_prod`. The `if` condition below ensures that `clone_prod` will not run if the pull request is closed:
+
+The `branch_deployments.yml` file located in `.github/workflows/branch_deployments.yml` defines a `dagster_cloud_build_push` job with a series of steps that launch a branch deployment. Because we want to queue a run of `clone_prod` within each deployment after it launches, we'll add an additional step at the end `dagster_cloud_build_push`. This job is triggered on multiple pull request events: `opened`, `synchronize`, `reopen`, and `closed`. This means that upon future pushes to the branch, we'll trigger a run of `clone_prod`. The `if` condition below ensures that `clone_prod` will not run if the pull request is closed:
 
 ```yaml file=/guides/dagster/development_to_production/branch_deployments/clone_prod.yaml
 # .github/workflows/branch_deployments.yml
@@ -318,9 +319,7 @@ alt="instance-overview"
 src="/images/guides/development_to_production/branch_deployments/snowflake.png"
 width={1431}
 height={537}
-/>
-
-  </TabItem>
+/> </TabItem>
 
   <TabItem name="Using Gitlab CI/CD">
 
@@ -390,7 +389,9 @@ alt="instance-overview"
 src="/images/guides/development_to_production/branch_deployments/snowflake.png"
 width={1431}
 height={537}
-/> </TabItem>
+/>
+
+</TabItem>
 
 </TabGroup>
 

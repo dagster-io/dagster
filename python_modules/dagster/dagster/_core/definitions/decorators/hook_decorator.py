@@ -28,12 +28,10 @@ def _validate_hook_fn_params(fn, expected_positionals):
     missing_positional = validate_expected_params(params, expected_positionals)
     if missing_positional:
         raise DagsterInvalidDefinitionError(
-            "'{hook_name}' decorated function does not have required positional "
-            "parameter '{missing_param}'. Hook functions should only have keyword arguments "
+            f"'{fn.__name__}' decorated function does not have required positional "
+            f"parameter '{missing_positional}'. Hook functions should only have keyword arguments "
             "that match input names and a first positional parameter named 'context' and "
-            "a second positional parameter named 'event_list'.".format(
-                hook_name=fn.__name__, missing_param=missing_positional
-            )
+            "a second positional parameter named 'event_list'."
         )
 
 
@@ -140,8 +138,7 @@ SuccessOrFailureHookFn = Callable[["HookContext"], Any]
 
 
 @overload
-def success_hook(hook_fn: SuccessOrFailureHookFn) -> HookDefinition:
-    ...
+def success_hook(hook_fn: SuccessOrFailureHookFn) -> HookDefinition: ...
 
 
 @overload
@@ -149,8 +146,7 @@ def success_hook(
     *,
     name: Optional[str] = ...,
     required_resource_keys: Optional[AbstractSet[str]] = ...,
-) -> Callable[[SuccessOrFailureHookFn], HookDefinition]:
-    ...
+) -> Callable[[SuccessOrFailureHookFn], HookDefinition]: ...
 
 
 def success_hook(
@@ -215,16 +211,14 @@ def success_hook(
 
 
 @overload
-def failure_hook(name: SuccessOrFailureHookFn) -> HookDefinition:
-    ...
+def failure_hook(name: SuccessOrFailureHookFn) -> HookDefinition: ...
 
 
 @overload
 def failure_hook(
     name: Optional[str] = ...,
     required_resource_keys: Optional[AbstractSet[str]] = ...,
-) -> Callable[[SuccessOrFailureHookFn], HookDefinition]:
-    ...
+) -> Callable[[SuccessOrFailureHookFn], HookDefinition]: ...
 
 
 def failure_hook(

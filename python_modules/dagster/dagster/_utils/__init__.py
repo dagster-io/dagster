@@ -182,7 +182,7 @@ def camelcase(string: str) -> str:
 def ensure_single_item(ddict: Mapping[T, U]) -> Tuple[T, U]:
     check.mapping_param(ddict, "ddict")
     check.param_invariant(len(ddict) == 1, "ddict", "Expected dict with single item")
-    return list(ddict.items())[0]
+    return next(iter(ddict.items()))
 
 
 @contextlib.contextmanager
@@ -251,18 +251,15 @@ def hash_collection(
 
 
 @overload
-def make_hashable(value: Union[List[Any], Set[Any]]) -> Tuple[Any, ...]:
-    ...
+def make_hashable(value: Union[List[Any], Set[Any]]) -> Tuple[Any, ...]: ...
 
 
 @overload
-def make_hashable(value: Dict[Any, Any]) -> Tuple[Tuple[Any, Any]]:
-    ...
+def make_hashable(value: Dict[Any, Any]) -> Tuple[Tuple[Any, Any]]: ...
 
 
 @overload
-def make_hashable(value: Any) -> Any:
-    ...
+def make_hashable(value: Any) -> Any: ...
 
 
 def make_hashable(value: Any) -> Any:
@@ -699,8 +696,7 @@ def normalize_to_repository(
     definitions_or_repository: Optional[Union["Definitions", "RepositoryDefinition"]] = ...,
     repository: Optional["RepositoryDefinition"] = ...,
     error_on_none: Literal[True] = ...,
-) -> "RepositoryDefinition":
-    ...
+) -> "RepositoryDefinition": ...
 
 
 @overload
@@ -708,8 +704,7 @@ def normalize_to_repository(
     definitions_or_repository: Optional[Union["Definitions", "RepositoryDefinition"]] = ...,
     repository: Optional["RepositoryDefinition"] = ...,
     error_on_none: Literal[False] = ...,
-) -> Optional["RepositoryDefinition"]:
-    ...
+) -> Optional["RepositoryDefinition"]: ...
 
 
 def normalize_to_repository(

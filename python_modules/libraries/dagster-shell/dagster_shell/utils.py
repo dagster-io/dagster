@@ -99,7 +99,7 @@ def execute_script_file(
             stderr=stderr_pipe,
             cwd=cwd,
             env=env,
-            preexec_fn=pre_exec,
+            preexec_fn=pre_exec,  # noqa: PLW1509
             encoding="UTF-8",
         )
 

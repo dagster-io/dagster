@@ -5,17 +5,19 @@ description: Dagster supports data backfills for each partition or subsets of pa
 
 # Backfills
 
-## Overview
+Backfilling is the process of running partitions for assets or ops that either don’t exist or updating existing records. Dagster supports backfills for each partition or a subset of partitions.
 
-Dagster supports data backfills for each partition or subsets of partitions. After defining a [partitioned asset or job](/concepts/partitions-schedules-sensors/partitions), you can launch a _backfill_ which submits runs to fill in multiple partitions at the same time.
+After defining a [partition](/concepts/partitions-schedules-sensors/partitions), you can launch a backfill that will submit runs to fill in multiple partitions at the same time.
+
+Backfills are common when setting up a pipeline for the first time. The assets you want to materialize might have historical data that needs to be materialized to get the assets up to date. Another common reason to run a backfill is when you’ve changed the logic for an asset and need to update historical data with the new logic.
 
 ---
 
-## Launching Backfills
+## Launching backfills for partitioned assets
 
-### Partitioned Asset Backfills
+To launch backfills for a partitioned asset, click the **Materialize** button on either the [**Asset details**](/concepts/partitions-schedules-sensors/partitioning-assets) or the **Global asset lineage** page. The backfill modal will display.
 
-You can open the backfill modal to launch backfills for a partitioned asset using the "Materialize" button, either on the [Asset detail page](https://docs.dagster.io/concepts/partitions-schedules-sensors/partitions#materializing-partitioned-assets) or when viewing a graph of assets. Backfills can also be launched for a selection of differently partitioned assets, as long as the roots share the same partitioning.
+Backfills can also be launched for a selection of partitioned assets as long as the most upstream assets share the same partitioning. For example: All partitions use a `DailyPartitionsDefinition`.
 
 <Image
 alt="backfills-launch-modal"
@@ -24,7 +26,7 @@ width={856}
 height={689}
 />
 
-To observe the the progress of an asset backfill, you can visit the backfill details page. You can get to this page by clicking on the notification that shows up after launching a backfill. You can also reach this page by clicking on "Overview" in the top navigation pane, then clicking the "Backfills" tab, and then clicking on the ID of one of the backfills.
+To observe the progress of an asset backfill, navigate to the **Backfill details** page for the backfill. This page can be accessed by clicking **Overview (top navigation bar) > Backfills tab**, then clicking the ID of the backfill:
 
 <Image
 alt="backfills-launch-modal"
@@ -33,44 +35,44 @@ width={1737}
 height={335}
 />
 
-#### Single-run backfills
+### Launching single-run backfills using backfill policies <Experimental />
 
-By default, if you launch a backfill that covers N partitions, Dagster will launch N separate runs - one for each partition. This works well when your code is single threaded, because it avoids overwhelming it with large amounts of data. However, if you're using a parallel-processing engine like Spark and Snowflake, you often don't need Dagster to help with parallelism, so splitting up the backfill into multiple runs just adds extra overhead.
+By default, if you launch a backfill that covers `N` partitions, Dagster will launch `N` separate runs, one for each partition. This approach can help avoid overwhelming Dagster or resources with large amounts of data. However, if you're using a parallel-processing engine like Spark and Snowflake, you often don't need Dagster to help with parallelism, so splitting up the backfill into multiple runs just adds extra overhead.
 
-Dagster supports backfills that execute as a single run that covers a range of partitions. For example, this allows you to execute the backfill as a single Snowflake query. After it completes, Dagster will track that all those partitions have been filled.
+Dagster supports backfills that execute as a single run that covers a range of partitions, such as executing a backfill as a single Snowflake query. After the run completes, Dagster will track that all the partitions have been filled.
 
-For this to work, your code needs to be written in a way that allows it to operate on partition ranges, instead of just single partitions.
+To get this behavior, you need to:
 
-If your code uses any of the `partition_key`, `asset_partition_key`, `asset_partition_key_for_output`, or `asset_partition_key_for_input` context methods or properties, you'll need to update it to use methods or properties like `asset_partitions_time_window`, `asset_partition_key_range`, `asset_partition_keys`, `asset_partitions_time_window_for_output`, `asset_partition_key_range_output`, `asset_partitions_time_window_for_input`, or `asset_partition_key_range_for_input` instead.
+- **Set the asset's `backfill_policy`** to <PyObject object="BackfillPolicy" method="single_run" />
+- **Write code that operates a range of partitions** instead of just single partitions. This means that, if your code uses the `partition_key` context property, you'll need to update it to use one of the following properties instead:
+
+  - [`partition_time_window`](/\_apidocs/execution#dagster.OpExecutionContext.partition_time_window)
+  - [`partition_key_range`](/\_apidocs/execution#dagster.OpExecutionContext.partition_key_range)
+  - [`partition_keys`](/\_apidocs/execution#dagster.OpExecutionContext.partition_keys)
+
+  Which property to use depends on whether it's most convenient for you to operate on start/end datetime objects, start/end partition keys, or a list of partition keys.
+
+For example:
 
 ```python file=/concepts/partitions_schedules_sensors/backfills/single_run_backfill_asset.py startafter=start_marker endbefore=end_marker
-from dagster import AssetKey, DailyPartitionsDefinition, asset
+from dagster import AssetKey, BackfillPolicy, DailyPartitionsDefinition, asset
 
 
 @asset(
     partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
+    backfill_policy=BackfillPolicy.single_run(),
     deps=[AssetKey("raw_events")],
 )
 def events(context):
-    (
-        input_start_datetime,
-        input_end_datetime,
-    ) = context.asset_partitions_time_window_for_input("raw_events")
-    input_data = read_data_in_datetime_range(input_start_datetime, input_end_datetime)
+    start_datetime, end_datetime = context.partition_time_window
+
+    input_data = read_data_in_datetime_range(start_datetime, end_datetime)
     output_data = compute_events_from_raw_events(input_data)
 
-    (
-        output_start_datetime,
-        output_end_datetime,
-    ) = context.asset_partitions_time_window_for_output()
-    return overwrite_data_in_datetime_range(
-        output_start_datetime,
-        output_end_datetime,
-        output_data,
-    )
+    overwrite_data_in_datetime_range(start_datetime, end_datetime, output_data)
 ```
 
-Alternatively, if you are using an I/O manager to handle saving and loading your data, you'll need to ensure the I/O manager is also using these methods. If you're using any of the built-in database I/O managers, like [Snowflake](/integrations/snowflake), [BigQuery](/integrations/bigquery), or [DuckDB](/\_apidocs/libraries/dagster-duckdb), you'll have this out-of-the-box.
+If you are using an I/O manager to handle saving and loading your data, you'll need to ensure the I/O manager is also using these methods. If you're using any of the built-in database I/O managers, like [Snowflake](/integrations/snowflake), [BigQuery](/integrations/bigquery), or [DuckDB](/\_apidocs/libraries/dagster-duckdb), you'll have this out-of-the-box. **Note**: This doesn't apply to file system I/O managers.
 
 ```python file=/concepts/partitions_schedules_sensors/backfills/single_run_backfill_io_manager.py startafter=start_marker endbefore=end_marker
 from dagster import IOManager
@@ -86,24 +88,20 @@ class MyIOManager(IOManager):
         return overwrite_data_in_datetime_range(start_datetime, end_datetime, obj)
 ```
 
-### Partitioned Job Backfills
+---
 
-You can launch and monitor backfills of a job using the [Partitions tab](/concepts/partitions-schedules-sensors/partitions#dagster-ui-partitions-tab).
+## Launching backfills for partitioned jobs
 
-To launch a backfill, click the "Launch backfill" button at the top center of the Partitions tab. This opens the "Launch backfill" modal, which lets you select the set of partitions to launch the backfill over. A run will be launched for each partition.
+To launch and monitor backfills for a job, use the [**Partitions** tab](/concepts/webserver/ui#partitions-tab) in the job's **Details** page:
 
-<!-- This was generated from go/prod -->
+1. Click the **Launch backfill** button in the **Partitions** tab. This opens the **Launch backfill** modal.
+2. Select the partitions to backfill. A run will be launched for each partition.
+3. Click **Submit \[N] runs** button on the bottom right to submit the runs. What happens when you click this button depends on your [Run Coordinator](/deployment/run-coordinator):
 
-<Image
-alt="backfills-launch-modal"
-src="/images/concepts/partitions-schedules-sensors/backfills-launch-modal.png"
-width={3808}
-height={2414}
-/>
+   - **For the default run coordinator**, the modal will exit after all runs have been launched
+   - **For the queued run coordinator**, the modal will exit after all runs have been queued
 
-You can click the button on the bottom right to submit the runs. What happens when you hit this button depends on your [Run Coordinator](/deployment/run-coordinator). With the default run coordinator, the modal will exit after all runs have been launched. With the queued run coordinator, the modal will exit after all runs have been queued.
-
-After all the runs have been submitted, you'll be returned to the partitions page, with a filter for runs inside the backfill. This refreshes periodically and allows you to see how the backfill is progressing. Boxes become green or red as steps in the backfill runs succeed or fail.
+After all the runs have been submitted, you'll be returned to the **Partitions** page, with a filter for runs inside the backfill. This page refreshes periodically and allows you to see how the backfill is progressing. Boxes will become green or red as steps in the backfill runs succeed or fail:
 
 <Image
 alt="partitions-page"
@@ -112,25 +110,25 @@ width={3808}
 height={2414}
 />
 
-### Using the Backfill CLI
+---
 
-You can also launch backfills using the [`backfill`](/\_apidocs/cli#dagster-pipeline-backfill) CLI.
+## Launching backfills of jobs using the CLI
 
-In the [Partitions](/concepts/partitions-schedules-sensors/partitions#date-partitioned-job) concept page, we defined a partitioned job called `do_stuff_partitioned` that had date partitions.
+### Backfilling all partitions in a job
 
-Having done so, we can run the command `dagster job backfill` to execute the backfill.
+Backfills can also be launched using the [`backfill`](/\_apidocs/cli#dagster-pipeline-backfill) CLI.
+
+Let's say we defined a date-partitioned job named `trips_update_job`. To execute the backfill for this job, we can run the `dagster job backfill` command as follows:
 
 ```bash
-$ dagster job backfill -p do_stuff_partitioned
+$ dagster job backfill -p trips_update_job
 ```
 
 This will display a list of all the partitions in the job, ask you if you want to proceed, and then launch a run for each partition.
 
-#### Executing a subset of partitions
+### Backfilling a subset of partitions
 
-You can also execute subsets of the partition sets.
-
-You can specify the `--partitions` argument and provide a comma-separated list of partition names you want to backfill:
+To execute a subset of a partition set, use the `--partitions` argument and provide a comma-separated list of partition names you want to backfill:
 
 ```bash
 $ dagster job backfill -p do_stuff_partitioned --partitions 2021-04-01,2021-04-02

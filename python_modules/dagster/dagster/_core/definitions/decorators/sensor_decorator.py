@@ -181,11 +181,9 @@ def asset_sensor(
 
             elif result is not None:
                 raise DagsterInvariantViolationError(
-                    (
-                        "Error in sensor {sensor_name}: Sensor unexpectedly returned output "
-                        "{result} of type {type_}.  Should only return SkipReason or "
-                        "RunRequest objects."
-                    ).format(sensor_name=sensor_name, result=result, type_=type(result))
+                    f"Error in sensor {sensor_name}: Sensor unexpectedly returned output "
+                    f"{result} of type {type(result)}.  Should only return SkipReason or "
+                    "RunRequest objects."
                 )
 
         # Preserve any resource arguments from the underlying function, for when we inspect the

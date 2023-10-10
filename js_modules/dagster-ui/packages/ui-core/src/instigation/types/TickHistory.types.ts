@@ -24,6 +24,7 @@ export type TickHistoryQuery = {
           status: Types.InstigationTickStatus;
           timestamp: number;
           cursor: string | null;
+          instigationType: Types.InstigationType;
           skipReason: string | null;
           runIds: Array<string>;
           originRunIds: Array<string>;
@@ -73,6 +74,7 @@ export type HistoryTickFragment = {
   status: Types.InstigationTickStatus;
   timestamp: number;
   cursor: string | null;
+  instigationType: Types.InstigationType;
   skipReason: string | null;
   runIds: Array<string>;
   originRunIds: Array<string>;

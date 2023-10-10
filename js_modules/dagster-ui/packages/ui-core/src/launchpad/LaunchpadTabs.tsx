@@ -87,7 +87,7 @@ const REMOVE_ALL_THRESHOLD = 3;
 interface LaunchpadTabsProps {
   data: IStorageData;
   onCreate: () => void;
-  onSave: (data: IStorageData) => void;
+  onSave: (data: React.SetStateAction<IStorageData>) => void;
 }
 
 export const LaunchpadTabs = (props: LaunchpadTabsProps) => {
@@ -120,16 +120,17 @@ export const LaunchpadTabs = (props: LaunchpadTabsProps) => {
       description: 'All configuration tabs will be discarded.',
     });
 
-    let updatedData = data;
-    sessionKeys.forEach((keyToRemove) => {
-      updatedData = applyRemoveSession(updatedData, keyToRemove);
+    onSave((data) => {
+      let updatedData = data;
+      sessionKeys.forEach((keyToRemove) => {
+        updatedData = applyRemoveSession(updatedData, keyToRemove);
+      });
+      return updatedData;
     });
-
-    onSave(updatedData);
   };
 
   return (
-    <Box border={{side: 'bottom', width: 1, color: Colors.KeylineGray}} padding={{top: 12}}>
+    <Box border="bottom" padding={{top: 12}}>
       <LaunchpadTabsContainer>
         {sessionKeys.map((key) => (
           <LaunchpadTab

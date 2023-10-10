@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, Colors, NonIdealState, PageHeader, Tag, Heading} from '@dagster-io/ui-components';
+import {Box, NonIdealState, PageHeader, Tag, Heading} from '@dagster-io/ui-components';
 import React from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
@@ -48,10 +48,7 @@ export const GraphRoot: React.FC<Props> = (props) => {
           </Tag>
         }
       />
-      <Box
-        border={{side: 'top', width: 1, color: Colors.KeylineGray}}
-        style={{minHeight: 0, flex: 1, display: 'flex'}}
-      >
+      <Box border="top" style={{minHeight: 0, flex: 1, display: 'flex'}}>
         <GraphExplorerRoot repoAddress={repoAddress} />
       </Box>
     </div>

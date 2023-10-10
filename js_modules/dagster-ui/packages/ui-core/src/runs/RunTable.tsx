@@ -28,12 +28,13 @@ import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {AnchorButton} from '../ui/AnchorButton';
+import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {useRepositoryForRunWithoutSnapshot} from '../workspace/useRepositoryForRun';
 import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
 
-import {AssetKeyTagCollection} from './AssetKeyTagCollection';
+import {AssetKeyTagCollection, AssetCheckTagCollection} from './AssetTagCollections';
+import {CreatedByTagCell} from './CreatedByTag';
 import {RunActionsMenu, RunBulkActionsMenu} from './RunActionsMenu';
-import {RunCreatedByCell} from './RunCreatedByCell';
 import {RunStatusTagWithStats} from './RunStatusTag';
 import {DagsterTag, TagType} from './RunTag';
 import {RunTags} from './RunTags';
@@ -231,6 +232,12 @@ export const RUN_TABLE_RUN_FRAGMENT = gql`
         path
       }
     }
+    assetCheckSelection {
+      name
+      assetKey {
+        path
+      }
+    }
     status
     tags {
       ...RunTagsFragment
@@ -275,6 +282,14 @@ const RunRow: React.FC<{
     return false;
   }, [repo, pipelineName]);
 
+  const repoAddressGuess = React.useMemo(() => {
+    if (repo) {
+      const {match} = repo;
+      return buildRepoAddress(match.repository.name, match.repositoryLocation.name);
+    }
+    return null;
+  }, [repo]);
+
   const onChange = (e: React.FormEvent<HTMLInputElement>) => {
     if (e.target instanceof HTMLInputElement) {
       const {checked} = e.target;
@@ -304,7 +319,7 @@ const RunRow: React.FC<{
   });
 
   const allTagsWithPinned = React.useMemo(() => {
-    const allTags: Omit<typeof run.tags[0], '__typename'>[] = [...run.tags];
+    const allTags: Omit<(typeof run.tags)[0], '__typename'>[] = [...run.tags];
     if ((isJob && run.mode !== 'default') || !isJob) {
       allTags.push({
         key: 'mode',
@@ -400,7 +415,10 @@ const RunRow: React.FC<{
       <td style={{position: 'relative'}}>
         <Box flex={{direction: 'column', gap: 5}}>
           {isHiddenAssetGroupJob(run.pipelineName) ? (
-            <AssetKeyTagCollection assetKeys={assetKeysForRun(run)} />
+            <Box flex={{gap: 16}}>
+              <AssetKeyTagCollection assetKeys={assetKeysForRun(run)} />
+              <AssetCheckTagCollection assetChecks={run.assetCheckSelection} />
+            </Box>
           ) : (
             <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
               <PipelineReference
@@ -465,7 +483,7 @@ const RunRow: React.FC<{
       </td>
       {hideCreatedBy ? null : (
         <td>
-          <RunCreatedByCell tags={run.tags || []} />
+          <CreatedByTagCell repoAddress={repoAddressGuess} tags={run.tags || []} />
         </td>
       )}
       <td>
@@ -517,15 +535,15 @@ const Row = styled.tr<{highlighted: boolean}>`
 function ActionBar({top, bottom}: {top: React.ReactNode; bottom?: React.ReactNode}) {
   return (
     <Box flex={{direction: 'column'}} padding={{vertical: 12}}>
-      <Box flex={{alignItems: 'center', gap: 12}} padding={{left: 24, right: 24}}>
+      <Box flex={{alignItems: 'center', gap: 12}} padding={{left: 24, right: 12}}>
         {top}
       </Box>
       {bottom ? (
         <Box
           margin={{top: 12}}
           padding={{left: 24, right: 12, top: 8}}
-          border={{side: 'top', width: 1, color: Colors.KeylineGray}}
-          flex={{gap: 8}}
+          border="top"
+          flex={{gap: 8, wrap: 'wrap'}}
         >
           {bottom}
         </Box>

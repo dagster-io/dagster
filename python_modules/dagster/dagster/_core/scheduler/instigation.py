@@ -1,10 +1,13 @@
 from enum import Enum
-from typing import Any, List, NamedTuple, Optional, Sequence, Union
+from typing import AbstractSet, Any, List, Mapping, NamedTuple, Optional, Sequence, Union
 
+import pendulum
 from typing_extensions import TypeAlias
 
 import dagster._check as check
+from dagster._core.definitions import RunRequest
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeAssetEvaluation
+from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 
 # re-export
 from dagster._core.definitions.run_request import (
@@ -271,7 +274,13 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
 
     def with_status(self, status: TickStatus, **kwargs: Any):
         check.inst_param(status, "status", TickStatus)
-        return self._replace(tick_data=self.tick_data.with_status(status, **kwargs))
+        end_timestamp = pendulum.now("UTC").timestamp() if status != TickStatus.STARTED else None
+        return self._replace(
+            tick_data=self.tick_data.with_status(status, end_timestamp=end_timestamp, **kwargs)
+        )
+
+    def with_run_requests(self, run_requests: Sequence[RunRequest]) -> "InstigatorTick":
+        return self._replace(tick_data=self.tick_data.with_run_requests(run_requests))
 
     def with_reason(self, skip_reason: str) -> "InstigatorTick":
         check.opt_str_param(skip_reason, "skip_reason")
@@ -318,6 +327,10 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
     @property
     def timestamp(self) -> float:
         return self.tick_data.timestamp
+
+    @property
+    def end_timestamp(self) -> Optional[float]:
+        return self.tick_data.end_timestamp
 
     @property
     def status(self) -> TickStatus:
@@ -377,6 +390,54 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
     ) -> Sequence[DynamicPartitionsRequestResult]:
         return self.tick_data.dynamic_partitions_request_results
 
+    @property
+    def requested_asset_materialization_count(self) -> int:
+        check.invariant(
+            self.tick_data.instigator_type == InstigatorType.AUTO_MATERIALIZE,
+            "Only auto-materialize ticks set requested_asset_materialization_count",
+        )
+        if self.tick_data.status != TickStatus.SUCCESS:
+            return 0
+
+        asset_partitions = set()
+        for run_request in self.tick_data.run_requests or []:
+            for asset_key in run_request.asset_selection or []:
+                asset_partitions.add(AssetKeyPartitionKey(asset_key, run_request.partition_key))
+        return len(asset_partitions)
+
+    @property
+    def requested_assets_and_partitions(self) -> Mapping[AssetKey, AbstractSet[str]]:
+        check.invariant(
+            self.tick_data.instigator_type == InstigatorType.AUTO_MATERIALIZE,
+            "Only auto-materialize ticks set requested_asset_keys",
+        )
+
+        if self.tick_data.status != TickStatus.SUCCESS:
+            return {}
+
+        partitions_by_asset_key = {}
+        for run_request in self.tick_data.run_requests or []:
+            for asset_key in run_request.asset_selection or []:
+                if asset_key not in partitions_by_asset_key:
+                    partitions_by_asset_key[asset_key] = set()
+
+                if run_request.partition_key:
+                    partitions_by_asset_key[asset_key].add(run_request.partition_key)
+
+        return partitions_by_asset_key
+
+    @property
+    def requested_asset_keys(self) -> AbstractSet[AssetKey]:
+        check.invariant(
+            self.tick_data.instigator_type == InstigatorType.AUTO_MATERIALIZE,
+            "Only auto-materialize ticks set requested_asset_keys",
+        )
+
+        if self.tick_data.status != TickStatus.SUCCESS:
+            return set()
+
+        return set(self.requested_assets_and_partitions.keys())
+
 
 @whitelist_for_serdes(
     old_storage_names={"JobTickData"},
@@ -394,7 +455,7 @@ class TickData(
             ("instigator_name", str),
             ("instigator_type", InstigatorType),
             ("status", TickStatus),
-            ("timestamp", float),
+            ("timestamp", float),  # Time the tick started
             ("run_ids", Sequence[str]),
             ("run_keys", Sequence[str]),
             ("error", Optional[SerializableErrorInfo]),
@@ -408,6 +469,9 @@ class TickData(
                 "dynamic_partitions_request_results",
                 Sequence[DynamicPartitionsRequestResult],
             ),
+            ("end_timestamp", Optional[float]),  # Time the tick finished
+            ("run_requests", Optional[Sequence[RunRequest]]),  # run requests created by the tick
+            ("auto_materialize_evaluation_id", Optional[int]),
         ],
     )
 ):
@@ -452,6 +516,9 @@ class TickData(
         dynamic_partitions_request_results: Optional[
             Sequence[DynamicPartitionsRequestResult]
         ] = None,
+        end_timestamp: Optional[float] = None,
+        run_requests: Optional[Sequence[RunRequest]] = None,
+        auto_materialize_evaluation_id: Optional[int] = None,
     ):
         _validate_tick_args(instigator_type, status, run_ids, error, skip_reason)
         check.opt_list_param(log_key, "log_key", of_type=str)
@@ -476,6 +543,9 @@ class TickData(
                 "dynamic_partitions_request_results",
                 of_type=DynamicPartitionsRequestResult,
             ),
+            end_timestamp=end_timestamp,
+            run_requests=check.opt_sequence_param(run_requests, "run_requests"),
+            auto_materialize_evaluation_id=auto_materialize_evaluation_id,
         )
 
     def with_status(
@@ -484,6 +554,7 @@ class TickData(
         error: Optional[SerializableErrorInfo] = None,
         timestamp: Optional[float] = None,
         failure_count: Optional[int] = None,
+        end_timestamp: Optional[float] = None,
     ) -> "TickData":
         return TickData(
             **merge_dicts(
@@ -494,6 +565,9 @@ class TickData(
                     "timestamp": timestamp if timestamp is not None else self.timestamp,
                     "failure_count": (
                         failure_count if failure_count is not None else self.failure_count
+                    ),
+                    "end_timestamp": (
+                        end_timestamp if end_timestamp is not None else self.end_timestamp
                     ),
                 },
             )
@@ -518,6 +592,16 @@ class TickData(
                         if (run_key and run_key not in self.run_keys)
                         else self.run_keys
                     ),
+                },
+            )
+        )
+
+    def with_run_requests(self, run_requests: Sequence[RunRequest]) -> "TickData":
+        return TickData(
+            **merge_dicts(
+                self._asdict(),
+                {
+                    "run_requests": run_requests,
                 },
             )
         )
@@ -607,6 +691,7 @@ class AutoMaterializeAssetEvaluationRecord(NamedTuple):
     evaluation: AutoMaterializeAssetEvaluation
     evaluation_id: int
     timestamp: float
+    asset_key: AssetKey
 
     @classmethod
     def from_db_row(cls, row):
@@ -617,4 +702,5 @@ class AutoMaterializeAssetEvaluationRecord(NamedTuple):
             ),
             evaluation_id=row["evaluation_id"],
             timestamp=datetime_as_float(row["create_timestamp"]),
+            asset_key=AssetKey.from_db_string(row["asset_key"]),
         )

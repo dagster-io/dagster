@@ -19,6 +19,7 @@ import Link from '../Link';
 
 import 'react-medium-image-zoom/dist/styles.css';
 import {RenderedDAG} from './RenderedDAG';
+import EnvVarsBenefits from './includes/EnvVarsBenefits.mdx';
 import EnvironmentVariablesIntro from './includes/EnvironmentVariablesIntro.mdx';
 import AddGitlabVariable from './includes/dagster-cloud/AddGitlabVariable.mdx';
 import AddGitubRepositorySecret from './includes/dagster-cloud/AddGitubRepositorySecret.mdx';
@@ -365,7 +366,7 @@ const PlaceholderImage = ({caption = 'Placeholder Image'}) => {
 
 const Experimental = () => {
   return (
-    <div className="experimental-tag inline-flex items-center px-3 py-0.5 rounded-full align-middle text-xs uppercase font-medium bg-sea-foam text-gable-green">
+    <div className="experimental-tag">
       <span className="hidden">(</span>Experimental<span className="hidden">)</span>
     </div>
   );
@@ -373,7 +374,7 @@ const Experimental = () => {
 
 const Legacy = () => {
   return (
-    <div className="legacy-tag inline-flex items-center px-3 py-0.5 rounded-full align-middle text-xs uppercase font-medium bg-yellow-200 text-yellow-700">
+    <div className="legacy-tag">
       <span className="hidden">(</span>Legacy<span className="hidden">)</span>
     </div>
   );
@@ -767,6 +768,7 @@ export default {
   BDCreateConfigureAgent,
   DbtModelAssetExplanation,
   EnvironmentVariablesIntro,
+  EnvVarsBenefits,
   K8sEnvVarsConfiguration,
   DockerEnvVarsConfiguration,
   AmazonEcsEnvVarsConfiguration,

@@ -5,7 +5,7 @@ import styled from 'styled-components';
 export const HeaderCell = ({children}: {children?: React.ReactNode}) => (
   <CellBox
     padding={{vertical: 8, horizontal: 12}}
-    border={{side: 'right', width: 1, color: Colors.KeylineGray}}
+    border="right"
     style={{whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden'}}
   >
     {children}
@@ -23,7 +23,7 @@ export const RowCell = ({
     padding={12}
     flex={{direction: 'column', justifyContent: 'flex-start'}}
     style={{color: Colors.Gray500, overflow: 'hidden', ...(style || {})}}
-    border={{side: 'right', width: 1, color: Colors.KeylineGray}}
+    border="right"
   >
     {children}
   </CellBox>

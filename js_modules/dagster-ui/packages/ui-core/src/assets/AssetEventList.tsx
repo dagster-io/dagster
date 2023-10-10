@@ -9,6 +9,7 @@ import {RunStatusWithStats} from '../runs/RunStatusDots';
 import {titleForRun} from '../runs/RunUtils';
 import {Container, Inner, Row} from '../ui/VirtualizedTable';
 
+import {RunlessEventTag} from './RunlessEventTag';
 import {AssetEventGroup} from './groupByPartition';
 
 // This component is on the feature-flagged AssetOverview page and replaces AssetEventTable
@@ -66,7 +67,7 @@ export const AssetEventList: React.FC<{
                 style={{height: size}}
                 padding={{left: 24, right: 12}}
                 flex={{direction: 'column', justifyContent: 'center', gap: 8}}
-                border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+                border="bottom"
               >
                 {xAxis === 'partition' ? (
                   <AssetEventListPartitionRow group={group} />
@@ -149,7 +150,7 @@ const AssetEventListEventRow: React.FC<{group: AssetEventGroup}> = ({group}) => 
       </Box>
       <Box flex={{gap: 4, direction: 'row'}}>
         {partition && <Tag>{partition}</Tag>}
-        {latest && run && (
+        {latest && run ? (
           <Tag>
             <AssetRunLink
               runId={run.id}
@@ -161,7 +162,9 @@ const AssetEventListEventRow: React.FC<{group: AssetEventGroup}> = ({group}) => 
               </Box>
             </AssetRunLink>
           </Tag>
-        )}
+        ) : latest && !latest.runId ? (
+          <RunlessEventTag tags={latest.tags} />
+        ) : undefined}
       </Box>
     </>
   );

@@ -82,8 +82,7 @@ def deprecated(
     additional_warn_text: Optional[str] = ...,
     subject: Optional[str] = ...,
     emit_runtime_warning: bool = ...,
-) -> T_Annotatable:
-    ...
+) -> T_Annotatable: ...
 
 
 @overload
@@ -94,8 +93,7 @@ def deprecated(
     additional_warn_text: Optional[str] = ...,
     subject: Optional[str] = ...,
     emit_runtime_warning: bool = ...,
-) -> Callable[[T_Annotatable], T_Annotatable]:
-    ...
+) -> Callable[[T_Annotatable], T_Annotatable]: ...
 
 
 def deprecated(
@@ -196,8 +194,7 @@ def deprecated_param(
     breaking_version: str,
     additional_warn_text: Optional[str] = ...,
     emit_runtime_warning: bool = ...,
-) -> T_Annotatable:
-    ...
+) -> T_Annotatable: ...
 
 
 @overload
@@ -208,8 +205,7 @@ def deprecated_param(
     breaking_version: str,
     additional_warn_text: Optional[str] = ...,
     emit_runtime_warning: bool = ...,
-) -> Callable[[T_Annotatable], T_Annotatable]:
-    ...
+) -> Callable[[T_Annotatable], T_Annotatable]: ...
 
 
 def deprecated_param(
@@ -308,8 +304,7 @@ def experimental(
     additional_warn_text: Optional[str] = ...,
     subject: Optional[str] = ...,
     emit_runtime_warning: bool = ...,
-) -> T_Annotatable:
-    ...
+) -> T_Annotatable: ...
 
 
 @overload
@@ -319,8 +314,7 @@ def experimental(
     additional_warn_text: Optional[str] = ...,
     subject: Optional[str] = ...,
     emit_runtime_warning: bool = ...,
-) -> Callable[[T_Annotatable], T_Annotatable]:
-    ...
+) -> Callable[[T_Annotatable], T_Annotatable]: ...
 
 
 def experimental(
@@ -405,8 +399,7 @@ def experimental_param(
     param: str,
     additional_warn_text: Optional[str] = ...,
     emit_runtime_warning: bool = ...,
-) -> T_Annotatable:
-    ...
+) -> T_Annotatable: ...
 
 
 @overload
@@ -416,8 +409,7 @@ def experimental_param(
     param: str,
     additional_warn_text: Optional[str] = ...,
     emit_runtime_warning: bool = ...,
-) -> Callable[[T_Annotatable], T_Annotatable]:
-    ...
+) -> Callable[[T_Annotatable], T_Annotatable]: ...
 
 
 def experimental_param(
@@ -556,7 +548,7 @@ def _get_subject(obj: Annotatable, param: Optional[str] = None) -> str:
         elif inspect.isfunction(obj):
             return f"Function `{obj.__qualname__}`"
         elif is_resource_def(obj):
-            return f"Dagster resource `{obj.__qualname__}`"  # type: ignore  # (bad stubs)
+            return f"Dagster resource `{obj.__qualname__}`"
         else:
             check.failed(f"Unexpected object type: {type(obj)}")
 

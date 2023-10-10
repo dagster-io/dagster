@@ -12,7 +12,9 @@ from typing import Iterator, List, Mapping, Optional, Sequence, Tuple, TypeVar
 
 from dagster import (
     Any,
+    AssetCheckKey,
     AssetCheckResult,
+    AssetCheckSpec,
     AssetExecutionContext,
     AssetKey,
     AssetMaterialization,
@@ -41,6 +43,7 @@ from dagster import (
     Map,
     Noneable,
     Nothing,
+    OpExecutionContext,
     Out,
     Output,
     PythonObjectDagsterType,
@@ -79,10 +82,12 @@ from dagster import (
     usable_as_dagster_type,
     with_resources,
 )
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.decorators.sensor_decorator import sensor
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import Failure
 from dagster._core.definitions.executor_definition import in_process_executor
+from dagster._core.definitions.external_asset import external_assets_from_specs
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
@@ -731,7 +736,7 @@ def eventually_successful():
     @op(
         required_resource_keys={"retry_count"},
     )
-    def fail(context: AssetExecutionContext, depth: int) -> int:
+    def fail(context: OpExecutionContext, depth: int) -> int:
         if context.resources.retry_count <= depth:
             raise Exception("fail")
 
@@ -1375,6 +1380,17 @@ def asset_two(asset_one):
 two_assets_job = build_assets_job(name="two_assets_job", assets=[asset_one, asset_two])
 
 
+@asset
+def executable_asset() -> None:
+    pass
+
+
+unexecutable_asset = next(iter(external_assets_from_specs([AssetSpec("unexecutable_asset")])))
+
+executable_test_job = build_assets_job(
+    name="executable_test_job", assets=[executable_asset, unexecutable_asset]
+)
+
 static_partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d", "e", "f"])
 
 
@@ -1837,6 +1853,7 @@ def define_jobs():
         named_groups_job,
         memoization_job,
         req_config_job,
+        executable_test_job,
     ]
 
 
@@ -1903,13 +1920,17 @@ def define_asset_jobs():
                 "hanging_asset_resource": hanging_asset_resource,
             },
         ),
+        subsettable_checked_multi_asset,
+        checked_multi_asset_job,
+        check_in_op_asset,
+        asset_check_job,
     ]
 
 
 @asset_check(asset=asset_1, description="asset_1 check")
 def my_check(asset_1):
     return AssetCheckResult(
-        success=True,
+        passed=True,
         metadata={
             "foo": "bar",
             "baz": "quux",
@@ -1917,7 +1938,42 @@ def my_check(asset_1):
     )
 
 
-asset_check_job = build_assets_job("asset_check_job", [asset_1], asset_checks=[my_check])
+@asset(check_specs=[AssetCheckSpec(asset="check_in_op_asset", name="my_check")])
+def check_in_op_asset():
+    yield Output(1)
+    yield AssetCheckResult(passed=True)
+
+
+asset_check_job = build_assets_job(
+    "asset_check_job", [asset_1, check_in_op_asset], asset_checks=[my_check]
+)
+
+
+@multi_asset(
+    outs={
+        "one": AssetOut(key="one", is_required=False),
+        "two": AssetOut(key="two", is_required=False),
+    },
+    check_specs=[
+        AssetCheckSpec("my_check", asset="one"),
+        AssetCheckSpec("my_other_check", asset="one"),
+    ],
+    can_subset=True,
+)
+def subsettable_checked_multi_asset(context: OpExecutionContext):
+    if AssetKey("one") in context.selected_asset_keys:
+        yield Output(1, output_name="one")
+    if AssetKey("two") in context.selected_asset_keys:
+        yield Output(1, output_name="two")
+    if AssetCheckKey(AssetKey("one"), "my_check") in context.selected_asset_check_keys:
+        yield AssetCheckResult(check_name="my_check", passed=True)
+    if AssetCheckKey(AssetKey("one"), "my_other_check") in context.selected_asset_check_keys:
+        yield AssetCheckResult(check_name="my_other_check", passed=True)
+
+
+checked_multi_asset_job = define_asset_job(
+    "checked_multi_asset_job", AssetSelection.assets(subsettable_checked_multi_asset)
+)
 
 
 def define_asset_checks():

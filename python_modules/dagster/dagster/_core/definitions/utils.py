@@ -113,10 +113,8 @@ def validate_tags(
 
             if not valid:
                 raise DagsterInvalidDefinitionError(
-                    'Invalid value for tag "{key}", {err_reason}. Tag values must be strings '
-                    "or meet the constraint that json.loads(json.dumps(value)) == value.".format(
-                        key=key, err_reason=err_reason
-                    )
+                    f'Invalid value for tag "{key}", {err_reason}. Tag values must be strings '
+                    "or meet the constraint that json.loads(json.dumps(value)) == value."
                 )
 
             valid_tags[key] = str_val  # type: ignore  # (possible none)
@@ -159,9 +157,7 @@ def config_from_files(config_files: Sequence[str]) -> Mapping[str, Any]:
         globbed_files = glob(file_glob)
         if not globbed_files:
             raise DagsterInvariantViolationError(
-                'File or glob pattern "{file_glob}" for "config_files" produced no results.'.format(
-                    file_glob=file_glob
-                )
+                f'File or glob pattern "{file_glob}" for "config_files" produced no results.'
             )
 
         filenames += [os.path.realpath(globbed_file) for globbed_file in globbed_files]

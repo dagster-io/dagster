@@ -34,7 +34,15 @@ export const Padding = () => {
 };
 
 export const BorderSides = () => {
-  const sides: BorderSide[] = ['all', 'horizontal', 'vertical', 'top', 'right', 'bottom', 'left'];
+  const sides: BorderSide[] = [
+    'all',
+    'top-and-bottom',
+    'left-and-right',
+    'top',
+    'right',
+    'bottom',
+    'left',
+  ];
   const widths: BorderWidth[] = [1, 2];
   return (
     <Group direction="column" spacing={16}>

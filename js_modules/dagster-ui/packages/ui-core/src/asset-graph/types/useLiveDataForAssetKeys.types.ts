@@ -4,6 +4,7 @@ import * as Types from '../../graphql/types';
 
 export type AssetLatestInfoFragment = {
   __typename: 'AssetLatestInfo';
+  id: string;
   unstartedRunIds: Array<string>;
   inProgressRunIds: Array<string>;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
@@ -38,6 +39,7 @@ export type AssetNodeLiveFragment = {
   assetChecks: Array<{
     __typename: 'AssetCheck';
     name: string;
+    canExecuteIndividually: Types.AssetCheckCanExecuteIndividually;
     executionForLatestMaterialization: {
       __typename: 'AssetCheckExecution';
       id: string;
@@ -102,6 +104,7 @@ export type AssetGraphLiveQuery = {
     assetChecks: Array<{
       __typename: 'AssetCheck';
       name: string;
+      canExecuteIndividually: Types.AssetCheckCanExecuteIndividually;
       executionForLatestMaterialization: {
         __typename: 'AssetCheckExecution';
         id: string;
@@ -128,6 +131,7 @@ export type AssetGraphLiveQuery = {
   }>;
   assetsLatestInfo: Array<{
     __typename: 'AssetLatestInfo';
+    id: string;
     unstartedRunIds: Array<string>;
     inProgressRunIds: Array<string>;
     assetKey: {__typename: 'AssetKey'; path: Array<string>};

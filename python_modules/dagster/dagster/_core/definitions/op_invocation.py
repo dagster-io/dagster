@@ -5,6 +5,7 @@ from typing import (
     Dict,
     Mapping,
     NamedTuple,
+    Set,
     Tuple,
     TypeVar,
     Union,
@@ -20,13 +21,15 @@ from dagster._core.errors import (
 )
 
 from .events import (
+    AssetKey,
     AssetMaterialization,
     AssetObservation,
     DynamicOutput,
     ExpectationResult,
     Output,
 )
-from .output import DynamicOutputDefinition
+from .output import DynamicOutputDefinition, OutputDefinition
+from .result import MaterializeResult
 
 if TYPE_CHECKING:
     from ..execution.context.invocation import BoundOpExecutionContext
@@ -34,7 +37,6 @@ if TYPE_CHECKING:
     from .composition import PendingNodeInvocation
     from .decorators.op_decorator import DecoratedOpFunction
     from .op_definition import OpDefinition
-    from .output import OutputDefinition
 
 T = TypeVar("T")
 
@@ -324,6 +326,63 @@ def _resolve_inputs(
     return input_dict
 
 
+def _key_for_result(result: MaterializeResult, context: "BoundOpExecutionContext") -> AssetKey:
+    if result.asset_key:
+        return result.asset_key
+
+    if len(context.assets_def.keys) == 1:
+        return next(iter(context.assets_def.keys))
+
+    raise DagsterInvariantViolationError(
+        "MaterializeResult did not include asset_key and it can not be inferred. Specify which"
+        f" asset_key, options are: {context.assets_def.keys}"
+    )
+
+
+def _output_name_for_result_obj(
+    event: MaterializeResult,
+    context: "BoundOpExecutionContext",
+):
+    asset_key = _key_for_result(event, context)
+    return context.assets_def.get_output_name_for_asset_key(asset_key)
+
+
+def _handle_gen_event(
+    event: T,
+    op_def: "OpDefinition",
+    context: "BoundOpExecutionContext",
+    output_defs: Mapping[str, OutputDefinition],
+    outputs_seen: Set[str],
+) -> T:
+    if isinstance(
+        event,
+        (AssetMaterialization, AssetObservation, ExpectationResult),
+    ):
+        return event
+    elif isinstance(event, MaterializeResult):
+        output_name = _output_name_for_result_obj(event, context)
+        outputs_seen.add(output_name)
+        return event
+    else:
+        if not isinstance(event, (Output, DynamicOutput)):
+            raise DagsterInvariantViolationError(
+                f"When yielding outputs from a {op_def.node_type_str} generator,"
+                " they should be wrapped in an `Output` object."
+            )
+        else:
+            output_def = output_defs[event.output_name]
+            _type_check_output(output_def, event, context)
+            if output_def.name in outputs_seen and not isinstance(
+                output_def, DynamicOutputDefinition
+            ):
+                raise DagsterInvariantViolationError(
+                    f"Invocation of {op_def.node_type_str} '{context.alias}' yielded"
+                    f" an output '{output_def.name}' multiple times."
+                )
+            outputs_seen.add(output_def.name)
+        return event
+
+
 def _type_check_output_wrapper(
     op_def: "OpDefinition", result: Any, context: "BoundOpExecutionContext"
 ) -> Any:
@@ -341,35 +400,22 @@ def _type_check_output_wrapper(
             outputs_seen = set()
 
             async for event in async_gen:
-                if isinstance(
-                    event,
-                    (AssetMaterialization, AssetObservation, ExpectationResult),
-                ):
-                    yield event
-                else:
-                    if not isinstance(event, (Output, DynamicOutput)):
-                        raise DagsterInvariantViolationError(
-                            f"When yielding outputs from a {op_def.node_type_str} generator,"
-                            " they should be wrapped in an `Output` object."
-                        )
-                    else:
-                        output_def = output_defs[event.output_name]
-                        _type_check_output(output_def, event, context)
-                        if output_def.name in outputs_seen and not isinstance(
-                            output_def, DynamicOutputDefinition
-                        ):
-                            raise DagsterInvariantViolationError(
-                                f"Invocation of {op_def.node_type_str} '{context.alias}' yielded"
-                                f" an output '{output_def.name}' multiple times."
-                            )
-                        outputs_seen.add(output_def.name)
-                    yield event
+                yield _handle_gen_event(event, op_def, context, output_defs, outputs_seen)
+
             for output_def in op_def.output_defs:
-                if output_def.name not in outputs_seen and output_def.is_required:
-                    raise DagsterInvariantViolationError(
-                        f"Invocation of {op_def.node_type_str} '{context.alias}' did not return"
-                        f" an output for non-optional output '{output_def.name}'"
-                    )
+                if (
+                    output_def.name not in outputs_seen
+                    and output_def.is_required
+                    and not output_def.is_dynamic
+                ):
+                    if output_def.dagster_type.is_nothing:
+                        # implicitly yield None as we do in execute_step
+                        yield Output(output_name=output_def.name, value=None)
+                    else:
+                        raise DagsterInvariantViolationError(
+                            f"Invocation of {op_def.node_type_str} '{context.alias}' did not"
+                            f" return an output for non-optional output '{output_def.name}'"
+                        )
 
         return to_gen(result)
 
@@ -388,29 +434,8 @@ def _type_check_output_wrapper(
         def type_check_gen(gen):
             outputs_seen = set()
             for event in gen:
-                if isinstance(
-                    event,
-                    (AssetMaterialization, AssetObservation, ExpectationResult),
-                ):
-                    yield event
-                else:
-                    if not isinstance(event, (Output, DynamicOutput)):
-                        raise DagsterInvariantViolationError(
-                            f"When yielding outputs from a {op_def.node_type_str} generator,"
-                            " they should be wrapped in an `Output` object."
-                        )
-                    else:
-                        output_def = output_defs[event.output_name]
-                        output = _type_check_output(output_def, event, context)
-                        if output_def.name in outputs_seen and not isinstance(
-                            output_def, DynamicOutputDefinition
-                        ):
-                            raise DagsterInvariantViolationError(
-                                f"Invocation of {op_def.node_type_str} '{context.alias}' yielded"
-                                f" an output '{output_def.name}' multiple times."
-                            )
-                        outputs_seen.add(output_def.name)
-                    yield output
+                yield _handle_gen_event(event, op_def, context, output_defs, outputs_seen)
+
             for output_def in op_def.output_defs:
                 if (
                     output_def.name not in outputs_seen
@@ -422,8 +447,8 @@ def _type_check_output_wrapper(
                         yield Output(output_name=output_def.name, value=None)
                     else:
                         raise DagsterInvariantViolationError(
-                            f"Invocation of {op_def.node_type_str} '{context.alias}' did not"
-                            f" return an output for non-optional output '{output_def.name}'"
+                            f'Invocation of {op_def.node_type_str} "{context.alias}" did not'
+                            f' return an output for non-optional output "{output_def.name}"'
                         )
 
         return type_check_gen(result)
@@ -439,13 +464,20 @@ def _type_check_function_output(
 
     output_defs_by_name = {output_def.name: output_def for output_def in op_def.output_defs}
     for event in validate_and_coerce_op_result_to_iterator(result, context, op_def.output_defs):
-        _type_check_output(output_defs_by_name[event.output_name], event, context)
+        if isinstance(event, (Output, DynamicOutput)):
+            _type_check_output(output_defs_by_name[event.output_name], event, context)
+        elif isinstance(event, (MaterializeResult)):
+            # ensure result objects are contextually valid
+            _output_name_for_result_obj(event, context)
+
     return result
 
 
 def _type_check_output(
-    output_def: "OutputDefinition", output: T, context: "BoundOpExecutionContext"
-) -> T:
+    output_def: "OutputDefinition",
+    output: Union[Output, DynamicOutput],
+    context: "BoundOpExecutionContext",
+) -> None:
     """Validates and performs core type check on a provided output.
 
     Args:
@@ -457,36 +489,19 @@ def _type_check_output(
     from ..execution.plan.execute_step import do_type_check
 
     op_label = context.describe_op()
-
-    if isinstance(output, (Output, DynamicOutput)):
-        dagster_type = output_def.dagster_type
-        type_check = do_type_check(context.for_type(dagster_type), dagster_type, output.value)
-        if not type_check.success:
-            raise DagsterTypeCheckDidNotPass(
-                description=(
-                    f'Type check failed for {op_label} output "{output.output_name}" - '
-                    f'expected type "{dagster_type.display_name}". '
-                    f"Description: {type_check.description}"
-                ),
-                metadata=type_check.metadata,
-                dagster_type=dagster_type,
-            )
-
-        context.observe_output(
-            output_def.name, output.mapping_key if isinstance(output, DynamicOutput) else None
+    dagster_type = output_def.dagster_type
+    type_check = do_type_check(context.for_type(dagster_type), dagster_type, output.value)
+    if not type_check.success:
+        raise DagsterTypeCheckDidNotPass(
+            description=(
+                f'Type check failed for {op_label} output "{output.output_name}" - '
+                f'expected type "{dagster_type.display_name}". '
+                f"Description: {type_check.description}"
+            ),
+            metadata=type_check.metadata,
+            dagster_type=dagster_type,
         )
-        return output
-    else:
-        dagster_type = output_def.dagster_type
-        type_check = do_type_check(context.for_type(dagster_type), dagster_type, output)
-        if not type_check.success:
-            raise DagsterTypeCheckDidNotPass(
-                description=(
-                    f'Type check failed for {op_label} output "{output_def.name}" - '
-                    f'expected type "{dagster_type.display_name}". '
-                    f"Description: {type_check.description}"
-                ),
-                metadata=type_check.metadata,
-                dagster_type=dagster_type,
-            )
-        return output
+
+    context.observe_output(
+        output_def.name, output.mapping_key if isinstance(output, DynamicOutput) else None
+    )

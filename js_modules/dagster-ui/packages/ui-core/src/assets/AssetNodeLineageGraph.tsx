@@ -8,8 +8,8 @@ import {MINIMAL_SCALE} from '../asset-graph/AssetGraphExplorer';
 import {AssetGroupNode} from '../asset-graph/AssetGroupNode';
 import {AssetNodeMinimal, AssetNode} from '../asset-graph/AssetNode';
 import {AssetNodeLink} from '../asset-graph/ForeignNode';
-import {GraphData, LiveData, toGraphId} from '../asset-graph/Utils';
-import {SVGViewport} from '../graph/SVGViewport';
+import {GraphData, toGraphId} from '../asset-graph/Utils';
+import {DEFAULT_MAX_ZOOM, SVGViewport} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
 import {AssetKeyInput} from '../graphql/types';
 import {getJSONForKey} from '../hooks/useStateWithStorage';
@@ -22,13 +22,14 @@ const LINEAGE_GRAPH_ZOOM_LEVEL = 'lineageGraphZoomLevel';
 export const AssetNodeLineageGraph: React.FC<{
   assetKey: AssetKeyInput;
   assetGraphData: GraphData;
-  liveDataByNode: LiveData;
   params: AssetViewParams;
-}> = ({assetKey, assetGraphData, liveDataByNode, params}) => {
+}> = ({assetKey, assetGraphData, params}) => {
   const assetGraphId = toGraphId(assetKey);
 
   const [highlighted, setHighlighted] = React.useState<string | null>(null);
 
+  // Use the pathname as part of the key so that different deployments don't invalidate each other's cached layout
+  // and so that different assets dont invalidate each others layout
   const {layout, loading} = useAssetLayout(assetGraphData);
   const viewportEl = React.useRef<SVGViewport>();
   const history = useHistory();
@@ -64,13 +65,18 @@ export const AssetNodeLineageGraph: React.FC<{
         viewportEl.current?.autocenter(true);
         e.stopPropagation();
       }}
-      maxZoom={1.2}
-      maxAutocenterZoom={1.2}
+      maxZoom={DEFAULT_MAX_ZOOM}
+      maxAutocenterZoom={DEFAULT_MAX_ZOOM}
     >
-      {({scale}) => (
+      {({scale}, viewportRect) => (
         <SVGContainer width={layout.width} height={layout.height}>
           {viewportEl.current && <SVGSaveZoomLevel scale={scale} />}
-          <AssetEdges highlighted={highlighted} edges={layout.edges} />
+          <AssetEdges
+            selected={null}
+            highlighted={highlighted}
+            edges={layout.edges}
+            viewportRect={viewportRect}
+          />
 
           {Object.values(layout.groups)
             .sort((a, b) => a.id.length - b.id.length)
@@ -102,13 +108,11 @@ export const AssetNodeLineageGraph: React.FC<{
                 ) : scale < MINIMAL_SCALE ? (
                   <AssetNodeMinimal
                     definition={graphNode.definition}
-                    liveData={liveDataByNode[graphNode.id]}
                     selected={graphNode.id === assetGraphId}
                   />
                 ) : (
                   <AssetNode
                     definition={graphNode.definition}
-                    liveData={liveDataByNode[graphNode.id]}
                     selected={graphNode.id === assetGraphId}
                   />
                 )}

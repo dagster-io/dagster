@@ -350,8 +350,7 @@ class _ResourceDecoratorCallable:
 
 
 @overload
-def resource(config_schema: ResourceFunction) -> ResourceDefinition:
-    ...
+def resource(config_schema: ResourceFunction) -> ResourceDefinition: ...
 
 
 @overload
@@ -360,8 +359,7 @@ def resource(
     description: Optional[str] = ...,
     required_resource_keys: Optional[AbstractSet[str]] = ...,
     version: Optional[str] = ...,
-) -> Callable[[ResourceFunction], "ResourceDefinition"]:
-    ...
+) -> Callable[[ResourceFunction], "ResourceDefinition"]: ...
 
 
 def resource(

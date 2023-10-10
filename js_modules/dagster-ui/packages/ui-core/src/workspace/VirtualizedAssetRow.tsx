@@ -78,10 +78,7 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
 
   return (
     <Row $height={height} $start={start} data-testid={testId(`row-${tokenForAssetKey({path})}`)}>
-      <RowGrid
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-        $showRepoColumn={showRepoColumn}
-      >
+      <RowGrid border="bottom" $showRepoColumn={showRepoColumn}>
         {showCheckboxColumn ? (
           <RowCell>
             <Checkbox checked={checked} onChange={onChange} />
@@ -214,7 +211,7 @@ export const VirtualizedAssetCatalogHeader: React.FC<{
   return (
     <Box
       background={Colors.White}
-      border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+      border="top-and-bottom"
       style={{
         display: 'grid',
         gridTemplateColumns: TEMPLATE_COLUMNS_FOR_CATALOG,
@@ -240,7 +237,7 @@ export const VirtualizedAssetHeader: React.FC<{
 }> = ({nameLabel}) => {
   return (
     <Box
-      border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+      border="top-and-bottom"
       style={{
         display: 'grid',
         gridTemplateColumns: TEMPLATE_COLUMNS,

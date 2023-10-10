@@ -17,13 +17,13 @@ type LaunchpadHooksContextValue = {
     error: GenericError | PythonErrorFragment;
     fallback?: React.ReactNode;
   }>;
-  // TODO (salazarm): Remove this prop after cloud PR lands to override UserDisplay instead
-  RunCreatedByCell?: any;
+  StaticFilterSorter?: Record<string, (a: any, b: any) => number>;
 };
 
 export const LaunchpadHooksContext = React.createContext<LaunchpadHooksContextValue>({
   LaunchRootExecutionButton: undefined,
   useLaunchWithTelemetry: undefined,
+  StaticFilterSorter: undefined,
 });
 
 export function useLaunchPadHooks() {
@@ -33,6 +33,7 @@ export function useLaunchPadHooks() {
     MaterializeButton: OverrideMaterializeButton,
     UserDisplay: OverrideUserDisplay,
     PythonErrorInfoHeader,
+    StaticFilterSorter,
   } = React.useContext(LaunchpadHooksContext);
 
   return {
@@ -41,5 +42,6 @@ export function useLaunchPadHooks() {
     MaterializeButton: OverrideMaterializeButton ?? Button,
     PythonErrorInfoHeader,
     UserDisplay: OverrideUserDisplay ?? UserDisplay,
+    StaticFilterSorter,
   };
 }

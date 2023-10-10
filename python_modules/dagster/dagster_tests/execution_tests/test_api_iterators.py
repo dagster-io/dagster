@@ -291,10 +291,8 @@ def test_execute_run_bad_state():
 
         with pytest.raises(
             check.CheckError,
-            match=r"Run basic_resource_pipeline \({}\) in state"
-            r" DagsterRunStatus.SUCCESS, expected NOT_STARTED or STARTING".format(
-                dagster_run.run_id
-            ),
+            match=rf"Run basic_resource_pipeline \({dagster_run.run_id}\) in state"
+            r" DagsterRunStatus.SUCCESS, expected NOT_STARTED or STARTING",
         ):
             execute_run(InMemoryJob(job_def), dagster_run, instance=instance)
 

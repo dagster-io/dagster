@@ -500,7 +500,7 @@ def test_telemetry_custom_io_manager():
         def load_input(self, context):
             return 1
 
-    assert not MyIOManager._is_dagster_maintained()
+    assert not MyIOManager._is_dagster_maintained()  # noqa: SLF001
 
 
 def test_telemetry_dagster_io_manager():

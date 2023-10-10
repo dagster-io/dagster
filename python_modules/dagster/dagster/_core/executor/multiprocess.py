@@ -178,9 +178,7 @@ class MultiprocessExecutor(Executor):
 
         yield DagsterEvent.engine_event(
             plan_context,
-            "Executing steps using multiprocess executor: parent process (pid: {pid})".format(
-                pid=os.getpid()
-            ),
+            f"Executing steps using multiprocess executor: parent process (pid: {os.getpid()})",
             event_specific_data=EngineEventData.multiprocess(
                 os.getpid(), step_keys_to_execute=execution_plan.step_keys_to_execute
             ),

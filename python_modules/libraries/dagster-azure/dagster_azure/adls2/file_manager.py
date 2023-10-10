@@ -42,11 +42,7 @@ class ADLS2FileHandle(FileHandle):
     @property
     def adls2_path(self):
         """str: The file's ADLS2 URL."""
-        return "adfss://{file_system}@{account}.dfs.core.windows.net/{key}".format(
-            file_system=self.file_system,
-            account=self.account,
-            key=self.key,
-        )
+        return f"adfss://{self.file_system}@{self.account}.dfs.core.windows.net/{self.key}"
 
 
 class ADLS2FileManager(FileManager):

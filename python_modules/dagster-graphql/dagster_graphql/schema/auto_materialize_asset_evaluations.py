@@ -181,6 +181,8 @@ class GrapheneAutoMaterializeAssetEvaluationRecord(graphene.ObjectType):
     rulesWithRuleEvaluations = non_null_list(GrapheneAutoMaterializeRuleWithRuleEvaluations)
     timestamp = graphene.NonNull(graphene.Float)
     runIds = non_null_list(graphene.String)
+    rules = graphene.Field(graphene.List(graphene.NonNull(GrapheneAutoMaterializeRule)))
+    assetKey = graphene.NonNull(GrapheneAssetKey)
 
     class Meta:
         name = "AutoMaterializeAssetEvaluationRecord"
@@ -201,6 +203,15 @@ class GrapheneAutoMaterializeAssetEvaluationRecord(graphene.ObjectType):
             ),
             timestamp=record.timestamp,
             runIds=record.evaluation.run_ids,
+            rules=(
+                [
+                    GrapheneAutoMaterializeRule(snapshot)
+                    for snapshot in record.evaluation.rule_snapshots
+                ]
+                if record.evaluation.rule_snapshots is not None
+                else None  # Return None if no rules serialized in evaluation
+            ),
+            assetKey=GrapheneAssetKey(path=record.asset_key.path),
         )
 
 
@@ -210,6 +221,13 @@ class GrapheneAutoMaterializeAssetEvaluationRecords(graphene.ObjectType):
 
     class Meta:
         name = "AutoMaterializeAssetEvaluationRecords"
+
+    def resolve_currentEvaluationId(self, graphene_info):
+        from dagster._daemon.asset_daemon import get_current_evaluation_id
+
+        # TODO Move to its own top-level field rather than a field
+        # on GrapheneAutoMaterializeAssetEvaluationRecords
+        return get_current_evaluation_id(graphene_info.context.instance)
 
 
 class GrapheneAutoMaterializeAssetEvaluationNeedsMigrationError(graphene.ObjectType):

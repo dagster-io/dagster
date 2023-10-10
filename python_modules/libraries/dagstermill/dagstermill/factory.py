@@ -17,7 +17,7 @@ from dagster import (
     _seven,
 )
 from dagster._config.pythonic_config import Config, infer_schema_from_config_class
-from dagster._config.pythonic_config.utils import safe_is_subclass
+from dagster._config.pythonic_config.inheritance_utils import safe_is_subclass
 from dagster._core.definitions.events import AssetMaterialization, Failure, RetryRequested
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.reconstruct import ReconstructableJob

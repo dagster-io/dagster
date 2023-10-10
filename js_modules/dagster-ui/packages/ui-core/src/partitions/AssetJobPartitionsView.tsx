@@ -1,4 +1,4 @@
-import {Box, Button, Colors, Subheading, useViewport} from '@dagster-io/ui-components';
+import {Box, Button, Subheading, useViewport} from '@dagster-io/ui-components';
 import React from 'react';
 
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
@@ -90,7 +90,7 @@ export const AssetJobPartitionsView: React.FC<{
     <div>
       <Box
         flex={{justifyContent: 'space-between', direction: 'row', alignItems: 'center'}}
-        border={{width: 1, side: 'bottom', color: Colors.KeylineGray}}
+        border="bottom"
         padding={{vertical: 16, horizontal: 24}}
       >
         <Subheading>Status</Subheading>
@@ -104,11 +104,7 @@ export const AssetJobPartitionsView: React.FC<{
           />
         </Box>
       </Box>
-      <Box
-        flex={{direction: 'row', alignItems: 'center'}}
-        border={{width: 1, side: 'bottom', color: Colors.KeylineGray}}
-        padding={{left: 8}}
-      >
+      <Box flex={{direction: 'row', alignItems: 'center'}} border="bottom" padding={{left: 8}}>
         <CountBox count={total} label="Total partitions" />
         <CountBox count={missing} label="Missing partitions" />
       </Box>
@@ -162,7 +158,7 @@ export const AssetJobPartitionsView: React.FC<{
       )}
       <Box
         padding={{horizontal: 24, vertical: 16}}
-        border={{side: 'horizontal', color: Colors.KeylineGray, width: 1}}
+        border="top-and-bottom"
         style={{marginBottom: -1}}
       >
         <Subheading>Backfill history</Subheading>
@@ -218,10 +214,7 @@ const AssetJobPartitionGraphs: React.FC<{
 
   return (
     <>
-      <Box
-        padding={{horizontal: 24, vertical: 16}}
-        border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
-      >
+      <Box padding={{horizontal: 24, vertical: 16}} border="top-and-bottom">
         <Subheading>Run duration</Subheading>
       </Box>
 
@@ -234,10 +227,7 @@ const AssetJobPartitionGraphs: React.FC<{
           jobDataByPartition={runDurationData}
         />
       </Box>
-      <Box
-        padding={{horizontal: 24, vertical: 16}}
-        border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
-      >
+      <Box padding={{horizontal: 24, vertical: 16}} border="top-and-bottom">
         <Subheading>Step durations</Subheading>
       </Box>
       <Box margin={24}>

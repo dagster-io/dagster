@@ -3,7 +3,12 @@ import {Meta} from '@storybook/react';
 import * as React from 'react';
 import {MemoryRouter} from 'react-router-dom';
 
-import {buildAssetCheckNeedsMigrationError, buildAssetChecks} from '../../../graphql/types';
+import {
+  buildAssetCheckNeedsMigrationError,
+  buildAssetChecks,
+  buildAssetKey,
+  buildAssetNode,
+} from '../../../graphql/types';
 import {AssetFeatureProvider} from '../../AssetFeatureContext';
 import {buildQueryMock} from '../../AutoMaterializePolicyPage/__fixtures__/AutoMaterializePolicyPage.fixtures';
 import {ASSET_CHECK_DETAILS_QUERY} from '../AssetCheckDetailModal';
@@ -23,7 +28,7 @@ import {AssetChecksQuery, AssetChecksQueryVariables} from '../types/AssetChecks.
 
 // eslint-disable-next-line import/no-default-export
 export default {
-  title: 'AssetChecks',
+  title: 'Asset Details/Checks',
   component: AssetChecks,
 } as Meta;
 
@@ -51,6 +56,9 @@ export const MigrationRequired = () => {
           variables: {assetKey: testAssetKey},
           data: {
             assetChecksOrError: buildAssetCheckNeedsMigrationError(),
+            assetNodeOrError: buildAssetNode({
+              assetKey: buildAssetKey(testAssetKey),
+            }),
           },
         }),
       ]}
@@ -69,6 +77,9 @@ export const NoChecks = () => {
             assetChecksOrError: buildAssetChecks({
               checks: [],
             }) as any,
+            assetNodeOrError: buildAssetNode({
+              assetKey: buildAssetKey(testAssetKey),
+            }),
           },
         }),
       ]}
@@ -94,6 +105,9 @@ export const Default = () => {
                 TestAssetCheck,
               ],
             }) as any,
+            assetNodeOrError: buildAssetNode({
+              assetKey: buildAssetKey(testAssetKey),
+            }),
           },
         }),
         buildQueryMock<AssetCheckDetailsQuery, AssetCheckDetailsQueryVariables>({

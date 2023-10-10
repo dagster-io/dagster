@@ -135,9 +135,7 @@ def network_buildkite_container(network_name: str) -> List[str]:
         r'export CONTAINER_NAME=`docker ps --filter "id=\${CONTAINER_ID}" --format "{{.Names}}"`',
         # then, we dynamically bind this container into the user-defined bridge
         # network to make the target containers visible...
-        "docker network connect {network_name} \\${{CONTAINER_NAME}}".format(
-            network_name=network_name
-        ),
+        f"docker network connect {network_name} \\${{CONTAINER_NAME}}",
     ]
 
 

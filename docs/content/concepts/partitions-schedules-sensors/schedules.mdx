@@ -100,11 +100,9 @@ If you don't need access to the context parameter, you can omit it from the deco
 
 #### Time partitioned jobs and assets
 
-When you have a [partitioned job](/concepts/partitions-schedules-sensors/partitions) that's partitioned by time, you can use the <PyObject object="build_schedule_from_partitioned_job"/> function to construct a schedule for it whose interval matches the spacing of partitions in your job.
+When you have a [partitioned job](/concepts/partitions-schedules-sensors/partitions) that's partitioned by time, you can use the <PyObject object="build_schedule_from_partitioned_job"/> function to construct a schedule for it whose interval matches the spacing of partitions in your job. For example, if you have a daily partitioned job that fills in a date partition of a table each time it runs, you likely want to run that job every day.
 
-For example, if you have a daily partitioned job that fills in a date partition of a table each time it runs, you likely want to run that job every day.
-
-The Partitioned Jobs concepts page includes an [example of how to define a date-partitioned job](/concepts/partitions-schedules-sensors/partitions#date-partitioned-job). Having defined that job, you can construct a schedule for it using <PyObject object="build_schedule_from_partitioned_job"/>. For example:
+Having defined a date-partitioned job, you can construct a schedule for it using <PyObject object="build_schedule_from_partitioned_job"/>. For example:
 
 ```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_marker endbefore=end_marker
 from dagster import build_schedule_from_partitioned_job, job
@@ -120,7 +118,7 @@ do_stuff_partitioned_schedule = build_schedule_from_partitioned_job(
 )
 ```
 
-The Partitioned Jobs concepts page also includes an [example of a date-partitioned asset](/concepts/partitions-schedules-sensors/partitions#partitioned-assets). You can define a schedule similarly using <PyObject object="build_schedule_from_partitioned_job"/>:
+The [Partitioning assets](/concepts/partitions-schedules-sensors/partitioning-assets) documentation includes an [example of a date-partitioned asset](/concepts/partitions-schedules-sensors/partitioning-assets#defining-partitioned-assets). You can define a schedule similarly using <PyObject object="build_schedule_from_partitioned_job"/>:
 
 ```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_partitioned_asset_schedule endbefore=end_partitioned_asset_schedule
 from dagster import (
@@ -152,7 +150,7 @@ You can use the `minute_of_hour`, `hour_of_day`, `day_of_week`, and `day_of_mont
 
 #### Static partitioned jobs
 
-You can also create a schedule for a static partition. The Partitioned Jobs concepts page also includes an [example of how to define a static partitioned job](/concepts/partitions-schedules-sensors/partitions#defining-a-job-with-static-partitions). To define a schedule for a static partitioned job, we will construct a schedule from scratch, rather than using a helper function like `build_schedule_from_partitioned_job` this will allow more flexibility in determining which partitions should be run by the schedule.
+You can also create a schedule for a static partition. The Partitioned Jobs concepts page also includes an [example of how to define a static partitioned job](/concepts/partitions-schedules-sensors/partitioning-ops#defining-jobs-with-static-partitions). To define a schedule for a static partitioned job, we will construct a schedule from scratch, rather than using a helper function like `build_schedule_from_partitioned_job` this will allow more flexibility in determining which partitions should be run by the schedule.
 
 For example, if we have the continents static partitioned job from the Partitioned Jobs concept page
 
@@ -244,7 +242,7 @@ Dagster's [resources](/concepts/resources) system can be used with schedules to 
 
 To specify resource dependencies, annotate the resource as a parameter to the schedule's function. Resources are provided by attaching them to your <PyObject object="Definitions" /> call.
 
-Here, a resource is provided which helps a schedule generate a date string:
+Here, a resource is provided that helps a schedule generate a date string:
 
 ```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_on_schedule endbefore=end_new_resource_on_schedule dedent=4
 from dagster import (
@@ -394,7 +392,7 @@ If your `@schedule`-decorated function doesn't have a context parameter, you don
 
 #### Testing schedules with resources
 
-For schedules which utilize [resources](/concepts/resources), you can provide the necessary resources when invoking the schedule function.
+For schedules that utilize [resources](/concepts/resources), you can provide the necessary resources when invoking the schedule function.
 
 Below is a test for the `process_data_schedule` that we defined in the [Using resources in schedules](#using-resources-in-schedules) section, which uses the `date_formatter` resource.
 

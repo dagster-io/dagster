@@ -10,7 +10,7 @@ import {
 import * as React from 'react';
 import styled from 'styled-components';
 
-import {GraphData, LiveData} from '../asset-graph/Utils';
+import {GraphData} from '../asset-graph/Utils';
 import {AssetGraphQueryItem, calculateGraphDistances} from '../asset-graph/useAssetGraphData';
 import {AssetKeyInput} from '../graphql/types';
 
@@ -23,22 +23,13 @@ export const AssetNodeLineage: React.FC<{
   setParams: (params: AssetViewParams) => void;
   assetKey: AssetKeyInput;
   assetGraphData: GraphData;
-  liveDataByNode: LiveData;
   requestedDepth: number;
   graphQueryItems: AssetGraphQueryItem[];
-}> = ({
-  params,
-  setParams,
-  assetKey,
-  liveDataByNode,
-  assetGraphData,
-  graphQueryItems,
-  requestedDepth,
-}) => {
-  const maxDistances = React.useMemo(() => calculateGraphDistances(graphQueryItems, assetKey), [
-    graphQueryItems,
-    assetKey,
-  ]);
+}> = ({params, setParams, assetKey, assetGraphData, graphQueryItems, requestedDepth}) => {
+  const maxDistances = React.useMemo(
+    () => calculateGraphDistances(graphQueryItems, assetKey),
+    [graphQueryItems, assetKey],
+  );
   const maxDepth =
     params.lineageScope === 'upstream'
       ? maxDistances.upstream
@@ -56,7 +47,7 @@ export const AssetNodeLineage: React.FC<{
       <Box
         flex={{justifyContent: 'space-between', alignItems: 'center', gap: 12}}
         padding={{left: 24, right: 12, vertical: 12}}
-        border={{side: 'bottom', color: Colors.KeylineGray, width: 1}}
+        border="bottom"
       >
         <ButtonGroup<AssetLineageScope>
           activeItems={new Set([params.lineageScope || 'neighbors'])}
@@ -76,7 +67,6 @@ export const AssetNodeLineage: React.FC<{
         {Object.values(assetGraphData.nodes).length > 1 ? (
           <LaunchAssetExecutionButton
             intent="none"
-            liveDataForStale={liveDataByNode}
             scope={{all: Object.values(assetGraphData.nodes).map((n) => n.definition)}}
           />
         ) : (
@@ -90,12 +80,7 @@ export const AssetNodeLineage: React.FC<{
           Not all upstream/downstream assets shown. Increase the depth to show more.
         </DepthHidesAssetsNotice>
       )}
-      <AssetNodeLineageGraph
-        assetKey={assetKey}
-        liveDataByNode={liveDataByNode}
-        assetGraphData={assetGraphData}
-        params={params}
-      />
+      <AssetNodeLineageGraph assetKey={assetKey} assetGraphData={assetGraphData} params={params} />
     </Box>
   );
 };

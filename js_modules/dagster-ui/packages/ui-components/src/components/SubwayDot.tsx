@@ -84,7 +84,9 @@ const Blob = styled.div<BlobProps>`
   justify-content: center;
   outline: none;
   text-transform: uppercase;
-  transition: background 50ms linear, color 50ms linear;
+  transition:
+    background 50ms linear,
+    color 50ms linear;
   user-select: none;
   width: ${({$blobSize}) => `${$blobSize}px`};
 

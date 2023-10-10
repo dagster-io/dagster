@@ -1,6 +1,9 @@
-from typing import NamedTuple, Optional
+from typing import NamedTuple, Optional, Sequence
 
+import dagster._check as check
 from dagster._annotations import PublicAttr, experimental
+from dagster._core.definitions.asset_check_result import AssetCheckResult
+from dagster._core.definitions.data_version import DataVersion
 
 from .events import (
     AssetKey,
@@ -16,6 +19,8 @@ class MaterializeResult(
         [
             ("asset_key", PublicAttr[Optional[AssetKey]]),
             ("metadata", PublicAttr[Optional[MetadataUserInput]]),
+            ("check_results", PublicAttr[Sequence[AssetCheckResult]]),
+            ("data_version", PublicAttr[Optional[DataVersion]]),
         ],
     )
 ):
@@ -33,11 +38,28 @@ class MaterializeResult(
         *,  # enforce kwargs
         asset_key: Optional[CoercibleToAssetKey] = None,
         metadata: Optional[MetadataUserInput] = None,
+        check_results: Optional[Sequence[AssetCheckResult]] = None,
+        data_version: Optional[DataVersion] = None,
     ):
         asset_key = AssetKey.from_coercible(asset_key) if asset_key else None
 
         return super().__new__(
             cls,
             asset_key=asset_key,
-            metadata=metadata,  # check?
+            metadata=check.opt_nullable_mapping_param(
+                metadata,
+                "metadata",
+                key_type=str,
+            ),
+            check_results=check.opt_sequence_param(
+                check_results, "check_results", of_type=AssetCheckResult
+            ),
+            data_version=check.opt_inst_param(data_version, "data_version", DataVersion),
         )
+
+    def check_result_named(self, check_name: str) -> AssetCheckResult:
+        for check_result in self.check_results:
+            if check_result.check_name == check_name:
+                return check_result
+
+        check.failed(f"Could not find check result named {check_name}")

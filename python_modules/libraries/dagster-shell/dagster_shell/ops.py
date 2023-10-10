@@ -157,11 +157,7 @@ def create_shell_command_op(
         )
 
         if return_code:
-            raise Failure(
-                description="Shell command execution failed with output: {output}".format(
-                    output=output
-                )
-            )
+            raise Failure(description=f"Shell command execution failed with output: {output}")
 
         return output
 
@@ -237,11 +233,7 @@ def create_shell_script_op(
         )
 
         if return_code:
-            raise Failure(
-                description="Shell command execution failed with output: {output}".format(
-                    output=output
-                )
-            )
+            raise Failure(description=f"Shell command execution failed with output: {output}")
 
         return output
 

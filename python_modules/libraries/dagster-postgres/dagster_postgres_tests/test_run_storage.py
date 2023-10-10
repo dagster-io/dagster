@@ -15,15 +15,15 @@ class TestPostgresRunStorage(TestRunStorage):
         return storage
 
     def test_load_from_config(self, hostname):
-        url_cfg = """
+        url_cfg = f"""
           run_storage:
             module: dagster_postgres.run_storage
             class: PostgresRunStorage
             config:
               postgres_url: postgresql://test:test@{hostname}:5432/test
-        """.format(hostname=hostname)
+        """
 
-        explicit_cfg = """
+        explicit_cfg = f"""
           run_storage:
             module: dagster_postgres.run_storage
             class: PostgresRunStorage
@@ -33,10 +33,10 @@ class TestPostgresRunStorage(TestRunStorage):
                 password: test
                 hostname: {hostname}
                 db_name: test
-        """.format(hostname=hostname)
+        """
 
         with environ({"TEST_PG_PASSWORD": "test"}):
-            env_cfg = """
+            env_cfg = f"""
             run_storage:
               module: dagster_postgres.run_storage
               class: PostgresRunStorage
@@ -47,7 +47,7 @@ class TestPostgresRunStorage(TestRunStorage):
                     env: TEST_PG_PASSWORD
                   hostname: {hostname}
                   db_name: test
-            """.format(hostname=hostname)
+            """
 
             with instance_for_test(overrides=yaml.safe_load(url_cfg)) as from_url_instance:
                 with instance_for_test(

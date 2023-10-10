@@ -21,11 +21,16 @@ from dagster._check import CheckError
 from dagster._cli.utils import get_instance_for_cli
 from dagster._config import Field
 from dagster._core.definitions import build_assets_job
+from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.events import AssetMaterialization, AssetObservation
 from dagster._core.errors import (
     DagsterHomeNotSetError,
     DagsterInvalidConfigError,
     DagsterInvariantViolationError,
 )
+from dagster._core.event_api import EventRecordsFilter
+from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.instance.config import DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT
@@ -740,3 +745,37 @@ def test_get_status_by_partition(mock_get_and_update):
             DailyPartitionsDefinition(start_date="2023-06-01"),
         )
         assert partition_status == {"2023-07-01": AssetPartitionStatus.IN_PROGRESS}
+
+
+def test_report_runless_asset_event():
+    with instance_for_test() as instance:
+        my_asset_key = AssetKey("my_asset")
+
+        instance.report_runless_asset_event(AssetMaterialization(my_asset_key))
+        mats = instance.get_latest_materialization_events([my_asset_key])
+        assert mats[my_asset_key]
+
+        instance.report_runless_asset_event(AssetObservation(my_asset_key))
+        records = instance.get_event_records(
+            EventRecordsFilter(
+                event_type=DagsterEventType.ASSET_OBSERVATION,
+                asset_key=my_asset_key,
+            ),
+            limit=1,
+        )
+        assert len(records) == 1
+
+        my_check = "my_check"
+        instance.report_runless_asset_event(
+            AssetCheckEvaluation(
+                asset_key=my_asset_key,
+                check_name=my_check,
+                passed=True,
+                metadata={},
+            )
+        )
+        records = instance.event_log_storage.get_asset_check_execution_history(
+            check_key=AssetCheckKey(asset_key=my_asset_key, name=my_check),
+            limit=1,
+        )
+        assert len(records) == 1

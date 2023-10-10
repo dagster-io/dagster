@@ -42,12 +42,14 @@ with DAG(
         retries=3,
     )
 
-    templated_command = dedent("""
+    templated_command = dedent(
+        """
     {% for i in range(5) %}
         echo "{{ ds }}"
         echo "{{ macros.ds_add(ds, 7)}}"
     {% endfor %}
-    """)
+    """
+    )
 
     t3 = BashOperator(
         task_id="templated",

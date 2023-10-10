@@ -22,8 +22,7 @@ class RepresentedJob(ABC):
 
     @property
     @abstractmethod
-    def _job_index(self) -> JobIndex:
-        ...
+    def _job_index(self) -> JobIndex: ...
 
     @property
     def name(self) -> str:

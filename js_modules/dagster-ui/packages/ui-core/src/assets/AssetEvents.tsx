@@ -52,14 +52,8 @@ export const AssetEvents: React.FC<Props> = ({
   liveData,
   dataRefreshHint,
 }) => {
-  const {
-    xAxis,
-    materializations,
-    observations,
-    loadedPartitionKeys,
-    refetch,
-    loading,
-  } = useRecentAssetEvents(assetKey, params, {assetHasDefinedPartitions: false});
+  const {xAxis, materializations, observations, loadedPartitionKeys, refetch, loading} =
+    useRecentAssetEvents(assetKey, params, {assetHasDefinedPartitions: false});
 
   React.useEffect(() => {
     if (params.asOf) {
@@ -123,7 +117,7 @@ export const AssetEvents: React.FC<Props> = ({
       {assetHasUndefinedPartitions && (
         <Box
           flex={{justifyContent: 'space-between', alignItems: 'center'}}
-          border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+          border="bottom"
           padding={{vertical: 16, horizontal: 24}}
           style={{marginBottom: -1}}
         >
@@ -151,12 +145,12 @@ export const AssetEvents: React.FC<Props> = ({
         <>
           <FailedRunSinceMaterializationBanner
             stepKey={stepKeyForAsset(assetNode)}
-            border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+            border="bottom"
             run={liveData?.runWhichFailedToMaterialize || null}
           />
           <CurrentRunsBanner
             stepKey={stepKeyForAsset(assetNode)}
-            border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+            border="bottom"
             liveData={liveData}
           />
         </>
@@ -177,7 +171,7 @@ export const AssetEvents: React.FC<Props> = ({
             <Box
               flex={{alignItems: 'center', gap: 16}}
               padding={{vertical: 12, horizontal: 24}}
-              border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+              border="bottom"
             >
               <EventTypeSelect
                 value={filters.types}
@@ -202,7 +196,7 @@ export const AssetEvents: React.FC<Props> = ({
         <Box
           flex={{direction: 'column'}}
           style={{flex: 3, minWidth: 0, overflowY: 'auto'}}
-          border={{side: 'left', color: Colors.KeylineGray, width: 1}}
+          border="left"
         >
           <ErrorBoundary region="event" resetErrorOnChange={[focused]}>
             {xAxis === 'partition' ? (

@@ -6,6 +6,8 @@ export type ResourceDetailsFragment = {
   __typename: 'ResourceDetails';
   name: string;
   description: string | null;
+  schedulesUsing: Array<string>;
+  sensorsUsing: Array<string>;
   resourceType: string;
   configFields: Array<{
     __typename: 'ConfigTypeField';
@@ -75,6 +77,8 @@ export type ResourceRootQuery = {
         __typename: 'ResourceDetails';
         name: string;
         description: string | null;
+        schedulesUsing: Array<string>;
+        sensorsUsing: Array<string>;
         resourceType: string;
         configFields: Array<{
           __typename: 'ConfigTypeField';

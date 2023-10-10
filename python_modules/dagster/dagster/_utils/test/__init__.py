@@ -3,7 +3,7 @@ import shutil
 import tempfile
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import Any, Dict, Mapping, Optional, cast
+from typing import Any, Dict, List, Mapping, Optional, Type, cast
 
 # top-level include is dangerous in terms of incurring circular deps
 from dagster import (
@@ -113,18 +113,14 @@ def build_job_with_input_stubs(
     for node_name, input_dict in inputs.items():
         if not job_def.has_node_named(node_name):
             raise DagsterInvariantViolationError(
-                (
-                    "You are injecting an input value for node {node_name} "
-                    "into pipeline {job_name} but that node was not found"
-                ).format(node_name=node_name, job_name=job_def.name)
+                f"You are injecting an input value for node {node_name} "
+                f"into pipeline {job_def.name} but that node was not found"
             )
 
         node = job_def.get_node_named(node_name)
         for input_name, input_value in input_dict.items():
             stub_node_def = create_stub_op(
-                "__stub_{node_name}_{input_name}".format(
-                    node_name=node_name, input_name=input_name
-                ),
+                f"__stub_{node_name}_{input_name}",
                 input_value,
             )
             stub_node_defs.append(stub_node_def)
@@ -332,3 +328,16 @@ class ConcurrencyEnabledSqliteTestEventLogStorage(SqliteEventLogStorage, Configu
         if not self._sleep_interval:
             return claim_status
         return claim_status.with_sleep_interval(float(self._sleep_interval))
+
+
+def get_all_direct_subclasses_of_marker(marker_interface_cls: Type) -> List[Type]:
+    import dagster as dagster
+
+    return [
+        symbol
+        for symbol in dagster.__dict__.values()
+        if isinstance(symbol, type)
+        and issubclass(symbol, marker_interface_cls)
+        and marker_interface_cls
+        in symbol.__bases__  # ensure that the class is a direct subclass of marker_interface_cls (not a subclass of a subclass)
+    ]

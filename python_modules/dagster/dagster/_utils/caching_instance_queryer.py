@@ -70,9 +70,9 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         self._logger = logger or logging.getLogger("dagster")
 
         self._asset_record_cache: Dict[AssetKey, Optional[AssetRecord]] = {}
-        self._asset_partition_count_cache: Dict[
-            Optional[int], Dict[AssetKey, Mapping[str, int]]
-        ] = defaultdict(dict)
+        self._asset_partitions_cache: Dict[Optional[int], Dict[AssetKey, Set[str]]] = defaultdict(
+            dict
+        )
         self._asset_partition_versions_updated_after_cursor_cache: Dict[
             AssetKeyPartitionKey, int
         ] = {}
@@ -81,7 +81,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
 
         self._evaluation_time = evaluation_time if evaluation_time else pendulum.now("UTC")
 
-        self._root_unreconciled_ancestors_cache: Dict[AssetKeyPartitionKey, Set[AssetKey]] = {}
+        self._outdated_ancestors_cache: Dict[AssetKeyPartitionKey, Set[AssetKey]] = {}
         self._respect_materialization_data_versions = (
             self._instance.auto_materialize_respect_materialization_data_versions
         )
@@ -101,18 +101,6 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
     ####################
     # QUERY BATCHING
     ####################
-
-    def prefetch_asset_partition_counts(
-        self, asset_keys: Sequence[AssetKey], after_cursor: Optional[int]
-    ):
-        """For performance, batches together queries for selected assets."""
-        if after_cursor is not None:
-            self._asset_partition_count_cache[after_cursor] = dict(
-                self.instance.get_materialization_count_by_partition(
-                    asset_keys=asset_keys,
-                    after_cursor=after_cursor,
-                )
-            )
 
     def prefetch_asset_records(self, asset_keys: Iterable[AssetKey]):
         """For performance, batches together queries for selected assets."""
@@ -493,48 +481,30 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         return result
 
     ####################
-    # PARTITION COUNTS
+    # PARTITIONS
     ####################
 
-    def get_materialized_partition_counts(
-        self, asset_key: AssetKey, after_cursor: Optional[int] = None
-    ) -> Mapping[str, int]:
-        """Returns a mapping from partition key to the number of times that partition has been
-        materialized for a given asset.
-
-        Args:
-            asset_key (AssetKey): The asset key.
-            after_cursor (Optional[int]): The cursor after which to look for materializations. If
-                not provided, will look at all materializations.
-        """
-        if (
-            after_cursor not in self._asset_partition_count_cache
-            or asset_key not in self._asset_partition_count_cache[after_cursor]
-        ):
-            self._asset_partition_count_cache[after_cursor][asset_key] = (
-                self.instance.get_materialization_count_by_partition(
-                    asset_keys=[asset_key], after_cursor=after_cursor
-                )[asset_key]
-            )
-        return self._asset_partition_count_cache[after_cursor][asset_key]
-
     def get_materialized_partitions(
-        self, asset_key: AssetKey, after_cursor: Optional[int] = None
-    ) -> Iterable[str]:
+        self, asset_key: AssetKey, before_cursor: Optional[int] = None
+    ) -> Set[str]:
         """Returns a list of the partitions that have been materialized for the given asset key.
 
         Args:
             asset_key (AssetKey): The asset key.
-            after_cursor (Optional[int]): The cursor after which to look for materializations. If
-                not provided, will look at all materializations.
+            before_cursor (Optional[int]): The cursor before which to look for materialized
+                partitions. If not provided, will look at all materializations.
         """
-        return [
-            partition_key
-            for partition_key, count in self.get_materialized_partition_counts(
-                asset_key, after_cursor
-            ).items()
-            if count > 0
-        ]
+        if (
+            before_cursor not in self._asset_partitions_cache
+            or asset_key not in self._asset_partitions_cache[before_cursor]
+        ):
+            self._asset_partitions_cache[before_cursor][asset_key] = (
+                self.instance.get_materialized_partitions(
+                    asset_key=asset_key, before_cursor=before_cursor
+                )
+            )
+
+        return self._asset_partitions_cache[before_cursor][asset_key]
 
     ####################
     # DYNAMIC PARTITIONS
@@ -787,9 +757,9 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             asset_partitions (Optional[Sequence[AssetKeyPartitionKey]]): If supplied, will filter
                 the set of checked partitions to the given partitions.
             after_cursor (Optional[int]): The cursor after which to look for updates.
-            use_asset_versions (bool): If True, will use data versions to filter out asset
-                partitions which were materialized, but not have not had their data versions
-                cahnged since the given cursor.
+            respect_materialization_data_versions (bool): If True, will use data versions to filter
+                out asset partitions which were materialized, but not have not had their data
+                versions changed since the given cursor.
                 NOTE: This boolean has been temporarily disabled
         """
         if not self.asset_partition_has_materialization_or_observation(
@@ -830,12 +800,16 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             asset_key, updated_after_cursor, after_cursor
         )
 
-    def get_updated_parent_asset_partitions(
+    def get_parent_asset_partitions_updated_after_child(
         self,
         asset_partition: AssetKeyPartitionKey,
         parent_asset_partitions: AbstractSet[AssetKeyPartitionKey],
         respect_materialization_data_versions: bool,
+        ignored_parent_keys: AbstractSet[AssetKey],
     ) -> AbstractSet[AssetKeyPartitionKey]:
+        """Returns values inside parent_asset_partitions that correspond to asset partitions that
+        have been updated since the latest materialization of asset_partition.
+        """
         parent_asset_partitions_by_key: Dict[AssetKey, Set[AssetKeyPartitionKey]] = defaultdict(set)
         for parent in parent_asset_partitions:
             parent_asset_partitions_by_key[parent.asset_key].add(parent)
@@ -844,6 +818,10 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         updated_parents = set()
 
         for parent_key, parent_asset_partitions in parent_asset_partitions_by_key.items():
+            # ignore updates to particular parents
+            if parent_key in ignored_parent_keys:
+                continue
+
             # ignore non-observable source parents
             if self.asset_graph.is_source(parent_key) and not self.asset_graph.is_observable(
                 parent_key
@@ -876,15 +854,17 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             )
         return updated_parents
 
-    def get_root_unreconciled_ancestors(
+    def get_outdated_ancestors(
         self, *, asset_partition: AssetKeyPartitionKey
     ) -> AbstractSet[AssetKey]:
-        """Return the set of root unreconciled ancestors of the given asset partition, i.e. the set
-        of ancestors of this asset partition whose parents have been updated more recently than
-        they have.
+        """Return the set of assets that are ancestors of the given asset partition and have parents
+        that have been updated more recently than they have.
+
+        If two ancestors would be returned, but one of them is an ancestor of the other one, then
+        only the most upstream ancestor is included.
         """
-        if asset_partition in self._root_unreconciled_ancestors_cache:
-            return self._root_unreconciled_ancestors_cache[asset_partition]
+        if asset_partition in self._outdated_ancestors_cache:
+            return self._outdated_ancestors_cache[asset_partition]
 
         if self.asset_graph.is_source(asset_partition.asset_key):
             return set()
@@ -911,7 +891,12 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             ).parent_partitions
 
             for parent in parent_asset_partitions:
-                if parent not in visited and parent not in self._root_unreconciled_ancestors_cache:
+                if (
+                    parent not in visited
+                    and parent not in self._outdated_ancestors_cache
+                    # do not evaluate self-dependency asset partitions
+                    and parent.asset_key != current_partition.asset_key
+                ):
                     queue.append(parent)
 
         # Toposort them so that at each iteration we can count on the cache being full for
@@ -931,24 +916,20 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                 ).parent_partitions
 
                 updated_parents: AbstractSet[AssetKeyPartitionKey] = (
-                    self.get_updated_parent_asset_partitions(
+                    self.get_parent_asset_partitions_updated_after_child(
                         asset_partition=current_partition,
                         parent_asset_partitions=parent_asset_partitions,
                         respect_materialization_data_versions=self._respect_materialization_data_versions,
+                        # ignore self-dependency asset partitions
+                        ignored_parent_keys={current_partition.asset_key},
                     )
                 )
 
-                root_unreconciled_ancestors = (
-                    {current_partition.asset_key} if updated_parents else set()
-                )
+                outdated_ancestors = {current_partition.asset_key} if updated_parents else set()
 
                 for parent in set(parent_asset_partitions) - updated_parents:
-                    root_unreconciled_ancestors.update(
-                        self._root_unreconciled_ancestors_cache[parent]
-                    )
+                    outdated_ancestors.update(self._outdated_ancestors_cache.get(parent, set()))
 
-                self._root_unreconciled_ancestors_cache[current_partition] = (
-                    root_unreconciled_ancestors
-                )
+                self._outdated_ancestors_cache[current_partition] = outdated_ancestors
 
-        return self._root_unreconciled_ancestors_cache[asset_partition]
+        return self._outdated_ancestors_cache[asset_partition]

@@ -240,8 +240,7 @@ class Node(ABC):
         return self._retry_policy
 
     @abstractmethod
-    def describe_node(self) -> str:
-        ...
+    def describe_node(self) -> str: ...
 
     @abstractmethod
     def get_resource_requirements(
@@ -249,8 +248,7 @@ class Node(ABC):
         outer_container: "GraphDefinition",
         parent_handle: Optional["NodeHandle"] = None,
         asset_layer: Optional["AssetLayer"] = None,
-    ) -> Iterator["ResourceRequirement"]:
-        ...
+    ) -> Iterator["ResourceRequirement"]: ...
 
 
 class GraphNode(Node):
@@ -418,9 +416,7 @@ class NodeHandle(NamedTuple("_NodeHandle", [("name", str), ("parent", Optional["
         check.inst_param(ancestor, "ancestor", NodeHandle)
         check.invariant(
             self.is_or_descends_from(ancestor),
-            "Handle {handle} does not descend from {ancestor}".format(
-                handle=self.to_string(), ancestor=ancestor.to_string()
-            ),
+            f"Handle {self.to_string()} does not descend from {ancestor.to_string()}",
         )
 
         return NodeHandle.from_path(self.path[len(ancestor.path) :])
@@ -852,9 +848,7 @@ def _create_handle_dict(
                         handles.append(inner_dep)
                     else:
                         check.failed(
-                            "Unexpected MultiDependencyDefinition dependencies type {}".format(
-                                inner_dep
-                            )
+                            f"Unexpected MultiDependencyDefinition dependencies type {inner_dep}"
                         )
 
                 handle_dict[from_node.get_input(input_name)] = (DependencyType.FAN_IN, handles)
@@ -991,7 +985,7 @@ class DependencyStructure:
             raise DagsterInvalidDefinitionError(
                 f"{node_input.node.describe_node()} cannot be both downstream of dynamic output "
                 f"{node_output.describe()} and collect over dynamic output "
-                f"{list(self._collect_index[node_input.node_name])[0].describe()}."
+                f"{next(iter(self._collect_index[node_input.node_name])).describe()}."
             )
 
         if self._dynamic_fan_out_index.get(node_input.node_name) is None:

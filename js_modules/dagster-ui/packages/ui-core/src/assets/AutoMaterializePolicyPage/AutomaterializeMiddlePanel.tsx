@@ -1,13 +1,9 @@
 import {useQuery} from '@apollo/client';
-import {Box, Colors, NonIdealState, Subheading} from '@dagster-io/ui-components';
+import {Box, NonIdealState, Subheading} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {ErrorWrapper} from '../../app/PythonErrorInfo';
-import {
-  AutoMaterializeAssetEvaluationRecord,
-  AutoMaterializeDecisionType,
-  AutoMaterializeRule,
-} from '../../graphql/types';
+import {AutoMaterializeDecisionType, AutoMaterializeRule} from '../../graphql/types';
 import {AssetKey} from '../types';
 
 import {AutomaterializeRequestedPartitionsLink} from './AutomaterializeRequestedPartitionsLink';
@@ -19,6 +15,7 @@ import {
   GetEvaluationsQuery,
   GetEvaluationsQueryVariables,
   RuleWithEvaluationsFragment,
+  AutoMaterializeEvaluationRecordItemFragment,
 } from './types/GetEvaluationsQuery.types';
 
 interface Props {
@@ -78,7 +75,7 @@ export const AutomaterializeMiddlePanel = (props: Props) => {
       <Box flex={{direction: 'column', grow: 1}}>
         <Box
           style={{flex: '0 0 48px'}}
-          border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+          border="bottom"
           padding={{horizontal: 16}}
           flex={{alignItems: 'center', justifyContent: 'space-between'}}
         >
@@ -115,7 +112,7 @@ export const AutomaterializeMiddlePanel = (props: Props) => {
     );
   }
 
-  const rules =
+  const currentRules =
     (data?.assetNodeOrError.__typename === 'AssetNode' &&
       data.assetNodeOrError.autoMaterializePolicy?.rules) ||
     [];
@@ -126,7 +123,7 @@ export const AutomaterializeMiddlePanel = (props: Props) => {
 
   return (
     <AutomaterializeMiddlePanelWithData
-      rules={rules}
+      currentRules={currentRules}
       assetHasDefinedPartitions={assetHasDefinedPartitions}
       selectedEvaluation={selectedEvaluation}
     />
@@ -134,12 +131,12 @@ export const AutomaterializeMiddlePanel = (props: Props) => {
 };
 
 export const AutomaterializeMiddlePanelWithData = ({
-  rules,
+  currentRules,
   selectedEvaluation,
   assetHasDefinedPartitions,
 }: {
-  rules: AutoMaterializeRule[];
-  selectedEvaluation: NoConditionsMetEvaluation | AutoMaterializeAssetEvaluationRecord;
+  currentRules: AutoMaterializeRule[];
+  selectedEvaluation: NoConditionsMetEvaluation | AutoMaterializeEvaluationRecordItemFragment;
   assetHasDefinedPartitions: boolean;
 }) => {
   const runIds =
@@ -150,6 +147,11 @@ export const AutomaterializeMiddlePanelWithData = ({
     selectedEvaluation?.__typename === 'AutoMaterializeAssetEvaluationRecord'
       ? selectedEvaluation.rulesWithRuleEvaluations
       : [];
+  const rules =
+    selectedEvaluation?.__typename === 'AutoMaterializeAssetEvaluationRecord' &&
+    selectedEvaluation.rules
+      ? selectedEvaluation.rules
+      : currentRules;
 
   const headerRight = () => {
     if (runIds.length === 0) {
@@ -172,7 +174,7 @@ export const AutomaterializeMiddlePanelWithData = ({
       <Box
         style={{flex: '0 0 48px'}}
         padding={{horizontal: 16}}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+        border="bottom"
         flex={{alignItems: 'center', justifyContent: 'space-between'}}
       >
         <Subheading>Result</Subheading>

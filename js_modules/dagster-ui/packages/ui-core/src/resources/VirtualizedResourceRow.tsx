@@ -29,13 +29,20 @@ export const VirtualizedResourceRow = (props: ResourceRowProps) => {
     parentResources,
     jobsOpsUsing,
     assetKeysUsing,
+    schedulesUsing,
+    sensorsUsing,
   } = props;
   const resourceTypeSuccinct = succinctType(resourceType);
-  const uses = parentResources.length + jobsOpsUsing.length + assetKeysUsing.length;
+  const uses =
+    parentResources.length +
+    jobsOpsUsing.length +
+    assetKeysUsing.length +
+    schedulesUsing.length +
+    sensorsUsing.length;
 
   return (
     <Row $height={height} $start={start}>
-      <RowGrid border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}>
+      <RowGrid border="bottom">
         <RowCell>
           <Box flex={{direction: 'column', gap: 4}}>
             <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
@@ -81,7 +88,7 @@ export const VirtualizedResourceRow = (props: ResourceRowProps) => {
 export const VirtualizedResourceHeader = () => {
   return (
     <Box
-      border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+      border="top-and-bottom"
       style={{
         display: 'grid',
         gridTemplateColumns: TEMPLATE_COLUMNS,

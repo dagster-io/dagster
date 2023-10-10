@@ -59,7 +59,7 @@ from ..implementation.loader import (
     CrossRepoAssetDependedByLoader,
     StaleStatusLoader,
 )
-from ..schema.asset_checks import GrapheneAssetCheck, GrapheneAssetCheckNeedsMigrationError
+from ..schema.asset_checks import GrapheneAssetCheck, GrapheneAssetChecks
 from . import external
 from .asset_key import GrapheneAssetKey
 from .auto_materialize_policy import GrapheneAutoMaterializePolicy
@@ -151,6 +151,7 @@ class GrapheneAssetDependency(graphene.ObjectType):
 
 
 class GrapheneAssetLatestInfo(graphene.ObjectType):
+    id = graphene.NonNull(graphene.ID)
     assetKey = graphene.NonNull(GrapheneAssetKey)
     latestMaterialization = graphene.Field(GrapheneMaterializationEvent)
     unstartedRunIds = non_null_list(graphene.String)
@@ -223,6 +224,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     graphName = graphene.String()
     groupName = graphene.String()
     id = graphene.NonNull(graphene.ID)
+    isExecutable = graphene.NonNull(graphene.Boolean)
     isObservable = graphene.NonNull(graphene.Boolean)
     isPartitioned = graphene.NonNull(graphene.Boolean)
     isSource = graphene.NonNull(graphene.Boolean)
@@ -821,6 +823,9 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_isObservable(self, _graphene_info: ResolveInfo) -> bool:
         return self._external_asset_node.is_observable
 
+    def resolve_isExecutable(self, _graphene_info: ResolveInfo) -> bool:
+        return self._external_asset_node.is_executable
+
     def resolve_latestMaterializationByPartition(
         self,
         graphene_info: ResolveInfo,
@@ -1093,12 +1098,13 @@ class GrapheneAssetNode(graphene.ObjectType):
 
     def resolve_assetChecks(self, graphene_info: ResolveInfo) -> List[GrapheneAssetCheck]:
         res = fetch_asset_checks(graphene_info, self._external_asset_node.asset_key)
-        if isinstance(res, GrapheneAssetCheckNeedsMigrationError):
+        if not isinstance(res, GrapheneAssetChecks):
             return []
         return res.checks
 
 
 class GrapheneAssetGroup(graphene.ObjectType):
+    id = graphene.NonNull(graphene.String)
     groupName = graphene.NonNull(graphene.String)
     assetKeys = non_null_list(GrapheneAssetKey)
 

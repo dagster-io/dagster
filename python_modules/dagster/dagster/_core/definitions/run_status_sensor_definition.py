@@ -340,8 +340,7 @@ def build_run_status_sensor_context(
 @overload
 def run_failure_sensor(
     name: RunFailureSensorEvaluationFn,
-) -> SensorDefinition:
-    ...
+) -> SensorDefinition: ...
 
 
 @overload
@@ -377,8 +376,7 @@ def run_failure_sensor(
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     request_job: Optional[ExecutableDefinition] = None,
     request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
-) -> Callable[[RunFailureSensorEvaluationFn], SensorDefinition,]:
-    ...
+) -> Callable[[RunFailureSensorEvaluationFn], SensorDefinition,]: ...
 
 
 @deprecated_param(

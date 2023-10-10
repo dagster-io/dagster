@@ -12,9 +12,11 @@ To practice what you’ve learned, create a `weekly_partition` using Dagster’s
 
 ## Check your work
 
-The partition you built should look similar to the code contained in the **View answer** toggle. Click to open it.
+The partition you built should look similar to the following code. Click **View answer** to view it.
 
-```python
+**If there are differences**, compare what you wrote to the partition below and change them, as this partition will be used as-is in future lessons.
+
+```python {% obfuscated="true" %}
 from dagster import WeeklyPartitionsDefinition
 from ..assets import constants
 
@@ -26,5 +28,3 @@ weekly_partition = WeeklyPartitionsDefinition(
   end_date=end_date
 )
 ```
-
-**If there are differences**, compare what you wrote to the partition above and change them, as this partition will be used as-is in future lessons.

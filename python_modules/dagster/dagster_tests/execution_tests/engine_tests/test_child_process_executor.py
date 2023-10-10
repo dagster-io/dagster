@@ -35,7 +35,7 @@ class ThrowAnErrorCommand(ChildProcessCommand):
 class CrashyCommand(ChildProcessCommand):
     def execute(self):
         # access inner API to simulate hard crash
-        os._exit(1)  # noqa: SLF001
+        os._exit(1)
 
 
 class SegfaultCommand(ChildProcessCommand):

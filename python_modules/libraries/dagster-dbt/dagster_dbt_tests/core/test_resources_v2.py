@@ -16,7 +16,7 @@ from dagster import (
     materialize,
     op,
 )
-from dagster._core.execution.context.compute import OpExecutionContext
+from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster_dbt import dbt_assets
 from dagster_dbt.asset_utils import build_dbt_asset_selection
 from dagster_dbt.core.resources_v2 import (
@@ -24,8 +24,10 @@ from dagster_dbt.core.resources_v2 import (
     DbtCliEventMessage,
     DbtCliResource,
 )
+from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 from dagster_dbt.dbt_manifest import DbtManifestParam
 from dagster_dbt.errors import DagsterDbtCliRuntimeError
+from pydantic import ValidationError
 
 from ..conftest import TEST_PROJECT_DIR
 
@@ -52,13 +54,22 @@ def test_dbt_cli(global_config_flags: List[str], command: str) -> None:
 def test_dbt_cli_manifest_argument(manifest: DbtManifestParam) -> None:
     dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR)
 
-    assert dbt.cli(["run"]).is_successful()
+    assert dbt.cli(["run"], manifest=manifest).is_successful()
 
 
 def test_dbt_cli_project_dir_path() -> None:
     dbt = DbtCliResource(project_dir=Path(TEST_PROJECT_DIR))  # type: ignore
 
+    assert Path(dbt.project_dir).is_absolute()
     assert dbt.cli(["run"]).is_successful()
+
+    # project directory must exist
+    with pytest.raises(ValidationError, match="does not exist"):
+        DbtCliResource(project_dir="nonexistent")
+
+    # project directory must be a valid dbt project
+    with pytest.raises(ValidationError, match="specify a valid path to a dbt project"):
+        DbtCliResource(project_dir=f"{TEST_PROJECT_DIR}/models")
 
 
 def test_dbt_cli_failure() -> None:
@@ -73,14 +84,13 @@ def test_dbt_cli_failure() -> None:
     assert dbt_cli_invocation.target_path.joinpath("dbt.log").exists()
 
 
-# as
 def test_dbt_cli_subprocess_cleanup(caplog: pytest.LogCaptureFixture) -> None:
     dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR)
     dbt_cli_invocation_1 = dbt.cli(["run"])
 
     assert dbt_cli_invocation_1.process.returncode is None
 
-    atexit._run_exitfuncs()  # ruff: noqa: SLF001
+    atexit._run_exitfuncs()  # noqa: SLF001
 
     assert "Terminating the execution of dbt command." in caplog.text
     assert not dbt_cli_invocation_1.is_successful()
@@ -90,7 +100,7 @@ def test_dbt_cli_subprocess_cleanup(caplog: pytest.LogCaptureFixture) -> None:
 
     dbt_cli_invocation_2 = dbt.cli(["run"]).wait()
 
-    atexit._run_exitfuncs()  # ruff: noqa: SLF001
+    atexit._run_exitfuncs()  # noqa: SLF001
 
     assert "Terminating the execution of dbt command." not in caplog.text
     assert dbt_cli_invocation_2.is_successful()
@@ -118,9 +128,44 @@ def test_dbt_cli_get_artifact() -> None:
         dbt_cli_invocation_2.get_artifact("sources.json")
 
     # Artifacts are stored in separate paths by manipulating DBT_TARGET_PATH.
+    # By default, they are stored in the `target` directory of the DBT project.
+    assert dbt_cli_invocation_1.target_path.parent == Path(TEST_PROJECT_DIR, "target")
+
     # As a result, their contents should be different, and newer artifacts
     # should not overwrite older ones.
     assert manifest_json_1 != manifest_json_2
+
+
+def test_dbt_cli_target_path(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setenv("DBT_TARGET_PATH", os.fspath(tmp_path))
+    dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR)
+
+    dbt_cli_invocation_1 = dbt.cli(["compile"]).wait()
+    manifest_st_mtime_1 = dbt_cli_invocation_1.target_path.joinpath("manifest.json").stat().st_mtime
+
+    dbt_cli_invocation_2 = dbt.cli(["compile"], target_path=dbt_cli_invocation_1.target_path).wait()
+    manifest_st_mtime_2 = dbt_cli_invocation_2.target_path.joinpath("manifest.json").stat().st_mtime
+
+    # The target path should be the same for both invocations
+    assert dbt_cli_invocation_1.target_path == dbt_cli_invocation_2.target_path
+
+    # Which results in the manifest.json being overwritten
+    assert manifest_st_mtime_1 != manifest_st_mtime_2
+
+
+@pytest.mark.parametrize("target_path", [Path("tmp"), Path("/tmp")])
+def test_dbt_cli_target_path_env_var(monkeypatch: pytest.MonkeyPatch, target_path: Path) -> None:
+    dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR)
+    expected_target_path = (
+        target_path if target_path.is_absolute() else Path(TEST_PROJECT_DIR).joinpath(target_path)
+    )
+
+    monkeypatch.setenv("DBT_TARGET_PATH", os.fspath(target_path))
+
+    dbt_cli_invocation = dbt.cli(["compile"]).wait()
+
+    assert dbt_cli_invocation.target_path.parent == expected_target_path
+    assert dbt_cli_invocation.get_artifact("manifest.json")
 
 
 def test_dbt_profile_configuration() -> None:
@@ -148,12 +193,13 @@ def test_dbt_profile_dir_configuration(profiles_dir: Union[str, Path]) -> None:
 
     assert dbt.cli(["parse"]).is_successful()
 
-    dbt = DbtCliResource(
-        project_dir=TEST_PROJECT_DIR, profiles_dir=f"{TEST_PROJECT_DIR}/nonexistent"
-    )
+    # profiles directory must exist
+    with pytest.raises(ValidationError, match="does not exist"):
+        DbtCliResource(project_dir=TEST_PROJECT_DIR, profiles_dir="nonexistent")
 
-    with pytest.raises(DagsterDbtCliRuntimeError):
-        dbt.cli(["parse"]).wait()
+    # profiles directory must contain profile configuration
+    with pytest.raises(ValidationError, match="specify a valid path to a dbt profile directory"):
+        DbtCliResource(project_dir=TEST_PROJECT_DIR, profiles_dir=f"{TEST_PROJECT_DIR}/models")
 
 
 def test_dbt_without_partial_parse() -> None:
@@ -199,7 +245,7 @@ def test_dbt_with_partial_parse() -> None:
 
 def test_dbt_cli_debug_execution() -> None:
     @dbt_assets(manifest=manifest)
-    def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         yield from dbt.cli(["--debug", "run"], context=context).stream()
 
     result = materialize(
@@ -220,7 +266,7 @@ def test_dbt_cli_subsetted_execution() -> None:
     )
 
     @dbt_assets(manifest=manifest, select=dbt_select)
-    def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         dbt_cli_invocation = dbt.cli(["run"], context=context)
 
         assert dbt_cli_invocation.process.args == ["dbt", "run", "--select", dbt_select]
@@ -243,7 +289,7 @@ def test_dbt_cli_asset_selection() -> None:
     ]
 
     @dbt_assets(manifest=manifest)
-    def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         dbt_cli_invocation = dbt.cli(["run"], context=context)
 
         dbt_cli_args: List[str] = list(dbt_cli_invocation.process.args)  # type: ignore
@@ -273,7 +319,7 @@ def test_dbt_cli_asset_selection() -> None:
 @pytest.mark.parametrize("exclude", [None, "fqn:dagster_dbt_test_project.subdir.least_caloric"])
 def test_dbt_cli_default_selection(exclude: Optional[str]) -> None:
     @dbt_assets(manifest=manifest, exclude=exclude)
-    def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         dbt_cli_invocation = dbt.cli(["run"], context=context)
 
         expected_args = ["dbt", "run", "--select", "fqn:*"]
@@ -361,7 +407,10 @@ def test_dbt_cli_op_execution() -> None:
 def test_no_default_asset_events_emitted(data: dict) -> None:
     asset_events = DbtCliEventMessage(
         raw_event={
-            "info": {"level": "info"},
+            "info": {
+                "level": "info",
+                "invocation_id": "1-2-3",
+            },
             "data": data,
         }
     ).to_default_asset_events(manifest={})
@@ -371,7 +420,10 @@ def test_no_default_asset_events_emitted(data: dict) -> None:
 
 def test_to_default_asset_output_events() -> None:
     raw_event = {
-        "info": {"level": "info"},
+        "info": {
+            "level": "info",
+            "invocation_id": "1-2-3",
+        },
         "data": {
             "node_info": {
                 "unique_id": "a.b.c",
@@ -381,7 +433,7 @@ def test_to_default_asset_output_events() -> None:
                 "node_started_at": "2024-01-01T00:00:00Z",
                 "node_finished_at": "2024-01-01T00:01:00Z",
                 "meta": {},
-            }
+            },
         },
     }
     asset_events = list(
@@ -392,6 +444,7 @@ def test_to_default_asset_output_events() -> None:
     assert all(isinstance(e, Output) for e in asset_events)
     assert asset_events[0].metadata == {
         "unique_id": TextMetadataValue("a.b.c"),
+        "invocation_id": TextMetadataValue("1-2-3"),
         "Execution Duration": FloatMetadataValue(60.0),
     }
 
@@ -411,7 +464,7 @@ def test_dbt_tests_to_events(is_asset_check: bool) -> None:
                     "severity": "ERROR",
                 },
                 "name": "test.a",
-                "meta": {"dagster": {"asset_check": is_asset_check}},
+                "attached_node": "model.a" if is_asset_check else None,
             },
         },
         "sources": {},
@@ -422,7 +475,10 @@ def test_dbt_tests_to_events(is_asset_check: bool) -> None:
         },
     }
     raw_event = {
-        "info": {"level": "info"},
+        "info": {
+            "level": "info",
+            "invocation_id": "1-2-3",
+        },
         "data": {
             "node_info": {
                 "unique_id": "test.a",
@@ -433,8 +489,15 @@ def test_dbt_tests_to_events(is_asset_check: bool) -> None:
             },
         },
     }
+
+    dagster_dbt_translator = DagsterDbtTranslator(
+        settings=DagsterDbtTranslatorSettings(enable_asset_checks=is_asset_check)
+    )
+
     asset_events = list(
-        DbtCliEventMessage(raw_event=raw_event).to_default_asset_events(manifest=manifest)
+        DbtCliEventMessage(raw_event=raw_event).to_default_asset_events(
+            manifest=manifest, dagster_dbt_translator=dagster_dbt_translator
+        )
     )
 
     expected_event_type = AssetCheckResult if is_asset_check else AssetObservation

@@ -101,7 +101,7 @@ const LaunchpadSetupFromRunAllowedRoot: React.FC<Props> = (props) => {
         newSession.solidSelection = [solidSelection];
       }
 
-      onSave(applyCreateSession(storageData, newSession));
+      onSave((storageData) => applyCreateSession(storageData, newSession));
     }
   }, [run, storageData, onSave]);
 

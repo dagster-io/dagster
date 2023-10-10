@@ -83,20 +83,20 @@ export const InstanceConfig = React.memo(() => {
         title={<Heading>{pageTitle}</Heading>}
         tabs={<InstanceTabs tab="config" refreshState={refreshState} />}
       />
-      <Box
-        padding={{vertical: 16, horizontal: 24}}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-      >
+      <Box padding={{vertical: 16, horizontal: 24}} border="bottom">
         <Subheading>
           Dagster version: <Code style={{fontSize: '16px'}}>{data.version}</Code>
         </Subheading>
       </Box>
-      <StyledRawCodeMirror
-        value={config || ''}
-        options={{readOnly: true, lineNumbers: true, mode: 'yaml'}}
-        handlers={handlers}
-        theme={['instance-config']}
-      />
+      {/* Div wrapper on CodeMirror to allow entire page to scroll */}
+      <div>
+        <StyledRawCodeMirror
+          value={config || ''}
+          options={{readOnly: true, lineNumbers: true, mode: 'yaml'}}
+          handlers={handlers}
+          theme={['instance-config']}
+        />
+      </div>
     </>
   );
 });

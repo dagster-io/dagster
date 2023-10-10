@@ -112,15 +112,18 @@ from dagster._config.source import (
 )
 from dagster._core.definitions import AssetCheckResult as AssetCheckResult
 from dagster._core.definitions.asset_check_spec import (
+    AssetCheckKey as AssetCheckKey,
     AssetCheckSeverity as AssetCheckSeverity,
     AssetCheckSpec as AssetCheckSpec,
 )
+from dagster._core.definitions.asset_dep import AssetDep as AssetDep
 from dagster._core.definitions.asset_in import AssetIn as AssetIn
 from dagster._core.definitions.asset_out import AssetOut as AssetOut
 from dagster._core.definitions.asset_selection import AssetSelection as AssetSelection
 from dagster._core.definitions.asset_sensor_definition import (
     AssetSensorDefinition as AssetSensorDefinition,
 )
+from dagster._core.definitions.asset_spec import AssetSpec as AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition as AssetsDefinition
 from dagster._core.definitions.auto_materialize_policy import (
     AutoMaterializePolicy as AutoMaterializePolicy,
@@ -314,6 +317,7 @@ from dagster._core.definitions.resource_definition import (
     make_values_resource as make_values_resource,
     resource as resource,
 )
+from dagster._core.definitions.result import MaterializeResult as MaterializeResult
 from dagster._core.definitions.run_config import RunConfig as RunConfig
 from dagster._core.definitions.run_request import (
     AddDynamicPartitionsRequest as AddDynamicPartitionsRequest,
@@ -469,6 +473,25 @@ from dagster._core.instance import DagsterInstance as DagsterInstance
 from dagster._core.instance_for_test import instance_for_test as instance_for_test
 from dagster._core.launcher.default_run_launcher import DefaultRunLauncher as DefaultRunLauncher
 from dagster._core.log_manager import DagsterLogManager as DagsterLogManager
+from dagster._core.pipes.client import (
+    PipesClient as PipesClient,
+    PipesContextInjector as PipesContextInjector,
+    PipesMessageReader as PipesMessageReader,
+)
+from dagster._core.pipes.context import (
+    PipesMessageHandler as PipesMessageHandler,
+    PipesSession as PipesSession,
+)
+from dagster._core.pipes.subprocess import PipesSubprocessClient as PipesSubprocessClient
+from dagster._core.pipes.utils import (
+    PipesBlobStoreMessageReader as PipesBlobStoreMessageReader,
+    PipesEnvContextInjector as PipesEnvContextInjector,
+    PipesFileContextInjector as PipesFileContextInjector,
+    PipesFileMessageReader as PipesFileMessageReader,
+    PipesTempFileContextInjector as PipesTempFileContextInjector,
+    PipesTempFileMessageReader as PipesTempFileMessageReader,
+    open_pipes_session as open_pipes_session,
+)
 from dagster._core.run_coordinator.queued_run_coordinator import (
     QueuedRunCoordinator as QueuedRunCoordinator,
     SubmitRunContext as SubmitRunContext,

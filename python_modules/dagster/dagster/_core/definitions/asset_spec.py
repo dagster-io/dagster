@@ -1,9 +1,8 @@
-from typing import TYPE_CHECKING, Any, Iterable, Mapping, NamedTuple, Optional, Union
+from enum import Enum
+from typing import TYPE_CHECKING, Any, Iterable, Mapping, NamedTuple, Optional
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental
-from dagster._core.definitions.assets import AssetsDefinition
-from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.errors import DagsterInvariantViolationError
 
 from .auto_materialize_policy import AutoMaterializePolicy
@@ -15,7 +14,36 @@ from .freshness_policy import FreshnessPolicy
 from .metadata import MetadataUserInput
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_dep import AssetDep
+    from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
+
+# SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE lives on the metadata of an asset
+# (which currently ends up on the Output associated with the asset key)
+# whih encodes the execution type the of asset. "Unexecutable" assets are assets
+# that cannot be materialized in Dagster, but can have events in the event
+# log keyed off of them, making Dagster usable as a observability and lineage tool
+# for externally materialized assets.
+SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE = "dagster/asset_execution_type"
+
+
+class AssetExecutionType(Enum):
+    OBSERVATION = "OBSERVATION"
+    UNEXECUTABLE = "UNEXECUTABLE"
+    MATERIALIZATION = "MATERIALIZATION"
+
+    @staticmethod
+    def is_executable(varietal_str: Optional[str]) -> bool:
+        return AssetExecutionType.str_to_enum(varietal_str) in {
+            AssetExecutionType.MATERIALIZATION,
+            AssetExecutionType.OBSERVATION,
+        }
+
+    @staticmethod
+    def str_to_enum(varietal_str: Optional[str]) -> "AssetExecutionType":
+        return (
+            AssetExecutionType.MATERIALIZATION
+            if varietal_str is None
+            else AssetExecutionType(varietal_str)
+        )
 
 
 @experimental
@@ -23,7 +51,7 @@ class AssetSpec(
     NamedTuple(
         "_AssetSpec",
         [
-            ("asset_key", PublicAttr[AssetKey]),
+            ("key", PublicAttr[AssetKey]),
             ("deps", PublicAttr[Iterable["AssetDep"]]),
             ("description", PublicAttr[Optional[str]]),
             ("metadata", PublicAttr[Optional[Mapping[str, Any]]]),
@@ -39,7 +67,7 @@ class AssetSpec(
     function that defines how it materialized.
 
     Attributes:
-        asset_key (AssetKey): The unique identifier for this asset.
+        key (AssetKey): The unique identifier for this asset.
         deps (Optional[AbstractSet[AssetKey]]): The asset keys for the upstream assets that
             materializing this asset depends on.
         description (Optional[str]): Human-readable description of this asset.
@@ -61,12 +89,9 @@ class AssetSpec(
 
     def __new__(
         cls,
-        asset_key: CoercibleToAssetKey,
-        deps: Optional[
-            Iterable[
-                Union[CoercibleToAssetKey, "AssetSpec", AssetsDefinition, SourceAsset, "AssetDep"]
-            ]
-        ] = None,
+        key: CoercibleToAssetKey,
+        *,
+        deps: Optional[Iterable["CoercibleToAssetDep"]] = None,
         description: Optional[str] = None,
         metadata: Optional[MetadataUserInput] = None,
         skippable: bool = False,
@@ -80,10 +105,7 @@ class AssetSpec(
         dep_set = {}
         if deps:
             for dep in deps:
-                if not isinstance(dep, AssetDep):
-                    asset_dep = AssetDep(dep)
-                else:
-                    asset_dep = dep
+                asset_dep = AssetDep.from_coercible(dep)
 
                 # we cannot do deduplication via a set because MultiPartitionMappings have an internal
                 # dictionary that cannot be hashed. Instead deduplicate by making a dictionary and checking
@@ -91,13 +113,13 @@ class AssetSpec(
                 if asset_dep.asset_key in dep_set.keys():
                     raise DagsterInvariantViolationError(
                         f"Cannot set a dependency on asset {asset_dep.asset_key} more than once for"
-                        f" AssetSpec {asset_key}"
+                        f" AssetSpec {key}"
                     )
                 dep_set[asset_dep.asset_key] = asset_dep
 
         return super().__new__(
             cls,
-            asset_key=AssetKey.from_coercible(asset_key),
+            key=AssetKey.from_coercible(key),
             deps=list(dep_set.values()),
             description=check.opt_str_param(description, "description"),
             metadata=check.opt_mapping_param(metadata, "metadata", key_type=str),

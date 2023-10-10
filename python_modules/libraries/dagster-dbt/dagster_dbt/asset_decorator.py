@@ -16,6 +16,7 @@ from dagster import (
     AssetKey,
     AssetOut,
     AssetsDefinition,
+    BackfillPolicy,
     Nothing,
     PartitionsDefinition,
     multi_asset,
@@ -46,6 +47,7 @@ def dbt_assets(
     io_manager_key: Optional[str] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     dagster_dbt_translator: DagsterDbtTranslator = DagsterDbtTranslator(),
+    backfill_policy: Optional[BackfillPolicy] = None,
 ) -> Callable[..., AssetsDefinition]:
     """Create a definition for how to compute a set of dbt resources, described by a manifest.json.
     When invoking dbt commands using :py:class:`~dagster_dbt.DbtCliResource`'s
@@ -68,6 +70,9 @@ def dbt_assets(
             compose the dbt assets.
         dagster_dbt_translator (Optional[DagsterDbtTranslator]): Allows customizing how to map
             dbt models, seeds, etc. to asset keys and asset metadata.
+        backfill_policy (Optional[BackfillPolicy]): If a partitions_def is defined, this determines
+            how to execute backfills that target multiple partitions.
+
 
     Examples:
         Running ``dbt build`` for a dbt project:
@@ -285,6 +290,7 @@ def dbt_assets(
                 **({"dagster-dbt/exclude": exclude} if exclude else {}),
             },
             check_specs=check_specs,
+            backfill_policy=backfill_policy,
         )(fn)
 
         return asset_definition
@@ -341,7 +347,9 @@ def get_dbt_multi_asset_args(
         ]
         for test_unique_id in test_unique_ids:
             test_resource_props = manifest["nodes"][test_unique_id]
-            check_spec = default_asset_check_fn(asset_key, test_resource_props)
+            check_spec = default_asset_check_fn(
+                asset_key, unique_id, dagster_dbt_translator.settings, test_resource_props
+            )
 
             if check_spec:
                 check_specs.append(check_spec)

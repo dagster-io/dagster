@@ -535,8 +535,8 @@ class GraphDefinition(NodeDefinition):
         if not self.has_config_mapping:
             raise DagsterInvalidDefinitionError(
                 "Only graphs utilizing config mapping can be pre-configured. The graph "
-                '"{graph_name}" does not have a config mapping, and thus has nothing to be '
-                "configured.".format(graph_name=self.name)
+                f'"{self.name}" does not have a config mapping, and thus has nothing to be '
+                "configured."
             )
         config_mapping = cast(ConfigMapping, self.config_mapping)
         return self.copy(
@@ -1022,20 +1022,13 @@ def _validate_out_mappings(
             target_node = node_dict.get(mapping.maps_from.node_name)
             if target_node is None:
                 raise DagsterInvalidDefinitionError(
-                    "In {class_name} '{name}' output mapping references node "
-                    "'{node_name}' which it does not contain.".format(
-                        name=name, node_name=mapping.maps_from.node_name, class_name=class_name
-                    )
+                    f"In {class_name} '{name}' output mapping references node "
+                    f"'{mapping.maps_from.node_name}' which it does not contain."
                 )
             if not target_node.has_output(mapping.maps_from.output_name):
                 raise DagsterInvalidDefinitionError(
-                    "In {class_name} {name} output mapping from {described_node} "
-                    "which contains no output named '{mapping.maps_from.output_name}'".format(
-                        described_node=target_node.describe_node(),
-                        name=name,
-                        mapping=mapping,
-                        class_name=class_name,
-                    )
+                    f"In {class_name} {name} output mapping from {target_node.describe_node()} "
+                    f"which contains no output named '{mapping.maps_from.output_name}'"
                 )
 
             target_output = target_node.output_def_named(mapping.maps_from.output_name)
@@ -1049,29 +1042,22 @@ def _validate_out_mappings(
                 and class_name != "GraphDefinition"
             ):
                 raise DagsterInvalidDefinitionError(
-                    "In {class_name} '{name}' output '{mapping.graph_output_name}' of type"
-                    " {mapping.dagster_type.display_name} maps from"
-                    " {mapping.maps_from.node_name}.{mapping.maps_from.output_name} of different"
-                    " type {target_output.dagster_type.display_name}. OutputMapping source and"
-                    " destination must have the same type.".format(
-                        class_name=class_name,
-                        mapping=mapping,
-                        name=name,
-                        target_output=target_output,
-                    )
+                    f"In {class_name} '{name}' output '{mapping.graph_output_name}' of type"
+                    f" {mapping.dagster_type.display_name} maps from"
+                    f" {mapping.maps_from.node_name}.{mapping.maps_from.output_name} of different"
+                    f" type {target_output.dagster_type.display_name}. OutputMapping source and"
+                    " destination must have the same type."
                 )
 
         elif isinstance(mapping, OutputDefinition):
             raise DagsterInvalidDefinitionError(
-                "You passed an OutputDefinition named '{output_name}' directly "
+                f"You passed an OutputDefinition named '{mapping.name}' directly "
                 "in to output_mappings. Return an OutputMapping by calling "
-                "mapping_from on the OutputDefinition.".format(output_name=mapping.name)
+                "mapping_from on the OutputDefinition."
             )
         else:
             raise DagsterInvalidDefinitionError(
-                "Received unexpected type '{type}' in output_mappings. "
-                "Provide an OutputMapping using OutputDefinition(...).mapping_from(...)".format(
-                    type=type(mapping)
-                )
+                f"Received unexpected type '{type(mapping)}' in output_mappings. "
+                "Provide an OutputMapping using OutputDefinition(...).mapping_from(...)"
             )
     return output_mappings, output_defs

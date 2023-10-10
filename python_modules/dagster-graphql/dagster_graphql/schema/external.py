@@ -14,6 +14,7 @@ from dagster._core.host_representation import (
     GrpcServerCodeLocation,
     ManagedGrpcPythonEnvCodeLocationOrigin,
 )
+from dagster._core.host_representation.feature_flags import get_feature_flags_for_location
 from dagster._core.host_representation.grpc_server_state_subscriber import (
     LocationStateChangeEvent,
     LocationStateChangeEventType,
@@ -163,6 +164,14 @@ class GrapheneWorkspaceLocationStatusEntriesOrError(graphene.Union):
         name = "WorkspaceLocationStatusEntriesOrError"
 
 
+class GrapheneFeatureFlag(graphene.ObjectType):
+    class Meta:
+        name = "FeatureFlag"
+
+    name = graphene.NonNull(graphene.String)
+    enabled = graphene.NonNull(graphene.Boolean)
+
+
 class GrapheneWorkspaceLocationEntry(graphene.ObjectType):
     id = graphene.NonNull(graphene.ID)
     name = graphene.NonNull(graphene.String)
@@ -172,6 +181,8 @@ class GrapheneWorkspaceLocationEntry(graphene.ObjectType):
     updatedTimestamp = graphene.NonNull(graphene.Float)
 
     permissions = graphene.Field(non_null_list(GraphenePermission))
+
+    featureFlags = non_null_list(GrapheneFeatureFlag)
 
     class Meta:
         name = "WorkspaceLocationEntry"
@@ -209,6 +220,13 @@ class GrapheneWorkspaceLocationEntry(graphene.ObjectType):
     def resolve_permissions(self, graphene_info):
         permissions = graphene_info.context.permissions_for_location(location_name=self.name)
         return [GraphenePermission(permission, value) for permission, value in permissions.items()]
+
+    def resolve_featureFlags(self, graphene_info):
+        feature_flags = get_feature_flags_for_location(self._location_entry)
+        return [
+            GrapheneFeatureFlag(name=feature_flag_name.value, enabled=feature_flag_enabled)
+            for feature_flag_name, feature_flag_enabled in feature_flags.items()
+        ]
 
 
 class GrapheneRepository(graphene.ObjectType):
@@ -344,7 +362,9 @@ class GrapheneRepository(graphene.ObjectType):
 
         return [
             GrapheneAssetGroup(
-                group_name, [external_node.asset_key for external_node in external_nodes]
+                f"{self._repository_location.name}-{self._repository.name}-{group_name}",
+                group_name,
+                [external_node.asset_key for external_node in external_nodes],
             )
             for group_name, external_nodes in groups.items()
         ]

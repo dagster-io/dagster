@@ -80,7 +80,6 @@ Now that you’ve defined how the asset can be materialized, let’s create the 
      ```
 
    ```
-
    ```
 
 5. Next, run the query in DuckDB and store the results as a DataFrame:

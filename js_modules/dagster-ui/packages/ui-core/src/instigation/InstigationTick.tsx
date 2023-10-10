@@ -172,7 +172,7 @@ export const FailedRunList: React.FC<{
   }
   return (
     <Group direction="column" spacing={16}>
-      <Box padding={12} border={{side: 'bottom', width: 1, color: Colors.Gray200}}>
+      <Box padding={12} border={{side: 'bottom', color: Colors.Gray200}}>
         <Body>
           Failed Runs
           <Tooltip content="Failed runs this tick reacted on and reported back to.">

@@ -11,6 +11,11 @@ import {
   Popover,
   TextInput,
   Tooltip,
+  Dialog,
+  DialogFooter,
+  DialogBody,
+  Table,
+  Tag,
 } from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
 import uniq from 'lodash/uniq';
@@ -34,6 +39,7 @@ interface GraphQueryInputProps {
   popoverPosition?: PopoverPosition;
   className?: string;
   disabled?: boolean;
+  type?: 'asset_graph';
 
   linkToPreview?: {
     repoName: string;
@@ -320,6 +326,7 @@ export const GraphQueryInput = React.memo(
               disabled={props.disabled}
               value={pendingValue}
               icon="op_selector"
+              rightElement={props.type === 'asset_graph' ? <InfoIconDialog /> : undefined}
               strokeColor={intentToStrokeColor(props.intent)}
               autoFocus={props.autoFocus}
               placeholder={placeholderTextForItems(props.placeholder, props.items)}
@@ -422,6 +429,128 @@ export const GraphQueryInput = React.memo(
     prevProps.value === nextProps.value &&
     isEqual(prevProps.presets, nextProps.presets),
 );
+
+const InfoIconDialog = () => {
+  const [isOpen, setIsOpen] = React.useState(false);
+  return (
+    <>
+      <Dialog
+        isOpen={isOpen}
+        title="Query filter tips"
+        onClose={() => setIsOpen(false)}
+        style={{width: '743px', maxWidth: '80%'}}
+      >
+        <DialogBody>
+          <Box flex={{direction: 'column', gap: 10}}>
+            <div>Create custom filter queries to fine tune which assets appear in the graph.</div>
+            <CustomTable>
+              <thead>
+                <tr>
+                  <th>Query</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <Tag>*</Tag>
+                  </td>
+                  <td>Render the entire lineage graph</td>
+                </tr>
+                <tr>
+                  <td>
+                    <Tag>*&quot;my_asset&quot;</Tag>
+                  </td>
+                  <td>Render the entire upstream lineage of my_asset</td>
+                </tr>
+                <tr>
+                  <td>
+                    <Tag>+&quot;my_asset&quot;</Tag>
+                  </td>
+                  <td>Render one layer upstream of my_asset</td>
+                </tr>
+                <tr>
+                  <td>
+                    <Tag>++&quot;my_asset&quot;</Tag>
+                  </td>
+                  <td>Render two layers upstream of my_asset</td>
+                </tr>
+                <tr>
+                  <td>
+                    <Tag>&quot;my_asset&quot;*</Tag>
+                  </td>
+                  <td>Render the entire downstream lineage of my_asset</td>
+                </tr>
+                <tr>
+                  <td>
+                    <Tag>&quot;my_asset&quot;+</Tag>
+                  </td>
+                  <td>Render one layer downstream of my_asset</td>
+                </tr>
+                <tr>
+                  <td>
+                    <Tag>&quot;my_asset&quot;++</Tag>
+                  </td>
+                  <td>Render two layers downstream of my_asset</td>
+                </tr>
+                <tr>
+                  <td>
+                    <Tag>+&quot;my_asset&quot;+</Tag>
+                  </td>
+                  <td>Render one layer upstream and downstream of my_asset</td>
+                </tr>
+                <tr>
+                  <td>
+                    <Tag>*&quot;my_asset&quot;*</Tag>
+                  </td>
+                  <td>Render the entire upstream and downstream lineage of my_asset</td>
+                </tr>
+                <tr>
+                  <td>
+                    <Tag>&quot;my_asset&quot; &quot;another&quot;</Tag>
+                  </td>
+                  <td>Render two disjointed lineage segments</td>
+                </tr>
+              </tbody>
+            </CustomTable>
+          </Box>
+        </DialogBody>
+        <DialogFooter topBorder>
+          <Button onClick={() => setIsOpen(false)} intent="primary">
+            Close
+          </Button>
+        </DialogFooter>
+      </Dialog>
+      <div
+        style={{cursor: 'pointer'}}
+        onClick={() => {
+          setIsOpen(true);
+        }}
+      >
+        <Icon name="info" />
+      </div>
+    </>
+  );
+};
+
+const CustomTable = styled(Table)`
+  border-left: none;
+
+  &&& tr {
+    &:last-child td {
+      box-shadow: inset 1px 1px 0 rgba(233, 232, 232, 1) !important;
+    }
+    &:last-child td:first-child,
+    td:first-child,
+    th:first-child {
+      vertical-align: middle;
+      box-shadow: inset 0 1px 0 ${Colors.KeylineGray} !important;
+    }
+  }
+  border: 1px solid ${Colors.KeylineGray};
+  border-top: none;
+  margin-bottom: 12px;
+`;
 
 const OpInfoWrap = styled.div`
   width: 350px;

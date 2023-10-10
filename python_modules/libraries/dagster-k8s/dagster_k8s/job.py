@@ -3,6 +3,7 @@ import hashlib
 import json
 import random
 import string
+from enum import Enum
 from typing import Any, List, Mapping, NamedTuple, Optional, Sequence
 
 import dagster._check as check
@@ -10,6 +11,7 @@ import kubernetes
 from dagster import (
     Array,
     BoolSource,
+    Enum as DagsterEnum,
     Field,
     Noneable,
     StringSource,
@@ -49,6 +51,16 @@ MAX_K8S_NAME_LEN = 63
 K8S_RESOURCE_REQUIREMENTS_KEY = "dagster-k8s/resource_requirements"
 K8S_RESOURCE_REQUIREMENTS_SCHEMA = Shape({"limits": Permissive(), "requests": Permissive()})
 
+
+class K8sConfigMergeBehavior(Enum):
+    SHALLOW = (  # Top-level keys in each of 'container_config' / 'pod_spec_config' are replaced
+        "SHALLOW"
+    )
+    DEEP = (  # Dictionaries are deep-merged, lists are appended after removing values that are already present
+        "DEEP"
+    )
+
+
 USER_DEFINED_K8S_CONFIG_KEY = "dagster-k8s/config"
 USER_DEFINED_K8S_CONFIG_SCHEMA = Shape(
     {
@@ -58,6 +70,10 @@ USER_DEFINED_K8S_CONFIG_SCHEMA = Shape(
         "job_config": Permissive(),
         "job_metadata": Permissive(),
         "job_spec_config": Permissive(),
+        "merge_behavior": Field(
+            DagsterEnum.from_python_enum(K8sConfigMergeBehavior),
+            is_required=False,
+        ),
     }
 )
 
@@ -77,6 +93,7 @@ class UserDefinedDagsterK8sConfig(
             ("job_config", Mapping[str, Any]),
             ("job_metadata", Mapping[str, Any]),
             ("job_spec_config", Mapping[str, Any]),
+            ("merge_behavior", K8sConfigMergeBehavior),
         ],
     )
 ):
@@ -88,6 +105,7 @@ class UserDefinedDagsterK8sConfig(
         job_config: Optional[Mapping[str, Any]] = None,
         job_metadata: Optional[Mapping[str, Any]] = None,
         job_spec_config: Optional[Mapping[str, Any]] = None,
+        merge_behavior: K8sConfigMergeBehavior = K8sConfigMergeBehavior.SHALLOW,
     ):
         container_config = check.opt_mapping_param(
             container_config, "container_config", key_type=str
@@ -128,6 +146,9 @@ class UserDefinedDagsterK8sConfig(
             job_config=job_config,
             job_metadata=job_metadata,
             job_spec_config=job_spec_config,
+            merge_behavior=check.inst_param(
+                merge_behavior, "merge_behavior", K8sConfigMergeBehavior
+            ),
         )
 
     def to_dict(self):
@@ -138,6 +159,7 @@ class UserDefinedDagsterK8sConfig(
             "job_config": self.job_config,
             "job_metadata": self.job_metadata,
             "job_spec_config": self.job_spec_config,
+            "merge_behavior": self.merge_behavior.value,
         }
 
     @classmethod
@@ -149,6 +171,9 @@ class UserDefinedDagsterK8sConfig(
             job_config=config_dict.get("job_config"),
             job_metadata=config_dict.get("job_metadata"),
             job_spec_config=config_dict.get("job_spec_config"),
+            merge_behavior=K8sConfigMergeBehavior(
+                config_dict.get("merge_behavior", K8sConfigMergeBehavior.SHALLOW.value)
+            ),
         )
 
 
@@ -188,9 +213,9 @@ def get_user_defined_k8s_config(tags: Mapping[str, str]):
                 result,
             )
 
-        user_defined_k8s_config = result.value
+        user_defined_k8s_config = check.not_none(result.value)
 
-    container_config = user_defined_k8s_config.get("container_config", {})  # type: ignore
+    container_config = user_defined_k8s_config.get("container_config", {})
 
     # Backcompat for resource requirements key
     if K8S_RESOURCE_REQUIREMENTS_KEY in tags:
@@ -201,11 +226,14 @@ def get_user_defined_k8s_config(tags: Mapping[str, str]):
 
     return UserDefinedDagsterK8sConfig(
         container_config=container_config,
-        pod_template_spec_metadata=user_defined_k8s_config.get("pod_template_spec_metadata"),  # type: ignore
-        pod_spec_config=user_defined_k8s_config.get("pod_spec_config"),  # type: ignore
-        job_config=user_defined_k8s_config.get("job_config"),  # type: ignore
-        job_metadata=user_defined_k8s_config.get("job_metadata"),  # type: ignore
-        job_spec_config=user_defined_k8s_config.get("job_spec_config"),  # type: ignore
+        pod_template_spec_metadata=user_defined_k8s_config.get("pod_template_spec_metadata"),
+        pod_spec_config=user_defined_k8s_config.get("pod_spec_config"),
+        job_config=user_defined_k8s_config.get("job_config"),
+        job_metadata=user_defined_k8s_config.get("job_metadata"),
+        job_spec_config=user_defined_k8s_config.get("job_spec_config"),
+        merge_behavior=K8sConfigMergeBehavior(
+            user_defined_k8s_config.get("merge_behavior", K8sConfigMergeBehavior.SHALLOW.value)
+        ),
     )
 
 
@@ -404,7 +432,16 @@ class DagsterK8sJobConfig(
                     ),
                 ),
                 "run_k8s_config": Field(
-                    USER_DEFINED_K8S_CONFIG_SCHEMA,
+                    Shape(
+                        {
+                            "container_config": Permissive(),
+                            "pod_template_spec_metadata": Permissive(),
+                            "pod_spec_config": Permissive(),
+                            "job_config": Permissive(),
+                            "job_metadata": Permissive(),
+                            "job_spec_config": Permissive(),
+                        }
+                    ),
                     is_required=False,
                     description="Raw Kubernetes configuration for launched runs.",
                 ),
@@ -587,6 +624,10 @@ class DagsterK8sJobConfig(
                             "container_config": Permissive(),
                             "pod_spec_config": Permissive(),
                             "pod_template_spec_metadata": Permissive(),
+                            "merge_behavior": Field(
+                                DagsterEnum.from_python_enum(K8sConfigMergeBehavior),
+                                is_required=False,
+                            ),
                         }
                     ),
                     is_required=False,
@@ -787,7 +828,7 @@ def construct_dagster_k8s_job(
             {
                 "name": pod_name,
                 "labels": merge_dicts(
-                    dagster_labels, user_defined_pod_template_labels, job_config.labels
+                    dagster_labels, job_config.labels, user_defined_pod_template_labels
                 ),
             },
         ),

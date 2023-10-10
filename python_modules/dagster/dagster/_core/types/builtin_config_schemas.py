@@ -31,7 +31,7 @@ def define_typed_input_schema_dict(value_config_type):
 
 
 def load_type_input_schema_dict(value):
-    file_type, file_options = list(value.items())[0]
+    file_type, file_options = next(iter(value.items()))
     if file_type == "value":
         return file_options
     elif file_type == "json":

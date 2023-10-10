@@ -343,7 +343,7 @@ To view and materialize assets in the UI, you can point the underlying webserver
 dagster dev -m module_with_assets
 ```
 
-If you want the UI to show both assets and [jobs](/concepts/ops-jobs-graphs/jobs) that target the assets, you can place the assets and jobs together inside a <PyObject object="Definitions" /> object. For example:
+If you want the UI to show both assets and [jobs](/concepts/assets/asset-jobs) that target the assets, you can place the assets and jobs together inside a <PyObject object="Definitions" /> object. For example:
 
 ```python
 defs = Definitions(
@@ -367,13 +367,13 @@ A <PyObject object="Definitions" /> object defines a code location, which is a c
 
 To view a list of all your assets, click **Assets** in the top navigation. This opens the **Asset catalog**:
 
-<!-- ![Asset catalog page in the UI](/images/concepts/webserver/all-assets.png) -->
+<!-- ![Asset catalog page in the UI](/images/concepts/webserver/asset-catalog.png) -->
 
 <Image
 alt="Asset catalog page in the UI"
-src="/images/concepts/webserver/all-assets.png"
-width={3574}
-height={1962}
+src="/images/concepts/webserver/asset-catalog.png"
+width={3572}
+height={1944}
 />
 
 </TabItem>
@@ -383,13 +383,13 @@ height={1962}
 
 View the **Asset details** page for an asset by clicking on its name:
 
-<!-- ![Asset details page in the UI](/images/concepts/webserver/asset.png) -->
+<!-- ![Asset details page in the UI](/images/concepts/webserver/asset-details.png) -->
 
 <Image
 alt="Asset details page in the UI"
-src="/images/concepts/webserver/asset.png"
-width={3574}
-height={1962}
+src="/images/concepts/webserver/asset-details.png"
+width={3062}
+height={1628}
 />
 
 </TabItem>
@@ -402,13 +402,13 @@ To view a graph of all assets and their dependencies, you can:
 - Click **View global asset lineage** in the [**Asset catalog**](#asset-catalog)
 - Click the **Lineage tab** in the [**Asset details** page](#asset-details)
 
-<!-- ![Asset lineage graph](/images/concepts/assets/software-defined-assets/graph.png) -->
+<!-- ![Asset lineage graph](/images/concepts/webserver/global-asset-lineage.png) -->
 
 <Image
 alt="Asset lineage graph"
-src="/images/concepts/assets/software-defined-assets/graph.png"
+src="/images/concepts/webserver/global-asset-lineage.png"
 width={3574}
-height={1962}
+height={1944}
 />
 
 </TabItem>
@@ -425,7 +425,7 @@ In the UI, you can launch runs that materialize assets by:
 
 ## Building jobs that materialize assets
 
-Jobs that target assets can materialize a fixed selection of assets each time they run and be placed on schedules and sensors. Refer to the [Jobs documentation](/concepts/ops-jobs-graphs/jobs#from-software-defined-assets) for more info and examples.
+Jobs that target assets can materialize a fixed selection of assets each time they run and be placed on schedules and sensors. Refer to the [Asset jobs documentation](/concepts/assets/asset-jobs) for more info and examples.
 
 ---
 

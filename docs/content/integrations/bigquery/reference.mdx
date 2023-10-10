@@ -140,7 +140,7 @@ SELECT *
 
 When the `partition_expr` value is injected into this statement, the resulting SQL query must follow BigQuery's SQL syntax. Refer to the [BigQuery documentation](https://cloud.google.com/bigquery/docs/reference/standard-sql/query-syntax) for more information.
 
-When materializing the above assets, a partition must be selected, as described in [Materializing partitioned assets](/concepts/partitions-schedules-sensors/partitions#materializing-partitioned-assets). In this example, the query used when materializing the `Iris-setosa` partition of the above assets would be:
+When materializing the above assets, a partition must be selected, as described in [Materializing partitioned assets](/concepts/partitions-schedules-sensors/partitioning-assets#materializing-partitioned-assets). In this example, the query used when materializing the `Iris-setosa` partition of the above assets would be:
 
 ```sql
 SELECT *
@@ -188,7 +188,7 @@ SELECT *
 
 When the `partition_expr` value is injected into this statement, the resulting SQL query must follow BigQuery's SQL syntax. Refer to the [BigQuery documentation](https://cloud.google.com/bigquery/docs/reference/standard-sql/query-syntax) for more information.
 
-When materializing the above assets, a partition must be selected, as described in [Materializing partitioned assets](/concepts/partitions-schedules-sensors/partitions#materializing-partitioned-assets). The `[partition_start]` and `[partition_end]` bounds are of the form `YYYY-MM-DD HH:MM:SS`. In this example, the query when materializing the `2023-01-02` partition of the above assets would be:
+When materializing the above assets, a partition must be selected, as described in [Materializing partitioned assets](/concepts/partitions-schedules-sensors/partitioning-assets#materializing-partitioned-assets). The `[partition_start]` and `[partition_end]` bounds are of the form `YYYY-MM-DD HH:MM:SS`. In this example, the query when materializing the `2023-01-02` partition of the above assets would be:
 
 ```sql
 SELECT *
@@ -249,7 +249,7 @@ def iris_cleaned(iris_data_partitioned: pd.DataFrame):
 
 Dagster uses the `partition_expr` metadata to craft the `SELECT` statement when loading the correct partition in a downstream asset. For multi-partitions, Dagster concatenates the `WHERE` statements described in the static partition and time-window partition sections to craft the correct `SELECT` statement.
 
-When materializing the above assets, a partition must be selected, as described in [Materializing partitioned assets](/concepts/partitions-schedules-sensors/partitions#materializing-partitioned-assets). For example, when materializing the `2023-01-02|Iris-setosa` partition of the above assets, the following query will be used:
+When materializing the above assets, a partition must be selected, as described in [Materializing partitioned assets](/concepts/partitions-schedules-sensors/partitioning-assets#materializing-partitioned-assets). For example, when materializing the `2023-01-02|Iris-setosa` partition of the above assets, the following query will be used:
 
 ```sql
 SELECT *

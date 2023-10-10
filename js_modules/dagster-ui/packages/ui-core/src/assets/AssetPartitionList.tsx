@@ -1,4 +1,4 @@
-import {Box, Colors} from '@dagster-io/ui-components';
+import {Box, Colors, MiddleTruncate} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 
@@ -83,11 +83,19 @@ export const AssetPartitionList: React.FC<AssetPartitionListProps> = ({
                 style={{height: size}}
                 padding={{left: 24, right: 12}}
                 flex={{direction: 'column', justifyContent: 'center', gap: 8}}
-                border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+                border="bottom"
               >
-                <Box flex={{gap: 4, direction: 'row', alignItems: 'center'}}>
-                  {dimensionKey}
-                  <div style={{flex: 1}} />
+                <div
+                  style={{
+                    gap: 4,
+                    display: 'grid',
+                    gridTemplateColumns: 'minmax(0, 1fr) auto',
+                    alignItems: 'center',
+                  }}
+                  data-tooltip={dimensionKey}
+                  data-tooltip-style={PartitionTooltipStyle}
+                >
+                  <MiddleTruncate text={dimensionKey} />
                   {/* Note: we could just state.map, but we want these in a particular order*/}
                   {state.includes(AssetPartitionStatus.MISSING) && (
                     <AssetPartitionStatusDot status={[AssetPartitionStatus.MISSING]} />
@@ -101,7 +109,7 @@ export const AssetPartitionList: React.FC<AssetPartitionListProps> = ({
                   {state.includes(AssetPartitionStatus.MATERIALIZED) && (
                     <AssetPartitionStatusDot status={[AssetPartitionStatus.MATERIALIZED]} />
                   )}
-                </Box>
+                </div>
               </Box>
             </AssetListRow>
           );
@@ -122,3 +130,12 @@ export const AssetPartitionStatusDot = ({status}: {status: AssetPartitionStatus[
     }}
   />
 );
+
+const PartitionTooltipStyle = JSON.stringify({
+  background: Colors.Gray100,
+  border: `1px solid ${Colors.Gray200}`,
+  color: Colors.Dark,
+  fontSize: '14px',
+  top: 0,
+  left: 0,
+});

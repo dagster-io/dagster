@@ -144,12 +144,7 @@ class DependencyStructureIndex:
             if input_dep_snap.input_name == input_name:
                 return input_dep_snap.upstream_output_snaps
 
-        check.failed(
-            "Input {input_name} not found for node {node_name}".format(
-                input_name=input_name,
-                node_name=node_name,
-            )
-        )
+        check.failed(f"Input {input_name} not found for node {node_name}")
 
     def get_upstream_output(self, node_name: str, input_name: str) -> "OutputHandleSnap":
         check.str_param(node_name, "node_name")

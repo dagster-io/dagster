@@ -79,10 +79,6 @@
             "path": "/concepts/assets/software-defined-assets"
           },
           {
-            "title": "Asset observations",
-            "path": "/concepts/assets/asset-observations"
-          },
-          {
             "title": "Graph-backed Assets",
             "path": "/concepts/assets/graph-backed-assets"
           },
@@ -91,12 +87,24 @@
             "path": "/concepts/assets/multi-assets"
           },
           {
+            "title": "Asset jobs",
+            "path": "/concepts/assets/asset-jobs"
+          },
+          {
+            "title": "Asset observations",
+            "path": "/concepts/assets/asset-observations"
+          },
+          {
             "title": "Asset selection syntax",
             "path": "/concepts/assets/asset-selection-syntax"
           },
           {
             "title": "Auto-materializing assets",
             "path": "/concepts/assets/asset-auto-execution"
+          },
+          {
+            "title": "Asset checks (Experimental)",
+            "path": "/concepts/assets/asset-checks"
           }
         ]
       },
@@ -123,7 +131,21 @@
         "children": [
           {
             "title": "Partitions",
-            "path": "/concepts/partitions-schedules-sensors/partitions"
+            "path": "/concepts/partitions-schedules-sensors/partitions",
+            "children": [
+              {
+                "title": "Partitioning assets",
+                "path": "/concepts/partitions-schedules-sensors/partitioning-assets"
+              },
+              {
+                "title": "Partitioning ops (Advanced)",
+                "path": "/concepts/partitions-schedules-sensors/partitioning-ops"
+              },
+              {
+                "title": "Testing partitions",
+                "path": "/concepts/partitions-schedules-sensors/testing-partitions"
+              }
+            ]
           },
           {
             "title": "Backfills",
@@ -164,6 +186,19 @@
       {
         "title": "Dagster UI",
         "path": "/concepts/webserver/ui"
+      },
+      {
+        "title": "Logging",
+        "children": [
+          {
+            "title": "Loggers",
+            "path": "/concepts/logging/loggers"
+          },
+          {
+            "title": "Python logging",
+            "path": "/concepts/logging/python-logging"
+          }
+        ]
       },
       {
         "title": "Testing",
@@ -207,17 +242,22 @@
           },
           {
             "title": "Jobs",
+            "path": "/concepts/ops-jobs-graphs/jobs",
             "children": [
               {
-                "title": "Jobs",
-                "path": "/concepts/ops-jobs-graphs/jobs"
+                "title": "Asset jobs",
+                "path": "/concepts/assets/asset-jobs"
+              },
+              {
+                "title": "Op jobs",
+                "path": "/concepts/ops-jobs-graphs/op-jobs"
               },
               {
                 "title": "Job execution",
                 "path": "/concepts/ops-jobs-graphs/job-execution"
               },
               {
-                "title": "Metadata & tags",
+                "title": "Job metadata & tags",
                 "path": "/concepts/ops-jobs-graphs/metadata-tags"
               }
             ]
@@ -240,17 +280,8 @@
             "path": "/concepts/types"
           },
           {
-            "title": "Logging",
-            "children": [
-              {
-                "title": "Loggers",
-                "path": "/concepts/logging/loggers"
-              },
-              {
-                "title": "Python logging",
-                "path": "/concepts/logging/python-logging"
-              }
-            ]
+            "title": "Custom loggers",
+            "path": "/concepts/logging/custom-loggers"
           },
           {
             "title": "GraphQL",
@@ -542,6 +573,26 @@
             ]
           },
           {
+            "title": "Insights",
+            "path": "/dagster-cloud/insights",
+            "children": [
+              {
+                "title": "Integrating external metrics",
+                "path": "/dagster-cloud/insights/integrating-external-metrics",
+                "children": [
+                  {
+                    "title": "Snowflake + dbt",
+                    "path": "/dagster-cloud/insights/integrating-snowflake-and-dbt"
+                  }
+                ]
+              },
+              {
+                "title": "Exporting metrics",
+                "path": "/dagster-cloud/insights/exporting-insights-metrics"
+              }
+            ]
+          },
+          {
             "title": "dagster-cloud CLI",
             "path": "/dagster-cloud/managing-deployments/dagster-cloud-cli"
           }
@@ -643,6 +694,11 @@
             "path": "/integrations/duckdb/reference"
           }
         ]
+      },
+      {
+        "title": "Embedded ELT",
+        "path": "/integrations/embedded-elt"
+
       },
       {
         "title": "Fivetran",
@@ -964,6 +1020,10 @@
             "path": "/_apidocs/utilities"
           },
           {
+            "title": "Pipes",
+            "path": "/_apidocs/pipes"
+          },
+          {
             "title": "Internals",
             "path": "/_apidocs/internals"
           }
@@ -972,6 +1032,10 @@
       {
         "title": "Libraries",
         "children": [
+          {
+            "title": "Dagster Pipes (dagster-pipes)",
+            "path": "/_apidocs/libraries/dagster-pipes"
+          },
           {
             "title": "Airbyte (dagster-airbyte)",
             "path": "/_apidocs/libraries/dagster-airbyte"

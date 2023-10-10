@@ -242,7 +242,9 @@ class UnboundHookContext(HookContext):
 
     @property
     def job_name(self) -> str:
-        return self.job_name
+        return _check_property_on_test_context(
+            self, attr_str="_job_name", user_facing_name="job_name", param_on_builder="job_name"
+        )
 
     @property
     def run_id(self) -> str:

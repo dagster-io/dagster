@@ -152,7 +152,7 @@ defs = Definitions(
 )
 ```
 
-This example also constructs an <PyObject module="dagster_aws.s3" object="S3Resource" /> because the <PyObject module="dagster_aws.s3" object="S3PickleIOManager" /> depends on the S3 resource. For more information on how these resource-resource dependencies are modeled, refer to the [resources](/concepts/resources#resources-which-depend-on-other-resources) documentation.
+This example also constructs an <PyObject module="dagster_aws.s3" object="S3Resource" /> because the <PyObject module="dagster_aws.s3" object="S3PickleIOManager" /> depends on the S3 resource. For more information on how these resource-resource dependencies are modeled, refer to the [resources](/concepts/resources#resources-that-depend-on-other-resources) documentation.
 
 When `upstream_asset` is materialized, the value `[1, 2, 3]` will be pickled and stored in an object on S3. When `downstream_asset` is materialized, the value of `upstream_asset` will be read from S3 and depickled, and `[1, 2, 3, 4]` will be pickled and stored in a different object on S3.
 
@@ -415,6 +415,43 @@ class ConfigurableExternalIOManager(ConfigurableIOManagerFactory):
 
     def create_io_manager(self, context) -> ExternalIOManager:
         return ExternalIOManager(self.api_token)
+```
+
+### Defining Pythonic I/O managers
+
+<Note>
+  <strong>Heads up!</strong> This section applies to Dagster 1.3 and later.
+  Refer to the <a href="/concepts/resources">Resources</a> documentation for
+  more info on Pythonic resources.
+</Note>
+
+Pythonic I/O managers are defined as subclasses of <PyObject object="ConfigurableIOManager"/>, and similarly to [Pythonic resources](/concepts/resources) specify any configuration fields as attributes. Each subclass must implement a `handle_output` and `load_input` method, which are called by Dagster at runtime to handle the storing and loading of data.
+
+```python file=/concepts/resources/pythonic_resources.py startafter=start_new_io_manager endbefore=end_new_io_manager dedent=4
+from dagster import (
+    Definitions,
+    AssetKey,
+    OutputContext,
+    InputContext,
+    ConfigurableIOManager,
+)
+
+class MyIOManager(ConfigurableIOManager):
+    root_path: str
+
+    def _get_path(self, asset_key: AssetKey) -> str:
+        return self.root_path + "/".join(asset_key.path)
+
+    def handle_output(self, context: OutputContext, obj):
+        write_csv(self._get_path(context.asset_key), obj)
+
+    def load_input(self, context: InputContext):
+        return read_csv(self._get_path(context.asset_key))
+
+defs = Definitions(
+    assets=...,
+    resources={"io_manager": MyIOManager(root_path="/tmp/")},
+)
 ```
 
 ### Handling partitioned assets

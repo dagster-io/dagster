@@ -9,7 +9,7 @@ import {secondsToCountdownTime} from './secondsToCountdownTime';
 
 interface Props {
   refreshing: boolean;
-  seconds: number;
+  seconds?: number;
   onRefresh: () => void;
   dataDescription?: string;
 }
@@ -21,7 +21,11 @@ export const RefreshableCountdown = (props: Props) => {
       <span
         style={{color: Colors.Gray400, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap'}}
       >
-        {refreshing ? `Refreshing ${dataDescription}…` : secondsToCountdownTime(seconds)}
+        {refreshing
+          ? `Refreshing ${dataDescription}…`
+          : seconds === undefined
+          ? null
+          : secondsToCountdownTime(seconds)}
       </span>
       <Tooltip content={<span style={{whiteSpace: 'nowrap'}}>Refresh now</span>} position="top">
         <RefreshButton onClick={onRefresh}>
@@ -32,7 +36,7 @@ export const RefreshableCountdown = (props: Props) => {
   );
 };
 
-const RefreshButton = styled.button`
+export const RefreshButton = styled.button`
   border: none;
   cursor: pointer;
   padding: 8px;

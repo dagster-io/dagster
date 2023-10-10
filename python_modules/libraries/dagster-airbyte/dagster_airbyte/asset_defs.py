@@ -226,6 +226,7 @@ def build_airbyte_assets(
     upstream_assets: Optional[Set[AssetKey]] = None,
     schema_by_table_name: Optional[Mapping[str, TableSchema]] = None,
     freshness_policy: Optional[FreshnessPolicy] = None,
+    stream_to_asset_map: Optional[Mapping[str, str]] = None,
 ) -> Sequence[AssetsDefinition]:
     """Builds a set of assets representing the tables created by an Airbyte sync operation.
 
@@ -244,6 +245,8 @@ def build_airbyte_assets(
             A list of assets to add as sources.
         upstream_assets (Optional[Set[AssetKey]]): Deprecated, use deps instead. A list of assets to add as sources.
         freshness_policy (Optional[FreshnessPolicy]): A freshness policy to apply to the assets
+        stream_to_asset_map (Optional[Mapping[str, str]]): A mapping of an Airbyte stream name to a Dagster asset.
+            This allows the use of the "prefix" setting in Airbyte with special characters that aren't valid asset names.
     """
     if upstream_assets is not None and deps is not None:
         raise DagsterInvalidDefinitionError(
@@ -314,7 +317,9 @@ def build_airbyte_assets(
                             output_name=_table_to_output_name_fn(dependent_table),
                         )
         else:
-            for materialization in generate_materializations(ab_output, asset_key_prefix):
+            for materialization in generate_materializations(
+                ab_output, asset_key_prefix, stream_to_asset_map
+            ):
                 table_name = materialization.asset_key.path[-1]
                 if table_name in destination_tables:
                     yield Output(
@@ -755,9 +760,7 @@ class AirbyteYAMLCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinition)
                 ]
                 check.invariant(
                     len(state_files) > 0,
-                    "No state files found for connection {} in {}".format(
-                        connection_name, connection_dir
-                    ),
+                    f"No state files found for connection {connection_name} in {connection_dir}",
                 )
                 check.invariant(
                     len(state_files) <= 1,

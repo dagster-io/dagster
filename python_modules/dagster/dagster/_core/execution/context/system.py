@@ -404,7 +404,7 @@ class PlanExecutionContext(IPlanContext):
             if range_start != range_end:
                 raise DagsterInvariantViolationError(
                     "Cannot access partition_key for a partitioned run with a range of partitions."
-                    " Call asset_partition_key_range instead."
+                    " Call partition_key_range instead."
                 )
             else:
                 if isinstance(self.partitions_def, MultiPartitionsDefinition):
@@ -455,9 +455,25 @@ class PlanExecutionContext(IPlanContext):
                 f" single time dimension, but instead found {type(partitions_def)}"
             )
 
-        return cast(
-            Union[MultiPartitionsDefinition, TimeWindowPartitionsDefinition], partitions_def
-        ).time_window_for_partition_key(self.partition_key)
+        if self.has_partition_key:
+            return cast(
+                Union[MultiPartitionsDefinition, TimeWindowPartitionsDefinition], partitions_def
+            ).time_window_for_partition_key(self.partition_key)
+        elif self.has_partition_key_range:
+            partition_key_range = self.asset_partition_key_range
+            partitions_def = cast(
+                Union[TimeWindowPartitionsDefinition, MultiPartitionsDefinition], partitions_def
+            )
+            return TimeWindow(
+                partitions_def.time_window_for_partition_key(partition_key_range.start).start,
+                partitions_def.time_window_for_partition_key(partition_key_range.end).end,
+            )
+
+        else:
+            check.failed(
+                "Has a PartitionsDefinition, so should either have a partition key or a partition"
+                " key range"
+            )
 
     @property
     def has_partition_key(self) -> bool:
@@ -558,6 +574,24 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         self._input_asset_version_info: Dict[AssetKey, Optional["InputAssetVersionInfo"]] = {}
         self._is_external_input_asset_version_info_loaded = False
         self._data_version_cache: Dict[AssetKey, "DataVersion"] = {}
+
+        self._requires_typed_event_stream = False
+        self._typed_event_stream_error_message = None
+
+    # In this mode no conversion is done on returned values and missing but expected outputs are not
+    # allowed.
+    @property
+    def requires_typed_event_stream(self) -> bool:
+        return self._requires_typed_event_stream
+
+    @property
+    def typed_event_stream_error_message(self) -> Optional[str]:
+        return self._typed_event_stream_error_message
+
+    # Error message will be appended to the default error message.
+    def set_requires_typed_event_stream(self, *, error_message: Optional[str] = None):
+        self._requires_typed_event_stream = True
+        self._typed_event_stream_error_message = error_message
 
     @property
     def step(self) -> ExecutionStep:
@@ -863,6 +897,11 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
     def op_config(self) -> Any:
         op_config = self.resolved_run_config.ops.get(str(self.node_handle))
         return op_config.config if op_config else None
+
+    @property
+    def is_op_in_graph(self) -> bool:
+        """Whether this step corresponds to an op within a graph (either @graph, or @graph_asset)."""
+        return self.step.node_handle.parent is not None
 
     @property
     def is_sda_step(self) -> bool:

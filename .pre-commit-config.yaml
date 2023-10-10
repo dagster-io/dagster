@@ -1,6 +1,6 @@
 repos:
-- repo: https://github.com/psf/black
-  rev: refs/tags/23.7.0:refs/tags/23.7.0
+- repo: https://github.com/psf/black-pre-commit-mirror
+  rev: refs/tags/23.9.1:refs/tags/23.9.1
 
   # We need two instances of the black pre-commit hook because black can only run with a single
   # config, but we need different configs for docs_snippets and the rest of the repo due to
@@ -17,6 +17,6 @@ repos:
       name: black-jupyter [docs-snippets]
       files: "^examples/docs_snippets/.*.py"
 - repo: https://github.com/charliermarsh/ruff-pre-commit
-  rev: v0.0.277
+  rev: v0.0.289
   hooks:
     - id: ruff

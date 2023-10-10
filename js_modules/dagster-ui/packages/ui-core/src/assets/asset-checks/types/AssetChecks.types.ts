@@ -8,14 +8,31 @@ export type AssetChecksQueryVariables = Types.Exact<{
 
 export type AssetChecksQuery = {
   __typename: 'Query';
+  assetNodeOrError:
+    | {
+        __typename: 'AssetNode';
+        id: string;
+        jobNames: Array<string>;
+        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+        repository: {
+          __typename: 'Repository';
+          id: string;
+          name: string;
+          location: {__typename: 'RepositoryLocation'; id: string; name: string};
+        };
+      }
+    | {__typename: 'AssetNotFoundError'};
   assetChecksOrError:
+    | {__typename: 'AssetCheckNeedsAgentUpgradeError'}
     | {__typename: 'AssetCheckNeedsMigrationError'; message: string}
+    | {__typename: 'AssetCheckNeedsUserCodeUpgrade'}
     | {
         __typename: 'AssetChecks';
         checks: Array<{
           __typename: 'AssetCheck';
           name: string;
           description: string | null;
+          canExecuteIndividually: Types.AssetCheckCanExecuteIndividually;
           executionForLatestMaterialization: {
             __typename: 'AssetCheckExecution';
             id: string;

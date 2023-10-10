@@ -29,6 +29,7 @@ from ...implementation.fetch_schedules import get_schedules_for_pipeline
 from ...implementation.fetch_sensors import get_sensors_for_pipeline
 from ...implementation.loader import BatchRunLoader
 from ...implementation.utils import UserFacingGraphQLError, capture_error
+from ..asset_checks import GrapheneAssetCheckHandle
 from ..asset_key import GrapheneAssetKey
 from ..dagster_types import (
     GrapheneDagsterType,
@@ -345,6 +346,7 @@ class GrapheneRun(graphene.ObjectType):
     jobName = graphene.NonNull(graphene.String)
     solidSelection = graphene.List(graphene.NonNull(graphene.String))
     assetSelection = graphene.List(graphene.NonNull(GrapheneAssetKey))
+    assetCheckSelection = graphene.List(graphene.NonNull(GrapheneAssetCheckHandle))
     resolvedOpSelection = graphene.List(graphene.NonNull(graphene.String))
     stats = graphene.NonNull(GrapheneRunStatsSnapshotOrError)
     stepStats = non_null_list(GrapheneRunStepStats)
@@ -442,6 +444,13 @@ class GrapheneRun(graphene.ObjectType):
 
     def resolve_assetSelection(self, _graphene_info: ResolveInfo):
         return self.dagster_run.asset_selection
+
+    def resolve_assetCheckSelection(self, _graphene_info: ResolveInfo):
+        return (
+            [GrapheneAssetCheckHandle(handle) for handle in self.dagster_run.asset_check_selection]
+            if self.dagster_run.asset_check_selection is not None
+            else None
+        )
 
     def resolve_resolvedOpSelection(self, _graphene_info: ResolveInfo):
         return self.dagster_run.resolved_op_selection

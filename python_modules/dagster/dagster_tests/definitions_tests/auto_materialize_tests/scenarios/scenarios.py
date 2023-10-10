@@ -2,7 +2,9 @@ from dagster import Definitions
 from dagster._core.definitions.executor_definition import in_process_executor
 
 from .active_run_scenarios import active_run_scenarios
-from .auto_materialize_policy_scenarios import auto_materialize_policy_scenarios
+from .auto_materialize_policy_scenarios import (
+    auto_materialize_policy_scenarios,
+)
 from .auto_observe_scenarios import auto_observe_scenarios
 from .basic_scenarios import basic_scenarios
 from .definition_change_scenarios import definition_change_scenarios

@@ -40,8 +40,8 @@ class SparkResource:
 
         if not os.path.exists(application_jar):
             raise SparkOpError(
-                "Application jar {} does not exist. A valid jar must be "
-                "built before running this op.".format(application_jar)
+                f"Application jar {application_jar} does not exist. A valid jar must be "
+                "built before running this op."
             )
 
         spark_shell_cmd = construct_spark_shell_command(

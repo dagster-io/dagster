@@ -312,10 +312,7 @@ export const TickHistoryTimeline = ({
   if (!data || error) {
     return (
       <>
-        <Box
-          padding={{top: 16, horizontal: 24}}
-          border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-        >
+        <Box padding={{top: 16, horizontal: 24}} border="bottom">
           <Subheading>Recent ticks</Subheading>
         </Box>
         <Box padding={{vertical: 64}}>
@@ -359,7 +356,7 @@ export const TickHistoryTimeline = ({
       <Box padding={{vertical: 16, horizontal: 24}}>
         <Subheading>Recent ticks</Subheading>
       </Box>
-      <Box border={{side: 'top', width: 1, color: Colors.KeylineGray}}>
+      <Box border="top">
         <LiveTickTimeline
           ticks={ticks}
           nextTick={nextTick}
@@ -450,6 +447,7 @@ const JOB_TICK_HISTORY_QUERY = gql`
     status
     timestamp
     cursor
+    instigationType
     skipReason
     runIds
     runs {

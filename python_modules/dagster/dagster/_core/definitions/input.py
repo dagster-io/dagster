@@ -52,16 +52,9 @@ def _check_default_value(input_name: str, dagster_type: DagsterType, default_val
             type_check = dagster_type.type_check_scalar_value(default_value)
             if not type_check.success:
                 raise DagsterInvalidDefinitionError(
-                    (
-                        "Type check failed for the default_value of InputDefinition "
-                        "{input_name} of type {dagster_type}. "
-                        "Received value {value} of type {type}"
-                    ).format(
-                        input_name=input_name,
-                        dagster_type=dagster_type.display_name,
-                        value=default_value,
-                        type=type(default_value),
-                    ),
+                    "Type check failed for the default_value of InputDefinition "
+                    f"{input_name} of type {dagster_type.display_name}. "
+                    f"Received value {default_value} of type {type(default_value)}",
                 )
 
     return default_value

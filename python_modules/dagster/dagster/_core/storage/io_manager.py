@@ -156,8 +156,7 @@ class IOManager(InputManager, OutputManager):
 
 
 @overload
-def io_manager(config_schema: IOManagerFunction) -> IOManagerDefinition:
-    ...
+def io_manager(config_schema: IOManagerFunction) -> IOManagerDefinition: ...
 
 
 @overload
@@ -168,8 +167,7 @@ def io_manager(
     input_config_schema: CoercableToConfigSchema = None,
     required_resource_keys: Optional[Set[str]] = None,
     version: Optional[str] = None,
-) -> Callable[[IOManagerFunction], IOManagerDefinition]:
-    ...
+) -> Callable[[IOManagerFunction], IOManagerDefinition]: ...
 
 
 def io_manager(

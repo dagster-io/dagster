@@ -1,7 +1,6 @@
 import {
   Box,
   Button,
-  Colors,
   Dialog,
   DialogFooter,
   NonIdealState,
@@ -14,10 +13,11 @@ interface Props {
   setIsOpen: (value: boolean) => void;
   header: React.ReactNode;
   content: React.ReactNode;
+  height?: number;
 }
 
 export const AssetKeysDialog = (props: Props) => {
-  const {isOpen, setIsOpen, header, content} = props;
+  const {isOpen, setIsOpen, header, content, height = 272} = props;
   return (
     <Dialog
       isOpen={isOpen}
@@ -27,7 +27,7 @@ export const AssetKeysDialog = (props: Props) => {
       canEscapeKeyClose
     >
       {header}
-      <div style={{height: '272px', overflow: 'hidden'}}>{content}</div>
+      <div style={{height: `${height}px`, overflow: 'hidden'}}>{content}</div>
       <DialogFooter topBorder>
         <Button onClick={() => setIsOpen(false)}>Close</Button>
       </DialogFooter>
@@ -49,7 +49,7 @@ export const AssetKeysDialogHeader = (props: HeaderProps) => {
     <Box
       padding={{horizontal: 24, vertical: 16}}
       flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
-      border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+      border="bottom"
     >
       <div style={{fontSize: '16px'}}>{title}</div>
       {showSearch ? (

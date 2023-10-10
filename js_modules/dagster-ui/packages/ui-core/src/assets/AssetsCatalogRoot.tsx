@@ -1,8 +1,7 @@
 import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, Page, Spinner} from '@dagster-io/ui-components';
 import * as React from 'react';
-import {useHistory} from 'react-router';
-import {useParams} from 'react-router-dom';
+import {useHistory, useParams} from 'react-router-dom';
 
 import {useTrackPageView} from '../app/analytics';
 import {displayNameForAssetKey} from '../asset-graph/Utils';

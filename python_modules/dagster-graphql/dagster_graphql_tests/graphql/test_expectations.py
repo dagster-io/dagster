@@ -11,9 +11,7 @@ from .utils import sync_execute_get_events
 def get_expectation_results(logs, op_name: str):
     def _f():
         for log in logs:
-            if log["__typename"] == "StepExpectationResultEvent" and log["stepKey"] == "{}".format(
-                op_name
-            ):
+            if log["__typename"] == "StepExpectationResultEvent" and log["stepKey"] == f"{op_name}":
                 yield log
 
     return list(_f())

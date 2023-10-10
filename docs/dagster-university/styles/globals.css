@@ -30,13 +30,35 @@ page {
   display: flex;
   width: 100vw;
   flex-grow: 1;
-  /* max-width: 1280px; */
+  max-width: 1280px;
 }
 
 main {
-  overflow: auto;
   height: calc(100vh - var(--top-nav-height));
+  margin: 0 auto;
   flex-grow: 1;
   font-size: 16px;
-  padding: 0 5rem 5rem;
+}
+
+.codeBlock code[class*='language-'],
+.codeBlock pre[class*='language-'] {
+  font-family: theme('fontFamily.mono');
+  font-size: 14px;
+  text-shadow: none;
+  border-radius: 4px;
+}
+
+.callout p {
+  margin: 0;
+}
+
+.prose.prose :where(tbody td):not(:where([class~='not-prose'], [class~='not-prose'] *)),
+.prose.prose :where(thead th):not(:where([class~='not-prose'], [class~='not-prose'] *)) {
+  vertical-align: top;
+}
+
+.prose.prose td :where(img):not(:where([class~='not-prose'], [class~='not-prose'] *)),
+.prose.prose th :where(img):not(:where([class~='not-prose'], [class~='not-prose'] *)) {
+  margin-top: 0;
+  margin-bottom: 0;
 }

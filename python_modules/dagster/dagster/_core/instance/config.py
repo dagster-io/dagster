@@ -182,7 +182,7 @@ def get_default_tick_retention_settings(
             TickStatus.SUCCESS: -1,
             TickStatus.FAILURE: -1,
         }
-    # for sensor
+    # for sensor / auto-materialize
     return {
         TickStatus.STARTED: -1,
         TickStatus.SKIPPED: 7,
@@ -213,6 +213,7 @@ def retention_config_schema() -> Field:
         {
             "schedule": _tick_retention_config_schema(),
             "sensor": _tick_retention_config_schema(),
+            "auto_materialize": _tick_retention_config_schema(),
         },
         is_required=False,
     )

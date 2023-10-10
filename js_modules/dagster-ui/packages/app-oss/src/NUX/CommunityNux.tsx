@@ -95,7 +95,7 @@ const Form: React.FC<{
       <Box
         flex={{direction: 'row', gap: 24, alignItems: 'center'}}
         padding={{bottom: 24}}
-        border={{side: 'bottom', color: Colors.KeylineGray, width: 1}}
+        border="bottom"
       >
         <Box flex={{direction: 'column', gap: 8, alignItems: 'start', justifyContent: 'start'}}>
           <Heading>Join the Dagster community</Heading>

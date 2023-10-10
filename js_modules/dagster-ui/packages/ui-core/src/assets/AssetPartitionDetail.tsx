@@ -6,6 +6,7 @@ import {
   Group,
   Heading,
   Icon,
+  MiddleTruncate,
   Mono,
   Spinner,
   Subheading,
@@ -197,14 +198,21 @@ export const AssetPartitionDetail: React.FC<{
 
   return (
     <Box padding={{horizontal: 24, bottom: 24}} style={{flex: 1}}>
-      <Box
-        padding={{vertical: 24}}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-        flex={{alignItems: 'center'}}
-      >
+      <Box padding={{vertical: 24}} border="bottom" flex={{alignItems: 'center'}}>
         {partition ? (
-          <Box flex={{gap: 12, alignItems: 'center'}}>
-            <Heading>{partition}</Heading>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'minmax(0, 1fr) auto',
+              gap: 12,
+              alignItems: 'center',
+            }}
+            data-tooltip={partition}
+            data-tooltip-style={PartitionHeadingTooltipStyle}
+          >
+            <Heading>
+              <MiddleTruncate text={partition} />
+            </Heading>
             {hasLoadingState ? (
               <Spinner purpose="body-text" />
             ) : latest ? (
@@ -217,7 +225,7 @@ export const AssetPartitionDetail: React.FC<{
                 include="all"
               />
             ) : undefined}
-          </Box>
+          </div>
         ) : (
           <Heading color={Colors.Gray400}>No partition selected</Heading>
         )}
@@ -228,7 +236,7 @@ export const AssetPartitionDetail: React.FC<{
           run={currentRun}
           stepKey={stepKey}
           padding={{horizontal: 0, vertical: 16}}
-          border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+          border="bottom"
         />
       )}
       {currentRun && currentRunStatusMessage && (
@@ -246,7 +254,7 @@ export const AssetPartitionDetail: React.FC<{
 
       <Box
         style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 16, minHeight: 76}}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+        border="bottom"
         padding={{vertical: 16}}
       >
         {!latest ? (
@@ -340,3 +348,11 @@ export const AssetPartitionDetailEmpty = ({partitionKey}: {partitionKey?: string
     hasLoadingState
   />
 );
+
+const PartitionHeadingTooltipStyle = JSON.stringify({
+  background: Colors.Gray100,
+  border: `1px solid ${Colors.Gray200}`,
+  fontSize: '18px',
+  fontWeight: '600',
+  color: Colors.Dark,
+});

@@ -15,19 +15,17 @@ from dagster._core.definitions.events import (
     normalize_metadata,
 )
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster._serdes import whitelist_for_serdes
 
 if TYPE_CHECKING:
     from dagster._core.execution.context.compute import StepExecutionContext
 
 
 @experimental
-@whitelist_for_serdes
 class AssetCheckResult(
     NamedTuple(
         "_AssetCheckResult",
         [
-            ("success", PublicAttr[bool]),
+            ("passed", PublicAttr[bool]),
             ("asset_key", PublicAttr[Optional[AssetKey]]),
             ("check_name", PublicAttr[Optional[str]]),
             ("metadata", PublicAttr[Mapping[str, MetadataValue]]),
@@ -42,7 +40,7 @@ class AssetCheckResult(
             The asset key that was checked.
         check_name (Optional[str]):
             The name of the check.
-        success (bool):
+        passed (bool):
             The pass/fail result of the check.
         metadata (Optional[Dict[str, RawMetadataValue]]):
             Arbitrary metadata about the asset.  Keys are displayed string labels, and values are
@@ -56,7 +54,7 @@ class AssetCheckResult(
     def __new__(
         cls,
         *,
-        success: bool,
+        passed: bool,
         asset_key: Optional[CoercibleToAssetKey] = None,
         check_name: Optional[str] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
@@ -69,7 +67,7 @@ class AssetCheckResult(
             cls,
             asset_key=AssetKey.from_coercible(asset_key) if asset_key is not None else None,
             check_name=check.opt_str_param(check_name, "check_name"),
-            success=check.bool_param(success, "success"),
+            passed=check.bool_param(passed, "passed"),
             metadata=normalized_metadata,
             severity=check.inst_param(severity, "severity", AssetCheckSeverity),
         )
@@ -140,8 +138,20 @@ class AssetCheckResult(
         return AssetCheckEvaluation(
             check_name=resolved_check_name,
             asset_key=resolved_asset_key,
-            success=self.success,
+            passed=self.passed,
             metadata=self.metadata,
             target_materialization_data=target_materialization_data,
             severity=self.severity,
         )
+
+    def get_spec_python_identifier(
+        self, *, asset_key: Optional[AssetKey] = None, check_name: Optional[str] = None
+    ) -> str:
+        """Returns a string uniquely identifying the asset check spec associated with this result.
+        This is used for the output name associated with an `AssetCheckResult`.
+        """
+        asset_key = asset_key or self.asset_key
+        check_name = check_name or self.check_name
+        assert asset_key is not None, "Asset key must be provided if not set on spec"
+        assert asset_key is not None, "Asset key must be provided if not set on spec"
+        return f"{asset_key.to_python_identifier()}_{self.check_name}"

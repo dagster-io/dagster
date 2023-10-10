@@ -89,9 +89,8 @@ export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}
     return permissionedSchedules.map(({name}) => makeScheduleKey(repoAddress, name));
   }, [permissionedSchedules, repoAddress]);
 
-  const [{checkedIds: checkedKeys}, {onToggleFactory, onToggleAll}] = useSelectionReducer(
-    permissionedKeys,
-  );
+  const [{checkedIds: checkedKeys}, {onToggleFactory, onToggleAll}] =
+    useSelectionReducer(permissionedKeys);
 
   const checkedSchedules = React.useMemo(() => {
     return permissionedSchedules
@@ -202,7 +201,7 @@ export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}
       {activeFiltersJsx.length ? (
         <Box
           padding={{vertical: 8, horizontal: 24}}
-          border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+          border="top-and-bottom"
           flex={{direction: 'row', gap: 8}}
         >
           {activeFiltersJsx}

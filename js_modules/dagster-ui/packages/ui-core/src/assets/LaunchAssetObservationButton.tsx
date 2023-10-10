@@ -15,6 +15,7 @@ import {
   getCommonJob,
   LAUNCH_ASSET_LOADER_QUERY,
 } from './LaunchAssetExecutionButton';
+import {asAssetKeyInput} from './asInput';
 import {
   LaunchAssetExecutionAssetNodeFragment,
   LaunchAssetLoaderQuery,
@@ -43,7 +44,7 @@ export const LaunchAssetObservationButton: React.FC<{
 
   const scopeAssets = 'selected' in scope ? scope.selected : scope.all;
   if (!scopeAssets.length) {
-    return <span />;
+    return <></>;
   }
 
   const count = scopeAssets.length > 1 ? ` (${scopeAssets.length})` : '';
@@ -73,7 +74,7 @@ export const LaunchAssetObservationButton: React.FC<{
 
     const result = await client.query<LaunchAssetLoaderQuery, LaunchAssetLoaderQueryVariables>({
       query: LAUNCH_ASSET_LOADER_QUERY,
-      variables: {assetKeys: scopeAssets.map((a) => ({path: a.assetKey.path}))},
+      variables: {assetKeys: scopeAssets.map(asAssetKeyInput)},
     });
 
     if (result.data.assetNodeDefinitionCollisions.length) {

@@ -180,6 +180,7 @@ class UnresolvedAssetJobDefinition(
         assets = asset_graph.assets
         source_assets = asset_graph.source_assets
         selected_asset_keys = self.selection.resolve(asset_graph)
+        selected_asset_checks = self.selection.resolve_checks(asset_graph)
 
         asset_keys_by_partitions_def = defaultdict(set)
         for asset_key in selected_asset_keys:
@@ -224,6 +225,7 @@ class UnresolvedAssetJobDefinition(
             tags=self.tags,
             metadata=self.metadata,
             asset_selection=selected_asset_keys,
+            asset_check_selection=selected_asset_checks,
             partitions_def=self.partitions_def if self.partitions_def else inferred_partitions_def,
             executor_def=self.executor_def or default_executor_def,
             hooks=self.hooks,

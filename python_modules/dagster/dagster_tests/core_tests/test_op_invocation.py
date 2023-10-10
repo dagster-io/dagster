@@ -545,7 +545,7 @@ def test_optional_output_yielded():
     def op_multiple_outputs_not_sent():
         yield Output(2, output_name="2")
 
-    assert list(op_multiple_outputs_not_sent())[0].value == 2
+    assert next(iter(op_multiple_outputs_not_sent())).value == 2
 
 
 def test_optional_output_yielded_async():
@@ -597,8 +597,8 @@ def test_missing_required_output_generator():
     with pytest.raises(
         DagsterInvariantViolationError,
         match=(
-            "Invocation of op 'op_multiple_outputs_not_sent' did not return an output "
-            "for non-optional output '1'"
+            'Invocation of op "op_multiple_outputs_not_sent" did not return an output '
+            'for non-optional output "1"'
         ),
     ):
         list(op_multiple_outputs_not_sent())

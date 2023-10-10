@@ -140,6 +140,8 @@ export const RESOURCE_ENTRY_FRAGMENT = gql`
         id
       }
     }
+    schedulesUsing
+    sensorsUsing
   }
 `;
 
@@ -150,6 +152,7 @@ const WORKSPACE_RESOURCES_QUERY = gql`
         id
         name
         allTopLevelResourceDetails {
+          id
           ...ResourceEntryFragment
         }
       }

@@ -9,6 +9,7 @@ import {showSharedToaster} from '../app/DomUtils';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {Timestamp} from '../app/time/Timestamp';
+import {asAssetKeyInput, asAssetCheckHandleInput} from '../assets/asInput';
 import {AssetKey} from '../assets/types';
 import {ExecutionParams, RunStatus} from '../graphql/types';
 
@@ -144,22 +145,13 @@ function getBaseExecutionMetadata(run: RunFragment | RunTableRunFragment) {
   };
 }
 
-export type ReExecutionStyle =
-  | {type: 'all'}
-  | {type: 'from-failure'}
-  | {type: 'selection'; selection: StepSelection};
-
-export function getReexecutionVariables(input: {
+export function getReexecutionParamsForSelection(input: {
   run: (RunFragment | RunTableRunFragment) & {runConfigYaml: string};
-  style: ReExecutionStyle;
+  selection: StepSelection;
   repositoryLocationName: string;
   repositoryName: string;
 }) {
-  const {run, style, repositoryLocationName, repositoryName} = input;
-
-  if (!run || !run.pipelineSnapshotId) {
-    return undefined;
-  }
+  const {run, selection, repositoryLocationName, repositoryName} = input;
 
   const executionParams: ExecutionParams = {
     mode: run.mode,
@@ -170,28 +162,20 @@ export function getReexecutionVariables(input: {
       repositoryName,
       pipelineName: run.pipelineName,
       solidSelection: run.solidSelection,
-      assetSelection: run.assetSelection
-        ? run.assetSelection.map((asset_key) => ({
-            path: asset_key.path,
-          }))
-        : null,
+      assetSelection: run.assetSelection ? run.assetSelection.map(asAssetKeyInput) : [],
+      assetCheckSelection: run.assetCheckSelection
+        ? run.assetCheckSelection.map(asAssetCheckHandleInput)
+        : [],
     },
   };
 
-  if (style.type === 'from-failure') {
-    executionParams.executionMetadata?.tags?.push({
-      key: DagsterTag.IsResumeRetry,
-      value: 'true',
-    });
-  }
-  if (style.type === 'selection') {
-    executionParams.stepKeys = style.selection.keys;
-    executionParams.executionMetadata?.tags?.push({
-      key: DagsterTag.StepSelection,
-      value: style.selection.query,
-    });
-  }
-  return {executionParams};
+  executionParams.stepKeys = selection.keys;
+  executionParams.executionMetadata?.tags?.push({
+    key: DagsterTag.StepSelection,
+    value: selection.query,
+  });
+
+  return executionParams;
 }
 
 export const LAUNCH_PIPELINE_EXECUTION_MUTATION = gql`
@@ -238,27 +222,29 @@ export const DELETE_MUTATION = gql`
 `;
 
 export const TERMINATE_MUTATION = gql`
-  mutation Terminate($runId: String!, $terminatePolicy: TerminateRunPolicy) {
-    terminatePipelineExecution(runId: $runId, terminatePolicy: $terminatePolicy) {
-      ... on TerminateRunFailure {
-        message
-      }
-      ... on RunNotFoundError {
-        message
-      }
-      ... on TerminateRunSuccess {
-        run {
-          id
-          canTerminate
+  mutation Terminate($runIds: [String!]!, $terminatePolicy: TerminateRunPolicy) {
+    terminateRuns(runIds: $runIds, terminatePolicy: $terminatePolicy) {
+      ...PythonErrorFragment
+      ... on TerminateRunsResult {
+        terminateRunResults {
+          ...PythonErrorFragment
+          ... on RunNotFoundError {
+            message
+          }
+          ... on TerminateRunFailure {
+            message
+          }
+          ... on TerminateRunSuccess {
+            run {
+              id
+              canTerminate
+            }
+          }
         }
-      }
-      ... on UnauthorizedError {
-        message
       }
       ...PythonErrorFragment
     }
   }
-
   ${PYTHON_ERROR_FRAGMENT}
 `;
 

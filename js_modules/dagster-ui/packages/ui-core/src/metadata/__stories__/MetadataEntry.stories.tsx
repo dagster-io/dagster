@@ -12,7 +12,10 @@ import {MetadataEntries} from '../MetadataEntry';
 import {MetadataEntryFragment} from '../types/MetadataEntry.types';
 
 // eslint-disable-next-line import/no-default-export
-export default {component: MetadataEntries};
+export default {
+  title: 'MetadataEntries',
+  component: MetadataEntries,
+};
 
 const MetadataEntryTypes: MetadataEntryFragment['__typename'][] = [
   'PathMetadataEntry',

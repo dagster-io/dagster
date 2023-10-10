@@ -135,7 +135,11 @@ def execute_run_iterator(
             ),
         )
 
-    if dagster_run.resolved_op_selection or dagster_run.asset_selection:
+    if (
+        dagster_run.resolved_op_selection
+        or dagster_run.asset_selection
+        or dagster_run.asset_check_selection
+    ):
         # when `execute_run_iterator` is directly called, the sub pipeline hasn't been created
         # note that when we receive the solids to execute via DagsterRun, it won't support
         # solid selection query syntax
@@ -146,6 +150,7 @@ def execute_run_iterator(
                 else None
             ),
             asset_selection=dagster_run.asset_selection,
+            asset_check_selection=dagster_run.asset_check_selection,
         )
 
     execution_plan = _get_execution_plan_from_run(job, dagster_run, instance)
@@ -219,7 +224,11 @@ def execute_run(
             dagster_run.job_name, dagster_run.run_id, dagster_run.status
         ),
     )
-    if dagster_run.resolved_op_selection or dagster_run.asset_selection:
+    if (
+        dagster_run.resolved_op_selection
+        or dagster_run.asset_selection
+        or dagster_run.asset_check_selection
+    ):
         # when `execute_run` is directly called, the sub job hasn't been created
         # note that when we receive the solids to execute via DagsterRun, it won't support
         # solid selection query syntax
@@ -230,6 +239,7 @@ def execute_run(
                 else None
             ),
             asset_selection=dagster_run.asset_selection,
+            asset_check_selection=dagster_run.asset_check_selection,
         )
 
     execution_plan = _get_execution_plan_from_run(job, dagster_run, instance)
@@ -544,9 +554,7 @@ def _reexecute_job(
         parent_dagster_run = execute_instance.get_run_by_id(parent_run_id)
         if parent_dagster_run is None:
             check.failed(
-                "No parent run with id {parent_run_id} found in instance.".format(
-                    parent_run_id=parent_run_id
-                ),
+                f"No parent run with id {parent_run_id} found in instance.",
             )
 
         execution_plan: Optional[ExecutionPlan] = None
@@ -671,6 +679,7 @@ def _get_execution_plan_from_run(
         and execution_plan_snapshot.can_reconstruct_plan
         and job.resolved_op_selection == dagster_run.resolved_op_selection
         and job.asset_selection == dagster_run.asset_selection
+        and job.asset_check_selection == dagster_run.asset_check_selection
     ):
         return ExecutionPlan.rebuild_from_snapshot(
             dagster_run.job_name,

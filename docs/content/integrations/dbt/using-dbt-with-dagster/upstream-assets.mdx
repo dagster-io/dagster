@@ -49,7 +49,7 @@ import os
 
 import duckdb
 import pandas as pd
-from dagster import OpExecutionContext, asset
+from dagster import AssetExecutionContext, asset
 from dagster_dbt import DbtCliResource, dbt_assets
 
 from .constants import dbt_manifest_path, dbt_project_dir
@@ -71,7 +71,7 @@ def raw_customers(context) -> None:
 
 
 @dbt_assets(manifest=dbt_manifest_path)
-def jaffle_shop_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+def jaffle_shop_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
 ```
 

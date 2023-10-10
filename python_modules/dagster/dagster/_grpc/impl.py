@@ -9,7 +9,7 @@ import pendulum
 
 import dagster._check as check
 from dagster._core.definitions import ScheduleEvaluationContext
-from dagster._core.definitions.asset_check_spec import AssetCheckHandle
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
@@ -205,9 +205,7 @@ def _run_in_subprocess(
         serializable_error_info = serializable_error_info_from_exc_info(sys.exc_info())
         event = IPCErrorMessage(
             serializable_error_info=serializable_error_info,
-            message="Error during RPC setup for executing run: {message}".format(
-                message=serializable_error_info.message
-            ),
+            message=f"Error during RPC setup for executing run: {serializable_error_info.message}",
         )
         subprocess_status_handler(event)
         subprocess_status_handler(RunInSubprocessComplete())
@@ -265,7 +263,7 @@ def get_external_pipeline_subset_result(
     job_name: str,
     op_selection: Optional[Sequence[str]],
     asset_selection: Optional[AbstractSet[AssetKey]],
-    asset_check_selection: Optional[AbstractSet[AssetCheckHandle]],
+    asset_check_selection: Optional[AbstractSet[AssetCheckKey]],
 ):
     try:
         definition = repo_def.get_maybe_subset_job_def(
@@ -321,8 +319,7 @@ def get_external_schedule_execution(
             with user_code_error_boundary(
                 ScheduleExecutionError,
                 lambda: (
-                    "Error occurred during the execution function for schedule {schedule_name}"
-                    .format(schedule_name=schedule_def.name)
+                    f"Error occurred during the execution function for schedule {schedule_def.name}"
                 ),
             ):
                 return schedule_def.evaluate_tick(schedule_context)

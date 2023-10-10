@@ -6,6 +6,7 @@ import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {useUnscopedPermissions} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {Timestamp} from '../app/time/Timestamp';
+import {AutoMaterializeExperimentalTag} from '../assets/AutoMaterializePolicyPage/AutoMaterializeExperimentalBanner';
 import {useAutomaterializeDaemonStatus} from '../assets/AutomaterializeDaemonStatusTag';
 import {TimeFromNow} from '../ui/TimeFromNow';
 
@@ -66,7 +67,10 @@ export const DaemonList: React.FC<Props> = ({daemonStatuses, showTimestampColumn
           <tr>
             <td>
               <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
-                Auto-materializing
+                <Box flex={{gap: 8, alignItems: 'center'}}>
+                  Auto-materializing
+                  <AutoMaterializeExperimentalTag />
+                </Box>
                 {automaterialize.loading ? (
                   <Spinner purpose="body-text" />
                 ) : (

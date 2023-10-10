@@ -12,4 +12,8 @@ You can pass any object or connection into your code location’s `Definitions` 
 
 Check out the [Dagster Docs](https://docs.dagster.io/integrations) for more info about all of Dagster’s integrations.
 
+{% callout %}
+
 > ‼️ Make sure you update your code to match the practice problem answer before continuing!
+
+{% /callout %}

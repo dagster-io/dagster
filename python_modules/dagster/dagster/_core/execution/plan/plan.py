@@ -412,13 +412,8 @@ class _PlanBuilder:
 
         # Otherwise we throw an error.
         raise DagsterInvariantViolationError(
-            (
-                "In top-level graph of {described_target}, input {input_name} "
-                "must get a value from the inputs section of its configuration."
-            ).format(
-                described_target=self.job_def.describe_target(),
-                input_name=input_name,
-            )
+            f"In top-level graph of {self.job_def.describe_target()}, input {input_name} "
+            "must get a value from the inputs section of its configuration."
         )
 
 
@@ -537,15 +532,9 @@ def get_step_input_source(
 
     # Otherwise we throw an error.
     raise DagsterInvariantViolationError(
-        (
-            "In {described_target} {described_node}, input {input_name} "
-            "must get a value either (a) from a dependency or (b) from the "
-            "inputs section of its configuration."
-        ).format(
-            described_target=job_def.describe_target(),
-            described_node=node.describe_node(),
-            input_name=input_name,
-        )
+        f"In {job_def.describe_target()} {node.describe_node()}, input {input_name} "
+        "must get a value either (a) from a dependency or (b) from the "
+        "inputs section of its configuration."
     )
 
 

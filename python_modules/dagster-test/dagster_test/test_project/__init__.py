@@ -348,8 +348,6 @@ def get_test_project_docker_image():
             majmin=majmin, image_version="latest"
         )
 
-    final_docker_image = "{repository}/{image_name}:{tag}".format(
-        repository=docker_repository, image_name=image_name, tag=docker_image_tag
-    )
+    final_docker_image = f"{docker_repository}/{image_name}:{docker_image_tag}"
     print("Using Docker image: %s" % final_docker_image)  # noqa: T201
     return final_docker_image

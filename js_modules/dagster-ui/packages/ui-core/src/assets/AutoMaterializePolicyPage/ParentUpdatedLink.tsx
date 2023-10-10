@@ -28,11 +28,11 @@ export const ParentUpdatedLink = ({updatedAssetKeys, willUpdateAssetKeys}: Props
 
   const filteredAssetKeys: AssetKeyDetail[] = React.useMemo(() => {
     return [
-      ...filteredUpdatedAssetKeys.sort(sortAssetKeys).map((assetKey) => ({
+      ...[...filteredUpdatedAssetKeys].sort(sortAssetKeys).map((assetKey) => ({
         assetKey,
         detailType: AssetDetailType.Updated,
       })),
-      ...filteredWillUpdateAssetKeys.sort(sortAssetKeys).map((assetKey) => ({
+      ...[...filteredWillUpdateAssetKeys].sort(sortAssetKeys).map((assetKey) => ({
         assetKey,
         detailType: AssetDetailType.WillUpdate,
       })),

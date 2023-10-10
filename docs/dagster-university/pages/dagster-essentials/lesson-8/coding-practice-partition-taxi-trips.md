@@ -9,7 +9,9 @@ lesson: '8'
 To practice what you’ve learned, partition the `taxi_trips` asset by month using the following guidelines:
 
 - Because a month’s parquet file may contain historical data from outside the month, it is recommended that you partition by the month of the parquet file, not the month of the trip
+
 - With every partition, insert the new data into the `taxi_trips` table
+
 - For convenience, add a `partition_date` column to represent which partition the record was inserted from. You’ll need to drop the existing `taxi_trips` because of the new `partition_date` column. In a Python REPL or scratch script, run the following:
 
   ```yaml
@@ -19,6 +21,7 @@ To practice what you’ve learned, partition the `taxi_trips` asset by month usi
   ```
 
 - Because the `taxi_trips` table will exist after the first partition materializes, the SQL query will have to change
+
 - In this asset, you’ll need to do three actions:
   - Create the `taxi_trips` table if it doesn’t already exist
   - Delete any old data from that `partition_date` to prevent duplicates when backfilling
@@ -28,9 +31,11 @@ To practice what you’ve learned, partition the `taxi_trips` asset by month usi
 
 ## Check your work
 
-The updated asset should look similar to the code contained in the **View answer** toggle. Click to open it.
+The updated asset should look similar to the following code. Click **View answer** to view it.
 
-```python
+**If there are differences**, compare what you wrote to the asset below and change them, as this asset will be used as-is in future lessons.
+
+```python {% obfuscated="true" %}
 from dagster import asset
 from .partitions import monthly_partitions
 
@@ -66,5 +71,3 @@ def taxi_trips(context, database: DuckDBResource):
     with database.get_connection() as conn:
       conn.execute(query)
 ```
-
-**If there are differences**, compare what you wrote to the asset above and change them, as this asset will be used as-is in future lessons.

@@ -19,6 +19,7 @@ from dagster import (
     asset_check,
     define_asset_job,
 )
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 
 
@@ -32,8 +33,7 @@ def execute_assets_and_checks(
 
 def test_asset_check_decorator():
     @asset_check(asset="asset1", description="desc")
-    def check1():
-        ...
+    def check1(): ...
 
     assert check1.name == "check1"
     assert check1.description == "desc"
@@ -42,40 +42,34 @@ def test_asset_check_decorator():
 
 def test_asset_check_decorator_name():
     @asset_check(asset="asset1", description="desc", name="check1")
-    def _check():
-        ...
+    def _check(): ...
 
     assert _check.name == "check1"
 
 
 def test_asset_check_with_prefix():
     @asset(key_prefix="prefix")
-    def asset1():
-        ...
+    def asset1(): ...
 
     @asset_check(asset=asset1)
-    def my_check():
-        ...
+    def my_check(): ...
 
     assert my_check.asset_key == AssetKey(["prefix", "asset1"])
 
 
 def test_asset_check_input_with_prefix():
     @asset(key_prefix="prefix")
-    def asset1():
-        ...
+    def asset1(): ...
 
     @asset_check(asset=asset1)
-    def my_check(asset1):
-        ...
+    def my_check(asset1): ...
 
     assert my_check.asset_key == AssetKey(["prefix", "asset1"])
 
 
 def test_execute_asset_and_check():
     @asset
-    def asset1():
-        ...
+    def asset1(): ...
 
     @asset_check(asset=asset1, description="desc")
     def check1(context):
@@ -84,7 +78,7 @@ def test_execute_asset_and_check():
         return AssetCheckResult(
             asset_key=asset_check_spec.asset_key,
             check_name=asset_check_spec.name,
-            success=True,
+            passed=True,
             metadata={"foo": "bar"},
         )
 
@@ -125,8 +119,8 @@ def test_execute_asset_and_check():
     )
     assert (
         len(
-            instance.event_log_storage.get_asset_check_executions(
-                AssetKey("asset1"), "check1", limit=10
+            instance.event_log_storage.get_asset_check_execution_history(
+                AssetCheckKey(asset_key=AssetKey("asset1"), name="check1"), limit=10
             )
         )
         == 1
@@ -136,7 +130,7 @@ def test_execute_asset_and_check():
 def test_execute_check_without_asset():
     @asset_check(asset="asset1", description="desc")
     def check1():
-        return AssetCheckResult(success=True, metadata={"foo": "bar"})
+        return AssetCheckResult(passed=True, metadata={"foo": "bar"})
 
     result = execute_assets_and_checks(asset_checks=[check1])
     assert result.success
@@ -153,8 +147,7 @@ def test_execute_check_without_asset():
 
 def test_execute_check_and_asset_in_separate_run():
     @asset
-    def asset1():
-        ...
+    def asset1(): ...
 
     @asset_check(asset=asset1, description="desc")
     def check1(context):
@@ -163,7 +156,7 @@ def test_execute_check_and_asset_in_separate_run():
         return AssetCheckResult(
             asset_key=asset_check_spec.asset_key,
             check_name=asset_check_spec.name,
-            success=True,
+            passed=True,
             metadata={"foo": "bar"},
         )
 
@@ -188,12 +181,11 @@ def test_execute_check_and_asset_in_separate_run():
 
 def test_execute_check_and_unrelated_asset():
     @asset
-    def asset2():
-        ...
+    def asset2(): ...
 
     @asset_check(asset="asset1", description="desc")
     def check1():
-        return AssetCheckResult(success=True)
+        return AssetCheckResult(passed=True)
 
     result = execute_assets_and_checks(assets=[asset2], asset_checks=[check1])
     assert result.success
@@ -230,7 +222,7 @@ def test_check_doesnt_execute_if_asset_fails():
 def test_check_decorator_unexpected_asset_key():
     @asset_check(asset="asset1", description="desc")
     def asset1_check():
-        return AssetCheckResult(asset_key=AssetKey("asset2"), success=True)
+        return AssetCheckResult(asset_key=AssetKey("asset2"), passed=True)
 
     with pytest.raises(
         DagsterInvariantViolationError,
@@ -244,16 +236,14 @@ def test_check_decorator_unexpected_asset_key():
 
 def test_asset_check_separate_op_downstream_still_executes():
     @asset
-    def asset1():
-        ...
+    def asset1(): ...
 
     @asset_check(asset=asset1)
     def asset1_check(context):
-        return AssetCheckResult(success=False)
+        return AssetCheckResult(passed=False)
 
     @asset(deps=[asset1])
-    def asset2():
-        ...
+    def asset2(): ...
 
     result = execute_assets_and_checks(assets=[asset1, asset2], asset_checks=[asset1_check])
     assert result.success
@@ -266,23 +256,21 @@ def test_asset_check_separate_op_downstream_still_executes():
     check_eval = check_evals[0]
     assert check_eval.asset_key == AssetKey("asset1")
     assert check_eval.check_name == "asset1_check"
-    assert not check_eval.success
+    assert not check_eval.passed
 
 
 def test_error_severity_skip_downstream():
     pytest.skip("Currently users should raise exceptions instead of using checks for control flow.")
 
     @asset
-    def asset1():
-        ...
+    def asset1(): ...
 
     @asset_check(asset=asset1, severity=AssetCheckSeverity.ERROR)
     def check1(context):
-        return AssetCheckResult(success=False)
+        return AssetCheckResult(passed=False)
 
     @asset(deps=[asset1])
-    def asset2():
-        ...
+    def asset2(): ...
 
     result = execute_assets_and_checks(
         assets=[asset1, asset2], asset_checks=[check1], raise_on_error=False
@@ -313,11 +301,10 @@ def test_error_severity_with_source_asset_fail():
 
     @asset_check(asset=asset1, severity=AssetCheckSeverity.ERROR)
     def check1(context):
-        return AssetCheckResult(success=False)
+        return AssetCheckResult(passed=False)
 
     @asset(deps=[asset1])
-    def asset2():
-        ...
+    def asset2(): ...
 
     result = execute_assets_and_checks(
         assets=[asset1, asset2], asset_checks=[check1], raise_on_error=False
@@ -346,7 +333,7 @@ def test_error_severity_with_source_asset_success():
 
     @asset_check(asset=asset1)
     def check1(context):
-        return AssetCheckResult(success=True, severity=AssetCheckSeverity.ERROR)
+        return AssetCheckResult(passed=True, severity=AssetCheckSeverity.ERROR)
 
     @asset
     def asset2(asset1):
@@ -375,14 +362,13 @@ def test_error_severity_with_source_asset_success():
     check_eval = check_evals[0]
     assert check_eval.asset_key == AssetKey("asset1")
     assert check_eval.check_name == "check1"
-    assert check_eval.success
+    assert check_eval.passed
 
 
 def test_definitions_conflicting_checks():
     def make_check():
         @asset_check(asset="asset1")
-        def check1(context):
-            ...
+        def check1(context): ...
 
         return check1
 
@@ -396,8 +382,7 @@ def test_definitions_conflicting_checks():
 def test_definitions_same_name_different_asset():
     def make_check_for_asset(asset_key: str):
         @asset_check(asset=asset_key)
-        def check1(context):
-            ...
+        def check1(context): ...
 
         return check1
 
@@ -407,8 +392,7 @@ def test_definitions_same_name_different_asset():
 def test_definitions_same_asset_different_name():
     def make_check(check_name: str):
         @asset_check(asset="asset1", name=check_name)
-        def _check(context):
-            ...
+        def _check(context): ...
 
         return _check
 
@@ -422,27 +406,25 @@ def test_resource_params():
     @asset_check(asset=AssetKey("asset1"))
     def check1(my_resource: ResourceParam[MyResource]):
         assert my_resource.value == 5
-        return AssetCheckResult(success=True)
+        return AssetCheckResult(passed=True)
 
     execute_assets_and_checks(asset_checks=[check1], resources={"my_resource": MyResource(5)})
 
 
 def test_job_only_execute_checks_downstream_of_selected_assets():
     @asset
-    def asset1():
-        ...
+    def asset1(): ...
 
     @asset
-    def asset2():
-        ...
+    def asset2(): ...
 
     @asset_check(asset=asset1)
     def check1():
-        return AssetCheckResult(success=False)
+        return AssetCheckResult(passed=False)
 
     @asset_check(asset=asset2)
     def check2():
-        return AssetCheckResult(success=False)
+        return AssetCheckResult(passed=False)
 
     defs = Definitions(
         assets=[asset1, asset2],
@@ -464,8 +446,7 @@ def test_asset_not_provided():
     with pytest.raises(Exception):
 
         @asset_check(description="desc")
-        def check1():
-            ...
+        def check1(): ...
 
 
 def test_managed_input():
@@ -476,15 +457,14 @@ def test_managed_input():
     @asset_check(asset=asset1, description="desc")
     def check1(asset1):
         assert asset1 == 4
-        return AssetCheckResult(success=True)
+        return AssetCheckResult(passed=True)
 
     class MyIOManager(IOManager):
         def load_input(self, context):
             assert context.asset_key == asset1.key
             return 4
 
-        def handle_output(self, context, obj):
-            ...
+        def handle_output(self, context, obj): ...
 
     assert check1.name == "check1"
     assert check1.asset_key == asset1.key
@@ -504,8 +484,7 @@ def test_multiple_managed_inputs():
     ):
 
         @asset_check(asset="asset1", description="desc")
-        def check1(asset1, asset2):
-            ...
+        def check1(asset1, asset2): ...
 
 
 def test_managed_input_with_context():
@@ -517,9 +496,24 @@ def test_managed_input_with_context():
     def check1(context, asset1):
         assert context
         assert asset1 == 4
-        return AssetCheckResult(success=True)
+        return AssetCheckResult(passed=True)
 
     assert check1.name == "check1"
     assert check1.asset_key == asset1.key
 
     execute_assets_and_checks(assets=[asset1], asset_checks=[check1])
+
+
+def test_doesnt_invoke_io_manager():
+    class DummyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            assert False
+
+        def load_input(self, context):
+            assert False
+
+    @asset_check(asset="asset1", description="desc")
+    def check1(context):
+        return AssetCheckResult(passed=True)
+
+    execute_assets_and_checks(asset_checks=[check1], resources={"io_manager": DummyIOManager()})

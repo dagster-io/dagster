@@ -6,6 +6,7 @@ import {AppTopNav} from '@dagster-io/ui-core/app/AppTopNav';
 import {ContentRoot} from '@dagster-io/ui-core/app/ContentRoot';
 import {UserSettingsButton} from '@dagster-io/ui-core/app/UserSettingsButton';
 import {logLink, timeStartLink} from '@dagster-io/ui-core/app/apolloLinks';
+import {LiveDataPollRateContext} from '@dagster-io/ui-core/asset-data/AssetLiveDataProvider';
 import {DeploymentStatusType} from '@dagster-io/ui-core/instance/DeploymentStatusProvider';
 import React from 'react';
 
@@ -13,7 +14,7 @@ import {CommunityNux} from './NUX/CommunityNux';
 import {extractInitializationData} from './extractInitializationData';
 import {telemetryLink} from './telemetryLink';
 
-const {pathPrefix, telemetryEnabled} = extractInitializationData();
+const {pathPrefix, telemetryEnabled, liveDataPollRate} = extractInitializationData();
 
 const apolloLinks = [logLink, errorLink, timeStartLink];
 
@@ -37,14 +38,16 @@ const appCache = createAppCache();
 // eslint-disable-next-line import/no-default-export
 export default function AppPage() {
   return (
-    <AppProvider appCache={appCache} config={config}>
-      <AppTopNav searchPlaceholder="Search…" allowGlobalReload>
-        <UserSettingsButton />
-      </AppTopNav>
-      <App>
-        <ContentRoot />
-        <CommunityNux />
-      </App>
-    </AppProvider>
+    <LiveDataPollRateContext.Provider value={liveDataPollRate ?? 2000}>
+      <AppProvider appCache={appCache} config={config}>
+        <AppTopNav searchPlaceholder="Search…" allowGlobalReload>
+          <UserSettingsButton />
+        </AppTopNav>
+        <App>
+          <ContentRoot />
+          <CommunityNux />
+        </App>
+      </AppProvider>
+    </LiveDataPollRateContext.Provider>
   );
 }

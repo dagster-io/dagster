@@ -1,4 +1,4 @@
-import {Box, Colors, Icon} from '@dagster-io/ui-components';
+import {Box, Icon} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 import styled from 'styled-components';
@@ -80,11 +80,7 @@ export function VirtualizedAssetPartitionListForDialog<A>({
               <Box
                 style={{height: '100%'}}
                 flex={{direction: 'row', alignItems: 'center'}}
-                border={
-                  index < allRows.length - 1
-                    ? {side: 'bottom', width: 1, color: Colors.KeylineGray}
-                    : null
-                }
+                border={index < allRows.length - 1 ? 'bottom' : null}
               >
                 {row.type === 'partition-name' ? (
                   <ExpandablePartitionName

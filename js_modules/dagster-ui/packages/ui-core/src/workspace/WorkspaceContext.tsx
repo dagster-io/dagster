@@ -77,6 +77,10 @@ export const ROOT_WORKSPACE_QUERY = gql`
       ...WorkspaceDisplayMetadata
     }
     updatedTimestamp
+    featureFlags {
+      name
+      enabled
+    }
     locationOrLoadError {
       ... on RepositoryLocation {
         id
@@ -130,9 +134,11 @@ export const ROOT_WORKSPACE_QUERY = gql`
       pipelineName
     }
     assetGroups {
+      id
       groupName
     }
     allTopLevelResourceDetails {
+      id
       name
     }
     ...RepositoryInfoFragment
@@ -365,6 +371,27 @@ export const useActivePipelineForName = (pipelineName: string, snapshotId?: stri
     return match.repository.pipelines.find((pipeline) => pipeline.name === pipelineName) || null;
   }
   return null;
+};
+
+export const getFeatureFlagForCodeLocation = (
+  locationEntries: WorkspaceLocationNodeFragment[],
+  locationName: string,
+  flagName: string,
+) => {
+  const matchingLocation = locationEntries.find(({id}) => id === locationName);
+  if (matchingLocation) {
+    const {featureFlags} = matchingLocation;
+    const matchingFlag = featureFlags.find(({name}) => name === flagName);
+    if (matchingFlag) {
+      return matchingFlag.enabled;
+    }
+  }
+  return false;
+};
+
+export const useFeatureFlagForCodeLocation = (locationName: string, flagName: string) => {
+  const {locationEntries} = useWorkspaceState();
+  return getFeatureFlagForCodeLocation(locationEntries, locationName, flagName);
 };
 
 export const isThisThingAJob = (repo: DagsterRepoOption | null, pipelineOrJobName: string) => {

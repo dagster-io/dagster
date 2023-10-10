@@ -119,7 +119,7 @@ def _build_fivetran_assets(
 
         else:
             if unmaterialized_asset_keys:
-                asset_key = list(unmaterialized_asset_keys)[0]
+                asset_key = next(iter(unmaterialized_asset_keys))
                 output_name = "_".join(asset_key.path)
                 raise DagsterStepOutputNotFoundError(
                     f"Core compute for {context.op_def.name} did not return an output for"

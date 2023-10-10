@@ -103,6 +103,7 @@ class StepDelegatingExecutor(Executor):
                 retry_mode=self.retries.for_inner_plan(),
                 known_state=active_execution.get_known_state(),
                 should_verify_step=self._should_verify_step,
+                print_serialized_events=False,
             ),
             dagster_run=plan_context.dagster_run,
         )

@@ -16,7 +16,9 @@ export const Table = styled(HTMLTable)<TableProps>`
 
   & tr th,
   & tr td {
-    box-shadow: inset 0 1px 0 ${Colors.KeylineGray}, inset 1px 0 0 ${Colors.KeylineGray} !important;
+    box-shadow:
+      inset 0 1px 0 ${Colors.KeylineGray},
+      inset 1px 0 0 ${Colors.KeylineGray} !important;
   }
 
   & tr th {
@@ -47,7 +49,9 @@ export const Table = styled(HTMLTable)<TableProps>`
   }
 
   & tr:last-child td {
-    box-shadow: inset 0 1px 0 ${Colors.KeylineGray}, inset 1px 0 0 ${Colors.KeylineGray},
+    box-shadow:
+      inset 0 1px 0 ${Colors.KeylineGray},
+      inset 1px 0 0 ${Colors.KeylineGray},
       inset 0 -1px 0 ${Colors.KeylineGray} !important;
   }
 

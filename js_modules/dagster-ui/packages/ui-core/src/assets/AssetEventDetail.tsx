@@ -15,6 +15,7 @@ import {AssetEventMetadataEntriesTable} from './AssetEventMetadataEntriesTable';
 import {AssetEventSystemTags} from './AssetEventSystemTags';
 import {AssetLineageElements} from './AssetLineageElements';
 import {AssetMaterializationUpstreamData} from './AssetMaterializationUpstreamData';
+import {RunlessEventTag} from './RunlessEventTag';
 import {
   AssetMaterializationFragment,
   AssetObservationFragment,
@@ -34,18 +35,15 @@ export const AssetEventDetail: React.FC<{
 
   return (
     <Box padding={{horizontal: 24, bottom: 24}} style={{flex: 1}}>
-      <Box
-        padding={{vertical: 24}}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-        flex={{alignItems: 'center', justifyContent: 'space-between'}}
-      >
+      <Box padding={{vertical: 24}} border="bottom" flex={{alignItems: 'center', gap: 12}}>
         <Heading>
           <Timestamp timestamp={{ms: Number(event.timestamp)}} />
         </Heading>
+        {!event.runId ? <RunlessEventTag tags={event.tags} /> : undefined}
       </Box>
       <Box
         style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 16}}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+        border="bottom"
         padding={{vertical: 16}}
       >
         <Box flex={{gap: 4, direction: 'column'}}>
@@ -143,14 +141,14 @@ export const AssetEventDetailEmpty = () => (
   <Box padding={{horizontal: 24}} style={{flex: 1}}>
     <Box
       padding={{vertical: 24}}
-      border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+      border="bottom"
       flex={{alignItems: 'center', justifyContent: 'space-between'}}
     >
       <Heading color={Colors.Gray400}>No event selected</Heading>
     </Box>
     <Box
       style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 16}}
-      border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+      border="bottom"
       padding={{vertical: 16}}
     >
       <Box flex={{gap: 4, direction: 'column'}}>

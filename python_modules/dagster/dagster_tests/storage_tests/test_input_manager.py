@@ -356,8 +356,7 @@ def test_input_manager_with_assets():
 
             return 2
 
-        def handle_output(self, context, obj):
-            ...
+        def handle_output(self, context, obj): ...
 
     materialize([upstream])
     output = materialize(

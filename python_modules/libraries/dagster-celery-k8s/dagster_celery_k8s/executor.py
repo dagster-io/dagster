@@ -206,6 +206,7 @@ def _submit_task_k8s_job(app, plan_context, step, queue, priority, known_state):
         retry_mode=plan_context.executor.retries.for_inner_plan(),
         known_state=known_state,
         should_verify_step=True,
+        print_serialized_events=True,
     )
 
     job_config = plan_context.executor.job_config
@@ -531,7 +532,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             try:
                 raw_logs = api_client.retrieve_pod_logs(pod_name, namespace=job_namespace)
                 logs += raw_logs.split("\n")
-            except kubernetes.client.rest.ApiException:
+            except kubernetes.client.exceptions.ApiException:
                 instance.report_engine_event(
                     "Encountered unexpected error while fetching pod logs for Kubernetes job {}, "
                     "Pod name {} for step {}. Will attempt to continue with other pods.".format(

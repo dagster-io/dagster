@@ -174,12 +174,8 @@ export function _buildAssetNodeStatusContent({
     return LOADING_STATUS_CONTENT;
   }
 
-  const {
-    lastMaterialization,
-    runWhichFailedToMaterialize,
-    inProgressRunIds,
-    unstartedRunIds,
-  } = liveData;
+  const {lastMaterialization, runWhichFailedToMaterialize, inProgressRunIds, unstartedRunIds} =
+    liveData;
 
   const materializingRunId = inProgressRunIds[0] || unstartedRunIds[0];
   const overdue = isAssetOverdue(liveData);
@@ -224,13 +220,14 @@ export function _buildAssetNodeStatusContent({
   if (liveData.partitionStats) {
     const {numPartitions, numMaterialized, numFailed} = liveData.partitionStats;
     const numMissing = numPartitions - numFailed - numMaterialized;
-    const {background, foreground, border} = StyleForAssetPartitionStatus[
-      overdue || numFailed
-        ? AssetPartitionStatus.FAILED
-        : numMissing
-        ? AssetPartitionStatus.MISSING
-        : AssetPartitionStatus.MATERIALIZED
-    ];
+    const {background, foreground, border} =
+      StyleForAssetPartitionStatus[
+        overdue || numFailed
+          ? AssetPartitionStatus.FAILED
+          : numMissing
+          ? AssetPartitionStatus.MISSING
+          : AssetPartitionStatus.MATERIALIZED
+      ];
     const statusCase =
       overdue || numFailed
         ? (StatusCase.PARTITIONS_FAILED as const)

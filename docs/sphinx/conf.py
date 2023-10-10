@@ -17,6 +17,7 @@ paths = [
     ### dagster packages
     "../../python_modules/automation",
     "../../python_modules/dagster",
+    "../../python_modules/dagster-pipes",
     "../../python_modules/dagster-graphql",
     "../../python_modules/dagit",
     "../../python_modules/dagster-webserver",
@@ -31,6 +32,8 @@ paths = [
     "../../python_modules/libraries/dagster-datadog",
     "../../python_modules/libraries/dagster-datahub",
     "../../python_modules/libraries/dagster-docker",
+    "../../python_modules/libraries/dagster-embedded-elt",
+    "../../python_modules/libraries/dagster-embedded-elt/sling",
     "../../python_modules/libraries/dagster-fivetran",
     "../../python_modules/libraries/dagster-github",
     "../../python_modules/libraries/dagster-k8s",

@@ -190,19 +190,18 @@ const OpsRootWithData: React.FC<Props & {name?: string; usedSolids: Solid[]}> = 
     }
   });
 
-  const onClickInvocation: React.ComponentProps<
-    typeof UsedSolidDetails
-  >['onClickInvocation'] = React.useCallback(
-    ({pipelineName, handleID}) => {
-      history.push(
-        workspacePathFromAddress(
-          repoAddress,
-          `/pipeline_or_job/${pipelineName}/${handleID.split('.').join('/')}`,
-        ),
-      );
-    },
-    [history, repoAddress],
-  );
+  const onClickInvocation: React.ComponentProps<typeof UsedSolidDetails>['onClickInvocation'] =
+    React.useCallback(
+      ({pipelineName, handleID}) => {
+        history.push(
+          workspacePathFromAddress(
+            repoAddress,
+            `/pipeline_or_job/${pipelineName}/${handleID.split('.').join('/')}`,
+          ),
+        );
+      },
+      [history, repoAddress],
+    );
 
   return (
     <div style={{height: '100%', display: 'flex'}}>
@@ -212,10 +211,7 @@ const OpsRootWithData: React.FC<Props & {name?: string; usedSolids: Solid[]}> = 
         firstMinSize={420}
         first={
           <OpListColumnContainer>
-            <Box
-              padding={{vertical: 12, horizontal: 24}}
-              border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-            >
+            <Box padding={{vertical: 12, horizontal: 24}} border="bottom">
               <TokenizingField
                 values={search}
                 onChange={(search) => onSearch(search)}
@@ -353,7 +349,8 @@ const OPS_ROOT_QUERY = gql`
 
 const OpListItem = styled.div<{selected: boolean}>`
   background: ${({selected}) => (selected ? Colors.Gray100 : Colors.White)};
-  box-shadow: ${({selected}) => (selected ? Colors.HighlightGreen : 'transparent')} 4px 0 0 inset,
+  box-shadow:
+    ${({selected}) => (selected ? Colors.HighlightGreen : 'transparent')} 4px 0 0 inset,
     ${Colors.KeylineGray} 0 -1px 0 inset;
   color: ${Colors.Gray800};
   cursor: pointer;

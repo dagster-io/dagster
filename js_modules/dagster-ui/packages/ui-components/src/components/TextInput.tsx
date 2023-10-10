@@ -56,7 +56,7 @@ export const TextInputContainerStyles = css`
   position: relative;
 `;
 
-export const TextInputContainer = styled.div<{$disabled: boolean}>`
+export const TextInputContainer = styled.div<{$disabled?: boolean}>`
   ${TextInputContainerStyles}
 
   > ${IconWrapper}:first-child {
@@ -85,7 +85,9 @@ const RightContainer = styled.div`
 export const TextInputStyles = css`
   border: none;
   border-radius: 8px;
-  box-shadow: ${Colors.Gray300} inset 0px 0px 0px 1px, ${Colors.KeylineGray} inset 2px 2px 1.5px;
+  box-shadow:
+    ${Colors.Gray300} inset 0px 0px 0px 1px,
+    ${Colors.KeylineGray} inset 2px 2px 1.5px;
   flex-grow: 1;
   font-size: 14px;
   line-height: 20px;
@@ -94,7 +96,9 @@ export const TextInputStyles = css`
   transition: box-shadow 150ms;
 
   :disabled {
-    box-shadow: ${Colors.Gray200} inset 0px 0px 0px 1px, ${Colors.KeylineGray} inset 2px 2px 1.5px;
+    box-shadow:
+      ${Colors.Gray200} inset 0px 0px 0px 1px,
+      ${Colors.KeylineGray} inset 2px 2px 1.5px;
     background-color: ${Colors.Gray50};
     color: ${Colors.Gray400};
   }
@@ -104,7 +108,9 @@ export const TextInputStyles = css`
   }
 
   :focus {
-    box-shadow: ${Colors.Gray300} inset 0px 0px 0px 1px, ${Colors.KeylineGray} inset 2px 2px 1.5px,
+    box-shadow:
+      ${Colors.Gray300} inset 0px 0px 0px 1px,
+      ${Colors.KeylineGray} inset 2px 2px 1.5px,
       rgba(58, 151, 212, 0.6) 0 0 0 3px;
     outline: none;
   }
@@ -133,8 +139,10 @@ const StyledInput = styled.input<StyledInputProps>`
   padding: ${({$hasIcon}) => ($hasIcon ? '6px 6px 6px 28px' : '6px 6px 6px 12px')};
 
   :focus {
-    box-shadow: ${({$strokeColor}) => $strokeColor} inset 0px 0px 0px 1px,
-      ${Colors.KeylineGray} inset 2px 2px 1.5px, rgba(58, 151, 212, 0.6) 0 0 0 3px;
+    box-shadow:
+      ${({$strokeColor}) => $strokeColor} inset 0px 0px 0px 1px,
+      ${Colors.KeylineGray} inset 2px 2px 1.5px,
+      rgba(58, 151, 212, 0.6) 0 0 0 3px;
   }
 `;
 
@@ -150,8 +158,10 @@ export const TextArea = styled.textarea<TextAreaProps>`
     ${Colors.KeylineGray} inset 2px 2px 1.5px;
 
   :focus {
-    box-shadow: ${({$strokeColor}) => $strokeColor || Colors.Gray300} inset 0px 0px 0px 1px,
-      ${Colors.KeylineGray} inset 2px 2px 1.5px, rgba(58, 151, 212, 0.6) 0 0 0 3px;
+    box-shadow:
+      ${({$strokeColor}) => $strokeColor || Colors.Gray300} inset 0px 0px 0px 1px,
+      ${Colors.KeylineGray} inset 2px 2px 1.5px,
+      rgba(58, 151, 212, 0.6) 0 0 0 3px;
   }
 
   ${({$resize}) => ($resize ? `resize: ${$resize};` : null)}

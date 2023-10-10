@@ -197,6 +197,7 @@ def _submit_task_docker(app, plan_context, step, queue, priority, known_state):
         instance_ref=plan_context.instance.get_ref(),
         retry_mode=plan_context.executor.retries.for_inner_plan(),
         known_state=known_state,
+        print_serialized_events=True,
     )
 
     task = create_docker_task(app)

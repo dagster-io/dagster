@@ -117,7 +117,7 @@ def test_get_cached_partition_status_changed_time_partitions():
         )
         assert set(materialized_keys) == {"2022-02-02"}
         counts = traced_counter.get().counts()
-        assert counts.get("DagsterInstance.get_materialization_count_by_partition") == 1
+        assert counts.get("DagsterInstance.get_materialized_partitions") == 1
 
 
 def test_get_cached_partition_status_by_asset():
@@ -160,7 +160,7 @@ def test_get_cached_partition_status_by_asset():
         assert len(materialized_keys) == 1
         assert "2022-02-01" in materialized_keys
         counts = traced_counter.get().counts()
-        assert counts.get("DagsterInstance.get_materialization_count_by_partition") == 1
+        assert counts.get("DagsterInstance.get_materialized_partitions") == 1
 
         asset_job.execute_in_process(instance=created_instance, partition_key="2022-02-02")
 
@@ -181,8 +181,8 @@ def test_get_cached_partition_status_by_asset():
             partition_key in materialized_keys for partition_key in ["2022-02-01", "2022-02-02"]
         )
         counts = traced_counter.get().counts()
-        # Assert that get_materialization_count_by_partition is not called again via cache rebuild
-        assert counts.get("DagsterInstance.get_materialization_count_by_partition") == 1
+        # Assert that get_materialized_partitions is not called again via cache rebuild
+        assert counts.get("DagsterInstance.get_materialized_partitions") == 1
 
         static_partitions_def = StaticPartitionsDefinition(["a", "b", "c"])
         asset1, asset_job, asset_graph = _swap_partitions_def(
@@ -203,8 +203,8 @@ def test_get_cached_partition_status_by_asset():
             for partition in ["b", "c"]
         )
         counts = traced_counter.get().counts()
-        # Assert that get_materialization_count_by_partition is called again when partitions_def changes
-        assert counts.get("DagsterInstance.get_materialization_count_by_partition") == 2
+        # Assert that get_materialized_partitions is called again when partitions_def changes
+        assert counts.get("DagsterInstance.get_materialized_partitions") == 2
 
 
 def test_multipartition_get_cached_partition_status():

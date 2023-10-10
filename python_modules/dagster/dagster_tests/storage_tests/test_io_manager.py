@@ -683,9 +683,9 @@ def test_error_boundary_with_gen():
         basic_op()
 
     result = single_op_job.execute_in_process(raise_on_error=False)
-    step_failure = [
+    step_failure = next(
         event for event in result.all_events if event.event_type_value == "STEP_FAILURE"
-    ][0]
+    )
     assert step_failure.event_specific_data.error.cls_name == "DagsterExecutionHandleOutputError"
 
 
@@ -710,9 +710,9 @@ def test_handle_output_exception_raised():
         basic_op()
 
     result = single_op_job.execute_in_process(raise_on_error=False)
-    step_failure = [
+    step_failure = next(
         event for event in result.all_node_events if event.event_type_value == "STEP_FAILURE"
-    ][0]
+    )
     assert step_failure.event_specific_data.error.cls_name == "DagsterExecutionHandleOutputError"
 
 
@@ -916,9 +916,9 @@ def test_context_logging_metadata_add_output_metadata_called_twice():
     materialization = result.asset_materializations_for_node("asset1")[0]
     assert set(materialization.metadata.keys()) == {"foo", "bar"}
 
-    handled_output_event = [
+    handled_output_event = next(
         event for event in result.all_node_events if event.event_type_value == "HANDLED_OUTPUT"
-    ][0]
+    )
     assert set(handled_output_event.event_specific_data.metadata.keys()) == {
         "foo",
         "bar",
@@ -966,12 +966,10 @@ def test_nothing_output_nothing_input():
     my_io_manager = MyIOManager()
 
     @op(out=Out(Nothing))
-    def op1():
-        ...
+    def op1(): ...
 
     @op(ins={"input1": In(Nothing)})
-    def op2():
-        ...
+    def op2(): ...
 
     @job(resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(my_io_manager)})
     def job1():
@@ -997,12 +995,10 @@ def test_nothing_output_something_input():
     my_io_manager = MyIOManager()
 
     @op(out=Out(Nothing))
-    def op1():
-        ...
+    def op1(): ...
 
     @op
-    def op2(_input1):
-        ...
+    def op2(_input1): ...
 
     @job(resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(my_io_manager)})
     def job1():

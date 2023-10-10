@@ -17,6 +17,7 @@ from dagster import (
     SourceAsset,
     StaticPartitionsDefinition,
     asset,
+    asset_check,
     define_asset_job,
     io_manager,
     observable_source_asset,
@@ -202,16 +203,13 @@ def test_update_repo_stats_dynamic_partitions(caplog):
 
 def test_get_stats_from_external_repo_partitions():
     @asset(partitions_def=StaticPartitionsDefinition(["foo", "bar"]))
-    def asset1():
-        ...
+    def asset1(): ...
 
     @asset(partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"))
-    def asset2():
-        ...
+    def asset2(): ...
 
     @asset
-    def asset3():
-        ...
+    def asset3(): ...
 
     external_repo = ExternalRepository(
         external_repository_data_from_def(
@@ -232,8 +230,7 @@ def test_get_stats_from_external_repo_multi_partitions():
             }
         )
     )
-    def multi_partitioned_asset():
-        ...
+    def multi_partitioned_asset(): ...
 
     external_repo = ExternalRepository(
         external_repository_data_from_def(
@@ -250,8 +247,7 @@ def test_get_stats_from_external_repo_source_assets():
     source_asset1 = SourceAsset("source_asset1")
 
     @asset
-    def asset1():
-        ...
+    def asset1(): ...
 
     external_repo = ExternalRepository(
         external_repository_data_from_def(
@@ -267,12 +263,10 @@ def test_get_stats_from_external_repo_observable_source_assets():
     source_asset1 = SourceAsset("source_asset1")
 
     @observable_source_asset
-    def source_asset2():
-        ...
+    def source_asset2(): ...
 
     @asset
-    def asset1():
-        ...
+    def asset1(): ...
 
     external_repo = ExternalRepository(
         external_repository_data_from_def(
@@ -287,12 +281,10 @@ def test_get_stats_from_external_repo_observable_source_assets():
 
 def test_get_stats_from_external_repo_freshness_policies():
     @asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=30))
-    def asset1():
-        ...
+    def asset1(): ...
 
     @asset
-    def asset2():
-        ...
+    def asset2(): ...
 
     external_repo = ExternalRepository(
         external_repository_data_from_def(
@@ -306,16 +298,13 @@ def test_get_stats_from_external_repo_freshness_policies():
 
 def test_get_status_from_external_repo_auto_materialize_policy():
     @asset(auto_materialize_policy=AutoMaterializePolicy.lazy())
-    def asset1():
-        ...
+    def asset1(): ...
 
     @asset
-    def asset2():
-        ...
+    def asset2(): ...
 
     @asset(auto_materialize_policy=AutoMaterializePolicy.eager())
-    def asset3():
-        ...
+    def asset3(): ...
 
     external_repo = ExternalRepository(
         external_repository_data_from_def(
@@ -330,12 +319,10 @@ def test_get_status_from_external_repo_auto_materialize_policy():
 
 def test_get_stats_from_external_repo_code_versions():
     @asset(code_version="hello")
-    def asset1():
-        ...
+    def asset1(): ...
 
     @asset
-    def asset2():
-        ...
+    def asset2(): ...
 
     external_repo = ExternalRepository(
         external_repository_data_from_def(
@@ -347,14 +334,29 @@ def test_get_stats_from_external_repo_code_versions():
     assert stats["num_assets_with_code_versions_in_repo"] == "1"
 
 
+def test_get_stats_from_external_repo_code_checks():
+    @asset
+    def my_asset(): ...
+
+    @asset_check(asset=my_asset)
+    def my_check(): ...
+
+    external_repo = ExternalRepository(
+        external_repository_data_from_def(
+            Definitions(assets=[my_asset], asset_checks=[my_check]).get_repository_def()
+        ),
+        repository_handle=MagicMock(spec=RepositoryHandle),
+    )
+    stats = get_stats_from_external_repo(external_repo)
+    assert stats["num_asset_checks"] == "1"
+
+
 def test_get_stats_from_external_repo_dbt():
     @asset(compute_kind="dbt")
-    def asset1():
-        ...
+    def asset1(): ...
 
     @asset
-    def asset2():
-        ...
+    def asset2(): ...
 
     external_repo = ExternalRepository(
         external_repository_data_from_def(
@@ -378,8 +380,7 @@ def test_get_stats_from_external_repo_resources():
         baz: str
 
     @asset
-    def asset1(my_resource: MyResource, custom_resource: CustomResource):
-        ...
+    def asset1(my_resource: MyResource, custom_resource: CustomResource): ...
 
     external_repo = ExternalRepository(
         external_repository_data_from_def(
@@ -424,8 +425,7 @@ def test_get_stats_from_external_repo_io_managers():
             return 1
 
     @asset
-    def asset1():
-        ...
+    def asset1(): ...
 
     external_repo = ExternalRepository(
         external_repository_data_from_def(
@@ -457,8 +457,7 @@ def test_get_stats_from_external_repo_functional_resources():
         return 2
 
     @asset(required_resource_keys={"my_resource", "custom_resource"})
-    def asset1():
-        ...
+    def asset1(): ...
 
     external_repo = ExternalRepository(
         external_repository_data_from_def(
@@ -490,8 +489,7 @@ def test_get_stats_from_external_repo_functional_io_managers():
         return 2
 
     @asset
-    def asset1():
-        ...
+    def asset1(): ...
 
     external_repo = ExternalRepository(
         external_repository_data_from_def(
@@ -544,12 +542,10 @@ def test_get_stats_from_external_repo_delayed_resource_configuration():
         return 1
 
     @asset
-    def asset1(my_resource: MyResource):
-        ...
+    def asset1(my_resource: MyResource): ...
 
     @asset(required_resource_keys={"my_other_resource"})
-    def asset2():
-        ...
+    def asset2(): ...
 
     external_repo = ExternalRepository(
         external_repository_data_from_def(

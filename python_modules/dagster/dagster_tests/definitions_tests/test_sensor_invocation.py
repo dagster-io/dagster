@@ -343,8 +343,7 @@ def test_multi_asset_sensor_invocation_resources() -> None:
 def test_multi_asset_sensor_with_source_assets() -> None:
     # upstream_asset1 exists in another repository
     @asset(partitions_def=DailyPartitionsDefinition(start_date="2023-03-01"))
-    def upstream_asset1():
-        ...
+    def upstream_asset1(): ...
 
     upstream_asset1_source = SourceAsset(
         key=upstream_asset1.key,
@@ -352,8 +351,7 @@ def test_multi_asset_sensor_with_source_assets() -> None:
     )
 
     @asset()
-    def downstream_asset(upstream_asset1):
-        ...
+    def downstream_asset(upstream_asset1): ...
 
     @multi_asset_sensor(
         monitored_assets=[
@@ -966,8 +964,8 @@ def test_partitions_multi_asset_sensor_context():
         assert sensor_data.run_requests[0].tags["dagster/partition"] == "2022-08-01"
         assert (
             ctx.cursor
-            == '{"AssetKey([\'daily_partitions_asset\'])": ["2022-08-01", 3, {}],'
-            ' "AssetKey([\'daily_partitions_asset_2\'])": ["2022-08-01", 4, {}]}'
+            == '{"AssetKey([\'daily_partitions_asset\'])": ["2022-08-01", 4, {}],'
+            ' "AssetKey([\'daily_partitions_asset_2\'])": ["2022-08-01", 5, {}]}'
         )
 
 
@@ -1550,9 +1548,13 @@ def test_build_multi_asset_sensor_context_asset_selection_set_to_latest_material
 
     with instance_for_test() as instance:
         result = materialize([my_asset], instance=instance)
-        records = list(
-            instance.get_event_records(EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION))
-        )[0]
+        records = next(
+            iter(
+                instance.get_event_records(
+                    EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION)
+                )
+            )
+        )
         assert records.event_log_entry.run_id == result.run_id
 
         ctx = build_multi_asset_sensor_context(
@@ -1595,9 +1597,13 @@ def test_build_multi_asset_sensor_context_set_to_latest_materializations():
 
     with instance_for_test() as instance:
         result = materialize([my_asset], instance=instance)
-        records = list(
-            instance.get_event_records(EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION))
-        )[0]
+        records = next(
+            iter(
+                instance.get_event_records(
+                    EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION)
+                )
+            )
+        )
         assert records.event_log_entry.run_id == result.run_id
 
         ctx = build_multi_asset_sensor_context(

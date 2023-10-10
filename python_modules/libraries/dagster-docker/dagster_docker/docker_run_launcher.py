@@ -130,12 +130,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
                 network.connect(container)
 
         self._instance.report_engine_event(
-            message=(
-                "Launching run in a new container {container_id} with image {docker_image}".format(
-                    container_id=container.id,
-                    docker_image=docker_image,
-                )
-            ),
+            message=f"Launching run in a new container {container.id} with image {docker_image}",
             dagster_run=run,
             cls=self.__class__,
         )

@@ -83,6 +83,13 @@
         dict({
           'key': dict({
             'path': list([
+              'check_in_op_asset',
+            ]),
+          }),
+        }),
+        dict({
+          'key': dict({
+            'path': list([
               'diamond_source',
             ]),
           }),
@@ -140,6 +147,13 @@
           'key': dict({
             'path': list([
               'dynamic_in_multipartitions_success',
+            ]),
+          }),
+        }),
+        dict({
+          'key': dict({
+            'path': list([
+              'executable_asset',
             ]),
           }),
         }),
@@ -300,7 +314,21 @@
         dict({
           'key': dict({
             'path': list([
+              'one',
+            ]),
+          }),
+        }),
+        dict({
+          'key': dict({
+            'path': list([
               'str_asset',
+            ]),
+          }),
+        }),
+        dict({
+          'key': dict({
+            'path': list([
+              'two',
             ]),
           }),
         }),
@@ -315,6 +343,13 @@
           'key': dict({
             'path': list([
               'unconnected',
+            ]),
+          }),
+        }),
+        dict({
+          'key': dict({
+            'path': list([
+              'unexecutable_asset',
             ]),
           }),
         }),
@@ -421,6 +456,11 @@
         'id': 'test.test_repo.["diamond_source"]',
       }),
       dict({
+        'freshnessInfo': None,
+        'freshnessPolicy': None,
+        'id': 'test.test_repo.["check_in_op_asset"]',
+      }),
+      dict({
         'freshnessInfo': dict({
           'currentMinutesLate': None,
           'latestMaterializationMinutesLate': None,
@@ -460,6 +500,16 @@
         'freshnessInfo': None,
         'freshnessPolicy': None,
         'id': 'test.test_repo.["no_multipartitions_1"]',
+      }),
+      dict({
+        'freshnessInfo': None,
+        'freshnessPolicy': None,
+        'id': 'test.test_repo.["one"]',
+      }),
+      dict({
+        'freshnessInfo': None,
+        'freshnessPolicy': None,
+        'id': 'test.test_repo.["two"]',
       }),
       dict({
         'freshnessInfo': None,
@@ -550,6 +600,16 @@
         'freshnessInfo': None,
         'freshnessPolicy': None,
         'id': 'test.test_repo.["upstream_dynamic_partitioned_asset"]',
+      }),
+      dict({
+        'freshnessInfo': None,
+        'freshnessPolicy': None,
+        'id': 'test.test_repo.["executable_asset"]',
+      }),
+      dict({
+        'freshnessInfo': None,
+        'freshnessPolicy': None,
+        'id': 'test.test_repo.["unexecutable_asset"]',
       }),
       dict({
         'freshnessInfo': None,

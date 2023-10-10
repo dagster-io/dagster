@@ -18,8 +18,8 @@ from typing import (
 
 import dagster._check as check
 import dagster._seven as seven
-from dagster._annotations import PublicAttr, experimental_param, public
-from dagster._core.definitions.data_version import DataVersion
+from dagster._annotations import PublicAttr, deprecated, experimental_param, public
+from dagster._core.definitions.data_version import DATA_VERSION_TAG, DataVersion
 from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX, SYSTEM_TAG_PREFIX
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import NamedTupleSerializer
@@ -188,6 +188,32 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
             return arg.key
         else:
             return AssetKey.from_coercible(arg)
+
+    # @staticmethod
+    # def from_coercible_to_asset_dep(arg: "CoercibleToAssetDep") -> "AssetKey":
+    #     from dagster._core.definitions.asset_dep import AssetDep
+    #     from dagster._core.definitions.asset_spec import AssetSpec
+    #     from dagster._core.definitions.assets import AssetsDefinition
+    #     from dagster._core.definitions.source_asset import SourceAsset
+
+    #     if isinstance(arg, AssetsDefinition):
+    #         if len(arg.keys) > 1:
+    #             # Only AssetsDefinition with a single asset can be passed
+    #             raise DagsterInvalidDefinitionError(
+    #                 "Cannot pass a multi_asset AssetsDefinition as an argument to deps."
+    #                 " Instead, specify dependencies on the assets created by the multi_asset"
+    #                 f" via AssetKeys or strings. For the multi_asset {arg.node_def.name}, the"
+    #                 f" available keys are: {arg.keys}."
+    #             )
+    #         return arg.key
+    #     elif isinstance(arg, SourceAsset):
+    #         return arg.key
+    #     elif isinstance(arg, AssetDep):
+    #         return arg.asset_key
+    #     elif isinstance(arg, AssetSpec):
+    #         return arg.asset_key
+    #     else:
+    #         return AssetKey.from_coercible(arg)
 
     def has_prefix(self, prefix: Sequence[str]) -> bool:
         return len(self.path) >= len(prefix) and self.path[: len(prefix)] == prefix
@@ -438,7 +464,7 @@ class AssetObservation(
                 "The tags argument is reserved for system-populated tags."
             )
 
-        metadata = normalize_metadata(
+        normed_metadata = normalize_metadata(
             check.opt_mapping_param(metadata, "metadata", key_type=str),
         )
 
@@ -446,7 +472,7 @@ class AssetObservation(
             cls,
             asset_key=asset_key,
             description=check.opt_str_param(description, "description"),
-            metadata=metadata,
+            metadata=normed_metadata,
             tags=tags,
             partition=check.opt_str_param(partition, "partition"),
         )
@@ -454,6 +480,10 @@ class AssetObservation(
     @property
     def label(self) -> str:
         return " ".join(self.asset_key.path)
+
+    @property
+    def data_version(self) -> Optional[str]:
+        return self.tags.get(DATA_VERSION_TAG)
 
 
 UNDEFINED_ASSET_KEY_PATH = ["__undefined__"]
@@ -539,7 +569,7 @@ class AssetMaterialization(
                 " AssetMaterializations. The tags argument is reserved for system-populated tags."
             )
 
-        metadata = normalize_metadata(
+        normed_metadata = normalize_metadata(
             check.opt_mapping_param(metadata, "metadata", key_type=str),
         )
 
@@ -560,7 +590,7 @@ class AssetMaterialization(
             cls,
             asset_key=asset_key,
             description=check.opt_str_param(description, "description"),
-            metadata=metadata,
+            metadata=normed_metadata,
             tags=tags,
             partition=partition,
         )
@@ -592,6 +622,10 @@ class AssetMaterialization(
         )
 
 
+@deprecated(
+    breaking_version="1.7",
+    additional_warn_text="Please use AssetCheckResult and @asset_check instead.",
+)
 @whitelist_for_serdes(
     storage_field_names={"metadata": "metadata_entries"},
     field_serializers={"metadata": MetadataFieldSerializer},
@@ -630,7 +664,7 @@ class ExpectationResult(
         description: Optional[str] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
-        metadata = normalize_metadata(
+        normed_metadata = normalize_metadata(
             check.opt_mapping_param(metadata, "metadata", key_type=str),
         )
 
@@ -639,7 +673,7 @@ class ExpectationResult(
             success=check.bool_param(success, "success"),
             label=check.opt_str_param(label, "label", "result"),
             description=check.opt_str_param(description, "description"),
-            metadata=metadata,
+            metadata=normed_metadata,
         )
 
 
@@ -682,7 +716,7 @@ class TypeCheck(
         description: Optional[str] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
-        metadata = normalize_metadata(
+        normed_metadata = normalize_metadata(
             check.opt_mapping_param(metadata, "metadata", key_type=str),
         )
 
@@ -690,7 +724,7 @@ class TypeCheck(
             cls,
             success=check.bool_param(success, "success"),
             description=check.opt_str_param(description, "description"),
-            metadata=metadata,
+            metadata=normed_metadata,
         )
 
 

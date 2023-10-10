@@ -79,7 +79,7 @@ def test_depends_on_s3_resource_file_manager(mock_s3_bucket):
 
     assert len(keys_in_bucket) == 1
 
-    file_key = list(keys_in_bucket)[0]
+    file_key = next(iter(keys_in_bucket))
     comps = file_key.split("/")
 
     assert "/".join(comps[:-1]) == "some-prefix"
@@ -126,7 +126,7 @@ def test_depends_on_s3_resource_file_manager_pythonic(mock_s3_bucket) -> None:
 
     assert len(keys_in_bucket) == 1
 
-    file_key = list(keys_in_bucket)[0]
+    file_key = next(iter(keys_in_bucket))
     comps = file_key.split("/")
 
     assert "/".join(comps[:-1]) == "some-prefix"

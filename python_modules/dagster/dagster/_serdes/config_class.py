@@ -76,12 +76,10 @@ class ConfigurableClassData(
         }
 
     @overload
-    def rehydrate(self, as_type: Type[T_ConfigurableClass]) -> T_ConfigurableClass:
-        ...
+    def rehydrate(self, as_type: Type[T_ConfigurableClass]) -> T_ConfigurableClass: ...
 
     @overload
-    def rehydrate(self, as_type: None = ...) -> "ConfigurableClass":
-        ...
+    def rehydrate(self, as_type: None = ...) -> "ConfigurableClass": ...
 
     def rehydrate(
         self, as_type: Optional[Type[T_ConfigurableClass]] = None

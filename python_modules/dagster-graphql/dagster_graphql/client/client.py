@@ -4,7 +4,7 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Union
 import dagster._check as check
 import requests.exceptions
 from dagster import DagsterRunStatus
-from dagster._annotations import experimental, public
+from dagster._annotations import deprecated, public
 from dagster._core.definitions.run_config import RunConfig, convert_config_input
 from dagster._core.definitions.utils import validate_tags
 from gql import Client, gql
@@ -30,7 +30,6 @@ from .utils import (
 )
 
 
-@experimental
 class DagsterGraphQLClient:
     """Official Dagster Python Client for GraphQL.
 
@@ -336,6 +335,7 @@ class DagsterGraphQLClient:
                 message=query_result["message"],
             )
 
+    @deprecated(breaking_version="2.0")
     @public
     def shutdown_repository_location(
         self, repository_location_name: str

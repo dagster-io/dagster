@@ -75,9 +75,9 @@ def test_list_account_settings(ecs):
     settings = ecs.list_account_settings(effectiveSettings=True)["settings"]
     assert settings
 
-    task_arn_format_setting = [
+    task_arn_format_setting = next(
         setting for setting in settings if setting["name"] == "taskLongArnFormat"
-    ][0]
+    )
     assert task_arn_format_setting["value"] == "enabled"
 
 
@@ -181,9 +181,9 @@ def test_put_account_setting(ecs):
     settings = ecs.list_account_settings(effectiveSettings=True)["settings"]
     assert settings
 
-    task_arn_format_setting = [
+    task_arn_format_setting = next(
         setting for setting in settings if setting["name"] == "taskLongArnFormat"
-    ][0]
+    )
     assert task_arn_format_setting["value"] == "disabled"
 
 

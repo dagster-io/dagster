@@ -16,7 +16,7 @@ line-length = 100
 preview = true
 
 # Black will refuse to run if it's not this version.
-required-version = "23.7.0"
+required-version = "23.9.1"
 
 # Ensure black's output will be compatible with all listed versions.
 target-versions = ['py38', 'py39', 'py310', 'py311']
@@ -253,7 +253,7 @@ select = [
 ]
 
 # Fail if Ruff is not running this version.
-required-version = "0.0.277"
+required-version = "0.0.289"
 
 [tool.ruff.flake8-builtins]
 

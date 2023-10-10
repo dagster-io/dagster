@@ -1,4 +1,4 @@
-import {Box, Colors} from '@dagster-io/ui-components';
+import {Box} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 
@@ -7,9 +7,10 @@ import {Container, Inner, Row} from './VirtualizedTable';
 interface Props<T> {
   items: T[];
   renderItem: (item: T) => React.ReactNode;
+  itemBorders?: boolean;
 }
 
-export function VirtualizedItemListForDialog<A>({items, renderItem}: Props<A>) {
+export function VirtualizedItemListForDialog<A>({items, renderItem, itemBorders = true}: Props<A>) {
   const container = React.useRef<HTMLDivElement | null>(null);
 
   const rowVirtualizer = useVirtualizer({
@@ -32,11 +33,7 @@ export function VirtualizedItemListForDialog<A>({items, renderItem}: Props<A>) {
               <Box
                 style={{height: '100%'}}
                 flex={{direction: 'row', alignItems: 'center'}}
-                border={
-                  index < items.length - 1
-                    ? {side: 'bottom', width: 1, color: Colors.KeylineGray}
-                    : null
-                }
+                border={itemBorders && index < items.length - 1 ? 'bottom' : null}
               >
                 {renderItem(assetKey)}
               </Box>

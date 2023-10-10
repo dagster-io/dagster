@@ -26,3 +26,7 @@ export function useDocumentVisibility() {
 
   return documentVisible;
 }
+
+export function isDocumentVisible() {
+  return document.visibilityState !== 'hidden';
+}

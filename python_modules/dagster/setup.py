@@ -28,6 +28,9 @@ def get_version() -> str:
 # grpcio 1.44.0 is the min version compatible with both protobuf 3 and 4
 GRPC_VERSION_FLOOR = "1.44.0"
 
+ver = get_version()
+# dont pin dev installs to avoid pip dep resolver issues
+pin = "" if ver == "1!0+dev" else f"=={ver}"
 
 setup(
     name="dagster",
@@ -104,6 +107,7 @@ setup(
         "universal_pathlib",
         # https://github.com/pydantic/pydantic/issues/5821
         "pydantic != 1.10.7,<2.0.0",
+        f"dagster-pipes{pin}",
     ],
     extras_require={
         "docker": ["docker"],
@@ -119,7 +123,7 @@ setup(
             "pytest-rerunfailures==10.0",
             "pytest-runner==5.2",
             "pytest-xdist==2.1.0",
-            "pytest==7.0.1",  # last version supporting python 3.6
+            "pytest>=7.0.1",
             "responses<=0.23.1",  # https://github.com/getsentry/responses/issues/654
             "syrupy<4",  # 3.7 compatible,
             "tox==3.25.0",
@@ -127,13 +131,13 @@ setup(
             "morefs[asynclocal]; python_version>='3.8'",
         ],
         "black": [
-            "black[jupyter]==23.7.0",
+            "black[jupyter]==23.9.1",
         ],
         "mypy": [
             "mypy==0.991",
         ],
         "pyright": [
-            "pyright==1.1.316",
+            "pyright==1.1.327",
             ### Stub packages
             "pandas-stubs",  # version will be resolved against pandas
             "types-backports",  # version will be resolved against backports
@@ -157,7 +161,7 @@ setup(
             "types-toml",  # version will be resolved against toml
         ],
         "ruff": [
-            "ruff==0.0.277",
+            "ruff==0.0.289",
         ],
     },
     entry_points={

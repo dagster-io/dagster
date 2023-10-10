@@ -117,11 +117,11 @@ def execute_list_command(cli_args, print_fn):
 def get_job_in_same_python_env_instructions(command_name):
     return (
         "This commands targets a job. The job can be specified in a number of ways:\n\n1. dagster"
-        " job {command_name} -f /path/to/file.py -a define_some_job\n\n2. dagster job"
-        " {command_name} -m a_module.submodule -a define_some_job\n\n3. dagster job {command_name}"
-        " -f /path/to/file.py -a define_some_repo -j <<job_name>>\n\n4. dagster job {command_name}"
+        f" job {command_name} -f /path/to/file.py -a define_some_job\n\n2. dagster job"
+        f" {command_name} -m a_module.submodule -a define_some_job\n\n3. dagster job {command_name}"
+        f" -f /path/to/file.py -a define_some_repo -j <<job_name>>\n\n4. dagster job {command_name}"
         " -m a_module.submodule -a define_some_repo -j <<job_name>>"
-    ).format(command_name=command_name)
+    )
 
 
 def get_job_instructions(command_name):
@@ -284,10 +284,7 @@ def add_step_to_table(memoized_plan):
     for step_output_handle, version in memoized_plan.step_output_versions.items():
         table.append(
             [
-                "{key}.{output}".format(
-                    key=step_output_handle.step_key,
-                    output=step_output_handle.output_name,
-                ),
+                f"{step_output_handle.step_key}.{step_output_handle.output_name}",
                 version,
                 (
                     "stored"

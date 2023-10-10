@@ -64,10 +64,31 @@ export const UNPARTITIONED_ASSET: AssetNodeForGraphQueryFragment = {
   computeKind: null,
   isPartitioned: false,
   isObservable: false,
+  isExecutable: true,
   isSource: false,
   assetKey: {
     __typename: 'AssetKey',
     path: ['unpartitioned_asset'],
+  },
+};
+
+export const UNPARTITIONED_SOURCE_ASSET: AssetNodeForGraphQueryFragment = {
+  ...UNPARTITIONED_ASSET,
+  id: 'test.py.repo.["unpartitioned_source_asset"]',
+  isSource: true,
+  assetKey: {
+    __typename: 'AssetKey',
+    path: ['unpartitioned_source_asset'],
+  },
+};
+
+export const UNPARTITIONED_NON_EXECUTABLE_ASSET: AssetNodeForGraphQueryFragment = {
+  ...UNPARTITIONED_ASSET,
+  id: 'test.py.repo.["unpartitioned_non_executable_asset"]',
+  isExecutable: false,
+  assetKey: {
+    __typename: 'AssetKey',
+    path: ['unpartitioned_non_executable_asset'],
   },
 };
 
@@ -136,6 +157,7 @@ export const ASSET_DAILY: AssetNodeForGraphQueryFragment = {
   computeKind: null,
   isPartitioned: true,
   isObservable: false,
+  isExecutable: true,
   isSource: false,
   assetKey: {
     __typename: 'AssetKey',
@@ -173,6 +195,7 @@ export const ASSET_WEEKLY: AssetNodeForGraphQueryFragment = {
   computeKind: null,
   isPartitioned: true,
   isObservable: false,
+  isExecutable: true,
   isSource: false,
   assetKey: {
     __typename: 'AssetKey',
@@ -571,42 +594,43 @@ export const LaunchAssetLoaderResourceJob8Mock: MockedResponse<LaunchAssetLoader
   },
 };
 
-export const LaunchAssetLoaderResourceMyAssetJobMock: MockedResponse<LaunchAssetLoaderResourceQuery> = {
-  request: {
-    query: LAUNCH_ASSET_LOADER_RESOURCE_QUERY,
-    variables: {
-      pipelineName: 'my_asset_job',
-      repositoryLocationName: 'test.py',
-      repositoryName: 'repo',
-    },
-  },
-  result: {
-    data: {
-      __typename: 'Query',
-      partitionSetsOrError: {
-        results: [
-          {
-            id: '129179973a9144278c2429d3ba680bf0f809a59b',
-            name: 'my_asset_job_partition_set',
-            __typename: 'PartitionSet',
-          },
-        ],
-        __typename: 'PartitionSets',
-      },
-      pipelineOrError: {
-        id: '8689a9dcd052f769b73d73dfe57e89065dac369d',
-        modes: [
-          {
-            __typename: 'Mode',
-            id: '719d9b2c592b98ae0f4a7ec570cae0a06667db31-default',
-            resources: [],
-          },
-        ],
-        __typename: 'Pipeline',
+export const LaunchAssetLoaderResourceMyAssetJobMock: MockedResponse<LaunchAssetLoaderResourceQuery> =
+  {
+    request: {
+      query: LAUNCH_ASSET_LOADER_RESOURCE_QUERY,
+      variables: {
+        pipelineName: 'my_asset_job',
+        repositoryLocationName: 'test.py',
+        repositoryName: 'repo',
       },
     },
-  },
-};
+    result: {
+      data: {
+        __typename: 'Query',
+        partitionSetsOrError: {
+          results: [
+            {
+              id: '129179973a9144278c2429d3ba680bf0f809a59b',
+              name: 'my_asset_job_partition_set',
+              __typename: 'PartitionSet',
+            },
+          ],
+          __typename: 'PartitionSets',
+        },
+        pipelineOrError: {
+          id: '8689a9dcd052f769b73d73dfe57e89065dac369d',
+          modes: [
+            {
+              __typename: 'Mode',
+              id: '719d9b2c592b98ae0f4a7ec570cae0a06667db31-default',
+              resources: [],
+            },
+          ],
+          __typename: 'Pipeline',
+        },
+      },
+    },
+  };
 
 export const LaunchAssetLoaderAssetDailyWeeklyMock: MockedResponse<LaunchAssetLoaderQuery> = {
   request: {
@@ -622,6 +646,7 @@ export const LaunchAssetLoaderAssetDailyWeeklyMock: MockedResponse<LaunchAssetLo
         {
           ...ASSET_DAILY,
           requiredResources: [],
+          assetChecks: [],
           partitionDefinition: {
             name: 'Foo',
             type: PartitionDefinitionType.TIME_WINDOW,
@@ -648,6 +673,7 @@ export const LaunchAssetLoaderAssetDailyWeeklyMock: MockedResponse<LaunchAssetLo
         {
           ...ASSET_WEEKLY,
           requiredResources: [],
+          assetChecks: [],
           partitionDefinition: {
             name: 'Foo',
             type: PartitionDefinitionType.TIME_WINDOW,
@@ -677,38 +703,39 @@ export const LaunchAssetLoaderAssetDailyWeeklyMock: MockedResponse<LaunchAssetLo
   },
 };
 
-export const LaunchAssetCheckUpstreamWeeklyRootMock: MockedResponse<LaunchAssetCheckUpstreamQuery> = {
-  request: {
-    query: LAUNCH_ASSET_CHECK_UPSTREAM_QUERY,
-    variables: {
-      assetKeys: [{path: ['asset_weekly_root']}],
+export const LaunchAssetCheckUpstreamWeeklyRootMock: MockedResponse<LaunchAssetCheckUpstreamQuery> =
+  {
+    request: {
+      query: LAUNCH_ASSET_CHECK_UPSTREAM_QUERY,
+      variables: {
+        assetKeys: [{path: ['asset_weekly_root']}],
+      },
     },
-  },
-  result: {
-    data: {
-      __typename: 'Query',
-      assetNodes: [
-        {
-          id: 'test.py.repo.["asset_weekly_root"]',
-          assetKey: {
-            path: ['asset_weekly_root'],
-            __typename: 'AssetKey',
-          },
-          isSource: false,
-          opNames: ['asset_weekly_root'],
-          graphName: null,
-          assetMaterializations: [
-            {
-              runId: '8fec6fcd-7a05-4f1c-8cf8-4bfd6965eeba',
-              __typename: 'MaterializationEvent',
+    result: {
+      data: {
+        __typename: 'Query',
+        assetNodes: [
+          {
+            id: 'test.py.repo.["asset_weekly_root"]',
+            assetKey: {
+              path: ['asset_weekly_root'],
+              __typename: 'AssetKey',
             },
-          ],
-          __typename: 'AssetNode',
-        },
-      ],
+            isSource: false,
+            opNames: ['asset_weekly_root'],
+            graphName: null,
+            assetMaterializations: [
+              {
+                runId: '8fec6fcd-7a05-4f1c-8cf8-4bfd6965eeba',
+                __typename: 'MaterializationEvent',
+              },
+            ],
+            __typename: 'AssetNode',
+          },
+        ],
+      },
     },
-  },
-};
+  };
 
 export function buildConfigPartitionSelectionLatestPartitionMock(
   partitionName: string,
@@ -768,6 +795,7 @@ type LaunchAssetLoaderQueryAssetNode = LaunchAssetLoaderQuery['assetNodes'][0];
 const ASSET_DAILY_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
   ...ASSET_DAILY,
   requiredResources: [],
+  assetChecks: [],
   partitionDefinition: {
     name: 'Foo',
     type: PartitionDefinitionType.TIME_WINDOW,
@@ -795,6 +823,7 @@ const ASSET_DAILY_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
 const ASSET_WEEKLY_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
   ...ASSET_WEEKLY,
   requiredResources: [],
+  assetChecks: [],
   partitionDefinition: {
     name: 'Foo',
     type: PartitionDefinitionType.TIME_WINDOW,
@@ -833,6 +862,7 @@ const ASSET_WEEKLY_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
 const ASSET_WEEKLY_ROOT_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
   ...ASSET_WEEKLY_ROOT,
   requiredResources: [],
+  assetChecks: [],
   partitionDefinition: {
     name: 'Foo',
     type: PartitionDefinitionType.TIME_WINDOW,
@@ -860,6 +890,7 @@ const ASSET_WEEKLY_ROOT_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
 const UNPARTITIONED_ASSET_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
   ...UNPARTITIONED_ASSET,
   requiredResources: [],
+  assetChecks: [],
   partitionDefinition: null,
   configField: {
     name: 'config',
@@ -880,6 +911,7 @@ const UNPARTITIONED_ASSET_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
 const UNPARTITIONED_ASSET_OTHER_REPO_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
   ...UNPARTITIONED_ASSET_OTHER_REPO,
   requiredResources: [],
+  assetChecks: [],
   partitionDefinition: null,
   configField: {
     name: 'config',
@@ -901,6 +933,7 @@ const UNPARTITIONED_ASSET_OTHER_REPO_LOADER_RESULT: LaunchAssetLoaderQueryAssetN
 const UNPARTITIONED_ASSET_WITH_REQUIRED_CONFIG_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
   ...UNPARTITIONED_ASSET_WITH_REQUIRED_CONFIG,
   requiredResources: [],
+  assetChecks: [],
   partitionDefinition: null,
   configField: {
     name: 'config',

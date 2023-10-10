@@ -4,9 +4,11 @@ module: 'dagster_essentials'
 lesson: '3'
 ---
 
+# Project files
+
 Now that you’ve created the Dagster project, let’s talk a bit about the files it contains. The project you created in the previous section looks something like this:
 
-```
+```bash
 .
 ├── README.md
 ├── dagster_university/
@@ -62,7 +64,7 @@ The columns in the following table are as follows:
 
 - **dagster_university/**
 - Dagster
-- - A Python module that will contain your Dagster code. This directory also contains the following:
+- A Python module that will contain your Dagster code. This directory also contains the following:
   - `__init__.py` - This file includes a `Definitions` object that defines that is loaded in your project, such as assets and sensors. This allows Dagster to load the definitions in a module. We’ll discuss this topic, and this file, later in this course.
   - Several directories, for example: `/assets`. These directories follow our recommended best practices and will be used to contain the definitions - like assets - you create in the following lessons. We’ll discuss the files they contain later, too.
 

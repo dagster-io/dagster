@@ -18,8 +18,12 @@ To practice what you’ve learned, create an asset in `metrics.py` that:
     - `total_amount` - The total sum of the revenue produced by trips that week
     - `trip_distance` - The total miles driven in all trips that happened that week
 
-> **Extra credit!** If want a challenge, follow this constraint:
+{% callout %}
+
+> 💡 **Extra credit!** If want a challenge, follow this constraint:
 > Imagine that the entire `trips` data is too big to fit into memory. However, a week’s worth of data fits comfortably. How would you structure your asset’s function to accommodate this?
+
+{% /callout %}
 
 ---
 
@@ -45,13 +49,15 @@ period,num_trips,total_amount,trip_distance,passenger_count
 
 ## Check your work
 
-The asset you built should look similar to the code contained in the **View answer** toggle. Click to open it.
+The asset you built should look similar to the following code. Click **View answer** to view it.
 
 Note that the solution below is one of many possible ways to solve this challenge. Your way can be completely valid and more performant than this one!
 
 We’ll assume your code looks like the following for the rest of the module. Despite not being the highest quality code, it’s flexible enough for us to extend in a later section.
 
-```python
+**If there are differences**, compare what you wrote to the asset below, change it, and then re-materialize the asset to prepare for the next lesson.
+
+```python {% obfuscated="true" %}
 from datetime import datetime, timedelta
 from . import constants
 
@@ -102,5 +108,3 @@ def trips_by_week():
 
     result.to_csv(constants.TRIPS_BY_WEEK_FILE_PATH, index=False)
 ```
-
-**If there are differences**, compare what you wrote to the asset above, change them, and then re-materialize the asset to prepare for the next lesson.

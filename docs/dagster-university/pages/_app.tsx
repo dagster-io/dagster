@@ -69,7 +69,7 @@ export default function MyApp({Component, pageProps}: AppProps<MyAppProps>) {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <div className="page">
-        <main className="flex column prose max-w-none">
+        <main className="prose max-w-5xl">
           <Component {...pageProps} />
         </main>
       </div>

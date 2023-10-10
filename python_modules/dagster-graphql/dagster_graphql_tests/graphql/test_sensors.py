@@ -201,6 +201,7 @@ query SensorQuery($sensorSelector: SensorSelector!, $dayRange: Int, $dayOffset: 
         ticks(dayRange: $dayRange, dayOffset: $dayOffset) {
           id
           timestamp
+          endTimestamp
         }
       }
     }
@@ -952,6 +953,9 @@ def test_sensor_tick_range(graphql_context: WorkspaceRequestContext):
     )
     assert len(result.data["sensorOrError"]["sensorState"]["ticks"]) == 1
     assert result.data["sensorOrError"]["sensorState"]["ticks"][0]["timestamp"] == three.timestamp()
+    assert (
+        result.data["sensorOrError"]["sensorState"]["ticks"][0]["endTimestamp"] >= three.timestamp()
+    )
 
     result = execute_dagster_graphql(
         graphql_context,
@@ -960,6 +964,9 @@ def test_sensor_tick_range(graphql_context: WorkspaceRequestContext):
     )
     assert len(result.data["sensorOrError"]["sensorState"]["ticks"]) == 1
     assert result.data["sensorOrError"]["sensorState"]["ticks"][0]["timestamp"] == two.timestamp()
+    assert (
+        result.data["sensorOrError"]["sensorState"]["ticks"][0]["endTimestamp"] >= two.timestamp()
+    )
 
     result = execute_dagster_graphql(
         graphql_context,

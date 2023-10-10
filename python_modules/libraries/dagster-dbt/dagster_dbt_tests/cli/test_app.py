@@ -220,3 +220,39 @@ def test_project_scaffold_command_on_invalid_dbt_project(
 
     assert result.exit_code != 0
     assert not dagster_project_dir.exists()
+
+
+@pytest.mark.parametrize("project_name", ["dagster", "dagster_dbt"])
+def test_project_scaffold_command_on_package_conflict(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, dbt_project_dir: Path, project_name: str
+) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    result = runner.invoke(
+        app,
+        [
+            "project",
+            "scaffold",
+            "--project-name",
+            project_name,
+            "--dbt-project-dir",
+            os.fspath(dbt_project_dir),
+        ],
+    )
+
+    assert result.exit_code != 0
+
+    result = runner.invoke(
+        app,
+        [
+            "project",
+            "scaffold",
+            "--project-name",
+            project_name,
+            "--dbt-project-dir",
+            os.fspath(dbt_project_dir),
+            "--ignore-package-conflict",
+        ],
+    )
+
+    assert result.exit_code == 0

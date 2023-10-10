@@ -1,22 +1,15 @@
-import {pathVerticalDiagonal, pathHorizontalDiagonal} from '@vx/shape';
+import {pathHorizontalDiagonal, pathVerticalDiagonal} from '@vx/shape';
 
 import {featureEnabled, FeatureFlag} from '../app/Flags';
 import {COMMON_COLLATOR} from '../app/Util';
-import {
-  AssetCheckExecutionResolvedStatus,
-  AssetCheckSeverity,
-  Maybe,
-  RunStatus,
-  StaleCauseCategory,
-  StaleStatus,
-} from '../graphql/types';
+import {RunStatus, StaleStatus} from '../graphql/types';
 
 import {AssetNodeKeyFragment} from './types/AssetNode.types';
 import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
 import {
+  AssetGraphLiveQuery,
   AssetLatestInfoFragment,
   AssetLatestInfoRunFragment,
-  AssetGraphLiveQuery,
   AssetNodeLiveFragment,
   AssetNodeLiveFreshnessInfoFragment,
   AssetNodeLiveMaterializationFragment,
@@ -147,28 +140,15 @@ export interface LiveDataForNode {
   freshnessInfo: AssetNodeLiveFreshnessInfoFragment | null;
   lastObservation: AssetNodeLiveObservationFragment | null;
   staleStatus: StaleStatus | null;
-  staleCauses: {
-    dependency: Maybe<AssetKey>;
-    category: StaleCauseCategory;
-    key: AssetKey;
-    reason: string;
-  }[];
+  staleCauses: AssetGraphLiveQuery['assetNodes'][0]['staleCauses'];
+  assetChecks: AssetGraphLiveQuery['assetNodes'][0]['assetChecks'];
   partitionStats: {
     numMaterialized: number;
     numMaterializing: number;
     numPartitions: number;
     numFailed: number;
   } | null;
-  assetChecks: {
-    name: string;
-    executionForLatestMaterialization: {
-      runId: string;
-      status: AssetCheckExecutionResolvedStatus;
-      evaluation: {
-        severity: AssetCheckSeverity;
-      } | null;
-    } | null;
-  }[];
+  opNames: string[];
 }
 
 export const MISSING_LIVE_DATA: LiveDataForNode = {
@@ -183,6 +163,7 @@ export const MISSING_LIVE_DATA: LiveDataForNode = {
   staleStatus: null,
   staleCauses: [],
   assetChecks: [],
+  opNames: [],
   stepKey: '',
 };
 
@@ -190,7 +171,10 @@ export interface LiveData {
   [assetId: GraphId]: LiveDataForNode;
 }
 
-export const buildLiveData = ({assetNodes, assetsLatestInfo}: AssetGraphLiveQuery) => {
+export const buildLiveData = ({
+  assetNodes,
+  assetsLatestInfo,
+}: Pick<AssetGraphLiveQuery, 'assetNodes' | 'assetsLatestInfo'>) => {
   const data: LiveData = {};
 
   for (const liveNode of assetNodes) {
@@ -235,6 +219,7 @@ export const buildLiveDataForNode = (
     unstartedRunIds: assetLatestInfo?.unstartedRunIds || [],
     partitionStats: assetNode.partitionStats || null,
     runWhichFailedToMaterialize,
+    opNames: assetNode.opNames,
   };
 };
 
@@ -261,3 +246,21 @@ export const itemWithAssetKey = (key: {path: string[]}) => {
   const token = tokenForAssetKey(key);
   return (asset: {assetKey: {path: string[]}}) => tokenForAssetKey(asset.assetKey) === token;
 };
+
+export function walkTreeUpwards(
+  nodeId: string,
+  graphData: GraphData,
+  callback: (nodeId: string) => void,
+) {
+  // TODO
+  console.log({nodeId, graphData, callback});
+}
+
+export function walkTreeDownwards(
+  nodeId: string,
+  graphData: GraphData,
+  callback: (nodeId: string) => void,
+) {
+  // TODO
+  console.log({nodeId, graphData, callback});
+}

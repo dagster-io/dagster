@@ -1,5 +1,4 @@
 import {BaseTag, Box, Colors, Icon, Spinner, Tag} from '@dagster-io/ui-components';
-import qs from 'qs';
 import * as React from 'react';
 
 import {assertUnreachable} from '../../app/Util';
@@ -7,7 +6,6 @@ import {AssetCheckExecutionResolvedStatus, AssetCheckSeverity} from '../../graph
 import {TagActionsPopover} from '../../ui/TagActions';
 
 export const AssetCheckStatusTag = ({
-  check,
   execution,
 }: {
   check: {
@@ -53,7 +51,7 @@ export const AssetCheckStatusTag = ({
       case AssetCheckExecutionResolvedStatus.FAILED:
         return isWarn ? (
           <Tag icon="warning_outline" intent="warning">
-            Warning
+            Failed
           </Tag>
         ) : (
           <Tag icon="cancel" intent="danger">
@@ -85,7 +83,7 @@ export const AssetCheckStatusTag = ({
       actions={[
         {
           label: 'View in run logs',
-          to: `/runs/${runId}?${qs.stringify({logs: check.name})}`,
+          to: `/runs/${runId}`,
         },
       ]}
     >

@@ -1,12 +1,5 @@
 from enum import Enum
-from typing import (
-    TYPE_CHECKING,
-    AbstractSet,
-    Dict,
-    FrozenSet,
-    NamedTuple,
-    Optional,
-)
+from typing import TYPE_CHECKING, AbstractSet, Dict, FrozenSet, NamedTuple, Optional, Sequence
 
 import dagster._check as check
 from dagster._annotations import experimental, public
@@ -18,7 +11,10 @@ from dagster._serdes.serdes import (
 )
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
+    from dagster._core.definitions.auto_materialize_rule import (
+        AutoMaterializeRule,
+        AutoMaterializeRuleSnapshot,
+    )
 
 
 class AutoMaterializePolicySerializer(NamedTupleSerializer):
@@ -237,3 +233,7 @@ class AutoMaterializePolicy(
         if AutoMaterializeRule.materialize_on_parent_updated() in self.rules:
             return AutoMaterializePolicyType.EAGER
         return AutoMaterializePolicyType.LAZY
+
+    @property
+    def rule_snapshots(self) -> Sequence["AutoMaterializeRuleSnapshot"]:
+        return [rule.to_snapshot() for rule in self.rules]

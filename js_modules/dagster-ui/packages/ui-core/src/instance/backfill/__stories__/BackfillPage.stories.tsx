@@ -17,7 +17,7 @@ import {buildBackfillDetailsQuery} from '../__fixtures__/buildBackfillDetails';
 
 // eslint-disable-next-line import/no-default-export
 export default {
-  title: 'BackfillPage',
+  title: 'Instance/Backfills',
   component: BackfillPage,
 } as Meta;
 

@@ -115,18 +115,14 @@ class CachingDataTimeResolver:
             return first_filled_time_window.end
 
         # get a per-partition count of the new materializations
-        new_partition_counts = self._instance_queryer.get_materialized_partition_counts(
-            asset_key, after_cursor=cursor
+        partitions = self._instance_queryer.get_materialized_partitions(asset_key)
+        prev_partitions = self._instance_queryer.get_materialized_partitions(
+            asset_key, before_cursor=cursor + 1
         )
-
-        total_partition_counts = self._instance_queryer.get_materialized_partition_counts(asset_key)
-
-        # these are the partitions that did not exist before this record was created
         net_new_partitions = {
             partition_key
-            for partition_key, new_count in new_partition_counts.items()
-            if new_count == total_partition_counts.get(partition_key)
-            and partitions_def.is_valid_partition_key(partition_key)
+            for partition_key in (partitions - prev_partitions)
+            if partitions_def.is_valid_partition_key(partition_key)
         }
 
         # there are new materializations, but they don't fill any new partitions

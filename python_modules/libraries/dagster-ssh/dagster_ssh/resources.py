@@ -181,9 +181,7 @@ class SSHResource:
             # Create intermediate directories if they don't exist
             mkdir_p(local_folder)
 
-            self.log.info(
-                "Starting to transfer from {0} to {1}".format(remote_filepath, local_filepath)
-            )
+            self.log.info(f"Starting to transfer from {remote_filepath} to {local_filepath}")
 
             sftp_client.get(remote_filepath, local_filepath)
 
@@ -195,9 +193,7 @@ class SSHResource:
         check.str_param(local_filepath, "local_filepath")
         conn = self.get_connection()
         with conn.open_sftp() as sftp_client:
-            self.log.info(
-                "Starting to transfer file from {0} to {1}".format(local_filepath, remote_filepath)
-            )
+            self.log.info(f"Starting to transfer file from {local_filepath} to {remote_filepath}")
 
             sftp_client.put(local_filepath, remote_filepath, confirm=confirm)
 

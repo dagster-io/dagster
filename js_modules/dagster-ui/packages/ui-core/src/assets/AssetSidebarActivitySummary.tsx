@@ -1,4 +1,4 @@
-import {Body, Box, Colors, Icon, Spinner, Table} from '@dagster-io/ui-components';
+import {Body, Box, Colors, Icon, MiddleTruncate, Spinner} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -17,6 +17,7 @@ import {FailedRunSinceMaterializationBanner} from './FailedRunSinceMaterializati
 import {LatestMaterializationMetadata} from './LastMaterializationMetadata';
 import {OverdueTag, freshnessPolicyDescription} from './OverdueTag';
 import {AssetCheckStatusTag} from './asset-checks/AssetCheckStatusTag';
+import {ExecuteChecksButton} from './asset-checks/ExecuteChecksButton';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {useGroupedEvents} from './groupByPartition';
 import {useRecentAssetEvents} from './useRecentAssetEvents';
@@ -39,18 +40,12 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
   liveData,
   stepKey,
 }) => {
-  const {
-    materializations,
-    observations,
-    loadedPartitionKeys,
-    loading,
-    refetch,
-    xAxis,
-  } = useRecentAssetEvents(
-    asset.assetKey,
-    {},
-    {assetHasDefinedPartitions: !!asset.partitionDefinition},
-  );
+  const {materializations, observations, loadedPartitionKeys, loading, refetch, xAxis} =
+    useRecentAssetEvents(
+      asset.assetKey,
+      {},
+      {assetHasDefinedPartitions: !!asset.partitionDefinition},
+    );
 
   const grouped = useGroupedEvents(xAxis, materializations, observations, loadedPartitionKeys);
   const displayedEvent = isSourceAsset ? observations[0] : materializations[0];
@@ -65,14 +60,10 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
         <>
           <FailedRunSinceMaterializationBanner
             stepKey={stepKey}
-            border={{side: 'top', width: 1, color: Colors.KeylineGray}}
+            border="top"
             run={liveData?.runWhichFailedToMaterialize || null}
           />
-          <CurrentRunsBanner
-            stepKey={stepKey}
-            border={{side: 'top', width: 1, color: Colors.KeylineGray}}
-            liveData={liveData}
-          />
+          <CurrentRunsBanner stepKey={stepKey} border="top" liveData={liveData} />
         </>
       )}
 
@@ -80,11 +71,7 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
         <SidebarSection title="Freshness policy">
           <Box margin={{horizontal: 24, vertical: 12}} flex={{gap: 12, alignItems: 'flex-start'}}>
             <Body style={{flex: 1}}>{freshnessPolicyDescription(asset.freshnessPolicy)}</Body>
-            <OverdueTag
-              liveData={liveData}
-              policy={asset.freshnessPolicy}
-              assetKey={asset.assetKey}
-            />
+            <OverdueTag policy={asset.freshnessPolicy} assetKey={asset.assetKey} />
           </Box>
         </SidebarSection>
       )}
@@ -101,7 +88,7 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
             <Icon name="open_in_new" color={Colors.Link} />
           </Box>
           <Box margin={{horizontal: 24}} flex={{gap: 12, alignItems: 'flex-start'}}>
-            <Body style={{flex: 1}}>
+            <Body style={{flex: 1, marginBottom: 12}}>
               {automaterializePolicyDescription(asset.autoMaterializePolicy)}
             </Body>
             <AutomaterializePolicyTag policy={asset.autoMaterializePolicy} />
@@ -168,27 +155,42 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
       </SidebarSection>
       {liveData && liveData.assetChecks.length > 0 && (
         <SidebarSection title="Checks">
-          <Box padding={{horizontal: 24, vertical: 12}}>
+          <Box padding={{horizontal: 24, vertical: 12}} flex={{gap: 12, alignItems: 'center'}}>
+            <ExecuteChecksButton assetNode={asset} checks={liveData.assetChecks} />
             <Link to={assetDetailsPathForKey(asset.assetKey, {view: 'checks'})}>
               View all check details
             </Link>
           </Box>
 
-          <Table $compact>
-            <tbody>
-              {liveData.assetChecks.map((check) => (
-                <tr key={check.name}>
-                  <td style={{paddingLeft: 24}}>{check.name}</td>
-                  <td>
-                    <AssetCheckStatusTag
-                      check={check}
-                      execution={check.executionForLatestMaterialization}
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
+          {liveData.assetChecks.slice(0, 10).map((check) => (
+            <Box
+              key={check.name}
+              border={{side: 'top', width: 1, color: Colors.KeylineGray}}
+              padding={{vertical: 8, right: 12, left: 24}}
+              flex={{
+                gap: 8,
+                direction: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <MiddleTruncate text={`${check.name}`} />
+              <AssetCheckStatusTag
+                check={check}
+                execution={check.executionForLatestMaterialization}
+              />
+            </Box>
+          ))}
+          {liveData.assetChecks.length > 10 && (
+            <Box
+              padding={{vertical: 12, right: 12, left: 24}}
+              border={{side: 'top', width: 1, color: Colors.KeylineGray}}
+            >
+              <Link to={assetDetailsPathForKey(asset.assetKey, {view: 'checks'})}>
+                View {liveData.assetChecks.length - 10} more…
+              </Link>
+            </Box>
+          )}
         </SidebarSection>
       )}
     </>

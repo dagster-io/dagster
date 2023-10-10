@@ -12,7 +12,8 @@ import {isHiddenAssetGroupJob} from '../../asset-graph/Utils';
 import {BulkActionStatus, RunStatus} from '../../graphql/types';
 import {PartitionStatus, PartitionStatusHealthSourceOps} from '../../partitions/PartitionStatus';
 import {PipelineReference} from '../../pipelines/PipelineReference';
-import {AssetKeyTagCollection} from '../../runs/AssetKeyTagCollection';
+import {AssetKeyTagCollection} from '../../runs/AssetTagCollections';
+import {CreatedByTagCell} from '../../runs/CreatedByTag';
 import {inProgressStatuses} from '../../runs/RunStatuses';
 import {RunStatusTagsWithCounts} from '../../runs/RunTimeline';
 import {runsPathWithFilters} from '../../runs/RunsFilterInput';
@@ -21,9 +22,10 @@ import {LoadingOrNone, useDelayedRowQuery} from '../../workspace/VirtualizedWork
 import {isThisThingAJob, useRepository} from '../../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../../workspace/repoAddressAsString';
+import {RepoAddress} from '../../workspace/types';
 import {workspacePathFromAddress, workspacePipelinePath} from '../../workspace/workspacePath';
 
-import {BackfillActionsMenu} from './BackfillActionsMenu';
+import {BackfillActionsMenu, backfillCanCancelRuns} from './BackfillActionsMenu';
 import {BackfillStatusTagForPage} from './BackfillStatusTagForPage';
 import {
   PartitionStatusesForBackfillFragment,
@@ -52,6 +54,13 @@ export const BackfillRow = ({
   onShowPartitionsRequested: (backfill: BackfillTableFragment) => void;
   refetch: () => void;
 }) => {
+  const repoAddress = backfill.partitionSet
+    ? buildRepoAddress(
+        backfill.partitionSet.repositoryOrigin.repositoryName,
+        backfill.partitionSet.repositoryOrigin.repositoryLocationName,
+      )
+    : null;
+
   const statusDetails = useLazyQuery<SingleBackfillQuery, SingleBackfillQueryVariables>(
     SINGLE_BACKFILL_STATUS_DETAILS_QUERY,
     {
@@ -68,7 +77,8 @@ export const BackfillRow = ({
     },
   );
 
-  const statusUnsupported = backfill.numPartitions === null || backfill.partitionNames === null;
+  const statusUnsupported =
+    backfill.numPartitions === null || backfill.partitionNames === null || backfill.isAssetBackfill;
 
   // Note: We switch queries based on how many partitions there are to display,
   // because the detail is nice for small backfills but breaks for 100k+ partitions.
@@ -127,7 +137,7 @@ export const BackfillRow = ({
       </td>
       {showBackfillTarget ? (
         <td style={{width: '20%'}}>
-          <BackfillTarget backfill={backfill} />
+          <BackfillTarget backfill={backfill} repoAddress={repoAddress} />
         </td>
       ) : null}
       <td style={{width: allPartitions ? 300 : 140}}>
@@ -136,6 +146,9 @@ export const BackfillRow = ({
           allPartitions={allPartitions}
           onExpand={() => onShowPartitionsRequested(backfill)}
         />
+      </td>
+      <td style={{width: 160}}>
+        <CreatedByTagCell tags={backfill.tags} repoAddress={repoAddress} />
       </td>
       <td style={{width: 140}}>
         {counts || statusUnsupported ? (
@@ -156,7 +169,11 @@ export const BackfillRow = ({
         )}
       </td>
       <td>
-        <BackfillActionsMenu backfill={backfill} counts={counts} refetch={refetch} />
+        <BackfillActionsMenu
+          backfill={backfill}
+          canCancelRuns={backfillCanCancelRuns(backfill, counts)}
+          refetch={refetch}
+        />
       </td>
     </tr>
   );
@@ -174,10 +191,13 @@ const BackfillRunStatus = ({
   counts: {[status: string]: number};
 }) => {
   const history = useHistory();
-  const partitionCounts = Object.entries(counts).reduce((partitionCounts, [runStatus, count]) => {
-    partitionCounts[runStatus] = (partitionCounts[runStatus] || 0) + count;
-    return partitionCounts;
-  }, {} as {[status: string]: number});
+  const partitionCounts = Object.entries(counts).reduce(
+    (partitionCounts, [runStatus, count]) => {
+      partitionCounts[runStatus] = (partitionCounts[runStatus] || 0) + count;
+      return partitionCounts;
+    },
+    {} as {[status: string]: number},
+  );
 
   const health: PartitionStatusHealthSourceOps = React.useMemo(
     () => ({
@@ -210,17 +230,11 @@ const BackfillRunStatus = ({
 
 const BackfillTarget: React.FC<{
   backfill: BackfillTableFragment;
-}> = ({backfill}) => {
+  repoAddress: RepoAddress | null;
+}> = ({backfill, repoAddress}) => {
+  const repo = useRepository(repoAddress);
   const {assetSelection, partitionSet, partitionSetName} = backfill;
 
-  const repoAddress = partitionSet
-    ? buildRepoAddress(
-        partitionSet.repositoryOrigin.repositoryName,
-        partitionSet.repositoryOrigin.repositoryLocationName,
-      )
-    : null;
-
-  const repo = useRepository(repoAddress);
   const isHiddenAssetPartitionSet = isHiddenAssetGroupJob(partitionSetName || '');
 
   const buildHeader = () => {

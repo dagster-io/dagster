@@ -616,9 +616,7 @@ def _helm_chart_helper(
             else:
                 assert (
                     len(pod_names) == 0
-                ), "celery-worker pods {pod_names} exists when celery is not enabled.".format(
-                    pod_names=pod_names
-                )
+                ), f"celery-worker pods {pod_names} exists when celery is not enabled."
 
         dagster_user_deployments_values = helm_config.get("dagster-user-deployments", {})
         if (

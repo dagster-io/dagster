@@ -260,8 +260,7 @@ def test_bind_resource_to_instigator(include_job_in_definitions) -> None:
         hello_world_op()
 
     @sensor(job=hello_world_job)
-    def hello_world_sensor():
-        ...
+    def hello_world_sensor(): ...
 
     hello_world_schedule = ScheduleDefinition(
         name="hello_world_schedule", cron_schedule="* * * * *", job=hello_world_job
@@ -314,8 +313,7 @@ def test_bind_resource_to_instigator_by_name() -> None:
         hello_world_op()
 
     @sensor(job_name="hello_world_job")
-    def hello_world_sensor():
-        ...
+    def hello_world_sensor(): ...
 
     hello_world_schedule = ScheduleDefinition(
         name="hello_world_schedule", cron_schedule="* * * * *", job_name="hello_world_job"

@@ -23,6 +23,17 @@ def test_project_scaffold_command_fails_when_dir_path_exists():
         assert result.exit_code != 0
 
 
+def test_project_scaffold_command_fails_on_package_conflict():
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        result = runner.invoke(scaffold_command, ["--name", "dagster"])
+        assert "conflicts with an existing PyPI package" in result.output
+        assert result.exit_code != 0
+
+        result = runner.invoke(scaffold_command, ["--name", "dagster", "--ignore-package-conflict"])
+        assert result.exit_code == 0
+
+
 def test_project_scaffold_command_succeeds():
     runner = CliRunner()
     with runner.isolated_filesystem():

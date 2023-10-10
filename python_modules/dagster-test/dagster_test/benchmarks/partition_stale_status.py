@@ -121,12 +121,10 @@ def main(num_partitions: int, override_partition_limit: bool) -> None:
         return {key: randint(0, 100) for key in keys}
 
     @asset
-    def downstream1(root):
-        ...
+    def downstream1(root): ...
 
     @asset
-    def downstream2(downstream1):
-        ...
+    def downstream2(downstream1): ...
 
     all_assets = [root, downstream1, downstream2]
     with instance_for_test() as instance:

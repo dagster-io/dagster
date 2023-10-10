@@ -6,8 +6,10 @@
 
 [tool.black]
 line-length = 88
-preview = true
-required-version = "23.7.0"
+
+# disabled to maintain dummy function bodies on a dedicated line
+preview = false
+required-version = "23.9.1"
 target-versions = ['py38', 'py39', 'py310', 'py311']
 
 [tool.ruff]

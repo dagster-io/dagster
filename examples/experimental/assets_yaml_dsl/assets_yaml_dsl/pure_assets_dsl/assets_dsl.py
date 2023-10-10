@@ -13,7 +13,7 @@ except ImportError:
     from yaml import Loader
 
 from dagster import AssetKey, asset
-from dagster._core.ext.subprocess import ExtSubprocess
+from dagster._core.pipes.subprocess import PipesSubprocessClient
 
 
 def load_yaml(relative_path) -> Dict[str, Any]:
@@ -39,16 +39,16 @@ def from_asset_entries(asset_entries: Dict[str, Any]) -> List[AssetsDefinition]:
         @asset(key=asset_key, deps=deps, description=description, group_name=group_name)
         def _assets_def(
             context: AssetExecutionContext,
-            subprocess_resource: ExtSubprocess,
-        ) -> None:
+            pipes_subprocess_client: PipesSubprocessClient,
+        ):
             # instead of querying a dummy client, do your real data processing here
 
             python_executable = shutil.which("python")
             assert python_executable is not None
-            subprocess_resource.run(
+            pipes_subprocess_client.run(
                 command=[python_executable, file_relative_path(__file__, "sql_script.py"), sql],
                 context=context,
-            )
+            ).get_results()
 
         assets_defs.append(_assets_def)
 

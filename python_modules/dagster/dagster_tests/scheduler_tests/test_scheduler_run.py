@@ -634,593 +634,6 @@ def feb_27_2019_start_of_day() -> "DateTime":
     )
 
 
-@pytest.mark.parametrize("executor", get_schedule_executors())
-def test_simple_schedule(
-    instance: DagsterInstance,
-    workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
-    executor: ThreadPoolExecutor,
-):
-    freeze_datetime = feb_27_2019_one_second_to_midnight()
-    with pendulum.test(freeze_datetime):
-        external_schedule = external_repo.get_external_schedule("simple_schedule")
-
-        schedule_origin = external_schedule.get_external_origin()
-
-        instance.start_schedule(external_schedule)
-
-        assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 0
-
-        # launch_scheduled_runs does nothing before the first tick
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-
-        assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 0
-
-    freeze_datetime = freeze_datetime.add(seconds=2)
-    with pendulum.test(freeze_datetime):
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-
-        assert instance.get_runs_count() == 1
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 1
-
-        expected_datetime = create_pendulum_time(year=2019, month=2, day=28)
-
-        validate_tick(
-            ticks[0],
-            external_schedule,
-            expected_datetime,
-            TickStatus.SUCCESS,
-            [run.run_id for run in instance.get_runs()],
-        )
-
-        wait_for_all_runs_to_start(instance)
-        validate_run_started(
-            instance,
-            next(iter(instance.get_runs())),
-            execution_time=create_pendulum_time(2019, 2, 28),
-        )
-
-        # Verify idempotence
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-
-        assert instance.get_runs_count() == 1
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 1
-        assert ticks[0].status == TickStatus.SUCCESS
-
-    # Verify advancing in time but not going past a tick doesn't add any new runs
-    freeze_datetime = freeze_datetime.add(seconds=2)
-    with pendulum.test(freeze_datetime):
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-
-        assert instance.get_runs_count() == 1
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 1
-        assert ticks[0].status == TickStatus.SUCCESS
-
-    freeze_datetime = freeze_datetime.add(days=2)
-    with pendulum.test(freeze_datetime):
-        # Traveling two more days in the future passes two ticks times, but only the most recent
-        # will be created as a tick with a corresponding run.
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-        assert instance.get_runs_count() == 2
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 2
-        assert len([tick for tick in ticks if tick.status == TickStatus.SUCCESS]) == 2
-
-        # Check idempotence again
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-        assert instance.get_runs_count() == 2
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 2
-
-
-# Verify that the scheduler uses selector and not origin to dedupe schedules
-@pytest.mark.parametrize("executor", get_schedule_executors())
-def test_schedule_with_different_origin(
-    instance: DagsterInstance,
-    workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
-    executor: ThreadPoolExecutor,
-):
-    external_schedule = external_repo.get_external_schedule("simple_schedule")
-    existing_origin = external_schedule.get_external_origin()
-
-    code_location_origin = existing_origin.external_repository_origin.code_location_origin
-    assert isinstance(code_location_origin, ManagedGrpcPythonEnvCodeLocationOrigin)
-    modified_loadable_target_origin = code_location_origin.loadable_target_origin._replace(
-        executable_path="/different/executable_path"
-    )
-
-    # Change metadata on the origin that shouldn't matter for execution
-    modified_origin = existing_origin._replace(
-        external_repository_origin=existing_origin.external_repository_origin._replace(
-            code_location_origin=code_location_origin._replace(
-                loadable_target_origin=modified_loadable_target_origin
-            )
-        )
-    )
-
-    freeze_datetime = feb_27_2019_one_second_to_midnight()
-    with pendulum.test(freeze_datetime):
-        schedule_state = InstigatorState(
-            modified_origin,
-            InstigatorType.SCHEDULE,
-            InstigatorStatus.RUNNING,
-            ScheduleInstigatorData(
-                external_schedule.cron_schedule, pendulum.now("UTC").timestamp()
-            ),
-        )
-        instance.add_instigator_state(schedule_state)
-
-        freeze_datetime = freeze_datetime.add(seconds=2)
-
-    with pendulum.test(freeze_datetime):
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-
-        assert instance.get_runs_count() == 1
-        ticks = instance.get_ticks(existing_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 1
-
-
-@pytest.mark.parametrize("executor", get_schedule_executors())
-def test_old_tick_schedule(
-    instance: DagsterInstance,
-    workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
-    executor: ThreadPoolExecutor,
-):
-    freeze_datetime = feb_27_2019_one_second_to_midnight()
-    with pendulum.test(freeze_datetime):
-        external_schedule = external_repo.get_external_schedule("simple_schedule")
-
-        # Create an old tick from several days ago
-        instance.create_tick(
-            TickData(
-                instigator_origin_id=external_schedule.get_external_origin_id(),
-                instigator_name="simple_schedule",
-                instigator_type=InstigatorType.SCHEDULE,
-                status=TickStatus.STARTED,
-                timestamp=pendulum.now("UTC").subtract(days=3).timestamp(),
-                selector_id=external_schedule.selector_id,
-            )
-        )
-
-        schedule_origin = external_schedule.get_external_origin()
-        instance.start_schedule(external_schedule)
-
-    freeze_datetime = freeze_datetime.add(seconds=2)
-    with pendulum.test(freeze_datetime):
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-
-        assert instance.get_runs_count() == 1
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 2
-
-
-@pytest.mark.parametrize("executor", get_schedule_executors())
-def test_no_started_schedules(
-    instance: DagsterInstance,
-    workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
-    executor: ThreadPoolExecutor,
-):
-    external_schedule = external_repo.get_external_schedule("simple_schedule")
-    schedule_origin = external_schedule.get_external_origin()
-
-    evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-    assert instance.get_runs_count() == 0
-
-    ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-    assert len(ticks) == 0
-
-
-@pytest.mark.parametrize("executor", get_schedule_executors())
-def test_schedule_without_timezone(instance: DagsterInstance, executor: ThreadPoolExecutor):
-    with create_test_daemon_workspace_context(
-        workspace_load_target=workspace_load_target(),
-        instance=instance,
-    ) as workspace_context:
-        code_location = next(
-            iter(workspace_context.create_request_context().get_workspace_snapshot().values())
-        ).code_location
-        assert code_location is not None
-        external_repo = code_location.get_repository("the_repo")
-        external_schedule = external_repo.get_external_schedule("simple_schedule_no_timezone")
-        schedule_origin = external_schedule.get_external_origin()
-        initial_datetime = create_pendulum_time(
-            year=2019, month=2, day=27, hour=0, minute=0, second=0, tz="UTC"
-        )
-
-        with pendulum.test(initial_datetime):
-            instance.start_schedule(external_schedule)
-
-            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-
-            assert instance.get_runs_count() == 1
-
-            ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-
-            assert len(ticks) == 1
-
-            expected_datetime = create_pendulum_time(year=2019, month=2, day=27, tz="UTC")
-
-            validate_tick(
-                ticks[0],
-                external_schedule,
-                expected_datetime,
-                TickStatus.SUCCESS,
-                [run.run_id for run in instance.get_runs()],
-            )
-
-            wait_for_all_runs_to_start(instance)
-            validate_run_started(
-                instance,
-                next(iter(instance.get_runs())),
-                execution_time=expected_datetime,
-            )
-
-            # Verify idempotence
-            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-            assert instance.get_runs_count() == 1
-            ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-            assert len(ticks) == 1
-
-
-@pytest.mark.parametrize("executor", get_schedule_executors())
-def test_bad_eval_fn_no_retries(
-    instance: DagsterInstance,
-    workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
-    executor: ThreadPoolExecutor,
-):
-    external_schedule = external_repo.get_external_schedule("wrong_config_schedule")
-    schedule_origin = external_schedule.get_external_origin()
-    freeze_datetime = create_pendulum_time(year=2019, month=2, day=27, hour=0, minute=0, second=0)
-    with pendulum.test(freeze_datetime):
-        instance.start_schedule(external_schedule)
-
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-
-        assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 1
-
-        validate_tick(
-            ticks[0],
-            external_schedule,
-            freeze_datetime,
-            TickStatus.FAILURE,
-            [run.run_id for run in instance.get_runs()],
-            "DagsterInvalidConfigError",
-            expected_failure_count=1,
-        )
-
-        # Idempotency (tick does not retry)
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-
-        assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 1
-
-        validate_tick(
-            ticks[0],
-            external_schedule,
-            freeze_datetime,
-            TickStatus.FAILURE,
-            [],
-            "DagsterInvalidConfigError",
-            expected_failure_count=1,
-        )
-
-    freeze_datetime = freeze_datetime.add(days=1)
-    with pendulum.test(freeze_datetime):
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-
-        assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 2
-
-        validate_tick(
-            ticks[0],
-            external_schedule,
-            freeze_datetime,
-            TickStatus.FAILURE,
-            [],
-            "DagsterInvalidConfigError",
-            expected_failure_count=1,
-        )
-
-
-@pytest.mark.parametrize("executor", get_schedule_executors())
-def test_invalid_eval_fn_with_retries(
-    instance: DagsterInstance,
-    workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
-    executor: ThreadPoolExecutor,
-):
-    external_schedule = external_repo.get_external_schedule("wrong_config_schedule")
-    schedule_origin = external_schedule.get_external_origin()
-    freeze_datetime = create_pendulum_time(year=2019, month=2, day=27, hour=0, minute=0, second=0)
-    with pendulum.test(freeze_datetime):
-        instance.start_schedule(external_schedule)
-
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"), max_tick_retries=2)
-
-        assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 1
-
-        validate_tick(
-            ticks[0],
-            external_schedule,
-            freeze_datetime,
-            TickStatus.FAILURE,
-            [],
-            "Missing required config entry",
-            expected_failure_count=1,
-        )
-
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"), max_tick_retries=2)
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"), max_tick_retries=2)
-
-        assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 1
-
-        validate_tick(
-            ticks[0],
-            external_schedule,
-            freeze_datetime,
-            TickStatus.FAILURE,
-            [],
-            "Missing required config entry",
-            expected_failure_count=3,
-        )
-
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"), max_tick_retries=2)
-        assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 1
-
-        validate_tick(
-            ticks[0],
-            external_schedule,
-            freeze_datetime,
-            TickStatus.FAILURE,
-            [],
-            "Missing required config entry",
-            expected_failure_count=3,
-        )
-
-    freeze_datetime = freeze_datetime.add(days=1)
-    with pendulum.test(freeze_datetime):
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-
-        assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 2
-
-        validate_tick(
-            ticks[0],
-            external_schedule,
-            freeze_datetime,
-            TickStatus.FAILURE,
-            [],
-            "Missing required config entry",
-            expected_failure_count=1,
-        )
-
-
-@pytest.mark.parametrize("executor", get_schedule_executors())
-def test_passes_on_retry(
-    instance: DagsterInstance,
-    workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
-    executor: ThreadPoolExecutor,
-):
-    # We need to use different keys across sync and async executors, as the dictionary is persisted across processes.
-    if isinstance(executor, SingleThreadPoolExecutor):
-        schedule_name = "passes_on_retry_schedule_sync"
-    else:
-        schedule_name = "passes_on_retry_schedule_async"
-    external_schedule = external_repo.get_external_schedule(schedule_name)
-    schedule_origin = external_schedule.get_external_origin()
-    freeze_datetime = create_pendulum_time(year=2019, month=2, day=27, hour=0, minute=0, second=0)
-    with pendulum.test(freeze_datetime):
-        instance.start_schedule(external_schedule)
-
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"), max_tick_retries=1)
-
-        assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 1
-
-        validate_tick(
-            ticks[0],
-            external_schedule,
-            freeze_datetime,
-            TickStatus.FAILURE,
-            [],
-            f"Error occurred during the evaluation of schedule {schedule_name}",
-            expected_failure_count=1,
-        )
-
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"), max_tick_retries=1)
-
-        assert instance.get_runs_count() == 1
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 1
-
-        validate_tick(
-            ticks[0],
-            external_schedule,
-            freeze_datetime,
-            TickStatus.SUCCESS,
-            [run.run_id for run in instance.get_runs()],
-            expected_failure_count=1,
-        )
-
-    freeze_datetime = freeze_datetime.add(days=1)
-    with pendulum.test(freeze_datetime):
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"), max_tick_retries=1)
-
-        assert instance.get_runs_count() == 2
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 2
-
-        validate_tick(
-            ticks[0],
-            external_schedule,
-            freeze_datetime,
-            TickStatus.SUCCESS,
-            [next(iter(instance.get_runs())).run_id],
-            expected_failure_count=0,
-        )
-
-
-@pytest.mark.parametrize("executor", get_schedule_executors())
-def test_bad_should_execute(
-    instance: DagsterInstance,
-    workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
-    executor: ThreadPoolExecutor,
-):
-    external_schedule = external_repo.get_external_schedule("bad_should_execute_schedule")
-    schedule_origin = external_schedule.get_external_origin()
-    initial_datetime = create_pendulum_time(
-        year=2019,
-        month=2,
-        day=27,
-        hour=0,
-        minute=0,
-        second=0,
-    )
-    with pendulum.test(initial_datetime):
-        instance.start_schedule(external_schedule)
-
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-
-        assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 1
-
-        validate_tick(
-            ticks[0],
-            external_schedule,
-            initial_datetime,
-            TickStatus.FAILURE,
-            [run.run_id for run in instance.get_runs()],
-            "Error occurred during the execution of should_execute for schedule"
-            " bad_should_execute_schedule",
-            expected_failure_count=1,
-        )
-
-
-@pytest.mark.parametrize("executor", get_schedule_executors())
-def test_skip(
-    instance: DagsterInstance,
-    workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
-    executor: ThreadPoolExecutor,
-):
-    external_schedule = external_repo.get_external_schedule("skip_schedule")
-    schedule_origin = external_schedule.get_external_origin()
-    freeze_datetime = feb_27_2019_start_of_day()
-    with pendulum.test(freeze_datetime):
-        instance.start_schedule(external_schedule)
-
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-
-        assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 1
-        validate_tick(
-            ticks[0],
-            external_schedule,
-            freeze_datetime,
-            TickStatus.SKIPPED,
-            [run.run_id for run in instance.get_runs()],
-            expected_skip_reason="should_execute function for skip_schedule returned false.",
-        )
-
-
-@pytest.mark.parametrize("executor", get_schedule_executors())
-def test_wrong_config_schedule(
-    instance: DagsterInstance,
-    workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
-    executor: ThreadPoolExecutor,
-):
-    external_schedule = external_repo.get_external_schedule("wrong_config_schedule")
-    schedule_origin = external_schedule.get_external_origin()
-    freeze_datetime = create_pendulum_time(year=2019, month=2, day=27, hour=0, minute=0, second=0)
-    with pendulum.test(freeze_datetime):
-        instance.start_schedule(external_schedule)
-
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-
-        assert instance.get_runs_count() == 0
-
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 1
-        validate_tick(
-            ticks[0],
-            external_schedule,
-            freeze_datetime,
-            TickStatus.FAILURE,
-            [],
-            "DagsterInvalidConfigError",
-            expected_failure_count=1,
-        )
-
-
-@pytest.mark.parametrize("executor", get_schedule_executors())
-def test_schedule_run_default_config(
-    instance: DagsterInstance,
-    workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
-    executor: ThreadPoolExecutor,
-):
-    external_schedule = external_repo.get_external_schedule("default_config_schedule")
-    schedule_origin = external_schedule.get_external_origin()
-    initial_datetime = create_pendulum_time(year=2019, month=2, day=27, hour=0, minute=0, second=0)
-    with pendulum.test(initial_datetime):
-        instance.start_schedule(external_schedule)
-
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-
-        assert instance.get_runs_count() == 1
-
-        wait_for_all_runs_to_start(instance)
-
-        run = next(iter(instance.get_runs()))
-
-        validate_run_started(
-            instance,
-            run,
-            execution_time=initial_datetime,
-            expected_success=True,
-        )
-
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 1
-        validate_tick(
-            ticks[0],
-            external_schedule,
-            initial_datetime,
-            TickStatus.SUCCESS,
-            [run.run_id for run in instance.get_runs()],
-        )
-
-        assert instance.run_launcher.did_run_launch(run.run_id)  # type: ignore  # (unspecified instance subclass)
-
-
 def _get_unloadable_schedule_origin():
     load_target = workspace_load_target()
     return ExternalRepositoryOrigin(
@@ -1237,218 +650,30 @@ def _get_unloadable_workspace_load_target():
     )
 
 
-@pytest.mark.parametrize("executor", get_schedule_executors())
-def test_bad_schedules_mixed_with_good_schedule(
-    instance: DagsterInstance,
-    workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
-    executor: ThreadPoolExecutor,
-):
-    good_schedule = external_repo.get_external_schedule("simple_schedule")
-    bad_schedule = external_repo.get_external_schedule("bad_should_execute_on_odd_days_schedule")
+def test_settings():
+    settings = {"use_threads": True, "num_workers": 4}
+    with instance_for_test(overrides={"schedules": settings}) as thread_inst:
+        assert thread_inst.get_settings("schedules") == settings
 
-    good_origin = good_schedule.get_external_origin()
-    bad_origin = bad_schedule.get_external_origin()
-    unloadable_origin = _get_unloadable_schedule_origin()
-    freeze_datetime = feb_27_2019_start_of_day()
-    with pendulum.test(freeze_datetime):
-        instance.start_schedule(good_schedule)
-        instance.start_schedule(bad_schedule)
 
-        unloadable_schedule_state = InstigatorState(
-            unloadable_origin,
-            InstigatorType.SCHEDULE,
-            InstigatorStatus.RUNNING,
-            ScheduleInstigatorData("0 0 * * *", pendulum.now("UTC").timestamp()),
+@contextmanager
+def _grpc_server_external_repo(port: int, scheduler_instance: DagsterInstance):
+    server_process = open_server_process(
+        instance_ref=scheduler_instance.get_ref(),
+        port=port,
+        socket=None,
+        loadable_target_origin=loadable_target_origin(),
+    )
+    try:
+        location_origin: GrpcServerCodeLocationOrigin = GrpcServerCodeLocationOrigin(
+            host="localhost", port=port, location_name="test_location"
         )
-        instance.add_instigator_state(unloadable_schedule_state)
-
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-
-        assert instance.get_runs_count() == 1
-        wait_for_all_runs_to_start(instance)
-        validate_run_started(
-            instance,
-            next(iter(instance.get_runs())),
-            execution_time=freeze_datetime,
-        )
-
-        good_ticks = instance.get_ticks(good_origin.get_id(), good_schedule.selector_id)
-        assert len(good_ticks) == 1
-        validate_tick(
-            good_ticks[0],
-            good_schedule,
-            freeze_datetime,
-            TickStatus.SUCCESS,
-            [run.run_id for run in instance.get_runs()],
-        )
-
-        bad_ticks = instance.get_ticks(bad_origin.get_id(), bad_schedule.selector_id)
-        assert len(bad_ticks) == 1
-
-        assert bad_ticks[0].status == TickStatus.FAILURE
-
-        assert "Error occurred during the execution of should_execute for schedule bad_should_execute_on_odd_days_schedule" in bad_ticks[0].error.message  # type: ignore  # (possible none)
-
-        unloadable_ticks = instance.get_ticks(unloadable_origin.get_id(), "fake_selector")
-        assert len(unloadable_ticks) == 0
-
-    freeze_datetime = freeze_datetime.add(days=1)
-    with pendulum.test(freeze_datetime):
-        new_now = pendulum.now("UTC")
-        evaluate_schedules(workspace_context, executor, new_now)
-
-        assert instance.get_runs_count() == 3
-        wait_for_all_runs_to_start(instance)
-
-        good_schedule_runs = instance.get_runs(filters=RunsFilter.for_schedule(good_schedule))
-        assert len(good_schedule_runs) == 2
-        validate_run_started(
-            instance,
-            good_schedule_runs[0],
-            execution_time=new_now,
-        )
-
-        good_ticks = instance.get_ticks(good_origin.get_id(), good_schedule.selector_id)
-        assert len(good_ticks) == 2
-        validate_tick(
-            good_ticks[0],
-            good_schedule,
-            new_now,
-            TickStatus.SUCCESS,
-            [good_schedule_runs[0].run_id],
-        )
-
-        bad_schedule_runs = instance.get_runs(filters=RunsFilter.for_schedule(bad_schedule))
-        assert len(bad_schedule_runs) == 1
-        validate_run_started(
-            instance,
-            bad_schedule_runs[0],
-            execution_time=new_now,
-        )
-
-        bad_ticks = instance.get_ticks(bad_origin.get_id(), bad_schedule.selector_id)
-        assert len(bad_ticks) == 2
-        validate_tick(
-            bad_ticks[0],
-            bad_schedule,
-            new_now,
-            TickStatus.SUCCESS,
-            [bad_schedule_runs[0].run_id],
-        )
-
-        unloadable_ticks = instance.get_ticks(unloadable_origin.get_id(), "fake_selector")
-        assert len(unloadable_ticks) == 0
-
-
-@pytest.mark.parametrize("executor", get_schedule_executors())
-def test_run_scheduled_on_time_boundary(
-    instance: DagsterInstance,
-    workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
-    executor: ThreadPoolExecutor,
-):
-    external_schedule = external_repo.get_external_schedule("simple_schedule")
-
-    schedule_origin = external_schedule.get_external_origin()
-    freeze_datetime = feb_27_2019_start_of_day()  # 00:00:00
-    with pendulum.test(freeze_datetime):
-        # Start schedule exactly at midnight
-        instance.start_schedule(external_schedule)
-
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-
-        assert instance.get_runs_count() == 1
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 1
-        assert ticks[0].status == TickStatus.SUCCESS
-
-
-@pytest.mark.parametrize("executor", get_schedule_executors())
-def test_bad_load_repository(
-    instance: DagsterInstance,
-    workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
-    caplog: pytest.LogCaptureFixture,
-    executor: ThreadPoolExecutor,
-):
-    freeze_datetime = feb_27_2019_one_second_to_midnight()
-    with pendulum.test(freeze_datetime):
-        external_schedule = external_repo.get_external_schedule("simple_schedule")
-        valid_schedule_origin = external_schedule.get_external_origin()
-
-        # Swap out a new repository name
-        invalid_repo_origin = ExternalInstigatorOrigin(
-            ExternalRepositoryOrigin(
-                valid_schedule_origin.external_repository_origin.code_location_origin,
-                "invalid_repo_name",
-            ),
-            valid_schedule_origin.instigator_name,
-        )
-
-        schedule_state = InstigatorState(
-            invalid_repo_origin,
-            InstigatorType.SCHEDULE,
-            InstigatorStatus.RUNNING,
-            ScheduleInstigatorData("0 0 * * *", pendulum.now("UTC").timestamp()),
-        )
-        instance.add_instigator_state(schedule_state)
-
-    initial_datetime = freeze_datetime.add(seconds=1)
-    with pendulum.test(initial_datetime):
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-
-        assert instance.get_runs_count() == 0
-
-        ticks = instance.get_ticks(invalid_repo_origin.get_id(), external_schedule.selector_id)
-
-        assert len(ticks) == 0
-
-        assert (
-            "Could not find repository invalid_repo_name in location test_location to run schedule"
-            " simple_schedule"
-            in caplog.text
-        )
-
-
-@pytest.mark.parametrize("executor", get_schedule_executors())
-def test_bad_load_schedule(
-    instance: DagsterInstance,
-    workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
-    caplog,
-    executor: ThreadPoolExecutor,
-):
-    freeze_datetime = feb_27_2019_one_second_to_midnight()
-    with pendulum.test(freeze_datetime):
-        external_schedule = external_repo.get_external_schedule("simple_schedule")
-        valid_schedule_origin = external_schedule.get_external_origin()
-
-        # Swap out a new schedule name
-        invalid_repo_origin = ExternalInstigatorOrigin(
-            valid_schedule_origin.external_repository_origin,
-            "invalid_schedule",
-        )
-
-        schedule_state = InstigatorState(
-            invalid_repo_origin,
-            InstigatorType.SCHEDULE,
-            InstigatorStatus.RUNNING,
-            ScheduleInstigatorData("0 0 * * *", pendulum.now("UTC").timestamp()),
-        )
-        instance.add_instigator_state(schedule_state)
-
-    initial_datetime = freeze_datetime.add(seconds=1)
-    with pendulum.test(initial_datetime):
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-
-        assert instance.get_runs_count() == 0
-
-        ticks = instance.get_ticks(invalid_repo_origin.get_id(), schedule_state.selector_id)
-
-        assert len(ticks) == 0
-
-        assert "Could not find schedule invalid_schedule in repository the_repo." in caplog.text
+        with GrpcServerCodeLocation(origin=location_origin) as location:
+            yield location.get_repository("the_repo")
+    finally:
+        DagsterGrpcClient(port=port, socket=None).shutdown_server()
+        if server_process.poll() is None:
+            wait_for_process(server_process, timeout=30)
 
 
 @pytest.mark.parametrize("executor", get_schedule_executors())
@@ -1483,532 +708,6 @@ def test_error_load_code_location(instance: DagsterInstance, executor: ThreadPoo
             assert instance.get_runs_count() == 0
             ticks = instance.get_ticks(fake_origin.get_id(), schedule_state.selector_id)
             assert len(ticks) == 0
-
-
-@pytest.mark.parametrize("executor", get_schedule_executors())
-def test_load_code_location_not_in_workspace(
-    instance: DagsterInstance,
-    workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
-    caplog: pytest.LogCaptureFixture,
-    executor: ThreadPoolExecutor,
-):
-    freeze_datetime = to_timezone(
-        create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
-        "US/Central",
-    )
-
-    with pendulum.test(freeze_datetime):
-        external_schedule = external_repo.get_external_schedule("simple_schedule")
-        valid_schedule_origin = external_schedule.get_external_origin()
-
-        code_location_origin = valid_schedule_origin.external_repository_origin.code_location_origin
-        assert isinstance(code_location_origin, ManagedGrpcPythonEnvCodeLocationOrigin)
-
-        # Swap out a new location name
-        invalid_repo_origin = ExternalInstigatorOrigin(
-            ExternalRepositoryOrigin(
-                code_location_origin._replace(location_name="missing_location"),
-                valid_schedule_origin.external_repository_origin.repository_name,
-            ),
-            valid_schedule_origin.instigator_name,
-        )
-
-        schedule_state = InstigatorState(
-            invalid_repo_origin,
-            InstigatorType.SCHEDULE,
-            InstigatorStatus.RUNNING,
-            ScheduleInstigatorData("0 0 * * *", pendulum.now("UTC").timestamp()),
-        )
-        instance.add_instigator_state(schedule_state)
-
-    initial_datetime = freeze_datetime.add(seconds=1)
-    with pendulum.test(initial_datetime):
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-
-        assert instance.get_runs_count() == 0
-
-        ticks = instance.get_ticks(invalid_repo_origin.get_id(), schedule_state.selector_id)
-
-        assert len(ticks) == 0
-
-        assert (
-            "Schedule simple_schedule was started from a location missing_location that can no"
-            " longer be found in the workspace"
-            in caplog.text
-        )
-
-
-@pytest.mark.parametrize("executor", get_schedule_executors())
-def test_multiple_schedules_on_different_time_ranges(
-    instance: DagsterInstance,
-    workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
-    executor: ThreadPoolExecutor,
-):
-    external_schedule = external_repo.get_external_schedule("simple_schedule")
-    external_hourly_schedule = external_repo.get_external_schedule("simple_hourly_schedule")
-    freeze_datetime = feb_27_2019_one_second_to_midnight()
-    with pendulum.test(freeze_datetime):
-        instance.start_schedule(external_schedule)
-        instance.start_schedule(external_hourly_schedule)
-
-    freeze_datetime = freeze_datetime.add(seconds=2)
-    with pendulum.test(freeze_datetime):
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-
-        assert instance.get_runs_count() == 2
-        ticks = instance.get_ticks(
-            external_schedule.get_external_origin_id(), external_schedule.selector_id
-        )
-        assert len(ticks) == 1
-        assert ticks[0].status == TickStatus.SUCCESS
-
-        hourly_ticks = instance.get_ticks(
-            external_hourly_schedule.get_external_origin_id(),
-            external_hourly_schedule.selector_id,
-        )
-        assert len(hourly_ticks) == 1
-        assert hourly_ticks[0].status == TickStatus.SUCCESS
-
-    freeze_datetime = freeze_datetime.add(hours=1)
-    with pendulum.test(freeze_datetime):
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-
-        assert instance.get_runs_count() == 3
-
-        ticks = instance.get_ticks(
-            external_schedule.get_external_origin_id(), external_schedule.selector_id
-        )
-        assert len(ticks) == 1
-        assert ticks[0].status == TickStatus.SUCCESS
-
-        hourly_ticks = instance.get_ticks(
-            external_hourly_schedule.get_external_origin_id(),
-            external_hourly_schedule.selector_id,
-        )
-        assert len(hourly_ticks) == 2
-        assert len([tick for tick in hourly_ticks if tick.status == TickStatus.SUCCESS]) == 2
-
-
-@pytest.mark.parametrize("executor", get_schedule_executors())
-def test_launch_failure(
-    workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
-    executor: ThreadPoolExecutor,
-):
-    with instance_for_test(
-        overrides={
-            "run_launcher": {
-                "module": "dagster._core.test_utils",
-                "class": "ExplodingRunLauncher",
-            },
-        },
-    ) as instance:
-        external_schedule = external_repo.get_external_schedule("simple_schedule")
-
-        schedule_origin = external_schedule.get_external_origin()
-        freeze_datetime = feb_27_2019_start_of_day()
-        with pendulum.test(freeze_datetime):
-            exploding_ctx = workspace_context.copy_for_test_instance(instance)
-            instance.start_schedule(external_schedule)
-
-            evaluate_schedules(exploding_ctx, executor, pendulum.now("UTC"))
-
-            assert instance.get_runs_count() == 1
-
-            run = next(iter(instance.get_runs()))
-
-            validate_run_started(
-                instance,
-                run,
-                execution_time=freeze_datetime,
-                expected_success=False,
-            )
-
-            ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-            assert len(ticks) == 1
-            validate_tick(
-                ticks[0],
-                external_schedule,
-                freeze_datetime,
-                TickStatus.SUCCESS,
-                [run.run_id for run in instance.get_runs()],
-            )
-
-
-@pytest.mark.parametrize("executor", get_schedule_executors())
-def test_union_schedule(
-    instance: DagsterInstance,
-    workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
-    executor: ThreadPoolExecutor,
-):
-    # This is a Wednesday.
-    freeze_datetime = feb_27_2019_start_of_day()
-    with pendulum.test(freeze_datetime):
-        external_schedule = external_repo.get_external_schedule("union_schedule")
-        schedule_origin = external_schedule.get_external_origin()
-        instance.start_schedule(external_schedule)
-
-    # No new runs should be launched
-    with pendulum.test(freeze_datetime):
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-        assert instance.get_runs_count() == 0
-
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 0
-
-    freeze_datetime = freeze_datetime.add(days=1)
-    with pendulum.test(freeze_datetime):
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-        assert instance.get_runs_count() == 1
-
-        wait_for_all_runs_to_start(instance)
-
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 1
-
-        validate_tick(
-            ticks[0],
-            external_schedule,
-            create_pendulum_time(year=2019, month=2, day=28, tz="UTC"),
-            TickStatus.SUCCESS,
-            [next(iter(instance.get_runs())).run_id],
-        )
-
-        validate_run_started(
-            instance,
-            next(iter(instance.get_runs())),
-            execution_time=create_pendulum_time(year=2019, month=2, day=28, tz="UTC"),
-            partition_time=None,
-        )
-
-    freeze_datetime = freeze_datetime.add(days=1)
-    with pendulum.test(freeze_datetime):
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-        assert instance.get_runs_count() == 2
-
-        wait_for_all_runs_to_start(instance)
-
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 2
-
-        validate_tick(
-            ticks[0],
-            external_schedule,
-            create_pendulum_time(year=2019, month=3, day=1, tz="UTC"),
-            TickStatus.SUCCESS,
-            [next(iter(instance.get_runs())).run_id],
-        )
-
-        validate_run_started(
-            instance,
-            next(iter(instance.get_runs())),
-            execution_time=create_pendulum_time(year=2019, month=3, day=1, tz="UTC"),
-        )
-
-    freeze_datetime = freeze_datetime.add(days=1)
-    with pendulum.test(freeze_datetime):
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-        assert instance.get_runs_count() == 3
-
-        wait_for_all_runs_to_start(instance)
-
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 3
-
-        validate_tick(
-            ticks[0],
-            external_schedule,
-            create_pendulum_time(year=2019, month=3, day=1, hour=12, tz="UTC"),
-            TickStatus.SUCCESS,
-            [next(iter(instance.get_runs())).run_id],
-        )
-
-        validate_run_started(
-            instance,
-            next(iter(instance.get_runs())),
-            execution_time=create_pendulum_time(year=2019, month=3, day=1, hour=12, tz="UTC"),
-            partition_time=None,
-        )
-
-    # No new runs should be launched
-    freeze_datetime = freeze_datetime.add(days=1)
-    with pendulum.test(freeze_datetime):
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-        assert instance.get_runs_count() == 3
-
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 3
-
-
-@pytest.mark.parametrize("executor", get_schedule_executors())
-def test_multi_runs(
-    instance: DagsterInstance,
-    workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
-    executor: ThreadPoolExecutor,
-):
-    freeze_datetime = feb_27_2019_one_second_to_midnight()
-    with pendulum.test(freeze_datetime):
-        external_schedule = external_repo.get_external_schedule("multi_run_schedule")
-        schedule_origin = external_schedule.get_external_origin()
-        instance.start_schedule(external_schedule)
-
-        assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 0
-
-        # launch_scheduled_runs does nothing before the first tick
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-        assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 0
-
-    freeze_datetime = freeze_datetime.add(seconds=2)
-    with pendulum.test(freeze_datetime):
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-        assert instance.get_runs_count() == 2
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 1
-
-        expected_datetime = create_pendulum_time(year=2019, month=2, day=28)
-
-        runs = instance.get_runs()
-        validate_tick(
-            ticks[0],
-            external_schedule,
-            expected_datetime,
-            TickStatus.SUCCESS,
-            [run.run_id for run in runs],
-        )
-
-        wait_for_all_runs_to_start(instance)
-        runs = instance.get_runs()
-        validate_run_started(instance, runs[0], execution_time=create_pendulum_time(2019, 2, 28))
-        validate_run_started(instance, runs[1], execution_time=create_pendulum_time(2019, 2, 28))
-
-        # Verify idempotence
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-        assert instance.get_runs_count() == 2
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 1
-        assert ticks[0].status == TickStatus.SUCCESS
-
-    freeze_datetime = freeze_datetime.add(days=1)
-    with pendulum.test(freeze_datetime):
-        # Traveling one more day in the future before running results in a tick
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-        assert instance.get_runs_count() == 4
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 2
-        assert len([tick for tick in ticks if tick.status == TickStatus.SUCCESS]) == 2
-        runs = instance.get_runs()
-
-
-@pytest.mark.parametrize("executor", get_schedule_executors())
-def test_multi_run_list(
-    instance: DagsterInstance,
-    workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
-    executor: ThreadPoolExecutor,
-):
-    freeze_datetime = feb_27_2019_one_second_to_midnight()
-    with pendulum.test(freeze_datetime):
-        external_schedule = external_repo.get_external_schedule("multi_run_list_schedule")
-        schedule_origin = external_schedule.get_external_origin()
-        instance.start_schedule(external_schedule)
-
-        assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 0
-
-        # launch_scheduled_runs does nothing before the first tick
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-        assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 0
-
-    freeze_datetime = freeze_datetime.add(seconds=2)
-    with pendulum.test(freeze_datetime):
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-        assert instance.get_runs_count() == 2
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 1
-
-        expected_datetime = create_pendulum_time(year=2019, month=2, day=28)
-
-        runs = instance.get_runs()
-        validate_tick(
-            ticks[0],
-            external_schedule,
-            expected_datetime,
-            TickStatus.SUCCESS,
-            [run.run_id for run in runs],
-        )
-
-        wait_for_all_runs_to_start(instance)
-        runs = instance.get_runs()
-        validate_run_started(instance, runs[0], execution_time=create_pendulum_time(2019, 2, 28))
-        validate_run_started(instance, runs[1], execution_time=create_pendulum_time(2019, 2, 28))
-
-        # Verify idempotence
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-        assert instance.get_runs_count() == 2
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 1
-        assert ticks[0].status == TickStatus.SUCCESS
-
-    freeze_datetime = freeze_datetime.add(days=1)
-    with pendulum.test(freeze_datetime):
-        # Traveling one more day in the future before running results in a tick
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-        assert instance.get_runs_count() == 4
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 2
-        assert len([tick for tick in ticks if tick.status == TickStatus.SUCCESS]) == 2
-        runs = instance.get_runs()
-
-
-@pytest.mark.parametrize("executor", get_schedule_executors())
-def test_multi_runs_missing_run_key(
-    instance: DagsterInstance,
-    workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
-    executor: ThreadPoolExecutor,
-):
-    freeze_datetime = feb_27_2019_start_of_day()
-    with pendulum.test(freeze_datetime):
-        external_schedule = external_repo.get_external_schedule(
-            "multi_run_schedule_with_missing_run_key"
-        )
-        schedule_origin = external_schedule.get_external_origin()
-        instance.start_schedule(external_schedule)
-
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-        assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 1
-
-        validate_tick(
-            ticks[0],
-            external_schedule,
-            freeze_datetime,
-            TickStatus.FAILURE,
-            [],
-            "Error occurred during the execution function for schedule "
-            "multi_run_schedule_with_missing_run_key",
-            expected_failure_count=1,
-        )
-
-
-@pytest.mark.parametrize("executor", get_schedule_executors())
-def test_large_schedule(
-    instance: DagsterInstance,
-    workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
-    executor: ThreadPoolExecutor,
-):
-    freeze_datetime = feb_27_2019_one_second_to_midnight()
-    with pendulum.test(freeze_datetime):
-        external_schedule = external_repo.get_external_schedule("large_schedule")
-        schedule_origin = external_schedule.get_external_origin()
-        instance.start_schedule(external_schedule)
-
-        freeze_datetime = freeze_datetime.add(seconds=2)
-
-    with pendulum.test(freeze_datetime):
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-
-        assert instance.get_runs_count() == 1
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 1
-
-
-@contextmanager
-def _grpc_server_external_repo(port: int, instance: DagsterInstance):
-    server_process = open_server_process(
-        instance_ref=instance.get_ref(),
-        port=port,
-        socket=None,
-        loadable_target_origin=loadable_target_origin(),
-    )
-    try:
-        location_origin: GrpcServerCodeLocationOrigin = GrpcServerCodeLocationOrigin(
-            host="localhost", port=port, location_name="test_location"
-        )
-        with GrpcServerCodeLocation(origin=location_origin) as location:
-            yield location.get_repository("the_repo")
-    finally:
-        DagsterGrpcClient(port=port, socket=None).shutdown_server()
-        if server_process.poll() is None:
-            wait_for_process(server_process, timeout=30)
-
-
-@pytest.mark.parametrize("executor", get_schedule_executors())
-def test_skip_reason_schedule(
-    instance: DagsterInstance,
-    workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
-    executor: ThreadPoolExecutor,
-):
-    freeze_datetime = feb_27_2019_start_of_day()
-    with pendulum.test(freeze_datetime):
-        external_schedule = external_repo.get_external_schedule("empty_schedule")
-
-        schedule_origin = external_schedule.get_external_origin()
-
-        instance.start_schedule(external_schedule)
-
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-
-        assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 1
-
-        validate_tick(
-            ticks[0],
-            external_schedule,
-            freeze_datetime,
-            TickStatus.SKIPPED,
-            [],
-            expected_skip_reason="Schedule function returned an empty result",
-        )
-
-
-@pytest.mark.parametrize("executor", get_schedule_executors())
-def test_many_requests_schedule(
-    instance: DagsterInstance,
-    workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
-    executor: ThreadPoolExecutor,
-    submit_executor: Optional[ThreadPoolExecutor],
-):
-    freeze_datetime = feb_27_2019_start_of_day()
-    with pendulum.test(freeze_datetime):
-        external_schedule = external_repo.get_external_schedule("many_requests_schedule")
-
-        schedule_origin = external_schedule.get_external_origin()
-
-        instance.start_schedule(external_schedule)
-
-        evaluate_schedules(
-            workspace_context, executor, pendulum.now("UTC"), submit_executor=submit_executor
-        )
-
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 1
-
-        runs = instance.get_runs()
-        assert len(runs) == 15
-        validate_tick(
-            ticks[0],
-            external_schedule,
-            freeze_datetime,
-            TickStatus.SUCCESS,
-            [run.run_id for run in runs],
-        )
 
 
 @pytest.mark.parametrize("executor", get_schedule_executors())
@@ -2396,175 +1095,102 @@ def test_repository_namespacing(instance: DagsterInstance, executor):
             assert ticks[0].status == TickStatus.SUCCESS
 
 
-@pytest.mark.parametrize("executor", get_schedule_executors())
-def test_asset_selection(
+def test_stale_request_context(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
     external_repo: ExternalRepository,
-    executor: ThreadPoolExecutor,
 ):
-    freeze_datetime = feb_27_2019_one_second_to_midnight()
-    external_schedule = external_repo.get_external_schedule("asset_selection_schedule")
-    schedule_origin = external_schedule.get_external_origin()
-
+    freeze_datetime = feb_27_2019_start_of_day()
     with pendulum.test(freeze_datetime):
+        external_schedule = external_repo.get_external_schedule("many_requests_schedule")
+
+        schedule_origin = external_schedule.get_external_origin()
+
         instance.start_schedule(external_schedule)
+        executor = ThreadPoolExecutor()
+        blocking_executor = BlockingThreadPoolExecutor()
 
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-
-        # launch_scheduled_runs does nothing before the first tick
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-        instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-
-    freeze_datetime = freeze_datetime.add(seconds=2)
-    with pendulum.test(freeze_datetime):
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-
-        assert instance.get_runs_count() == 1
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 1
-
-        expected_datetime = create_pendulum_time(year=2019, month=2, day=28)
-
-        validate_tick(
-            ticks[0],
-            external_schedule,
-            expected_datetime,
-            TickStatus.SUCCESS,
-            [run.run_id for run in instance.get_runs()],
+        futures = {}
+        list(
+            launch_scheduled_runs(
+                workspace_context,
+                get_default_daemon_logger("SchedulerDaemon"),
+                pendulum.now("UTC"),
+                threadpool_executor=executor,
+                scheduler_run_futures=futures,
+                submit_threadpool_executor=blocking_executor,
+            )
         )
 
-        wait_for_all_runs_to_start(instance)
-        run = next(iter(instance.get_runs()))
-        assert run.asset_selection == {AssetKey("asset1")}
+        # Reload the workspace (and kill previous server) before unblocking the threads.
+        # This will cause failures if the threads do not refresh their request contexts.
+        p = workspace_context._grpc_server_registry._all_processes[0]  # noqa: SLF001
+        workspace_context.reload_workspace()
+        p.server_process.kill()
+        p.wait()
+        blocking_executor.allow()
+        wait_for_futures(futures, timeout=FUTURES_TIMEOUT)
 
-        validate_run_started(instance, run, execution_time=create_pendulum_time(2019, 2, 28))
-
-
-@pytest.mark.parametrize("executor", get_schedule_executors())
-def test_stale_asset_selection_never_materialized(
-    instance: DagsterInstance,
-    workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
-    executor: ThreadPoolExecutor,
-):
-    freeze_datetime = feb_27_2019_one_second_to_midnight()
-    external_schedule = external_repo.get_external_schedule("stale_asset_selection_schedule")
-
-    with pendulum.test(freeze_datetime):
-        instance.start_schedule(external_schedule)
-
-    # never materialized so all assets stale
-    freeze_datetime = freeze_datetime.add(seconds=2)
-    with pendulum.test(freeze_datetime):
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-        wait_for_all_runs_to_start(instance)
-        schedule_run = next((r for r in instance.get_runs() if r.job_name == "asset_job"), None)
-        assert schedule_run is not None
-        assert schedule_run.asset_selection == {AssetKey("asset1"), AssetKey("asset2")}
-        validate_run_started(
-            instance, schedule_run, execution_time=create_pendulum_time(2019, 2, 28)
-        )
-
-
-@pytest.mark.parametrize("executor", get_schedule_executors())
-def test_stale_asset_selection_empty(
-    instance: DagsterInstance,
-    workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
-    executor: ThreadPoolExecutor,
-):
-    freeze_datetime = feb_27_2019_one_second_to_midnight()
-    external_schedule = external_repo.get_external_schedule("stale_asset_selection_schedule")
-
-    with pendulum.test(freeze_datetime):
-        instance.start_schedule(external_schedule)
-
-    materialize([asset1, asset2], instance=instance)
-
-    # assets previously materialized so we expect empy set
-    freeze_datetime = freeze_datetime.add(seconds=2)
-    with pendulum.test(freeze_datetime):
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-        wait_for_all_runs_to_start(instance)
-        schedule_run = next((r for r in instance.get_runs() if r.job_name == "asset_job"), None)
-        assert schedule_run is None
-
-
-@pytest.mark.parametrize("executor", get_schedule_executors())
-def test_stale_asset_selection_subset(
-    instance: DagsterInstance,
-    workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
-    executor: ThreadPoolExecutor,
-):
-    freeze_datetime = feb_27_2019_one_second_to_midnight()
-    external_schedule = external_repo.get_external_schedule("stale_asset_selection_schedule")
-
-    with pendulum.test(freeze_datetime):
-        instance.start_schedule(external_schedule)
-
-    materialize([asset1], instance=instance)
-
-    # assets previously materialized so we expect empy set
-    freeze_datetime = freeze_datetime.add(seconds=2)
-    with pendulum.test(freeze_datetime):
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-        wait_for_all_runs_to_start(instance)
-        schedule_run = next((r for r in instance.get_runs() if r.job_name == "asset_job"), None)
-        assert schedule_run is not None
-        assert schedule_run.asset_selection == {AssetKey("asset2")}
-        validate_run_started(
-            instance, schedule_run, execution_time=create_pendulum_time(2019, 2, 28)
-        )
-
-
-@pytest.mark.parametrize("executor", get_schedule_executors())
-def test_source_asset_observation(
-    instance: DagsterInstance, workspace_context, external_repo, executor
-):
-    freeze_datetime = feb_27_2019_one_second_to_midnight()
-    external_schedule = external_repo.get_external_schedule("source_asset_observation_schedule")
-    schedule_origin = external_schedule.get_external_origin()
-
-    with pendulum.test(freeze_datetime):
-        instance.start_schedule(external_schedule)
-
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-
-        # launch_scheduled_runs does nothing before the first tick
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-        instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-
-    freeze_datetime = freeze_datetime.add(seconds=2)
-    with pendulum.test(freeze_datetime):
-        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-
-        assert instance.get_runs_count() == 1
         ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 1
 
-        expected_datetime = create_pendulum_time(year=2019, month=2, day=28)
-
+        runs = instance.get_runs()
+        assert len(runs) == 15, ticks[0].error
         validate_tick(
             ticks[0],
             external_schedule,
-            expected_datetime,
+            freeze_datetime,
             TickStatus.SUCCESS,
-            [run.run_id for run in instance.get_runs()],
+            [run.run_id for run in runs],
         )
 
-        wait_for_all_runs_to_start(instance)
-        run = next(iter(instance.get_runs()))
-        assert run.asset_selection == {AssetKey("source_asset")}
 
-        validate_run_started(instance, run, execution_time=create_pendulum_time(2019, 2, 28))
+@pytest.mark.parametrize("executor", get_schedule_executors())
+def test_launch_failure(
+    workspace_context: WorkspaceProcessContext,
+    external_repo: ExternalRepository,
+    executor: ThreadPoolExecutor,
+):
+    with instance_for_test(
+        overrides={
+            "run_launcher": {
+                "module": "dagster._core.test_utils",
+                "class": "ExplodingRunLauncher",
+            },
+        },
+    ) as scheduler_instance:
+        external_schedule = external_repo.get_external_schedule("simple_schedule")
 
+        schedule_origin = external_schedule.get_external_origin()
+        freeze_datetime = feb_27_2019_start_of_day()
+        with pendulum.test(freeze_datetime):
+            exploding_ctx = workspace_context.copy_for_test_instance(scheduler_instance)
+            scheduler_instance.start_schedule(external_schedule)
 
-def test_settings():
-    settings = {"use_threads": True, "num_workers": 4}
-    with instance_for_test(overrides={"schedules": settings}) as thread_inst:
-        assert thread_inst.get_settings("schedules") == settings
+            evaluate_schedules(exploding_ctx, executor, pendulum.now("UTC"))
+
+            assert scheduler_instance.get_runs_count() == 1
+
+            run = next(iter(scheduler_instance.get_runs()))
+
+            validate_run_started(
+                scheduler_instance,
+                run,
+                execution_time=freeze_datetime,
+                expected_success=False,
+            )
+
+            ticks = scheduler_instance.get_ticks(
+                schedule_origin.get_id(), external_schedule.selector_id
+            )
+            assert len(ticks) == 1
+            validate_tick(
+                ticks[0],
+                external_schedule,
+                freeze_datetime,
+                TickStatus.SUCCESS,
+                [run.run_id for run in scheduler_instance.get_runs()],
+            )
 
 
 @pytest.mark.parametrize("executor", get_schedule_executors())
@@ -2628,51 +1254,1584 @@ def test_schedule_mutation(
         assert len(ticks) == 1
 
 
-def test_stale_request_context(
-    instance: DagsterInstance,
-    workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
-):
-    freeze_datetime = feb_27_2019_start_of_day()
-    with pendulum.test(freeze_datetime):
-        external_schedule = external_repo.get_external_schedule("many_requests_schedule")
+class TestSchedulerRun:
+    @pytest.fixture
+    def scheduler_instance(self, instance):
+        return instance
 
-        schedule_origin = external_schedule.get_external_origin()
+    @pytest.mark.parametrize("executor", get_schedule_executors())
+    def test_simple_schedule(
+        self,
+        scheduler_instance: DagsterInstance,
+        workspace_context: WorkspaceProcessContext,
+        external_repo: ExternalRepository,
+        executor: ThreadPoolExecutor,
+    ):
+        freeze_datetime = feb_27_2019_one_second_to_midnight()
+        with pendulum.test(freeze_datetime):
+            external_schedule = external_repo.get_external_schedule("simple_schedule")
 
-        instance.start_schedule(external_schedule)
-        executor = ThreadPoolExecutor()
-        blocking_executor = BlockingThreadPoolExecutor()
+            schedule_origin = external_schedule.get_external_origin()
 
-        futures = {}
-        list(
-            launch_scheduled_runs(
-                workspace_context,
-                get_default_daemon_logger("SchedulerDaemon"),
-                pendulum.now("UTC"),
-                threadpool_executor=executor,
-                scheduler_run_futures=futures,
-                submit_threadpool_executor=blocking_executor,
+            scheduler_instance.start_schedule(external_schedule)
+
+            assert scheduler_instance.get_runs_count() == 0
+            ticks = scheduler_instance.get_ticks(
+                schedule_origin.get_id(), external_schedule.selector_id
+            )
+            assert len(ticks) == 0
+
+            # launch_scheduled_runs does nothing before the first tick
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+
+            assert scheduler_instance.get_runs_count() == 0
+            ticks = scheduler_instance.get_ticks(
+                schedule_origin.get_id(), external_schedule.selector_id
+            )
+            assert len(ticks) == 0
+
+        freeze_datetime = freeze_datetime.add(seconds=2)
+        with pendulum.test(freeze_datetime):
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+
+            assert scheduler_instance.get_runs_count() == 1
+            ticks = scheduler_instance.get_ticks(
+                schedule_origin.get_id(), external_schedule.selector_id
+            )
+            assert len(ticks) == 1
+
+            expected_datetime = create_pendulum_time(year=2019, month=2, day=28)
+
+            validate_tick(
+                ticks[0],
+                external_schedule,
+                expected_datetime,
+                TickStatus.SUCCESS,
+                [run.run_id for run in scheduler_instance.get_runs()],
+            )
+
+            wait_for_all_runs_to_start(scheduler_instance)
+            validate_run_started(
+                scheduler_instance,
+                next(iter(scheduler_instance.get_runs())),
+                execution_time=create_pendulum_time(2019, 2, 28),
+            )
+
+            # Verify idempotence
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+
+            assert scheduler_instance.get_runs_count() == 1
+            ticks = scheduler_instance.get_ticks(
+                schedule_origin.get_id(), external_schedule.selector_id
+            )
+            assert len(ticks) == 1
+            assert ticks[0].status == TickStatus.SUCCESS
+
+        # Verify advancing in time but not going past a tick doesn't add any new runs
+        freeze_datetime = freeze_datetime.add(seconds=2)
+        with pendulum.test(freeze_datetime):
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+
+            assert scheduler_instance.get_runs_count() == 1
+            ticks = scheduler_instance.get_ticks(
+                schedule_origin.get_id(), external_schedule.selector_id
+            )
+            assert len(ticks) == 1
+            assert ticks[0].status == TickStatus.SUCCESS
+
+        freeze_datetime = freeze_datetime.add(days=2)
+        with pendulum.test(freeze_datetime):
+            # Traveling two more days in the future passes two ticks times, but only the most recent
+            # will be created as a tick with a corresponding run.
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+            assert scheduler_instance.get_runs_count() == 2
+            ticks = scheduler_instance.get_ticks(
+                schedule_origin.get_id(), external_schedule.selector_id
+            )
+            assert len(ticks) == 2
+            assert len([tick for tick in ticks if tick.status == TickStatus.SUCCESS]) == 2
+
+            # Check idempotence again
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+            assert scheduler_instance.get_runs_count() == 2
+            ticks = scheduler_instance.get_ticks(
+                schedule_origin.get_id(), external_schedule.selector_id
+            )
+            assert len(ticks) == 2
+
+    # Verify that the scheduler uses selector and not origin to dedupe schedules
+    @pytest.mark.parametrize("executor", get_schedule_executors())
+    def test_schedule_with_different_origin(
+        self,
+        scheduler_instance: DagsterInstance,
+        workspace_context: WorkspaceProcessContext,
+        external_repo: ExternalRepository,
+        executor: ThreadPoolExecutor,
+    ):
+        external_schedule = external_repo.get_external_schedule("simple_schedule")
+        existing_origin = external_schedule.get_external_origin()
+
+        code_location_origin = existing_origin.external_repository_origin.code_location_origin
+        assert isinstance(code_location_origin, ManagedGrpcPythonEnvCodeLocationOrigin)
+        modified_loadable_target_origin = code_location_origin.loadable_target_origin._replace(
+            executable_path="/different/executable_path"
+        )
+
+        # Change metadata on the origin that shouldn't matter for execution
+        modified_origin = existing_origin._replace(
+            external_repository_origin=existing_origin.external_repository_origin._replace(
+                code_location_origin=code_location_origin._replace(
+                    loadable_target_origin=modified_loadable_target_origin
+                )
             )
         )
 
-        # Reload the workspace (and kill previous server) before unblocking the threads.
-        # This will cause failures if the threads do not refresh their request contexts.
-        p = workspace_context._grpc_server_registry._all_processes[0]  # noqa: SLF001
-        workspace_context.reload_workspace()
-        p.server_process.kill()
-        p.wait()
-        blocking_executor.allow()
-        wait_for_futures(futures, timeout=FUTURES_TIMEOUT)
+        freeze_datetime = feb_27_2019_one_second_to_midnight()
+        with pendulum.test(freeze_datetime):
+            schedule_state = InstigatorState(
+                modified_origin,
+                InstigatorType.SCHEDULE,
+                InstigatorStatus.RUNNING,
+                ScheduleInstigatorData(
+                    external_schedule.cron_schedule, pendulum.now("UTC").timestamp()
+                ),
+            )
+            scheduler_instance.add_instigator_state(schedule_state)
 
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 1
+            freeze_datetime = freeze_datetime.add(seconds=2)
 
-        runs = instance.get_runs()
-        assert len(runs) == 15, ticks[0].error
-        validate_tick(
-            ticks[0],
-            external_schedule,
-            freeze_datetime,
-            TickStatus.SUCCESS,
-            [run.run_id for run in runs],
+        with pendulum.test(freeze_datetime):
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+
+            assert scheduler_instance.get_runs_count() == 1
+            ticks = scheduler_instance.get_ticks(
+                existing_origin.get_id(), external_schedule.selector_id
+            )
+            assert len(ticks) == 1
+
+    @pytest.mark.parametrize("executor", get_schedule_executors())
+    def test_old_tick_schedule(
+        self,
+        scheduler_instance: DagsterInstance,
+        workspace_context: WorkspaceProcessContext,
+        external_repo: ExternalRepository,
+        executor: ThreadPoolExecutor,
+    ):
+        freeze_datetime = feb_27_2019_one_second_to_midnight()
+        with pendulum.test(freeze_datetime):
+            external_schedule = external_repo.get_external_schedule("simple_schedule")
+
+            # Create an old tick from several days ago
+            scheduler_instance.create_tick(
+                TickData(
+                    instigator_origin_id=external_schedule.get_external_origin_id(),
+                    instigator_name="simple_schedule",
+                    instigator_type=InstigatorType.SCHEDULE,
+                    status=TickStatus.STARTED,
+                    timestamp=pendulum.now("UTC").subtract(days=3).timestamp(),
+                    selector_id=external_schedule.selector_id,
+                )
+            )
+
+            schedule_origin = external_schedule.get_external_origin()
+            scheduler_instance.start_schedule(external_schedule)
+
+        freeze_datetime = freeze_datetime.add(seconds=2)
+        with pendulum.test(freeze_datetime):
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+
+            assert scheduler_instance.get_runs_count() == 1
+            ticks = scheduler_instance.get_ticks(
+                schedule_origin.get_id(), external_schedule.selector_id
+            )
+            assert len(ticks) == 2
+
+    @pytest.mark.parametrize("executor", get_schedule_executors())
+    def test_no_started_schedules(
+        self,
+        scheduler_instance: DagsterInstance,
+        workspace_context: WorkspaceProcessContext,
+        external_repo: ExternalRepository,
+        executor: ThreadPoolExecutor,
+    ):
+        external_schedule = external_repo.get_external_schedule("simple_schedule")
+        schedule_origin = external_schedule.get_external_origin()
+
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+        assert scheduler_instance.get_runs_count() == 0
+
+        ticks = scheduler_instance.get_ticks(
+            schedule_origin.get_id(), external_schedule.selector_id
         )
+        assert len(ticks) == 0
+
+    @pytest.mark.parametrize("executor", get_schedule_executors())
+    def test_schedule_without_timezone(
+        self,
+        scheduler_instance: DagsterInstance,
+        workspace_context: WorkspaceProcessContext,
+        executor: ThreadPoolExecutor,
+    ):
+        code_location = next(
+            iter(workspace_context.create_request_context().get_workspace_snapshot().values())
+        ).code_location
+        assert code_location is not None
+        external_repo = code_location.get_repository("the_repo")
+        external_schedule = external_repo.get_external_schedule("simple_schedule_no_timezone")
+        schedule_origin = external_schedule.get_external_origin()
+        initial_datetime = create_pendulum_time(
+            year=2019, month=2, day=27, hour=0, minute=0, second=0, tz="UTC"
+        )
+
+        with pendulum.test(initial_datetime):
+            scheduler_instance.start_schedule(external_schedule)
+
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+
+            assert scheduler_instance.get_runs_count() == 1
+
+            ticks = scheduler_instance.get_ticks(
+                schedule_origin.get_id(), external_schedule.selector_id
+            )
+
+            assert len(ticks) == 1
+
+            expected_datetime = create_pendulum_time(year=2019, month=2, day=27, tz="UTC")
+
+            validate_tick(
+                ticks[0],
+                external_schedule,
+                expected_datetime,
+                TickStatus.SUCCESS,
+                [run.run_id for run in scheduler_instance.get_runs()],
+            )
+
+            wait_for_all_runs_to_start(scheduler_instance)
+            validate_run_started(
+                scheduler_instance,
+                next(iter(scheduler_instance.get_runs())),
+                execution_time=expected_datetime,
+            )
+
+            # Verify idempotence
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+            assert scheduler_instance.get_runs_count() == 1
+            ticks = scheduler_instance.get_ticks(
+                schedule_origin.get_id(), external_schedule.selector_id
+            )
+            assert len(ticks) == 1
+
+    @pytest.mark.parametrize("executor", get_schedule_executors())
+    def test_bad_eval_fn_no_retries(
+        self,
+        scheduler_instance: DagsterInstance,
+        workspace_context: WorkspaceProcessContext,
+        external_repo: ExternalRepository,
+        executor: ThreadPoolExecutor,
+    ):
+        external_schedule = external_repo.get_external_schedule("wrong_config_schedule")
+        schedule_origin = external_schedule.get_external_origin()
+        freeze_datetime = create_pendulum_time(
+            year=2019, month=2, day=27, hour=0, minute=0, second=0
+        )
+        with pendulum.test(freeze_datetime):
+            scheduler_instance.start_schedule(external_schedule)
+
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+
+            assert scheduler_instance.get_runs_count() == 0
+            ticks = scheduler_instance.get_ticks(
+                schedule_origin.get_id(), external_schedule.selector_id
+            )
+            assert len(ticks) == 1
+
+            validate_tick(
+                ticks[0],
+                external_schedule,
+                freeze_datetime,
+                TickStatus.FAILURE,
+                [run.run_id for run in scheduler_instance.get_runs()],
+                "DagsterInvalidConfigError",
+                expected_failure_count=1,
+            )
+
+            # Idempotency (tick does not retry)
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+
+            assert scheduler_instance.get_runs_count() == 0
+            ticks = scheduler_instance.get_ticks(
+                schedule_origin.get_id(), external_schedule.selector_id
+            )
+            assert len(ticks) == 1
+
+            validate_tick(
+                ticks[0],
+                external_schedule,
+                freeze_datetime,
+                TickStatus.FAILURE,
+                [],
+                "DagsterInvalidConfigError",
+                expected_failure_count=1,
+            )
+
+        freeze_datetime = freeze_datetime.add(days=1)
+        with pendulum.test(freeze_datetime):
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+
+            assert scheduler_instance.get_runs_count() == 0
+            ticks = scheduler_instance.get_ticks(
+                schedule_origin.get_id(), external_schedule.selector_id
+            )
+            assert len(ticks) == 2
+
+            validate_tick(
+                ticks[0],
+                external_schedule,
+                freeze_datetime,
+                TickStatus.FAILURE,
+                [],
+                "DagsterInvalidConfigError",
+                expected_failure_count=1,
+            )
+
+    @pytest.mark.parametrize("executor", get_schedule_executors())
+    def test_invalid_eval_fn_with_retries(
+        self,
+        scheduler_instance: DagsterInstance,
+        workspace_context: WorkspaceProcessContext,
+        external_repo: ExternalRepository,
+        executor: ThreadPoolExecutor,
+    ):
+        external_schedule = external_repo.get_external_schedule("wrong_config_schedule")
+        schedule_origin = external_schedule.get_external_origin()
+        freeze_datetime = create_pendulum_time(
+            year=2019, month=2, day=27, hour=0, minute=0, second=0
+        )
+        with pendulum.test(freeze_datetime):
+            scheduler_instance.start_schedule(external_schedule)
+
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"), max_tick_retries=2)
+
+            assert scheduler_instance.get_runs_count() == 0
+            ticks = scheduler_instance.get_ticks(
+                schedule_origin.get_id(), external_schedule.selector_id
+            )
+            assert len(ticks) == 1
+
+            validate_tick(
+                ticks[0],
+                external_schedule,
+                freeze_datetime,
+                TickStatus.FAILURE,
+                [],
+                "Missing required config entry",
+                expected_failure_count=1,
+            )
+
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"), max_tick_retries=2)
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"), max_tick_retries=2)
+
+            assert scheduler_instance.get_runs_count() == 0
+            ticks = scheduler_instance.get_ticks(
+                schedule_origin.get_id(), external_schedule.selector_id
+            )
+            assert len(ticks) == 1
+
+            validate_tick(
+                ticks[0],
+                external_schedule,
+                freeze_datetime,
+                TickStatus.FAILURE,
+                [],
+                "Missing required config entry",
+                expected_failure_count=3,
+            )
+
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"), max_tick_retries=2)
+            assert scheduler_instance.get_runs_count() == 0
+            ticks = scheduler_instance.get_ticks(
+                schedule_origin.get_id(), external_schedule.selector_id
+            )
+            assert len(ticks) == 1
+
+            validate_tick(
+                ticks[0],
+                external_schedule,
+                freeze_datetime,
+                TickStatus.FAILURE,
+                [],
+                "Missing required config entry",
+                expected_failure_count=3,
+            )
+
+        freeze_datetime = freeze_datetime.add(days=1)
+        with pendulum.test(freeze_datetime):
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+
+            assert scheduler_instance.get_runs_count() == 0
+            ticks = scheduler_instance.get_ticks(
+                schedule_origin.get_id(), external_schedule.selector_id
+            )
+            assert len(ticks) == 2
+
+            validate_tick(
+                ticks[0],
+                external_schedule,
+                freeze_datetime,
+                TickStatus.FAILURE,
+                [],
+                "Missing required config entry",
+                expected_failure_count=1,
+            )
+
+    @pytest.mark.parametrize("executor", get_schedule_executors())
+    def test_passes_on_retry(
+        self,
+        scheduler_instance: DagsterInstance,
+        workspace_context: WorkspaceProcessContext,
+        external_repo: ExternalRepository,
+        executor: ThreadPoolExecutor,
+    ):
+        # We need to use different keys across sync and async executors, as the dictionary is persisted across processes.
+        if isinstance(executor, SingleThreadPoolExecutor):
+            schedule_name = "passes_on_retry_schedule_sync"
+        else:
+            schedule_name = "passes_on_retry_schedule_async"
+        external_schedule = external_repo.get_external_schedule(schedule_name)
+        schedule_origin = external_schedule.get_external_origin()
+        freeze_datetime = create_pendulum_time(
+            year=2019, month=2, day=27, hour=0, minute=0, second=0
+        )
+        with pendulum.test(freeze_datetime):
+            scheduler_instance.start_schedule(external_schedule)
+
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"), max_tick_retries=1)
+
+            assert scheduler_instance.get_runs_count() == 0
+            ticks = scheduler_instance.get_ticks(
+                schedule_origin.get_id(), external_schedule.selector_id
+            )
+            assert len(ticks) == 1
+
+            validate_tick(
+                ticks[0],
+                external_schedule,
+                freeze_datetime,
+                TickStatus.FAILURE,
+                [],
+                f"Error occurred during the evaluation of schedule {schedule_name}",
+                expected_failure_count=1,
+            )
+
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"), max_tick_retries=1)
+
+            assert scheduler_instance.get_runs_count() == 1
+            ticks = scheduler_instance.get_ticks(
+                schedule_origin.get_id(), external_schedule.selector_id
+            )
+            assert len(ticks) == 1
+
+            validate_tick(
+                ticks[0],
+                external_schedule,
+                freeze_datetime,
+                TickStatus.SUCCESS,
+                [run.run_id for run in scheduler_instance.get_runs()],
+                expected_failure_count=1,
+            )
+
+        freeze_datetime = freeze_datetime.add(days=1)
+        with pendulum.test(freeze_datetime):
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"), max_tick_retries=1)
+
+            assert scheduler_instance.get_runs_count() == 2
+            ticks = scheduler_instance.get_ticks(
+                schedule_origin.get_id(), external_schedule.selector_id
+            )
+            assert len(ticks) == 2
+
+            validate_tick(
+                ticks[0],
+                external_schedule,
+                freeze_datetime,
+                TickStatus.SUCCESS,
+                [next(iter(scheduler_instance.get_runs())).run_id],
+                expected_failure_count=0,
+            )
+
+    @pytest.mark.parametrize("executor", get_schedule_executors())
+    def test_bad_should_execute(
+        self,
+        scheduler_instance: DagsterInstance,
+        workspace_context: WorkspaceProcessContext,
+        external_repo: ExternalRepository,
+        executor: ThreadPoolExecutor,
+    ):
+        external_schedule = external_repo.get_external_schedule("bad_should_execute_schedule")
+        schedule_origin = external_schedule.get_external_origin()
+        initial_datetime = create_pendulum_time(
+            year=2019,
+            month=2,
+            day=27,
+            hour=0,
+            minute=0,
+            second=0,
+        )
+        with pendulum.test(initial_datetime):
+            scheduler_instance.start_schedule(external_schedule)
+
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+
+            assert scheduler_instance.get_runs_count() == 0
+            ticks = scheduler_instance.get_ticks(
+                schedule_origin.get_id(), external_schedule.selector_id
+            )
+            assert len(ticks) == 1
+
+            validate_tick(
+                ticks[0],
+                external_schedule,
+                initial_datetime,
+                TickStatus.FAILURE,
+                [run.run_id for run in scheduler_instance.get_runs()],
+                "Error occurred during the execution of should_execute for schedule"
+                " bad_should_execute_schedule",
+                expected_failure_count=1,
+            )
+
+    @pytest.mark.parametrize("executor", get_schedule_executors())
+    def test_skip(
+        self,
+        scheduler_instance: DagsterInstance,
+        workspace_context: WorkspaceProcessContext,
+        external_repo: ExternalRepository,
+        executor: ThreadPoolExecutor,
+    ):
+        external_schedule = external_repo.get_external_schedule("skip_schedule")
+        schedule_origin = external_schedule.get_external_origin()
+        freeze_datetime = feb_27_2019_start_of_day()
+        with pendulum.test(freeze_datetime):
+            scheduler_instance.start_schedule(external_schedule)
+
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+
+            assert scheduler_instance.get_runs_count() == 0
+            ticks = scheduler_instance.get_ticks(
+                schedule_origin.get_id(), external_schedule.selector_id
+            )
+            assert len(ticks) == 1
+            validate_tick(
+                ticks[0],
+                external_schedule,
+                freeze_datetime,
+                TickStatus.SKIPPED,
+                [run.run_id for run in scheduler_instance.get_runs()],
+                expected_skip_reason="should_execute function for skip_schedule returned false.",
+            )
+
+    @pytest.mark.parametrize("executor", get_schedule_executors())
+    def test_wrong_config_schedule(
+        self,
+        scheduler_instance: DagsterInstance,
+        workspace_context: WorkspaceProcessContext,
+        external_repo: ExternalRepository,
+        executor: ThreadPoolExecutor,
+    ):
+        external_schedule = external_repo.get_external_schedule("wrong_config_schedule")
+        schedule_origin = external_schedule.get_external_origin()
+        freeze_datetime = create_pendulum_time(
+            year=2019, month=2, day=27, hour=0, minute=0, second=0
+        )
+        with pendulum.test(freeze_datetime):
+            scheduler_instance.start_schedule(external_schedule)
+
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+
+            assert scheduler_instance.get_runs_count() == 0
+
+            ticks = scheduler_instance.get_ticks(
+                schedule_origin.get_id(), external_schedule.selector_id
+            )
+            assert len(ticks) == 1
+            validate_tick(
+                ticks[0],
+                external_schedule,
+                freeze_datetime,
+                TickStatus.FAILURE,
+                [],
+                "DagsterInvalidConfigError",
+                expected_failure_count=1,
+            )
+
+    @pytest.mark.parametrize("executor", get_schedule_executors())
+    def test_schedule_run_default_config(
+        self,
+        scheduler_instance: DagsterInstance,
+        workspace_context: WorkspaceProcessContext,
+        external_repo: ExternalRepository,
+        executor: ThreadPoolExecutor,
+    ):
+        external_schedule = external_repo.get_external_schedule("default_config_schedule")
+        schedule_origin = external_schedule.get_external_origin()
+        initial_datetime = create_pendulum_time(
+            year=2019, month=2, day=27, hour=0, minute=0, second=0
+        )
+        with pendulum.test(initial_datetime):
+            scheduler_instance.start_schedule(external_schedule)
+
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+
+            assert scheduler_instance.get_runs_count() == 1
+
+            wait_for_all_runs_to_start(scheduler_instance)
+
+            run = next(iter(scheduler_instance.get_runs()))
+
+            validate_run_started(
+                scheduler_instance,
+                run,
+                execution_time=initial_datetime,
+                expected_success=True,
+            )
+
+            ticks = scheduler_instance.get_ticks(
+                schedule_origin.get_id(), external_schedule.selector_id
+            )
+            assert len(ticks) == 1
+            validate_tick(
+                ticks[0],
+                external_schedule,
+                initial_datetime,
+                TickStatus.SUCCESS,
+                [run.run_id for run in scheduler_instance.get_runs()],
+            )
+
+            assert scheduler_instance.run_launcher.did_run_launch(run.run_id)  # type: ignore  # (unspecified scheduler_instance subclass)
+
+    @pytest.mark.parametrize("executor", get_schedule_executors())
+    def test_bad_schedules_mixed_with_good_schedule(
+        self,
+        scheduler_instance: DagsterInstance,
+        workspace_context: WorkspaceProcessContext,
+        external_repo: ExternalRepository,
+        executor: ThreadPoolExecutor,
+    ):
+        good_schedule = external_repo.get_external_schedule("simple_schedule")
+        bad_schedule = external_repo.get_external_schedule(
+            "bad_should_execute_on_odd_days_schedule"
+        )
+
+        good_origin = good_schedule.get_external_origin()
+        bad_origin = bad_schedule.get_external_origin()
+        unloadable_origin = _get_unloadable_schedule_origin()
+        freeze_datetime = feb_27_2019_start_of_day()
+        with pendulum.test(freeze_datetime):
+            scheduler_instance.start_schedule(good_schedule)
+            scheduler_instance.start_schedule(bad_schedule)
+
+            unloadable_schedule_state = InstigatorState(
+                unloadable_origin,
+                InstigatorType.SCHEDULE,
+                InstigatorStatus.RUNNING,
+                ScheduleInstigatorData("0 0 * * *", pendulum.now("UTC").timestamp()),
+            )
+            scheduler_instance.add_instigator_state(unloadable_schedule_state)
+
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+
+            assert scheduler_instance.get_runs_count() == 1
+            wait_for_all_runs_to_start(scheduler_instance)
+            validate_run_started(
+                scheduler_instance,
+                next(iter(scheduler_instance.get_runs())),
+                execution_time=freeze_datetime,
+            )
+
+            good_ticks = scheduler_instance.get_ticks(
+                good_origin.get_id(), good_schedule.selector_id
+            )
+            assert len(good_ticks) == 1
+            validate_tick(
+                good_ticks[0],
+                good_schedule,
+                freeze_datetime,
+                TickStatus.SUCCESS,
+                [run.run_id for run in scheduler_instance.get_runs()],
+            )
+
+            bad_ticks = scheduler_instance.get_ticks(bad_origin.get_id(), bad_schedule.selector_id)
+            assert len(bad_ticks) == 1
+
+            assert bad_ticks[0].status == TickStatus.FAILURE
+
+            assert "Error occurred during the execution of should_execute for schedule bad_should_execute_on_odd_days_schedule" in bad_ticks[0].error.message  # type: ignore  # (possible none)
+
+            unloadable_ticks = scheduler_instance.get_ticks(
+                unloadable_origin.get_id(), "fake_selector"
+            )
+            assert len(unloadable_ticks) == 0
+
+        freeze_datetime = freeze_datetime.add(days=1)
+        with pendulum.test(freeze_datetime):
+            new_now = pendulum.now("UTC")
+            evaluate_schedules(workspace_context, executor, new_now)
+
+            assert scheduler_instance.get_runs_count() == 3
+            wait_for_all_runs_to_start(scheduler_instance)
+
+            good_schedule_runs = scheduler_instance.get_runs(
+                filters=RunsFilter.for_schedule(good_schedule)
+            )
+            assert len(good_schedule_runs) == 2
+            validate_run_started(
+                scheduler_instance,
+                good_schedule_runs[0],
+                execution_time=new_now,
+            )
+
+            good_ticks = scheduler_instance.get_ticks(
+                good_origin.get_id(), good_schedule.selector_id
+            )
+            assert len(good_ticks) == 2
+            validate_tick(
+                good_ticks[0],
+                good_schedule,
+                new_now,
+                TickStatus.SUCCESS,
+                [good_schedule_runs[0].run_id],
+            )
+
+            bad_schedule_runs = scheduler_instance.get_runs(
+                filters=RunsFilter.for_schedule(bad_schedule)
+            )
+            assert len(bad_schedule_runs) == 1
+            validate_run_started(
+                scheduler_instance,
+                bad_schedule_runs[0],
+                execution_time=new_now,
+            )
+
+            bad_ticks = scheduler_instance.get_ticks(bad_origin.get_id(), bad_schedule.selector_id)
+            assert len(bad_ticks) == 2
+            validate_tick(
+                bad_ticks[0],
+                bad_schedule,
+                new_now,
+                TickStatus.SUCCESS,
+                [bad_schedule_runs[0].run_id],
+            )
+
+            unloadable_ticks = scheduler_instance.get_ticks(
+                unloadable_origin.get_id(), "fake_selector"
+            )
+            assert len(unloadable_ticks) == 0
+
+    @pytest.mark.parametrize("executor", get_schedule_executors())
+    def test_run_scheduled_on_time_boundary(
+        self,
+        scheduler_instance: DagsterInstance,
+        workspace_context: WorkspaceProcessContext,
+        external_repo: ExternalRepository,
+        executor: ThreadPoolExecutor,
+    ):
+        external_schedule = external_repo.get_external_schedule("simple_schedule")
+
+        schedule_origin = external_schedule.get_external_origin()
+        freeze_datetime = feb_27_2019_start_of_day()  # 00:00:00
+        with pendulum.test(freeze_datetime):
+            # Start schedule exactly at midnight
+            scheduler_instance.start_schedule(external_schedule)
+
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+
+            assert scheduler_instance.get_runs_count() == 1
+            ticks = scheduler_instance.get_ticks(
+                schedule_origin.get_id(), external_schedule.selector_id
+            )
+            assert len(ticks) == 1
+            assert ticks[0].status == TickStatus.SUCCESS
+
+    @pytest.mark.parametrize("executor", get_schedule_executors())
+    def test_bad_load_repository(
+        self,
+        scheduler_instance: DagsterInstance,
+        workspace_context: WorkspaceProcessContext,
+        external_repo: ExternalRepository,
+        caplog: pytest.LogCaptureFixture,
+        executor: ThreadPoolExecutor,
+    ):
+        freeze_datetime = feb_27_2019_one_second_to_midnight()
+        with pendulum.test(freeze_datetime):
+            external_schedule = external_repo.get_external_schedule("simple_schedule")
+            valid_schedule_origin = external_schedule.get_external_origin()
+
+            # Swap out a new repository name
+            invalid_repo_origin = ExternalInstigatorOrigin(
+                ExternalRepositoryOrigin(
+                    valid_schedule_origin.external_repository_origin.code_location_origin,
+                    "invalid_repo_name",
+                ),
+                valid_schedule_origin.instigator_name,
+            )
+
+            schedule_state = InstigatorState(
+                invalid_repo_origin,
+                InstigatorType.SCHEDULE,
+                InstigatorStatus.RUNNING,
+                ScheduleInstigatorData("0 0 * * *", pendulum.now("UTC").timestamp()),
+            )
+            scheduler_instance.add_instigator_state(schedule_state)
+
+        initial_datetime = freeze_datetime.add(seconds=1)
+        with pendulum.test(initial_datetime):
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+
+            assert scheduler_instance.get_runs_count() == 0
+
+            ticks = scheduler_instance.get_ticks(
+                invalid_repo_origin.get_id(), external_schedule.selector_id
+            )
+
+            assert len(ticks) == 0
+
+            assert (
+                "Could not find repository invalid_repo_name in location test_location to run"
+                " schedule simple_schedule"
+                in caplog.text
+            )
+
+    @pytest.mark.parametrize("executor", get_schedule_executors())
+    def test_bad_load_schedule(
+        self,
+        scheduler_instance: DagsterInstance,
+        workspace_context: WorkspaceProcessContext,
+        external_repo: ExternalRepository,
+        caplog,
+        executor: ThreadPoolExecutor,
+    ):
+        freeze_datetime = feb_27_2019_one_second_to_midnight()
+        with pendulum.test(freeze_datetime):
+            external_schedule = external_repo.get_external_schedule("simple_schedule")
+            valid_schedule_origin = external_schedule.get_external_origin()
+
+            # Swap out a new schedule name
+            invalid_repo_origin = ExternalInstigatorOrigin(
+                valid_schedule_origin.external_repository_origin,
+                "invalid_schedule",
+            )
+
+            schedule_state = InstigatorState(
+                invalid_repo_origin,
+                InstigatorType.SCHEDULE,
+                InstigatorStatus.RUNNING,
+                ScheduleInstigatorData("0 0 * * *", pendulum.now("UTC").timestamp()),
+            )
+            scheduler_instance.add_instigator_state(schedule_state)
+
+        initial_datetime = freeze_datetime.add(seconds=1)
+        with pendulum.test(initial_datetime):
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+
+            assert scheduler_instance.get_runs_count() == 0
+
+            ticks = scheduler_instance.get_ticks(
+                invalid_repo_origin.get_id(), schedule_state.selector_id
+            )
+
+            assert len(ticks) == 0
+
+            assert "Could not find schedule invalid_schedule in repository the_repo." in caplog.text
+
+    @pytest.mark.parametrize("executor", get_schedule_executors())
+    def test_load_code_location_not_in_workspace(
+        self,
+        scheduler_instance: DagsterInstance,
+        workspace_context: WorkspaceProcessContext,
+        external_repo: ExternalRepository,
+        caplog: pytest.LogCaptureFixture,
+        executor: ThreadPoolExecutor,
+    ):
+        freeze_datetime = to_timezone(
+            create_pendulum_time(
+                year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"
+            ),
+            "US/Central",
+        )
+
+        with pendulum.test(freeze_datetime):
+            external_schedule = external_repo.get_external_schedule("simple_schedule")
+            valid_schedule_origin = external_schedule.get_external_origin()
+
+            code_location_origin = (
+                valid_schedule_origin.external_repository_origin.code_location_origin
+            )
+            assert isinstance(code_location_origin, ManagedGrpcPythonEnvCodeLocationOrigin)
+
+            # Swap out a new location name
+            invalid_repo_origin = ExternalInstigatorOrigin(
+                ExternalRepositoryOrigin(
+                    code_location_origin._replace(location_name="missing_location"),
+                    valid_schedule_origin.external_repository_origin.repository_name,
+                ),
+                valid_schedule_origin.instigator_name,
+            )
+
+            schedule_state = InstigatorState(
+                invalid_repo_origin,
+                InstigatorType.SCHEDULE,
+                InstigatorStatus.RUNNING,
+                ScheduleInstigatorData("0 0 * * *", pendulum.now("UTC").timestamp()),
+            )
+            scheduler_instance.add_instigator_state(schedule_state)
+
+        initial_datetime = freeze_datetime.add(seconds=1)
+        with pendulum.test(initial_datetime):
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+
+            assert scheduler_instance.get_runs_count() == 0
+
+            ticks = scheduler_instance.get_ticks(
+                invalid_repo_origin.get_id(), schedule_state.selector_id
+            )
+
+            assert len(ticks) == 0
+
+            assert (
+                "Schedule simple_schedule was started from a location missing_location that can no"
+                " longer be found in the workspace"
+                in caplog.text
+            )
+
+    @pytest.mark.parametrize("executor", get_schedule_executors())
+    def test_multiple_schedules_on_different_time_ranges(
+        self,
+        scheduler_instance: DagsterInstance,
+        workspace_context: WorkspaceProcessContext,
+        external_repo: ExternalRepository,
+        executor: ThreadPoolExecutor,
+    ):
+        external_schedule = external_repo.get_external_schedule("simple_schedule")
+        external_hourly_schedule = external_repo.get_external_schedule("simple_hourly_schedule")
+        freeze_datetime = feb_27_2019_one_second_to_midnight()
+        with pendulum.test(freeze_datetime):
+            scheduler_instance.start_schedule(external_schedule)
+            scheduler_instance.start_schedule(external_hourly_schedule)
+
+        freeze_datetime = freeze_datetime.add(seconds=2)
+        with pendulum.test(freeze_datetime):
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+
+            assert scheduler_instance.get_runs_count() == 2
+            ticks = scheduler_instance.get_ticks(
+                external_schedule.get_external_origin_id(), external_schedule.selector_id
+            )
+            assert len(ticks) == 1
+            assert ticks[0].status == TickStatus.SUCCESS
+
+            hourly_ticks = scheduler_instance.get_ticks(
+                external_hourly_schedule.get_external_origin_id(),
+                external_hourly_schedule.selector_id,
+            )
+            assert len(hourly_ticks) == 1
+            assert hourly_ticks[0].status == TickStatus.SUCCESS
+
+        freeze_datetime = freeze_datetime.add(hours=1)
+        with pendulum.test(freeze_datetime):
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+
+            assert scheduler_instance.get_runs_count() == 3
+
+            ticks = scheduler_instance.get_ticks(
+                external_schedule.get_external_origin_id(), external_schedule.selector_id
+            )
+            assert len(ticks) == 1
+            assert ticks[0].status == TickStatus.SUCCESS
+
+            hourly_ticks = scheduler_instance.get_ticks(
+                external_hourly_schedule.get_external_origin_id(),
+                external_hourly_schedule.selector_id,
+            )
+            assert len(hourly_ticks) == 2
+            assert len([tick for tick in hourly_ticks if tick.status == TickStatus.SUCCESS]) == 2
+
+    @pytest.mark.parametrize("executor", get_schedule_executors())
+    def test_union_schedule(
+        self,
+        scheduler_instance: DagsterInstance,
+        workspace_context: WorkspaceProcessContext,
+        external_repo: ExternalRepository,
+        executor: ThreadPoolExecutor,
+    ):
+        # This is a Wednesday.
+        freeze_datetime = feb_27_2019_start_of_day()
+        with pendulum.test(freeze_datetime):
+            external_schedule = external_repo.get_external_schedule("union_schedule")
+            schedule_origin = external_schedule.get_external_origin()
+            scheduler_instance.start_schedule(external_schedule)
+
+        # No new runs should be launched
+        with pendulum.test(freeze_datetime):
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+            assert scheduler_instance.get_runs_count() == 0
+
+            ticks = scheduler_instance.get_ticks(
+                schedule_origin.get_id(), external_schedule.selector_id
+            )
+            assert len(ticks) == 0
+
+        freeze_datetime = freeze_datetime.add(days=1)
+        with pendulum.test(freeze_datetime):
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+            assert scheduler_instance.get_runs_count() == 1
+
+            wait_for_all_runs_to_start(scheduler_instance)
+
+            ticks = scheduler_instance.get_ticks(
+                schedule_origin.get_id(), external_schedule.selector_id
+            )
+            assert len(ticks) == 1
+
+            validate_tick(
+                ticks[0],
+                external_schedule,
+                create_pendulum_time(year=2019, month=2, day=28, tz="UTC"),
+                TickStatus.SUCCESS,
+                [next(iter(scheduler_instance.get_runs())).run_id],
+            )
+
+            validate_run_started(
+                scheduler_instance,
+                next(iter(scheduler_instance.get_runs())),
+                execution_time=create_pendulum_time(year=2019, month=2, day=28, tz="UTC"),
+                partition_time=None,
+            )
+
+        freeze_datetime = freeze_datetime.add(days=1)
+        with pendulum.test(freeze_datetime):
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+            assert scheduler_instance.get_runs_count() == 2
+
+            wait_for_all_runs_to_start(scheduler_instance)
+
+            ticks = scheduler_instance.get_ticks(
+                schedule_origin.get_id(), external_schedule.selector_id
+            )
+            assert len(ticks) == 2
+
+            validate_tick(
+                ticks[0],
+                external_schedule,
+                create_pendulum_time(year=2019, month=3, day=1, tz="UTC"),
+                TickStatus.SUCCESS,
+                [next(iter(scheduler_instance.get_runs())).run_id],
+            )
+
+            validate_run_started(
+                scheduler_instance,
+                next(iter(scheduler_instance.get_runs())),
+                execution_time=create_pendulum_time(year=2019, month=3, day=1, tz="UTC"),
+            )
+
+        freeze_datetime = freeze_datetime.add(days=1)
+        with pendulum.test(freeze_datetime):
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+            assert scheduler_instance.get_runs_count() == 3
+
+            wait_for_all_runs_to_start(scheduler_instance)
+
+            ticks = scheduler_instance.get_ticks(
+                schedule_origin.get_id(), external_schedule.selector_id
+            )
+            assert len(ticks) == 3
+
+            validate_tick(
+                ticks[0],
+                external_schedule,
+                create_pendulum_time(year=2019, month=3, day=1, hour=12, tz="UTC"),
+                TickStatus.SUCCESS,
+                [next(iter(scheduler_instance.get_runs())).run_id],
+            )
+
+            validate_run_started(
+                scheduler_instance,
+                next(iter(scheduler_instance.get_runs())),
+                execution_time=create_pendulum_time(year=2019, month=3, day=1, hour=12, tz="UTC"),
+                partition_time=None,
+            )
+
+        # No new runs should be launched
+        freeze_datetime = freeze_datetime.add(days=1)
+        with pendulum.test(freeze_datetime):
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+            assert scheduler_instance.get_runs_count() == 3
+
+            ticks = scheduler_instance.get_ticks(
+                schedule_origin.get_id(), external_schedule.selector_id
+            )
+            assert len(ticks) == 3
+
+    @pytest.mark.parametrize("executor", get_schedule_executors())
+    def test_multi_runs(
+        self,
+        scheduler_instance: DagsterInstance,
+        workspace_context: WorkspaceProcessContext,
+        external_repo: ExternalRepository,
+        executor: ThreadPoolExecutor,
+    ):
+        freeze_datetime = feb_27_2019_one_second_to_midnight()
+        with pendulum.test(freeze_datetime):
+            external_schedule = external_repo.get_external_schedule("multi_run_schedule")
+            schedule_origin = external_schedule.get_external_origin()
+            scheduler_instance.start_schedule(external_schedule)
+
+            assert scheduler_instance.get_runs_count() == 0
+            ticks = scheduler_instance.get_ticks(
+                schedule_origin.get_id(), external_schedule.selector_id
+            )
+            assert len(ticks) == 0
+
+            # launch_scheduled_runs does nothing before the first tick
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+            assert scheduler_instance.get_runs_count() == 0
+            ticks = scheduler_instance.get_ticks(
+                schedule_origin.get_id(), external_schedule.selector_id
+            )
+            assert len(ticks) == 0
+
+        freeze_datetime = freeze_datetime.add(seconds=2)
+        with pendulum.test(freeze_datetime):
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+            assert scheduler_instance.get_runs_count() == 2
+            ticks = scheduler_instance.get_ticks(
+                schedule_origin.get_id(), external_schedule.selector_id
+            )
+            assert len(ticks) == 1
+
+            expected_datetime = create_pendulum_time(year=2019, month=2, day=28)
+
+            runs = scheduler_instance.get_runs()
+            validate_tick(
+                ticks[0],
+                external_schedule,
+                expected_datetime,
+                TickStatus.SUCCESS,
+                [run.run_id for run in runs],
+            )
+
+            wait_for_all_runs_to_start(scheduler_instance)
+            runs = scheduler_instance.get_runs()
+            validate_run_started(
+                scheduler_instance, runs[0], execution_time=create_pendulum_time(2019, 2, 28)
+            )
+            validate_run_started(
+                scheduler_instance, runs[1], execution_time=create_pendulum_time(2019, 2, 28)
+            )
+
+            # Verify idempotence
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+            assert scheduler_instance.get_runs_count() == 2
+            ticks = scheduler_instance.get_ticks(
+                schedule_origin.get_id(), external_schedule.selector_id
+            )
+            assert len(ticks) == 1
+            assert ticks[0].status == TickStatus.SUCCESS
+
+        freeze_datetime = freeze_datetime.add(days=1)
+        with pendulum.test(freeze_datetime):
+            # Traveling one more day in the future before running results in a tick
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+            assert scheduler_instance.get_runs_count() == 4
+            ticks = scheduler_instance.get_ticks(
+                schedule_origin.get_id(), external_schedule.selector_id
+            )
+            assert len(ticks) == 2
+            assert len([tick for tick in ticks if tick.status == TickStatus.SUCCESS]) == 2
+            runs = scheduler_instance.get_runs()
+
+    @pytest.mark.parametrize("executor", get_schedule_executors())
+    def test_multi_run_list(
+        self,
+        scheduler_instance: DagsterInstance,
+        workspace_context: WorkspaceProcessContext,
+        external_repo: ExternalRepository,
+        executor: ThreadPoolExecutor,
+    ):
+        freeze_datetime = feb_27_2019_one_second_to_midnight()
+        with pendulum.test(freeze_datetime):
+            external_schedule = external_repo.get_external_schedule("multi_run_list_schedule")
+            schedule_origin = external_schedule.get_external_origin()
+            scheduler_instance.start_schedule(external_schedule)
+
+            assert scheduler_instance.get_runs_count() == 0
+            ticks = scheduler_instance.get_ticks(
+                schedule_origin.get_id(), external_schedule.selector_id
+            )
+            assert len(ticks) == 0
+
+            # launch_scheduled_runs does nothing before the first tick
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+            assert scheduler_instance.get_runs_count() == 0
+            ticks = scheduler_instance.get_ticks(
+                schedule_origin.get_id(), external_schedule.selector_id
+            )
+            assert len(ticks) == 0
+
+        freeze_datetime = freeze_datetime.add(seconds=2)
+        with pendulum.test(freeze_datetime):
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+            assert scheduler_instance.get_runs_count() == 2
+            ticks = scheduler_instance.get_ticks(
+                schedule_origin.get_id(), external_schedule.selector_id
+            )
+            assert len(ticks) == 1
+
+            expected_datetime = create_pendulum_time(year=2019, month=2, day=28)
+
+            runs = scheduler_instance.get_runs()
+            validate_tick(
+                ticks[0],
+                external_schedule,
+                expected_datetime,
+                TickStatus.SUCCESS,
+                [run.run_id for run in runs],
+            )
+
+            wait_for_all_runs_to_start(scheduler_instance)
+            runs = scheduler_instance.get_runs()
+            validate_run_started(
+                scheduler_instance, runs[0], execution_time=create_pendulum_time(2019, 2, 28)
+            )
+            validate_run_started(
+                scheduler_instance, runs[1], execution_time=create_pendulum_time(2019, 2, 28)
+            )
+
+            # Verify idempotence
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+            assert scheduler_instance.get_runs_count() == 2
+            ticks = scheduler_instance.get_ticks(
+                schedule_origin.get_id(), external_schedule.selector_id
+            )
+            assert len(ticks) == 1
+            assert ticks[0].status == TickStatus.SUCCESS
+
+        freeze_datetime = freeze_datetime.add(days=1)
+        with pendulum.test(freeze_datetime):
+            # Traveling one more day in the future before running results in a tick
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+            assert scheduler_instance.get_runs_count() == 4
+            ticks = scheduler_instance.get_ticks(
+                schedule_origin.get_id(), external_schedule.selector_id
+            )
+            assert len(ticks) == 2
+            assert len([tick for tick in ticks if tick.status == TickStatus.SUCCESS]) == 2
+            runs = scheduler_instance.get_runs()
+
+    @pytest.mark.parametrize("executor", get_schedule_executors())
+    def test_multi_runs_missing_run_key(
+        self,
+        scheduler_instance: DagsterInstance,
+        workspace_context: WorkspaceProcessContext,
+        external_repo: ExternalRepository,
+        executor: ThreadPoolExecutor,
+    ):
+        freeze_datetime = feb_27_2019_start_of_day()
+        with pendulum.test(freeze_datetime):
+            external_schedule = external_repo.get_external_schedule(
+                "multi_run_schedule_with_missing_run_key"
+            )
+            schedule_origin = external_schedule.get_external_origin()
+            scheduler_instance.start_schedule(external_schedule)
+
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+            assert scheduler_instance.get_runs_count() == 0
+            ticks = scheduler_instance.get_ticks(
+                schedule_origin.get_id(), external_schedule.selector_id
+            )
+            assert len(ticks) == 1
+
+            validate_tick(
+                ticks[0],
+                external_schedule,
+                freeze_datetime,
+                TickStatus.FAILURE,
+                [],
+                "Error occurred during the execution function for schedule "
+                "multi_run_schedule_with_missing_run_key",
+                expected_failure_count=1,
+            )
+
+    @pytest.mark.parametrize("executor", get_schedule_executors())
+    def test_large_schedule(
+        self,
+        scheduler_instance: DagsterInstance,
+        workspace_context: WorkspaceProcessContext,
+        external_repo: ExternalRepository,
+        executor: ThreadPoolExecutor,
+    ):
+        freeze_datetime = feb_27_2019_one_second_to_midnight()
+        with pendulum.test(freeze_datetime):
+            external_schedule = external_repo.get_external_schedule("large_schedule")
+            schedule_origin = external_schedule.get_external_origin()
+            scheduler_instance.start_schedule(external_schedule)
+
+            freeze_datetime = freeze_datetime.add(seconds=2)
+
+        with pendulum.test(freeze_datetime):
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+
+            assert scheduler_instance.get_runs_count() == 1
+            ticks = scheduler_instance.get_ticks(
+                schedule_origin.get_id(), external_schedule.selector_id
+            )
+            assert len(ticks) == 1
+
+    @pytest.mark.parametrize("executor", get_schedule_executors())
+    def test_skip_reason_schedule(
+        self,
+        scheduler_instance: DagsterInstance,
+        workspace_context: WorkspaceProcessContext,
+        external_repo: ExternalRepository,
+        executor: ThreadPoolExecutor,
+    ):
+        freeze_datetime = feb_27_2019_start_of_day()
+        with pendulum.test(freeze_datetime):
+            external_schedule = external_repo.get_external_schedule("empty_schedule")
+
+            schedule_origin = external_schedule.get_external_origin()
+
+            scheduler_instance.start_schedule(external_schedule)
+
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+
+            assert scheduler_instance.get_runs_count() == 0
+            ticks = scheduler_instance.get_ticks(
+                schedule_origin.get_id(), external_schedule.selector_id
+            )
+            assert len(ticks) == 1
+
+            validate_tick(
+                ticks[0],
+                external_schedule,
+                freeze_datetime,
+                TickStatus.SKIPPED,
+                [],
+                expected_skip_reason="Schedule function returned an empty result",
+            )
+
+    @pytest.mark.parametrize("executor", get_schedule_executors())
+    def test_many_requests_schedule(
+        self,
+        scheduler_instance: DagsterInstance,
+        workspace_context: WorkspaceProcessContext,
+        external_repo: ExternalRepository,
+        executor: ThreadPoolExecutor,
+        submit_executor: Optional[ThreadPoolExecutor],
+    ):
+        freeze_datetime = feb_27_2019_start_of_day()
+        with pendulum.test(freeze_datetime):
+            external_schedule = external_repo.get_external_schedule("many_requests_schedule")
+
+            schedule_origin = external_schedule.get_external_origin()
+
+            scheduler_instance.start_schedule(external_schedule)
+
+            evaluate_schedules(
+                workspace_context, executor, pendulum.now("UTC"), submit_executor=submit_executor
+            )
+
+            ticks = scheduler_instance.get_ticks(
+                schedule_origin.get_id(), external_schedule.selector_id
+            )
+            assert len(ticks) == 1
+
+            runs = scheduler_instance.get_runs()
+            assert len(runs) == 15
+            validate_tick(
+                ticks[0],
+                external_schedule,
+                freeze_datetime,
+                TickStatus.SUCCESS,
+                [run.run_id for run in runs],
+            )
+
+    @pytest.mark.parametrize("executor", get_schedule_executors())
+    def test_asset_selection(
+        self,
+        scheduler_instance: DagsterInstance,
+        workspace_context: WorkspaceProcessContext,
+        external_repo: ExternalRepository,
+        executor: ThreadPoolExecutor,
+    ):
+        freeze_datetime = feb_27_2019_one_second_to_midnight()
+        external_schedule = external_repo.get_external_schedule("asset_selection_schedule")
+        schedule_origin = external_schedule.get_external_origin()
+
+        with pendulum.test(freeze_datetime):
+            scheduler_instance.start_schedule(external_schedule)
+
+            ticks = scheduler_instance.get_ticks(
+                schedule_origin.get_id(), external_schedule.selector_id
+            )
+
+            # launch_scheduled_runs does nothing before the first tick
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+            scheduler_instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+
+        freeze_datetime = freeze_datetime.add(seconds=2)
+        with pendulum.test(freeze_datetime):
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+
+            assert scheduler_instance.get_runs_count() == 1
+            ticks = scheduler_instance.get_ticks(
+                schedule_origin.get_id(), external_schedule.selector_id
+            )
+            assert len(ticks) == 1
+
+            expected_datetime = create_pendulum_time(year=2019, month=2, day=28)
+
+            validate_tick(
+                ticks[0],
+                external_schedule,
+                expected_datetime,
+                TickStatus.SUCCESS,
+                [run.run_id for run in scheduler_instance.get_runs()],
+            )
+
+            wait_for_all_runs_to_start(scheduler_instance)
+            run = next(iter(scheduler_instance.get_runs()))
+            assert run.asset_selection == {AssetKey("asset1")}
+
+            validate_run_started(
+                scheduler_instance, run, execution_time=create_pendulum_time(2019, 2, 28)
+            )
+
+    @pytest.mark.parametrize("executor", get_schedule_executors())
+    def test_stale_asset_selection_never_materialized(
+        self,
+        scheduler_instance: DagsterInstance,
+        workspace_context: WorkspaceProcessContext,
+        external_repo: ExternalRepository,
+        executor: ThreadPoolExecutor,
+    ):
+        freeze_datetime = feb_27_2019_one_second_to_midnight()
+        external_schedule = external_repo.get_external_schedule("stale_asset_selection_schedule")
+
+        with pendulum.test(freeze_datetime):
+            scheduler_instance.start_schedule(external_schedule)
+
+        # never materialized so all assets stale
+        freeze_datetime = freeze_datetime.add(seconds=2)
+        with pendulum.test(freeze_datetime):
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+            wait_for_all_runs_to_start(scheduler_instance)
+            schedule_run = next(
+                (r for r in scheduler_instance.get_runs() if r.job_name == "asset_job"), None
+            )
+            assert schedule_run is not None
+            assert schedule_run.asset_selection == {AssetKey("asset1"), AssetKey("asset2")}
+            validate_run_started(
+                scheduler_instance, schedule_run, execution_time=create_pendulum_time(2019, 2, 28)
+            )
+
+    @pytest.mark.parametrize("executor", get_schedule_executors())
+    def test_stale_asset_selection_empty(
+        self,
+        scheduler_instance: DagsterInstance,
+        workspace_context: WorkspaceProcessContext,
+        external_repo: ExternalRepository,
+        executor: ThreadPoolExecutor,
+    ):
+        freeze_datetime = feb_27_2019_one_second_to_midnight()
+        external_schedule = external_repo.get_external_schedule("stale_asset_selection_schedule")
+
+        with pendulum.test(freeze_datetime):
+            scheduler_instance.start_schedule(external_schedule)
+
+        materialize([asset1, asset2], instance=scheduler_instance)
+
+        # assets previously materialized so we expect empy set
+        freeze_datetime = freeze_datetime.add(seconds=2)
+        with pendulum.test(freeze_datetime):
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+            wait_for_all_runs_to_start(scheduler_instance)
+            schedule_run = next(
+                (r for r in scheduler_instance.get_runs() if r.job_name == "asset_job"), None
+            )
+            assert schedule_run is None
+
+    @pytest.mark.parametrize("executor", get_schedule_executors())
+    def test_stale_asset_selection_subset(
+        self,
+        scheduler_instance: DagsterInstance,
+        workspace_context: WorkspaceProcessContext,
+        external_repo: ExternalRepository,
+        executor: ThreadPoolExecutor,
+    ):
+        freeze_datetime = feb_27_2019_one_second_to_midnight()
+        external_schedule = external_repo.get_external_schedule("stale_asset_selection_schedule")
+
+        with pendulum.test(freeze_datetime):
+            scheduler_instance.start_schedule(external_schedule)
+
+        materialize([asset1], instance=scheduler_instance)
+
+        # assets previously materialized so we expect empy set
+        freeze_datetime = freeze_datetime.add(seconds=2)
+        with pendulum.test(freeze_datetime):
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+            wait_for_all_runs_to_start(scheduler_instance)
+            schedule_run = next(
+                (r for r in scheduler_instance.get_runs() if r.job_name == "asset_job"), None
+            )
+            assert schedule_run is not None
+            assert schedule_run.asset_selection == {AssetKey("asset2")}
+            validate_run_started(
+                scheduler_instance, schedule_run, execution_time=create_pendulum_time(2019, 2, 28)
+            )
+
+    @pytest.mark.parametrize("executor", get_schedule_executors())
+    def test_source_asset_observation(
+        self, scheduler_instance: DagsterInstance, workspace_context, external_repo, executor
+    ):
+        freeze_datetime = feb_27_2019_one_second_to_midnight()
+        external_schedule = external_repo.get_external_schedule("source_asset_observation_schedule")
+        schedule_origin = external_schedule.get_external_origin()
+
+        with pendulum.test(freeze_datetime):
+            scheduler_instance.start_schedule(external_schedule)
+
+            ticks = scheduler_instance.get_ticks(
+                schedule_origin.get_id(), external_schedule.selector_id
+            )
+
+            # launch_scheduled_runs does nothing before the first tick
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+            scheduler_instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+
+        freeze_datetime = freeze_datetime.add(seconds=2)
+        with pendulum.test(freeze_datetime):
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+
+            assert scheduler_instance.get_runs_count() == 1
+            ticks = scheduler_instance.get_ticks(
+                schedule_origin.get_id(), external_schedule.selector_id
+            )
+            assert len(ticks) == 1
+
+            expected_datetime = create_pendulum_time(year=2019, month=2, day=28)
+
+            validate_tick(
+                ticks[0],
+                external_schedule,
+                expected_datetime,
+                TickStatus.SUCCESS,
+                [run.run_id for run in scheduler_instance.get_runs()],
+            )
+
+            wait_for_all_runs_to_start(scheduler_instance)
+            run = next(iter(scheduler_instance.get_runs()))
+            assert run.asset_selection == {AssetKey("source_asset")}
+
+            validate_run_started(
+                scheduler_instance, run, execution_time=create_pendulum_time(2019, 2, 28)
+            )

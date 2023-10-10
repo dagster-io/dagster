@@ -189,10 +189,7 @@ export const AssetPartitions: React.FC<Props> = ({
   return (
     <>
       {timeDimensionIdx !== -1 && (
-        <Box
-          padding={{vertical: 16, horizontal: 24}}
-          border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-        >
+        <Box padding={{vertical: 16, horizontal: 24}} border="bottom">
           <DimensionRangeWizard
             partitionKeys={selections[timeDimensionIdx]!.dimension.partitionKeys}
             health={{ranges: rangesForEachDimension[timeDimensionIdx]!}}
@@ -210,7 +207,7 @@ export const AssetPartitions: React.FC<Props> = ({
       <Box
         padding={{vertical: 16, horizontal: 24}}
         flex={{direction: 'row', justifyContent: 'space-between'}}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+        border="bottom"
       >
         <div data-testid={testId('partitions-selected')}>
           {countsFiltered.toLocaleString()} Partitions Selected
@@ -230,14 +227,14 @@ export const AssetPartitions: React.FC<Props> = ({
               key={selection.dimension.name}
               style={{display: 'flex', flex: 1, paddingRight: 1, minWidth: 200}}
               flex={{direction: 'column'}}
-              border={{side: 'right', color: Colors.KeylineGray, width: 1}}
+              border="right"
               background={Colors.Gray50}
               data-testid={testId(`partitions-${selection.dimension.name}`)}
             >
               <Box
                 flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
                 background={Colors.White}
-                border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+                border="bottom"
                 padding={{horizontal: 24, vertical: 8}}
               >
                 <div>

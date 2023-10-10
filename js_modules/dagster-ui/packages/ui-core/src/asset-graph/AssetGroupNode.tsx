@@ -11,12 +11,8 @@ import {MINIMAL_SCALE, GROUPS_ONLY_SCALE} from './AssetGraphExplorer';
 import {GroupLayout} from './layout';
 
 export const AssetGroupNode: React.FC<{group: GroupLayout; scale: number}> = ({group, scale}) => {
-  const {
-    repositoryLocationName,
-    repositoryDisambiguationRequired,
-    repositoryName,
-    groupName,
-  } = group;
+  const {repositoryLocationName, repositoryDisambiguationRequired, repositoryName, groupName} =
+    group;
 
   return (
     <div style={{position: 'relative', width: '100%', height: '100%'}}>

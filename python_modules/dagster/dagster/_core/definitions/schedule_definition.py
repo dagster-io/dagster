@@ -652,11 +652,7 @@ class ScheduleDefinition(IHasInternalInit):
                     ),
                 ):
                     if not self._should_execute(context):
-                        yield SkipReason(
-                            "should_execute function for {schedule_name} returned false.".format(
-                                schedule_name=name
-                            )
-                        )
+                        yield SkipReason(f"should_execute function for {name} returned false.")
                         return
 
                 with user_code_error_boundary(
