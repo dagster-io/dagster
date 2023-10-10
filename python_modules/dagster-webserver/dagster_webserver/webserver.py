@@ -32,7 +32,10 @@ from starlette.responses import (
 from starlette.routing import Mount, Route, WebSocketRoute
 from starlette.types import Message
 
-from .external_assets import handle_report_asset_materialization_request
+from .external_assets import (
+    handle_report_asset_check_request,
+    handle_report_asset_materialization_request,
+)
 from .graphql import GraphQLServer
 from .version import __version__
 
@@ -202,6 +205,10 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
         context = self.make_request_context(request)
         return await handle_report_asset_materialization_request(context, request)
 
+    async def report_asset_check_endpoint(self, request: Request) -> JSONResponse:
+        context = self.make_request_context(request)
+        return await handle_report_asset_check_request(context, request)
+
     def index_html_endpoint(self, request: Request):
         """Serves root html."""
         index_path = self.relative_path("webapp/build/index.html")
@@ -319,6 +326,11 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                 Route(
                     "/report_asset_materialization/{asset_key:path}",
                     self.report_asset_materialization_endpoint,
+                    methods=["POST"],
+                ),
+                Route(
+                    "/report_asset_check/{asset_key:path}",
+                    self.report_asset_check_endpoint,
                     methods=["POST"],
                 ),
                 Route("/{path:path}", self.index_html_endpoint),
