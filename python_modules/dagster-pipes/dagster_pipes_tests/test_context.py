@@ -4,7 +4,6 @@ from unittest.mock import MagicMock
 
 import jsonschema
 import pytest
-<<<<<<< HEAD:python_modules/dagster-pipes/dagster_pipes_tests/test_context.py
 from dagster_pipes import (
     PIPES_PROTOCOL_VERSION,
     PIPES_PROTOCOL_VERSION_FIELD,
@@ -17,18 +16,7 @@ from dagster_pipes import (
     PipesParams,
     PipesPartitionKeyRange,
     PipesTimeWindow,
-=======
-from dagster_ext import (
-    EXT_PROTOCOL_VERSION_FIELD,
-    PROTOCOL_VERSION,
-    DagsterExtError,
-    ExtContext,
-    ExtContextData,
-    ExtDataProvenance,
-    ExtPartitionKeyRange,
-    ExtTimeWindow,
-    get_ext_json_schema,
->>>>>>> c16b2ba0d1 ([externals] JsonSchema):python_modules/dagster-ext/dagster_ext_tests/test_context.py
+    get_pipes_json_schema,
 )
 
 TEST_PIPES_CONTEXT_DEFAULTS = PipesContextData(
@@ -55,19 +43,12 @@ class _DirectContextLoader(PipesContextLoader):
 
 
 def _make_external_execution_context(**kwargs):
-<<<<<<< HEAD:python_modules/dagster-pipes/dagster_pipes_tests/test_context.py
-    kwargs = {**TEST_PIPES_CONTEXT_DEFAULTS, **kwargs}
+    data = PipesContextData(**{**TEST_PIPES_CONTEXT_DEFAULTS, **kwargs})
+    jsonschema.validate(data, get_pipes_json_schema("context"))
     return PipesContext(
         params_loader=MagicMock(),
-        context_loader=_DirectContextLoader(PipesContextData(**kwargs)),
+        context_loader=_DirectContextLoader(data),
         message_writer=MagicMock(),
-=======
-    data = ExtContextData({**TEST_EXT_CONTEXT_DEFAULTS, **kwargs})
-    jsonschema.validate(data, get_ext_json_schema("context"))
-    return ExtContext(
-        data=data,
-        message_channel=MagicMock(),
->>>>>>> c16b2ba0d1 ([externals] JsonSchema):python_modules/dagster-ext/dagster_ext_tests/test_context.py
     )
 
 
@@ -223,7 +204,6 @@ def test_report_twice_materialized():
         context.report_asset_materialization(asset_key="foo")
 
 
-<<<<<<< HEAD:python_modules/dagster-pipes/dagster_pipes_tests/test_context.py
 def _make_pipes_message(method, params):
     return PipesMessage(
         {
@@ -272,19 +252,19 @@ def test_multiple_close():
     # `close` is idempotent, multiple calls should not raise an error
     context.close()
     context.close()
-=======
+
+
 def test_message_json_schema_validation():
     message = {
-        EXT_PROTOCOL_VERSION_FIELD: PROTOCOL_VERSION,
+        PIPES_PROTOCOL_VERSION_FIELD: PIPES_PROTOCOL_VERSION,
         "method": "foo",
         "params": {"bar": "baz"},
     }
-    jsonschema.validate(message, get_ext_json_schema("message"))
+    jsonschema.validate(message, get_pipes_json_schema("message"))
 
 
 def test_json_schema_rejects_invalid():
     with pytest.raises(jsonschema.ValidationError):
-        jsonschema.validate({"foo": "bar"}, get_ext_json_schema("context"))
+        jsonschema.validate({"foo": "bar"}, get_pipes_json_schema("context"))
     with pytest.raises(jsonschema.ValidationError):
-        jsonschema.validate({"foo": "bar"}, get_ext_json_schema("message"))
->>>>>>> c16b2ba0d1 ([externals] JsonSchema):python_modules/dagster-ext/dagster_ext_tests/test_context.py
+        jsonschema.validate({"foo": "bar"}, get_pipes_json_schema("message"))

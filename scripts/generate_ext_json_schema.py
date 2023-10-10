@@ -13,31 +13,32 @@ from typing import (
 )
 
 import jsonschema
-from dagster_ext import (
-    ExtContextData,
-    ExtMessage,
-    get_ext_json_schema_path,
+from dagster_pipes import (
+    PIPES_PROTOCOL_VERSION_FIELD,
+    PipesContextData,
+    PipesMessage,
+    get_pipes_json_schema_path,
 )
 from pydantic import BaseModel, create_model
 from typing_extensions import TypedDict, TypeGuard
 
 OUTPUT_FILEPATH = os.path.join(
-    os.path.dirname(__file__), "../python_modules/dagster-ext/ext_protocol_schema.json"
+    os.path.dirname(__file__), "../python_modules/dagster-pipes/pipes_protocol_schema.json"
 )
 
 MODEL_CACHE: Dict[str, Any] = {}
 
 
 def main():
-    context_schema = create_pydantic_model_from_typeddict(ExtContextData).model_json_schema()
-    message_schema = create_pydantic_model_from_typeddict(ExtMessage).model_json_schema()
-    inject_dagster_ext_version_field(message_schema)
+    context_schema = create_pydantic_model_from_typeddict(PipesContextData).model_json_schema()
+    message_schema = create_pydantic_model_from_typeddict(PipesMessage).model_json_schema()
+    inject_dagster_pipes_version_field(message_schema)
     jsonschema.Draft7Validator.check_schema(context_schema)
     jsonschema.Draft7Validator.check_schema(message_schema)
 
-    with open(get_ext_json_schema_path("context"), "w") as f:
+    with open(get_pipes_json_schema_path("context"), "w") as f:
         f.write(json.dumps(context_schema, indent=2))
-    with open(get_ext_json_schema_path("message"), "w") as f:
+    with open(get_pipes_json_schema_path("message"), "w") as f:
         f.write(json.dumps(message_schema, indent=2))
 
 
@@ -58,12 +59,12 @@ def create_pydantic_model_from_typeddict(typed_dict_cls: Type[TypedDict]) -> Typ
     return MODEL_CACHE[typed_dict_cls.__name__]
 
 
-def inject_dagster_ext_version_field(schema: Dict[str, Any]) -> None:
-    """Add `__dagster_ext_version` field to the schema.
+def inject_dagster_pipes_version_field(schema: Dict[str, Any]) -> None:
+    f"""Add `{PIPES_PROTOCOL_VERSION_FIELD}` field to the schema.
     This field is excluded from the Pydantic-constructed schema because it is underscore-prefixed,
     which means it is not treated as a field by Pydantic.
     """
-    schema["properties"]["__dagster_ext_version"] = {"type": "string"}
+    schema["properties"]["__dagster_pipes_version"] = {"type": "string"}
 
 
 def normalize_field_type(field_type: Type) -> Type:

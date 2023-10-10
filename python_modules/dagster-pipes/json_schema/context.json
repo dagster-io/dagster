@@ -1,6 +1,6 @@
 {
   "$defs": {
-    "ExtDataProvenance": {
+    "PipesDataProvenance": {
       "properties": {
         "code_version": {
           "title": "Code Version",
@@ -23,10 +23,10 @@
         "input_data_versions",
         "is_user_provided"
       ],
-      "title": "ExtDataProvenance",
+      "title": "PipesDataProvenance",
       "type": "object"
     },
-    "ExtPartitionKeyRange": {
+    "PipesPartitionKeyRange": {
       "properties": {
         "start": {
           "title": "Start",
@@ -41,10 +41,10 @@
         "start",
         "end"
       ],
-      "title": "ExtPartitionKeyRange",
+      "title": "PipesPartitionKeyRange",
       "type": "object"
     },
-    "ExtTimeWindow": {
+    "PipesTimeWindow": {
       "properties": {
         "start": {
           "title": "Start",
@@ -59,7 +59,7 @@
         "start",
         "end"
       ],
-      "title": "ExtTimeWindow",
+      "title": "PipesTimeWindow",
       "type": "object"
     }
   },
@@ -105,7 +105,7 @@
           "additionalProperties": {
             "anyOf": [
               {
-                "$ref": "#/$defs/ExtDataProvenance"
+                "$ref": "#/$defs/PipesDataProvenance"
               },
               {
                 "type": "null"
@@ -134,7 +134,7 @@
     "partition_key_range": {
       "anyOf": [
         {
-          "$ref": "#/$defs/ExtPartitionKeyRange"
+          "$ref": "#/$defs/PipesPartitionKeyRange"
         },
         {
           "type": "null"
@@ -144,7 +144,7 @@
     "partition_time_window": {
       "anyOf": [
         {
-          "$ref": "#/$defs/ExtTimeWindow"
+          "$ref": "#/$defs/PipesTimeWindow"
         },
         {
           "type": "null"
@@ -187,6 +187,6 @@
     "retry_number",
     "extras"
   ],
-  "title": "ExtContextData",
+  "title": "PipesContextData",
   "type": "object"
 }

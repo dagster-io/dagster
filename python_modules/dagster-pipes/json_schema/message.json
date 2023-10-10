@@ -15,7 +15,7 @@
       ],
       "title": "Params"
     },
-    "__dagster_ext_version": {
+    "__dagster_pipes_version": {
       "type": "string"
     }
   },
@@ -23,6 +23,6 @@
     "method",
     "params"
   ],
-  "title": "ExtMessage",
+  "title": "PipesMessage",
   "type": "object"
 }

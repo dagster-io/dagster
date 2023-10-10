@@ -24,8 +24,8 @@ from .utils import (
 
 _CORE_PACKAGES = [
     "python_modules/dagster",
-    "python_modules/dagster-ext",
     "python_modules/dagster-graphql",
+    "python_modules/dagster-pipes",
     "python_modules/dagster-webserver",
     "python_modules/dagit",
     "js_modules/dagster-ui",
