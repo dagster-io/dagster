@@ -272,7 +272,7 @@ export const LaunchAssetExecutionButton: React.FC<{
                 <MenuItem
                   text="Materialize changed and missing"
                   icon="changes_present"
-                  onClick={(e) => setShowCalculatingChangedAndMissingDialog(e)}
+                  onClick={() => setShowCalculatingChangedAndMissingDialog(true)}
                 />
               ) : null}
               <MenuItem

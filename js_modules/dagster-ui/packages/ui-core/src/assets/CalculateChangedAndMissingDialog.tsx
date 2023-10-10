@@ -112,6 +112,7 @@ export const CalculateChangedAndMissingDialog = React.memo(
                   <Row $height={size} $start={start} key={key} ref={measureElement}>
                     <RowGrid border="bottom">
                       <Checkbox
+                        id={`checkbox-${key}`}
                         checked={checked.has(item)}
                         onChange={() => {
                           setChecked((checked) => {
@@ -125,9 +126,19 @@ export const CalculateChangedAndMissingDialog = React.memo(
                           });
                         }}
                       />
-                      <Link to={assetDetailsPathForKey(item)}>
-                        <MiddleTruncate text={displayNameForAssetKey(item)} />
-                      </Link>
+                      <Box
+                        as="label"
+                        htmlFor={`checkbox-${key}`}
+                        flex={{alignItems: 'center', gap: 4}}
+                        style={{cursor: 'pointer'}}
+                      >
+                        <Box flex={{shrink: 1}}>
+                          <MiddleTruncate text={displayNameForAssetKey(item)} />
+                        </Box>
+                        <Link to={assetDetailsPathForKey(item)} target="_blank">
+                          <Icon name="open_in_new" color={Colors.Link} />
+                        </Link>
+                      </Box>
                     </RowGrid>
                   </Row>
                 );
