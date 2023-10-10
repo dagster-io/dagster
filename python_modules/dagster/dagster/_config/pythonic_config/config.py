@@ -164,9 +164,6 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
         for key, value in config_dict.items():
             field = self.__fields__.get(key)
 
-            if field and not field.required and value is None:
-                continue
-
             if field and field.field_info.discriminator:
                 nested_dict = value
 
