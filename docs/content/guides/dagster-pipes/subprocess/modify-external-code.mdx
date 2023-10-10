@@ -34,7 +34,7 @@ Getting external code to send information back to Dagster via Dagster Pipes requ
 
   - The <code>with open_dagster_pipes():</code> is a context manager in Python, ensuring resource setup and cleanup for a specific segment of code. It's useful for tasks requiring initial setup and final teardown, like opening and closing connections. In this case, the context manager is used to initialize and close the Dagster Pipes connection.
 
-- An instance of the Dagster Pipes context via <PyObject module="dagster_pipes" object="PipesContext" method="get"/>. You can access information like `partition_key` and `asset_key` via this context object. Refer to the [the API documentation](/_apidocs/libraries/dagster-pipes#dagster_pipes.PipesContext) for more information.
+- An instance of the Dagster Pipes context via <PyObject module="dagster_pipes" object="PipesContext" method="get"/>. You can access information like `partition_key` and `asset_key` via this context object. Refer to the [the API documentation](/\_apidocs/libraries/dagster-pipes#dagster_pipes.PipesContext) for more information.
 
 In our sample Python script, the changes would look like the following:
 
@@ -88,10 +88,10 @@ Then, the log messages will show up in the [**Run details**](/concepts/webserver
 2. Select the **info** checkbox and deselect the others. This will show only the logs marked as **info** level.
 
 <Image
-  alt="Send log messages to Dagster"
-  src="/images/guides/dagster-pipes/modifying-code-4-log-messages.png"
-  width={1326}
-  height={742}
+alt="Send log messages to Dagster"
+src="/images/guides/dagster-pipes/modifying-code-4-log-messages.png"
+width={1326}
+height={742}
 />
 
 ---
@@ -116,19 +116,19 @@ context.report_asset_materialization(metadata={"total_orders": total_orders})
 Then, `total_orders` will show up in the UI as structured metadata:
 
 <Image
-  alt="Report asset materialization to Dagster"
-  src="/images/guides/dagster-pipes/modifying-code-5-1-report-asset-materialization.png"
-  width={1412}
-  height={806}
+alt="Report asset materialization to Dagster"
+src="/images/guides/dagster-pipes/modifying-code-5-1-report-asset-materialization.png"
+width={1412}
+height={806}
 />
 
 This metadata will also be displayed on the **Events** tab of the **Asset Details** page in the UI:
 
 <Image
-  alt="View materialization events in asset details page"
-  src="/images/guides/dagster-pipes/modifying-code-5-2-materialization-asset-details.png"
-  width={1286}
-  height={736}
+alt="View materialization events in asset details page"
+src="/images/guides/dagster-pipes/modifying-code-5-2-materialization-asset-details.png"
+width={1286}
+height={736}
 />
 
 #### Report asset checks
@@ -148,19 +148,19 @@ context.report_asset_check(
 When Dagster executes the code, you’ll see an asset check event with the check result in the UI:
 
 <Image
-  alt="Report asset checks to Dagster"
-  src="/images/guides/dagster-pipes/modifying-code-5-3-report-asset-checks.png"
-  width={1312}
-  height={734}
+alt="Report asset checks to Dagster"
+src="/images/guides/dagster-pipes/modifying-code-5-3-report-asset-checks.png"
+width={1312}
+height={734}
 />
 
 This check result will also be displayed on the **Checks** tab of the **Asset Details** page in the UI:
 
 <Image
-  alt="View checks in asset details page"
-  src="/images/guides/dagster-pipes/modifying-code-5-4-checks-asset-details.png"
-  width={1302}
-  height={730}
+alt="View checks in asset details page"
+src="/images/guides/dagster-pipes/modifying-code-5-4-checks-asset-details.png"
+width={1302}
+height={730}
 />
 
 ---

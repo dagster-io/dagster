@@ -15,9 +15,27 @@ In this part of the tutorial, you'll create a Dagster asset that, in its executi
 
 ## Step 1: Define the Dagster asset
 
-1. Create a new file named `dagster_subprocess_pipes.py` in the same directory as the `external_code.py` file you created earlier in the [Prerequisites](/guides/dagster-pipes/subprocess#prerequisites) step.
+Before getting started, make sure you have fulfilled all the [prerequisites](/guides/dagster-pipes/subprocess#prerequisites) for the tutorial. You should have a standalone Python script named `external_code.py` which looks like the following:
 
-2. First, you’ll define the asset. Copy and paste the following into the file:
+```python file=/guides/dagster/dagster_pipes/subprocess/external_code_original.py lines=2-
+import pandas as pd
+
+
+def main():
+    orders_df = pd.DataFrame({"order_id": [1, 2], "item_id": [432, 878]})
+    total_orders = len(orders_df)
+    print(f"processing total {total_orders} orders")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+### Step 1.1: Define the asset
+
+First, create a new file named `dagster_subprocess_pipes.py` in the same directory as the `external_code.py` file you created earlier in the [Prerequisites](/guides/dagster-pipes/subprocess#prerequisites) step.
+
+Next, you’ll define the asset. Copy and paste the following into the file:
 
 ```python file=/guides/dagster/dagster_pipes/subprocess/dagster_subprocess_pipes.py startafter=start_asset_marker endbefore=end_asset_marker lines=-16
 import shutil
@@ -47,7 +65,9 @@ Here’s what we did in this example:
   - First, found the path to the Python executable on the system using `shutil.which("python")`.
   - Then, provided the file path to the file that we want to execute. In this case, it’s the `extern al_code.py` file that you created earlier.
 
-3. Then, invoke the subprocess from the asset using the `pipes_subprocess_client` resource:
+### Step 1.2: Invoke the external code from the asset
+
+Then, invoke a subprocess that executes the external code from the asset using the `pipes_subprocess_client` resource:
 
 ```python file=/guides/dagster/dagster_pipes/subprocess/dagster_subprocess_pipes.py startafter=start_asset_marker endbefore=end_asset_marker
 import shutil
@@ -144,38 +164,38 @@ In this step, you’ll execute the subprocess asset you created in earlier steps
 2. Navigate to <`localhost:3000`>, where you should see the UI:
 
    <Image
-   alt="Asset in the UI"
-   src="/images/guides/dagster-pipes/subprocess-1-asset.png"
-   width={1264}
-   height={714}
+     alt="Asset in the UI"
+     src="/images/guides/dagster-pipes/subprocess-1-asset.png"
+     width={1264}
+     height={714}
    />
 
 3. Click **Materialize** located in the top right to run your code:
 
    <Image
-   alt="Materialize asset"
-   src="/images/guides/dagster-pipes/subprocess-2-materialize.png"
-   width={1326}
-   height={744}
+     alt="Materialize asset"
+     src="/images/guides/dagster-pipes/subprocess-2-materialize.png"
+     width={1326}
+     height={744}
    />
 
 4. Navigate to the [Run details](/concepts/webserver/ui#run-details) page, where you should see the logs for the run:
 
    <Image
-   alt="Logs in the run details page"
-   src="/images/guides/dagster-pipes/subprocess-3-1-events.png"
-   width={1272}
-   height={718}
+     alt="Logs in the run details page"
+     src="/images/guides/dagster-pipes/subprocess-3-1-logs.png"
+     width={1272}
+     height={718}
    />
 
-In `external_code.py`, we have a `print` statement that outputs to `stdout`. Dagster will display these in the UI's raw compute log view. To see the `stdout` log, toggle the log section to **stdout**:
+5. In `external_code.py`, we have a `print` statement that outputs to `stdout`. Dagster will display these in the UI's raw compute log view. To see the `stdout` log, toggle the log section to **stdout**:
 
-<Image
-alt="Raw compute logs in the run details page"
-src="/images/guides/dagster-pipes/subprocess-3-2-raw-compute-logs.png"
-width={1272}
-height={718}
-/>
+   <Image
+     alt="Raw compute logs in the run details page"
+     src="/images/guides/dagster-pipes/subprocess-3-2-raw-compute-logs.png"
+     width={1272}
+     height={718}
+   />
 
 ---
 
