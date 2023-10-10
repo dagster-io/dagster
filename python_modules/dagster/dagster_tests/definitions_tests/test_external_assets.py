@@ -53,6 +53,26 @@ def test_external_asset_basic_creation() -> None:
     assert assets_def.is_asset_executable(expected_key) is False
 
 
+def test_multi_external_asset_basic_creation() -> None:
+    for assets_def in external_assets_from_specs(
+        specs=[
+            AssetSpec(
+                key="external_asset_one",
+                description="desc",
+                metadata={"user_metadata": "value"},
+                group_name="a_group",
+            ),
+            AssetSpec(
+                key=AssetKey(["value", "another_spec"]),
+                description="desc",
+                metadata={"user_metadata": "value"},
+                group_name="a_group",
+            ),
+        ]
+    ):
+        assert isinstance(assets_def, AssetsDefinition)
+
+
 def test_invalid_external_asset_creation() -> None:
     invalid_specs = [
         AssetSpec("invalid_asset1", auto_materialize_policy=AutoMaterializePolicy.eager()),
