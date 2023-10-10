@@ -97,9 +97,9 @@ def external_assets_from_specs(specs: Sequence[AssetSpec]) -> List[AssetsDefinit
         )
 
         @multi_asset(
+            name=spec.key.to_python_identifier(),
             specs=[
                 AssetSpec(
-                    name=spec.key.to_python_identifier(),
                     key=spec.key,
                     description=spec.description,
                     group_name=spec.group_name,
@@ -113,7 +113,7 @@ def external_assets_from_specs(specs: Sequence[AssetSpec]) -> List[AssetsDefinit
                     },
                     deps=spec.deps,
                 )
-            ]
+            ],
         )
         def _external_assets_def(context: AssetExecutionContext) -> None:
             raise DagsterInvariantViolationError(
