@@ -14,7 +14,10 @@ CLOUD_API_TOKEN = os.getenv("DAGSTER_CLOUD_TOKEN", "user:test:joe")
 def create_external_asset_materialization(data):
     if IS_CLOUD:
         url = "http://localhost:3000/test/report_asset_materialization/"
-        headers = {"content-type": "application/json", "Dagster-Cloud-Api-Token": CLOUD_API_TOKEN}
+        headers = {
+            "content-type": "application/json",
+            "Dagster-Cloud-Api-Token": CLOUD_API_TOKEN,
+        }
     else:
         url = "http://localhost:3000/report_asset_materialization/"
         headers = {"content-type": "application/json"}

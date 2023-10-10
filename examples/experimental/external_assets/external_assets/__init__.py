@@ -15,7 +15,7 @@ from .pipes import (
 
 config_file = os.path.expanduser("~/.kube/config")
 
-kubernetes.config.load_kube_config(config_file)  # type: ignore
+kubernetes.config.load_kube_config(config_file)
 
 defs = Definitions(
     assets=[*external_asset_defs, telem_post_processing],
