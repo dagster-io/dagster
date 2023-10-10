@@ -62,6 +62,10 @@ class PickledObjectADLS2IOManager(UPathIOManager):
         with self._acquire_lease(file_client, is_rm=True) as lease:
             file_client.delete_file(lease=lease, recursive=True)
 
+    def make_directory(self, path: UPath) -> None:
+        # It is not necessary to create directories in ADLS2
+        return None
+
     def path_exists(self, path: UPath) -> bool:
         try:
             self.file_system_client.get_file_client(str(path)).get_file_properties()
