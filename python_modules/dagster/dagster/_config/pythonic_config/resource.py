@@ -893,10 +893,20 @@ def separate_resource_params(cls: Type[BaseModel], data: Dict[str, Any]) -> Sepa
     # metadata field
     out = SeparatedResourceParams(
         resources={
-            k: v for k, v, t, m in data_with_annotation if _is_annotated_as_resource_type(t, m)
+            d.key: d.value
+            for d in data_with_annotation
+            if _is_annotated_as_resource_type(
+                d.annotation,
+                d.annotation_metadata,
+            )
         },
         non_resources={
-            k: v for k, v, t, m in data_with_annotation if not _is_annotated_as_resource_type(t, m)
+            d.key: d.value
+            for d in data_with_annotation
+            if not _is_annotated_as_resource_type(
+                d.annotation,
+                d.annotation_metadata,
+            )
         },
     )
     return out

@@ -167,6 +167,17 @@ def _convert_pydantic_field(pydantic_field: ModelField, model_cls: Optional[Type
         )
 
 
+def strip_wrapping_annotated_types(potentially_annotated_type: Any) -> Any:
+    """For a type that is wrapped in Annotated, return the unwrapped type. Recursive,
+    so it will unwrap nested Annotated types.
+
+    e.g. Annotated[Annotated[List[str], "foo"], "bar] -> List[str]
+    """
+    while get_origin(potentially_annotated_type) == Annotated:
+        potentially_annotated_type = get_args(potentially_annotated_type)[0]
+    return potentially_annotated_type
+
+
 def _config_type_for_type_on_pydantic_field(
     potential_dagster_type: Any,
 ) -> ConfigType:
@@ -175,8 +186,7 @@ def _config_type_for_type_on_pydantic_field(
     Args:
         potential_dagster_type (Any): The Python type of the Pydantic field.
     """
-    while get_origin(potential_dagster_type) == Annotated:
-        potential_dagster_type = get_args(potential_dagster_type)[0]
+    potential_dagster_type = strip_wrapping_annotated_types(potential_dagster_type)
 
     # special case pydantic constrained types to their source equivalents
     if safe_is_subclass(potential_dagster_type, ConstrainedStr):
