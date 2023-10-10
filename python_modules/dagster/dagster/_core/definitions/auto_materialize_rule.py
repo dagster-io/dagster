@@ -134,10 +134,28 @@ class RuleEvaluationContext(NamedTuple):
     def asset_graph(self) -> AssetGraph:
         return self.instance_queryer.asset_graph
 
-    @property
-    def new_candidates(self) -> AbstractSet[AssetKeyPartitionKey]:
-        """The set of candidates on this tick which were not candidates on the previous tick."""
+    def get_candidates_not_skipped_on_previous_tick(self) -> AbstractSet[AssetKeyPartitionKey]:
+        """Returns the set of candidate asset partitions which were not skipped on the previous
+        tick.
+
+        Many rules use the results from the previous tick, rather than re-calculating from scratch.
+        This function finds candidates for which this would not be possible, as the previous tick
+        did not calculate information for them.
+        """
         return {c for c in self.candidates if c not in self.cursor.skipped_on_last_tick_subset}
+
+    def get_candidates_with_updated_parents(
+        self,
+    ) -> AbstractSet[AssetKeyPartitionKey]:
+        """Returns the set of candidate asset partitions whose parents have been updated since the
+        last tick or will be requested on this tick.
+
+        Many rules depend on the state of the asset's parents, so this function is useful for
+        finding asset partitions that should be re-evaluated.
+        """
+        updated_parents = self.get_asset_partitions_with_updated_parents()
+        will_update_parents = set(self.get_will_update_parent_mapping().keys())
+        return self.candidates & (updated_parents | will_update_parents)
 
     def get_previous_tick_results(self, rule: "AutoMaterializeRule") -> "RuleEvaluationResults":
         """Returns the results that were calculated for a given rule on the previous tick."""
@@ -231,19 +249,6 @@ class RuleEvaluationContext(NamedTuple):
                 will_update_parents_by_asset_partition[asset_partition].add(parent_key)
 
         return will_update_parents_by_asset_partition
-
-    def get_candidates_with_updated_parents(
-        self,
-    ) -> AbstractSet[AssetKeyPartitionKey]:
-        """Returns the set of candidate asset partitions whose parents have been updated since the
-        last tick or will be requested on this tick.
-
-        Because many rules depend on the state of the asset's parents, this function is useful for
-        finding asset partitions that should be re-evaluated.
-        """
-        updated_parents = self.get_asset_partitions_with_updated_parents()
-        will_update_parents = set(self.get_will_update_parent_mapping().keys())
-        return self.candidates & (updated_parents | will_update_parents)
 
     def get_asset_partitions_by_asset_key(
         self,
@@ -566,7 +571,8 @@ class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOut
 
         # only need to evaluate net-new candidates and candidates whose parents have changed
         candidates_to_evaluate = (
-            context.new_candidates | context.get_candidates_with_updated_parents()
+            context.get_candidates_not_skipped_on_previous_tick()
+            | context.get_candidates_with_updated_parents()
         )
         for candidate in candidates_to_evaluate:
             outdated_ancestors = set()
@@ -612,7 +618,8 @@ class SkipOnParentMissingRule(AutoMaterializeRule, NamedTuple("_SkipOnParentMiss
 
         # only need to evaluate net-new candidates and candidates whose parents have changed
         candidates_to_evaluate = (
-            context.new_candidates | context.get_candidates_with_updated_parents()
+            context.get_candidates_not_skipped_on_previous_tick()
+            | context.get_candidates_with_updated_parents()
         )
         for candidate in candidates_to_evaluate:
             missing_parent_asset_keys = set()
@@ -679,7 +686,8 @@ class SkipOnNotAllParentsUpdatedRule(
 
         # only need to evaluate net-new candidates and candidates whose parents have changed
         candidates_to_evaluate = (
-            context.new_candidates | context.get_candidates_with_updated_parents()
+            context.get_candidates_not_skipped_on_previous_tick()
+            | context.get_candidates_with_updated_parents()
         )
         for candidate in candidates_to_evaluate:
             parent_partitions = context.asset_graph.get_parents_partitions(
