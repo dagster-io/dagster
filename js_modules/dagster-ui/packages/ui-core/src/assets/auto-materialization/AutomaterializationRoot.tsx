@@ -79,9 +79,9 @@ export const AutomaterializationRoot = () => {
     () => {
       const ticks = queryResult.data?.autoMaterializeTicks;
       return (
-        ticks?.map((tick, index, arr) => {
+        ticks?.map((tick, index) => {
           // For ticks that get stuck in "Started" state without an endtimestamp.
-          if (!tick.endTimestamp && index !== arr.length - 1) {
+          if (!tick.endTimestamp && index !== ticks.length - 2) {
             tick.endTimestamp = ticks[index + 1]!.timestamp;
             tick.status = InstigationTickStatus.FAILURE;
           }
