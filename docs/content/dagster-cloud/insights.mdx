@@ -143,3 +143,16 @@ External metrics, such as Snowflake credits, can be integrated into Dagster Insi
 ## Exporting metrics
 
 Metrics in Dagster Cloud Insights can be exported using a GraphQL API endpoint. Refer to the [Exporting Insights metrics from Dagster Cloud guide](/dagster-cloud/insights/exporting-insights-metrics) for details.
+
+## Why is Insights experimental?
+Dagster Insights are a new feature that we launched in Oct 2023. The experimental label means we’re still working with design partners to collect feedback on how it works, and could make changes based on that feedback. It’s possible that we could make breaking changes to some of aspects of the feature, though we’re going to do our best to avoid that. 
+
+## How to get access
+The Dagster Insights is an experimental feature, which means that it can only be enabled on request from our team. To get access to it, please reach out to us directly through your company slack channel or by joining #dagster-insights to request it, and read more about the status of the experimental release here (docs link) 
+
+While visualizing and exploring Dagster generated metrics within the UI will be available to all cloud users, capturing external metadata in our metrics store is an **Enterprise-only feature**
+
+## Future plans
+As part of the experimental release, out of the box utilities for capturing external metadata are limited to dbt+Snowflake pipelines creating software-defined assets. 
+
+We plan to quickly follow up with additional data sources and capabilities for capturing arbitrary metadata, as well as native tooling for enabling these capabilities on pipelines using the ops / jobs framework in the coming weeks.
