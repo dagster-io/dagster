@@ -1,5 +1,4 @@
 from dagster import (
-    AssetCheckResult,
     AssetExecutionContext,
     AssetKey,
     EventLogEntry,
@@ -38,8 +37,7 @@ def telem_post_processing(context: AssetExecutionContext, k8s_pipes_client: Pipe
 
 @asset_check(asset="telem_post_processing")
 def telem_post_processing_check(context, k8s_pipes_client: PipesK8sClient):
-    context.log.info(context)
-    values = yield from k8s_pipes_client.run(
+    yield from k8s_pipes_client.run(
         context=context,
         namespace="default",
         image="pipes-check:latest",
@@ -51,8 +49,6 @@ def telem_post_processing_check(context, k8s_pipes_client: PipesK8sClient):
             ]
         },
     ).get_results()
-    context.log.info(values)
-    return AssetCheckResult(passed=True)
 
 
 telem_post_processing_job = define_asset_job(
