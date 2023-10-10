@@ -1,19 +1,24 @@
-import os
-
 from dagster import (
-    AssetCheckSpec,
     AssetExecutionContext,
     AssetKey,
     EventLogEntry,
     RunRequest,
     SensorEvaluationContext,
     asset,
+    asset_check,
     asset_sensor,
     define_asset_job,
 )
 from dagster_k8s import PipesK8sClient
+from dagster_pipes import encode_env_var
 
-config_file = os.path.expanduser("~/.kube/config")
+pod_spec_for_kind = {
+    "containers": [
+        {
+            "imagePullPolicy": "Never",
+        }
+    ]
+}
 
 
 @asset(
@@ -23,21 +28,26 @@ config_file = os.path.expanduser("~/.kube/config")
         AssetKey(["s3", "joined_sensor_telem"]),
     ],
     group_name="pipes",
-    check_specs=[AssetCheckSpec("telem_post_processing_check", asset="telem_post_processing")],
 )
 def telem_post_processing(context: AssetExecutionContext, k8s_pipes_client: PipesK8sClient):
-    yield from k8s_pipes_client.run(
+    return k8s_pipes_client.run(
         context=context,
         namespace="default",
-        image="pipes-dogfood:latest",
-        base_pod_spec={
-            "containers": [
-                {
-                    "imagePullPolicy": "Never",
-                }
-            ]
-        },
-    ).get_results()
+        image="pipes-materialize:latest",
+        env={"DAGSTER_PIPES_IS_DAGSTER_PIPED_PROCESS": encode_env_var(True)},
+        base_pod_spec=pod_spec_for_kind,
+    ).get_materialize_result()
+
+
+@asset_check(asset="telem_post_processing")
+def telem_post_processing_check(context, k8s_pipes_client: PipesK8sClient):
+    return k8s_pipes_client.run(
+        context=context,
+        namespace="default",
+        image="pipes-check:latest",
+        env={"DAGSTER_PIPES_IS_DAGSTER_PIPED_PROCESS": encode_env_var(True)},
+        base_pod_spec=pod_spec_for_kind,
+    ).get_asset_check_result()
 
 
 telem_post_processing_job = define_asset_job(
