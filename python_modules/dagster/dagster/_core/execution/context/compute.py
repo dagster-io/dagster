@@ -1322,7 +1322,7 @@ def build_execution_context(
     For ops in graph-backed assets
     step type     annotation                result
     op            AssetExecutionContext     AssetExecutionContext
-    op            OpExecutionContext        OpExecutionContext
+    op            OpExecutionContext        OpExecutionContext  this is a chagne
     op            None                      OpExecutionContext
     """
     is_sda_step = step_context.is_sda_step
