@@ -163,6 +163,7 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
         modified_data = {}
         for key, value in config_dict.items():
             field = self.__fields__.get(key)
+
             if field and not field.required and value is None:
                 continue
 
