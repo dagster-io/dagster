@@ -50,11 +50,7 @@ PipesExtras = Mapping[str, Any]
 PipesParams = Mapping[str, Any]
 
 
-_ENV_KEY_PREFIX = "DAGSTER_PIPES_"
-
-
-def _param_name_to_env_key(key: str) -> str:
-    return f"{_ENV_KEY_PREFIX}{key.upper()}"
+# ##### MESSAGE
 
 
 def _make_message(method: str, params: Optional[Mapping[str, Any]]) -> "PipesMessage":
@@ -64,17 +60,6 @@ def _make_message(method: str, params: Optional[Mapping[str, Any]]) -> "PipesMes
         "params": params,
     }
 
-
-# ##### PARAMETERS
-
-IS_DAGSTER_PIPES_PROCESS = "IS_DAGSTER_PIPES_PROCESS"
-
-DAGSTER_PIPES_BOOTSTRAP_PARAM_NAMES = {
-    k: _param_name_to_env_key(k) for k in (IS_DAGSTER_PIPES_PROCESS, "context", "messages")
-}
-
-
-# ##### MESSAGE
 
 # Can't use a constant for TypedDict key so this value is repeated in `ExtMessage` defn.
 PIPES_PROTOCOL_VERSION_FIELD = "__dagster_pipes_version"
@@ -346,8 +331,8 @@ def _normalize_param_metadata(
     return new_metadata
 
 
-def _param_from_env_var(key: str) -> Any:
-    raw_value = os.environ.get(_param_name_to_env_var(key))
+def _param_from_env_var(env_var: str) -> Any:
+    raw_value = os.environ.get(env_var)
     return decode_env_var(raw_value) if raw_value is not None else None
 
 
@@ -380,18 +365,6 @@ def decode_env_var(value: str) -> Any:
     decoded = base64.b64decode(value)
     decompressed = zlib.decompress(decoded)
     return json.loads(decompressed.decode("utf-8"))
-
-
-def _param_name_to_env_var(param_name: str) -> str:
-    return f"{_ENV_KEY_PREFIX}{param_name.upper()}"
-
-
-def _env_var_to_param_name(env_var: str) -> str:
-    return env_var[len(_ENV_KEY_PREFIX) :].lower()
-
-
-def is_dagster_pipes_process() -> bool:
-    return _param_from_env_var(IS_DAGSTER_PIPES_PROCESS)
 
 
 def _emit_orchestration_inactive_warning() -> None:
@@ -488,6 +461,12 @@ class PipesParamsLoader(ABC):
     message reader. These params are used to respectively bootstrap the
     :py:class:`PipesContextLoader` and :py:class:`PipesMessageWriter`.
     """
+
+    @abstractmethod
+    def is_dagster_pipes_process(self) -> bool:
+        """Whether or not this process has been provided with provided with information to create
+        a PipesContext or should instead return a mock.
+        """
 
     @abstractmethod
     def load_context_params(self) -> PipesParams:
@@ -688,14 +667,22 @@ class PipesStreamMessageWriterChannel(PipesMessageWriterChannel):
         self._stream.writelines((json.dumps(message), "\n"))
 
 
+DAGSTER_PIPES_CONTEXT_ENV_VAR = "DAGSTER_PIPES_CONTEXT"
+DAGSTER_PIPES_MESSAGES_ENV_VAR = "DAGSTER_PIPES_MESSAGES"
+
+
 class PipesEnvVarParamsLoader(PipesParamsLoader):
     """Params loader that extracts params from environment variables."""
 
+    def is_dagster_pipes_process(self) -> bool:
+        # use the presence of DAGSTER_PIPES_CONTEXT to discern if we are in a pipes process
+        return DAGSTER_PIPES_CONTEXT_ENV_VAR in os.environ
+
     def load_context_params(self) -> PipesParams:
-        return _param_from_env_var("context")
+        return _param_from_env_var(DAGSTER_PIPES_CONTEXT_ENV_VAR)
 
     def load_messages_params(self) -> PipesParams:
-        return _param_from_env_var("messages")
+        return _param_from_env_var(DAGSTER_PIPES_MESSAGES_ENV_VAR)
 
 
 # ########################
@@ -809,8 +796,7 @@ def open_dagster_pipes(
 
     If the process was not launched by Dagster, this function will emit a warning and return a
     `MagicMock` object. This should make all operations on the context no-ops and prevent your code
-    from crashing. However, it is recommended to instead check :py:func:`is_dagster_pipes_process()`
-    to handle the case where the process is not launched by Dagster.
+    from crashing.
 
     Args:
         context_loader (Optional[PipesContextLoader]): The context loader to use. Defaults to
@@ -826,8 +812,8 @@ def open_dagster_pipes(
     if PipesContext.is_initialized():
         return PipesContext.get()
 
-    if is_dagster_pipes_process():
-        params_loader = params_loader or PipesEnvVarParamsLoader()
+    params_loader = params_loader or PipesEnvVarParamsLoader()
+    if params_loader.is_dagster_pipes_process():
         context_loader = context_loader or PipesDefaultContextLoader()
         message_writer = message_writer or PipesDefaultMessageWriter()
         context = PipesContext(params_loader, context_loader, message_writer)
