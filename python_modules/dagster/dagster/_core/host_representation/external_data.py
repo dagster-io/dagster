@@ -1493,7 +1493,9 @@ def external_asset_nodes_from_defs(
         asset_info_by_node_output = asset_layer.asset_info_by_node_output_handle
 
         for node_output_handle, asset_info in asset_info_by_node_output.items():
-            if not asset_info.is_required:
+            if not asset_info.is_required or not asset_layer.is_materializable_for_asset(
+                asset_info.key
+            ):
                 continue
             output_key = asset_info.key
             if output_key not in op_names_by_asset_key:

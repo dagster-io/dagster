@@ -1272,6 +1272,16 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             known_state=self._known_state,
         )
 
+    def output_observes_source_asset(self, output_name: str) -> bool:
+        """Returns True if this step observes a source asset."""
+        asset_layer = self.job_def.asset_layer
+        if asset_layer is None:
+            return False
+        asset_key = asset_layer.asset_key_for_output(self.node_handle, output_name)
+        if asset_key is None:
+            return False
+        return asset_layer.is_observable_for_asset(asset_key)
+
 
 class TypeCheckContext:
     """The ``context`` object available to a type check function on a DagsterType."""
