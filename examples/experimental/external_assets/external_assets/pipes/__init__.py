@@ -12,6 +12,14 @@ from dagster import (
 from dagster_k8s import PipesK8sClient
 from dagster_pipes import encode_env_var
 
+pod_spec_for_kind = {
+    "containers": [
+        {
+            "imagePullPolicy": "Never",
+        }
+    ]
+}
+
 
 @asset(
     key="telem_post_processing",
@@ -27,13 +35,7 @@ def telem_post_processing(context: AssetExecutionContext, k8s_pipes_client: Pipe
         namespace="default",
         image="pipes-materialize:latest",
         env={"DAGSTER_PIPES_IS_DAGSTER_PIPED_PROCESS": encode_env_var(True)},
-        base_pod_spec={
-            "containers": [
-                {
-                    "imagePullPolicy": "Never",
-                }
-            ]
-        },
+        base_pod_spec=pod_spec_for_kind,
     ).get_materialize_result()
 
 
@@ -44,13 +46,7 @@ def telem_post_processing_check(context, k8s_pipes_client: PipesK8sClient):
         namespace="default",
         image="pipes-check:latest",
         env={"DAGSTER_PIPES_IS_DAGSTER_PIPED_PROCESS": encode_env_var(True)},
-        base_pod_spec={
-            "containers": [
-                {
-                    "imagePullPolicy": "Never",
-                }
-            ]
-        },
+        base_pod_spec=pod_spec_for_kind,
     ).get_asset_check_result()
 
 
