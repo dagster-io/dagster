@@ -5,7 +5,9 @@ description: "Learn to integrate Dagster Pipes with Databricks to launch externa
 
 # Integrating Databricks with Dagster Pipes
 
-In this guide, we’ll show you how to use [Dagster Pipes](/guides/dagster-pipes) with Dagster’s Databricks integration to launch Databricks jobs. You can then send information such as structured metadata and logging back to Dagster, where it will be visible in the Dagster UI.
+In this guide, we’ll show you how to use [Dagster Pipes](/guides/dagster-pipes) with Dagster’s Databricks integration to launch Databricks jobs.
+
+Pipes allows your Databricks code to execute outside of a full Dagster environment. Instead, the environment only needs to contain `dagster-pipes`, a single-file Python package with no dependencies that can be installed from PyPI or easily vendored. `dagster-pipes` handles streaming `stdout`/`stderr` and Dagster events back to the orchestration process.
 
 <Note>
   <strong>Heads up!</strong> This guide focuses on using an out-of-the-box
@@ -22,29 +24,28 @@ In this guide, we’ll show you how to use [Dagster Pipes](/guides/dagster-pipes
 
 To use Dagster Pipes with Databricks, you’ll need:
 
-- **To have the following libraries installed**:
+- **In the orchestration environment**, you'll need to install the following packages:
 
-  - **Dagster (`dagster`) and the Dagster UI (`dagster-webserver`).** Refer to the [Installation guide](/getting-started/install) for more info.
-  - **The `dagster-databricks` library**:
+  ```shell
+  pip install dagster dagster-webserver dagster-databricks
+  ```
 
-    ```shell
-    pip install dagster-databricks
-    ```
+  Refer to the [Dagster installation guide](/getting-started/install) for more info.
 
 - **In Databricks:**
   - **An existing Databricks workspace** with an existing project that’s deployed with a Databricks job. If you don’t have this, follow the [Databricks quickstart](https://docs.databricks.com/workflows/jobs/jobs-quickstart.html) to set one up.
   - **The following information about your Databricks workspace**:
-    - `host` - The host address, starting with `https://`, of your Databricks workspace
+    - `host` - The host URL of your Databricks workspace, ex: `https://dbc-xxxxxxx-yyyy.cloud.databricks.com/`
     - `token` - A personal access token for the Databricks workspace Refer to the Databricks API authentication documentation for more info about retrieving these values.
-  - **To have the `dagster-pipes` library available in the Databricks environment.**
+  - **To have the `dagster-pipes` package available in the Databricks environment.**
 
 ---
 
-## Step 1: Create a Databricks job in Dagster
+## Step 1: Create an asset computed in Databricks
 
 In this step, you’ll create a Dagster asset that, when materialized, opens a Dagster pipes session and launches a Databricks job that executes some external code.
 
-### Step 1.1: Define a Dagster asset
+### Step 1.1: Define the Dagster asset
 
 1. Create a new file named `dagster_databricks_pipes.py` in your Dagster project.
 
@@ -82,8 +83,9 @@ In this step, you’ll create a Dagster asset that, when materialized, opens a D
    Here’s what we did in this example:
 
    - Created an asset named `databricks_asset`
-   - Provided <PyObject object="AssetExecutionContext" /> as the `context` argument to the asset. This object provides system information such as resources, config, and logging. We’ll come back to this a bit later in this section.
+   - Provided <PyObject object="AssetExecutionContext" /> as the `context` argument to the asset. This object provides access to system APIs such as resources, config, and logging. We’ll come back to this a bit later in this section.
    - Specified a resource for the asset to use, <PyObject module="dagster_databricks" object="PipesDatabricksClient" />. We’ll also come back to this in a little bit.
+   - Defined a Databricks `SubmitTask` object in the asset body using the official Databricks Python SDK. The <PyObject module="dagster_databricks" object="PipesDatabricksClient" /> accepts this object and injects environnment variables and a cluster logging specification into it before submitting it to the Databricks API to launch a job.
    - Defined a Databricks `SubmitTask` specification in the asset body. When the asset is materialized, this specification will be passed to the Databricks resource (<PyObject module="dagster_databricks" object="PipesDatabricksClient" />), which will use it to launch a Databricks job.
 
      - `new_cluster` - TODO
@@ -109,9 +111,9 @@ In this step, you’ll create a Dagster asset that, when materialized, opens a D
 
 ### Step 1.2: Create the Databricks job
 
-In this step, we’ll create the Databricks job and pass in the task specification, as well as our `context` data. The Databricks resource used by the asset contains a `run` method. This method synchronously executes the Databricks job using the task specification you created in [the previous step](#step-11-define-a-dagster-asset).
+In this step, we’ll create the Databricks job and pass in the task specification, as well as our `context` data. The Databricks resource used by the asset exposes a `run` method. This method synchronously executes the Databricks job defined by the task specification created in [the previous step](#step-11-define-the-dagster-asset).
 
-When the job is executed, Dagster Pipes will return a <PyObject module="dagster_pipes" object="PipesClientCompletedInvocation" /> object. This object contains a `get_results` method, which you can use to access the results reported by the Databricks job.
+When the job finishes executing, Dagster Pipes will return a <PyObject module="dagster_pipes" object="PipesClientCompletedInvocation" /> object. This object exposes a `get_results` method, which you can use to access the results reported by the Databricks job. **Note**: Execution can take several minutes even for trivial scripts due to cluster provisioning times.
 
 In the body of the `databricks_asset`, add the following:
 
@@ -126,7 +128,7 @@ return pipes_databricks.run(
 
 Let’s take a look at what this code does:
 
-- Submit the job to the Databricks resource (`pipes_databricks`) using the `run` method
+- Submit the job to the Databricks API by using the `pipes_databricks` resource
 - Provide the `task` specification and asset `context` to the Databricks job
 - Use `get_results` to access the results of the execution
 - Lastly, return the results of the Databricks job
@@ -156,7 +158,7 @@ The [`dagster-databricks`](/\_apidocs/libraries/dagster-databricks) library prov
    )
    ```
 
-In this example, we created a `pipes_databricks_resource`. The <PyObject module="dagster_databricks" object="PipesDatabricksClient" /> accepts a `client` argument, which provides the information required to connect to a Databricks workspace by using `WorkspaceClient`.
+In this example, we created a <PyObject module="dagster_databricks" object="PipesDatabricksClient" /> object that's bound to the `pipes_databricks_resource` resource key. This provides the information required to connect to a Databricks workspace by using the Databricks SDK's `WorkspaceClient` object.
 
 ### Step 1.4: Update the Definitions object
 
@@ -223,7 +225,7 @@ defs = Definitions(
 
 ## Step 2: Modify the Databricks code
 
-The next step is to modify the code in Databricks to work with Dagster Pipes. **Note:** The target file (`python_file`) you specified in [Step 1.1](#step-11-create-a-dagster-asset) must already exist in Databricks.
+The next step is to modify the code in Databricks to work with Dagster Pipes. **Note:** The target file (`python_file`) you specified in [Step 1.1](#step-11-define-the-dagster-asset) must already exist in Databricks.
 
 1. In the imports section of the file, add the following:
 
