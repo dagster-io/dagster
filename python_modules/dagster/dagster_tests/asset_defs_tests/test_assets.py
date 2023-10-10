@@ -2027,19 +2027,15 @@ def test_multi_asset_specs_no_loop_construction() -> None:
     ] == {AssetKey("upstream_asset")}
 
 
-@pytest.mark.xfail(reason="""Demonstration of bug. Fails with Error:
-dagster._core.errors.DagsterInvalidDefinitionError: Invalid dependencies: node "_an_asset_op_2"
-does not have output "upstream_asset". Listed as dependency for node "_an_asset_op
-input "upstream_asset""")
 def test_multi_asset_specs_factory_esque_code() -> None:
     upstream_asset = AssetSpec("upstream_asset")
     downstream_asset = AssetSpec("downstream_asset", deps=[upstream_asset])
 
     assets_defs: List[AssetsDefinition] = []
 
-    for spec in [upstream_asset, downstream_asset]:
+    for i, spec in enumerate([upstream_asset, downstream_asset]):
 
-        @multi_asset(specs=[spec])
+        @multi_asset(specs=[spec], name=f"_an_asset_op_{i}")
         def _an_asset_op() -> Any:
             raise NotImplementedError()
 
