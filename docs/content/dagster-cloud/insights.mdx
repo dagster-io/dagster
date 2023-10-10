@@ -8,13 +8,19 @@ platform_type: "cloud"
 # Dagster Cloud Insights
 
 <Note>
-  This feature is considered <strong>experimental</strong>. To get access to
-  Insights please request access in the
+  This feature is considered <strong>experimental</strong>. Request access using
+  the&nbsp;
   <a href="https://dagster.slack.com/archives/C05V7GETFSQ">#dagster-insights</a>
-  channel in Slack.
+  &nbsp;channel in the Dagster Slack.
 </Note>
 
-Insights is Dagster Cloud feature that provides visibility into historical usage and cost metrics such as run duration, credit usage and failures. This feature is available as a top level tab in the Dagster Cloud UI:
+Using Dagster Cloud Insights, you can gain visibility into historical usage and cost metrics such as Dagster Cloud run duration, credit usage, and failures. You can also [integrate other external metrics](#integrating-external-metrics) into the Insights UI and [export metrics from Dagster Cloud](#exporting-metrics).
+
+---
+
+## Accessing Insights in the Dagster UI
+
+To access this feature, click **Insights** in the top navigation bar in the UI:
 
 <Image
 alt="Viewing the Insights tab in the Dagster UI"
@@ -23,22 +29,115 @@ width={771}
 height={536}
 />
 
-The Insights page shows a list of metrics in the left panel. For each metric the daily, weekly or monthly aggregated values are shown in a graph in the main panel. These metrics are updated available on a daily cadence. The following metrics are available:
+The left navigation panel on this page contains a list of [available metrics](#available-metrics). For each metric, the daily, weekly, or monthly aggregated values are displayed in the graph.
 
-- **Dagster credits**: Dagster credit cost associated with computing this object. Dagster credits are charged for every step that is run, and for every asset that is materialized. For more information, [see the pricing FAQ](https://dagster.io/pricing#faq).
-- **Compute duration**: Time spent computing steps. For jobs which run steps in parallel, the compute duration may be longer than the wall clock time it takes for the run to complete.
-- **Retry compute**: Time spent computing steps, including time spent retrying failed steps. For jobs which run steps in parallel, the compute duration may be longer than the wall clock time it takes for the run to complete.
-- **Step retries**: Number of times steps were retried when computing this object.
-- **Observations**: Number of asset observations associated with computing this object.
-- **Materializations**: Number of asset materializations associated with computing this object.
-- **Step failures**: Number of times steps failed when computing this object. Note that steps which retry and succeed are not tallied in this metric.
-- **Asset check warnings**: Number of asset checks that produced warnings.
-- **Asset check errors**: Number of asset checks that produced errors.
+These metrics are updated on a daily basis.
 
-## External metrics
+---
 
-External metrics such as Snowflake credits spent can be integrated in the Dagster Insights UI. See [External metrics](/dagster-cloud/insights/external-metrics) for details.
+## Available metrics
+
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <thead>
+    <tr>
+      <th
+        style={{
+          width: "25%",
+        }}
+      >
+        Metric
+      </th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Dagster credits</td>
+      <td>
+        The Dagster credit cost associated with computing this object. Dagster
+        credits are charged for every step that is run, and for every asset that
+        is materialized. For more information,{" "}
+        <a href="https://dagster.io/pricing#faq" target="_blank">
+          refer to the pricing FAQ
+        </a>
+        .
+      </td>
+    </tr>
+    <tr>
+      <td>Compute duration</td>
+      <td>
+        The time spent computing steps. For jobs that run steps in parallel, the
+        compute duration may be longer than the wall clock time it takes for the
+        run to complete.
+      </td>
+    </tr>
+    <tr>
+      <td>Materializations</td>
+      <td>
+        The number of asset materializations associated with computing this
+        object.
+      </td>
+    </tr>
+    <tr>
+      <td>Observations</td>
+      <td>
+        The number of{" "}
+        <a href="/concepts/assets/asset-observations">asset observations</a>{" "}
+        associated with computing this object.
+      </td>
+    </tr>
+    <tr>
+      <td>Step failures</td>
+      <td>
+        The number of times steps failed when computing this object.{" "}
+        <strong>Note</strong>: Steps that retry and succeed are not included in
+        this metric.
+      </td>
+    </tr>
+    <tr>
+      <td>Step retries</td>
+      <td>
+        The number of times steps were retried when computing this object.
+      </td>
+    </tr>
+    <tr>
+      <td>Asset check warnings</td>
+      <td>
+        The number of <a href="/concepts/assets/asset-checks">asset checks</a>{" "}
+        that produced warnings.
+      </td>
+    </tr>
+    <tr>
+      <td>Asset check errors</td>
+      <td>
+        The number of <a href="/concepts/assets/asset-checks">asset checks</a>{" "}
+        that produced errors.
+      </td>
+    </tr>
+    <tr>
+      <td>Retry compute</td>
+      <td>
+        The time spent computing steps, including time spent retrying failed
+        steps. For jobs that run steps in parallel, the compute duration may be
+        longer than the wall clock time it takes for the run to complete.
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+---
+
+## Integrating external metrics
+
+External metrics, such as Snowflake credits, can be integrated into Dagster Insights. Refer to the [Integrating external metrics into Dagster Cloud guide](/dagster-cloud/insights/external-metrics) for details.
+
+---
 
 ## Exporting metrics
 
-Dagster Cloud Insights metrics can be exported using a GraphQL API. See [Exporting metrics](/dagster-cloud/insights/metrics-export) for details.
+Metrics in Dagster Cloud Insights can be exported using a GraphQL API endpoint. Refer to the [Exporting Insights metrics from Dagster Cloud guide](/dagster-cloud/insights/exporting-insights-metrics) for details.
