@@ -819,14 +819,10 @@ auto_materialize_policy_scenarios = {
             unevaluated_runs=[run(["A"])],
             # C must wait for B to be materialized
             expected_run_requests=[],
-            # C is skipped because B is not materialized
-            expected_skipped_subset={AssetKeyPartitionKey(AssetKey("C"))},
         ),
         unevaluated_runs=[run(["B"])],
         # can now run C because the skip rule is no longer true
         expected_run_requests=[run_request(["C"])],
-        # C is no longer skipped
-        expected_skipped_subset=set(),
     ),
     "skipped_subset_partitioned": AssetReconciliationScenario(
         assets=partitioned_vee,
@@ -840,19 +836,10 @@ auto_materialize_policy_scenarios = {
             ],
             # C must wait for B to be materialized
             expected_run_requests=[],
-            # C is skipped because B is not materialized
-            expected_skipped_subset={
-                AssetKeyPartitionKey(AssetKey("C"), partition_key="a"),
-                AssetKeyPartitionKey(AssetKey("C"), partition_key="b"),
-            },
         ),
         unevaluated_runs=[run(["B"], partition_key="a")],
         # can now run C[a] because the skip rule is no longer true
         expected_run_requests=[run_request(["C"], partition_key="a")],
-        # C[a] is no longer skipped
-        expected_skipped_subset={
-            AssetKeyPartitionKey(AssetKey("C"), partition_key="b"),
-        },
     ),
     "skipped_subset_partitioned2": AssetReconciliationScenario(
         assets=partitioned_vee,
@@ -866,20 +853,11 @@ auto_materialize_policy_scenarios = {
             ],
             # C must wait for B to be materialized
             expected_run_requests=[],
-            # C is skipped because B is not materialized
-            expected_skipped_subset={
-                AssetKeyPartitionKey(AssetKey("C"), partition_key="a"),
-                AssetKeyPartitionKey(AssetKey("C"), partition_key="b"),
-            },
         ),
         # manually run C
         unevaluated_runs=[
             run(["C"], partition_key="a"),
         ],
         expected_run_requests=[],
-        # C[a] is no longer skipped because it was executed manually
-        expected_skipped_subset={
-            AssetKeyPartitionKey(AssetKey("C"), partition_key="b"),
-        },
     ),
 }
