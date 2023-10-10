@@ -1,6 +1,7 @@
 import operator
 from collections import defaultdict
 from typing import AbstractSet, Any, Callable, Dict, Iterable, Mapping, Optional, Set, Union, cast
+from datetime import datetime
 
 from dagster import _check as check
 from dagster._core.definitions.partition import (
@@ -303,6 +304,7 @@ class AssetGraphSubset:
         asset_keys: Iterable[AssetKey],
         asset_graph: AssetGraph,
         dynamic_partitions_store: DynamicPartitionsStore,
+        current_time: datetime,
     ) -> "AssetGraphSubset":
         partitions_subsets_by_asset_key: Dict[AssetKey, PartitionsSubset] = {}
         non_partitioned_asset_keys: Set[AssetKey] = set()
@@ -314,7 +316,7 @@ class AssetGraphSubset:
                     asset_key
                 ] = partitions_def.empty_subset().with_partition_keys(
                     partitions_def.get_partition_keys(
-                        dynamic_partitions_store=dynamic_partitions_store
+                        dynamic_partitions_store=dynamic_partitions_store, current_time=current_time
                     )
                 )
             else:

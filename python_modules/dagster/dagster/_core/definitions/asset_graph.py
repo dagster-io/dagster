@@ -734,26 +734,38 @@ class AssetGraph:
         while len(queue) > 0:
             candidates_unit = queue.dequeue()
 
-            if condition_fn(candidates_unit, result):
+            # Either:
+            # not in target
+            # in target and matches condition
+            matches_condition = condition_fn(candidates_unit, result)
+            if matches_condition:
                 result.update(candidates_unit)
 
+            # If not in target, we still need to enqueue children
+            # if in target, enqueue children if matches condition
+
+            # TODO test daily -> weekly -> daily case
+
             for candidate in candidates_unit:
-                if (
-                    any(
-                        target_asset in self._descendants_by_key[candidate.asset_key]
-                        for target_asset in target_subset.asset_keys
-                    )
-                    or candidate in target_subset
-                ):  # Is targeted or parent of targeted partition)
-                    for child in self.get_children_partitions(
-                        dynamic_partitions_store,
-                        evaluation_time,
-                        candidate.asset_key,
-                        candidate.partition_key,
-                    ):
-                        if child not in all_nodes:
-                            queue.enqueue(child)
-                            all_nodes.add(child)
+                if (matches_condition and candidate in target_subset) or (
+                    candidate not in target_subset
+                ):
+                    if (
+                        any(
+                            target_asset in self._descendants_by_key[candidate.asset_key]
+                            for target_asset in target_subset.asset_keys
+                        )
+                        or candidate in target_subset
+                    ):  # Is targeted or parent of targeted partition)
+                        for child in self.get_children_partitions(
+                            dynamic_partitions_store,
+                            evaluation_time,
+                            candidate.asset_key,
+                            candidate.partition_key,
+                        ):
+                            if child not in all_nodes:
+                                queue.enqueue(child)
+                                all_nodes.add(child)
 
         return result
 

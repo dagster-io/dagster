@@ -1100,6 +1100,7 @@ def test_asset_backfill_target_asset_and_same_partitioning_grandchild():
         foo.key,
         foo_grandchild.key,
     ]
+    all_partitions = [f"2023-10-0{x}" for x in range(1, 5)]
 
     asset_backfill_data = AssetBackfillData.from_asset_partitions(
         asset_graph=asset_graph,
@@ -1112,31 +1113,35 @@ def test_asset_backfill_target_asset_and_same_partitioning_grandchild():
     assert set(asset_backfill_data.target_subset.iterate_asset_partitions()) == {
         AssetKeyPartitionKey(asset_key, partition_key)
         for asset_key in [foo.key, foo_grandchild.key]
-        for partition_key in [f"2023-10-0{x}" for x in range(1, 6)]
+        for partition_key in all_partitions
     }
 
     asset_backfill_data, _, _, run_requests = run_backfill_to_completion(
         asset_graph, assets_by_repo_name, asset_backfill_data, [], instance
     )
     assert asset_backfill_data.materialized_subset == asset_backfill_data.target_subset
-    assert len(run_requests) == 5
-    for run_request in run_requests:
-        assert set(run_request.asset_selection) == {foo.key, foo_grandchild.key}
+    assert len(run_requests) == 8
+
+    for run_request in run_requests[0:4]:
+        assert set(run_request.asset_selection) == {foo.key}
+
+    for run_request in run_requests[4:8]:
+        assert set(run_request.asset_selection) == {foo_grandchild.key}
 
 
 def test_asset_backfill_target_asset_and_differently_partitioned_grandchild():
     instance = DagsterInstance.ephemeral()
 
-    @asset(partitions_def=DailyPartitionsDefinition("2023-09-20"))
+    @asset(partitions_def=DailyPartitionsDefinition("2023-10-01"))
     def foo():
         pass
 
-    @asset(partitions_def=DailyPartitionsDefinition("2023-09-20"))
-    def foo_child(foo):
+    @asset(partitions_def=DailyPartitionsDefinition("2023-10-01"), deps={foo})
+    def foo_child():
         pass
 
-    @asset(partitions_def=WeeklyPartitionsDefinition("2023-09-20"))
-    def foo_grandchild(foo_child):
+    @asset(partitions_def=WeeklyPartitionsDefinition("2023-10-01"), deps={foo_child})
+    def foo_grandchild():
         pass
 
     assets_by_repo_name = {
@@ -1159,10 +1164,32 @@ def test_asset_backfill_target_asset_and_differently_partitioned_grandchild():
         asset_selection=asset_selection,
         dynamic_partitions_store=MagicMock(),
         all_partitions=True,
-        backfill_start_time=pendulum.datetime(2023, 10, 5, 0, 0, 0),
+        backfill_start_time=pendulum.datetime(2023, 10, 8, 0, 0, 0),
     )
 
-    print(asset_backfill_data)
+    expected_targeted_partitions = {
+        AssetKeyPartitionKey(foo_grandchild.key, "2023-10-01"),
+        *{
+            AssetKeyPartitionKey(asset_key, partition_key)
+            for asset_key in [foo.key]
+            for partition_key in [f"2023-10-0{x}" for x in range(1, 8)]
+        },
+    }
 
-    run_backfill_to_completion(asset_graph, assets_by_repo_name, asset_backfill_data, [], instance)
-    assert False
+    assert (
+        set(asset_backfill_data.target_subset.iterate_asset_partitions())
+        == expected_targeted_partitions
+    )
+
+    asset_backfill_data, _, _, run_requests = run_backfill_to_completion(
+        asset_graph, assets_by_repo_name, asset_backfill_data, [], instance
+    )
+    assert asset_backfill_data.materialized_subset == asset_backfill_data.target_subset
+
+    assert len(run_requests) == 8
+
+    for run_request in run_requests[:7]:
+        assert run_request.asset_selection == [foo.key]
+
+    assert run_requests[7].asset_selection == [foo_grandchild.key]
+    assert run_requests[7].partition_key == "2023-10-01"
