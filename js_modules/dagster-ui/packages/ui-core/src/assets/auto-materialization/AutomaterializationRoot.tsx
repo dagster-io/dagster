@@ -77,8 +77,9 @@ export const AutomaterializationRoot = () => {
   }
   const ticks = React.useMemo(
     () => {
+      const ticks = queryResult.data?.autoMaterializeTicks;
       return (
-        queryResult.data?.autoMaterializeTicks.map((tick, index, arr) => {
+        ticks?.map((tick, index, arr) => {
           // For ticks that get stuck in "Started" state without an endtimestamp.
           if (!tick.endTimestamp && index !== arr.length - 1) {
             tick.endTimestamp = ticks[index + 1]!.timestamp;
