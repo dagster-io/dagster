@@ -1319,6 +1319,10 @@ def build_execution_context(
     op            AssetExecutionContext     Error - we cannot init an AssetExecutionContext w/o an AssetsDefinition
     op            OpExecutionContext        OpExecutionContext
     op            None                      OpExecutionContext
+    asset_check   AssetExecutionContext     AssetExecutionContext
+    asset_check   OpExecutionContext        OpExecutionContext
+    asset_check   None                      AssetExecutionContext
+
     For ops in graph-backed assets
     step type     annotation                result
     op            AssetExecutionContext     AssetExecutionContext
@@ -1326,7 +1330,8 @@ def build_execution_context(
     op            None                      OpExecutionContext
     """
     is_sda_step = step_context.is_sda_step
-    is_op_in_graph_asset = step_context.is_in_graph_asset
+    is_op_in_graph_asset = is_sda_step and step_context.is_op_in_graph
+    is_asset_check = step_context.is_asset_check_step
     context_annotation = EmptyAnnotation
     compute_fn = step_context.op_def._compute_fn  # noqa: SLF001
     compute_fn = (
@@ -1340,7 +1345,7 @@ def build_execution_context(
 
     # It would be nice to do this check at definition time, rather than at run time, but we don't
     # know if the op is part of an op job or a graph-backed asset until we have the step execution context
-    if context_annotation is AssetExecutionContext and not is_sda_step and not is_op_in_graph_asset:
+    if context_annotation is AssetExecutionContext and not is_sda_step and not is_asset_check:
         # AssetExecutionContext requires an AssetsDefinition during init, so an op in an op job
         # cannot be annotated with AssetExecutionContext
         raise DagsterInvalidDefinitionError(
@@ -1351,9 +1356,11 @@ def build_execution_context(
 
     if context_annotation is EmptyAnnotation:
         # if no type hint has been given, default to:
-        # * AssetExecutionContext for sda steps, not in graph-backed assets
+        # * AssetExecutionContext for sda steps not in graph-backed assets, and asset_checks
         # * OpExecutionContext for non sda steps
         # * OpExecutionContext for ops in graph-backed assets
+        if is_asset_check:
+            return AssetExecutionContext(step_context)
         if is_op_in_graph_asset or not is_sda_step:
             return OpExecutionContext(step_context)
         return AssetExecutionContext(step_context)
