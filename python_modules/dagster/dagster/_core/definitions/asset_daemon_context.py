@@ -424,53 +424,29 @@ class AssetDaemonContext:
             to_discard,
         )
 
-    @functools.cached_property
-    def skipped_asset_graph_subset(self) -> AssetGraphSubset:
-        subset = self.cursor.skipped_asset_graph_subset or AssetGraphSubset(self.asset_graph)
-        # factor out any asset partitions which have been materialized since last tick
-        for asset_key in self.target_asset_keys:
-            partitions_def = self.asset_graph.get_partitions_def(asset_key)
-            new_asset_partitions = self.instance_queryer.get_asset_partitions_updated_after_cursor(
-                asset_key=asset_key,
-                asset_partitions=None,
-                after_cursor=self.latest_storage_id,
-                respect_materialization_data_versions=False,
-            )
-            subset -= {
-                ap
-                for ap in new_asset_partitions
-                if partitions_def is None
-                # ignore partitions which are invalid
-                or (
-                    ap.partition_key is not None
-                    and partitions_def.has_partition_key(ap.partition_key)
-                )
-            }
-        return subset
-
     def get_auto_materialize_asset_evaluations(
         self,
     ) -> Tuple[
         Mapping[AssetKey, AutoMaterializeAssetEvaluation],
         AbstractSet[AssetKeyPartitionKey],
         AbstractSet[AssetKeyPartitionKey],
-        AssetGraphSubset,
+        AbstractSet[AssetKeyPartitionKey],
     ]:
         """Returns a mapping from asset key to the AutoMaterializeAssetEvaluation for that key, as
-        well as a set of all asset partitions that should be materialized this tick.
+        well as sets of all asset partitions that should be materialized, skipped, and discarded
+        this tick.
         """
         evaluations_by_key: Dict[AssetKey, AutoMaterializeAssetEvaluation] = {}
         will_materialize_mapping: Dict[AssetKey, AbstractSet[AssetKeyPartitionKey]] = defaultdict(
             set
         )
+        to_skip: Set[AssetKeyPartitionKey] = set()
         to_discard: Set[AssetKeyPartitionKey] = set()
         expected_data_time_mapping: Dict[AssetKey, Optional[datetime.datetime]] = defaultdict()
         visited_multi_asset_keys = set()
 
         num_checked_assets = 0
         num_target_asset_keys = len(self.target_asset_keys)
-
-        skipped_asset_graph_subset = self.skipped_asset_graph_subset
 
         for asset_key in itertools.chain(*self.asset_graph.toposort_asset_keys()):
             # an asset may have already been visited if it was part of a non-subsettable multi-asset
@@ -515,11 +491,8 @@ class AssetDaemonContext:
 
             evaluations_by_key[asset_key] = evaluation
             will_materialize_mapping[asset_key] = to_materialize_for_asset
+            to_skip.update(to_skip_for_asset)
             to_discard.update(to_discard_for_asset)
-
-            # update set of asset partitions which are currently in the "skipped" state
-            skipped_asset_graph_subset |= to_skip_for_asset
-            skipped_asset_graph_subset -= to_materialize_for_asset | to_discard_for_asset
 
             expected_data_time = get_expected_data_time_for_asset_key(
                 self.asset_graph,
@@ -557,28 +530,18 @@ class AssetDaemonContext:
                         rule_snapshots=auto_materialize_policy.rule_snapshots,  # Neighbors can have different rule snapshots
                     )
                     will_materialize_mapping[neighbor_key] = to_materialize_for_neighbor
+                    to_skip.update(to_skip_for_neighbor)
                     to_discard.update(to_discard_for_neighbor)
-
-                    # update set of asset partitions which are currently in the "skipped" state
-                    skipped_asset_graph_subset |= to_skip_for_neighbor
-                    skipped_asset_graph_subset -= (
-                        to_materialize_for_neighbor | to_discard_for_neighbor
-                    )
 
                     expected_data_time_mapping[neighbor_key] = expected_data_time
                     visited_multi_asset_keys.add(neighbor_key)
 
         to_materialize = set().union(*will_materialize_mapping.values())
-        return (
-            evaluations_by_key,
-            to_materialize,
-            to_discard,
-            skipped_asset_graph_subset,
-        )
+        return (evaluations_by_key, to_materialize, to_skip, to_discard)
 
     def evaluate(
         self,
-    ) -> Tuple[Sequence[RunRequest], AssetDaemonCursor, Sequence[AutoMaterializeAssetEvaluation],]:
+    ) -> Tuple[Sequence[RunRequest], AssetDaemonCursor, Sequence[AutoMaterializeAssetEvaluation]]:
         observe_request_timestamp = pendulum.now().timestamp()
         auto_observe_run_requests = (
             get_auto_observe_run_requests(
@@ -591,7 +554,7 @@ class AssetDaemonContext:
             else []
         )
 
-        evaluations, to_materialize, to_discard, skipped_asset_graph_subset = (
+        evaluations, to_materialize, to_skip, to_discard = (
             self.get_auto_materialize_asset_evaluations()
         )
 
@@ -625,7 +588,9 @@ class AssetDaemonContext:
                     for asset_key in cast(Sequence[AssetKey], run_request.asset_selection)
                 ],
                 observe_request_timestamp=observe_request_timestamp,
-                skipped_asset_graph_subset=skipped_asset_graph_subset,
+                skipped_on_last_tick_subset=AssetGraphSubset.from_asset_partition_set(
+                    to_skip, self.asset_graph
+                ),
             ),
             # only record evaluations where something happened
             [

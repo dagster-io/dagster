@@ -75,18 +75,6 @@ def test_reconciliation(scenario, respect_materialization_data_versions):
             ]
         ) == _sorted_evaluations(evaluations)
 
-    if scenario.expected_skipped_subset is not None:
-        # the __eq__ method for AssetGraphSubset ends up checking for object equality between
-        # the underlying AssetGraphs, so we just compare the important bits.
-        assert (
-            cursor.skipped_asset_graph_subset.non_partitioned_asset_keys
-            == scenario.expected_skipped_asset_graph_subset.non_partitioned_asset_keys
-        )
-        assert (
-            cursor.skipped_asset_graph_subset.partitions_subsets_by_asset_key
-            == scenario.expected_skipped_asset_graph_subset.partitions_subsets_by_asset_key
-        )
-
     assert len(run_requests) == len(scenario.expected_run_requests), evaluations
 
     def sort_run_request_key_fn(run_request):
