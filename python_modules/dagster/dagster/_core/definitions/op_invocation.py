@@ -200,7 +200,7 @@ def direct_invocation_result(
         assets_def=assets_def,
         resources_from_args=resources_by_param_name,
         config_from_args=(
-            config_input._convert_to_config_dictionary()  # noqa: SLF001
+            config_input.convert_to_config_dictionary()
             if isinstance(config_input, Config)
             else config_input
         ),

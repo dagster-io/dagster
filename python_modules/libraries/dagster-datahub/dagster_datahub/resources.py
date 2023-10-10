@@ -91,7 +91,7 @@ class DatahubKafkaEmitterResource(ConfigurableResource):
 
     def get_emitter(self) -> DatahubKafkaEmitter:
         return DatahubKafkaEmitter(
-            KafkaEmitterConfig.parse_obj(self._convert_to_config_dictionary())
+            KafkaEmitterConfig.parse_obj(self.convert_to_config_dictionary())
         )
 
 

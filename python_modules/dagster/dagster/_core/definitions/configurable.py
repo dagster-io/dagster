@@ -237,7 +237,7 @@ def _wrap_user_fn_if_pythonic_config(
         output = user_fn(**{param_name: config_input})
 
         if isinstance(output, Config):
-            return output._convert_to_config_dictionary()  # noqa: SLF001
+            return output.convert_to_config_dictionary()
         else:
             return output
 
