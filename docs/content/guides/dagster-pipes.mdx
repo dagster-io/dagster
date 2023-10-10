@@ -42,9 +42,7 @@ When Dagster Pipes is invoked, several steps will be carried out both in the **o
 
 ### In the orchestration process (Dagster)
 
-When the execution of a Dagster asset begins, Dagster makes context information (ex: `partition_key`, `asset_key`, etc.) available for the external process to consume.
-
-Next, Dagster launches the external process and passes in any provided parameters.
+When Dagster Pipes is called in a Dagster asset, Dagster launches the external process with parameters and context information (ex: `partition_key`, `asset_key`, etc.)
 
 <Image
 alt="Diagram explaining the Dagster Pipes process"
