@@ -7,7 +7,7 @@ description: "Learn how to create a Dagster asset that invokes a subprocess that
 
 <Note>
 
-This is part one of the [Using Dagster Pipes](/guides/dagster-pipes/subprocess) tutorial. If you are looking for how to modify your existing code that is already being orchestrated by Dagster, you can jump to <a href="/guides/dagster-pipes/tutorial/modify-external-code">Part 2: Modify external code</a>.
+This is part one of the [Using Dagster Pipes](/guides/dagster-pipes/subprocess) tutorial. If you are looking for how to modify your existing code that is already being orchestrated by Dagster, you can jump to <a href="/guides/dagster-pipes/subprocess/modify-external-code">Part 2: Modify external code</a>.
 
 </Note>
 
@@ -15,7 +15,7 @@ This part talks about how to create a Dagster asset that, in its execution funct
 
 ## Step 1: Define a Dagster asset that executes a subprocess
 
-1. Create a new file named `dagster_subprocess_pipes.py` in the same directory as the `external_code.py` file you created earlier in the [Prerequisites](/guides/dagster-pipes/tutorial#prerequisites) step.
+1. Create a new file named `dagster_subprocess_pipes.py` in the same directory as the `external_code.py` file you created earlier in the [Prerequisites](/guides/dagster-pipes/subprocess#prerequisites) step.
 2. First, you’ll define the asset. Copy and paste the following into the file:
 
 ```python file=/guides/dagster/dagster_pipes/subprocess/dagster_subprocess_pipes.py startafter=start_asset_marker endbefore=end_asset_marker lines=-16
@@ -141,37 +141,37 @@ dagster dev
 2. Navigate to localhost:3000, where you should see the UI:
 
 <Image
-alt="Asset in the UI"
-src="/images/guides/dagster-pipes/subprocess-1-asset.png"
-width={1264}
-height={714}
+  alt="Asset in the UI"
+  src="/images/guides/dagster-pipes/subprocess-1-asset.png"
+  width={1264}
+  height={714}
 />
 
 3. Click **Materialize** located in the top right to run your code:
 
 <Image
-alt="Materialize asset"
-src="/images/guides/dagster-pipes/subprocess-2-materialize.png"
-width={1326}
-height={744}
+  alt="Materialize asset"
+  src="/images/guides/dagster-pipes/subprocess-2-materialize.png"
+  width={1326}
+  height={744}
 />
 
 4. Navigate to the [Run details](/concepts/webserver/ui#run-details) page, where you should see the logs for the run:
 
 <Image
-alt="Logs in the run details page"
-src="/images/guides/dagster-pipes/subprocess-3-1-events.png"
-width={1272}
-height={718}
+  alt="Logs in the run details page"
+  src="/images/guides/dagster-pipes/subprocess-3-1-events.png"
+  width={1272}
+  height={718}
 />
 
 In the `external_code.py`, we've got a `print` statement which outputs to stdout. Dagster will display these in the UI's raw compute log view. To see the `stdout` log, toggle the log section to **stdout**:
 
 <Image
-alt="Raw compute logs in the run details page"
-src="/images/guides/dagster-pipes/subprocess-3-2-raw-compute-logs.png"
-width={1272}
-height={718}
+  alt="Raw compute logs in the run details page"
+  src="/images/guides/dagster-pipes/subprocess-3-2-raw-compute-logs.png"
+  width={1272}
+  height={718}
 />
 
 ---

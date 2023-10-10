@@ -92,10 +92,10 @@ Then, the log messages will show up in the Dagster UI. You can filter the log le
 2. Select the **info** checkbox and deselect the others. This will show only the logs marked as **info** level.
 
 <Image
-alt="Send log messages to Dagster"
-src="/images/guides/dagster-pipes/modifying-code-4-log-messages.png"
-width={1326}
-height={742}
+  alt="Send log messages to Dagster"
+  src="/images/guides/dagster-pipes/modifying-code-4-log-messages.png"
+  width={1326}
+  height={742}
 />
 
 ## Step 3: Send structured metadata to Dagster
@@ -104,7 +104,7 @@ Sometimes, you may want to log information from your external code to be structu
 
 #### Report asset materialization
 
-Similar to [reporting materialization metadata within the Dagster process](/concepts/assets/software-defined-assets#reporting-materialization-metadata), you can also report asset materialization back to Dagster from the external process.
+Similar to [reporting materialization metadata within the Dagster process](/concepts/assets/software-defined-assets#recording-materialization-metadata), you can also report asset materialization back to Dagster from the external process.
 
 In this example, we’re passing a piece of metadata named `total_orders` to the `metadata` parameter of the <PyObject module="dagster_pipes" object="PipesContext" method="report_asset_materialization" />. This payload will be sent from the external process back to Dagster:
 
@@ -118,19 +118,19 @@ context.report_asset_materialization(metadata={"total_orders": total_orders})
 Then, total_orders will show up in the UI as structured metadata:
 
 <Image
-alt="Report asset materialization to Dagster"
-src="/images/guides/dagster-pipes/modifying-code-5-1-report-asset-materialization.png"
-width={1412}
-height={806}
+  alt="Report asset materialization to Dagster"
+  src="/images/guides/dagster-pipes/modifying-code-5-1-report-asset-materialization.png"
+  width={1412}
+  height={806}
 />
 
 This metadata will also be displayed on the Events tab of the Asset Details page in the UI:
 
 <Image
-alt="View materialization events in asset details page"
-src="/images/guides/dagster-pipes/modifying-code-5-2-materialization-asset-details.png"
-width={1286}
-height={736}
+  alt="View materialization events in asset details page"
+  src="/images/guides/dagster-pipes/modifying-code-5-2-materialization-asset-details.png"
+  width={1286}
+  height={736}
 />
 
 #### Report asset checks
@@ -150,19 +150,19 @@ context.report_asset_check(
 When Dagster executes the code, you’ll see an asset check event with the check result in the UI:
 
 <Image
-alt="Report asset checks to Dagster"
-src="/images/guides/dagster-pipes/modifying-code-5-3-report-asset-checks.png"
-width={1312}
-height={734}
+  alt="Report asset checks to Dagster"
+  src="/images/guides/dagster-pipes/modifying-code-5-3-report-asset-checks.png"
+  width={1312}
+  height={734}
 />
 
 This check result will also be displayed on the Checks tab of the Asset Details page in the UI:
 
 <Image
-alt="View checks in asset details page"
-src="/images/guides/dagster-pipes/modifying-code-5-4-checks-asset-details.png"
-width={1302}
-height={730}
+  alt="View checks in asset details page"
+  src="/images/guides/dagster-pipes/modifying-code-5-4-checks-asset-details.png"
+  width={1302}
+  height={730}
 />
 
 ---
@@ -245,4 +245,4 @@ What's next? From here, you can:
 
 - Learn about other capabilities of executing external code in subprocess via Dagster Pipes in the [Reference](/guides/dagster-pipes/subprocess/reference) section
 - Learn about [other integrations with Dagster Pipes](/guides/dagster-pipes#usage).
-- Learn how to [customize your own Dagster Pipes protocols](/customizing-dagster-pipes-protocols).
+- Learn how to [customize your own Dagster Pipes protocols](/guides/dagster-pipes/customizing-dagster-pipes-protocols).
