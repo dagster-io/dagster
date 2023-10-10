@@ -98,47 +98,67 @@ export const CalculateChangedAndMissingDialog = React.memo(
       }
       if (staleOrMissing?.length) {
         return (
-          <Container ref={containerRef} style={{maxHeight: '500px'}}>
-            <Inner $totalHeight={totalHeight}>
-              {items.map(({index, key, size, start, measureElement}) => {
-                const item = staleOrMissing[index]!;
-                return (
-                  <Row $height={size} $start={start} key={key} ref={measureElement}>
-                    <RowGrid border="bottom">
-                      <Checkbox
-                        id={`checkbox-${key}`}
-                        checked={checked.has(item)}
-                        onChange={() => {
-                          setChecked((checked) => {
-                            const copy = new Set(checked);
-                            if (copy.has(item)) {
-                              copy.delete(item);
-                            } else {
-                              copy.add(item);
-                            }
-                            return copy;
-                          });
-                        }}
-                      />
-                      <Box
-                        as="label"
-                        htmlFor={`checkbox-${key}`}
-                        flex={{alignItems: 'center', gap: 4}}
-                        style={{cursor: 'pointer'}}
-                      >
-                        <Box flex={{shrink: 1}}>
-                          <MiddleTruncate text={displayNameForAssetKey(item)} />
+          <>
+            <RowGrid border="bottom" padding={{bottom: 8}}>
+              <Checkbox
+                id="check-all"
+                checked={checked.size === staleOrMissing.length}
+                onChange={() => {
+                  setChecked((checked) => {
+                    if (checked.size === staleOrMissing.length) {
+                      return new Set();
+                    } else {
+                      return new Set(staleOrMissing);
+                    }
+                  });
+                }}
+              />
+              <label htmlFor="check-all" style={{color: Colors.Gray500, cursor: 'pointer'}}>
+                Asset Name
+              </label>
+            </RowGrid>
+            <Container ref={containerRef} style={{maxHeight: '400px'}}>
+              <Inner $totalHeight={totalHeight}>
+                {items.map(({index, key, size, start, measureElement}) => {
+                  const item = staleOrMissing[index]!;
+                  return (
+                    <Row $height={size} $start={start} key={key} ref={measureElement}>
+                      <RowGrid border="bottom">
+                        <Checkbox
+                          id={`checkbox-${key}`}
+                          checked={checked.has(item)}
+                          onChange={() => {
+                            setChecked((checked) => {
+                              const copy = new Set(checked);
+                              if (copy.has(item)) {
+                                copy.delete(item);
+                              } else {
+                                copy.add(item);
+                              }
+                              return copy;
+                            });
+                          }}
+                        />
+                        <Box
+                          as="label"
+                          htmlFor={`checkbox-${key}`}
+                          flex={{alignItems: 'center', gap: 4}}
+                          style={{cursor: 'pointer'}}
+                        >
+                          <Box flex={{shrink: 1}}>
+                            <MiddleTruncate text={displayNameForAssetKey(item)} />
+                          </Box>
+                          <Link to={assetDetailsPathForKey(item)} target="_blank">
+                            <Icon name="open_in_new" color={Colors.Link} />
+                          </Link>
                         </Box>
-                        <Link to={assetDetailsPathForKey(item)} target="_blank">
-                          <Icon name="open_in_new" color={Colors.Link} />
-                        </Link>
-                      </Box>
-                    </RowGrid>
-                  </Row>
-                );
-              })}
-            </Inner>
-          </Container>
+                      </RowGrid>
+                    </Row>
+                  );
+                })}
+              </Inner>
+            </Container>
+          </>
         );
       }
       return (
@@ -162,6 +182,7 @@ export const CalculateChangedAndMissingDialog = React.memo(
                   onMaterializeAssets(Array.from(checked), e);
                   onClose();
                 }}
+                disabled={checked.size === 0}
               >
                 Materialize {checked.size} assets
               </Button>
