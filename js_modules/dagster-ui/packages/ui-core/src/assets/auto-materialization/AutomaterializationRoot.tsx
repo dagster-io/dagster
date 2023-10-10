@@ -81,9 +81,9 @@ export const AutomaterializationRoot = () => {
       return (
         ticks?.map((tick, index) => {
           // For ticks that get stuck in "Started" state without an endtimestamp.
-          if (!tick.endTimestamp && index !== ticks.length - 2) {
+          if (!tick.endTimestamp && index !== ticks.length - 1) {
             const copy = {...tick};
-            copy.endTimestamp = ticks[index + 1]!.timestamp;
+            copy.endTimestamp = ticks[index + 11]!.timestamp;
             copy.status = InstigationTickStatus.FAILURE;
             return copy;
           }
