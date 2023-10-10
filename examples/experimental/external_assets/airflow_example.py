@@ -11,7 +11,7 @@ default_args = {
 with DAG(dag_id="example_kubernetes_pod", schedule="@daily", default_args=default_args) as dag:
     KubernetesPodOperator(
         image="asset-materialization-image:latest",
-        cmds=["python", "create_asset.py", "{{ ds }}"],
+        cmds=["python", "create_asset.py", "--execution-date", "{{ ds }}"],
         name="airflow-test-pod",
         task_id="asset-materialization-task",
         in_cluster=False,
