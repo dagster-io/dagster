@@ -574,9 +574,24 @@
           },
           {
             "title": "Insights",
-            "path": "/dagster-cloud/insights"
+            "path": "/dagster-cloud/insights",
+            "children": [
+              {
+                "title": "Integrating external metrics",
+                "path": "/dagster-cloud/insights/integrating-external-metrics",
+                "children": [
+                  {
+                    "title": "Snowflake + dbt",
+                    "path": "/dagster-cloud/insights/integrating-snowflake-and-dbt"
+                  }
+                ]
+              },
+              {
+                "title": "Exporting metrics",
+                "path": "/dagster-cloud/insights/exporting-insights-metrics"
+              }
+            ]
           },
-
           {
             "title": "dagster-cloud CLI",
             "path": "/dagster-cloud/managing-deployments/dagster-cloud-cli"
