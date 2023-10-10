@@ -2,7 +2,7 @@ FROM python:3.10-slim
 
 # install pipes
 RUN pip install pandas numpy
-RUN pip install dagster-pipes>=1.5.1
+RUN pip install dagster-pipes>=1.5.2
 
 WORKDIR /app
 COPY pipes/join_iot_check.py /app/join_iot_check.py
