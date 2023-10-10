@@ -139,7 +139,7 @@ class RuleEvaluationContext(NamedTuple):
         """The set of candidates on this tick which were not candidates on the previous tick."""
         return {c for c in self.candidates if c not in self.cursor.skipped_on_last_tick_subset}
 
-    def get_previous_tick_results(self, rule: "AutoMaterializeRule"):
+    def get_previous_tick_results(self, rule: "AutoMaterializeRule") -> "RuleEvaluationResults":
         """Returns the results that were calculated for a given rule on the previous tick."""
         previous_evaluation = self.cursor.latest_evaluation_by_asset_key.get(self.asset_key)
         if not previous_evaluation:
@@ -301,9 +301,13 @@ class AutoMaterializeRule(ABC):
                 previous tick should be included in the results of this tick.
         """
         asset_partitions_by_evaluation_data = defaultdict(set, asset_partitions_by_evaluation_data)
+        evaluated_asset_partitions = set().union(*asset_partitions_by_evaluation_data.values())
         for evaluation_data, asset_partitions in context.get_previous_tick_results(self):
             for ap in asset_partitions:
-                if should_include(ap):
+                # evaluated data from this tick takes precedence over data from the previous tick
+                if ap in evaluated_asset_partitions:
+                    continue
+                elif should_include(ap):
                     asset_partitions_by_evaluation_data[evaluation_data].add(ap)
 
         return list(asset_partitions_by_evaluation_data.items())
@@ -485,8 +489,7 @@ class MaterializeOnParentUpdatedRule(
         return self.add_evaluation_data_from_previous_tick(
             context,
             asset_partitions_by_evaluation_data,
-            should_include=lambda ap: ap not in has_or_will_update
-            and context.skipped_on_last_tick_and_not_materialized_since(ap),
+            should_include=lambda ap: context.skipped_on_last_tick_and_not_materialized_since(ap),
         )
 
 
@@ -530,8 +533,7 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
         return self.add_evaluation_data_from_previous_tick(
             context,
             asset_partitions_by_evaluation_data,
-            should_include=lambda ap: ap not in missing_asset_partitions
-            and context.skipped_on_last_tick_and_not_materialized_since(ap),
+            should_include=lambda ap: context.skipped_on_last_tick_and_not_materialized_since(ap),
         )
 
 
