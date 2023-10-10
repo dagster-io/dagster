@@ -13,4 +13,3 @@ with open_dagster_pipes() as context:
         }
     )
     context.report_asset_materialization(metadata={"row_count": len(data)})
-    context.report_asset_check(check_name="telem_post_processing_check", passed=True)
