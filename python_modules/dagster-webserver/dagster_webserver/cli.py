@@ -162,6 +162,14 @@ DEFAULT_POOL_RECYCLE = 3600  # 1 hr
     required=False,
     hidden=True,
 )
+@click.option(
+    "--live-data-poll-rate",
+    help="Rate at which the dagster UI polls for updated asset data (in milliseconds)",
+    type=click.INT,
+    required=False,
+    default=2000,
+    show_default=True,
+)
 @click.version_option(version=__version__, prog_name="dagster-webserver")
 def dagster_webserver(
     host: str,
@@ -175,6 +183,7 @@ def dagster_webserver(
     dagster_log_level: str,
     code_server_log_level: str,
     instance_ref: Optional[str],
+    live_data_poll_rate: int,
     **kwargs: ClickArgValue,
 ):
     if suppress_warnings:
@@ -205,7 +214,12 @@ def dagster_webserver(
             code_server_log_level=code_server_log_level,
         ) as workspace_process_context:
             host_dagster_ui_with_workspace_process_context(
-                workspace_process_context, host, port, path_prefix, uvicorn_log_level
+                workspace_process_context,
+                host,
+                port,
+                path_prefix,
+                uvicorn_log_level,
+                live_data_poll_rate,
             )
 
 
@@ -227,6 +241,7 @@ def host_dagster_ui_with_workspace_process_context(
     port: Optional[int],
     path_prefix: str,
     log_level: str,
+    live_data_poll_rate: Optional[int] = None,
 ):
     check.inst_param(
         workspace_process_context, "workspace_process_context", IWorkspaceProcessContext
@@ -234,11 +249,12 @@ def host_dagster_ui_with_workspace_process_context(
     host = check.opt_str_param(host, "host", "127.0.0.1")
     check.opt_int_param(port, "port")
     check.str_param(path_prefix, "path_prefix")
+    check.opt_int_param(live_data_poll_rate, "live_data_poll_rate")
 
     logger = logging.getLogger(WEBSERVER_LOGGER_NAME)
 
     app = create_app_from_workspace_process_context(
-        workspace_process_context, path_prefix, lifespan=_lifespan
+        workspace_process_context, path_prefix, live_data_poll_rate, lifespan=_lifespan
     )
 
     if not port:
