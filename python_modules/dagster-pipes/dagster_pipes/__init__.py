@@ -197,19 +197,28 @@ def _resolve_optionally_passed_asset_key(
     asset_key: Optional[str],
     method: str,
 ) -> str:
-    asset_keys = _assert_defined_asset_property(data["asset_keys"], method)
     asset_key = _assert_opt_param_type(asset_key, str, method, "asset_key")
-    if asset_key and asset_key not in asset_keys:
-        raise DagsterPipesError(
-            f"Invalid asset key. Expected one of `{asset_keys}`, got `{asset_key}`."
-        )
-    if not asset_key:
-        if len(asset_keys) != 1:
+
+    defined_asset_keys = data["asset_keys"]
+    if defined_asset_keys:
+        if asset_key and asset_key not in defined_asset_keys:
             raise DagsterPipesError(
-                f"Calling `{method}` without passing an asset key is undefined. Current step"
-                " targets multiple assets."
+                f"Invalid asset key. Expected one of `{defined_asset_keys}`, got `{asset_key}`."
             )
-        asset_key = asset_keys[0]
+        if not asset_key:
+            if len(defined_asset_keys) != 1:
+                raise DagsterPipesError(
+                    f"Calling `{method}` without passing an asset key is undefined. Current step"
+                    " targets multiple assets."
+                )
+            asset_key = defined_asset_keys[0]
+
+    if not asset_key:
+        raise DagsterPipesError(
+            f"Calling `{method}` without passing an asset key is undefined. Current step"
+            " does not target a specific asset."
+        )
+
     return asset_key
 
 
