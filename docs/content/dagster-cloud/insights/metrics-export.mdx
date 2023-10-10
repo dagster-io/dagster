@@ -1,17 +1,40 @@
 ---
-title: Metrics Export
+title: "Exporting metrics from Dagster Cloud Insights | Dagster Docs"
 description: "Exporting metrics from Dagster Cloud Insights."
 
 platform_type: "cloud"
 ---
 
-# Exporting Metrics from Dagster Cloud Insights
+# Exporting metrics from Dagster Cloud Insights
 
-Metrics avaialable in [Dagster Cloud Insights](/dagster-cloud/insights) can be exported using a GraphQL API.
+Using a GraphQL API endpoint, you can export [Dagster Cloud Insights](/dagster-cloud/insights) metrics from your Dagster Cloud instance.
 
-## Example
+Refer to the [Available Insights metrics](/dagster-cloud/insights#available-metrics) for a list of available metrics.
 
-This examples uses the [GraphQL Python Client](/concepts/webserver/graphql-client) to export the Dagster Credits metric for all assets for the month of September 2023:
+---
+
+## Prerequisites
+
+To complete the steps in this guide, you'll need:
+
+- A Dagster Cloud account
+- A Dagster Cloud [user token](/dagster-cloud/account/managing-user-agent-tokens#managing-user-tokens)
+- Your deployment-scoped Dagster Cloud deployment URL. For example: `dagster-university.dagster.cloud/prod`
+
+---
+
+## Before you start
+
+Before you start, note that:
+
+- Metrics are currently computed once per day
+- We don't recommend frequently querying over large time ranges that may download a large amount of data. After an initial data load, we recommend loading data daily for the most recent week or less.
+
+---
+
+## Using the API
+
+In this example, we're using the [GraphQL Python Client](/concepts/webserver/graphql-client) to export the Dagster credits metric for all assets for September 2023:
 
 ```python
 from datetime import datetime
@@ -70,11 +93,27 @@ if __name__ == "__main__":
 
 ```
 
+To use this example yourself, replace the values of `url` and `user_token` in this function:
+
+```python
+def get_client():
+    url = "YOUR_ORG.dagster.cloud/prod"  # Your deployment-scoped url
+    user_token = "YOUR_TOKEN"  # A token generated from Cloud Settings -> Tokens
+    return DagsterGraphQLClient(url, headers={"Dagster-Cloud-Api-Token": user_token})
+```
+
+Refer to the [Reference section](#reference) for more info about the endpoints available in the GraphQL API.
+
+---
+
 ## Reference
 
-A condensed reference is provided below. For the full reference go to <https://YOUR_ORG.dagster.cloud/prod/graphql> and click on the Schema tab.
+For the full GraphQL API reference:
 
-The top level GraphQL queries available are:
+1. Navigate to <https://YOUR_ORG.dagster.cloud/prod/graphql>, replacing `YOUR_ORG` with your organization name. For example: `https://dagster-university.dagster.cloud/prod/graphql`
+2. Click the **Schema** tab.
+
+### Available top-level queries
 
 ```graphql
 reportingMetricsByJob(
@@ -93,7 +132,9 @@ reportingMetricsByAssetGroup(
 ): ReportingMetricsOrError!
 ```
 
-The `metricsSelector` specifies the metric name and time granularity.
+### Specifying metrics and time granularity
+
+Use `metricsSelector` to specify the metric name and time granularity:
 
 ```graphql
 input ReportingMetricsSelector {
@@ -118,7 +159,3 @@ enum ReportingMetricsGranularity {
 # "__dagster_asset_check_errors"
 # "__dagster_asset_check_warnings"
 ```
-
-## Automation
-
-We do not recommend doing frequent queries over large time windows that may download large amounts of data. After an initial data load, we recommend loading data daily for the most recent week or less. Note that the metrics data is currently computed once daily.
