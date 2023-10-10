@@ -319,6 +319,20 @@ class AutoMaterializeRule(ABC):
         """
         return DiscardOnRequiredButNonexistentParentsRule()
 
+    @public
+    @staticmethod
+    def discard_on_backfill_in_progress(
+        discard_all_partitions_of_backfilling_asset: bool = True,
+    ) -> "DiscardOnBackfillInProgressRule":
+        """Discard an asset's partitions if the asset is currently being backfilled.
+
+        Attributes:
+            discard_all_partitions_of_backfilling_asset (Optional[bool]): If true, discards
+                all partitions of the backfilling asset, regardless of whether the partition
+                is being backfilled. If false, discards only partitions that are being backfilled.
+        """
+        return DiscardOnBackfillInProgressRule(discard_all_partitions_of_backfilling_asset)
+
     def to_snapshot(self) -> AutoMaterializeRuleSnapshot:
         """Returns a serializable snapshot of this rule for historical evaluations."""
         return AutoMaterializeRuleSnapshot.from_rule(self)
@@ -706,6 +720,42 @@ class DiscardOnRequiredButNonexistentParentsRule(
                 )
                 for k, v in asset_partitions_by_nonexistent_but_required_parent_keys.items()
             ]
+
+        return []
+
+
+@whitelist_for_serdes
+class DiscardOnBackfillInProgressRule(
+    AutoMaterializeRule,
+    NamedTuple(
+        "_DiscardOnBackfillInProgressRule", [("discard_all_partitions_of_backfilling_asset", bool)]
+    ),
+):
+    @property
+    def decision_type(self) -> AutoMaterializeDecisionType:
+        return AutoMaterializeDecisionType.DISCARD
+
+    @property
+    def description(self) -> str:
+        return "asset is currently being backfilled"
+
+    def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
+        backfill_in_progress_candidates: AbstractSet[AssetKeyPartitionKey] = set()
+
+        backfilling_subset = (
+            context.instance_queryer.get_active_backfill_target_asset_graph_subset()
+        )
+
+        for candidate in context.candidates:
+            if self.discard_all_partitions_of_backfilling_asset:
+                if candidate.asset_key in backfilling_subset.asset_keys:
+                    backfill_in_progress_candidates.add(candidate)
+            else:
+                if candidate in backfilling_subset:
+                    backfill_in_progress_candidates.add(candidate)
+
+        if backfill_in_progress_candidates:
+            return [(None, backfill_in_progress_candidates)]
 
         return []
 

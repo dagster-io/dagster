@@ -71,6 +71,7 @@ def get_implicit_auto_materialize_policy(
             AutoMaterializeRule.skip_on_parent_outdated(),
             AutoMaterializeRule.skip_on_parent_missing(),
             AutoMaterializeRule.discard_on_required_but_nonexistent_parents(),
+            AutoMaterializeRule.discard_on_backfill_in_progress(),
             *(
                 {
                     AutoMaterializeRule.discard_on_max_materializations_exceeded(
@@ -356,23 +357,6 @@ class AssetDaemonContext:
                 self._logger.debug(f"Rule returned {len(asset_partitions)} partitions")
                 to_materialize.update(asset_partitions)
             self._logger.debug("Done evaluating materialize rule")
-
-        # These should be conditions, but aren't currently, so we just manually strip out things
-        # from our materialization set
-        for candidate in list(to_materialize):
-            if (
-                # must not be part of an active asset backfill
-                # Consider this as a skip so that partitions are evaluated after backfill finishes
-                # We currently do a discard to temp ignore the backfilled partitions
-                # Do you care about the targeted partition or the whole asset?
-                # Skip on part of backfill
-                candidate
-                in self.instance_queryer.get_active_backfill_target_asset_graph_subset()
-            ):
-                to_materialize.remove(candidate)
-                for rule_evaluation_data, asset_partitions in all_results:
-                    all_results.remove((rule_evaluation_data, asset_partitions))
-                    all_results.append((rule_evaluation_data, asset_partitions - {candidate}))
 
         skip_context = materialize_context._replace(candidates=to_materialize)
 
