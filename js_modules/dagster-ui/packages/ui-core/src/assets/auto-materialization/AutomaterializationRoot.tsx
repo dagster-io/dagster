@@ -17,6 +17,7 @@ import {useConfirmation} from '../../app/CustomConfirmationProvider';
 import {useUnscopedPermissions} from '../../app/Permissions';
 import {useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {useTrackPageView} from '../../app/analytics';
+import {InstigationTickStatus} from '../../graphql/types';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {LiveTickTimeline} from '../../instigation/LiveTickTimeline2';
 import {OverviewTabs} from '../../overview/OverviewTabs';
@@ -76,7 +77,16 @@ export const AutomaterializationRoot = () => {
   }
   const ticks = React.useMemo(
     () => {
-      return queryResult.data?.autoMaterializeTicks ?? [];
+      return (
+        queryResult.data?.autoMaterializeTicks.map((tick, index, arr) => {
+          // For ticks that get stuck in "Started" state without an endtimestamp.
+          if (!tick.endTimestamp && index !== arr.length - 1) {
+            tick.endTimestamp = ticks[index + 1]!.timestamp;
+            tick.status = InstigationTickStatus.FAILURE;
+          }
+          return tick;
+        }) ?? []
+      );
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [...ids.slice(0, 100)],
