@@ -94,7 +94,7 @@ export const AutomaterializationEvaluationHistoryTable = ({
         margin={{top: 32}}
         border="top"
       >
-        <Box flex={{direction: 'row', gap: 8}}>
+        <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
           <ButtonGroup
             activeItems={new Set(['evaluations'])}
             buttons={[
