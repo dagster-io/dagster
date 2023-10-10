@@ -7,6 +7,7 @@ import pytest
 from dagster import (
     AssetKey,
     AutoMaterializePolicy,
+    BackfillPolicy,
     DailyPartitionsDefinition,
     FreshnessPolicy,
     PartitionsDefinition,
@@ -174,6 +175,19 @@ def test_io_manager_key(io_manager_key: Optional[str]) -> None:
 
     for output_def in my_dbt_assets.node_def.output_defs:
         assert output_def.io_manager_key == expected_io_manager_key
+
+
+def test_backfill_policy():
+    backfill_policy = BackfillPolicy.single_run()
+
+    @dbt_assets(
+        manifest=manifest,
+        partitions_def=DailyPartitionsDefinition(start_date="2023-01-01"),
+        backfill_policy=backfill_policy,
+    )
+    def my_dbt_assets(): ...
+
+    assert my_dbt_assets.backfill_policy == backfill_policy
 
 
 def test_with_asset_key_replacements() -> None:
