@@ -167,7 +167,6 @@ class AssetReconciliationScenario(
             ("requires_respect_materialization_data_versions", bool),
             ("supports_with_external_asset_graph", bool),
             ("expected_error_message", Optional[str]),
-            ("expected_skipped_subset", Optional[AbstractSet[AssetKeyPartitionKey]]),
         ],
     )
 ):
@@ -191,7 +190,6 @@ class AssetReconciliationScenario(
         requires_respect_materialization_data_versions: bool = False,
         supports_with_external_asset_graph: bool = True,
         expected_error_message: Optional[str] = None,
-        expected_skipped_subset: Optional[AbstractSet[AssetKeyPartitionKey]] = None,
     ) -> "AssetReconciliationScenario":
         # For scenarios with no auto-materialize policies, we infer auto-materialize policies
         # and add them to the assets.
@@ -229,7 +227,6 @@ class AssetReconciliationScenario(
             requires_respect_materialization_data_versions=requires_respect_materialization_data_versions,
             supports_with_external_asset_graph=supports_with_external_asset_graph,
             expected_error_message=expected_error_message,
-            expected_skipped_subset=expected_skipped_subset,
         )
 
     def _get_code_location_origin(
@@ -248,13 +245,6 @@ class AssetReconciliationScenario(
                 + (f"_{location_name}" if location_name else ""),
             ),
             location_name=location_name or "test_location",
-        )
-
-    @property
-    def expected_skipped_asset_graph_subset(self) -> AssetGraphSubset:
-        return AssetGraphSubset.from_asset_partition_set(
-            self.expected_skipped_subset or set(),
-            AssetGraph.from_assets(self.assets or []),
         )
 
     def do_sensor_scenario(

@@ -967,4 +967,52 @@ auto_materialize_policy_scenarios = {
             ),
         ],
     ),
+    "skipped_subset_unpartitioned": AssetReconciliationScenario(
+        assets=vee,
+        asset_selection=AssetSelection.keys("C"),
+        cursor_from=AssetReconciliationScenario(
+            assets=vee,
+            asset_selection=AssetSelection.keys("C"),
+            unevaluated_runs=[run(["A"])],
+            # C must wait for B to be materialized
+            expected_run_requests=[],
+        ),
+        unevaluated_runs=[run(["B"])],
+        # can now run C because the skip rule is no longer true
+        expected_run_requests=[run_request(["C"])],
+    ),
+    "skipped_subset_partitioned": AssetReconciliationScenario(
+        assets=partitioned_vee,
+        asset_selection=AssetSelection.keys("C"),
+        cursor_from=AssetReconciliationScenario(
+            assets=partitioned_vee,
+            asset_selection=AssetSelection.keys("C"),
+            unevaluated_runs=[
+                run(["A"], partition_key="a"),
+                run(["A"], partition_key="b"),
+            ],
+            # C must wait for B to be materialized
+            expected_run_requests=[],
+        ),
+        unevaluated_runs=[run(["B"], partition_key="a")],
+        # can now run C[a] because the skip rule is no longer true
+        expected_run_requests=[run_request(["C"], partition_key="a")],
+    ),
+    "skipped_subset_partitioned2": AssetReconciliationScenario(
+        assets=partitioned_vee,
+        asset_selection=AssetSelection.keys("C"),
+        cursor_from=AssetReconciliationScenario(
+            assets=partitioned_vee,
+            asset_selection=AssetSelection.keys("C"),
+            unevaluated_runs=[
+                run(["A"], partition_key="a"),
+                run(["A"], partition_key="b"),
+            ],
+            # C must wait for B to be materialized
+            expected_run_requests=[],
+        ),
+        # manually run C
+        expected_run_requests=[],
+        unevaluated_runs=[],
+    ),
 }
