@@ -9,6 +9,7 @@ from dagster._core.definitions.auto_materialize_rule import (
     AutoMaterializeRuleEvaluation,
     AutoMaterializeRuleEvaluationData,
     ParentUpdatedRuleEvaluationData,
+    RequiredButNonexistentParentsRuleEvaluationData,
     TextRuleEvaluationData,
     WaitingOnAssetsRuleEvaluationData,
 )
@@ -67,12 +68,20 @@ class GrapheneWaitingOnKeysRuleEvaluationData(graphene.ObjectType):
         name = "WaitingOnKeysRuleEvaluationData"
 
 
+class GrapheneRequiredButNonexistentParentsRuleEvaluationData(graphene.ObjectType):
+    requiredButNonexistentAssetKeys = graphene.List(graphene.NonNull(GrapheneAssetKey))
+
+    class Meta:
+        name = "RequiredButNonexistentParentsRuleEvaluationData"
+
+
 class GrapheneAutoMaterializeRuleEvaluationData(graphene.Union):
     class Meta:
         types = (
             GrapheneTextRuleEvaluationData,
             GrapheneParentMaterializedRuleEvaluationData,
             GrapheneWaitingOnKeysRuleEvaluationData,
+            GrapheneRequiredButNonexistentParentsRuleEvaluationData,
         )
         name = "AutoMaterializeRuleEvaluationData"
 
@@ -139,6 +148,10 @@ def create_graphene_auto_materialize_rule_evaluation(
     elif isinstance(rule_evaluation_data, WaitingOnAssetsRuleEvaluationData):
         rule_evaluation_data = GrapheneWaitingOnKeysRuleEvaluationData(
             waitingOnAssetKeys=rule_evaluation_data.waiting_on_asset_keys
+        )
+    elif isinstance(rule_evaluation_data, RequiredButNonexistentParentsRuleEvaluationData):
+        rule_evaluation_data = GrapheneRequiredButNonexistentParentsRuleEvaluationData(
+            requiredButNonexistentAssetKeys=rule_evaluation_data.nonexistent_required_partitions_asset_keys
         )
     elif rule_evaluation_data is not None:
         check.failed(f"Unexpected rule evaluation data type {type(rule_evaluation_data)}")
