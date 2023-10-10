@@ -29,8 +29,11 @@ With Dagster Pipes, you can:
 
 While Dagster Pipes is lightweight and flexible, there are a few limitations to be aware of:
 
-- **Step launchers are currently incompatible.**
-- **I/O managers aren’t currently supported.** Dagster Pipes isn't built for processing data in memory, which is what I/O managers are for. For example, to process data in memory in Pyspark, you can use an I/O manager [as demonstrated in the Pyspark integration guide](/integrations/spark#running-pyspark-code-in-assets). Otherwise, in a remote case, you can use Pipes.
+- **Step launchers and Pipes can't currently be used together.** Dagster Pipes is a lightweight alternative to step launchers. Think of this as an either-or situation - you can use step launchers **or** you can use Dagster Pipes, depending on your needs.
+
+- **Some Dagster concepts aren't supported for use in external processes.** Dagster Pipes (`dagster-pipes`) doesn't include the core Dagster (`dagster`) library. As such, concepts like resources and I/O managers, which are included in `dagster`, aren't available for use in external processes executed by Dagster Pipes.
+
+  For example, I/O managers aren't currently supported, as Dagster Pipes isn't built for processing data in memory. To process data in memory in Pyspark, you could use an I/O manager [as demonstrated in the Pyspark integration guide](/integrations/spark#running-pyspark-code-in-assets). Otherwise, in a remote case, you can use Pipes.
 
 ---
 
