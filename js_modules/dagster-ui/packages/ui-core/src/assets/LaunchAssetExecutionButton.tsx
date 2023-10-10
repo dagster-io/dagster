@@ -195,7 +195,7 @@ export const LaunchAssetExecutionButton: React.FC<{
   const {MaterializeButton} = useLaunchPadHooks();
 
   const [showCalculatingChangedAndMissingDialog, setShowCalculatingChangedAndMissingDialog] =
-    React.useState<React.MouseEvent<any> | null>(null);
+    React.useState<boolean>(false);
 
   const options = optionsForButton(scope, liveDataForStale);
   const firstOption = options[0]!;
@@ -226,7 +226,7 @@ export const LaunchAssetExecutionButton: React.FC<{
       <CalculateChangedAndMissingDialog
         isOpen={!!showCalculatingChangedAndMissingDialog}
         onClose={() => {
-          setShowCalculatingChangedAndMissingDialog(null);
+          setShowCalculatingChangedAndMissingDialog(false);
         }}
         assets={inScope}
         preferredJobName={preferredJobName}
