@@ -352,7 +352,7 @@ class AssetDaemonContext:
                 to_materialize.update(asset_partitions)
             self._logger.debug("Done evaluating materialize rule")
 
-        # these should be conditions, but aren't currently, so we just manually strip out things
+        # these should be rules, but aren't currently, so we just manually strip out things
         # from our materialization set
         for candidate in list(to_materialize):
             if candidate in self.instance_queryer.get_active_backfill_target_asset_graph_subset():
