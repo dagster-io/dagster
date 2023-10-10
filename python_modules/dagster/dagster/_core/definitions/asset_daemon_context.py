@@ -484,6 +484,7 @@ class AssetDaemonContext:
 
             evaluations_by_key[asset_key] = evaluation
             will_materialize_mapping[asset_key] = to_materialize_for_asset
+            to_skip.update(to_skip_for_asset)
             to_discard.update(to_discard_for_asset)
 
             expected_data_time = get_expected_data_time_for_asset_key(
@@ -519,6 +520,7 @@ class AssetDaemonContext:
                         rule_snapshots=auto_materialize_policy.rule_snapshots,  # Neighbors can have different rule snapshots
                     )
                     will_materialize_mapping[neighbor_key] = to_materialize_for_neighbor
+                    to_skip.update(to_skip_for_neighbor)
                     to_discard.update(to_discard_for_neighbor)
 
                     expected_data_time_mapping[neighbor_key] = expected_data_time
