@@ -56,7 +56,7 @@ height={393}
 
 ### In the external process
 
-The process starts and loads the context info provided by Dagster. When finished, the process sends execution data, logs, and any specified metadata, back to Dagster.
+The process starts and loads the context info provided by Dagster. While the process runs, execution data, logs, and any specified metadata is streamed back to Dagster.
 
 After Dagster receives the data from the external process, it’ll be visible in the [Dagster UI](/concepts/webserver/ui).
 
