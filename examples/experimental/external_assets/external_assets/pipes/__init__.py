@@ -10,6 +10,7 @@ from dagster import (
     define_asset_job,
 )
 from dagster_k8s import PipesK8sClient
+from dagster_pipes import encode_env_var
 
 
 @asset(
@@ -25,6 +26,7 @@ def telem_post_processing(context: AssetExecutionContext, k8s_pipes_client: Pipe
         context=context,
         namespace="default",
         image="pipes-materialize:latest",
+        env={"DAGSTER_PIPES_IS_DAGSTER_PIPED_PROCESS": encode_env_var(True)},
         base_pod_spec={
             "containers": [
                 {
@@ -41,6 +43,7 @@ def telem_post_processing_check(context, k8s_pipes_client: PipesK8sClient):
         context=context,
         namespace="default",
         image="pipes-check:latest",
+        env={"DAGSTER_PIPES_IS_DAGSTER_PIPED_PROCESS": encode_env_var(True)},
         base_pod_spec={
             "containers": [
                 {
