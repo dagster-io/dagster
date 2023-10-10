@@ -65,7 +65,7 @@ class PickledObjectADLS2IOManager(UPathIOManager):
     def make_directory(self, path: UPath) -> None:
         # It is not necessary to create directories in ADLS2
         return None
-    
+
     def path_exists(self, path: UPath) -> bool:
         try:
             self.file_system_client.get_file_client(str(path)).get_file_properties()
