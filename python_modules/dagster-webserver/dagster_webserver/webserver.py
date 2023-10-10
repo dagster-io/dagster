@@ -40,15 +40,18 @@ T_IWorkspaceProcessContext = TypeVar("T_IWorkspaceProcessContext", bound=IWorksp
 
 class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
     _process_context: T_IWorkspaceProcessContext
+    _uses_app_path_prefix: bool
 
     def __init__(
         self,
         process_context: T_IWorkspaceProcessContext,
         app_path_prefix: str = "",
         live_data_poll_rate: Optional[int] = None,
+        uses_app_path_prefix: bool = True,
     ):
         self._process_context = process_context
         self._live_data_poll_rate = live_data_poll_rate
+        self._uses_app_path_prefix = uses_app_path_prefix
         super().__init__(app_path_prefix)
 
     def build_graphql_schema(self) -> Schema:
