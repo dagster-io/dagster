@@ -1,12 +1,9 @@
-FROM python:3.10-slim
-
-# install pipes
-RUN pip install pandas numpy
-RUN pip install dagster-pipes>=1.5.2
+FROM rust:latest
 
 WORKDIR /app
-COPY pipes/join_iot_check.py /app/join_iot_check.py
-RUN chmod +x /app/join_iot_check.py
 
-# Run pipes.py when the container launches
-ENTRYPOINT ["python", "/app/join_iot_check.py"]
+COPY pipes/rust_check /app/rust_check
+
+RUN cargo build --release --manifest-path /app/rust_check/Cargo.toml
+
+ENTRYPOINT ["/app/rust_check/target/release/rust_check"]
