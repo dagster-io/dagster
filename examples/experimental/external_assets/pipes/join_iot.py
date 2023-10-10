@@ -3,7 +3,7 @@ import pandas as pd
 from dagster_pipes import open_dagster_pipes
 
 with open_dagster_pipes() as context:
-    context.log.info("enriching iot telem data....")
+    context.log.info("joining iot telem data in partition ({context.partition_key})....")
     data = pd.DataFrame(
         {
             "trace_id": range(1000),

@@ -4,6 +4,7 @@ from dagster import (
     EventLogEntry,
     RunRequest,
     SensorEvaluationContext,
+    StaticPartitionsDefinition,
     asset,
     asset_check,
     asset_sensor,
@@ -28,6 +29,9 @@ pod_spec_for_kind = {
         AssetKey(["s3", "joined_sensor_telem"]),
     ],
     group_name="pipes",
+    partitions_def=StaticPartitionsDefinition(
+        ["apac", "eu", "americas", "vendor_foo", "vendor_bar"]
+    ),
 )
 def telem_post_processing(context: AssetExecutionContext, k8s_pipes_client: PipesK8sClient):
     return k8s_pipes_client.run(
