@@ -148,9 +148,9 @@ def main():
             },
         ]
         for data in synthetic_s3_data:
-            print(
+            print(  # noqa: T201
                 f"Creating asset materialization for s3 object put event ({data['uri']})"
-            )  # noqa: T201
+            )
             create_external_asset_materialization(data)
             time.sleep(1)
         time.sleep(30)
