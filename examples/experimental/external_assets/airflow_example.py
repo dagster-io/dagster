@@ -12,7 +12,7 @@ with DAG(dag_id="example_kubernetes_pod", schedule="@daily", default_args=defaul
     KubernetesPodOperator(
         image="asset-materialization-image:latest",
         cmds=["python", "create_asset.py", "--execution-date", "{{ ds }}"],
-        name="airflow-test-pod",
+        name="asset-materialization-pod",
         task_id="asset-materialization-task",
         in_cluster=False,
         cluster_context="kind-kind",
