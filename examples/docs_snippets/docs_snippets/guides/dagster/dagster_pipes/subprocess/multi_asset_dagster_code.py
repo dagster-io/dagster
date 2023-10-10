@@ -1,26 +1,24 @@
 import shutil
 
 from dagster import (
-    AssetCheckSpec,
     AssetExecutionContext,
+    AssetSpec,
     Definitions,
-    MaterializeResult,
     PipesSubprocessClient,
-    asset,
     file_relative_path,
+    multi_asset,
 )
 
 
-@asset(
-    check_specs=[AssetCheckSpec(name="no_empty_order_check", asset="my_asset")],
-)
+@multi_asset(specs=[AssetSpec("orders"), AssetSpec("users")])
 def subprocess_asset(
     context: AssetExecutionContext, pipes_subprocess_client: PipesSubprocessClient
-) -> MaterializeResult:
-    cmd = [shutil.which("python"), file_relative_path(__file__, "external_code.py")]
-    return pipes_subprocess_client.run(
-        command=cmd, context=context
-    ).get_materialize_result()
+):
+    cmd = [
+        shutil.which("python"),
+        file_relative_path(__file__, "multi_asset_external_code.py"),
+    ]
+    return pipes_subprocess_client.run(command=cmd, context=context).get_results()
 
 
 defs = Definitions(

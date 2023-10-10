@@ -1,9 +1,9 @@
 ---
 title: "Dagster Pipes tutorial | Dagster Docs"
-description: "With Dagster Pipes, you can incorporate existing code into Dagster without huge refactors. This guide shows you how to modify existing code to work with Dagster Pipes."
+description: "Learn how to use Dagster Pipes's built-in subprocess implementation to invoke a subprocess with the given command and environment"
 ---
 
-# Dagster Pipes + subprocess
+# Dagster Pipes tutorial
 
 In this guide, we’ll show you how to use [Dagster Pipes](/guides/dagster-pipes) with Dagster’s built-in subprocess implementation to run a subprocess with the given command and environment. You can then send information such as structured metadata and logging back to Dagster from the subprocess, where it will be visible in the Dagster UI.
 
@@ -37,9 +37,7 @@ pipe install dagster-pipes
   1. Create a standalone file named `external_code.py`.
   2. Then, copy and paste the following into the file:
 
-```python file=/guides/dagster/dagster_pipes/subprocess/external_code_original.py lines=1-
-# ruff: noqa: T201
-
+```python file=/guides/dagster/dagster_pipes/subprocess/external_code_original.py lines=2-
 import pandas as pd
 
 

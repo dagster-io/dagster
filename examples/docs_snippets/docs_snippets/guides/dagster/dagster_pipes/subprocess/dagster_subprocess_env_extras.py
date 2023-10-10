@@ -3,6 +3,7 @@ import shutil
 
 from dagster import (
     AssetExecutionContext,
+    Definitions,
     MaterializeResult,
     PipesSubprocessClient,
     asset,
@@ -23,3 +24,9 @@ def subprocess_asset(
             "MY_ENV_VAR_IN_SUBPROCESS": os.environ["MY_ENV_VAR"],
         },
     ).get_materialize_result()
+
+
+defs = Definitions(
+    assets=[subprocess_asset],
+    resources={"pipes_subprocess_client": PipesSubprocessClient()},
+)

@@ -855,19 +855,19 @@
         "path": "/guides/dagster-pipes",
         "children": [
           {
-            "title": "Dagster Pipes + subprocess",
+            "title": "Dagster Pipes tutorial",
             "path": "/guides/dagster-pipes/subprocess",
             "children": [
               {
-                "title": "Tutorial part 1: Define a Dagster asset",
+                "title": "Part 1: Define a Dagster asset",
                 "path": "/guides/dagster-pipes/subprocess/create-subprocess-asset"
               },
               {
-                "title": "Tutorial part 2: Modify external code",
+                "title": "Part 2: Modify external code",
                 "path": "/guides/dagster-pipes/subprocess/modify-external-code"
               },
               {
-                "title": "Reference",
+                "title": "Dagster Pipes + Subprocess Reference",
                 "path": "/guides/dagster-pipes/subprocess/reference"
               }
             ]

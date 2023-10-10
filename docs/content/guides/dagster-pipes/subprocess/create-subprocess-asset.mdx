@@ -1,13 +1,13 @@
 ---
 title: "Using Dagster Pipes, Part 1: Define a Dagster asset to invoke subprocess | Dagster Docs"
-description: "Learn how to use Dagster Pipes's built-in subprocess implementation to invoke a subprocess with the given command and environment."
+description: "Learn how to create a Dagster asset that invokes a subprocess that executes external code."
 ---
 
-# Using Dagster Pipes, Part 1: Define a Dagster asset to invoke subprocess
+# Define a Dagster asset that invokes a subprocess
 
 <Note>
 
-This is part one of the [Dagster Pipes + subprocess](/guides/dagster-pipes/subprocess) tutorial. If you are looking for how to modify your existing code that is already being orchestrated by Dagster, you can jump to <a href="/guides/dagster-pipes/tutorial/modify-external-code">Part 2: Modify external code</a>.
+This is part one of the [Using Dagster Pipes](/guides/dagster-pipes/subprocess) tutorial. If you are looking for how to modify your existing code that is already being orchestrated by Dagster, you can jump to <a href="/guides/dagster-pipes/tutorial/modify-external-code">Part 2: Modify external code</a>.
 
 </Note>
 
@@ -74,8 +74,8 @@ Let’s take a look at what this code does:
 
 - The `PipesSubprocessClient` resource used by the asset contains a `run` method.
 - When the asset is executed, this method will synchronously execute the subprocess with in a pipes session, and it will return a `PipesClientCompletedInvocation` object.
-- This object contains a `get_materialize_result` method, which you can use to access the <PyObject object="MaterializeResult" /> event reported by the subprocess.
-- Lastly, return the results of the subprocess.
+- This object contains a `get_materialize_result` method, which you can use to access the <PyObject object="MaterializeResult" /> event reported by the subprocess. We'll talk about how to report events from the subprocess in the next section.
+- Lastly, return the result of the subprocess.
 
 ## Step 2: Define a Definitions object
 
@@ -98,6 +98,7 @@ At this point, `dagster_subprocess_pipes.py` should look like the following:
 import shutil
 
 from dagster import (
+    AssetCheckSpec,
     AssetExecutionContext,
     Definitions,
     MaterializeResult,
@@ -107,7 +108,9 @@ from dagster import (
 )
 
 
-@asset
+@asset(
+    check_specs=[AssetCheckSpec(name="no_empty_order_check", asset="my_asset")],
+)
 def subprocess_asset(
     context: AssetExecutionContext, pipes_subprocess_client: PipesSubprocessClient
 ) -> MaterializeResult:
@@ -138,37 +141,37 @@ dagster dev
 2. Navigate to localhost:3000, where you should see the UI:
 
 <Image
-  alt="Asset in the UI"
-  src="/images/guides/dagster-pipes/subprocess-1-asset.png"
-  width={1264}
-  height={714}
+alt="Asset in the UI"
+src="/images/guides/dagster-pipes/subprocess-1-asset.png"
+width={1264}
+height={714}
 />
 
 3. Click **Materialize** located in the top right to run your code:
 
 <Image
-  alt="Materialize asset"
-  src="/images/guides/dagster-pipes/subprocess-2-materialize.png"
-  width={1326}
-  height={744}
+alt="Materialize asset"
+src="/images/guides/dagster-pipes/subprocess-2-materialize.png"
+width={1326}
+height={744}
 />
 
 4. Navigate to the [Run details](/concepts/webserver/ui#run-details) page, where you should see the logs for the run:
 
 <Image
-  alt="Logs in the run details page"
-  src="/images/guides/dagster-pipes/subprocess-3-1-events.png"
-  width={1272}
-  height={718}
+alt="Logs in the run details page"
+src="/images/guides/dagster-pipes/subprocess-3-1-events.png"
+width={1272}
+height={718}
 />
 
 In the `external_code.py`, we've got a `print` statement which outputs to stdout. Dagster will display these in the UI's raw compute log view. To see the `stdout` log, toggle the log section to **stdout**:
 
 <Image
-  alt="Raw compute logs in the run details page"
-  src="/images/guides/dagster-pipes/subprocess-3-2-raw-compute-logs.png"
-  width={1272}
-  height={718}
+alt="Raw compute logs in the run details page"
+src="/images/guides/dagster-pipes/subprocess-3-2-raw-compute-logs.png"
+width={1272}
+height={718}
 />
 
 ---
