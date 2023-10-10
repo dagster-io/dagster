@@ -237,9 +237,9 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
   const createdByValues = React.useMemo(
     () => [
       tagToFilterValue(DagsterTag.Automaterialize, 'true'),
-      ...sensorValues,
-      ...scheduleValues,
-      ...userValues,
+      ...[...sensorValues].sort(),
+      ...[...scheduleValues].sort(),
+      ...[...userValues].sort(),
     ],
     [sensorValues, scheduleValues, userValues],
   );
