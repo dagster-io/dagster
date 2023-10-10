@@ -35,6 +35,7 @@ import {RepoAddress} from '../workspace/types';
 
 import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
 import {MULTIPLE_DEFINITIONS_WARNING} from './AssetDefinedInMultipleReposNotice';
+import {CalculateChangedAndMissingDialog} from './CalculateChangedAndMissingDialog';
 import {LaunchAssetChoosePartitionsDialog} from './LaunchAssetChoosePartitionsDialog';
 import {partitionDefinitionsEqual} from './MultipartitioningSupport';
 import {isAssetMissing, isAssetStale} from './Stale';
@@ -193,6 +194,9 @@ export const LaunchAssetExecutionButton: React.FC<{
 
   const {MaterializeButton} = useLaunchPadHooks();
 
+  const [showCalculatingChangedAndMissingDialog, setShowCalculatingChangedAndMissingDialog] =
+    React.useState<React.MouseEvent<any> | null>(null);
+
   const options = optionsForButton(scope, liveDataForStale);
   const firstOption = options[0]!;
   if (!firstOption) {
@@ -219,6 +223,14 @@ export const LaunchAssetExecutionButton: React.FC<{
 
   return (
     <>
+      <CalculateChangedAndMissingDialog
+        isOpen={!!showCalculatingChangedAndMissingDialog}
+        onClose={() => {
+          setShowCalculatingChangedAndMissingDialog(null);
+        }}
+        assets={inScope}
+        preferredJobName={preferredJobName}
+      />
       <Box flex={{alignItems: 'center'}}>
         <Tooltip
           content="Shift+click to add configuration"
@@ -256,6 +268,13 @@ export const LaunchAssetExecutionButton: React.FC<{
                   onClick={(e) => onClick(option.assetKeys, e)}
                 />
               ))}
+              {!liveDataForStale && inScope.length && 'all' in scope ? (
+                <MenuItem
+                  text="Materialize changed and missing"
+                  icon="changes_present"
+                  onClick={(e) => setShowCalculatingChangedAndMissingDialog(e)}
+                />
+              ) : null}
               <MenuItem
                 text="Open launchpad"
                 icon={<Icon name="open_in_new" />}
