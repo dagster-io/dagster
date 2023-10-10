@@ -40,11 +40,6 @@ def telem_post_processing(context: AssetExecutionContext, k8s_pipes_client: Pipe
     ).get_results()
 
 
-# @asset_check(asset="telem_post_processing", description="Check that traces are valid")
-# def telem_post_processing_check() -> AssetCheckResult:
-#     return AssetCheckResult(passed=True, metadata={"valid": True})
-
-
 telem_post_processing_job = define_asset_job(
     name="telem_post_processing_job", selection="telem_post_processing"
 )
