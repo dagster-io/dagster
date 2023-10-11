@@ -26,7 +26,7 @@ from dagster._core.pipes.utils import (
     open_pipes_session,
 )
 from dagster_pipes import (
-    DAGSTER_PIPES_BOOTSTRAP_PARAM_NAMES,
+    DAGSTER_PIPES_MESSAGES_ENV_VAR,
     PipesContextData,
     PipesExtras,
     PipesParams,
@@ -130,7 +130,7 @@ class _PipesDatabricksClient(PipesClient):
                 **pipes_session.get_bootstrap_env_vars(),
             }
             cluster_log_root = pipes_session.get_bootstrap_params()[
-                DAGSTER_PIPES_BOOTSTRAP_PARAM_NAMES["messages"]
+                DAGSTER_PIPES_MESSAGES_ENV_VAR
             ].get("cluster_log_root")
             if cluster_log_root is not None:
                 submit_task_dict["new_cluster"]["cluster_log_conf"] = {
