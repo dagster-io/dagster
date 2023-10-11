@@ -3,11 +3,15 @@ title: Dagster Pipes | Dagster Docs
 description: "Dagster Pipes provides a protocol between the orchestration environment (Dagster) and external execution (ex: Databricks) and a toolkit for building implementations of that protocol."
 ---
 
-# Dagster Pipes
+# Dagster Pipes (Experimental)
+
+<Note>
+  This feature is currently <strong>experimental</strong>.
+</Note>
 
 Dagster Pipes is a toolkit for building integrations between Dagster and external execution environments. It standardizes the process of passing parameters, injecting context information, ingesting logs, and collecting metadata all while remaining agnostic to how remote computations are launched in those environments. This enables the separation of orchestration and business logic in the Dagster ecosystem.
 
-It also smooths the process of incorporating pre-existing code, business logic, and execution environments into Dagster. Using Dagster Pipes, you add just a few lines to your code and it becomes seamlessly invocable by the orchestrator. In turn, you can stream logs and metadata back to Dagster so you can leverage its observability, lineage, cataloging, and debugging capabilities.
+It also smooths the process of incorporating pre-existing code, business logic, and execution environments into Dagster. With Dagster Pipes and a few lines of code, you can execute your code through the orchestrator. In turn, you can stream logs and metadata back to Dagster so you can leverage its observability, lineage, cataloging, and debugging capabilities.
 
 ---
 
@@ -29,7 +33,7 @@ With Dagster Pipes, you can:
 
 While Dagster Pipes is lightweight and flexible, there are a few limitations to be aware of:
 
-- **Step launchers and Pipes can't currently be used together.** Dagster Pipes is a lightweight alternative to step launchers. Think of this as an either-or situation - you can use step launchers **or** you can use Dagster Pipes, depending on your needs.
+- **Step launchers and Pipes can't currently be used together.** Dagster Pipes is a lightweight alternative to step launchers. Think of this as an either-or situation - you can use step launchers **or** you can use Dagster Pipes. If your external code requires the core Dagster module (see below), you should use step launchers instead of Pipes.
 
 - **Some Dagster concepts aren't supported for use in external processes.** Dagster Pipes (`dagster-pipes`) doesn't include the core Dagster (`dagster`) library. As such, concepts like resources and I/O managers, which are included in `dagster`, aren't available for use in external processes executed by Dagster Pipes.
 
