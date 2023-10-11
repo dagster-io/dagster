@@ -94,6 +94,16 @@ class AssetEvaluationSpec(NamedTuple):
     num_discarded: int = 0
 
     @staticmethod
+    def empty(asset_key: str) -> "AssetEvaluationSpec":
+        return AssetEvaluationSpec(
+            asset_key=asset_key,
+            rule_evaluations=[],
+            num_requested=0,
+            num_skipped=0,
+            num_discarded=0,
+        )
+
+    @staticmethod
     def from_single_rule(
         asset_key: str,
         rule: AutoMaterializeRule,
