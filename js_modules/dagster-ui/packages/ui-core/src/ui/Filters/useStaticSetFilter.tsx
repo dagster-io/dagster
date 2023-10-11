@@ -6,7 +6,7 @@ import {LaunchpadHooksContext} from '../../launchpad/LaunchpadHooksContext';
 
 import {FilterObject, FilterTag, FilterTagHighlightedText} from './useFilter';
 
-type SetFilterValue<T> = {
+export type SetFilterValue<T> = {
   value: T;
   match: string[];
 };

@@ -4,6 +4,7 @@ import React from 'react';
 import {GenericError} from '../app/PythonErrorInfo';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {UserDisplay} from '../runs/UserDisplay';
+import {SetFilterValue} from '../ui/Filters/useStaticSetFilter';
 
 import {LaunchRootExecutionButton} from './LaunchRootExecutionButton';
 import {useLaunchWithTelemetry} from './useLaunchWithTelemetry';
@@ -17,7 +18,7 @@ type LaunchpadHooksContextValue = {
     error: GenericError | PythonErrorFragment;
     fallback?: React.ReactNode;
   }>;
-  StaticFilterSorter?: Record<string, (a: any, b: any) => number>;
+  StaticFilterSorter?: Record<string, (a: SetFilterValue<any>, b: SetFilterValue<any>) => number>;
 };
 
 export const LaunchpadHooksContext = React.createContext<LaunchpadHooksContextValue>({
