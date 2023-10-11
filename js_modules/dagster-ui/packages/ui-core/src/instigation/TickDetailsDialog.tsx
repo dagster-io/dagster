@@ -253,13 +253,11 @@ const JOB_SELECTED_TICK_QUERY = gql`
         tick(timestamp: $timestamp) {
           id
           ...HistoryTick
-          ...TickTagFragment
         }
       }
     }
   }
 
   ${PYTHON_ERROR_FRAGMENT}
-  ${TICK_TAG_FRAGMENT}
   ${HISTORY_TICK_FRAGMENT}
 `;
