@@ -759,12 +759,18 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
 
                 failure_text = []
 
+                cluster_failure_info = (
+                    f"Task {t.get('taskArn')} failed. Stop code: {t.get('stopCode')}. Stop"
+                    + f" reason: {t.get('stoppedReason')}."
+                    + f" {container_str} {[c.get('name') for c in failed_containers]} failed."
+                )
+
+                logging.warning(
+                    "Run monitoring detected run worker failure: " + cluster_failure_info
+                )
+
                 if self.include_cluster_info_in_failure_messages:
-                    failure_text.append(
-                        f"Task {t.get('taskArn')} failed. Stop code: {t.get('stopCode')}. Stop"
-                        f" reason: {t.get('stoppedReason')}."
-                        + f" {container_str} {[c.get('name') for c in failed_containers]} failed."
-                    )
+                    failure_text.append(cluster_failure_info)
 
                 logs = []
 
