@@ -8,6 +8,7 @@ from dagster import (
     AssetKey,
     AutoMaterializePolicy,
     BackfillPolicy,
+    DagsterInvalidDefinitionError,
     DailyPartitionsDefinition,
     FreshnessPolicy,
     PartitionsDefinition,
@@ -188,6 +189,91 @@ def test_backfill_policy():
     def my_dbt_assets(): ...
 
     assert my_dbt_assets.backfill_policy == backfill_policy
+
+
+def test_op_tags():
+    @dbt_assets(manifest=manifest, op_tags={"a": "b", "c": "d"})
+    def my_dbt_assets(): ...
+
+    assert my_dbt_assets.op.tags == {
+        "a": "b",
+        "c": "d",
+        "kind": "dbt",
+        "dagster-dbt/select": "fqn:*",
+    }
+
+    @dbt_assets(manifest=manifest, op_tags={"a": "b", "c": "d"}, select="+least_caloric")
+    def my_dbt_assets_with_select(): ...
+
+    assert my_dbt_assets_with_select.op.tags == {
+        "a": "b",
+        "c": "d",
+        "kind": "dbt",
+        "dagster-dbt/select": "+least_caloric",
+    }
+
+    @dbt_assets(manifest=manifest, op_tags={"a": "b", "c": "d"}, exclude="+least_caloric")
+    def my_dbt_assets_with_exclude(): ...
+
+    assert my_dbt_assets_with_exclude.op.tags == {
+        "a": "b",
+        "c": "d",
+        "kind": "dbt",
+        "dagster-dbt/exclude": "+least_caloric",
+        "dagster-dbt/select": "fqn:*",
+    }
+
+    @dbt_assets(
+        manifest=manifest,
+        op_tags={"a": "b", "c": "d"},
+        select="+least_caloric",
+        exclude="least_caloric",
+    )
+    def my_dbt_assets_with_select_and_exclude(): ...
+
+    assert my_dbt_assets_with_select_and_exclude.op.tags == {
+        "a": "b",
+        "c": "d",
+        "kind": "dbt",
+        "dagster-dbt/select": "+least_caloric",
+        "dagster-dbt/exclude": "least_caloric",
+    }
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=(
+            "To specify a dbt selection, use the 'select' argument, not 'dagster-dbt/select'"
+            " with op_tags"
+        ),
+    ):
+
+        @dbt_assets(
+            manifest=manifest,
+            op_tags={
+                "a": "b",
+                "c": "d",
+                "dagster-dbt/select": "+least_caloric",
+            },
+        )
+        def select_tag(): ...
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=(
+            "To specify a dbt exclusion, use the 'exclude' argument, not 'dagster-dbt/exclude'"
+            " with op_tags"
+        ),
+    ):
+
+        @dbt_assets(
+            manifest=manifest,
+            op_tags={
+                "a": "b",
+                "c": "d",
+                "dagster-dbt/exclude": "+least_caloric",
+            },
+        )
+        def exclude_tag(): ...
 
 
 def test_with_asset_key_replacements() -> None:
