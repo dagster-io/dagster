@@ -288,15 +288,13 @@ class AutoMaterializeRule(ABC):
 
     @public
     @staticmethod
-    def discard_on_required_but_nonexistent_parents() -> (
-        "DiscardOnRequiredButNonexistentParentsRule"
-    ):
-        """Discard an asset partition if it depends on parent partitions that do not exist.
+    def skip_on_required_but_nonexistent_parents() -> "SkipOnRequiredButNonexistentParentsRule":
+        """Skip an asset partition if it depends on parent partitions that do not exist.
 
         E.g. downstream asset B is partitioned starting 2022, but upstream asset A is partitioned
-        starting 2023. This rule will discard 2022 partitions in B.
+        starting 2023. This rule will skip 2022 partitions in B.
         """
-        return DiscardOnRequiredButNonexistentParentsRule()
+        return SkipOnRequiredButNonexistentParentsRule()
 
     def to_snapshot(self) -> AutoMaterializeRuleSnapshot:
         """Returns a serializable snapshot of this rule for historical evaluations."""
