@@ -18,8 +18,6 @@ with Dagster using teh Pipes protocol.
 
 .. autofunction:: decode_env_var
 
-.. autofunction:: is_dagster_pipes_process
-
 .. autoclass:: PipesContextLoader
 
 .. autoclass:: PipesMessageWriter
