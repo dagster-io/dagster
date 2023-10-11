@@ -9,25 +9,29 @@ from dagster._core.definitions.external_asset import (
 )
 
 
-def asset_specs_from_de_dsl() -> List[AssetSpec]:
-    specs = []
+def load_yaml(path):
     path = os.path.join(os.path.dirname(__file__), "asset_defs.yaml")
     with open(path, "r") as f:
-        data = yaml.load(f, Loader=yaml.SafeLoader)
+        return yaml.load(f, Loader=yaml.SafeLoader)
 
-    for asset in data["assets"]:
-        deps = [AssetKey(dep.split("/")) 
-                for dep in asset.get("dependsOn", [])]
-        specs.append(
-            AssetSpec(
-                deps=deps,
-                key=AssetKey(asset["name"].split("/")),
-                group_name="external_assets",
-            )
+
+def get_deps(asset):
+    return [AssetKey(dep.split("/")) for dep in asset.get("dependsOn", [])]
+
+
+def asset_specs_from_de_dsl(path) -> List[AssetSpec]:
+    return [
+        AssetSpec(
+            key=AssetKey(asset["name"].split("/")),
+            deps=get_deps(asset),
+            group_name="external_assets",
         )
-    return specs
+        for asset in load_yaml(path)["assets"]
+    ]
 
 
 defs = Definitions(
-    assets=external_assets_from_specs(asset_specs_from_de_dsl())
+    assets=external_assets_from_specs(
+        asset_specs_from_de_dsl("lake.yaml")
+    )
 )
