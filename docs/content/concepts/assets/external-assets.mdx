@@ -53,17 +53,48 @@ An **external asset** is an asset that is not materialized by Dagster, but is tr
 
 The following code declares a single external asset that represents a file in S3 and passes it to a <PyObject object="Definitions"/> object:
 
+<TabGroup>
+<TabItem name="Asset definition">
+
+Click the **Asset in the Dagster UI** tab to see how this asset would be rendered in the Dagster UI.
+
 ```python file=/concepts/assets/external_assets/single_declaration.py
 from dagster import AssetSpec, Definitions, external_asset_from_spec
 
 defs = Definitions(assets=[external_asset_from_spec(AssetSpec("file_in_s3"))])
 ```
 
+---
+
+</TabItem>
+<TabItem name="Asset in the Dagster UI">
+
+Click the **Asset definition** tab to view how this asset is defined.
+
+<Image
+alt="The files_in_s3 external asset in the Asset Graph of the Dagster UI"
+src="/images/concepts/assets/external-asset.png"
+width={3024}
+height={1654}
+/>
+
+---
+
+</TabItem>
+</TabGroup>
+
 ### External assets with dependencies
 
 External assets can depend only on other external assets.
 
-Dependencies are defined by using the `deps` argument of <PyObject object="AssetSpec" />. This enables Dagster to model entire graphs of assets scheduled and orchestrated by other systems. Consider the following example:
+Dependencies are defined by using the `deps` argument of <PyObject object="AssetSpec" />. This enables Dagster to model entire graphs of assets scheduled and orchestrated by other systems.
+
+In the following example, we have two assets: `raw_logs` and `processed_logs`. The `processed_logs` asset is produced by a scheduled computation in another orchestration system. Using external assets allows you to model both assets in Dagster.
+
+<TabGroup>
+<TabItem name="Asset definitions">
+
+Click the **Assets in the Dagster UI** tab to see how these assets would be rendered in the Dagster UI.
 
 ```python file=/concepts/assets/external_assets/external_asset_deps.py
 from dagster import AssetSpec, Definitions, external_assets_from_specs
@@ -74,11 +105,33 @@ processed_logs = AssetSpec("processed_logs", deps=[raw_logs])
 defs = Definitions(assets=external_assets_from_specs([raw_logs, processed_logs]))
 ```
 
-In this example, we have two assets: `raw_logs` and `processed_logs`. The `processed_logs` asset is produced by a scheduled computation in another orchestration system. Using external assets allows you to model both assets in Dagster.
+---
+
+</TabItem>
+<TabItem name="Assets in the Dagster UI">
+
+Click the **Asset definitions** tab to view how these assets are defined.
+
+<Image
+alt="External assets with dependencies in the Dagster UI"
+src="/images/concepts/assets/external-assets-show-detail.png"
+width={3024}
+height={1654}
+/>
+
+---
+
+</TabItem>
+</TabGroup>
 
 ### Fully-managed assets with external asset dependencies
 
 Fully-managed assets can depend on external assets. In this example, the `aggregated_logs` asset depends on `processed_logs`, which is an external asset:
+
+<TabGroup>
+<TabItem name="Asset definitions">
+
+Click the **Assets in the Dagster UI** tab to see how these assets would be rendered in the Dagster UI.
 
 ```python file=/concepts/assets/external_assets/normal_asset_depending_on_external.py
 from dagster import AssetSpec, Definitions, asset, external_assets_from_specs
@@ -98,17 +151,28 @@ defs = Definitions(
 )
 ```
 
----
+</TabItem>
+<TabItem name="Assets in the Dagster UI">
 
-## External assets in the Dagster UI
+Click the **Asset definitions** tab to view how these assets are defined.
 
-TODO
+<Image
+alt="An external asset as an upstream dependency to a fully-managed asset in the Dagster UI"
+src="/images/concepts/assets/external-assets-normal-dep-on-external.png"
+width={3024}
+height={1654}
+/>
+
+</TabItem>
+</TabGroup>
 
 ---
 
 ## Updating external asset metadata
 
-As Dagster doesn't control scheduling or materializing external assets, it's up to you to keep their metadata updated. To do this, you can use any of the following approaches:
+As Dagster doesn't control scheduling or materializing external assets, it's up to you to keep their metadata updated. This also means that materialization for external assets will be disabled in the Dagster UI.
+
+To keep your external assets updated, you can use any of the following approaches:
 
 - [A REST API](#using-the-rest-api)
 - [Sensors](#using-sensors)
