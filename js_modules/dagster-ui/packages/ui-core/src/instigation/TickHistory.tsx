@@ -15,6 +15,7 @@ import {
   IconWrapper,
   ButtonLink,
   ifPlural,
+  Caption,
 } from '@dagster-io/ui-components';
 import {Chart} from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
@@ -27,7 +28,12 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {ONE_MONTH, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useCopyToClipboard} from '../app/browser';
-import {InstigationSelector, InstigationTickStatus, InstigationType} from '../graphql/types';
+import {
+  DynamicPartitionsRequestType,
+  InstigationSelector,
+  InstigationTickStatus,
+  InstigationType,
+} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {TimeElapsed} from '../runs/TimeElapsed';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
@@ -41,6 +47,7 @@ import {TICK_TAG_FRAGMENT} from './InstigationTick';
 import {RunStatusLink, RUN_STATUS_FRAGMENT, HISTORY_TICK_FRAGMENT} from './InstigationUtils';
 import {LiveTickTimeline} from './LiveTickTimeline2';
 import {TickDetailsDialog} from './TickDetailsDialog';
+import {HistoryTickFragment} from './types/InstigationUtils.types';
 import {TickHistoryQuery, TickHistoryQueryVariables} from './types/TickHistory.types';
 import {truncate} from './util';
 
@@ -315,6 +322,20 @@ function TickRow({
   const {flagSensorScheduleLogging} = useFeatureFlags();
   const [showResults, setShowResults] = React.useState(false);
 
+  const [addedPartitions, deletedPartitions] = React.useMemo(() => {
+    const added = tick?.dynamicPartitionsRequestResults.filter(
+      (request) =>
+        request.type === DynamicPartitionsRequestType.ADD_PARTITIONS &&
+        request.partitionKeys?.length,
+    ).length;
+    const deleted = tick?.dynamicPartitionsRequestResults.filter(
+      (request) =>
+        request.type === DynamicPartitionsRequestType.DELETE_PARTITIONS &&
+        request.partitionKeys?.length,
+    ).length;
+    return [added, deleted];
+  }, [tick?.dynamicPartitionsRequestResults]);
+
   return (
     <tr>
       <td>
@@ -372,6 +393,23 @@ function TickRow({
                   ))
                 : null}
             </Box>
+            {addedPartitions || deletedPartitions ? (
+              <Caption>
+                (
+                {addedPartitions ? (
+                  <span>
+                    {addedPartitions} partition{ifPlural(addedPartitions, '', 's')} created
+                    {deletedPartitions ? ',' : ''}
+                  </span>
+                ) : null}
+                {deletedPartitions ? (
+                  <span>
+                    {deletedPartitions} partition{ifPlural(deletedPartitions, '', 's')} deleted,
+                  </span>
+                ) : null}
+                )
+              </Caption>
+            ) : null}
             <TickDetailsDialog
               isOpen={showResults}
               timestamp={tick.timestamp}

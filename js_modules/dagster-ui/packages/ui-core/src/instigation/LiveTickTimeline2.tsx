@@ -10,7 +10,7 @@ import {browserTimezone} from '../app/time/browserTimezone';
 import {AssetDaemonTickFragment} from '../assets/auto-materialization/types/AssetDaemonTicksQuery.types';
 import {InstigationTickStatus} from '../graphql/types';
 
-import {HistoryTickFragment} from './types/HistoryTickFragment.types';
+import {HistoryTickFragment} from './types/InstigationUtils.types';
 
 dayjs.extend(relativeTime);
 
