@@ -1,4 +1,3 @@
-import atexit
 import base64
 import datetime
 import json
@@ -820,24 +819,6 @@ def open_dagster_pipes(
         _emit_orchestration_inactive_warning()
         context = _get_mock()
     PipesContext.set(context)
-    return context
-
-
-def init_dagster_pipes(
-    *,
-    context_loader: Optional[PipesContextLoader] = None,
-    message_writer: Optional[PipesMessageWriter] = None,
-    params_loader: Optional[PipesParamsLoader] = None,
-) -> "PipesContext":
-    warnings.warn(
-        "`init_dagster_pipes` has been renamed to `open_dagster_pipes`. `init_dagster_pipes` will"
-        " be removed in 1.5.3.",
-        category=DeprecationWarning,
-    )
-    context = open_dagster_pipes(
-        context_loader=context_loader, message_writer=message_writer, params_loader=params_loader
-    )
-    atexit.register(context.close)
     return context
 
 
