@@ -17,6 +17,7 @@ from dagster import (
     AssetOut,
     AssetsDefinition,
     BackfillPolicy,
+    DagsterInvalidDefinitionError,
     Nothing,
     PartitionsDefinition,
     multi_asset,
@@ -48,6 +49,7 @@ def dbt_assets(
     partitions_def: Optional[PartitionsDefinition] = None,
     dagster_dbt_translator: DagsterDbtTranslator = DagsterDbtTranslator(),
     backfill_policy: Optional[BackfillPolicy] = None,
+    op_tags: Optional[Mapping[str, Any]] = None,
 ) -> Callable[..., AssetsDefinition]:
     """Create a definition for how to compute a set of dbt resources, described by a manifest.json.
     When invoking dbt commands using :py:class:`~dagster_dbt.DbtCliResource`'s
@@ -72,7 +74,10 @@ def dbt_assets(
             dbt models, seeds, etc. to asset keys and asset metadata.
         backfill_policy (Optional[BackfillPolicy]): If a partitions_def is defined, this determines
             how to execute backfills that target multiple partitions.
-
+        op_tags (Optional[Dict[str, Any]]): A dictionary of tags for the op that computes the assets.
+            Frameworks may expect and require certain metadata to be attached to a op. Values that
+            are not strings will be json encoded and must meet the criteria that
+            `json.loads(json.dumps(value)) == value`.
 
     Examples:
         Running ``dbt build`` for a dbt project:
@@ -277,6 +282,24 @@ def dbt_assets(
         dagster_dbt_translator=dagster_dbt_translator,
     )
 
+    if op_tags and "dagster-dbt/select" in op_tags:
+        raise DagsterInvalidDefinitionError(
+            "To specify a dbt selection, use the 'select' argument, not 'dagster-dbt/select'"
+            " with op_tags"
+        )
+
+    if op_tags and "dagster-dbt/exclude" in op_tags:
+        raise DagsterInvalidDefinitionError(
+            "To specify a dbt exclusion, use the 'exclude' argument, not 'dagster-dbt/exclude'"
+            " with op_tags"
+        )
+
+    resolved_op_tags = {
+        **({"dagster-dbt/select": select} if select else {}),
+        **({"dagster-dbt/exclude": exclude} if exclude else {}),
+        **(op_tags if op_tags else {}),
+    }
+
     def inner(fn) -> AssetsDefinition:
         asset_definition = multi_asset(
             outs=outs,
@@ -285,10 +308,7 @@ def dbt_assets(
             compute_kind="dbt",
             partitions_def=partitions_def,
             can_subset=True,
-            op_tags={
-                **({"dagster-dbt/select": select} if select else {}),
-                **({"dagster-dbt/exclude": exclude} if exclude else {}),
-            },
+            op_tags=resolved_op_tags,
             check_specs=check_specs,
             backfill_policy=backfill_policy,
         )(fn)
