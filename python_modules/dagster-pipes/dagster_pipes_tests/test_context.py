@@ -4,6 +4,10 @@ from unittest.mock import MagicMock
 
 import jsonschema
 import pytest
+from dagster._core.definitions.decorators.asset_decorator import asset
+from dagster._core.definitions.materialize import materialize
+from dagster._core.execution.context.compute import AssetExecutionContext
+from dagster._core.pipes.context import build_external_execution_context_data
 from dagster_pipes import (
     PIPES_PROTOCOL_VERSION,
     PIPES_PROTOCOL_VERSION_FIELD,
@@ -261,6 +265,19 @@ def test_message_json_schema_validation():
         "params": {"bar": "baz"},
     }
     jsonschema.validate(message, get_pipes_json_schema("message"))
+
+
+def test_context_json_schema_validation():
+    @asset
+    def foo(context: AssetExecutionContext):
+        context_data_no_extras = build_external_execution_context_data(context, extras=None)
+        jsonschema.validate(context_data_no_extras, get_pipes_json_schema("context"))
+        context_data_with_extras = build_external_execution_context_data(
+            context, extras={"foo": "bar"}
+        )
+        jsonschema.validate(context_data_with_extras, get_pipes_json_schema("context"))
+
+    materialize([foo])
 
 
 def test_json_schema_rejects_invalid():
