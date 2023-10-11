@@ -32,7 +32,7 @@ Getting external code to send information back to Dagster via Dagster Pipes requ
 
 - A call that connects to Dagster Pipes: <PyObject module="dagster_pipes" object="open_dagster_pipes"/> initializes the Dagster Pipes context that can be used to stream information back to Dagster. We recommend calling this function near the entry point of a pipes session.
 
-  - The <code>with open_dagster_pipes():</code> is a context manager in Python, ensuring resource setup and cleanup for a specific segment of code. It's useful for tasks requiring initial setup and final teardown, like opening and closing connections. In this case, the context manager is used to initialize and close the Dagster Pipes connection.
+  The <code>with open_dagster_pipes():</code> is a context manager in Python, ensuring resource setup and cleanup for a specific segment of code. It's useful for tasks requiring initial setup and final teardown, like opening and closing connections. In this case, the context manager is used to initialize and close the Dagster Pipes connection.
 
 - An instance of the Dagster Pipes context via <PyObject module="dagster_pipes" object="PipesContext" method="get"/>. You can access information like `partition_key` and `asset_key` via this context object. Refer to the [the API documentation](/\_apidocs/libraries/dagster-pipes#dagster_pipes.PipesContext) for more information.
 
@@ -284,10 +284,10 @@ defs = Definitions(
 
 ## What's next?
 
-Now, you've learned how to get access to Dagster Pipes context, report log messages events from the external process, and send structured events back to Dagster.
+In this tutorial, you learned how to get access to Dagster Pipes context, report log messages events from the external process, and send structured events back to Dagster.
 
 What's next? From here, you can:
 
-- Learn about other capabilities of executing external code in subprocess via Dagster Pipes in the [Reference](/guides/dagster-pipes/subprocess/reference) section
-- Learn about [other integrations with Dagster Pipes](/guides/dagster-pipes#usage).
-- Learn how to [customize your own Dagster Pipes protocols](/guides/dagster-pipes/customizing-dagster-pipes-protocols).
+- Learn about other capabilities of executing external code in subprocess via Dagster Pipes in the [Subprocess reference](/guides/dagster-pipes/subprocess/reference)
+- Learn about [other integrations with Dagster Pipes](/guides/dagster-pipes#usage)
+- Learn how to [customize your own Dagster Pipes protocols](/guides/dagster-pipes/customizing-dagster-pipes-protocols)

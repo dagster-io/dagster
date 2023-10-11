@@ -49,8 +49,9 @@ if __name__ == "__main__":
 
 The `run` method to the `PipesSubprocessClient` resource also accepts `env` and `extras` , which allow you to specify environment variables and extra arguments when executing the subprocess:
 
+Note: We're using `os.environ` in this example, but Dagster's recommendation is to use <PyObject object="EnvVar" /> in production.
+
 ```python file=/guides/dagster/dagster_pipes/subprocess/with_extras_env/dagster_code.py
-import os
 import shutil
 
 from dagster import (
@@ -73,7 +74,7 @@ def subprocess_asset(
         context=context,
         extras={"foo": "bar"},
         env={
-            "MY_ENV_VAR_IN_SUBPROCESS": os.environ["MY_ENV_VAR"],
+            "MY_ENV_VAR_IN_SUBPROCESS": "my_value",
         },
     ).get_materialize_result()
 
@@ -89,13 +90,13 @@ defs = Definitions(
 
 ## Working with @asset_check
 
-Sometimes, you may not want to materialize an asset, but instead want to report a data quality check result. When your asset has data quality checks defined in `@asset_check`:
+Sometimes, you may not want to materialize an asset, but instead want to report a data quality check result. When your asset has data quality checks defined in <PyObject object="asset_check" decorator />:
 
 <TabGroup>
 
 <TabItem name="External code in external_code.py">
 
-From the external code, you can report to Dagster that an asset check has been performed via <PyObject module="dagster_pipes" object="PipesContext" method="report_asset_check" />. Note that `asset_key` in this case is required, and must match the asset key defined in `@asset_check`:
+From the external code, you can report to Dagster that an asset check has been performed via <PyObject module="dagster_pipes" object="PipesContext" method="report_asset_check" />. Note that `asset_key` in this case is required, and must match the asset key defined in <PyObject object="asset_check" decorator />:
 
 ```python file=/guides/dagster/dagster_pipes/subprocess/with_asset_check/external_code.py
 import pandas as pd

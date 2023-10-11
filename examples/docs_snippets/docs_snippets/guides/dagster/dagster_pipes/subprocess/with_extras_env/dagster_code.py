@@ -1,4 +1,3 @@
-import os
 import shutil
 
 from dagster import (
@@ -21,7 +20,7 @@ def subprocess_asset(
         context=context,
         extras={"foo": "bar"},
         env={
-            "MY_ENV_VAR_IN_SUBPROCESS": os.environ["MY_ENV_VAR"],
+            "MY_ENV_VAR_IN_SUBPROCESS": "my_value",
         },
     ).get_materialize_result()
 

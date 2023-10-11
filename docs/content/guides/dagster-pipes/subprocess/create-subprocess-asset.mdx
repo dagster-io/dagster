@@ -13,6 +13,8 @@ This is part one of the [Using Dagster Pipes](/guides/dagster-pipes/subprocess) 
 
 In this part of the tutorial, you'll create a Dagster asset that, in its execution function, opens a Dagster pipes session and invokes a subprocess that executes some external code.
 
+---
+
 ## Step 1: Define the Dagster asset
 
 Before getting started, make sure you have fulfilled all the [prerequisites](/guides/dagster-pipes/subprocess#prerequisites) for the tutorial. You should have a standalone Python script named `external_code.py` which looks like the following:
@@ -102,7 +104,7 @@ Let’s take a look at what this code does:
 
 ## Step 2: Define a Definitions object
 
-To make the asset and subprocess resource loadable and accessible by Dagster's tools, such as the CLI, UI, and Dagster Cloud, you’ll create a `Definitions` object which contains them.
+To make the asset and subprocess resource loadable and accessible by Dagster's tools, such as the CLI, UI, and Dagster Cloud, you’ll create a <PyObject object="Definitions" /> object that contains them.
 
 Copy and paste the following to the bottom of `dagster_code.py`:
 

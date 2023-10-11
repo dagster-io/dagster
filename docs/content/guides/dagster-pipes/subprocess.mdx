@@ -23,13 +23,11 @@ This guide focuses on using an out-of-the-box `PipesSubprocessClient` resource. 
 
 ## Prerequisites
 
-To use Dagster Pipes to run a subprocess , you’ll need:
+To use Dagster Pipes to run a subprocess, you’ll need to have Dagster (`dagster`) and the Dagster UI (`dagster-webserver`) installed. Refer to the [Installation guide](/getting-started/install) for more info.
 
-- To have Dagster (`dagster`) and the Dagster UI (`dagster-webserver`) installed. Refer to the [Installation guide](/getting-started/install) for more info.
+You'll also need **an existing Python script.** We’ll use the following Python script to demonstrate. This file will be invoked by the Dagster asset that you’ll create later in this tutorial.
 
-- **An existing Python script**. We’ll use the following Python script to demonstrate. This file will be invoked by the Dagster asset that you’ll create later in this tutorial.
-  1. Create a standalone file named `external_code.py`.
-  2. Then, copy and paste the following into the file:
+Create a file named `external_code.py` and paste the following into it:
 
 ```python file=/guides/dagster/dagster_pipes/subprocess/part_1/external_code.py lines=2-
 import pandas as pd
