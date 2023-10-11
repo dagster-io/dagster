@@ -1,5 +1,7 @@
 {{- if .Values.dagsterDaemon.enabled }}
 {{- $userDeployments := index .Values "dagster-user-deployments" }}
+{{- $dagsterImageTag := include "dagster.dagsterImage.tag" (list $ $.Values.dagsterWebserver.image) }}
+{{- $dagsterImageRepository := include "dagster.dagsterImage.repository" (list $ $.Values.dagsterWebserver.image) }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -68,7 +70,7 @@ spec:
           securityContext:
             {{- toYaml .Values.dagsterDaemon.securityContext | nindent 12 }}
           imagePullPolicy: {{ .Values.dagsterDaemon.image.pullPolicy }}
-          image: {{ include "dagster.dagsterImage.name" (list $ .Values.dagsterDaemon.image) | quote }}
+          image: {{ printf "%s:%s" $dagsterImageRepository $dagsterImageTag | quote }}
           command: [
             "/bin/bash",
             "-c",
