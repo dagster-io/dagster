@@ -6,7 +6,7 @@ assets:
   - name: s3/iot_scrubbed_telem_apac
     dependsOn: [s3/iot_raw_telem_apac]
   - name: s3/iot_raw_telem_americas
-  - name: s3/iot_scurbbed_telem_americas
+  - name: s3/iot_scrubbed_telem_americas
     dependsOn: [s3/iot_raw_telem_americas]
   - name: vendors/telem_vendor_foo
   - name: vendors/telem_vendor_bar
@@ -14,7 +14,7 @@ assets:
     dependsOn: [
       s3/iot_scrubbed_telem_eu,
       s3/iot_scrubbed_telem_apac,
-      s3/iot_scurbbed_telem_americas,
+      s3/iot_scrubbed_telem_americas,
       vendors/telem_vendor_foo,
       vendors/telem_vendor_bar
     ]

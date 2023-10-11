@@ -114,6 +114,7 @@ def external_assets_from_specs(specs: Sequence[AssetSpec]) -> List[AssetsDefinit
                     deps=spec.deps,
                 )
             ],
+            compute_kind="telem-lake",
         )
         def _external_assets_def(context: AssetExecutionContext) -> None:
             raise DagsterInvariantViolationError(
