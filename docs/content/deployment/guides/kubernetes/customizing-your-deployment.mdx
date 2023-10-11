@@ -214,23 +214,41 @@ Other executors will ignore the `dagster-k8s/config` tag when it is set on an op
 
 ### Precedence rules
 
-If a Kubernetes configuration dictionary (like `container_config`) is specified at both the instance level in the Helm chart and in a specific Dagster job or op, the dictionaries will be shallowly merged. The more specific configuration takes precedence if the same key is set in both dictionaries.
+By default, if a Kubernetes configuration dictionary (like `container_config`) is specified at both the instance level in the Helm chart and in a specific Dagster job or op, the dictionaries will be shallowly merged. The more specific configuration takes precedence if the same key is set in both dictionaries.
 
 Consider the following example:
 
 - **In the Helm chart**, `k8sRunLauncher.runK8sConfig.podSpecConfig` is set to:
 
   ```json
-  { "nodeSelector": { "disktype": "ssd" }, "dns_policy": "ClusterFirst" }
+  { "node_selector": { "disktype": "ssd" }, "dns_policy": "ClusterFirst" }
   ```
 
 - **But a specific job** has the `pod_spec_config` key in the `dagster-k8s/config` tag set to:
 
   ```json
-  { "nodeSelector": { "region": "east" } }
+  { "node_selector": { "region": "east" } }
   ```
 
 Then the node selector from the job and the DNS policy from the Helm chart will be applied, since only the node selector is overridden in the job.
+
+To customize this behavior, you can also set the `merge_behavior` key in the `dagster-k8s/config` tag to `DEEP` instead of `SHALLOW`. When `merge_behavior` is set to `DEEP`, the config dictionaries are merged recursively. Scalar values will still be replaced by the more specific configuration, but any dictionary fields will be combined, and list fields will be appended to each other.
+
+To modify the previous example:
+
+- **In the Helm chart**, `k8sRunLauncher.runK8sConfig.podSpecConfig` is again set to:
+
+  ```json
+  { "node_selector": { "disktype": "ssd" }, "dns_policy": "ClusterFirst" }
+  ```
+
+- **But a specific job** has the `pod_spec_config` key in the `dagster-k8s/config` tag set to:
+
+  ```json
+  { "node_selector": { "region": "east" }, "merge_behavior": "DEEP" }
+  ```
+
+Then the job will merge the two `node_selector` dictionaries and use `{ "disktype": "ssd", "region": "east" }` as its `node_selector` configuration.
 
 ---
 
