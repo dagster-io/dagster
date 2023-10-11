@@ -69,7 +69,7 @@ class GrapheneWaitingOnKeysRuleEvaluationData(graphene.ObjectType):
 
 
 class GrapheneRequiredButNonexistentParentsRuleEvaluationData(graphene.ObjectType):
-    requiredButNonexistentAssetKeys = graphene.List(graphene.NonNull(GrapheneAssetKey))
+    assetKeysWithNonexistentRequiredPartitions = graphene.List(graphene.NonNull(GrapheneAssetKey))
 
     class Meta:
         name = "RequiredButNonexistentParentsRuleEvaluationData"
@@ -151,7 +151,7 @@ def create_graphene_auto_materialize_rule_evaluation(
         )
     elif isinstance(rule_evaluation_data, RequiredButNonexistentParentsRuleEvaluationData):
         rule_evaluation_data = GrapheneRequiredButNonexistentParentsRuleEvaluationData(
-            requiredButNonexistentAssetKeys=rule_evaluation_data.nonexistent_required_partitions_asset_keys
+            assetKeysWithNonexistentRequiredPartitions=rule_evaluation_data.asset_keys_with_nonexistent_required_partitions
         )
     elif rule_evaluation_data is not None:
         check.failed(f"Unexpected rule evaluation data type {type(rule_evaluation_data)}")

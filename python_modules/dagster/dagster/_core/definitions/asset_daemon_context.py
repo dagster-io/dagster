@@ -71,7 +71,20 @@ def get_implicit_auto_materialize_policy(
             AutoMaterializeRule.materialize_on_required_for_freshness(),
             AutoMaterializeRule.skip_on_parent_outdated(),
             AutoMaterializeRule.skip_on_parent_missing(),
+<<<<<<< HEAD
             AutoMaterializeRule.discard_on_required_but_nonexistent_parents(),
+=======
+            AutoMaterializeRule.skip_on_required_but_nonexistent_parents(),
+            *(
+                {
+                    AutoMaterializeRule.discard_on_max_materializations_exceeded(
+                        max_materializations_per_minute
+                    )
+                }
+                if max_materializations_per_minute is not None
+                else {}
+            ),
+>>>>>>> 5e74baddf7 (refactor into skip instead of discard)
         }
         if not bool(asset_graph.get_downstream_freshness_policies(asset_key=asset_key)):
             rules.add(AutoMaterializeRule.materialize_on_parent_updated())

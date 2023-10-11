@@ -9,10 +9,12 @@ from dagster._core.definitions.auto_materialize_rule import (
     AutoMaterializeRule,
     AutoMaterializeRuleEvaluation,
     ParentUpdatedRuleEvaluationData,
+    RequiredButNonexistentParentsRuleEvaluationData,
     WaitingOnAssetsRuleEvaluationData,
 )
 from dagster._core.definitions.partition import (
     SerializedPartitionsSubset,
+    StaticPartitionsDefinition,
 )
 from dagster._core.definitions.run_request import (
     InstigatorType,
@@ -227,6 +229,11 @@ query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: Stri
                                     path
                                 }
                             }
+                            ... on RequiredButNonexistentParentsRuleEvaluationData {
+                                assetKeysWithNonexistentRequiredPartitions {
+                                    path
+                                }
+                            }
                         }
                     }
                 }
@@ -397,6 +404,82 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
             )
             == 0
         )
+
+    def test_get_required_but_nonexistent_parent_evaluation(
+        self, graphql_context: WorkspaceRequestContext
+    ):
+        partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d", "e", "f"])
+
+        check.not_none(
+            graphql_context.instance.schedule_storage
+        ).add_auto_materialize_asset_evaluations(
+            evaluation_id=10,
+            asset_evaluations=[
+                AutoMaterializeAssetEvaluation(
+                    asset_key=AssetKey("upstream_static_partitioned_asset"),
+                    partition_subsets_by_condition=[
+                        (
+                            AutoMaterializeRuleEvaluation(
+                                rule_snapshot=AutoMaterializeRule.skip_on_required_but_nonexistent_parents().to_snapshot(),
+                                evaluation_data=RequiredButNonexistentParentsRuleEvaluationData(
+                                    asset_keys_with_nonexistent_required_partitions=frozenset(
+                                        {AssetKey("blah")}
+                                    )
+                                ),
+                            ),
+                            SerializedPartitionsSubset.from_subset(
+                                partitions_def.empty_subset().with_partition_keys(["a"]),
+                                partitions_def,
+                                None,  # type: ignore
+                            ),
+                        )
+                    ],
+                    num_requested=0,
+                    num_skipped=1,
+                    num_discarded=0,
+                ),
+            ],
+        )
+
+        results = execute_dagster_graphql(
+            graphql_context,
+            QUERY,
+            variables={
+                "assetKey": {"path": ["upstream_static_partitioned_asset"]},
+                "limit": 10,
+                "cursor": None,
+            },
+        )
+
+        assert results.data == {
+            "autoMaterializeAssetEvaluationsOrError": {
+                "records": [
+                    {
+                        "numRequested": 0,
+                        "numSkipped": 1,
+                        "numDiscarded": 0,
+                        "rulesWithRuleEvaluations": [
+                            {
+                                "rule": {"decisionType": "SKIP"},
+                                "ruleEvaluations": [
+                                    {
+                                        "partitionKeysOrError": {"partitionKeys": ["a"]},
+                                        "evaluationData": {
+                                            "assetKeysWithNonexistentRequiredPartitions": [
+                                                {"path": ["blah"]}
+                                            ]
+                                        },
+                                    }
+                                ],
+                            }
+                        ],
+                        "rules": None,
+                        "assetKey": {"path": ["upstream_static_partitioned_asset"]},
+                    }
+                ],
+                "currentEvaluationId": None,
+            }
+        }
 
     def _test_get_evaluations(self, graphql_context: WorkspaceRequestContext):
         results = execute_dagster_graphql(

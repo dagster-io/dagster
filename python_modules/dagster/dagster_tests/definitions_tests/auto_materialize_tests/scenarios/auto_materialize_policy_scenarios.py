@@ -807,7 +807,7 @@ auto_materialize_policy_scenarios = {
             " is not set"
         ),
     ),
-    "test_discard_on_required_but_nonexistent_parents": AssetReconciliationScenario(
+    "test_skip_on_required_but_nonexistent_parents": AssetReconciliationScenario(
         assets=with_auto_materialize_policy(
             one_parent_starts_later_and_nonexistent_upstream_partitions_not_allowed,
             AutoMaterializePolicy.eager(max_materializations_per_minute=None).without_rules(
@@ -829,7 +829,7 @@ auto_materialize_policy_scenarios = {
                 rule_evaluations=[
                     (
                         AutoMaterializeRuleEvaluation(
-                            AutoMaterializeRule.discard_on_required_but_nonexistent_parents().to_snapshot(),
+                            AutoMaterializeRule.skip_on_required_but_nonexistent_parents().to_snapshot(),
                             evaluation_data=RequiredButNonexistentParentsRuleEvaluationData(
                                 frozenset({AssetKey("asset1")})
                             ),
@@ -871,11 +871,11 @@ auto_materialize_policy_scenarios = {
                     ),
                 ],
                 num_requested=1,
-                num_discarded=3,
+                num_skipped=3,
             ),
         ],
     ),
-    "test_no_discard_when_nonexistent_upstream_partitions_allowed": AssetReconciliationScenario(
+    "test_no_skip_when_nonexistent_upstream_partitions_allowed": AssetReconciliationScenario(
         assets=with_auto_materialize_policy(
             one_parent_starts_later_and_nonexistent_upstream_partitions_allowed,
             AutoMaterializePolicy.eager(max_materializations_per_minute=None).without_rules(

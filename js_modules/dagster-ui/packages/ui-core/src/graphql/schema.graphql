@@ -3282,7 +3282,7 @@ type WaitingOnKeysRuleEvaluationData {
 }
 
 type RequiredButNonexistentParentsRuleEvaluationData {
-  requiredButNonexistentAssetKeys: [AssetKey!]
+  assetKeysWithNonexistentRequiredPartitions: [AssetKey!]
 }
 
 type AutoMaterializeAssetEvaluationNeedsMigrationError implements Error {

@@ -101,7 +101,7 @@ class RequiredButNonexistentParentsRuleEvaluationData(
     AutoMaterializeRuleEvaluationData,
     NamedTuple(
         "_RequiredButNonexistentParentsRuleEvaluationData",
-        [("nonexistent_required_partitions_asset_keys", FrozenSet[AssetKey])],
+        [("asset_keys_with_nonexistent_required_partitions", FrozenSet[AssetKey])],
     ),
 ):
     pass
@@ -648,12 +648,12 @@ class DiscardOnMaxMaterializationsExceededRule(
 
 
 @whitelist_for_serdes
-class DiscardOnRequiredButNonexistentParentsRule(
-    AutoMaterializeRule, NamedTuple("_DiscardOnRequiredButNonexistentParentsRule", [])
+class SkipOnRequiredButNonexistentParentsRule(
+    AutoMaterializeRule, NamedTuple("_SkipOnRequiredButNonexistentParentsRule", [])
 ):
     @property
     def decision_type(self) -> AutoMaterializeDecisionType:
-        return AutoMaterializeDecisionType.DISCARD
+        return AutoMaterializeDecisionType.SKIP
 
     @property
     def description(self) -> str:
@@ -680,7 +680,7 @@ class DiscardOnRequiredButNonexistentParentsRule(
             return [
                 (
                     RequiredButNonexistentParentsRuleEvaluationData(
-                        nonexistent_required_partitions_asset_keys=k
+                        asset_keys_with_nonexistent_required_partitions=k
                     ),
                     v,
                 )

@@ -35,7 +35,7 @@ class AutoMaterializePolicySerializer(NamedTupleSerializer):
             rules = {
                 AutoMaterializeRule.skip_on_parent_outdated(),
                 AutoMaterializeRule.skip_on_parent_missing(),
-                AutoMaterializeRule.discard_on_required_but_nonexistent_parents(),
+                AutoMaterializeRule.skip_on_required_but_nonexistent_parents(),
             }
             for backcompat_key, rule in backcompat_map.items():
                 if unpacked_dict.get(backcompat_key):

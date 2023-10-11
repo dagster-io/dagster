@@ -60,7 +60,7 @@ export type GetEvaluationsQuery = {
                   }
                 | {
                     __typename: 'RequiredButNonexistentParentsRuleEvaluationData';
-                    requiredButNonexistentAssetKeys: Array<{
+                    assetKeysWithNonexistentRequiredPartitions: Array<{
                       __typename: 'AssetKey';
                       path: Array<string>;
                     }> | null;
@@ -115,7 +115,7 @@ export type AutoMaterializeEvaluationRecordItemFragment = {
           }
         | {
             __typename: 'RequiredButNonexistentParentsRuleEvaluationData';
-            requiredButNonexistentAssetKeys: Array<{
+            assetKeysWithNonexistentRequiredPartitions: Array<{
               __typename: 'AssetKey';
               path: Array<string>;
             }> | null;
@@ -158,7 +158,7 @@ export type RuleWithEvaluationsFragment = {
         }
       | {
           __typename: 'RequiredButNonexistentParentsRuleEvaluationData';
-          requiredButNonexistentAssetKeys: Array<{
+          assetKeysWithNonexistentRequiredPartitions: Array<{
             __typename: 'AssetKey';
             path: Array<string>;
           }> | null;

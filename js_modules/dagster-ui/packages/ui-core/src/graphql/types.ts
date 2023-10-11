@@ -3272,7 +3272,7 @@ export type RequestedMaterializationsForAsset = {
 
 export type RequiredButNonexistentParentsRuleEvaluationData = {
   __typename: 'RequiredButNonexistentParentsRuleEvaluationData';
-  requiredButNonexistentAssetKeys: Maybe<Array<AssetKey>>;
+  assetKeysWithNonexistentRequiredPartitions: Maybe<Array<AssetKey>>;
 };
 
 export type Resource = {
@@ -10493,9 +10493,9 @@ export const buildRequiredButNonexistentParentsRuleEvaluationData = (
   relationshipsToOmit.add('RequiredButNonexistentParentsRuleEvaluationData');
   return {
     __typename: 'RequiredButNonexistentParentsRuleEvaluationData',
-    requiredButNonexistentAssetKeys:
-      overrides && overrides.hasOwnProperty('requiredButNonexistentAssetKeys')
-        ? overrides.requiredButNonexistentAssetKeys!
+    assetKeysWithNonexistentRequiredPartitions:
+      overrides && overrides.hasOwnProperty('assetKeysWithNonexistentRequiredPartitions')
+        ? overrides.assetKeysWithNonexistentRequiredPartitions!
         : [],
   };
 };

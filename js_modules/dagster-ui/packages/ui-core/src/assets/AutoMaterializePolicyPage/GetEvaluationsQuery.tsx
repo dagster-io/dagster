@@ -73,7 +73,7 @@ export const GET_EVALUATIONS_QUERY = gql`
           }
         }
         ... on RequiredButNonexistentParentsRuleEvaluationData {
-          requiredButNonexistentAssetKeys {
+          assetKeysWithNonexistentRequiredPartitions {
             path
           }
         }
