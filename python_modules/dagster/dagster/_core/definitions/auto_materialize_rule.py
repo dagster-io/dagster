@@ -97,17 +97,6 @@ class WaitingOnAssetsRuleEvaluationData(
 
 
 @whitelist_for_serdes
-class RequiredButNonexistentParentsRuleEvaluationData(
-    AutoMaterializeRuleEvaluationData,
-    NamedTuple(
-        "_RequiredButNonexistentParentsRuleEvaluationData",
-        [("asset_keys_with_nonexistent_required_partitions", FrozenSet[AssetKey])],
-    ),
-):
-    pass
-
-
-@whitelist_for_serdes
 class AutoMaterializeRuleSnapshot(NamedTuple):
     """A serializable snapshot of an AutoMaterializeRule for historical evaluations."""
 
@@ -679,9 +668,7 @@ class SkipOnRequiredButNonexistentParentsRule(
         if asset_partitions_by_nonexistent_but_required_parent_keys:
             return [
                 (
-                    RequiredButNonexistentParentsRuleEvaluationData(
-                        asset_keys_with_nonexistent_required_partitions=k
-                    ),
+                    WaitingOnAssetsRuleEvaluationData(waiting_on_asset_keys=k),
                     v,
                 )
                 for k, v in asset_partitions_by_nonexistent_but_required_parent_keys.items()

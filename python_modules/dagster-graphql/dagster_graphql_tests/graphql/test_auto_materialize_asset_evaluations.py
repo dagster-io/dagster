@@ -9,7 +9,6 @@ from dagster._core.definitions.auto_materialize_rule import (
     AutoMaterializeRule,
     AutoMaterializeRuleEvaluation,
     ParentUpdatedRuleEvaluationData,
-    RequiredButNonexistentParentsRuleEvaluationData,
     WaitingOnAssetsRuleEvaluationData,
 )
 from dagster._core.definitions.partition import (
@@ -229,11 +228,6 @@ query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: Stri
                                     path
                                 }
                             }
-                            ... on RequiredButNonexistentParentsRuleEvaluationData {
-                                assetKeysWithNonexistentRequiredPartitions {
-                                    path
-                                }
-                            }
                         }
                     }
                 }
@@ -421,10 +415,8 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
                         (
                             AutoMaterializeRuleEvaluation(
                                 rule_snapshot=AutoMaterializeRule.skip_on_required_but_nonexistent_parents().to_snapshot(),
-                                evaluation_data=RequiredButNonexistentParentsRuleEvaluationData(
-                                    asset_keys_with_nonexistent_required_partitions=frozenset(
-                                        {AssetKey("blah")}
-                                    )
+                                evaluation_data=WaitingOnAssetsRuleEvaluationData(
+                                    waiting_on_asset_keys=frozenset({AssetKey("blah")})
                                 ),
                             ),
                             SerializedPartitionsSubset.from_subset(
@@ -465,9 +457,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
                                     {
                                         "partitionKeysOrError": {"partitionKeys": ["a"]},
                                         "evaluationData": {
-                                            "assetKeysWithNonexistentRequiredPartitions": [
-                                                {"path": ["blah"]}
-                                            ]
+                                            "waitingOnAssetKeys": [{"path": ["blah"]}]
                                         },
                                     }
                                 ],

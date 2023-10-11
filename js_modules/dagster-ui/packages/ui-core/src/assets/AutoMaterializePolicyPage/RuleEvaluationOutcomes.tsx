@@ -147,8 +147,6 @@ const RightElementForEvaluations = ({
       );
     case 'WaitingOnKeysRuleEvaluationData':
       return <WaitingOnAssetKeysLink assetKeys={first.waitingOnAssetKeys || []} />;
-    case 'RequiredButNonexistentParentsRuleEvaluationData':
-      return <span></span>;
     case 'TextRuleEvaluationData':
       return <span>{first.text}</span>;
     default:
@@ -223,8 +221,6 @@ const RightElementForPartitionedEvaluations = ({
         ),
       );
       return <WaitingOnAssetKeysPartitionLink assetKeysByPartition={assetKeysByPartition} />;
-    case 'RequiredButNonexistentParentsRuleEvaluationData':
-      return <span></span>;
     case 'TextRuleEvaluationData':
       return <span>{first.text}</span>;
     default:

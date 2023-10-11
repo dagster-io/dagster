@@ -12,7 +12,6 @@ from dagster._core.definitions.auto_materialize_rule import (
     AutoMaterializeRuleEvaluation,
     DiscardOnMaxMaterializationsExceededRule,
     ParentUpdatedRuleEvaluationData,
-    RequiredButNonexistentParentsRuleEvaluationData,
     WaitingOnAssetsRuleEvaluationData,
 )
 from dagster._core.definitions.events import AssetKey
@@ -830,7 +829,7 @@ auto_materialize_policy_scenarios = {
                     (
                         AutoMaterializeRuleEvaluation(
                             AutoMaterializeRule.skip_on_required_but_nonexistent_parents().to_snapshot(),
-                            evaluation_data=RequiredButNonexistentParentsRuleEvaluationData(
+                            evaluation_data=WaitingOnAssetsRuleEvaluationData(
                                 frozenset({AssetKey("asset1")})
                             ),
                         ),

@@ -58,13 +58,6 @@ export type GetEvaluationsQuery = {
                       path: Array<string>;
                     }> | null;
                   }
-                | {
-                    __typename: 'RequiredButNonexistentParentsRuleEvaluationData';
-                    assetKeysWithNonexistentRequiredPartitions: Array<{
-                      __typename: 'AssetKey';
-                      path: Array<string>;
-                    }> | null;
-                  }
                 | {__typename: 'TextRuleEvaluationData'; text: string | null}
                 | {
                     __typename: 'WaitingOnKeysRuleEvaluationData';
@@ -113,13 +106,6 @@ export type AutoMaterializeEvaluationRecordItemFragment = {
             updatedAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
             willUpdateAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
           }
-        | {
-            __typename: 'RequiredButNonexistentParentsRuleEvaluationData';
-            assetKeysWithNonexistentRequiredPartitions: Array<{
-              __typename: 'AssetKey';
-              path: Array<string>;
-            }> | null;
-          }
         | {__typename: 'TextRuleEvaluationData'; text: string | null}
         | {
             __typename: 'WaitingOnKeysRuleEvaluationData';
@@ -155,13 +141,6 @@ export type RuleWithEvaluationsFragment = {
           __typename: 'ParentMaterializedRuleEvaluationData';
           updatedAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
           willUpdateAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
-        }
-      | {
-          __typename: 'RequiredButNonexistentParentsRuleEvaluationData';
-          assetKeysWithNonexistentRequiredPartitions: Array<{
-            __typename: 'AssetKey';
-            path: Array<string>;
-          }> | null;
         }
       | {__typename: 'TextRuleEvaluationData'; text: string | null}
       | {

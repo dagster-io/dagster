@@ -3266,7 +3266,6 @@ union AutoMaterializeRuleEvaluationData =
     TextRuleEvaluationData
   | ParentMaterializedRuleEvaluationData
   | WaitingOnKeysRuleEvaluationData
-  | RequiredButNonexistentParentsRuleEvaluationData
 
 type TextRuleEvaluationData {
   text: String
@@ -3279,10 +3278,6 @@ type ParentMaterializedRuleEvaluationData {
 
 type WaitingOnKeysRuleEvaluationData {
   waitingOnAssetKeys: [AssetKey!]
-}
-
-type RequiredButNonexistentParentsRuleEvaluationData {
-  assetKeysWithNonexistentRequiredPartitions: [AssetKey!]
 }
 
 type AutoMaterializeAssetEvaluationNeedsMigrationError implements Error {

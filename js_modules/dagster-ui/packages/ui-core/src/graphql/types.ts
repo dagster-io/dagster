@@ -531,7 +531,6 @@ export type AutoMaterializeRuleEvaluation = {
 
 export type AutoMaterializeRuleEvaluationData =
   | ParentMaterializedRuleEvaluationData
-  | RequiredButNonexistentParentsRuleEvaluationData
   | TextRuleEvaluationData
   | WaitingOnKeysRuleEvaluationData;
 
@@ -3268,11 +3267,6 @@ export type RequestedMaterializationsForAsset = {
   __typename: 'RequestedMaterializationsForAsset';
   assetKey: AssetKey;
   partitionKeys: Array<Scalars['String']>;
-};
-
-export type RequiredButNonexistentParentsRuleEvaluationData = {
-  __typename: 'RequiredButNonexistentParentsRuleEvaluationData';
-  assetKeysWithNonexistentRequiredPartitions: Maybe<Array<AssetKey>>;
 };
 
 export type Resource = {
@@ -10480,23 +10474,6 @@ export const buildRequestedMaterializationsForAsset = (
         : buildAssetKey({}, relationshipsToOmit),
     partitionKeys:
       overrides && overrides.hasOwnProperty('partitionKeys') ? overrides.partitionKeys! : [],
-  };
-};
-
-export const buildRequiredButNonexistentParentsRuleEvaluationData = (
-  overrides?: Partial<RequiredButNonexistentParentsRuleEvaluationData>,
-  _relationshipsToOmit: Set<string> = new Set(),
-): {
-  __typename: 'RequiredButNonexistentParentsRuleEvaluationData';
-} & RequiredButNonexistentParentsRuleEvaluationData => {
-  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
-  relationshipsToOmit.add('RequiredButNonexistentParentsRuleEvaluationData');
-  return {
-    __typename: 'RequiredButNonexistentParentsRuleEvaluationData',
-    assetKeysWithNonexistentRequiredPartitions:
-      overrides && overrides.hasOwnProperty('assetKeysWithNonexistentRequiredPartitions')
-        ? overrides.assetKeysWithNonexistentRequiredPartitions!
-        : [],
   };
 };
 

@@ -72,11 +72,6 @@ export const GET_EVALUATIONS_QUERY = gql`
             path
           }
         }
-        ... on RequiredButNonexistentParentsRuleEvaluationData {
-          assetKeysWithNonexistentRequiredPartitions {
-            path
-          }
-        }
       }
       partitionKeysOrError {
         ... on PartitionKeys {
