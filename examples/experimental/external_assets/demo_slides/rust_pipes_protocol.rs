@@ -3,15 +3,15 @@ struct PipesContext {
     // omitting other properties for brevity
 }
 
-fn open_pipes_context() -> PipesContext 
+fn open_dagster_pipes() -> PipesContext
 {
     let param = env::var("DAGSTER_PIPES_CONTEXT").unwrap();
     let zlib_compressed_slice = base64::decode(param).unwrap();
     let mut decoder = ZlibDecoder::new(&zlib_compressed_slice[..]);
     let mut json_str = String::new();
     decoder.read_to_string(&mut json_str).unwrap();
-    let context: PipesContext = serde_json::from_str(&json_str).unwrap();
-    return context;
+    let pipes: PipesContext = serde_json::from_str(&json_str).unwrap();
+    return pipes;
 }
 
 
@@ -22,7 +22,7 @@ struct PipesMessage {
 }
 
 fn report_asset_check(
-    context: &mut PipesContext,
+    pipes: &mut PipesContext,
     check_name: &str,
     passed: bool,
     asset_key: &str,
