@@ -614,8 +614,7 @@ class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOut
         return self.add_evaluation_data_from_previous_tick(
             context,
             asset_partitions_by_evaluation_data,
-            should_use_past_data_fn=lambda ap: ap not in candidates_to_evaluate
-            and not context.materialized_requested_or_discarded_since_previous_tick(ap),
+            should_use_past_data_fn=lambda ap: ap not in candidates_to_evaluate,
         )
 
 
@@ -662,8 +661,7 @@ class SkipOnParentMissingRule(AutoMaterializeRule, NamedTuple("_SkipOnParentMiss
         return self.add_evaluation_data_from_previous_tick(
             context,
             asset_partitions_by_evaluation_data,
-            should_use_past_data_fn=lambda ap: ap not in candidates_to_evaluate
-            and not context.materialized_requested_or_discarded_since_previous_tick(ap),
+            should_use_past_data_fn=lambda ap: ap not in candidates_to_evaluate,
         )
 
 
@@ -760,8 +758,7 @@ class SkipOnNotAllParentsUpdatedRule(
         return self.add_evaluation_data_from_previous_tick(
             context,
             asset_partitions_by_evaluation_data,
-            should_use_past_data_fn=lambda ap: ap not in candidates_to_evaluate
-            and not context.materialized_requested_or_discarded_since_previous_tick(ap),
+            should_use_past_data_fn=lambda ap: ap not in candidates_to_evaluate,
         )
 
 
@@ -1036,7 +1033,7 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
             and stored_evaluation.num_requested == 0
             and stored_evaluation.num_discarded == 0
             and stored_evaluation.num_skipped == self.num_skipped
-            # ensure a stable comparison between the evaluation data
+            and len(sorted_results) == len(sorted_stored_results)
             and (
                 # first is a quick check for the equality of the string representations of the
                 # partition subsets
