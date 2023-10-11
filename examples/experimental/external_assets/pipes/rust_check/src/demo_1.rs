@@ -1,32 +1,20 @@
-use std::collections::HashMap;
-use std::env;
-use std::io::prelude::*;
-
-use flate2::read::ZlibDecoder;
-use serde::{de, Deserialize, Serialize};
-use serde_json::json;
-
-fn check_large_dataframe_for_nulls(partition_key: &str) -> u32 {
-    // smoke and mirrors
-    return 1;
-}
-
-#[derive(Debug)]
 struct PipesContext {
     partition_key: String,
+    // omitting other properties for brevity
 }
 
-fn decode_env_var<T>(param: &str) -> T
+fn open_pipes_context() -> PipesContext 
 {
+    let param = env::var("DAGSTER_PIPES_CONTEXT").unwrap();
     let zlib_compressed_slice = base64::decode(param).unwrap();
     let mut decoder = ZlibDecoder::new(&zlib_compressed_slice[..]);
     let mut json_str = String::new();
     decoder.read_to_string(&mut json_str).unwrap();
-    let value: T = serde_json::from_str(&json_str).unwrap();
-    return value;
+    let context: PipesContext = serde_json::from_str(&json_str).unwrap();
+    return context;
 }
 
-#[derive(Debug, Serialize)]
+
 struct PipesMessage {
     __dagster_pipes_version: String,
     method: String,
@@ -44,7 +32,7 @@ fn report_asset_check(
         ("asset_key".to_string(), json!(asset_key)),
         ("check_name".to_string(), json!(check_name)),
         ("passed".to_string(), json!(passed)),
-        ("severity".to_string(), json!("ERROR")), // hardcode for now
+        ("severity".to_string(), json!("ERROR")), 
         ("metadata".to_string(), metadata),
     ]);
 
@@ -55,19 +43,4 @@ fn report_asset_check(
     };
     let serialized_msg = serde_json::to_string(&msg).unwrap();
     eprintln!("{}", serialized_msg);
-}
-
-fn main() {
-    let mut context = decode_env_var<PipesContext>(env::var("DAGSTER_PIPES_CONTEXT"))
-    let null_count = check_large_dataframe_for_nulls(context.partition_key);
-    let passed = null_count == 0;
-    let metadata = json!({"null_count": {"raw_value": null_count, "type": "int"}});
-
-    report_asset_check(
-        context,
-        "telem_post_processing_check",
-        passed,
-        "telem_post_processing",
-        metadata,
-    );
 }
