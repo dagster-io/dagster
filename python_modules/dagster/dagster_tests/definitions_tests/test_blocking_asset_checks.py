@@ -58,7 +58,9 @@ def downstream_asset():
 
 def test_check_pass():
     result = execute_assets_and_checks(
-        assets=[upstream_asset, blocking_asset, downstream_asset], raise_on_error=False
+        assets=[upstream_asset, blocking_asset, downstream_asset],
+        asset_checks=[pass_check, fail_check_if_tagged],
+        raise_on_error=False,
     )
     assert result.success
 
