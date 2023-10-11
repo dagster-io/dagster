@@ -373,6 +373,8 @@ def execute_cursor_command(sensor_name, cli_args, print_fn):
                             last_run_key=job_state.instigator_data.last_run_key,
                             min_interval=external_sensor.min_interval_seconds,
                             cursor=cursor_value,
+                            last_tick_start_timestamp=job_state.instigator_data.last_tick_start_timestamp,
+                            last_sensor_start_timestamp=job_state.instigator_data.last_sensor_start_timestamp,
                         ),
                     )
                 )

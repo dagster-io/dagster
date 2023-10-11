@@ -49,6 +49,7 @@ def sync_get_external_sensor_execution_data_grpc(
     last_completion_time: Optional[float],
     last_run_key: Optional[str],
     cursor: Optional[str],
+    first_tick_after_start: bool = False,
     timeout: Optional[int] = DEFAULT_GRPC_TIMEOUT,
 ) -> SensorExecutionData:
     check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
@@ -68,6 +69,7 @@ def sync_get_external_sensor_execution_data_grpc(
                 last_completion_time=last_completion_time,
                 last_run_key=last_run_key,
                 cursor=cursor,
+                first_tick_after_start=first_tick_after_start,
             ),
             timeout=timeout,
         ),

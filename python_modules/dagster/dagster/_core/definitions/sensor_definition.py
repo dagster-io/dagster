@@ -147,6 +147,7 @@ class SensorEvaluationContext:
         sensor_name: Optional[str] = None,
         resources: Optional[Mapping[str, "ResourceDefinition"]] = None,
         definitions: Optional["Definitions"] = None,
+        first_tick_after_start: bool = False,
     ):
         from dagster._core.definitions.definitions_class import Definitions
         from dagster._core.definitions.repository_definition import RepositoryDefinition
@@ -157,6 +158,9 @@ class SensorEvaluationContext:
             last_completion_time, "last_completion_time"
         )
         self._last_run_key = check.opt_str_param(last_run_key, "last_run_key")
+        self._first_tick_after_start = check.bool_param(
+            first_tick_after_start, "first_tick_after_start"
+        )
         self._cursor = check.opt_str_param(cursor, "cursor")
         self._repository_name = check.opt_str_param(repository_name, "repository_name")
         self._repository_def = normalize_to_repository(
@@ -226,6 +230,7 @@ class SensorEvaluationContext:
                 **(self._resource_defs or {}),
                 **wrap_resources_for_execution(resources_dict),
             },
+            first_tick_after_start=self._first_tick_after_start,
         )
 
     @public
@@ -381,6 +386,10 @@ class SensorEvaluationContext:
     @property
     def log_key(self) -> Optional[List[str]]:
         return self._log_key
+
+    @property
+    def first_tick_after_start(self):
+        return self._first_tick_after_start
 
 
 RawSensorEvaluationFunctionReturn = Union[
@@ -1062,6 +1071,7 @@ def build_sensor_context(
     resources: Optional[Mapping[str, object]] = None,
     definitions: Optional["Definitions"] = None,
     instance_ref: Optional["InstanceRef"] = None,
+    first_tick_from_start: bool = False,
 ) -> SensorEvaluationContext:
     """Builds sensor execution context using the provided parameters.
 
@@ -1082,6 +1092,7 @@ def build_sensor_context(
         definitions (Optional[Definitions]): `Definitions` object that the sensor is defined in.
             If needed by the sensor, top-level resource definitions will be pulled from these
             definitions. You can provide either this or `repository_def`.
+        first_tick (bool): Whether this is the first tick of the sensor since starting.
 
     Examples:
         .. code-block:: python
@@ -1113,6 +1124,7 @@ def build_sensor_context(
         repository_def=repository_def,
         sensor_name=sensor_name,
         resources=wrap_resources_for_execution(resources),
+        first_tick_after_start=first_tick_from_start,
     )
 
 
