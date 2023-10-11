@@ -22,9 +22,15 @@ describe('TickTag', () => {
     it('renders skip reason if no run keys', async () => {
       const skippedTick = {...tick, status: InstigationTickStatus.SKIPPED};
 
-      render(<TickTag tick={skippedTick} />);
+      render(
+        <TickStatusTag
+          error={skippedTick.error}
+          status={skippedTick.status}
+          count={skippedTick.runKeys.length}
+        />,
+      );
 
-      const tag = screen.queryByText(/skipped/i);
+      const tag = screen.queryByText(/0 requested/i);
       expect(tag).toBeVisible();
 
       await userEvent.hover(tag as HTMLElement);
