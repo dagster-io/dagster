@@ -35,6 +35,7 @@ from .types import (
 )
 from .utils import (
     default_grpc_timeout,
+    default_repository_grpc_timeout,
     default_schedule_grpc_timeout,
     default_sensor_grpc_timeout,
     max_rx_bytes,
@@ -46,6 +47,7 @@ CLIENT_HEARTBEAT_INTERVAL = 1
 DEFAULT_GRPC_TIMEOUT = default_grpc_timeout()
 DEFAULT_SCHEDULE_GRPC_TIMEOUT = default_schedule_grpc_timeout()
 DEFAULT_SENSOR_GRPC_TIMEOUT = default_sensor_grpc_timeout()
+DEFAULT_REPOSITORY_GRPC_TIMEOUT = default_repository_grpc_timeout()
 
 
 def client_heartbeat_thread(client: "DagsterGrpcClient", shutdown_event: Event) -> None:
@@ -350,6 +352,7 @@ class DagsterGrpcClient:
         self,
         external_repository_origin: ExternalRepositoryOrigin,
         defer_snapshots: bool = False,
+        timeout=DEFAULT_REPOSITORY_GRPC_TIMEOUT,
     ):
         for res in self._streaming_query(
             "StreamingExternalRepository",
@@ -357,6 +360,7 @@ class DagsterGrpcClient:
             # Rename parameter
             serialized_repository_python_origin=serialize_value(external_repository_origin),
             defer_snapshots=defer_snapshots,
+            timeout=timeout,
         ):
             yield {
                 "sequence_number": res.sequence_number,
