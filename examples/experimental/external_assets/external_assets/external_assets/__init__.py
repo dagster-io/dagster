@@ -30,8 +30,4 @@ def asset_specs_from_de_dsl(path) -> List[AssetSpec]:
     ]
 
 
-defs = Definitions(
-    assets=external_assets_from_specs(
-        asset_specs_from_de_dsl("lake.yaml")
-    )
-)
+defs = Definitions(assets=external_assets_from_specs(asset_specs_from_de_dsl("lake.yaml")))
