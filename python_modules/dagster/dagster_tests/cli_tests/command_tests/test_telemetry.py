@@ -14,6 +14,7 @@ from dagster import (
     DynamicPartitionsDefinition,
     FreshnessPolicy,
     MultiPartitionsDefinition,
+    PipesSubprocessClient,
     SourceAsset,
     StaticPartitionsDefinition,
     asset,
@@ -508,6 +509,24 @@ def test_get_stats_from_external_repo_functional_io_managers():
         {"module_name": "dagster_tests", "class_name": "my_io_manager"}
     ]
     assert stats["has_custom_resources"] == "True"
+
+
+def test_get_stats_from_external_repo_pipes_client():
+    external_repo = ExternalRepository(
+        external_repository_data_from_def(
+            Definitions(
+                resources={
+                    "pipes_subprocess_client": PipesSubprocessClient(),
+                },
+            ).get_repository_def()
+        ),
+        repository_handle=MagicMock(spec=RepositoryHandle),
+    )
+    stats = get_stats_from_external_repo(external_repo)
+    assert stats["dagster_resources"] == [
+        {"module_name": "dagster", "class_name": "_PipesSubprocess"}
+    ]
+    assert stats["has_custom_resources"] == "False"
 
 
 def test_get_stats_from_external_repo_delayed_resource_configuration():
