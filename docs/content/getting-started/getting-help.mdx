@@ -1,0 +1,82 @@
+---
+title: Getting Help | Dagster
+description: Have questions about how to use Dagster? Hit a bug? Have a feature request? This page includes tips on what to do.
+---
+
+# Getting Help
+
+Have questions about how to use Dagster? Hit a bug? Have a feature request? The Dagster Labs team and the Dagster community make a best-effort attempt to respond, on a few different platforms.
+
+---
+
+## Searching for answers
+
+Search engines like Google generally do a good job at surfacing relevant Dagster docs, Github Discussions and Github Issues, so we recommend starting there.
+
+Unfortunately, ChatGPT is not currently a great resource for answering questions about Dagster, because the corpus it was trained on doesn’t include Dagster’s latest APIs.
+
+---
+
+## Bugs and feature requests
+
+We use [Github Issues](https://github.com/dagster-io/dagster/issues) to track all bugs and feature requests from the community, and we welcome issues submitted by users.
+
+If you find a Github issue that seems like it’s related to the issue you’re experiencing, but you're not sure, don’t be shy about posting on that Github issue to ask. We can redirect it to a different issue if necessary.
+
+### Tips for filing issues
+
+- For bugs, include the minimum-sized working code snippet that reproduces your issue.
+- If your Github issue includes a code snippet, you can add syntax highlighting by specifying the language at the top of the block:
+
+      ```python
+      from dagster import ...
+      ...
+      ```
+
+---
+
+## Questions
+
+If you're trying to find out the best way to use Dagster for your use case, there are a couple places to get help.
+
+### Github Discussions: the preferred place to ask questions
+
+[Github Discussions](https://github.com/dagster-io/dagster/discussions) is the main Q & A site for Dagster. For questions whose answers might be useful to others (which is most questions), Github Discussions is the best place to ask them, because they show up when others Google the same questions.
+
+**Tip:** if your Github discussion includes a code snippet, add syntax highlighting by specifying the language at the top of the block:
+
+    ```python
+    from dagster import ...
+
+    ...
+    ```
+
+### The Dagster Slack: another place to ask questions
+
+The Dagster community also answers questions in #dagster-support and other channels of the [Dagster Slack](https://dagster.io/slack). We strongly encourage you to join Slack, as it's the main real-time gathering place for the community. Check out the #faq-read-me-before-posting channel for more info.
+
+We are slowly moving Q & A from Slack to Github Discussions and are more responsive on the latter.
+
+If you have a request of the form, "I want Dagster to do X, but it seems like it doesn’t", consider filing a Github issue instead of posting a Slack message. In most cases, our response on Slack will be to ask you to file a Github Issue, which makes it easier to track your request.
+
+### Asking digestible questions
+
+The less time and effort it takes for someone to digest your question, the more likely it will get answered. The easiest questions to answer include enough information to be clear and specific, but don't require the reader to understand details that aren't relevant.
+
+Below is an example of a well-phrased question. It's brief enough to be quickly digestible, but specific enough to be complete:
+
+> Is it possible to set up Dagster to automatically update an entire downstream table every time that a specific partition of an upstream table is updated? We have a table that's partitioned by customer, and we have a specific analysis that we want to do on a specific customer.
+
+Below is another example of a well-phrased question. It's the same as the question above, but also includes background context. As long as the background context doesn't obscure the core question, it's really helpful to include, because it allows the reader to understand the question more deeply and make broader suggestions:
+
+> Is it possible to set up Dagster to automatically update an entire downstream table every time that a specific partition of an upstream table is updated? We have a table that's partitioned by customer, and we have a specific analysis that we want to do on a specific customer.
+
+> The background here is that that we've set up Fivetran to pulls in our per-customer Salesforce tables into one big Snowflake table. We have about 500 customers, and they get pulled in usually daily, but it depends on the customer. For about 20 of these customers, we have custom logic, implemented in SQL with dbt, that performs analyses that are specific to those customers. We want those analyses to run automatically when customer data is updated, so that our sales representatives can discover red flags when they check their Looker dashboards.
+
+Below is an example of a question that doesn't provide enough detail for the reader to answer it:
+
+> How do I use tables with specific upstream partitions?
+
+Below is an example a question that's difficult to digest. It requires the reader to understand an entire data pipeline to be able to answer the specific question:
+
+> We've set up Fivetran to pulls in our per-customer Salesforce tables into one big Snowflake table. We have about 500 customers, and they get pulled in usually daily, but it depends on the customer. For about 20 of these customers, we have custom logic, implemented in SQL with dbt, that performs analyses that are specific to those customers. We want those analyses to run automatically when customer data is updated, so that our sales representatives can discover red flags when they check their Looker dashboards. How can I get this working with Dagster?
