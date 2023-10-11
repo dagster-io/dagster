@@ -14,7 +14,7 @@ This is part two of the [Using Dagster Pipes](/guides/dagster-pipes/subprocess) 
 At this point, you should have two files:
 
 - `external_code.py` which is a standalone Python script that you want to orchestrate with Dagster.
-- `dagster_subprocess_pipes.py` which includes a Dagster asset and other Dagster definitions.
+- `dagster_code.py` which includes a Dagster asset and other Dagster definitions.
 
 In this section, you'll learn how to modify the standalone Python script to work with [Dagster Pipes](/guides/dagster-pipes) in order to stream information back to Dagster. To do this, you'll:
 
@@ -38,7 +38,7 @@ Getting external code to send information back to Dagster via Dagster Pipes requ
 
 In our sample Python script, the changes would look like the following:
 
-```python file=/guides/dagster/dagster_pipes/subprocess/external_code_with_context.py lines=2-
+```python file=/guides/dagster/dagster_pipes/subprocess/part_2/step_1/external_code.py lines=2-
 import pandas as pd
 from dagster_pipes import PipesContext, open_dagster_pipes
 
@@ -63,7 +63,7 @@ if __name__ == "__main__":
 
 Dagster Pipes context offers a built-in logging capability that enables you to stream log messages back to Dagster. Instead of printing to the standard output, you can use the `context.log` method on <PyObject module="dagster_pipes" object="PipesContext" /> to send log messages back to Dagster. In this case, we’re sending an `info` level log message:
 
-```python file=/guides/dagster/dagster_pipes/subprocess/external_code_with_logs.py
+```python file=/guides/dagster/dagster_pipes/subprocess/part_2/step_2/external_code.py
 import pandas as pd
 from dagster_pipes import PipesContext, open_dagster_pipes
 
@@ -73,7 +73,7 @@ def main():
     total_orders = len(orders_df)
     # get the Dagster Pipes context
     context = PipesContext.get()
-    context.info.log(f"processing total {total_orders} orders")
+    context.log.info(f"processing total {total_orders} orders")
 
 
 if __name__ == "__main__":
@@ -106,7 +106,7 @@ Similar to [reporting materialization metadata within the Dagster process](/conc
 
 In this example, we’re passing a piece of metadata named `total_orders` to the `metadata` parameter of the <PyObject module="dagster_pipes" object="PipesContext" method="report_asset_materialization" />. This payload will be sent from the external process back to Dagster:
 
-```python file=/guides/dagster/dagster_pipes/subprocess/external_code_with_events.py startafter=start_events_marker endbefore=end_events_marker dedent=4
+```python file=/guides/dagster/dagster_pipes/subprocess/part_2/step_3/external_code.py startafter=start_events_marker endbefore=end_events_marker dedent=4
 # get the Dagster Pipes context
 context = PipesContext.get()
 # send structured metadata back to Dagster
@@ -137,13 +137,56 @@ Dagster allows you to define and execute data quality checks on assets. Refer to
 
 If your asset has data quality checks defined, you can report to Dagster that an asset check has been performed via <PyObject module="dagster_pipes" object="PipesContext" method="report_asset_check" />:
 
-```python file=/guides/dagster/dagster_pipes/subprocess/external_code_with_events.py startafter=start_checks_marker endbefore=end_checks_marker dedent=4
+<TabGroup>
+<TabItem name="Report from the external code">
+
+```python file=/guides/dagster/dagster_pipes/subprocess//part_2/step_3/external_code.py startafter=start_checks_marker endbefore=end_checks_marker dedent=4
 # report data quality check result back to Dagster
 context.report_asset_check(
     passed=orders_df[["item_id"]].notnull().all().bool(),
     check_name="no_empty_order_check",
 )
 ```
+
+</TabItem>
+<TabItem name="Define the asset in the Dagster code">
+
+```python file=/guides/dagster/dagster_pipes/subprocess/part_2/step_3/dagster_code.py
+import shutil
+
+from dagster import (
+    AssetCheckSpec,
+    AssetExecutionContext,
+    Definitions,
+    PipesSubprocessClient,
+    asset,
+    file_relative_path,
+)
+
+
+@asset(
+    check_specs=[AssetCheckSpec(name="no_empty_order_check", asset="subprocess_asset")],
+)
+def subprocess_asset(
+    context: AssetExecutionContext, pipes_subprocess_client: PipesSubprocessClient
+):
+    cmd = [
+        shutil.which("python"),
+        file_relative_path(__file__, "external_code_with_events.py"),
+    ]
+    return pipes_subprocess_client.run(
+        command=cmd, context=context
+    ).get_materialize_result()
+
+
+defs = Definitions(
+    assets=[subprocess_asset],
+    resources={"pipes_subprocess_client": PipesSubprocessClient()},
+)
+```
+
+</TabItem>
+</TabGroup>
 
 When Dagster executes the code, you’ll see an asset check event with the check result in the UI:
 
@@ -170,44 +213,9 @@ height={730}
 At this point, your two files should look like the following:
 
 <TabGroup>
-<TabItem name="Dagster code in dagster_subprocess_pipes.py">
-
-```python file=/guides/dagster/dagster_pipes/subprocess/dagster_subprocess_pipes_finished.py
-import shutil
-
-from dagster import (
-    AssetCheckSpec,
-    AssetExecutionContext,
-    Definitions,
-    MaterializeResult,
-    PipesSubprocessClient,
-    asset,
-    file_relative_path,
-)
-
-
-@asset(
-    check_specs=[AssetCheckSpec(name="no_empty_order_check", asset="my_asset")],
-)
-def subprocess_asset(
-    context: AssetExecutionContext, pipes_subprocess_client: PipesSubprocessClient
-) -> MaterializeResult:
-    cmd = [shutil.which("python"), file_relative_path(__file__, "external_code.py")]
-    return pipes_subprocess_client.run(
-        command=cmd, context=context
-    ).get_materialize_result()
-
-
-defs = Definitions(
-    assets=[subprocess_asset],
-    resources={"pipes_subprocess_client": PipesSubprocessClient()},
-)
-```
-
-</TabItem>
 <TabItem name="External code in external_code.py">
 
-```python file=/guides/dagster/dagster_pipes/subprocess/external_code_finished.py
+```python file=/guides/dagster/dagster_pipes/subprocess/part_2/step_3/external_code_finished.py
 import pandas as pd
 from dagster_pipes import PipesContext, open_dagster_pipes
 
@@ -230,6 +238,43 @@ if __name__ == "__main__":
     # connect to Dagster Pipes
     with open_dagster_pipes():
         main()
+```
+
+</TabItem>
+<TabItem name="Dagster code in dagster_code.py">
+
+```python file=/guides/dagster/dagster_pipes/subprocess/part_2/step_3/dagster_code.py
+import shutil
+
+from dagster import (
+    AssetCheckSpec,
+    AssetExecutionContext,
+    Definitions,
+    PipesSubprocessClient,
+    asset,
+    file_relative_path,
+)
+
+
+@asset(
+    check_specs=[AssetCheckSpec(name="no_empty_order_check", asset="subprocess_asset")],
+)
+def subprocess_asset(
+    context: AssetExecutionContext, pipes_subprocess_client: PipesSubprocessClient
+):
+    cmd = [
+        shutil.which("python"),
+        file_relative_path(__file__, "external_code_with_events.py"),
+    ]
+    return pipes_subprocess_client.run(
+        command=cmd, context=context
+    ).get_materialize_result()
+
+
+defs = Definitions(
+    assets=[subprocess_asset],
+    resources={"pipes_subprocess_client": PipesSubprocessClient()},
+)
 ```
 
 </TabItem>

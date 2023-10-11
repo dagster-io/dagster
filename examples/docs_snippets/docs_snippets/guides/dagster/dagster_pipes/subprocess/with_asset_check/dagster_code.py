@@ -23,7 +23,7 @@ def no_empty_order_check(
 ) -> AssetCheckResult:
     cmd = [
         shutil.which("python"),
-        file_relative_path(__file__, "asset_check_external_code.py"),
+        file_relative_path(__file__, "external_code.py"),
     ]
     return pipes_subprocess_client.run(
         command=cmd, context=context

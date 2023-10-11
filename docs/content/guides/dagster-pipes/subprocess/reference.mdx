@@ -14,43 +14,11 @@ This reference shows usage of Dagster Pipes with other entities in the Dagster s
 When launching the subprocess, you may want to make environment variables or additoional parameters available in the external process. Extras are arbitrary, user-defined parameters made available on the context object in the external process.
 
 <TabGroup>
-<TabItem name="Provide in the Dagster code">
-
-The `run` method to the `PipesSubprocessClient` resource also accepts `env` and `extras` , which allow you to specify environment variables and extra arguments when executing the subprocess:
-
-```python file=/guides/dagster/dagster_pipes/subprocess/extras_env_dagster_code.py
-import os
-import shutil
-
-from dagster import (
-    AssetExecutionContext,
-    PipesSubprocessClient,
-    asset,
-    file_relative_path,
-)
-
-
-@asset
-def subprocess_asset(
-    context: AssetExecutionContext, pipes_subprocess_client: PipesSubprocessClient
-):
-    cmd = [shutil.which("python"), file_relative_path(__file__, "external_code.py")]
-    return pipes_subprocess_client.run(
-        command=cmd,
-        context=context,
-        extras={"foo": "bar"},
-        env={
-            "MY_ENV_VAR_IN_SUBPROCESS": os.environ["MY_ENV_VAR"],
-        },
-    ).get_materialize_result()
-```
-
-</TabItem>
-<TabItem name="Access in the external code">
+<TabItem name="External code in external_code.py">
 
 In the external code, you can access extras via the `PipesContext` object:
 
-```python file=/guides/dagster/dagster_pipes/subprocess/extras_env_external_code.py lines=2-
+```python file=/guides/dagster/dagster_pipes/subprocess/with_extras_env/external_code.py lines=2-
 import os
 
 import pandas as pd
@@ -77,6 +45,46 @@ if __name__ == "__main__":
 ```
 
 </TabItem>
+<TabItem name="Dagster code in dagster_code.py">
+
+The `run` method to the `PipesSubprocessClient` resource also accepts `env` and `extras` , which allow you to specify environment variables and extra arguments when executing the subprocess:
+
+```python file=/guides/dagster/dagster_pipes/subprocess/with_extras_env/dagster_code.py
+import os
+import shutil
+
+from dagster import (
+    AssetExecutionContext,
+    Definitions,
+    MaterializeResult,
+    PipesSubprocessClient,
+    asset,
+    file_relative_path,
+)
+
+
+@asset
+def subprocess_asset(
+    context: AssetExecutionContext, pipes_subprocess_client: PipesSubprocessClient
+) -> MaterializeResult:
+    cmd = [shutil.which("python"), file_relative_path(__file__, "external_code.py")]
+    return pipes_subprocess_client.run(
+        command=cmd,
+        context=context,
+        extras={"foo": "bar"},
+        env={
+            "MY_ENV_VAR_IN_SUBPROCESS": os.environ["MY_ENV_VAR"],
+        },
+    ).get_materialize_result()
+
+
+defs = Definitions(
+    assets=[subprocess_asset],
+    resources={"pipes_subprocess_client": PipesSubprocessClient()},
+)
+```
+
+</TabItem>
 </TabGroup>
 
 ## Working with @asset_check
@@ -84,11 +92,40 @@ if __name__ == "__main__":
 Sometimes, you may not want to materialize an asset, but instead want to report a data quality check result. When your asset has data quality checks defined in `@asset_check`:
 
 <TabGroup>
-<TabItem name="Define in the Dagster code">
+
+<TabItem name="External code in external_code.py">
+
+From the external code, you can report to Dagster that an asset check has been performed via <PyObject module="dagster_pipes" object="PipesContext" method="report_asset_check" />. Note that `asset_key` in this case is required, and must match the asset key defined in `@asset_check`:
+
+```python file=/guides/dagster/dagster_pipes/subprocess/with_asset_check/external_code.py
+import pandas as pd
+from dagster_pipes import PipesContext, open_dagster_pipes
+
+
+def main():
+    orders_df = pd.DataFrame({"order_id": [1, 2], "item_id": [432, 878]})
+    # get the Dagster Pipes context
+    context = PipesContext.get()
+    # send structured metadata back to Dagster
+    context.report_asset_check(
+        asset_key="my_asset",
+        passed=orders_df[["item_id"]].notnull().all().bool(),
+        check_name="no_empty_order_check",
+    )
+
+
+if __name__ == "__main__":
+    # connect to Dagster Pipes
+    with open_dagster_pipes():
+        main()
+```
+
+</TabItem>
+<TabItem name="Dagster code in dagster_code.py">
 
 On Dagster's side, the `PipesClientCompletedInvocation` object returned from `PipesSubprocessClient` includes a `get_asset_check_result` method, which you can use to access the <PyObject object="AssetCheckResult" /> event reported by the subprocess.
 
-```python file=/guides/dagster/dagster_pipes/subprocess/asset_check_dagster_code.py
+```python file=/guides/dagster/dagster_pipes/subprocess/with_asset_check/dagster_code.py
 import shutil
 
 from dagster import (
@@ -114,7 +151,7 @@ def no_empty_order_check(
 ) -> AssetCheckResult:
     cmd = [
         shutil.which("python"),
-        file_relative_path(__file__, "asset_check_external_code.py"),
+        file_relative_path(__file__, "external_code.py"),
     ]
     return pipes_subprocess_client.run(
         command=cmd, context=context
@@ -129,24 +166,46 @@ defs = Definitions(
 ```
 
 </TabItem>
-<TabItem name="Report from the external code">
+</TabGroup>
 
-From the external code, you can report to Dagster that an asset check has been performed via <PyObject module="dagster_pipes" object="PipesContext" method="report_asset_check" />. Note that `asset_key` in this case is required, and must match the asset key defined in `@asset_check`:
+---
 
-```python file=/guides/dagster/dagster_pipes/subprocess/asset_check_external_code.py
+## Working with multi-assets
+
+Sometimes, you may invoke a single call to an API that results in multiple tables being updated, or you may have a single script that computes multiple assets. In these cases, you can use Dagster Pipes to report back on multiple assets at once.
+
+<TabGroup>
+
+<TabItem name="External code in external_code.py">
+
+**Note**: when working with multi-assets, \`<PyObject module="dagster_pipes" object="PipesContext" method="report_asset_materialization" /> may only be called once per unique asset key. If called more than once, an error similar to the following will surface:
+
+```bash
+Calling {method} with asset key {asset_key} is undefined. Asset has already been materialized, so no additional data can be reported for it
+```
+
+Instead, you’ll need to set the `asset_key` parameter for each instance of <PyObject module="dagster_pipes" object="PipesContext" method="report_asset_materialization" />:
+
+```python file=/guides/dagster/dagster_pipes/subprocess/with_multi_asset/external_code.py
 import pandas as pd
 from dagster_pipes import PipesContext, open_dagster_pipes
 
 
 def main():
-    orders_df = pd.DataFrame({"order_id": [1, 2], "item_id": [432, 878]})
+    orders_df = pd.DataFrame(
+        {"order_id": [1, 2, 3], "item_id": [432, 878, 102], "user_id": ["a", "b", "a"]}
+    )
+    total_orders = len(orders_df)
+    total_users = orders_df["user_id"].nunique()
+
     # get the Dagster Pipes context
     context = PipesContext.get()
-    # send structured metadata back to Dagster
-    context.report_asset_check(
-        asset_key="my_asset",
-        passed=orders_df[["item_id"]].notnull().all().bool(),
-        check_name="no_empty_order_check",
+    # send structured metadata back to Dagster. asset_key is required when there are multiple assets
+    context.report_asset_materialization(
+        asset_key="orders", metadata={"total_orders": total_orders}
+    )
+    context.report_asset_materialization(
+        asset_key="users", metadata={"total_users": total_users}
     )
 
 
@@ -157,20 +216,12 @@ if __name__ == "__main__":
 ```
 
 </TabItem>
-</TabGroup>
 
----
-
-## Working with multi-assets
-
-Sometimes, you may invoke a single call to an API that results in multiple tables being updated, or you may have a single script that computes multiple assets. In these cases, you can use Dagster Pipes to report back on multiple assets at once.
-
-<TabGroup>
-<TabItem name="Define in the Dagster code">
+<TabItem name="Dagster code in dagster_code.py">
 
 In the Dagster code, you can use <PyObject object="multi_asset" decorator /> to define a single asset that reprensents multiple assets. The `PipesClientCompletedInvocation` object returned from `PipesSubprocessClient` includes a `get_results` method, which you can use to access all the events, such as multiple <PyObject object="AssetMaterialization" pluralize /> and <PyObject object="AssetCheckResult" pluralize />, reported by the subprocess:
 
-```python file=/guides/dagster/dagster_pipes/subprocess/multi_asset_dagster_code.py
+```python file=/guides/dagster/dagster_pipes/subprocess/with_multi_asset/dagster_code.py
 import shutil
 
 from dagster import (
@@ -198,46 +249,6 @@ defs = Definitions(
     assets=[subprocess_asset],
     resources={"pipes_subprocess_client": PipesSubprocessClient()},
 )
-```
-
-</TabItem>
-<TabItem name="Report from the external code">
-
-**Note**: when working with multi-assets, \`<PyObject module="dagster_pipes" object="PipesContext" method="report_asset_materialization" /> may only be called once per unique asset key. If called more than once, an error similar to the following will surface:
-
-```bash
-Calling {method} with asset key {asset_key} is undefined. Asset has already been materialized, so no additional data can be reported for it
-```
-
-Instead, you’ll need to set the `asset_key` parameter for each instance of <PyObject module="dagster_pipes" object="PipesContext" method="report_asset_materialization" />:
-
-```python file=/guides/dagster/dagster_pipes/subprocess/multi_asset_external_code.py
-import pandas as pd
-from dagster_pipes import PipesContext, open_dagster_pipes
-
-
-def main():
-    orders_df = pd.DataFrame(
-        {"order_id": [1, 2, 3], "item_id": [432, 878, 102], "user_id": ["a", "b", "a"]}
-    )
-    total_orders = len(orders_df)
-    total_users = orders_df["user_id"].nunique()
-
-    # get the Dagster Pipes context
-    context = PipesContext.get()
-    # send structured metadata back to Dagster. asset_key is required when there are multiple assets
-    context.report_asset_materialization(
-        asset_key="orders", metadata={"total_orders": total_orders}
-    )
-    context.report_asset_materialization(
-        asset_key="users", metadata={"total_users": total_users}
-    )
-
-
-if __name__ == "__main__":
-    # connect to Dagster Pipes
-    with open_dagster_pipes():
-        main()
 ```
 
 </TabItem>

@@ -7,7 +7,7 @@ def main():
     total_orders = len(orders_df)
     # get the Dagster Pipes context
     context = PipesContext.get()
-    context.info.log(f"processing total {total_orders} orders")
+    context.log.info(f"processing total {total_orders} orders")
 
 
 if __name__ == "__main__":
