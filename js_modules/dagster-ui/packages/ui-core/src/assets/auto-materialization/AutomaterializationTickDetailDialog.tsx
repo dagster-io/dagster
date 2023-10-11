@@ -1,27 +1,11 @@
 import {gql, useQuery} from '@apollo/client';
-import {
-  Box,
-  Colors,
-  Subtitle2,
-  Caption,
-  Tag,
-  Button,
-  Dialog,
-  DialogBody,
-  DialogFooter,
-  ButtonLink,
-  Icon,
-  Spinner,
-} from '@dagster-io/ui-components';
+import {Box, Colors, Subtitle2, Caption, Icon, Spinner} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {PythonErrorInfo} from '../../app/PythonErrorInfo';
-import {formatElapsedTime} from '../../app/Util';
 import {Timestamp} from '../../app/time/Timestamp';
-import {PythonErrorFragment} from '../../app/types/PythonErrorFragment.types';
 import {tokenForAssetKey} from '../../asset-graph/Utils';
 import {AssetKeyInput, InstigationTickStatus} from '../../graphql/types';
 import {TickDetailSummary} from '../../instigation/TickDetailsDialog';
@@ -175,7 +159,7 @@ export const AutomaterializationTickDetailDialog = React.memo(
             }}
           >
             <Box padding={{vertical: 12, horizontal: 24}} border="bottom">
-              <TickDetailSummary tick={tick} />
+              {tick ? <TickDetailSummary tick={tick} /> : null}
             </Box>
             {tick?.status === InstigationTickStatus.STARTED ? null : (
               <>

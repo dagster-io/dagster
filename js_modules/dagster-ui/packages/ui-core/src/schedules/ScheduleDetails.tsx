@@ -17,10 +17,10 @@ import * as React from 'react';
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
 import {useCopyToClipboard} from '../app/browser';
 import {InstigationStatus, InstigationType} from '../graphql/types';
-import {TickTag} from '../instigation/InstigationTick';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {EvaluateScheduleDialog} from '../ticks/EvaluateScheduleDialog';
+import {TickStatusTag} from '../ticks/TickStatusTag';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 
@@ -146,7 +146,11 @@ export const ScheduleDetails: React.FC<{
                     timezone={executionTimezone}
                     timeFormat={TIME_FORMAT}
                   />
-                  <TickTag tick={latestTick} instigationType={InstigationType.SCHEDULE} />
+                  <TickStatusTag
+                    status={latestTick.status}
+                    error={latestTick.error}
+                    count={latestTick.runIds.length}
+                  />
                 </Group>
               ) : (
                 'Schedule has never run'

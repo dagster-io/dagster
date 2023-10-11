@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import * as React from 'react';
 
 import {InstigationTickStatus} from '../../graphql/types';
-import {TickTag} from '../InstigationTick';
+import {TickStatusTag} from '../../ticks/TickStatusTag';
 import {TickTagFragment} from '../types/InstigationTick.types';
 
 describe('TickTag', () => {
@@ -36,15 +36,16 @@ describe('TickTag', () => {
     it('renders info about requested run count if run keys', async () => {
       const skippedTick = {...tick, status: InstigationTickStatus.SKIPPED, runKeys: ['foo', 'bar']};
 
-      render(<TickTag tick={skippedTick} />);
+      render(
+        <TickStatusTag
+          error={skippedTick.error}
+          status={skippedTick.status}
+          count={skippedTick.runKeys.length}
+        />,
+      );
 
-      const tag = screen.queryByText(/skipped/i);
+      const tag = screen.queryByText(/0 requested/i);
       expect(tag).toBeVisible();
-
-      await userEvent.hover(tag as HTMLElement);
-      await waitFor(() => {
-        expect(screen.queryByText(/2 runs requested, but skipped/i)).toBeVisible();
-      });
     });
   });
 });

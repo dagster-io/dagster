@@ -28,9 +28,9 @@ import {
   StopRunningSensorMutation,
   StopRunningSensorMutationVariables,
 } from '../sensors/types/SensorMutations.types';
+import {TickStatusTag} from '../ticks/TickStatusTag';
 import {InstigatorSelectorInformation} from '../workspace/RepositoryInformation';
 
-import {TickTag} from './InstigationTick';
 import {InstigatedRunStatus} from './InstigationUtils';
 import {InstigationStateFragment} from './types/InstigationUtils.types';
 
@@ -191,7 +191,11 @@ const SensorStateRow = ({sensorState}: {sensorState: InstigationStateFragment}) 
       </td>
       <td>
         {latestTick ? (
-          <TickTag tick={latestTick} instigationType={InstigationType.SENSOR} />
+          <TickStatusTag
+            status={latestTick.status}
+            error={latestTick.error}
+            count={latestTick.runIds.length}
+          />
         ) : (
           <span style={{color: Colors.Gray300}}>None</span>
         )}
@@ -281,7 +285,11 @@ const ScheduleStateRow: React.FC<{
       </td>
       <td>
         {latestTick ? (
-          <TickTag tick={latestTick} instigationType={InstigationType.SCHEDULE} />
+          <TickStatusTag
+            status={latestTick.status}
+            error={latestTick.error}
+            count={latestTick.runIds.length}
+          />
         ) : null}
       </td>
       <td>
