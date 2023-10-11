@@ -13,7 +13,7 @@ External asset events can be recorded using :py:func:`DagsterInstance.report_run
     from dagster import DagsterInstance, AssetMaterialization, AssetKey
 
     instance = DagsterInstance.get()
-    instance.report_runless_asset_event(AssetMaterialization(AssetKey('raw_orders_asset')))
+    instance.report_runless_asset_event(AssetMaterialization(AssetKey('example_asset')))
 
 ----
 
@@ -76,18 +76,18 @@ Returns JSON:
 
 .. code-block:: bash
 
-    curl -X POST localhost:3000/report_asset_materialization/raw_orders_asset
+    curl -X POST localhost:3000/report_asset_materialization/example_asset
 
-**Example:** report an asset materialization against Dagster Cloud with json body via curl (required authentication done via `Content-Type: application/json` header).
+**Example:** report an asset materialization against Dagster Cloud with json body via curl (required authentication done via `Dagster-Cloud-Api-Token` header).
 
 .. code-block:: bash
 
     curl --request POST \
         --url https://example-org.dagster.cloud/example-deployment/report_asset_materialization/ \
         --header 'Content-Type: application/json' \
-        --header 'Dagster-Cloud-Api-Token: token' \
+        --header 'Dagster-Cloud-Api-Token: example-token' \
         --data '{
-            "asset_key": "raw_orders_asset",
+            "asset_key": "example_asset",
             "metadata": {
                 "rows": 10
             },
@@ -100,11 +100,11 @@ Returns JSON:
 
     import requests
 
-    url = f"{DAGSTER_WEBSERVER_HOST}/report_asset_materialization/raw_orders_asset"
+    url = f"{DAGSTER_WEBSERVER_HOST}/report_asset_materialization/example_asset"
     response = requests.request("POST", url)
     response.raise_for_status()
 
-**Example:** report an asset materialization against Dagster Cloud in python using `requests` (required authentication done via `Content-Type: application/json` header).
+**Example:** report an asset materialization against Dagster Cloud in python using `requests` (required authentication done via `Dagster-Cloud-Api-Token` header).
 
 .. code-block:: python
 
@@ -113,12 +113,12 @@ Returns JSON:
     url = "https://example-org.dagster.cloud/example-deployment/report_asset_materialization/"
 
     payload = {
-        "asset_key": "raw_orders_asset",
+        "asset_key": "example_asset",
         "metadata": {"rows": 10},
     }
     headers = {
         "Content-Type": "application/json",
-        "Dagster-Cloud-Api-Token": "token"
+        "Dagster-Cloud-Api-Token": "example-token"
     }
 
     response = requests.request("POST", url, json=payload, headers=headers)
