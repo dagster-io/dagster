@@ -23,7 +23,7 @@ import {LiveTickTimeline} from '../../instigation/LiveTickTimeline2';
 import {OverviewTabs} from '../../overview/OverviewTabs';
 import {useAutomaterializeDaemonStatus} from '../AutomaterializeDaemonStatusTag';
 
-import {ASSET_DAMEON_TICKS_QUERY} from './AssetDaemonTicksQuery';
+import {ASSET_DAEMON_TICKS_QUERY} from './AssetDaemonTicksQuery';
 import {AutomaterializationEvaluationHistoryTable} from './AutomaterializationEvaluationHistoryTable';
 import {AutomaterializationTickDetailDialog} from './AutomaterializationTickDetailDialog';
 import {AutomaterializeRunHistoryTable} from './AutomaterializeRunHistoryTable';
@@ -46,7 +46,7 @@ export const AutomaterializationRoot = () => {
   const {permissions: {canToggleAutoMaterialize} = {}} = useUnscopedPermissions();
 
   const [fetch, queryResult] = useLazyQuery<AssetDaemonTicksQuery, AssetDaemonTicksQueryVariables>(
-    ASSET_DAMEON_TICKS_QUERY,
+    ASSET_DAEMON_TICKS_QUERY,
   );
   const [isPaused, setIsPaused] = React.useState(false);
   function fetchData() {

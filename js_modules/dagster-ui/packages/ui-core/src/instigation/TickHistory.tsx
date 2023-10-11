@@ -14,9 +14,7 @@ import {
   Icon,
   IconWrapper,
   ButtonLink,
-  Dialog,
-  Button,
-  DialogFooter,
+  ifPlural,
 } from '@dagster-io/ui-components';
 import {Chart} from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
@@ -29,37 +27,26 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {ONE_MONTH, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useCopyToClipboard} from '../app/browser';
-import {InstigationTickStatus, InstigationType} from '../graphql/types';
+import {InstigationSelector, InstigationTickStatus, InstigationType} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {TimeElapsed} from '../runs/TimeElapsed';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
-import {DynamicPartitionRequests} from '../ticks/DynamicPartitionRequests';
 import {TickLogDialog} from '../ticks/TickLogDialog';
+import {TickStatusTag} from '../ticks/TickStatusTag';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
-import {TickTag, TICK_TAG_FRAGMENT} from './InstigationTick';
-import {RunStatusLink, RUN_STATUS_FRAGMENT} from './InstigationUtils';
-import {LiveTickTimeline} from './LiveTickTimeline';
+import {TICK_TAG_FRAGMENT} from './InstigationTick';
+import {RunStatusLink, RUN_STATUS_FRAGMENT, HISTORY_TICK_FRAGMENT} from './InstigationUtils';
+import {LiveTickTimeline} from './LiveTickTimeline2';
 import {TickDetailsDialog} from './TickDetailsDialog';
-import {
-  DynamicPartitionsRequestResultFragment,
-  HistoryTickFragment,
-  TickHistoryQuery,
-  TickHistoryQueryVariables,
-} from './types/TickHistory.types';
+import {TickHistoryQuery, TickHistoryQueryVariables} from './types/TickHistory.types';
+import {truncate} from './util';
 
 Chart.register(zoomPlugin);
 
 type InstigationTick = HistoryTickFragment;
-
-const TRUNCATION_THRESHOLD = 100;
-const TRUNCATION_BUFFER = 5;
-
-const truncate = (str: string) =>
-  str.length > TRUNCATION_THRESHOLD
-    ? `${str.slice(0, TRUNCATION_THRESHOLD - TRUNCATION_BUFFER)}…`
-    : str;
 
 const PAGE_SIZE = 25;
 interface ShownStatusState {
@@ -110,7 +97,6 @@ export const TicksTable = ({
       return status;
     },
   });
-  const copyToClipboard = useCopyToClipboard();
   const {flagSensorScheduleLogging} = useFeatureFlags();
   const instigationSelector = {...repoAddressToSelector(repoAddress), name};
   const statuses = Object.keys(shownStates)
@@ -183,7 +169,7 @@ export const TicksTable = ({
           onClose={() => setLogTick(undefined)}
         />
       ) : null}
-      <Box margin={{vertical: 8, horizontal: 24}}>
+      <Box padding={{vertical: 8, horizontal: 24}}>
         <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
           {tabs}
           <Box flex={{direction: 'row', gap: 16}}>
@@ -200,70 +186,22 @@ export const TicksTable = ({
             <tr>
               <th style={{width: 120}}>Timestamp</th>
               <th style={{width: 90}}>Status</th>
+              <th style={{width: 90}}>Duration</th>
               {instigationType === InstigationType.SENSOR ? (
                 <th style={{width: 120}}>Cursor</th>
               ) : null}
-              <th style={{width: 180}}>Runs</th>
+              <th style={{width: 180}}>Result</th>
               {flagSensorScheduleLogging ? <th style={{width: 180}}>Logs</th> : null}
-              <th style={{width: 200}}>Requests</th>
             </tr>
           </thead>
           <tbody>
             {ticks.map((tick) => (
-              <tr key={tick.id}>
-                <td>
-                  <TimestampDisplay
-                    timestamp={tick.timestamp}
-                    timeFormat={{showTimezone: false, showSeconds: true}}
-                  />
-                </td>
-                <td>
-                  <TickTag tick={tick} />
-                </td>
-                {instigationType === InstigationType.SENSOR ? (
-                  <td style={{width: 120}}>
-                    {tick.cursor ? (
-                      <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
-                        <div style={{fontFamily: FontFamily.monospace, fontSize: '16px'}}>
-                          {truncate(tick.cursor || '')}
-                        </div>
-                        <CopyButton
-                          onClick={async () => {
-                            copyToClipboard(tick.cursor || '');
-                            await showSharedToaster({
-                              message: <div>Copied value</div>,
-                              intent: 'success',
-                            });
-                          }}
-                        >
-                          <Icon name="assignment" />
-                        </CopyButton>
-                      </Box>
-                    ) : (
-                      <>&mdash;</>
-                    )}
-                  </td>
-                ) : null}
-                <td>
-                  {tick.runIds.length ? (
-                    tick.runs.map((run) => (
-                      <React.Fragment key={run.id}>
-                        <RunStatusLink run={run} />
-                      </React.Fragment>
-                    ))
-                  ) : (
-                    <>&mdash;</>
-                  )}
-                </td>
-                {flagSensorScheduleLogging ? (
-                  <td>
-                    {tick.logKey ? <a onClick={() => setLogTick(tick)}>View logs</a> : <>&mdash;</>}
-                  </td>
-                ) : null}
-                <td>
-                  <DynamicPartitionRequestsCell requests={tick.dynamicPartitionsRequestResults} />
-                </td>
-              </tr>
+              <TickRow
+                key={tick.id}
+                tick={tick}
+                setLogTick={setLogTick}
+                instigationSelector={instigationSelector}
+              />
             ))}
           </tbody>
         </Table>
@@ -331,7 +269,7 @@ export const TickHistoryTimeline = ({
 
   // Set it equal to an empty array in case of a weird error
   // https://elementl-workspace.slack.com/archives/C03CCE471E0/p1693237968395179?thread_ts=1693233109.602669&cid=C03CCE471E0
-  const {ticks = [], nextTick} = data.instigationStateOrError;
+  const {ticks = []} = data.instigationStateOrError;
 
   const onTickClick = (tick?: InstigationTick) => {
     setSelectedTime(tick ? tick.timestamp : undefined);
@@ -349,6 +287,7 @@ export const TickHistoryTimeline = ({
   return (
     <>
       <TickDetailsDialog
+        isOpen={!!selectedTime}
         timestamp={selectedTime}
         instigationSelector={instigationSelector}
         onClose={() => onTickClick(undefined)}
@@ -357,60 +296,99 @@ export const TickHistoryTimeline = ({
         <Subheading>Recent ticks</Subheading>
       </Box>
       <Box border="top">
-        <LiveTickTimeline
-          ticks={ticks}
-          nextTick={nextTick}
-          onHoverTick={onTickHover}
-          onSelectTick={onTickClick}
-        />
+        <LiveTickTimeline ticks={ticks} onHoverTick={onTickHover} onSelectTick={onTickClick} />
       </Box>
     </>
   );
 };
 
-function DynamicPartitionRequestsCell({
-  requests,
+function TickRow({
+  tick,
+  setLogTick,
+  instigationSelector,
 }: {
-  requests: DynamicPartitionsRequestResultFragment[];
+  tick: HistoryTickFragment;
+  setLogTick: (tick: InstigationTick) => void;
+  instigationSelector: InstigationSelector;
 }) {
-  const [isDialogOpen, setDialogOpen] = React.useState(false);
-  const nonSkipOnlyRequests = requests.filter((request) => request.partitionKeys?.length);
-  if (!nonSkipOnlyRequests.length) {
-    return null;
-  }
+  const copyToClipboard = useCopyToClipboard();
+  const {flagSensorScheduleLogging} = useFeatureFlags();
+  const [showResults, setShowResults] = React.useState(false);
 
   return (
-    <>
-      <ButtonLink
-        onClick={() => {
-          setDialogOpen(true);
-        }}
-      >
-        {nonSkipOnlyRequests.length} dynamic partition change
-        {nonSkipOnlyRequests.length === 1 ? '' : 's'}
-      </ButtonLink>
-      <Dialog
-        isOpen={isDialogOpen}
-        onClose={() => {
-          setDialogOpen(false);
-        }}
-        style={{width: '60%', minWidth: '400px'}}
-        icon="partition"
-        title="Dynamic partition changes"
-      >
-        <DynamicPartitionRequests includeTitle={false} requests={nonSkipOnlyRequests} />
-        <DialogFooter>
-          <Button
-            intent="primary"
-            onClick={() => {
-              setDialogOpen(false);
-            }}
-          >
-            Close
-          </Button>
-        </DialogFooter>
-      </Dialog>
-    </>
+    <tr>
+      <td>
+        <TimestampDisplay
+          timestamp={tick.timestamp}
+          timeFormat={{showTimezone: false, showSeconds: true}}
+        />
+      </td>
+      <td>
+        <TickStatusTag count={tick.runIds.length} status={tick.status} error={tick.error} />
+      </td>
+      <td>
+        <TimeElapsed startUnix={tick.timestamp} endUnix={tick.endTimestamp || Date.now() / 1000} />
+      </td>
+      {tick.instigationType === InstigationType.SENSOR ? (
+        <td style={{width: 120}}>
+          {tick.cursor ? (
+            <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+              <div style={{fontFamily: FontFamily.monospace, fontSize: '16px'}}>
+                {truncate(tick.cursor || '')}
+              </div>
+              <CopyButton
+                onClick={async () => {
+                  copyToClipboard(tick.cursor || '');
+                  await showSharedToaster({
+                    message: <div>Copied value</div>,
+                    intent: 'success',
+                  });
+                }}
+              >
+                <Icon name="assignment" />
+              </CopyButton>
+            </Box>
+          ) : (
+            <>&mdash;</>
+          )}
+        </td>
+      ) : null}
+      <td>
+        {tick.runIds.length ? (
+          <Box flex={{direction: 'column', gap: 6}}>
+            <Box flex={{alignItems: 'center', gap: 8}}>
+              <ButtonLink
+                onClick={() => {
+                  setShowResults(true);
+                }}
+              >
+                {tick.runIds.length} run{ifPlural(tick.runIds.length, '', 's')} requested
+              </ButtonLink>
+              {tick.runs.length === 1
+                ? tick.runs.map((run) => (
+                    <React.Fragment key={run.id}>
+                      <RunStatusLink run={run} />
+                    </React.Fragment>
+                  ))
+                : null}
+            </Box>
+            <TickDetailsDialog
+              isOpen={showResults}
+              timestamp={tick.timestamp}
+              instigationSelector={instigationSelector}
+              onClose={() => {
+                setShowResults(false);
+              }}
+            />
+          </Box>
+        ) : (
+          <>&mdash;</>
+        )}
+      </td>
+      {flagSensorScheduleLogging ? (
+        <td>{tick.logKey ? <a onClick={() => setLogTick(tick)}>View logs</a> : <>&mdash;</>}</td>
+      ) : null}
+    </tr>
   );
 }
 
@@ -426,9 +404,6 @@ const JOB_TICK_HISTORY_QUERY = gql`
       ... on InstigationState {
         id
         instigationType
-        nextTick {
-          ...NextTickForHistory
-        }
         ticks(dayRange: $dayRange, limit: $limit, cursor: $cursor, statuses: $statuses) {
           id
           ...HistoryTick
@@ -438,44 +413,10 @@ const JOB_TICK_HISTORY_QUERY = gql`
     }
   }
 
-  fragment NextTickForHistory on DryRunInstigationTick {
-    timestamp
-  }
-
-  fragment HistoryTick on InstigationTick {
-    id
-    status
-    timestamp
-    cursor
-    instigationType
-    skipReason
-    runIds
-    runs {
-      id
-      status
-      ...RunStatusFragment
-    }
-    originRunIds
-    error {
-      ...PythonErrorFragment
-    }
-    logKey
-    ...TickTagFragment
-    dynamicPartitionsRequestResults {
-      ...DynamicPartitionsRequestResultFragment
-    }
-  }
-
-  fragment DynamicPartitionsRequestResultFragment on DynamicPartitionsRequestResult {
-    partitionsDefName
-    partitionKeys
-    skippedPartitionKeys
-    type
-  }
-
   ${RUN_STATUS_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
   ${TICK_TAG_FRAGMENT}
+  ${HISTORY_TICK_FRAGMENT}
 `;
 
 const CopyButton = styled.button`

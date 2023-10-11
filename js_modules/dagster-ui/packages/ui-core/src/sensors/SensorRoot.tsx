@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, Tab, Tabs, Page, NonIdealState} from '@dagster-io/ui-components';
+import {Box, Page, NonIdealState, ButtonGroup} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {useParams} from 'react-router-dom';
 
@@ -8,6 +8,7 @@ import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {TicksTable, TickHistoryTimeline} from '../instigation/TickHistory';
 import {Loading} from '../ui/Loading';
@@ -31,7 +32,18 @@ export const SensorRoot: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) 
     sensorName,
   };
 
-  const [selectedTab, setSelectedTab] = React.useState<string>('ticks');
+  const [selectedTab, setSelectedTab] = useQueryPersistedState<'evaluations' | 'runs'>(
+    React.useMemo(
+      () => ({
+        queryKey: 'view',
+        decode: ({view}) => (view === 'runs' ? 'runs' : 'evaluations'),
+        encode: (raw) => {
+          return {view: raw, cursor: undefined, statuses: undefined};
+        },
+      }),
+      [],
+    ),
+  );
   const queryResult = useQuery<SensorRootQuery, SensorRootQueryVariables>(SENSOR_ROOT_QUERY, {
     variables: {sensorSelector},
     notifyOnNetworkStatusChange: true,
@@ -40,10 +52,16 @@ export const SensorRoot: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) 
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
   const tabs = (
-    <Tabs selectedTabId={selectedTab} onChange={setSelectedTab}>
-      <Tab id="ticks" title="Tick history" />
-      <Tab id="runs" title="Run history" />
-    </Tabs>
+    <ButtonGroup
+      activeItems={new Set([selectedTab])}
+      buttons={[
+        {id: 'evaluations', label: 'Evaluations'},
+        {id: 'runs', label: 'Runs'},
+      ]}
+      onClick={(id: 'evaluations' | 'runs') => {
+        setSelectedTab(id);
+      }}
+    />
   );
   return (
     <Loading queryResult={queryResult} allowStaleData={true}>
@@ -79,11 +97,13 @@ export const SensorRoot: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) 
               />
             ) : null}
             <TickHistoryTimeline repoAddress={repoAddress} name={sensorOrError.name} />
-            {selectedTab === 'ticks' ? (
-              <TicksTable tabs={tabs} repoAddress={repoAddress} name={sensorOrError.name} />
-            ) : (
-              <SensorPreviousRuns repoAddress={repoAddress} sensor={sensorOrError} tabs={tabs} />
-            )}
+            <Box margin={{top: 32}} border="top">
+              {selectedTab === 'evaluations' ? (
+                <TicksTable tabs={tabs} repoAddress={repoAddress} name={sensorOrError.name} />
+              ) : (
+                <SensorPreviousRuns repoAddress={repoAddress} sensor={sensorOrError} tabs={tabs} />
+              )}
+            </Box>
           </Page>
         );
       }}

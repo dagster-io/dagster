@@ -1,31 +1,24 @@
 import {
-  BaseTag,
   Body2,
   Box,
-  Button,
   ButtonGroup,
   ButtonLink,
   Checkbox,
-  Colors,
   CursorHistoryControls,
-  Dialog,
-  DialogBody,
-  DialogFooter,
   Spinner,
   Table,
-  Tag,
 } from '@dagster-io/ui-components';
 import React from 'react';
 
-import {PythonErrorInfo} from '../../app/PythonErrorInfo';
 import {useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {Timestamp} from '../../app/time/Timestamp';
 import {InstigationTickStatus} from '../../graphql/types';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {TimeElapsed} from '../../runs/TimeElapsed';
 import {useCursorPaginatedQuery} from '../../runs/useCursorPaginatedQuery';
+import {TickStatusTag} from '../../ticks/TickStatusTag';
 
-import {ASSET_DAMEON_TICKS_QUERY} from './AssetDaemonTicksQuery';
+import {ASSET_DAEMON_TICKS_QUERY} from './AssetDaemonTicksQuery';
 import {
   AssetDaemonTicksQuery,
   AssetDaemonTicksQueryVariables,
@@ -64,7 +57,7 @@ export const AutomaterializationEvaluationHistoryTable = ({
     AssetDaemonTicksQuery,
     AssetDaemonTicksQueryVariables
   >({
-    query: ASSET_DAMEON_TICKS_QUERY,
+    query: ASSET_DAEMON_TICKS_QUERY,
     variables: {
       statuses: React.useMemo(() => Array.from(statuses), [statuses]),
     },
@@ -147,7 +140,11 @@ export const AutomaterializationEvaluationHistoryTable = ({
                 <Timestamp timestamp={{unix: tick.timestamp}} />
               </td>
               <td>
-                <StatusTag tick={tick} />
+                <TickStatusTag
+                  error={tick.error}
+                  status={tick.status}
+                  count={tick.requestedAssetMaterializationCount}
+                />
               </td>
               <td>
                 <TimeElapsed
@@ -180,64 +177,6 @@ export const AutomaterializationEvaluationHistoryTable = ({
         <CursorHistoryControls {...paginationProps} />
       </div>
     </Box>
-  );
-};
-
-const StatusTag = ({tick}: {tick: AssetDaemonTickFragment}) => {
-  const {status, error, requestedAssetMaterializationCount} = tick;
-  const count = requestedAssetMaterializationCount;
-  const [showErrors, setShowErrors] = React.useState(false);
-  const tag = React.useMemo(() => {
-    switch (status) {
-      case InstigationTickStatus.STARTED:
-        return (
-          <Tag intent="primary" icon="spinner">
-            Evaluating
-          </Tag>
-        );
-      case InstigationTickStatus.SKIPPED:
-        return <BaseTag fillColor={Colors.Olive50} label="0 requested" />;
-      case InstigationTickStatus.FAILURE:
-        return (
-          <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
-            <Tag intent="danger">Failure</Tag>
-            {error ? (
-              <ButtonLink
-                onClick={() => {
-                  setShowErrors(true);
-                }}
-              >
-                View
-              </ButtonLink>
-            ) : null}
-          </Box>
-        );
-      case InstigationTickStatus.SUCCESS:
-        return <Tag intent="success">{count} requested</Tag>;
-    }
-  }, [error, count, status]);
-
-  return (
-    <>
-      {tag}
-      {error ? (
-        <Dialog isOpen={showErrors} title="Error" style={{width: '80vw'}}>
-          <DialogBody>
-            <PythonErrorInfo error={error} />
-          </DialogBody>
-          <DialogFooter topBorder>
-            <Button
-              intent="primary"
-              onClick={() => {
-                setShowErrors(false);
-              }}
-            >
-              Close
-            </Button>
-          </DialogFooter>
-        </Dialog>
-      ) : null}
-    </>
   );
 };
 

@@ -2,7 +2,7 @@ import {gql} from '@apollo/client';
 
 import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
 
-export const ASSET_DAMEON_TICKS_QUERY = gql`
+export const ASSET_DAEMON_TICKS_QUERY = gql`
   query AssetDaemonTicksQuery(
     $dayRange: Int
     $dayOffset: Int

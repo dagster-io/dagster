@@ -8,9 +8,9 @@ import styled from 'styled-components';
 import {TimeContext} from '../app/time/TimeContext';
 import {browserTimezone} from '../app/time/browserTimezone';
 import {AssetDaemonTickFragment} from '../assets/auto-materialization/types/AssetDaemonTicksQuery.types';
-import {InstigationTickStatus, InstigationType} from '../graphql/types';
+import {InstigationTickStatus} from '../graphql/types';
 
-import {HistoryTickFragment} from './types/TickHistory.types';
+import {HistoryTickFragment} from './types/HistoryTickFragment.types';
 
 dayjs.extend(relativeTime);
 
@@ -43,18 +43,7 @@ const timestampFormat = memoize((timezone: string) => {
     timeZone: timezone === 'Automatic' ? browserTimezone() : timezone,
   });
 });
-
-type StrippedDownTickFragment = Pick<
-  HistoryTickFragment,
-  'id' | 'timestamp' | 'instigationType'
-> & {
-  status: InstigationTickStatus;
-  runs?: HistoryTickFragment['runs'];
-  endTimestamp?: number | null;
-  requestedAssetMaterializationCount?: number;
-} & Pick<AssetDaemonTickFragment, 'requestedMaterializationsForAssets'>;
-
-export const LiveTickTimeline = <T extends StrippedDownTickFragment>({
+export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTickFragment>({
   ticks,
   onHoverTick,
   onSelectTick,
@@ -149,7 +138,10 @@ export const LiveTickTimeline = <T extends StrippedDownTickFragment>({
           </GridTick>
         ))}
         {ticksToDisplay.map((tick) => {
-          const count = tick.requestedAssetMaterializationCount ?? tick.runs?.length ?? 0;
+          const isAssetDaemonTick = 'requestedAssetMaterializationCount' in tick;
+          const count =
+            (isAssetDaemonTick ? tick.requestedAssetMaterializationCount : tick.runIds?.length) ??
+            0;
           return (
             <Tick
               key={tick.id}
@@ -189,7 +181,7 @@ export const LiveTickTimeline = <T extends StrippedDownTickFragment>({
   );
 };
 
-const TickTooltip = React.memo(({tick}: {tick: StrippedDownTickFragment}) => {
+const TickTooltip = React.memo(({tick}: {tick: HistoryTickFragment | AssetDaemonTickFragment}) => {
   const status = React.useMemo(() => {
     if (tick.status === InstigationTickStatus.FAILURE) {
       return 'Evaluation failed';
@@ -197,13 +189,15 @@ const TickTooltip = React.memo(({tick}: {tick: StrippedDownTickFragment}) => {
     if (tick.status === InstigationTickStatus.STARTED) {
       return 'Evaluating…';
     }
-    if (tick.instigationType === InstigationType.AUTO_MATERIALIZE) {
+    const isAssetDaemonTick = 'requestedAssetMaterializationCount' in tick;
+    if (isAssetDaemonTick) {
       return `${tick.requestedAssetMaterializationCount} materialization${ifPlural(
         tick.requestedAssetMaterializationCount,
+        '',
         's',
       )} requested`;
     } else {
-      return `${tick.runs?.length || 0} run${ifPlural(tick.runs?.length, 's')} requested`;
+      return `${tick.runs?.length || 0} run${ifPlural(tick.runs?.length, '', 's')} requested`;
     }
   }, [tick]);
   const startTime = dayjs(1000 * tick.timestamp!);
