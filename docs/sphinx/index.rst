@@ -9,6 +9,7 @@
    sections/api/apidocs/config
    sections/api/apidocs/errors
    sections/api/apidocs/execution
+   sections/api/apidocs/external-assets
    sections/api/apidocs/graphs
    sections/api/apidocs/hooks
    sections/api/apidocs/internals
