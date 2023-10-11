@@ -13,7 +13,7 @@ import * as React from 'react';
 
 import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
-import {InstigationStatus, InstigationType} from '../graphql/types';
+import {InstigationStatus} from '../graphql/types';
 import {
   displayScheduleMutationErrors,
   STOP_SCHEDULE_MUTATION,
