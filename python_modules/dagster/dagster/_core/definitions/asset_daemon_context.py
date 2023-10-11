@@ -1,3 +1,4 @@
+import dataclasses
 import datetime
 import itertools
 import logging
@@ -356,7 +357,7 @@ class AssetDaemonContext:
                 to_materialize.update(asset_partitions)
             self._verbose_log_fn("Done evaluating materialize rule")
 
-        skip_context = materialize_context._replace(candidates=to_materialize)
+        skip_context = dataclasses.replace(materialize_context, candidates=to_materialize)
 
         for skip_rule in auto_materialize_policy.skip_rules:
             rule_snapshot = skip_rule.to_snapshot()
@@ -376,6 +377,7 @@ class AssetDaemonContext:
         to_materialize.difference_update(to_skip)
 
         # this is treated separately from other rules, for now
+        discard_context = dataclasses.replace(skip_context, candidates=to_materialize)
         if auto_materialize_policy.max_materializations_per_minute is not None:
             rule = DiscardOnMaxMaterializationsExceededRule(
                 limit=auto_materialize_policy.max_materializations_per_minute
@@ -384,9 +386,7 @@ class AssetDaemonContext:
 
             self._verbose_log_fn(f"Evaluating discard rule: {rule_snapshot}")
 
-            for evaluation_data, asset_partitions in rule.evaluate_for_asset(
-                skip_context._replace(candidates=to_materialize)
-            ):
+            for evaluation_data, asset_partitions in rule.evaluate_for_asset(discard_context):
                 all_results.append(
                     (
                         AutoMaterializeRuleEvaluation(
@@ -580,7 +580,8 @@ class AssetDaemonContext:
                 evaluation
                 for evaluation in evaluations_by_asset_key.values()
                 if not evaluation.equivalent_to_stored_evaluation(
-                    self.cursor.latest_evaluation_by_asset_key.get(evaluation.asset_key)
+                    self.cursor.latest_evaluation_by_asset_key.get(evaluation.asset_key),
+                    self.asset_graph,
                 )
             ],
         )
