@@ -29,7 +29,7 @@ def test_without_rules():
             AutoMaterializeRule.skip_on_parent_outdated(),
             AutoMaterializeRule.skip_on_parent_missing(),
             AutoMaterializeRule.skip_on_required_but_nonexistent_parents(),
-            AutoMaterializeRule.discard_on_backfill_in_progress(),
+            AutoMaterializeRule.skip_on_backfill_in_progress(),
         }
     )
 
@@ -43,7 +43,7 @@ def test_without_rules():
             AutoMaterializeRule.skip_on_parent_outdated(),
             AutoMaterializeRule.skip_on_parent_missing(),
             AutoMaterializeRule.skip_on_required_but_nonexistent_parents(),
-            AutoMaterializeRule.discard_on_backfill_in_progress(),
+            AutoMaterializeRule.skip_on_backfill_in_progress(),
         }
     )
 
@@ -79,7 +79,7 @@ def test_with_rules():
             AutoMaterializeRule.skip_on_parent_missing(),
             AutoMaterializeRule.materialize_on_required_for_freshness(),
             AutoMaterializeRule.skip_on_required_but_nonexistent_parents(),
-            AutoMaterializeRule.discard_on_backfill_in_progress(),
+            AutoMaterializeRule.skip_on_backfill_in_progress(),
         )
         == AutoMaterializePolicy.eager()
     )

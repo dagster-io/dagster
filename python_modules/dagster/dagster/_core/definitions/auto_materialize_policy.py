@@ -36,7 +36,7 @@ class AutoMaterializePolicySerializer(NamedTupleSerializer):
                 AutoMaterializeRule.skip_on_parent_outdated(),
                 AutoMaterializeRule.skip_on_parent_missing(),
                 AutoMaterializeRule.skip_on_required_but_nonexistent_parents(),
-                AutoMaterializeRule.discard_on_backfill_in_progress(),
+                AutoMaterializeRule.skip_on_backfill_in_progress(),
             }
             for backcompat_key, rule in backcompat_map.items():
                 if unpacked_dict.get(backcompat_key):
@@ -178,7 +178,7 @@ class AutoMaterializePolicy(
                 AutoMaterializeRule.skip_on_parent_outdated(),
                 AutoMaterializeRule.skip_on_parent_missing(),
                 AutoMaterializeRule.skip_on_required_but_nonexistent_parents(),
-                AutoMaterializeRule.discard_on_backfill_in_progress(),
+                AutoMaterializeRule.skip_on_backfill_in_progress(),
             },
             max_materializations_per_minute=check.opt_int_param(
                 max_materializations_per_minute, "max_materializations_per_minute"
@@ -204,7 +204,7 @@ class AutoMaterializePolicy(
                 AutoMaterializeRule.skip_on_parent_outdated(),
                 AutoMaterializeRule.skip_on_parent_missing(),
                 AutoMaterializeRule.skip_on_required_but_nonexistent_parents(),
-                AutoMaterializeRule.discard_on_backfill_in_progress(),
+                AutoMaterializeRule.skip_on_backfill_in_progress(),
             },
             max_materializations_per_minute=check.opt_int_param(
                 max_materializations_per_minute, "max_materializations_per_minute"

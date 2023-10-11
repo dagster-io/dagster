@@ -72,7 +72,7 @@ def get_implicit_auto_materialize_policy(
             AutoMaterializeRule.skip_on_parent_outdated(),
             AutoMaterializeRule.skip_on_parent_missing(),
             AutoMaterializeRule.skip_on_required_but_nonexistent_parents(),
-            AutoMaterializeRule.discard_on_backfill_in_progress(),
+            AutoMaterializeRule.skip_on_backfill_in_progress(),
         }
         if not bool(asset_graph.get_downstream_freshness_policies(asset_key=asset_key)):
             rules.add(AutoMaterializeRule.materialize_on_parent_updated())

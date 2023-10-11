@@ -299,17 +299,18 @@ class AutoMaterializeRule(ABC):
 
     @public
     @staticmethod
-    def discard_on_backfill_in_progress(
-        discard_all_partitions_of_backfilling_asset: bool = True,
-    ) -> "DiscardOnBackfillInProgressRule":
-        """Discard an asset's partitions if the asset is currently being backfilled.
+    def skip_on_backfill_in_progress(
+        skip_all_partitions_of_backfilling_asset: bool = False,
+    ) -> "SkipOnBackfillInProgressRule":
+        """Skip an asset's partitions if the asset is currently being backfilled.
 
         Attributes:
-            discard_all_partitions_of_backfilling_asset (Optional[bool]): If true, discards
+            skip_all_partitions_of_backfilling_asset (Optional[bool]): If true, skips
                 all partitions of the backfilling asset, regardless of whether the partition
-                is being backfilled. If false, discards only partitions that are being backfilled.
+                is being backfilled. If false, skips only partitions that are being backfilled.
+                Defaults to false.
         """
-        return DiscardOnBackfillInProgressRule(discard_all_partitions_of_backfilling_asset)
+        return SkipOnBackfillInProgressRule(skip_all_partitions_of_backfilling_asset)
 
     def to_snapshot(self) -> AutoMaterializeRuleSnapshot:
         """Returns a serializable snapshot of this rule for historical evaluations."""
@@ -691,15 +692,15 @@ class SkipOnRequiredButNonexistentParentsRule(
 
 
 @whitelist_for_serdes
-class DiscardOnBackfillInProgressRule(
+class SkipOnBackfillInProgressRule(
     AutoMaterializeRule,
     NamedTuple(
-        "_DiscardOnBackfillInProgressRule", [("discard_all_partitions_of_backfilling_asset", bool)]
+        "_SkipOnBackfillInProgressRule", [("skip_all_partitions_of_backfilling_asset", bool)]
     ),
 ):
     @property
     def decision_type(self) -> AutoMaterializeDecisionType:
-        return AutoMaterializeDecisionType.DISCARD
+        return AutoMaterializeDecisionType.SKIP
 
     @property
     def description(self) -> str:
@@ -713,7 +714,7 @@ class DiscardOnBackfillInProgressRule(
         )
 
         for candidate in context.candidates:
-            if self.discard_all_partitions_of_backfilling_asset:
+            if self.skip_all_partitions_of_backfilling_asset:
                 if candidate.asset_key in backfilling_subset.asset_keys:
                     backfill_in_progress_candidates.add(candidate)
             else:
