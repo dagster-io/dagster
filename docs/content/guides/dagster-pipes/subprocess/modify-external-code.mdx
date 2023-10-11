@@ -89,7 +89,7 @@ Then, the log messages will show up in the [**Run details**](/concepts/webserver
 
 <Image
 alt="Send log messages to Dagster"
-src="/images/guides/dagster-pipes/modifying-code-4-log-messages.png"
+src="/images/guides/dagster-pipes/subprocess/part-2-step-2-log-level.png"
 width={1326}
 height={742}
 />
@@ -106,18 +106,31 @@ Similar to [reporting materialization metadata within the Dagster process](/conc
 
 In this example, we’re passing a piece of metadata named `total_orders` to the `metadata` parameter of the <PyObject module="dagster_pipes" object="PipesContext" method="report_asset_materialization" />. This payload will be sent from the external process back to Dagster:
 
-```python file=/guides/dagster/dagster_pipes/subprocess/part_2/step_3/external_code.py startafter=start_events_marker endbefore=end_events_marker dedent=4
-# get the Dagster Pipes context
-context = PipesContext.get()
-# send structured metadata back to Dagster
-context.report_asset_materialization(metadata={"total_orders": total_orders})
+```python file=/guides/dagster/dagster_pipes/subprocess/part_2/step_3_materialization/external_code.py
+import pandas as pd
+from dagster_pipes import PipesContext, open_dagster_pipes
+
+
+def main():
+    orders_df = pd.DataFrame({"order_id": [1, 2], "item_id": [432, 878]})
+    total_orders = len(orders_df)
+    # get the Dagster Pipes context
+    context = PipesContext.get()
+    # send structured metadata back to Dagster
+    context.report_asset_materialization(metadata={"total_orders": total_orders})
+
+
+if __name__ == "__main__":
+    # connect to Dagster Pipes
+    with open_dagster_pipes():
+        main()
 ```
 
 Then, `total_orders` will show up in the UI as structured metadata:
 
 <Image
 alt="Report asset materialization to Dagster"
-src="/images/guides/dagster-pipes/modifying-code-5-1-report-asset-materialization.png"
+src="/images/guides/dagster-pipes/subprocess/part-2-step-3-report-asset-materialization.png"
 width={1412}
 height={806}
 />
@@ -126,7 +139,7 @@ This metadata will also be displayed on the **Events** tab of the **Asset Detail
 
 <Image
 alt="View materialization events in asset details page"
-src="/images/guides/dagster-pipes/modifying-code-5-2-materialization-asset-details.png"
+src="/images/guides/dagster-pipes/subprocess/part-2-step-3-asset-details.png"
 width={1286}
 height={736}
 />
@@ -140,18 +153,35 @@ If your asset has data quality checks defined, you can report to Dagster that an
 <TabGroup>
 <TabItem name="Report from the external code">
 
-```python file=/guides/dagster/dagster_pipes/subprocess//part_2/step_3/external_code.py startafter=start_checks_marker endbefore=end_checks_marker dedent=4
-# report data quality check result back to Dagster
-context.report_asset_check(
-    passed=orders_df[["item_id"]].notnull().all().bool(),
-    check_name="no_empty_order_check",
-)
+```python file=/guides/dagster/dagster_pipes/subprocess//part_2/step_3_check/external_code.py
+import pandas as pd
+from dagster_pipes import PipesContext, open_dagster_pipes
+
+
+def main():
+    orders_df = pd.DataFrame({"order_id": [1, 2], "item_id": [432, 878]})
+    total_orders = len(orders_df)
+    # get the Dagster Pipes context
+    context = PipesContext.get()
+    # send structured metadata back to Dagster
+    context.report_asset_materialization(metadata={"total_orders": total_orders})
+    # report data quality check result back to Dagster
+    context.report_asset_check(
+        passed=orders_df[["item_id"]].notnull().all().bool(),
+        check_name="no_empty_order_check",
+    )
+
+
+if __name__ == "__main__":
+    # connect to Dagster Pipes
+    with open_dagster_pipes():
+        main()
 ```
 
 </TabItem>
 <TabItem name="Define the asset in the Dagster code">
 
-```python file=/guides/dagster/dagster_pipes/subprocess/part_2/step_3/dagster_code.py
+```python file=/guides/dagster/dagster_pipes/subprocess/part_2/step_3_check/dagster_code.py
 import shutil
 
 from dagster import (
@@ -172,7 +202,7 @@ def subprocess_asset(
 ):
     cmd = [
         shutil.which("python"),
-        file_relative_path(__file__, "external_code_with_events.py"),
+        file_relative_path(__file__, "external_code.py"),
     ]
     return pipes_subprocess_client.run(
         command=cmd, context=context
@@ -192,7 +222,7 @@ When Dagster executes the code, you’ll see an asset check event with the check
 
 <Image
 alt="Report asset checks to Dagster"
-src="/images/guides/dagster-pipes/modifying-code-5-3-report-asset-checks.png"
+src="/images/guides/dagster-pipes/subprocess/part-2-step-3-report-asset-check.png"
 width={1312}
 height={734}
 />
@@ -201,7 +231,7 @@ This check result will also be displayed on the **Checks** tab of the **Asset De
 
 <Image
 alt="View checks in asset details page"
-src="/images/guides/dagster-pipes/modifying-code-5-4-checks-asset-details.png"
+src="/images/guides/dagster-pipes/subprocess/part-2-step-3-check-tab.png"
 width={1302}
 height={730}
 />
@@ -215,7 +245,7 @@ At this point, your two files should look like the following:
 <TabGroup>
 <TabItem name="External code in external_code.py">
 
-```python file=/guides/dagster/dagster_pipes/subprocess/part_2/step_3/external_code_finished.py
+```python file=/guides/dagster/dagster_pipes/subprocess/part_2/step_3_check/external_code.py
 import pandas as pd
 from dagster_pipes import PipesContext, open_dagster_pipes
 
@@ -243,7 +273,7 @@ if __name__ == "__main__":
 </TabItem>
 <TabItem name="Dagster code in dagster_code.py">
 
-```python file=/guides/dagster/dagster_pipes/subprocess/part_2/step_3/dagster_code.py
+```python file=/guides/dagster/dagster_pipes/subprocess/part_2/step_3_check/dagster_code.py
 import shutil
 
 from dagster import (
@@ -264,7 +294,7 @@ def subprocess_asset(
 ):
     cmd = [
         shutil.which("python"),
-        file_relative_path(__file__, "external_code_with_events.py"),
+        file_relative_path(__file__, "external_code.py"),
     ]
     return pipes_subprocess_client.run(
         command=cmd, context=context
