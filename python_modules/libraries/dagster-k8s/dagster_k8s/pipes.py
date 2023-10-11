@@ -124,6 +124,10 @@ class _PipesK8sClient(PipesClient):
             or PipesK8sPodLogsMessageReader()
         )
 
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
+
     def run(
         self,
         *,

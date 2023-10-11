@@ -64,6 +64,10 @@ class _PipesSubprocess(PipesClient):
             or PipesTempFileMessageReader()
         )
 
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
+
     @public
     def run(
         self,
