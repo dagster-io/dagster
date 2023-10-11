@@ -1,3 +1,7 @@
-export function ifPlural(count: number | undefined | null, string: string) {
-  return count === 1 ? '' : string;
+export function ifPlural(
+  count: number | undefined | null,
+  singularString: string,
+  pluralString: string,
+) {
+  return count === 1 ? singularString : pluralString;
 }
