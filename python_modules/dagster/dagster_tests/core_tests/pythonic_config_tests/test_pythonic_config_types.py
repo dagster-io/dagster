@@ -909,4 +909,4 @@ def test_to_config_dict_combined_with_cached_method() -> None:
 
     obj = ConfigWithCachedMethod(a_string="bar")
     obj.a_string_cached()
-    assert obj._convert_to_config_dictionary() == {"a_string": "bar"}  # noqa: SLF001
+    assert obj.convert_to_config_dictionary() == {"a_string": "bar"}

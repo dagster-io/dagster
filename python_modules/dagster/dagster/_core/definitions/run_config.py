@@ -591,7 +591,7 @@ def _convert_config_classes_inner(configs: Any) -> Any:
 
     return {
         k: (
-            {"config": v._convert_to_config_dictionary()}  # noqa: SLF001
+            {"config": v.convert_to_config_dictionary()}
             if isinstance(v, Config)
             else _convert_config_classes_inner(v)
         )

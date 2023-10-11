@@ -189,6 +189,9 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
         super().__init__(**modified_data)
 
     def _convert_to_config_dictionary(self) -> Mapping[str, Any]:
+        return self.convert_to_config_dictionary()
+
+    def convert_to_config_dictionary(self) -> Mapping[str, Any]:
         """Converts this Config object to a Dagster config dictionary, in the same format as the dictionary
         accepted as run config or as YAML in the launchpad.
 
@@ -276,7 +279,7 @@ def _config_value_to_dict_representation(field: Optional[ModelField], value: Any
                 ).items()
             }
         else:
-            return {k: v for k, v in value._convert_to_config_dictionary().items()}  # noqa: SLF001
+            return {k: v for k, v in value.convert_to_config_dictionary().items()}
     elif isinstance(value, Enum):
         return value.name
 

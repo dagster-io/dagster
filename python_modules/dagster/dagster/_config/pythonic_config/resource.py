@@ -347,7 +347,7 @@ class ConfigurableResourceFactory(
         # to the correct type under the hood - useful in particular for enums
         casted_data_without_resources = {
             k: v
-            for k, v in self._convert_to_config_dictionary().items()
+            for k, v in self.convert_to_config_dictionary().items()
             if k in data_without_resources
         }
         resolved_config_dict = config_dictionary_from_values(casted_data_without_resources, schema)
@@ -584,7 +584,7 @@ class ConfigurableResourceFactory(
         return self.from_resource_context(
             build_init_resource_context(
                 config=post_process_config(
-                    self._config_schema.config_type, self._convert_to_config_dictionary()
+                    self._config_schema.config_type, self.convert_to_config_dictionary()
                 ).value
             )
         )
