@@ -575,13 +575,11 @@ class AssetDaemonContext:
                 observe_request_timestamp=observe_request_timestamp,
                 evaluations=list(evaluations_by_asset_key.values()),
             ),
-            # only record evaluations where something happened
+            # only record evaluations where something changed
             [
                 evaluation
                 for evaluation in evaluations_by_asset_key.values()
-                if sum([evaluation.num_requested, evaluation.num_skipped, evaluation.num_discarded])
-                > 0
-                and not evaluation.equivalent_to_stored_evaluation(
+                if not evaluation.equivalent_to_stored_evaluation(
                     self.cursor.latest_evaluation_by_asset_key.get(evaluation.asset_key)
                 )
             ],
