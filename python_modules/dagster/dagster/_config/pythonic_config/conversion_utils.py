@@ -8,6 +8,7 @@ from typing import (
     Optional,
     Type,
     TypeVar,
+    Union,
 )
 
 from pydantic import ConstrainedFloat, ConstrainedInt, ConstrainedStr
@@ -58,6 +59,7 @@ from dagster._config.field_utils import (
     convert_potential_field,
 )
 
+from .pydantic_compat_layer import ModelFieldCompat, model_fields
 from .type_check_utils import is_optional, safe_is_subclass
 
 
@@ -128,7 +130,9 @@ def _get_inner_field_if_exists(shape_type: Type, field: ModelField) -> Optional[
     return None
 
 
-def _convert_pydantic_field(pydantic_field: ModelField, model_cls: Optional[Type] = None) -> Field:
+def _convert_pydantic_field(
+    pydantic_field: ModelFieldCompat, model_cls: Optional[Type] = None
+) -> Field:
     """Transforms a Pydantic field into a corresponding Dagster config field.
 
 
@@ -139,26 +143,26 @@ def _convert_pydantic_field(pydantic_field: ModelField, model_cls: Optional[Type
     """
     from .config import Config, infer_schema_from_config_class
 
-    if pydantic_field.field_info.discriminator:
-        return _convert_pydantic_descriminated_union_field(pydantic_field)
+    if pydantic_field.discriminator:
+        return _convert_pydantic_discriminated_union_field(pydantic_field)
 
     field_type = pydantic_field.annotation
     if safe_is_subclass(field_type, Config):
         inferred_field = infer_schema_from_config_class(
             field_type,
-            description=pydantic_field.field_info.description,
+            description=pydantic_field.description,
         )
         return inferred_field
     else:
-        if not pydantic_field.required and not is_optional(field_type):
+        if not pydantic_field.is_required() and not is_optional(field_type):
             field_type = Optional[field_type]
 
         config_type = _config_type_for_type_on_pydantic_field(field_type)
 
         return Field(
             config=config_type,
-            description=pydantic_field.field_info.description,
-            is_required=pydantic_field.required and not is_optional(field_type),
+            description=pydantic_field.description,
+            is_required=pydantic_field.is_required() and not is_optional(field_type),
             default_value=(
                 pydantic_field.default
                 if pydantic_field.default is not None
@@ -236,8 +240,8 @@ def _config_type_for_type_on_pydantic_field(
         return convert_potential_field(potential_dagster_type).config_type
 
 
-def _convert_pydantic_descriminated_union_field(pydantic_field: ModelField) -> Field:
-    """Builds a Selector config field from a Pydantic field which is a descriminated union.
+def _convert_pydantic_discriminated_union_field(pydantic_field: ModelFieldCompat) -> Field:
+    """Builds a Selector config field from a Pydantic field which is a discriminated union.
 
     For example:
 
@@ -263,25 +267,32 @@ def _convert_pydantic_descriminated_union_field(pydantic_field: ModelField) -> F
     """
     from .config import Config, infer_schema_from_config_class
 
-    sub_fields_mapping = pydantic_field.sub_fields_mapping
-    if not sub_fields_mapping or not all(
-        issubclass(pydantic_field.type_, Config) for pydantic_field in sub_fields_mapping.values()
-    ):
-        raise NotImplementedError("Descriminated unions with non-Config types are not supported.")
+    field_type = pydantic_field.annotation
+    discriminator = pydantic_field.discriminator if pydantic_field.discriminator else None
+
+    if not get_origin(field_type) == Union:
+        raise DagsterInvalidDefinitionError("Discriminated union must be a Union type.")
+
+    sub_fields = get_args(field_type)
+    if not all(issubclass(sub_field, Config) for sub_field in sub_fields):
+        raise NotImplementedError("Discriminated unions with non-Config types are not supported.")
+
+    sub_fields_mapping = {}
+    if discriminator:
+        for sub_field in sub_fields:
+            sub_field_annotation = model_fields(sub_field)[discriminator].annotation
+
+            for sub_field_key in get_args(sub_field_annotation):
+                sub_fields_mapping[sub_field_key] = sub_field
 
     # First, we generate a mapping between the various discriminator values and the
     # Dagster config fields that correspond to them. We strip the discriminator key
     # from the fields, since the user should not have to specify it.
 
-    assert pydantic_field.sub_fields_mapping
     dagster_config_field_mapping = {
         discriminator_value: infer_schema_from_config_class(
-            field.type_,
-            fields_to_omit=(
-                {pydantic_field.field_info.discriminator}
-                if pydantic_field.field_info.discriminator
-                else None
-            ),
+            field,
+            fields_to_omit=({discriminator} if discriminator else None),
         )
         for discriminator_value, field in sub_fields_mapping.items()
     }

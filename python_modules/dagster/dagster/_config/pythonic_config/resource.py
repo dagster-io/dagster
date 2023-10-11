@@ -40,6 +40,9 @@ from dagster._utils.cached_method import cached_method
 from .attach_other_object_to_context import (
     IAttachDifferentObjectToOpContext as IAttachDifferentObjectToOpContext,
 )
+from .pydantic_compat_layer import (
+    model_fields,
+)
 
 try:
     from functools import cached_property  # type: ignore  # (py37 compat)
@@ -875,17 +878,19 @@ def separate_resource_params(cls: Type[BaseModel], data: Dict[str, Any]) -> Sepa
     """Separates out the key/value inputs of fields in a structured config Resource class which
     are marked as resources (ie, using ResourceDependency) from those which are not.
     """
-    keys_by_alias = {field.alias: field for field in cls.__fields__.values()}
+    fields_by_resolved_field_name = {
+        field.alias if field.alias else key: field for key, field in model_fields(cls).items()
+    }
     data_with_annotation: List[ResourceDataWithAnnotation] = [
         # No longer exists in Pydantic 2.x, will need to be updated when we upgrade
         ResourceDataWithAnnotation(
-            key=field_key,
+            key=field_name,
             value=field_value,
-            annotation=keys_by_alias[field_key].outer_type_,
-            annotation_metadata=[],
+            annotation=fields_by_resolved_field_name[field_name].annotation,
+            annotation_metadata=fields_by_resolved_field_name[field_name].metadata,
         )
-        for field_key, field_value in data.items()
-        if field_key in keys_by_alias
+        for field_name, field_value in data.items()
+        if field_name in fields_by_resolved_field_name
     ]
     # We need to grab metadata from the annotation in order to tell if
     # this key was annotated with a typing.Annotated annotation (which we use for resource/resource deps),
