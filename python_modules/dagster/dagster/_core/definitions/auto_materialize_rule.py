@@ -153,6 +153,17 @@ class RuleEvaluationContext:
             asset_graph=self.asset_graph
         )
 
+    @functools.cached_property
+    def previous_tick_evaluated_asset_partitions(
+        self,
+    ) -> AbstractSet[AssetKeyPartitionKey]:
+        """Returns the set of asset partitions that were skipped on the previous tick."""
+        if not self.previous_tick_evaluation:
+            return set()
+        return self.previous_tick_evaluation.get_evaluated_asset_partitions(
+            asset_graph=self.asset_graph
+        )
+
     def get_previous_tick_results(self, rule: "AutoMaterializeRule") -> "RuleEvaluationResults":
         """Returns the results that were calculated for a given rule on the previous tick."""
         if not self.previous_tick_evaluation:
@@ -161,13 +172,12 @@ class RuleEvaluationContext:
             rule_snapshot=rule.to_snapshot(), asset_graph=self.asset_graph
         )
 
-    def get_candidates_not_evaluated_on_previous_tick(
-        self, rule: "AutoMaterializeRule"
-    ) -> AbstractSet[AssetKeyPartitionKey]:
-        """Returns the set of candidates that do not have evaluation data from the previous tick."""
-        return self.candidates - set().union(
-            *[asset_partitions for _, asset_partitions in self.get_previous_tick_results(rule=rule)]
-        )
+    def get_candidates_not_evaluated_on_previous_tick(self) -> AbstractSet[AssetKeyPartitionKey]:
+        """Returns the set of candidates that were not evaluated by any rules on the previous tick.
+        Any asset partition that was evaluated by any rule on the previous tick must have been
+        evaluated by *all* skip rules.
+        """
+        return self.candidates - self.previous_tick_evaluated_asset_partitions
 
     def get_candidates_with_updated_or_will_update_parents(
         self,
@@ -576,7 +586,7 @@ class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOut
 
         # only need to evaluate net-new candidates and candidates whose parents have changed
         candidates_to_evaluate = (
-            context.get_candidates_not_evaluated_on_previous_tick(rule=self)
+            context.get_candidates_not_evaluated_on_previous_tick()
             | context.get_candidates_with_updated_or_will_update_parents()
         )
         for candidate in candidates_to_evaluate:
@@ -618,7 +628,7 @@ class SkipOnParentMissingRule(AutoMaterializeRule, NamedTuple("_SkipOnParentMiss
 
         # only need to evaluate net-new candidates and candidates whose parents have changed
         candidates_to_evaluate = (
-            context.get_candidates_not_evaluated_on_previous_tick(self)
+            context.get_candidates_not_evaluated_on_previous_tick()
             | context.get_candidates_with_updated_or_will_update_parents()
         )
         for candidate in candidates_to_evaluate:
@@ -685,7 +695,7 @@ class SkipOnNotAllParentsUpdatedRule(
 
         # only need to evaluate net-new candidates and candidates whose parents have changed
         candidates_to_evaluate = (
-            context.get_candidates_not_evaluated_on_previous_tick(self)
+            context.get_candidates_not_evaluated_on_previous_tick()
             | context.get_candidates_with_updated_or_will_update_parents()
         )
         for candidate in candidates_to_evaluate:
@@ -949,13 +959,22 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
         to_materialize = self._get_asset_partitions_with_decision_type(
             AutoMaterializeDecisionType.MATERIALIZE, asset_graph
         )
-        # nothing can be discarded without being in to_materialize, so don't bother deserializing
         if not to_materialize:
             return set()
         to_skip = self._get_asset_partitions_with_decision_type(
             AutoMaterializeDecisionType.SKIP, asset_graph
         )
         return to_materialize - to_skip
+
+    def get_evaluated_asset_partitions(
+        self, asset_graph: AssetGraph
+    ) -> AbstractSet[AssetKeyPartitionKey]:
+        """Returns the set of asset partitions which were evaluated by any rule on this evaluation."""
+        # no asset partition can be evaluated by SKIP or DISCARD rules without having at least one
+        # materialize rule evaluation
+        return self._get_asset_partitions_with_decision_type(
+            AutoMaterializeDecisionType.MATERIALIZE, asset_graph
+        )
 
     def equivalent_to_stored_evaluation(
         self, stored_evaluation: Optional["AutoMaterializeAssetEvaluation"], asset_graph: AssetGraph
