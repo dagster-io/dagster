@@ -275,6 +275,11 @@ pythonLogs: {}
 # All user code will be invoked within the images.
 ####################################################################################################
 dagster-user-deployments:
+  global:
+    image:
+      tag: "world"
+      repository: "hello"
+
   # Creates a workspace file with the gRPC servers hosting your user code.
   enabled: true
 

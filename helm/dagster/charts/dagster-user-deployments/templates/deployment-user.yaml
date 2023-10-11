@@ -1,5 +1,7 @@
 {{- $celeryConfigSecretName := .Values.global.celeryConfigSecretName | default .Values.celeryConfigSecretName }}
 {{ range $deployment := .Values.deployments }}
+{{- $dagsterImageTag := $.Values.global.image.tag | default (include "dagster.dagsterImage.tag" (list $ $deployment.image))}}
+{{- $dagsterImageRepository := $.Values.global.image.repository | default (include "dagster.dagsterImage.repository" (list $ $deployment.image))}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -40,7 +42,7 @@ spec:
         - name: {{ $.Chart.Name }}
           securityContext: {{ $deployment.securityContext | toYaml | nindent 12 }}
           imagePullPolicy: {{ $deployment.image.pullPolicy }}
-          image: {{ include "dagster.dagsterImage.name" (list $ $deployment.image) | quote }}
+          image: {{ printf "%s:%s" $dagsterImageRepository $dagsterImageTag | quote }}
           {{- if $deployment.dagsterApiGrpcArgs }}
           args: ["dagster", "api", "grpc", "-h", "0.0.0.0", "-p", "{{ $deployment.port }}", "{{- join "\",\"" $deployment.dagsterApiGrpcArgs }}"]
           {{- else if $deployment.codeServerArgs }}
@@ -48,7 +50,7 @@ spec:
           {{- end }}
           env:
             - name: DAGSTER_CURRENT_IMAGE
-              value: {{ include "dagster.dagsterImage.name" (list $ $deployment.image) | quote }}
+              value: {{ printf "%s:%s" $dagsterImageRepository $dagsterImageTag | quote }}
             - name: DAGSTER_PG_PASSWORD
               valueFrom:
                 secretKeyRef:
