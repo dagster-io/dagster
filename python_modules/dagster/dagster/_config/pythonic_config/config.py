@@ -164,6 +164,10 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
         for key, value in config_dict.items():
             field = self.__fields__.get(key)
 
+            # This is useful in Pydantic 2.x when reconstructing a config object from a dict
+            # e.g. when instantiating a resource at runtime from its config dict
+            # In Pydantic 1.x, this is a no-op, since a non-required field without a
+            # value provided will default to None (required & optional are the same in 1.x)
             if field and not field.required and value is None:
                 continue
 
