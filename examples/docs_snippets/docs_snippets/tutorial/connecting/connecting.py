@@ -15,7 +15,7 @@ def foo_asset():
     return 1
 
 
-hackernews_assets = [foo_asset]
+all_assets = [foo_asset]
 job = define_asset_job(
     name="hackernews_top_stories_job",
     selection=AssetSelection.all(),
@@ -27,7 +27,7 @@ hackernews_schedule = ScheduleDefinition(
 )
 
 io_manager = fs_io_manager.configured({"base_dir": "/tmp/dagster"})
-duckdb_io_manager = fs_io_manager.configured({"base_dir": "/tmp/dagster"})
+database_io_manager = fs_io_manager.configured({"base_dir": "/tmp/dagster"})
 
 # start_add_resource
 from .resources import DataGeneratorResource
@@ -37,11 +37,11 @@ from .resources import DataGeneratorResource
 datagen = DataGeneratorResource()  # Make the resource
 
 defs = Definitions(
-    assets=[*hackernews_assets],
+    assets=[*all_assets],
     schedules=[hackernews_schedule],
     resources={
         "io_manager": io_manager,
-        "database_io_manager": duckdb_io_manager,
+        "database_io_manager": database_io_manager,
         "hackernews_api": datagen,  # Add the newly-made resource here
     },
 )
