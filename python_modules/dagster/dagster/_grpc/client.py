@@ -33,11 +33,19 @@ from .types import (
     PartitionSetExecutionParamArgs,
     SensorExecutionArgs,
 )
-from .utils import default_grpc_timeout, max_rx_bytes, max_send_bytes
+from .utils import (
+    default_grpc_timeout,
+    default_schedule_grpc_timeout,
+    default_sensor_grpc_timeout,
+    max_rx_bytes,
+    max_send_bytes,
+)
 
 CLIENT_HEARTBEAT_INTERVAL = 1
 
 DEFAULT_GRPC_TIMEOUT = default_grpc_timeout()
+DEFAULT_SCHEDULE_GRPC_TIMEOUT = default_schedule_grpc_timeout()
+DEFAULT_SENSOR_GRPC_TIMEOUT = default_sensor_grpc_timeout()
 
 
 def client_heartbeat_thread(client: "DagsterGrpcClient", shutdown_event: Event) -> None:
@@ -355,7 +363,9 @@ class DagsterGrpcClient:
                 "serialized_external_repository_chunk": res.serialized_external_repository_chunk,
             }
 
-    def external_schedule_execution(self, external_schedule_execution_args):
+    def external_schedule_execution(
+        self, external_schedule_execution_args, timeout=DEFAULT_SCHEDULE_GRPC_TIMEOUT
+    ):
         check.inst_param(
             external_schedule_execution_args,
             "external_schedule_execution_args",
@@ -369,12 +379,13 @@ class DagsterGrpcClient:
                 serialized_external_schedule_execution_args=serialize_value(
                     external_schedule_execution_args
                 ),
+                timeout=timeout,
             )
         )
 
         return "".join([chunk.serialized_chunk for chunk in chunks])
 
-    def external_sensor_execution(self, sensor_execution_args, timeout=DEFAULT_GRPC_TIMEOUT):
+    def external_sensor_execution(self, sensor_execution_args, timeout=DEFAULT_SENSOR_GRPC_TIMEOUT):
         check.inst_param(
             sensor_execution_args,
             "sensor_execution_args",
