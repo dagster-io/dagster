@@ -688,6 +688,24 @@ class PipesEnvVarParamsLoader(PipesParamsLoader):
 # ########################
 
 
+class PipesS3ContextLoader(PipesContextLoader):
+    """Context loader that reads context from a JSON file on S3.
+
+    Args:
+        client (Any): A boto3.client("s3") object.
+    """
+
+    def __init__(self, client: Any):
+        self._client = client
+
+    @contextmanager
+    def load_context(self, params: PipesParams) -> Iterator[PipesContextData]:
+        bucket = _assert_env_param_type(params, "bucket", str, self.__class__)
+        key = _assert_env_param_type(params, "key", str, self.__class__)
+        obj = self._client.get_object(Bucket=bucket, Key=key)
+        yield json.loads(obj["Body"].read().decode("utf-8"))
+
+
 class PipesS3MessageWriter(PipesBlobStoreMessageWriter):
     """Message writer that writes messages by periodically writing message chunks to an S3 bucket.
 
