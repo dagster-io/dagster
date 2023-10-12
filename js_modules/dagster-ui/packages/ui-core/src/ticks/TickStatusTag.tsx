@@ -71,7 +71,18 @@ export const TickStatusTag = ({
         const count = isAssetDaemonTick
           ? tick.requestedAssetMaterializationCount
           : tick.runIds.length;
-        return <Tag intent="success">{count} requested</Tag>;
+        const successTag = <Tag intent="success">{count} requested</Tag>;
+        if ('runKeys' in tick && tick.runKeys.length > tick.runIds.length) {
+          const message = `${tick.runKeys.length} runs requested, but ${
+            tick.runKeys.length - tick.runIds.length
+          } skipped because the runs already exist for those requested keys.`;
+          return (
+            <Tooltip position="right" content={message}>
+              {successTag}
+            </Tooltip>
+          );
+        }
+        return successTag;
     }
   }, [tick]);
 
