@@ -311,6 +311,9 @@ class StepDelegatingExecutor(Executor):
                     else:
                         max_steps_to_run = None  # disables limit
 
+                    # process events from concurrency blocked steps
+                    list(active_execution.concurrency_event_iterator(plan_context))
+
                     for step in active_execution.get_steps_to_execute(max_steps_to_run):
                         running_steps[step.key] = step
                         list(
