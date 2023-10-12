@@ -644,7 +644,7 @@ class SkipOnRequiredButNonexistentParentsRule(
 
     @property
     def description(self) -> str:
-        return "parents are required but do not exist"
+        return "required parent partitions do not exist"
 
     def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
         asset_partitions_by_nonexistent_but_required_parent_keys = defaultdict(set)
