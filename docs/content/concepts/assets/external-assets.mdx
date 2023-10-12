@@ -7,45 +7,44 @@ description: External assets model assets in Dagster that are not scheduled or m
 
 An **external asset** is an asset that is not materialized by Dagster, but is tracked in the asset graph and asset catalog. This allows you to model assets in Dagster, attach metadata and events to those assets, but without scheduling their materialization with Dagster.
 
-**External assets are a good fit when data is**:
+External assets are a good fit if:
 
-- Landed by an external source (e.g. an external file landing daily; Kafka landing data into Amazon S3)
-- Created and processed using manual processes
-- Materialized by existing pipelines with their own scheduling and infrastructure that you do not want to or need to migrate en masse
+- **An external source creates the data**. For example: An external file created every day, or Kafka loading data into Amazon S3
+- **Dagster isn't required for materialization**. For example: An existing pipeline materializes data using its own scheduling mechanism
+- **Data is created and processed manually.** For example: Manually entering data into a spreadsheet
 
-**With an external asset, you can:**
+### What about Source Assets?
+
+[Source Assets](/concepts/assets/software-defined-assets#defining-external-asset-dependencies) can be used to model data that's produced by a process Dagster doesn't control, such as a daily file drop into Amazon S3.
+
+External assets can accomplish this, and more. As a result, Source Assets will be replaced with external assets in the near future.
+
+---
+
+## Uses and limitations
+
+With an external asset, you can:
 
 - Attach metadata to its definition for documentation, tracking ownership, and so on
-- Track its data quality and version in Dagster
+- Track its [data quality](/concepts/assets/asset-checks) and [version](/guides/dagster/asset-versioning-and-caching) in Dagster
 - Use [asset sensors](/concepts/partitions-schedules-sensors/asset-sensors) or auto-materialize policies to update downstream assets based on updates to external assets
 
-**You cannot, however:**
+### Limitations
 
-- Schedule an external asset's materialization
-- Backfill an external asset using Dagster
-- Use the [Dagster UI](/concepts/webserver/ui) or [GraphQL API](/concepts/webserver/graphql) to instigate ad hoc materializations
+The following aren't currently supported when using external assets:
 
-<Note>
-  <strong>What about Source Assets?</strong> A common use case for external
-  assets is modeling data produced by a process not under Dagster's control. For
-  example, a daily file drop from a third party into Amazon S3. In most systems,
-  these are described as <strong>sources</strong>. This includes Dagster, which
-  includes <PyObject object="SourceAsset" displayText="SourceAsset" />. As
-  external assets are a superset of Source Asset functionality,{" "}
-  <strong>
-    source assets will be supplanted by external assets in the near future
-  </strong>
-  .
-</Note>
+- Scheduling the execution of an external asset
+- Backfilling an external asset using Dagster
+- Using the [Dagster UI](/concepts/webserver/ui) or [GraphQL API](/concepts/webserver/graphql) to instigate ad hoc executions
 
 ---
 
 ## Relevant APIs
 
-| Name                                             | Description                                                                                 |
-| ------------------------------------------------ | ------------------------------------------------------------------------------------------- |
-| <PyObject object="external_assets_from_specs" /> | Create list of <PyObject object="AssetsDefinition"/> objects that represent external assets |
-| <PyObject object="AssetSpec" />                  | An object that represents the metadata of a particular asset                                |
+| Name                            | Description                                                                                    |
+| ------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `external_assets_from_specs`    | Creates a list of <PyObject object="AssetsDefinition"/> objects that represent external assets |
+| <PyObject object="AssetSpec" /> | An object that represents the metadata of a particular asset                                   |
 
 ---
 
@@ -70,6 +69,8 @@ defs = Definitions(assets=[external_asset_from_spec(AssetSpec("file_in_s3"))])
 <TabItem name="Asset in the Dagster UI">
 
 Click the **Asset definition** tab to view how this asset is defined.
+
+Note that the **Materialize** button is disabled, as external assets can't be executed by Dagster.
 
 <Image
 alt="The files_in_s3 external asset in the Asset Graph of the Dagster UI"
@@ -112,6 +113,8 @@ defs = Definitions(assets=external_assets_from_specs([raw_logs, processed_logs])
 
 Click the **Asset definitions** tab to view how these assets are defined.
 
+Note that the **Materialize** button is disabled, as external assets can't be executed by Dagster.
+
 <Image
 alt="External assets with dependencies in the Dagster UI"
 src="/images/concepts/assets/external-assets-show-detail.png"
@@ -124,7 +127,7 @@ height={1654}
 </TabItem>
 </TabGroup>
 
-### Fully-managed assets with external asset dependencies
+### Dagster-native assets with external asset dependencies
 
 Fully-managed assets can depend on external assets. In this example, the `aggregated_logs` asset depends on `processed_logs`, which is an external asset:
 
@@ -177,20 +180,34 @@ To keep your external assets updated, you can use any of the following approache
 - [A REST API](#using-the-rest-api)
 - [Sensors](#using-sensors)
 - [Using the Python API](#using-the-python-api)
-- [Logging events in ops](#logging-events-in-unrelated-ops)
+- [Logging events in ops](#logging-events-in-ops)
 
 ### Using the REST API
 
-Dagster OSS exposes a REST endpoint for reporting asset materializations. Refer to the following tabs for examples using a `curl` command, and for invoking the API in Python.
+Whether you're using Dagster OSS or Dagster Cloud, you can use a REST endpoint for reporting asset materializations. Refer to the following tabs for examples using `curl` and Python to communicate with the API.
 
 <TabGroup>
 <TabItem name="Using curl">
 
-The following demonstrates how to use a `curl` command in a shell script to communicate with the API:
+#### Dagster Cloud
 
 ```bash
 curl --request POST \
-    --url https://path/to/instance/report_asset_materialization/{asset_key}\
+    --url https://{organization}.dagster.cloud/{deployment}/report_asset_materialization/{asset_key} \
+    --header 'Content-Type: application/json' \
+    --header 'Dagster-Cloud-Api-Token: {token}' \
+    --data '{
+    "metadata" : {
+        "source": "From curl command"
+    }
+}'
+```
+
+#### Dagster OSS
+
+```bash
+curl --request POST \
+    --url https://{dagster_webserver_host}/report_asset_materialization/{asset_key} \
     --header 'Content-Type: application/json' \
     --data '{
     "metadata" : {
@@ -202,12 +219,24 @@ curl --request POST \
 </TabItem>
 <TabItem name="Using Python">
 
-The following demonstrates how to invoke the API in Python using the `requests` library:
+#### Dagster Cloud
 
 ```python
 import requests
 
-url = f"https://path/to/instance/report_asset_materialization/{asset_key}"
+url = f"https://{organization}.dagster.cloud/{deployment}/report_asset_materialization/{asset_key}"
+payload = { "metadata": { "source": "From python script" } }
+headers = { "Content-Type": "application/json", "Dagster-Cloud-Api-Token": "{token}" }
+
+response = requests.request("POST", url, json=payload, headers=headers)
+```
+
+#### Dagster OSS
+
+```python
+import requests
+
+url = f"https://{dagster_webserver_host}/report_asset_materialization/{asset_key}"
 payload = { "metadata": { "source": "From python script" } }
 headers = { "Content-Type": "application/json" }
 
@@ -266,7 +295,7 @@ defs = Definitions(
 
 You can insert events to attach to external assets directly from Dagster's Python API. Specifically, the API is `report_runless_asset_event` on <PyObject object="DagsterInstance" />.
 
-For example, this would be useful when writing a hand-rolled Python script to backfill metadata:
+For example, this would be useful when writing a Python script to backfill metadata:
 
 ```python file=/concepts/assets/external_assets/external_asset_events_using_python_api.py startafter=start_python_api_marker endbefore=end_python_api_marker dedent=4
 from dagster import AssetMaterialization
@@ -279,9 +308,9 @@ instance.report_runless_asset_event(
 )
 ```
 
-### Logging events in unrelated ops
+### Logging events using ops
 
-You can log an <PyObject object="AssetMaterialization"/> from a bare op. In this case, use the `log_event` method of <PyObject object="OpExecutionContext"/> to report an asset materialization of an external asset. For example:
+You can log an <PyObject object="AssetMaterialization"/> from an [op](/concepts/ops-jobs-graphs/ops). In this case, use the `log_event` method of <PyObject object="OpExecutionContext"/> to report an asset materialization of an external asset. For example:
 
 ```python file=/concepts/assets/external_assets/update_external_asset_via_op.py
 from dagster import (
