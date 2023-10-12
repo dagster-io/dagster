@@ -834,6 +834,8 @@ auto_materialize_policy_scenarios = {
         current_time=create_pendulum_time(year=2023, month=1, day=1, hour=4),
         expected_run_requests=[run_request(["asset3"], "2023-01-01-03:00")],
         expected_evaluations=[
+            AssetEvaluationSpec.empty("asset1"),
+            AssetEvaluationSpec.empty("asset2"),
             AssetEvaluationSpec(
                 asset_key="asset3",
                 rule_evaluations=[
@@ -907,6 +909,8 @@ auto_materialize_policy_scenarios = {
             run_request(["asset3"], "2023-01-01-03:00"),
         ],
         expected_evaluations=[
+            AssetEvaluationSpec.empty("asset1"),
+            AssetEvaluationSpec.empty("asset2"),
             AssetEvaluationSpec(
                 asset_key="asset3",
                 rule_evaluations=[
