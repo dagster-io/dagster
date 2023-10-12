@@ -41,11 +41,11 @@ def flaky_operation():
 
 
 # start_op_output_3
-from dagster import MetadataValue, Output, op
+from dagster import MetadataValue, Output, op, OpExecutionContext
 
 
 @op
-def my_metadata_output(context) -> Output:
+def my_metadata_output(context: OpExecutionContext) -> Output:
     df = get_some_data()
     return Output(
         df,
@@ -151,11 +151,11 @@ def my_retry_op():
 # end_retry_op
 
 # start_asset_op
-from dagster import AssetMaterialization, op
+from dagster import AssetMaterialization, op, OpExecutionContext
 
 
 @op
-def my_asset_op(context):
+def my_asset_op(context: OpExecutionContext):
     df = get_some_data()
     store_to_s3(df)
     context.log_event(

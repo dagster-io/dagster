@@ -1,4 +1,4 @@
-from dagster import Field, In, Int, List, configured, job, op, OpExecutionContext
+from dagster import Field, In, Int, List, OpExecutionContext, configured, job, op
 
 
 # start_configured_named

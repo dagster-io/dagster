@@ -59,11 +59,11 @@ The following example demonstrates creating an asset that has a partition for ea
 ```python file=/concepts/partitions_schedules_sensors/partitioned_asset.py
 import urllib.request
 
-from dagster import DailyPartitionsDefinition, asset
+from dagster import AssetExecutionContext, DailyPartitionsDefinition, asset
 
 
 @asset(partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"))
-def my_daily_partitioned_asset(context) -> None:
+def my_daily_partitioned_asset(context: AssetExecutionContext) -> None:
     partition_date_str = context.asset_partition_key_for_output()
 
     url = f"coolweatherwebsite.com/weather_obs&date={partition_date_str}"
@@ -91,6 +91,7 @@ Consider the following asset:
 
 ```python file=/concepts/partitions_schedules_sensors/multipartitions_asset.py startafter=start_multi_partitions_marker endbefore=end_multi_partitions_marker
 from dagster import (
+    AssetExecutionContext,
     DailyPartitionsDefinition,
     MultiPartitionsDefinition,
     StaticPartitionsDefinition,
@@ -106,7 +107,7 @@ from dagster import (
         }
     )
 )
-def multi_partitions_asset(context):
+def multi_partitions_asset(context: AssetExecutionContext):
     context.log.info(context.partition_key.keys_by_dimension)
 ```
 
@@ -148,7 +149,7 @@ images_partitions_def = DynamicPartitionsDefinition(name="images")
 
 
 @asset(partitions_def=images_partitions_def)
-def images(context):
+def images(context: AssetExecutionContext):
     ...
 ```
 
@@ -161,7 +162,7 @@ images_job = define_asset_job(
 
 
 @sensor(job=images_job)
-def image_sensor(context):
+def image_sensor(context: SensorEvaluationContext):
     new_images = [
         img_filename
         for img_filename in os.listdir(os.getenv("MY_DIRECTORY"))
@@ -195,11 +196,11 @@ For example, this example demonstrates how to define an asset that relies on an 
 ```python file=/concepts/partitions_schedules_sensors/partitioned_asset_uses_io_manager.py
 import pandas as pd
 
-from dagster import DailyPartitionsDefinition, asset
+from dagster import AssetExecutionContext, DailyPartitionsDefinition, asset
 
 
 @asset(partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"))
-def my_daily_partitioned_asset(context) -> pd.DataFrame:
+def my_daily_partitioned_asset(context: AssetExecutionContext) -> pd.DataFrame:
     partition_date_str = context.asset_partition_key_for_output()
     return pd.read_csv(f"coolweatherwebsite.com/weather_obs&date={partition_date_str}")
 ```

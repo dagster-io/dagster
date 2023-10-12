@@ -7,9 +7,10 @@ def get_iris_data_for_date(*args, **kwargs):
 import pandas as pd
 
 from dagster import (
+    AssetExecutionContext,
     DailyPartitionsDefinition,
     MultiPartitionsDefinition,
-    StaticPartitionDefinition,
+    StaticPartitionsDefinition,
     asset,
 )
 
@@ -18,14 +19,14 @@ from dagster import (
     partitions_def=MultiPartitionsDefinition(
         {
             "date": DailyPartitionsDefinition(start_date="2023-01-01"),
-            "species": StaticPartitionDefinition(
+            "species": StaticPartitionsDefinition(
                 ["Iris-setosa", "Iris-virginica", "Iris-versicolor"]
             ),
         }
     ),
     metadata={"partition_expr": {"date": "TO_TIMESTAMP(TIME)", "species": "SPECIES"}},
 )
-def iris_dataset_partitioned(context) -> pd.DataFrame:
+def iris_dataset_partitioned(context: AssetExecutionContext) -> pd.DataFrame:
     partition = partition = context.partition_key.keys_by_dimension
     species = partition["species"]
     date = partition["date"]

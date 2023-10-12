@@ -1,6 +1,6 @@
 # ruff: isort: skip_file
 
-from dagster import ResourceDefinition, graph, job
+from dagster import ResourceDefinition, graph, job, OpExecutionContext
 
 
 # start_resource_example
@@ -26,7 +26,7 @@ CREATE_TABLE_1_QUERY = "create table_1 as select * from table_0"
 
 
 @op(required_resource_keys={"database"})
-def op_requires_resources(context):
+def op_requires_resources(context: OpExecutionContext):
     context.resources.database.execute_query(CREATE_TABLE_1_QUERY)
 
 
@@ -146,7 +146,7 @@ from dagster import graph, op
 
 
 @op(required_resource_keys={"client"})
-def get_client(context):
+def get_client(context: OpExecutionContext):
     return context.resources.client
 
 
@@ -204,7 +204,7 @@ def db_connection():
 
 # start_cm_resource_op
 @op(required_resource_keys={"db_connection"})
-def use_db_connection(context):
+def use_db_connection(context: OpExecutionContext):
     db_conn = context.resources.db_connection
     ...
 
@@ -251,11 +251,11 @@ def do_something_with_resource(_):
 
 
 # start_asset_use_resource
-from dagster import asset
+from dagster import asset, AssetExecutionContext
 
 
 @asset(required_resource_keys={"foo"})
-def asset_requires_resource(context):
+def asset_requires_resource(context: AssetExecutionContext):
     do_something_with_resource(context.resources.foo)
 
 

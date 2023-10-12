@@ -33,7 +33,7 @@ Here's a basic job with an unconnected string input:
 
 ```python file=/concepts/io_management/load_from_config.py startafter=def_start_marker endbefore=def_end_marker
 @op
-def my_op(context, input_string: str):
+def my_op(context: OpExecutionContext, input_string: str):
     context.log.info(f"input string: {input_string}")
 
 
@@ -59,6 +59,7 @@ from typing import Dict, Union
 
 from dagster import (
     DagsterTypeLoaderContext,
+    OpExecutionContext,
     dagster_type_loader,
     job,
     op,
@@ -88,7 +89,7 @@ class Apple:
 
 
 @op
-def my_op(context, input_apple: Apple):
+def my_op(context: OpExecutionContext, input_apple: Apple):
     context.log.info(f"input apple diameter: {input_apple.diameter}")
 
 
@@ -146,7 +147,7 @@ Another option is to define a class that implements the <PyObject module="dagste
 
 ```python file=/concepts/io_management/input_managers.py startafter=start_load_unconnected_input endbefore=end_load_unconnected_input
 class Table1InputManager(InputManager):
-    def load_input(self, context):
+    def load_input(self, context: InputContext):
         return read_dataframe_from_table(name="table_1")
 
 
@@ -165,7 +166,7 @@ If you also want to use `Table1InputManager` to store outputs, or you want to ov
 ```python file=/concepts/io_management/input_managers.py startafter=start_load_unconnected_io endbefore=end_load_unconnected_io
 # in this example, TableIOManager is defined elsewhere and we just want to override load_input
 class Table1IOManager(TableIOManager):
-    def load_input(self, context):
+    def load_input(self, context: InputContext):
         return read_dataframe_from_table(name="table_1")
 
 
@@ -184,7 +185,7 @@ To accomplish this, you can define an `input_config_schema` on the IO manager or
 
 ```python file=/concepts/io_management/input_managers.py startafter=start_per_input_config endbefore=end_per_input_config
 class MyConfigurableInputLoader(InputManager):
-    def load_input(self, context):
+    def load_input(self, context: InputContext):
         return read_dataframe_from_table(name=context.config["table"])
 
 
@@ -219,11 +220,11 @@ To accomplish this, you can set up the `input_manager_key` on `op2`'s `In` to po
 
 ```python file=/concepts/io_management/input_managers.py startafter=start_load_input_subset endbefore=end_load_input_subset
 class MyIOManager(ConfigurableIOManager):
-    def handle_output(self, context, obj):
+    def handle_output(self, context: OutputContext, obj):
         table_name = context.name
         write_dataframe_to_table(name=table_name, dataframe=obj)
 
-    def load_input(self, context):
+    def load_input(self, context: InputContext):
         return read_dataframe_from_table(name=context.upstream_output.name)
 
 
@@ -257,7 +258,7 @@ So far, this is set up so that `op2` always loads `table_1` even if you execute 
 
 ```python file=/concepts/io_management/input_managers.py startafter=start_better_load_input_subset endbefore=end_better_load_input_subset
 class MyNewInputLoader(MyIOManager):
-    def load_input(self, context):
+    def load_input(self, context: InputContext):
         if context.upstream_output is None:
             # load input from table since there is no upstream output
             return read_dataframe_from_table(name="table_1")

@@ -1,6 +1,13 @@
 import pandas as pd
 
-from dagster import AssetCheckResult, AssetCheckSpec, Definitions, Output, asset, AssetExecutionContext
+from dagster import (
+    AssetCheckResult,
+    AssetCheckSpec,
+    AssetExecutionContext,
+    Definitions,
+    Output,
+    asset,
+)
 
 
 @asset(check_specs=[AssetCheckSpec(name="orders_id_has_no_nulls", asset="orders")])

@@ -6,12 +6,12 @@ from dagster import (
     DagsterType,
     Failure,
     Field,
+    OpExecutionContext,
     String,
     check_dagster_type,
     dagster_type_loader,
     job,
     op,
-    OpExecutionContext
 )
 
 

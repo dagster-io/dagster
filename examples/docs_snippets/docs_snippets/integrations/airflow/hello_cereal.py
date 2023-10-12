@@ -2,7 +2,7 @@ import csv
 
 import requests
 
-from dagster import job, op, OpExecutionContext
+from dagster import OpExecutionContext, job, op
 
 
 @op

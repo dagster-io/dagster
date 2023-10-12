@@ -7,11 +7,11 @@ from dagster import (
     AssetIn,
     ConfigurableIOManager,
     Definitions,
+    InputContext,
     IOManager,
+    OutputContext,
     asset,
     io_manager,
-    InputContext,
-    OutputContext
 )
 
 from .asset_input_managers import (

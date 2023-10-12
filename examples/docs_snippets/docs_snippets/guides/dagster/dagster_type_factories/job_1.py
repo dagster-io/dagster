@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from dagster import AssetMaterialization, job, op, OpExecutionContext
+from dagster import AssetMaterialization, OpExecutionContext, job, op
 
 
 @op

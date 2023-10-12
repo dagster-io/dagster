@@ -11,7 +11,7 @@ def my_op():
 
 # start_graph_one
 @op
-def return_one(context):
+def return_one(context: OpExecutionContext):
     return 1
 
 

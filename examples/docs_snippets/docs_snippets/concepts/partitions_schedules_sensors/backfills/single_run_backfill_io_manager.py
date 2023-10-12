@@ -1,5 +1,5 @@
 # start_marker
-from dagster import IOManager, InputContext, OutputContext
+from dagster import InputContext, IOManager, OutputContext
 
 
 class MyIOManager(IOManager):

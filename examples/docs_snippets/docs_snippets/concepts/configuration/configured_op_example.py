@@ -1,4 +1,4 @@
-from dagster import Field, configured, op, OpExecutionContext
+from dagster import Field, OpExecutionContext, configured, op
 
 
 @op(

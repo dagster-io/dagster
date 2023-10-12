@@ -1,5 +1,12 @@
 # start_database_example
-from dagster import StringSource, job, op, resource, InitResourceContext, OpExecutionContext
+from dagster import (
+    InitResourceContext,
+    OpExecutionContext,
+    StringSource,
+    job,
+    op,
+    resource,
+)
 
 
 @resource(config_schema={"username": StringSource, "password": StringSource})

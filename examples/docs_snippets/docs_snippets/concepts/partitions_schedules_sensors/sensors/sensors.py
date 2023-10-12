@@ -12,7 +12,7 @@ from dagster import (
     DagsterRunStatus,
     run_status_sensor,
     run_failure_sensor,
-    OpExecutionContext
+    OpExecutionContext,
 )
 
 

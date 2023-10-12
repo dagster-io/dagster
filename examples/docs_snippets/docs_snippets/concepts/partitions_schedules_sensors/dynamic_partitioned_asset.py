@@ -1,10 +1,12 @@
 import os
 
 from dagster import (
+    AssetExecutionContext,
     AssetSelection,
     Definitions,
     DynamicPartitionsDefinition,
     RunRequest,
+    SensorEvaluationContext,
     SensorResult,
     asset,
     define_asset_job,
@@ -16,7 +18,7 @@ images_partitions_def = DynamicPartitionsDefinition(name="images")
 
 
 @asset(partitions_def=images_partitions_def)
-def images(context):
+def images(context: AssetExecutionContext):
     ...
 
 
@@ -31,7 +33,7 @@ images_job = define_asset_job(
 
 
 @sensor(job=images_job)
-def image_sensor(context):
+def image_sensor(context: SensorEvaluationContext):
     new_images = [
         img_filename
         for img_filename in os.listdir(os.getenv("MY_DIRECTORY"))

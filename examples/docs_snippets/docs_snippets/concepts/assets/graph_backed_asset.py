@@ -7,7 +7,7 @@ from dagster import (
     AssetSelection,
     define_asset_job,
     Definitions,
-    OpExecutionContext
+    OpExecutionContext,
 )
 from mock import MagicMock
 

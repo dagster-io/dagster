@@ -1,9 +1,9 @@
 # start_marker
-from dagster import graph, op, OpExecutionContext
+from dagster import OpExecutionContext, graph, op
 
 
 @op
-def return_one(context) -> int:
+def return_one(context: OpExecutionContext) -> int:
     return 1
 
 

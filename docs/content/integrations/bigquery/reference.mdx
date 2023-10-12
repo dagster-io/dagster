@@ -100,7 +100,7 @@ In order to store static partitioned assets in BigQuery, you must specify `parti
 ```python file=/integrations/bigquery/reference/static_partition.py startafter=start_example endbefore=end_example
 import pandas as pd
 
-from dagster import StaticPartitionsDefinition, asset
+from dagster import AssetExecutionContext, StaticPartitionsDefinition, asset
 
 
 @asset(
@@ -109,7 +109,7 @@ from dagster import StaticPartitionsDefinition, asset
     ),
     metadata={"partition_expr": "SPECIES"},
 )
-def iris_data_partitioned(context) -> pd.DataFrame:
+def iris_data_partitioned(context: AssetExecutionContext) -> pd.DataFrame:
     species = context.asset_partition_key_for_output()
 
     full_df = pd.read_csv(
@@ -157,14 +157,14 @@ Like static partitioned assets, you can specify `partition_expr` metadata on the
 ```python file=/integrations/bigquery/reference/time_partition.py startafter=start_example endbefore=end_example
 import pandas as pd
 
-from dagster import DailyPartitionsDefinition, asset
+from dagster import AssetExecutionContext, DailyPartitionsDefinition, asset
 
 
 @asset(
     partitions_def=DailyPartitionsDefinition(start_date="2023-01-01"),
     metadata={"partition_expr": "TIMESTAMP_SECONDS(TIME)"},
 )
-def iris_data_per_day(context) -> pd.DataFrame:
+def iris_data_per_day(context: AssetExecutionContext) -> pd.DataFrame:
     partition = context.asset_partition_key_for_output()
 
     # get_iris_data_for_date fetches all of the iris data for a given date,
@@ -209,6 +209,7 @@ The BigQuery I/O manager can also store data partitioned on multiple dimensions.
 import pandas as pd
 
 from dagster import (
+    AssetExecutionContext,
     DailyPartitionsDefinition,
     MultiPartitionsDefinition,
     StaticPartitionsDefinition,
@@ -229,7 +230,7 @@ from dagster import (
         "partition_expr": {"date": "TIMESTAMP_SECONDS(TIME)", "species": "SPECIES"}
     },
 )
-def iris_data_partitioned(context) -> pd.DataFrame:
+def iris_data_partitioned(context: AssetExecutionContext) -> pd.DataFrame:
     partition = partition = context.partition_key.keys_by_dimension
     species = partition["species"]
     date = partition["date"]
@@ -415,13 +416,13 @@ from pyspark.sql.types import (
     StructType,
 )
 
-from dagster import Definitions, asset
+from dagster import AssetExecutionContext, Definitions, asset
 
 BIGQUERY_JARS = "com.google.cloud.spark:spark-bigquery-with-dependencies_2.12:0.28.0"
 
 
 @asset(required_resource_keys={"pyspark"})
-def iris_data(context) -> DataFrame:
+def iris_data(context: AssetExecutionContext) -> DataFrame:
     spark = context.resources.pyspark.spark_session
 
     schema = StructType(

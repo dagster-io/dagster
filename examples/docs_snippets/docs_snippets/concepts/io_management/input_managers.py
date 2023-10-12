@@ -7,12 +7,12 @@ import pandas as pd
 from dagster import (
     ConfigurableIOManager,
     In,
+    InputContext,
     InputManager,
+    OutputContext,
     input_manager,
     job,
     op,
-    OutputContext,
-    InputContext
 )
 
 

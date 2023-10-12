@@ -1,12 +1,12 @@
 from dagster import (
     AssetKey,
     Definitions,
+    InputContext,
     IOManager,
     IOManagerDefinition,
+    OutputContext,
     asset,
     with_resources,
-    OutputContext,
-    InputContext
 )
 
 

@@ -1,4 +1,4 @@
-from dagster import asset, build_asset_context, AssetExecutionContext
+from dagster import AssetExecutionContext, asset, build_asset_context
 
 # start_simple_asset
 

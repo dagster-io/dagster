@@ -1,6 +1,7 @@
 import shutil
 
 from dagster import (
+    AssetCheckResult,
     AssetExecutionContext,
     Definitions,
     MaterializeResult,
@@ -8,8 +9,6 @@ from dagster import (
     asset,
     asset_check,
     file_relative_path,
-    AssetExecutionContext,
-    AssetCheckResult
 )
 
 

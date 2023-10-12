@@ -6,17 +6,17 @@ from dagster import (
     Definitions,
     In,
     Nothing,
+    OpExecutionContext,
     RetryPolicy,
     ScheduleDefinition,
     job,
     op,
     schedule,
-    OpExecutionContext
 )
 
 
 @op
-def print_date(context) -> datetime:
+def print_date(context: OpExecutionContext) -> datetime:
     ds = datetime.now()
     context.log.info(ds)
     return ds

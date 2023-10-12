@@ -77,13 +77,13 @@ basic_schedule = ScheduleDefinition(job=ml_asset_job, cron_schedule="0 9 * * *")
 ## conditional_monitoring_start
 
 from sklearn import linear_model
-from dagster import asset, Output, AssetKey
+from dagster import asset, Output, AssetKey, AssetExecutionContext
 import numpy as np
 from sklearn.model_selection import train_test_split
 
 
 @asset(output_required=False)
-def conditional_machine_learning_model(context):
+def conditional_machine_learning_model(context: AssetExecutionContext):
     X, y = np.random.randint(5000, size=(5000, 2)), range(5000)
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.33, random_state=42

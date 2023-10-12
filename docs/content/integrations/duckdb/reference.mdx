@@ -103,7 +103,7 @@ To store static partitioned assets in DuckDB, specify `partition_expr` metadata 
 ```python file=/integrations/duckdb/reference/static_partition.py startafter=start_example endbefore=end_example
 import pandas as pd
 
-from dagster import StaticPartitionsDefinition, asset
+from dagster import AssetExecutionContext, StaticPartitionsDefinition, asset
 
 
 @asset(
@@ -112,7 +112,7 @@ from dagster import StaticPartitionsDefinition, asset
     ),
     metadata={"partition_expr": "SPECIES"},
 )
-def iris_dataset_partitioned(context) -> pd.DataFrame:
+def iris_dataset_partitioned(context: AssetExecutionContext) -> pd.DataFrame:
     species = context.asset_partition_key_for_output()
 
     full_df = pd.read_csv(
@@ -160,14 +160,14 @@ Like static partitioned assets, you can specify `partition_expr` metadata on the
 ```python file=/integrations/duckdb/reference/time_partition.py startafter=start_example endbefore=end_example
 import pandas as pd
 
-from dagster import DailyPartitionsDefinition, asset
+from dagster import AssetExecutionContext, DailyPartitionsDefinition, asset
 
 
 @asset(
     partitions_def=DailyPartitionsDefinition(start_date="2023-01-01"),
     metadata={"partition_expr": "TO_TIMESTAMP(TIME)"},
 )
-def iris_data_per_day(context) -> pd.DataFrame:
+def iris_data_per_day(context: AssetExecutionContext) -> pd.DataFrame:
     partition = context.asset_partition_key_for_output()
 
     # get_iris_data_for_date fetches all of the iris data for a given date,
@@ -212,9 +212,10 @@ The DuckDB I/O manager can also store data partitioned on multiple dimensions. T
 import pandas as pd
 
 from dagster import (
+    AssetExecutionContext,
     DailyPartitionsDefinition,
     MultiPartitionsDefinition,
-    StaticPartitionDefinition,
+    StaticPartitionsDefinition,
     asset,
 )
 
@@ -223,14 +224,14 @@ from dagster import (
     partitions_def=MultiPartitionsDefinition(
         {
             "date": DailyPartitionsDefinition(start_date="2023-01-01"),
-            "species": StaticPartitionDefinition(
+            "species": StaticPartitionsDefinition(
                 ["Iris-setosa", "Iris-virginica", "Iris-versicolor"]
             ),
         }
     ),
     metadata={"partition_expr": {"date": "TO_TIMESTAMP(TIME)", "species": "SPECIES"}},
 )
-def iris_dataset_partitioned(context) -> pd.DataFrame:
+def iris_dataset_partitioned(context: AssetExecutionContext) -> pd.DataFrame:
     partition = partition = context.partition_key.keys_by_dimension
     species = partition["species"]
     date = partition["date"]
@@ -410,11 +411,11 @@ from pyspark.sql.types import (
     StructType,
 )
 
-from dagster import Definitions, asset
+from dagster import AssetExecutionContext, Definitions, asset
 
 
 @asset(required_resource_keys={"pyspark"})
-def iris_dataset(context) -> DataFrame:
+def iris_dataset(context: AssetExecutionContext) -> DataFrame:
     spark = context.resources.pyspark.spark_session
 
     schema = StructType(

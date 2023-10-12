@@ -137,14 +137,14 @@ def old_third_party_resource() -> Definitions:
     # Alternatively could have been imported from third-party library
     # from fancy_db import FancyDbClient
 
-    from dagster import InitResourceContext, asset, resource
+    from dagster import AssetExecutionContext, InitResourceContext, asset, resource
 
     @resource(config_schema={"conn_string": str})
     def fancy_db_resource(context: InitResourceContext) -> FancyDbClient:
         return FancyDbClient(context.resource_config["conn_string"])
 
     @asset(required_resource_keys={"fancy_db"})
-    def existing_asset(context) -> None:
+    def existing_asset(context: AssetExecutionContext) -> None:
         context.resources.fancy_db.execute_query("SELECT * FROM foo")
 
     # end_old_third_party_resource
@@ -177,7 +177,7 @@ def old_resource_code_contextmanager() -> Definitions:
 
     # begin_old_resource_code_contextmanager
 
-    from dagster import InitResourceContext, asset, resource
+    from dagster import AssetExecutionContext, InitResourceContext, asset, resource
 
     @resource(config_schema={"conn_string": str})
     def fancy_db_resource(context: InitResourceContext) -> Iterator[FancyDbClient]:
@@ -190,7 +190,7 @@ def old_resource_code_contextmanager() -> Definitions:
             some_expensive_teardown()
 
     @asset(required_resource_keys={"fancy_db"})
-    def asset_one(context) -> None:
+    def asset_one(context: AssetExecutionContext) -> None:
         # some_expensive_setup() has been called, but some_expensive_teardown() has not
         context.resources.fancy_db.execute_query("SELECT * FROM foo")
 
@@ -251,7 +251,7 @@ def new_third_party_resource_old_code_broken() -> Definitions:
             ...
 
     # begin_new_third_party_resource
-    from dagster import ConfigurableResource, asset
+    from dagster import AssetExecutionContext, ConfigurableResource, asset
 
     class FancyDbResource(ConfigurableResource):
         conn_string: str
@@ -268,7 +268,7 @@ def new_third_party_resource_old_code_broken() -> Definitions:
 
     # begin_broken_unmigrated_code
     @asset(required_resource_keys={"fancy_db"})
-    def existing_asset(context) -> None:
+    def existing_asset(context: AssetExecutionContext) -> None:
         # This code is now broken because the resource is no longer a FancyDbClient
         # but it is a FancyDbResource.
         context.resources.fancy_db.execute_query("SELECT * FROM foo")
@@ -296,7 +296,12 @@ def new_third_party_resource_fixed() -> Definitions:
             ...
 
     # begin_new_third_party_resource_with_interface
-    from dagster import ConfigurableResource, IAttachDifferentObjectToOpContext, asset
+    from dagster import (
+        AssetExecutionContext,
+        ConfigurableResource,
+        IAttachDifferentObjectToOpContext,
+        asset,
+    )
 
     class FancyDbResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
         conn_string: str
@@ -313,7 +318,7 @@ def new_third_party_resource_fixed() -> Definitions:
         client.execute_query("SELECT * FROM foo")
 
     @asset(required_resource_keys={"fancy_db"})
-    def existing_asset(context) -> None:
+    def existing_asset(context: AssetExecutionContext) -> None:
         # This code now works because context.resources.fancy_db is now a FancyDbClient
         context.resources.fancy_db.execute_query("SELECT * FROM foo")
 

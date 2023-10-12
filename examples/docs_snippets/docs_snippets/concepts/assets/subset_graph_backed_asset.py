@@ -1,12 +1,12 @@
 from dagster import (
     AssetOut,
     Definitions,
+    OpExecutionContext,
     Out,
     Output,
     define_asset_job,
     graph_multi_asset,
     op,
-    OpExecutionContext
 )
 
 

@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import pandera as pa
 
-from dagster import AssetMaterialization, Field, In, Out, job, op, OpExecutionContext
+from dagster import AssetMaterialization, Field, In, OpExecutionContext, Out, job, op
 
 from .factory import pandera_schema_to_dagster_type
 
