@@ -11,7 +11,7 @@ description: "Dagster Pipes provides a protocol between the orchestration enviro
 
 Dagster Pipes is a toolkit for building integrations between Dagster and external execution environments. It standardizes the process of passing parameters, injecting context information, ingesting logs, and collecting metadata all while remaining agnostic to how remote computations are launched in those environments. This enables the separation of orchestration and business logic in the Dagster ecosystem.
 
-It also smooths the process of incorporating pre-existing code, business logic, and execution environments into Dagster. With Dagster Pipes and a few lines of code, you can execute your code through the orchestrator. In turn, you can stream logs and metadata back to Dagster so you can leverage its observability, lineage, cataloging, and debugging capabilities.
+It is particularly useful for the process of incorporating pre-existing code, business logic, and execution environments into Dagster. With Dagster Pipes and a few lines of code, you can execute your code through the orchestrator. In turn, you can stream logs and metadata back to Dagster so you can leverage its observability, lineage, cataloging, and debugging capabilities.
 
 ---
 
@@ -29,27 +29,15 @@ With Dagster Pipes, you can:
 
 ---
 
-## Limitations
-
-While Dagster Pipes is lightweight and flexible, there are a few limitations to be aware of:
-
-- **Step launchers and Pipes can't currently be used together.** Dagster Pipes is a lightweight alternative to step launchers. Think of this as an either-or situation - you can use step launchers **or** you can use Dagster Pipes. If your external code requires the core Dagster module (see below), you should use step launchers instead of Pipes.
-
-- **Some Dagster concepts aren't supported for use in external processes.** Dagster Pipes (`dagster-pipes`) doesn't include the core Dagster (`dagster`) library. As such, concepts like resources and I/O managers, which are included in `dagster`, aren't available for use in external processes executed by Dagster Pipes.
-
-  For example, I/O managers aren't currently supported, as Dagster Pipes isn't built for processing data in memory. To process data in memory in Pyspark, you could use an I/O manager [as demonstrated in the Pyspark integration guide](/integrations/spark#running-pyspark-code-in-assets). Otherwise, in a remote case, you can use Pipes.
-
----
-
 ## How it works
 
-Dagster Pipes provides a protocol between the orchestration environment (Dagster) and external execution (ex: Databricks) and a toolkit for building implementations of that protocol.
+Dagster Pipes provides a protocol between the orchestration environment (Dagster) and external execution (ex: Databricks), and a toolkit for building implementations of that protocol.
 
 When Dagster Pipes is invoked, several steps will be carried out in **Dagster's orchestration process** and in the **external process**, such as Databricks.
 
 ### In the orchestration process (Dagster)
 
-When Dagster Pipes is called in a Dagster asset, Dagster launches the external process with parameters and context information (ex: `partition_key`, `asset_key`, etc.)
+When Dagster Pipes is called in a Dagster asset or op, Dagster launches the external process with parameters and context information (ex: `partition_key`, `asset_key`, etc.)
 
 <Image
 alt="Diagram explaining the Dagster Pipes process"
@@ -63,6 +51,18 @@ height={393}
 The process starts and loads the context info provided by Dagster. While the process runs, execution data, logs, and any specified metadata are streamed back to Dagster.
 
 After Dagster receives the data from the external process, it’ll be visible in the [Dagster UI](/concepts/webserver/ui).
+
+---
+
+## Limitations
+
+While Dagster Pipes is lightweight and flexible, there are a few limitations to be aware of:
+
+- **Step launchers and Pipes can't currently be used together.** Dagster Pipes is a lightweight alternative to step launchers. Think of this as an either-or situation - you can use step launchers **or** you can use Dagster Pipes. If your external code requires the core Dagster module (see below), you should use step launchers instead of Pipes.
+
+- **Some Dagster concepts aren't supported for use in external processes.** Dagster Pipes (`dagster-pipes`) doesn't include the core Dagster (`dagster`) library. As such, concepts like resources and I/O managers, which are included in `dagster`, aren't available for use in external processes executed by Dagster Pipes.
+
+  For example, I/O managers aren't currently supported, as Dagster Pipes isn't built for processing data in memory. To process data in memory in Pyspark, you could use an I/O manager [as demonstrated in the Pyspark integration guide](/integrations/spark#running-pyspark-code-in-assets). Otherwise, in a remote case, you can use Pipes.
 
 ---
 
