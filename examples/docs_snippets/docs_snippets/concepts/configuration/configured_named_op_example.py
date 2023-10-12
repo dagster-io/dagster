@@ -1,4 +1,4 @@
-from dagster import Field, In, Int, List, configured, job, op
+from dagster import Field, In, Int, List, configured, job, op, OpExecutionContext
 
 
 # start_configured_named
@@ -8,7 +8,7 @@ from dagster import Field, In, Int, List, configured, job, op
     },
     ins={"xs": In(List[Int])},
 )
-def get_dataset(context, xs):
+def get_dataset(context: OpExecutionContext, xs):
     if context.op_config["is_sample"]:
         return xs[:5]
     else:

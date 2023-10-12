@@ -1,4 +1,4 @@
-from dagster import job, op
+from dagster import job, op, OpExecutionContext
 
 
 @op
@@ -17,7 +17,7 @@ def multiply_by_one_point_eight(number):
 
 
 @op
-def log_number(context, number):
+def log_number(context: OpExecutionContext, number):
     context.log.info(f"number: {number}")
 
 

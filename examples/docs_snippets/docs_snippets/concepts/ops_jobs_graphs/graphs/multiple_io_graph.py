@@ -1,5 +1,5 @@
 # start_marker
-from dagster import graph, op
+from dagster import graph, op, OpExecutionContext
 
 
 @op
@@ -8,12 +8,12 @@ def return_one(context) -> int:
 
 
 @op
-def add_one(context, number: int):
+def add_one(context: OpExecutionContext, number: int):
     return number + 1
 
 
 @op
-def adder(context, a: int, b: int) -> int:
+def adder(context: OpExecutionContext, a: int, b: int) -> int:
     return a + b
 
 

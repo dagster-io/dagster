@@ -11,6 +11,7 @@ from dagster import (
     job,
     op,
     schedule,
+    OpExecutionContext
 )
 
 
@@ -28,7 +29,7 @@ def sleep():
 
 
 @op
-def templated(context, ds: datetime):
+def templated(context: OpExecutionContext, ds: datetime):
     for _i in range(5):
         context.log.info(ds)
         context.log.info(ds - timedelta(days=7))

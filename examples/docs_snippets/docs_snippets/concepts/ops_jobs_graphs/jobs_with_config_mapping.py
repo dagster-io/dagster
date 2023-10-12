@@ -1,4 +1,4 @@
-from dagster import Config, RunConfig, config_mapping, job, op
+from dagster import Config, RunConfig, config_mapping, job, op, OpExecutionContext
 
 
 class DoSomethingConfig(Config):
@@ -6,7 +6,7 @@ class DoSomethingConfig(Config):
 
 
 @op
-def do_something(context, config: DoSomethingConfig) -> None:
+def do_something(context: OpExecutionContext, config: DoSomethingConfig) -> None:
     context.log.info("config_param: " + config.config_param)
 
 

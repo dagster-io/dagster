@@ -1,4 +1,4 @@
-from dagster import IOManager, io_manager, job, op
+from dagster import IOManager, io_manager, job, op, OutputContext, InputContext
 
 
 def connect():
@@ -25,11 +25,11 @@ def op_2(_input_dataframe):
 
 # io_manager_start_marker
 class MyIOManager(IOManager):
-    def handle_output(self, context, obj):
+    def handle_output(self, context: OutputContext, obj):
         table_name = context.config["table"]
         write_dataframe_to_table(name=table_name, dataframe=obj)
 
-    def load_input(self, context):
+    def load_input(self, context: InputContext):
         table_name = context.upstream_output.config["table"]
         return read_dataframe_from_table(name=table_name)
 

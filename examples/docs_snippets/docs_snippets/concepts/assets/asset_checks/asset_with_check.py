@@ -1,10 +1,10 @@
 import pandas as pd
 
-from dagster import AssetCheckResult, AssetCheckSpec, Definitions, Output, asset
+from dagster import AssetCheckResult, AssetCheckSpec, Definitions, Output, asset, AssetExecutionContext
 
 
 @asset(check_specs=[AssetCheckSpec(name="orders_id_has_no_nulls", asset="orders")])
-def orders(context):
+def orders(context: AssetExecutionContext):
     orders_df = pd.DataFrame({"order_id": [1, 2], "item_id": [432, 878]})
 
     # save the output and indicate that it's been saved

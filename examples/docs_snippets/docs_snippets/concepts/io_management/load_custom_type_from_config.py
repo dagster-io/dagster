@@ -7,6 +7,7 @@ from dagster import (
     job,
     op,
     usable_as_dagster_type,
+    OpExecutionContext
 )
 
 
@@ -32,7 +33,7 @@ class Apple:
 
 
 @op
-def my_op(context, input_apple: Apple):
+def my_op(context: OpExecutionContext, input_apple: Apple):
     context.log.info(f"input apple diameter: {input_apple.diameter}")
 
 

@@ -2,7 +2,7 @@ import csv
 
 import requests
 
-from dagster import job, op
+from dagster import job, op, OpExecutionContext
 
 
 @op
@@ -13,7 +13,7 @@ def download_cereals():
 
 
 @op
-def find_sugariest(context, cereals):
+def find_sugariest(context: OpExecutionContext, cereals):
     sorted_by_sugar = sorted(cereals, key=lambda cereal: cereal["sugars"])
     context.log.info(f'{sorted_by_sugar[-1]["name"]} is the sugariest cereal')
 

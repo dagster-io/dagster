@@ -5,14 +5,16 @@ from dagster import (
     IOManagerDefinition,
     asset,
     with_resources,
+    OutputContext,
+    InputContext
 )
 
 
 class MyIOManager(IOManager):
-    def handle_output(self, context, obj):
+    def handle_output(self, context: OutputContext, obj):
         assert False
 
-    def load_input(self, context):
+    def load_input(self, context: InputContext):
         return 5
 
 

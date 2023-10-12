@@ -11,22 +11,24 @@ from dagster import (
     input_manager,
     job,
     op,
+    OutputContext,
+    InputContext
 )
 
 
 class PandasIOManager(ConfigurableIOManager):
-    def handle_output(self, context, obj):
+    def handle_output(self, context: OutputContext, obj):
         pass
 
-    def load_input(self, context):
+    def load_input(self, context: InputContext):
         pass
 
 
 class TableIOManager(ConfigurableIOManager):
-    def handle_output(self, context, obj):
+    def handle_output(self, context: OutputContext, obj):
         pass
 
-    def load_input(self, context):
+    def load_input(self, context: InputContext):
         pass
 
 
@@ -70,7 +72,7 @@ def a_job():
 
 # in this case PandasIOManager is an existing IO Manager
 class MyNumpyLoader(PandasIOManager):
-    def load_input(self, context) -> np.ndarray:
+    def load_input(self, context: InputContext) -> np.ndarray:
         file_path = "path/to/dataframe"
         array = np.genfromtxt(file_path, delimiter=",", dtype=None)
         return array
@@ -102,19 +104,19 @@ class BetterPandasIOManager(ConfigurableIOManager):
             f"{output_context.step_key}_{output_context.name}.csv",
         )
 
-    def handle_output(self, context, obj: pd.DataFrame):
+    def handle_output(self, context: OutputContext, obj: pd.DataFrame):
         file_path = self._get_path(context)
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         if obj is not None:
             obj.to_csv(file_path, index=False)
 
-    def load_input(self, context) -> pd.DataFrame:
+    def load_input(self, context: InputContext) -> pd.DataFrame:
         return pd.read_csv(self._get_path(context.upstream_output))
 
 
 # write a subclass that uses _get_path for your custom loading logic
 class MyBetterNumpyLoader(BetterPandasIOManager):
-    def load_input(self, context) -> np.ndarray:
+    def load_input(self, context: InputContext) -> np.ndarray:
         file_path = self._get_path(context.upstream_output)
         array = np.genfromtxt(file_path, delimiter=",", dtype=None)
         return array
@@ -163,7 +165,7 @@ def simple_load_table_job():
 
 
 class Table1InputManager(InputManager):
-    def load_input(self, context):
+    def load_input(self, context: InputContext):
         return read_dataframe_from_table(name="table_1")
 
 
@@ -183,7 +185,7 @@ def load_table_job():
 # start_load_unconnected_io
 # in this example, TableIOManager is defined elsewhere and we just want to override load_input
 class Table1IOManager(TableIOManager):
-    def load_input(self, context):
+    def load_input(self, context: InputContext):
         return read_dataframe_from_table(name="table_1")
 
 
@@ -198,11 +200,11 @@ def io_load_table_job():
 
 
 class MyIOManager(ConfigurableIOManager):
-    def handle_output(self, context, obj):
+    def handle_output(self, context: OutputContext, obj):
         table_name = context.name
         write_dataframe_to_table(name=table_name, dataframe=obj)
 
-    def load_input(self, context):
+    def load_input(self, context: InputContext):
         return read_dataframe_from_table(name=context.upstream_output.name)
 
 
@@ -238,7 +240,7 @@ def my_subselection_job():
 
 
 class MyNewInputLoader(MyIOManager):
-    def load_input(self, context):
+    def load_input(self, context: InputContext):
         if context.upstream_output is None:
             # load input from table since there is no upstream output
             return read_dataframe_from_table(name="table_1")
@@ -260,7 +262,7 @@ my_subselection_job.execute_in_process(
 
 
 class MyConfigurableInputLoader(InputManager):
-    def load_input(self, context):
+    def load_input(self, context: InputContext):
         return read_dataframe_from_table(name=context.config["table"])
 
 

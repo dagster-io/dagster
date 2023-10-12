@@ -1,4 +1,4 @@
-from dagster import asset, job, op, repository, resource
+from dagster import asset, job, op, repository, resource, OpExecutionContext, AssetExecutionContext, InitResourceContext
 
 
 class MyDatabaseConnection:
@@ -8,18 +8,18 @@ class MyDatabaseConnection:
 
 # start_marker
 @op(config_schema={"person_name": str})
-def op_using_config(context):
+def op_using_config(context: OpExecutionContext):
     return f'hello {context.op_config["person_name"]}'
 
 
 @asset(config_schema={"person_name": str})
-def asset_using_config(context):
+def asset_using_config(context: AssetExecutionContext):
     # Note how asset config is also accessed with context.op_config
     return f'hello {context.op_config["person_name"]}'
 
 
 @resource(config_schema={"url": str})
-def resource_using_config(context):
+def resource_using_config(context: InitResourceContext):
     return MyDatabaseConnection(context.resource_config["url"])
 
 
