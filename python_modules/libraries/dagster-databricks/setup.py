@@ -33,9 +33,9 @@ setup(
     packages=find_packages(exclude=["dagster_databricks_tests*"]),
     include_package_data=True,
     install_requires=[
-        f"dagster{pin}",
-        f"dagster-pipes{pin}",
-        f"dagster-pyspark{pin}",
+        "dagster==1.5.3",
+        "dagster-pipes==1.5.3",
+        "dagster-pyspark==0.21.3",
         "databricks-cli~=0.17",  # TODO: Remove this dependency in the next minor release.
         "databricks_api",  # TODO: Remove this dependency in the next minor release.
         "databricks-sdk<0.9",  # Breaking changes occur in minor versions.

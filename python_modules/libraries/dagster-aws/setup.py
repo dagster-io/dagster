@@ -35,7 +35,7 @@ setup(
     include_package_data=True,
     install_requires=[
         "boto3",
-        f"dagster{pin}",
+        "dagster==1.5.3",
         "packaging",
         "requests",
     ],
