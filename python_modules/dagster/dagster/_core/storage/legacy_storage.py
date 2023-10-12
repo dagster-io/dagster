@@ -456,8 +456,8 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
 
     def get_materialization_records(
         self,
-        filters: Optional[Union[AssetKey, "AssetRecordsFilter"]] = None,
-        limit: int = 10000,
+        filters: Optional[Union[AssetKey, "AssetRecordsFilter"]],
+        limit: int,
         cursor: Optional[str] = None,
         ascending: bool = False,
     ) -> EventRecordsResult:
@@ -467,8 +467,8 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
 
     def get_observation_records(
         self,
-        filters: Optional[Union[AssetKey, "AssetRecordsFilter"]] = None,
-        limit: int = 10000,
+        filters: Optional[Union[AssetKey, "AssetRecordsFilter"]],
+        limit: int,
         cursor: Optional[str] = None,
         ascending: bool = False,
     ) -> EventRecordsResult:
@@ -478,8 +478,8 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
 
     def get_planned_materialization_records(
         self,
-        filters: Optional[Union[AssetKey, "AssetRecordsFilter"]] = None,
-        limit: int = 10000,
+        filters: Optional[Union[AssetKey, "AssetRecordsFilter"]],
+        limit: int,
         cursor: Optional[str] = None,
         ascending: bool = False,
     ) -> EventRecordsResult:
@@ -490,7 +490,7 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     def get_run_status_change_records(
         self,
         filters: Union["DagsterEventType", "RunStatusChangeRecordsFilter"],
-        limit: int = 10000,
+        limit: int,
         cursor: Optional[str] = None,
         ascending: bool = False,
     ) -> EventRecordsResult:

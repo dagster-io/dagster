@@ -475,8 +475,8 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     @abstractmethod
     def get_materialization_records(
         self,
-        records_filter: Optional[Union[AssetKey, AssetRecordsFilter]] = None,
-        limit: int = 10000,
+        records_filter: Optional[Union[AssetKey, AssetRecordsFilter]],
+        limit: int,
         cursor: Optional[str] = None,
         ascending: bool = False,
     ) -> EventRecordsResult:
@@ -485,8 +485,8 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     @abstractmethod
     def get_observation_records(
         self,
-        records_filter: Optional[Union[AssetKey, AssetRecordsFilter]] = None,
-        limit: Optional[int] = None,
+        records_filter: Optional[Union[AssetKey, AssetRecordsFilter]],
+        limit: int,
         cursor: Optional[str] = None,
         ascending: bool = False,
     ) -> EventRecordsResult:
@@ -495,8 +495,8 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     @abstractmethod
     def get_planned_materialization_records(
         self,
-        records_filter: Optional[Union[AssetKey, AssetRecordsFilter]] = None,
-        limit: Optional[int] = None,
+        records_filter: Optional[Union[AssetKey, AssetRecordsFilter]],
+        limit: int,
         cursor: Optional[str] = None,
         ascending: bool = False,
     ) -> EventRecordsResult:
@@ -506,7 +506,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     def get_run_status_change_records(
         self,
         records_filter: Union[DagsterEventType, RunStatusChangeRecordsFilter],
-        limit: Optional[int] = None,
+        limit: int,
         cursor: Optional[str] = None,
         ascending: bool = False,
     ) -> EventRecordsResult:

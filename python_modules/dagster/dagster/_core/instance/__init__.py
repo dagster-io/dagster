@@ -1915,8 +1915,8 @@ class DagsterInstance(DynamicPartitionsStore):
     @traced
     def get_materialization_records(
         self,
-        records_filter: Optional[Union[AssetKey, "AssetRecordsFilter"]] = None,
-        limit: int = 10000,
+        records_filter: Optional[Union[AssetKey, "AssetRecordsFilter"]],
+        limit: int,
         cursor: Optional[str] = None,
         ascending: bool = False,
     ) -> "EventRecordsResult":
@@ -1925,7 +1925,7 @@ class DagsterInstance(DynamicPartitionsStore):
         Args:
             records_filter (Optional[Union[AssetKey, AssetRecordsFilter]]): the filter by which to
                 filter event records.
-            limit (int): Number of results to get. Defaults to 10000.
+            limit (int): Number of results to get.
             cursor (Optional[str]): Cursor to use for pagination. Defaults to None.
             ascending (Optional[bool]): Sort the result in ascending order if True, descending
                 otherwise. Defaults to descending.
@@ -1941,8 +1941,8 @@ class DagsterInstance(DynamicPartitionsStore):
     @traced
     def get_planned_materialization_records(
         self,
-        records_filter: Optional[Union[AssetKey, "AssetRecordsFilter"]] = None,
-        limit: int = 10000,
+        records_filter: Optional[Union[AssetKey, "AssetRecordsFilter"]],
+        limit: int,
         cursor: Optional[str] = None,
         ascending: bool = False,
     ) -> "EventRecordsResult":
@@ -1951,7 +1951,7 @@ class DagsterInstance(DynamicPartitionsStore):
         Args:
             records_filter (Optional[Union[AssetKey, AssetRecordsFilter]]): the filter by which to
                 filter event records.
-            limit (int): Number of results to get. Defaults to 10000.
+            limit (int): Number of results to get.
             cursor (Optional[str]): Cursor to use for pagination. Defaults to None.
             ascending (Optional[bool]): Sort the result in ascending order if True, descending
                 otherwise. Defaults to descending.
@@ -1967,8 +1967,8 @@ class DagsterInstance(DynamicPartitionsStore):
     @traced
     def get_observation_records(
         self,
-        records_filter: Optional[Union[AssetKey, "AssetRecordsFilter"]] = None,
-        limit: int = 10000,
+        records_filter: Optional[Union[AssetKey, "AssetRecordsFilter"]],
+        limit: int,
         cursor: Optional[str] = None,
         ascending: bool = False,
     ) -> "EventRecordsResult":
@@ -1977,7 +1977,7 @@ class DagsterInstance(DynamicPartitionsStore):
         Args:
             records_filter (Optional[Union[AssetKey, AssetRecordsFilter]]): the filter by which to
                 filter event records.
-            limit (int): Number of results to get. Defaults to 10000.
+            limit (int): Number of results to get.
             cursor (Optional[str]): Cursor to use for pagination. Defaults to None.
             ascending (Optional[bool]): Sort the result in ascending order if True, descending
                 otherwise. Defaults to descending.
@@ -1992,7 +1992,7 @@ class DagsterInstance(DynamicPartitionsStore):
     def get_run_status_change_records(
         self,
         records_filter: Union["DagsterEventType", "RunStatusChangeRecordsFilter"],
-        limit: int = 10000,
+        limit: int,
         cursor: Optional[str] = None,
         ascending: bool = False,
     ) -> "EventRecordsResult":
@@ -2001,7 +2001,7 @@ class DagsterInstance(DynamicPartitionsStore):
         Args:
             records_filter (Optional[Union[DagsterEventType, RunStatusChangeRecordsFilter]]): the
                 filter by which to filter event records.
-            limit (int): Number of results to get. Defaults to 10000.
+            limit (int): Number of results to get.
             cursor (Optional[str]): Cursor to use for pagination. Defaults to None.
             ascending (Optional[bool]): Sort the result in ascending order if True, descending
                 otherwise. Defaults to descending.

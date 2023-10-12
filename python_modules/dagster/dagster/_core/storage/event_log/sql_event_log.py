@@ -1,4 +1,5 @@
 import logging
+import os
 from abc import abstractmethod
 from collections import OrderedDict, defaultdict
 from datetime import datetime
@@ -109,6 +110,26 @@ if TYPE_CHECKING:
 
 MAX_CONCURRENCY_SLOTS = 1000
 MIN_ASSET_ROWS = 25
+DEFAULT_MAX_LIMIT_EVENT_RECORDS = 10000
+
+
+def get_max_event_records_limit() -> int:
+    max_value = os.getenv("MAX_LIMIT_GET_EVENT_RECORDS")
+    if not max_value:
+        return DEFAULT_MAX_LIMIT_EVENT_RECORDS
+    try:
+        return int(max_value)
+    except ValueError:
+        return DEFAULT_MAX_LIMIT_EVENT_RECORDS
+
+
+def enforce_max_records_limit(limit: int):
+    max_limit = get_max_event_records_limit()
+    if limit > max_limit:
+        raise DagsterInvariantViolationError(
+            f"Cannot fetch more than {max_limit} event records at a time. Requested {limit}."
+        )
+
 
 # We are using third-party library objects for DB connections-- at this time, these libraries are
 # untyped. When/if we upgrade to typed variants, the `Any` here can be replaced or the alias as a
@@ -1023,11 +1044,12 @@ class SqlEventLogStorage(EventLogStorage):
 
     def get_materialization_records(
         self,
-        records_filter: Optional[Union[AssetKey, AssetRecordsFilter]] = None,
-        limit: int = 10000,
+        records_filter: Optional[Union[AssetKey, AssetRecordsFilter]],
+        limit: int,
         cursor: Optional[str] = None,
         ascending: bool = False,
     ) -> EventRecordsResult:
+        enforce_max_records_limit(limit)
         if isinstance(records_filter, AssetRecordsFilter):
             event_records_filter = records_filter.to_event_records_filter(
                 event_type=DagsterEventType.ASSET_MATERIALIZATION,
@@ -1036,29 +1058,24 @@ class SqlEventLogStorage(EventLogStorage):
             )
         else:
             before_cursor, after_cursor = EventRecordsFilter.get_cursor_params(cursor, ascending)
-            if isinstance(records_filter, AssetKey):
-                event_records_filter = EventRecordsFilter(
-                    event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                    asset_key=records_filter,
-                    before_cursor=before_cursor,
-                    after_cursor=after_cursor,
-                )
-            else:
-                event_records_filter = EventRecordsFilter(
-                    event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                    before_cursor=before_cursor,
-                    after_cursor=after_cursor,
-                )
+            asset_key = records_filter if isinstance(records_filter, AssetKey) else None
+            event_records_filter = EventRecordsFilter(
+                event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                asset_key=asset_key,
+                before_cursor=before_cursor,
+                after_cursor=after_cursor,
+            )
 
         return self._get_event_records_result(event_records_filter, limit, cursor, ascending)
 
     def get_observation_records(
         self,
-        records_filter: Optional[Union[AssetKey, AssetRecordsFilter]] = None,
-        limit: int = 10000,
+        records_filter: Optional[Union[AssetKey, AssetRecordsFilter]],
+        limit: int,
         cursor: Optional[str] = None,
         ascending: bool = False,
     ) -> EventRecordsResult:
+        enforce_max_records_limit(limit)
         if isinstance(records_filter, AssetRecordsFilter):
             event_records_filter = records_filter.to_event_records_filter(
                 event_type=DagsterEventType.ASSET_OBSERVATION,
@@ -1067,29 +1084,24 @@ class SqlEventLogStorage(EventLogStorage):
             )
         else:
             before_cursor, after_cursor = EventRecordsFilter.get_cursor_params(cursor, ascending)
-            if isinstance(records_filter, AssetKey):
-                event_records_filter = EventRecordsFilter(
-                    event_type=DagsterEventType.ASSET_OBSERVATION,
-                    asset_key=records_filter,
-                    before_cursor=before_cursor,
-                    after_cursor=after_cursor,
-                )
-            else:
-                event_records_filter = EventRecordsFilter(
-                    event_type=DagsterEventType.ASSET_OBSERVATION,
-                    before_cursor=before_cursor,
-                    after_cursor=after_cursor,
-                )
+            asset_key = records_filter if isinstance(records_filter, AssetKey) else None
+            event_records_filter = EventRecordsFilter(
+                event_type=DagsterEventType.ASSET_OBSERVATION,
+                asset_key=asset_key,
+                before_cursor=before_cursor,
+                after_cursor=after_cursor,
+            )
 
         return self._get_event_records_result(event_records_filter, limit, cursor, ascending)
 
     def get_planned_materialization_records(
         self,
-        records_filter: Optional[Union[AssetKey, AssetRecordsFilter]] = None,
-        limit: int = 10000,
+        records_filter: Optional[Union[AssetKey, AssetRecordsFilter]],
+        limit: int,
         cursor: Optional[str] = None,
         ascending: bool = False,
     ) -> EventRecordsResult:
+        enforce_max_records_limit(limit)
         if isinstance(records_filter, AssetRecordsFilter):
             event_records_filter = records_filter.to_event_records_filter(
                 event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
@@ -1098,28 +1110,23 @@ class SqlEventLogStorage(EventLogStorage):
             )
         else:
             before_cursor, after_cursor = EventRecordsFilter.get_cursor_params(cursor, ascending)
-            if isinstance(records_filter, AssetKey):
-                event_records_filter = EventRecordsFilter(
-                    event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
-                    asset_key=records_filter,
-                    before_cursor=before_cursor,
-                    after_cursor=after_cursor,
-                )
-            else:
-                event_records_filter = EventRecordsFilter(
-                    event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
-                    before_cursor=before_cursor,
-                    after_cursor=after_cursor,
-                )
+            asset_key = records_filter if isinstance(records_filter, AssetKey) else None
+            event_records_filter = EventRecordsFilter(
+                event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                asset_key=asset_key,
+                before_cursor=before_cursor,
+                after_cursor=after_cursor,
+            )
         return self._get_event_records_result(event_records_filter, limit, cursor, ascending)
 
     def get_run_status_change_records(
         self,
         records_filter: Union[DagsterEventType, RunStatusChangeRecordsFilter],
-        limit: int = 10000,
+        limit: int,
         cursor: Optional[str] = None,
         ascending: bool = False,
     ) -> EventRecordsResult:
+        enforce_max_records_limit(limit)
         event_type = (
             records_filter
             if isinstance(records_filter, DagsterEventType)
