@@ -3,7 +3,7 @@ import json
 import os
 import shutil
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import List, Optional, Union, cast
 
 import pytest
 from dagster import (
@@ -48,6 +48,21 @@ def test_dbt_cli(global_config_flags: List[str], command: str) -> None:
     assert dbt_cli_invocation.is_successful()
     assert dbt_cli_invocation.process.returncode == 0
     assert dbt_cli_invocation.target_path.joinpath("dbt.log").exists()
+
+
+def test_dbt_cli_executable() -> None:
+    dbt_executable = cast(str, shutil.which("dbt"))
+    dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR, dbt_executable=dbt_executable)
+
+    assert dbt.cli(["run"], manifest=manifest).is_successful()
+
+    dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR, dbt_executable=Path(dbt_executable))  # type: ignore
+
+    assert dbt.cli(["run"], manifest=manifest).is_successful()
+
+    # dbt executable must exist
+    with pytest.raises(ValidationError, match="does not exist"):
+        DbtCliResource(project_dir=TEST_PROJECT_DIR, dbt_executable="nonexistent")
 
 
 @pytest.mark.parametrize("manifest", [None, manifest, manifest_path, os.fspath(manifest_path)])
