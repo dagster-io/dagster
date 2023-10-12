@@ -34,20 +34,20 @@ Getting external code to send information back to Dagster via Dagster Pipes requ
 
   The <code>with open_dagster_pipes():</code> is a context manager in Python, ensuring resource setup and cleanup for a specific segment of code. It's useful for tasks requiring initial setup and final teardown, like opening and closing connections. In this case, the context manager is used to initialize and close the Dagster Pipes connection.
 
-- An instance of the Dagster Pipes context via <PyObject module="dagster_pipes" object="PipesContext" method="get"/>. You can access information like `partition_key` and `asset_key` via this context object. Refer to the [the API documentation](/\_apidocs/libraries/dagster-pipes#dagster_pipes.PipesContext) for more information.
+- An instance of the Dagster Pipes context via <PyObject module="dagster_pipes" object="Pipes" method="get"/>. You can access information like `partition_key` and `asset_key` via this context object. Refer to the [the API documentation](/\_apidocs/libraries/dagster-pipes#dagster_pipes.Pipes) for more information.
 
 In our sample Python script, the changes would look like the following:
 
 ```python file=/guides/dagster/dagster_pipes/subprocess/part_2/step_1/external_code.py lines=2-
 import pandas as pd
-from dagster_pipes import PipesContext, open_dagster_pipes
+from dagster_pipes import Pipes, open_dagster_pipes
 
 
 def main():
     orders_df = pd.DataFrame({"order_id": [1, 2], "item_id": [432, 878]})
     total_orders = len(orders_df)
     # get the Dagster Pipes context
-    pipes = PipesContext.get()
+    pipes = Pipes.get()
     print(f"processing total {total_orders} orders")
 
 
@@ -61,18 +61,18 @@ if __name__ == "__main__":
 
 ## Step 2: Send log messages to Dagster
 
-Dagster Pipes context offers a built-in logging capability that enables you to stream log messages back to Dagster. Instead of printing to the standard output, you can use the <PyObject module="dagster_pipes" object="PipesContext" method="log" /> to send log messages back to Dagster. In this case, we’re sending an `info` level log message:
+Dagster Pipes context offers a built-in logging capability that enables you to stream log messages back to Dagster. Instead of printing to the standard output, you can use the <PyObject module="dagster_pipes" object="Pipes" method="log" /> to send log messages back to Dagster. In this case, we’re sending an `info` level log message:
 
 ```python file=/guides/dagster/dagster_pipes/subprocess/part_2/step_2/external_code.py
 import pandas as pd
-from dagster_pipes import PipesContext, open_dagster_pipes
+from dagster_pipes import Pipes, open_dagster_pipes
 
 
 def main():
     orders_df = pd.DataFrame({"order_id": [1, 2], "item_id": [432, 878]})
     total_orders = len(orders_df)
     # get the Dagster Pipes context
-    pipes = PipesContext.get()
+    pipes = Pipes.get()
     pipes.log.info(f"processing total {total_orders} orders")
 
 
@@ -104,18 +104,18 @@ Sometimes, you may want to log information from your external code as structured
 
 Similar to [reporting materialization metadata within the Dagster process](/concepts/assets/software-defined-assets#recording-materialization-metadata), you can also report asset materialization back to Dagster from the external process.
 
-In this example, we’re passing a piece of metadata named `total_orders` to the `metadata` parameter of the <PyObject module="dagster_pipes" object="PipesContext" method="report_asset_materialization" />. This payload will be sent from the external process back to Dagster:
+In this example, we’re passing a piece of metadata named `total_orders` to the `metadata` parameter of the <PyObject module="dagster_pipes" object="Pipes" method="report_asset_materialization" />. This payload will be sent from the external process back to Dagster:
 
 ```python file=/guides/dagster/dagster_pipes/subprocess/part_2/step_3_materialization/external_code.py
 import pandas as pd
-from dagster_pipes import PipesContext, open_dagster_pipes
+from dagster_pipes import Pipes, open_dagster_pipes
 
 
 def main():
     orders_df = pd.DataFrame({"order_id": [1, 2], "item_id": [432, 878]})
     total_orders = len(orders_df)
     # get the Dagster Pipes context
-    pipes = PipesContext.get()
+    pipes = Pipes.get()
     # send structured metadata back to Dagster
     pipes.report_asset_materialization(metadata={"total_orders": total_orders})
 
@@ -148,21 +148,21 @@ height={736}
 
 Dagster allows you to define and execute data quality checks on assets. Refer to the [Asset Checks](/concepts/assets/asset-checks) documentation for more information.
 
-If your asset has data quality checks defined, you can report to Dagster that an asset check has been performed via <PyObject module="dagster_pipes" object="PipesContext" method="report_asset_check" />:
+If your asset has data quality checks defined, you can report to Dagster that an asset check has been performed via <PyObject module="dagster_pipes" object="Pipes" method="report_asset_check" />:
 
 <TabGroup>
 <TabItem name="Report from the external code">
 
 ```python file=/guides/dagster/dagster_pipes/subprocess//part_2/step_3_check/external_code.py
 import pandas as pd
-from dagster_pipes import PipesContext, open_dagster_pipes
+from dagster_pipes import Pipes, open_dagster_pipes
 
 
 def main():
     orders_df = pd.DataFrame({"order_id": [1, 2], "item_id": [432, 878]})
     total_orders = len(orders_df)
     # get the Dagster Pipes context
-    pipes = PipesContext.get()
+    pipes = Pipes.get()
     # send structured metadata back to Dagster
     pipes.report_asset_materialization(metadata={"total_orders": total_orders})
     # report data quality check result back to Dagster
@@ -247,14 +247,14 @@ At this point, your two files should look like the following:
 
 ```python file=/guides/dagster/dagster_pipes/subprocess/part_2/step_3_check/external_code.py
 import pandas as pd
-from dagster_pipes import PipesContext, open_dagster_pipes
+from dagster_pipes import Pipes, open_dagster_pipes
 
 
 def main():
     orders_df = pd.DataFrame({"order_id": [1, 2], "item_id": [432, 878]})
     total_orders = len(orders_df)
     # get the Dagster Pipes context
-    pipes = PipesContext.get()
+    pipes = Pipes.get()
     # send structured metadata back to Dagster
     pipes.report_asset_materialization(metadata={"total_orders": total_orders})
     # report data quality check result back to Dagster
