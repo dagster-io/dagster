@@ -157,7 +157,7 @@ class RuleEvaluationContext:
     def previous_tick_evaluated_asset_partitions(
         self,
     ) -> AbstractSet[AssetKeyPartitionKey]:
-        """Returns the set of asset partitions that were skipped on the previous tick."""
+        """Returns the set of asset partitions that were evaluated on the previous tick."""
         if not self.previous_tick_evaluation:
             return set()
         return self.previous_tick_evaluation.get_evaluated_asset_partitions(
@@ -172,8 +172,12 @@ class RuleEvaluationContext:
             rule_snapshot=rule.to_snapshot(), asset_graph=self.asset_graph
         )
 
-    def get_candidates_not_evaluated_on_previous_tick(self) -> AbstractSet[AssetKeyPartitionKey]:
-        """Returns the set of candidates that were not evaluated by any rules on the previous tick.
+    def get_candidates_not_evaluated_by_rule_on_previous_tick(
+        self,
+    ) -> AbstractSet[AssetKeyPartitionKey]:
+        """Returns the set of candidates that were not evaluated by the rule that is currently being
+        evaluated on the previous tick.
+
         Any asset partition that was evaluated by any rule on the previous tick must have been
         evaluated by *all* skip rules.
         """
@@ -586,7 +590,7 @@ class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOut
 
         # only need to evaluate net-new candidates and candidates whose parents have changed
         candidates_to_evaluate = (
-            context.get_candidates_not_evaluated_on_previous_tick()
+            context.get_candidates_not_evaluated_by_rule_on_previous_tick()
             | context.get_candidates_with_updated_or_will_update_parents()
         )
         for candidate in candidates_to_evaluate:
@@ -628,7 +632,7 @@ class SkipOnParentMissingRule(AutoMaterializeRule, NamedTuple("_SkipOnParentMiss
 
         # only need to evaluate net-new candidates and candidates whose parents have changed
         candidates_to_evaluate = (
-            context.get_candidates_not_evaluated_on_previous_tick()
+            context.get_candidates_not_evaluated_by_rule_on_previous_tick()
             | context.get_candidates_with_updated_or_will_update_parents()
         )
         for candidate in candidates_to_evaluate:
@@ -695,7 +699,7 @@ class SkipOnNotAllParentsUpdatedRule(
 
         # only need to evaluate net-new candidates and candidates whose parents have changed
         candidates_to_evaluate = (
-            context.get_candidates_not_evaluated_on_previous_tick()
+            context.get_candidates_not_evaluated_by_rule_on_previous_tick()
             | context.get_candidates_with_updated_or_will_update_parents()
         )
         for candidate in candidates_to_evaluate:
@@ -769,7 +773,7 @@ class SkipOnRequiredButNonexistentParentsRule(
     def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
         asset_partitions_by_evaluation_data = defaultdict(set)
 
-        candidates_to_evaluate = context.get_candidates_not_evaluated_on_previous_tick()
+        candidates_to_evaluate = context.get_candidates_not_evaluated_by_rule_on_previous_tick()
         for candidate in candidates_to_evaluate:
             nonexistent_parent_partitions = context.asset_graph.get_parents_partitions(
                 context.instance_queryer,
