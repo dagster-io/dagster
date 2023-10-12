@@ -50,18 +50,19 @@ sling = SlingResource(source_connection=source, ...)
 
 Note that no path is required in the source connection, as that is provided by the asset itself.
 
-````python
+```python
 asset_def = build_sling_asset(
     asset_spec=AssetSpec("my_file"),
     source_stream=f"file://{path_to_file}",
     ...
 )
+```
 
 For database connections, you can provide a connection string or a dictionary of keyword arguments. For example, to connect to a SQLite database, you can provide a path to the database using the `instance` keyword, which is specified in [Sling's SQLite connection](https://docs.slingdata.io/connections/database-connections/sqlite) documentation.
 
 ```python
 source = SlingSourceConnection(type="sqlite", instance="path/to/sqlite.db")
-````
+```
 
 ---
 
@@ -107,29 +108,64 @@ sling_job = build_assets_job(
 
 This is an example of how to setup a Sling sync between Postgres and Snowflake:
 
-```python
+```python file=/integrations/embedded_elt/postgres_snowflake.py
 import os
-from dagster_embedded_elt.sling import SlingResource, SlingSourceConnection, SlingTargetConnection
+
+from dagster_embedded_elt.sling import (
+    SlingMode,
+    SlingResource,
+    SlingSourceConnection,
+    SlingTargetConnection,
+    build_sling_asset,
+)
+
+from dagster import AssetSpec
 
 source = SlingSourceConnection(
-    type="postgres", host="localhost", port=5432, database="my_database",
-    user="my_user", password=os.getenv("PG_PASS")
+    type="postgres",
+    host="localhost",
+    port=5432,
+    database="my_database",
+    user="my_user",
+    password=os.getenv("PG_PASS"),
 )
 
 target = SlingTargetConnection(
-    type="snowflake", host="hostname.snowflake", user="username",
-    database="database", password=os.getenv("SF_PASSWORD"), role="role"
+    type="snowflake",
+    host="hostname.snowflake",
+    user="username",
+    database="database",
+    password=os.getenv("SF_PASSWORD"),
+    role="role",
 )
 
 sling = SlingResource(source_connection=source, target_connection=target)
+
+asset_def = build_sling_asset(
+    asset_spec=AssetSpec("my_asset_name"),
+    source_stream="public.my_table",
+    target_object="marts.my_table",
+    mode=SlingMode.INCREMENTAL,
+    primary_key="id",
+)
 ```
 
 Similarily, you can define file/storage connections:
 
-```python
+```python startafter=start_storage_config endbefore=end_storage_config file=/integrations/embedded_elt/s3_snowflake.py
 source = SlingSourceConnection(
-    type="s3", bucket="sling-bucket",
+    type="s3",
+    bucket="sling-bucket",
     access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
-    secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY")
+    secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+)
+
+sling = SlingResource(source_connection=source, target_connection=target)
+
+asset_def = build_sling_asset(
+    asset_spec=AssetSpec("my_asset_name"),
+    source_stream="s3://my-bucket/my_file.parquet",
+    target_object="marts.my_table",
+    primary_key="id",
 )
 ```
