@@ -364,14 +364,15 @@ def test_context_provided_to_blocking_asset_check():
     def to_check():
         return 1
 
-    # @asset_check(asset=to_check)
-    # def no_annotation(context):
-    #     assert isinstance(context, AssetExecutionContext)
-    # return AssetCheckResult(passed=True, check_name="no_annotation")
-    # no_annotation_blocking_asset = build_asset_with_blocking_check(
-    #     asset_def=to_check, checks=[no_annotation]
-    # )
-    # execute_assets_and_checks(assets=[no_annotation_blocking_asset])
+    @asset_check(asset=to_check)
+    def no_annotation(context):
+        assert isinstance(context, AssetExecutionContext)
+        return AssetCheckResult(passed=True, check_name="no_annotation")
+
+    no_annotation_blocking_asset = build_asset_with_blocking_check(
+        asset_def=to_check, checks=[no_annotation]
+    )
+    execute_assets_and_checks(assets=[no_annotation_blocking_asset])
 
     @asset_check(asset=to_check)
     def asset_annotation(context: AssetExecutionContext):
