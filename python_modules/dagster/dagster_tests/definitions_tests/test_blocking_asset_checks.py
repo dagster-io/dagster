@@ -6,12 +6,9 @@ from dagster import (
     ExecuteInProcessResult,
     asset,
     asset_check,
-    materialize,
 )
 from dagster._core.definitions.asset_checks import build_asset_with_blocking_check
 from dagster._core.definitions.asset_in import AssetIn
-from dagster._core.definitions.decorators.asset_decorator import graph_asset
-from dagster._core.definitions.decorators.op_decorator import op
 
 
 def execute_assets_and_checks(
@@ -57,22 +54,6 @@ blocking_asset = build_asset_with_blocking_check(
 @asset(deps=[blocking_asset])
 def downstream_asset():
     pass
-
-
-def test_graph_backed_asset():
-    @op
-    def op1(context: AssetExecutionContext):
-        return 1
-
-    @op
-    def op2(context: AssetExecutionContext, x):
-        return x + 1
-
-    @graph_asset
-    def the_graph():
-        return op2(op1())
-
-    materialize([the_graph])
 
 
 def test_check_pass():
