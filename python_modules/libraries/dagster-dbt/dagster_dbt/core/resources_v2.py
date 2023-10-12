@@ -51,6 +51,7 @@ from ..utils import ASSET_RESOURCE_TYPES, get_dbt_resource_props_by_dbt_unique_i
 logger = get_dagster_logger()
 
 
+DBT_EXECUTABLE = "dbt"
 DBT_PROJECT_YML_NAME = "dbt_project.yml"
 DBT_PROFILES_YML_NAME = "profiles.yml"
 PARTIAL_PARSE_FILE_NAME = "partial_parse.msgpack"
@@ -432,6 +433,7 @@ class DbtCliResource(ConfigurableResource):
         target (Optional[str]): The target from your dbt `profiles.yml` to use for execution. See
             https://docs.getdbt.com/docs/core/connect-data-platform/connection-profiles for more
             information.
+        dbt_executable (str]): The path to the dbt executable. By default, this is `dbt`.
 
     Examples:
         Creating a dbt resource with only a reference to ``project_dir``:
@@ -476,6 +478,17 @@ class DbtCliResource(ConfigurableResource):
                 project_dir="/path/to/dbt/project",
                 global_config_flags=["--no-use-color"],
             )
+
+        Creating a dbt resource with custom dbt executable path:
+
+        .. code-block:: python
+
+            from dagster_dbt import DbtCliResource
+
+            dbt = DbtCliResource(
+                project_dir="/path/to/dbt/project",
+                dbt_executable="/path/to/dbt/executable",
+            )
     """
 
     project_dir: str = Field(
@@ -518,6 +531,10 @@ class DbtCliResource(ConfigurableResource):
             " information."
         ),
     )
+    dbt_executable: str = Field(
+        default=DBT_EXECUTABLE,
+        description="The path to the dbt executable.",
+    )
 
     @classmethod
     def _validate_absolute_path_exists(cls, path: Union[str, Path]) -> Path:
@@ -534,7 +551,7 @@ class DbtCliResource(ConfigurableResource):
         if not path.joinpath(file_name).exists():
             raise ValueError(error_message)
 
-    @validator("project_dir", "profiles_dir", pre=True)
+    @validator("project_dir", "profiles_dir", "dbt_executable", pre=True)
     def convert_path_to_str(cls, v: Any) -> Any:
         """Validate that the path is converted to a string."""
         if isinstance(v, Path):
@@ -578,6 +595,17 @@ class DbtCliResource(ConfigurableResource):
         )
 
         return os.fspath(resolved_project_dir)
+
+    @validator("dbt_executable")
+    def validate_dbt_executable(cls, dbt_executable: str) -> str:
+        resolved_dbt_executable = shutil.which(dbt_executable)
+        if not resolved_dbt_executable:
+            raise ValueError(
+                f"The dbt executable '{dbt_executable}' does not exist. Please specify a valid"
+                " path to a dbt executable."
+            )
+
+        return dbt_executable
 
     @root_validator(pre=True)
     def validate_dbt_version(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -807,7 +835,13 @@ class DbtCliResource(ConfigurableResource):
         if self.target:
             profile_args += ["--target", self.target]
 
-        args = ["dbt"] + self.global_config_flags + args + profile_args + selection_args
+        args = [
+            self.dbt_executable,
+            *self.global_config_flags,
+            *args,
+            *profile_args,
+            *selection_args,
+        ]
         project_dir = Path(self.project_dir)
 
         if not target_path.is_absolute():
