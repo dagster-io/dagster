@@ -39,10 +39,6 @@ from dagster._utils.warnings import disable_dagster_warnings
 from ..context.compute import OpExecutionContext
 
 
-class NoAnnotationSentinel:
-    pass
-
-
 def create_op_compute_wrapper(
     op_def: OpDefinition,
 ) -> Callable[[OpExecutionContext, Mapping[str, InputDefinition]], Any]:
@@ -221,11 +217,14 @@ def _get_annotation_for_output_position(
     position: int, op_def: OpDefinition, output_defs: Sequence[OutputDefinition]
 ) -> Any:
     if op_def.is_from_decorator():
-        if len(output_defs) > 1 and op_def.get_output_annotation() != inspect.Parameter.empty:
-            return get_args(op_def.get_output_annotation())[position]
+        if len(output_defs) > 1:
+            annotation_subitems = get_args(op_def.get_output_annotation())
+            if len(annotation_subitems) == len(output_defs):
+                return annotation_subitems[position]
         else:
             return op_def.get_output_annotation()
-    return NoAnnotationSentinel()
+
+    return inspect.Parameter.empty
 
 
 def _check_output_object_name(
