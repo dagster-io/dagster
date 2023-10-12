@@ -150,9 +150,9 @@ class AssetDaemonCursor(NamedTuple):
                 "Latest storage ID should be >= previous latest storage ID",
             )
 
-        result_latest_evaluation_by_asset_key = {**self.latest_evaluation_by_asset_key}
-        for evaluation in evaluations:
-            result_latest_evaluation_by_asset_key[evaluation.asset_key] = evaluation
+        latest_evaluation_by_asset_key = {
+            evaluation.asset_key: evaluation for evaluation in evaluations
+        }
 
         return AssetDaemonCursor(
             latest_storage_id=latest_storage_id or self.latest_storage_id,
@@ -160,7 +160,7 @@ class AssetDaemonCursor(NamedTuple):
             handled_root_partitions_by_asset_key=result_handled_root_partitions_by_asset_key,
             evaluation_id=evaluation_id,
             last_observe_request_timestamp_by_asset_key=result_last_observe_request_timestamp_by_asset_key,
-            latest_evaluation_by_asset_key=result_latest_evaluation_by_asset_key,
+            latest_evaluation_by_asset_key=latest_evaluation_by_asset_key,
         )
 
     @classmethod
