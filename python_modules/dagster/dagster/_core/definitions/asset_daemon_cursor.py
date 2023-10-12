@@ -239,9 +239,9 @@ class AssetDaemonCursor(NamedTuple):
         latest_evaluation_by_asset_key = {}
         for key_str, serialized_evaluation in serialized_latest_evaluation_by_asset_key.items():
             key = AssetKey.from_user_string(key_str)
-            evaluation = deserialize_value(serialized_evaluation)
-            if not isinstance(evaluation, AutoMaterializeAssetEvaluation):
-                continue
+            evaluation = check.inst(
+                deserialize_value(serialized_evaluation), AutoMaterializeAssetEvaluation
+            )
             latest_evaluation_by_asset_key[key] = evaluation
 
         return cls(
