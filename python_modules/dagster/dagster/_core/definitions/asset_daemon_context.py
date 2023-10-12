@@ -425,17 +425,14 @@ class AssetDaemonContext:
         Mapping[AssetKey, AutoMaterializeAssetEvaluation],
         AbstractSet[AssetKeyPartitionKey],
         AbstractSet[AssetKeyPartitionKey],
-        AbstractSet[AssetKeyPartitionKey],
     ]:
         """Returns a mapping from asset key to the AutoMaterializeAssetEvaluation for that key, as
-        well as sets of all asset partitions that should be materialized, skipped, and discarded
-        this tick.
+        well as sets of all asset partitions that should be materialized or discarded this tick.
         """
         evaluations_by_key: Dict[AssetKey, AutoMaterializeAssetEvaluation] = {}
         will_materialize_mapping: Dict[AssetKey, AbstractSet[AssetKeyPartitionKey]] = defaultdict(
             set
         )
-        to_skip: Set[AssetKeyPartitionKey] = set()
         to_discard: Set[AssetKeyPartitionKey] = set()
         expected_data_time_mapping: Dict[AssetKey, Optional[datetime.datetime]] = defaultdict()
         visited_multi_asset_keys = set()
@@ -526,7 +523,7 @@ class AssetDaemonContext:
                     visited_multi_asset_keys.add(neighbor_key)
 
         to_materialize = set().union(*will_materialize_mapping.values())
-        return (evaluations_by_key, to_materialize, to_skip, to_discard)
+        return (evaluations_by_key, to_materialize, to_discard)
 
     def evaluate(
         self,
@@ -543,7 +540,7 @@ class AssetDaemonContext:
             else []
         )
 
-        evaluations_by_asset_key, to_materialize, to_skip, to_discard = (
+        evaluations_by_asset_key, to_materialize, to_discard = (
             self.get_auto_materialize_asset_evaluations()
         )
 
