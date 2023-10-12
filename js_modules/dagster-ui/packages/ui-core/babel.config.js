@@ -12,5 +12,6 @@ module.exports = {
     '@babel/plugin-proposal-private-property-in-object',
     '@babel/plugin-proposal-private-methods',
     'babel-plugin-macros',
+    'babel-plugin-transform-import-meta',
   ],
 };

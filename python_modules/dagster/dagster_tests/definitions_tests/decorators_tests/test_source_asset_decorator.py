@@ -1,7 +1,5 @@
 from dagster import Definitions
-from dagster._core.definitions.assets_job import (
-    build_source_asset_observation_job,
-)
+from dagster._core.definitions.assets_job import build_assets_job
 from dagster._core.definitions.data_version import DataVersion
 from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
 from dagster._core.definitions.events import AssetKey
@@ -48,8 +46,8 @@ def test_no_context_observable_asset():
         executed["yes"] = True
         return DataVersion("version-string")
 
-    asset_job = build_source_asset_observation_job(
-        "source_job", source_assets=[observable_asset_no_context]
+    asset_job = build_assets_job(
+        "source_job", source_assets=[observable_asset_no_context], assets=[]
     )
 
     defs = Definitions(jobs=[asset_job], assets=[observable_asset_no_context])

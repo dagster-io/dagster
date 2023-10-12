@@ -497,6 +497,7 @@ class SqlScheduleStorage(ScheduleStorage):
                         AssetDaemonAssetEvaluationsTable.c.asset_evaluation_body,
                         AssetDaemonAssetEvaluationsTable.c.evaluation_id,
                         AssetDaemonAssetEvaluationsTable.c.create_timestamp,
+                        AssetDaemonAssetEvaluationsTable.c.asset_key,
                     ]
                 )
                 .where(AssetDaemonAssetEvaluationsTable.c.asset_key == asset_key.to_string())
@@ -505,6 +506,23 @@ class SqlScheduleStorage(ScheduleStorage):
 
             if cursor:
                 query = query.where(AssetDaemonAssetEvaluationsTable.c.evaluation_id < cursor)
+
+            rows = db_fetch_mappings(conn, query)
+            return [AutoMaterializeAssetEvaluationRecord.from_db_row(row) for row in rows]
+
+    def get_auto_materialize_evaluations_for_evaluation_id(
+        self, evaluation_id: int
+    ) -> Sequence[AutoMaterializeAssetEvaluationRecord]:
+        with self.connect() as conn:
+            query = db_select(
+                [
+                    AssetDaemonAssetEvaluationsTable.c.id,
+                    AssetDaemonAssetEvaluationsTable.c.asset_evaluation_body,
+                    AssetDaemonAssetEvaluationsTable.c.evaluation_id,
+                    AssetDaemonAssetEvaluationsTable.c.create_timestamp,
+                    AssetDaemonAssetEvaluationsTable.c.asset_key,
+                ]
+            ).where(AssetDaemonAssetEvaluationsTable.c.evaluation_id == evaluation_id)
 
             rows = db_fetch_mappings(conn, query)
             return [AutoMaterializeAssetEvaluationRecord.from_db_row(row) for row in rows]

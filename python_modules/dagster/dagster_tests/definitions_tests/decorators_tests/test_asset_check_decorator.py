@@ -19,6 +19,7 @@ from dagster import (
     asset_check,
     define_asset_job,
 )
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 
 
@@ -118,8 +119,8 @@ def test_execute_asset_and_check():
     )
     assert (
         len(
-            instance.event_log_storage.get_asset_check_executions(
-                AssetKey("asset1"), "check1", limit=10
+            instance.event_log_storage.get_asset_check_execution_history(
+                AssetCheckKey(asset_key=AssetKey("asset1"), name="check1"), limit=10
             )
         )
         == 1
@@ -501,3 +502,18 @@ def test_managed_input_with_context():
     assert check1.asset_key == asset1.key
 
     execute_assets_and_checks(assets=[asset1], asset_checks=[check1])
+
+
+def test_doesnt_invoke_io_manager():
+    class DummyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            assert False
+
+        def load_input(self, context):
+            assert False
+
+    @asset_check(asset="asset1", description="desc")
+    def check1(context):
+        return AssetCheckResult(passed=True)
+
+    execute_assets_and_checks(asset_checks=[check1], resources={"io_manager": DummyIOManager()})

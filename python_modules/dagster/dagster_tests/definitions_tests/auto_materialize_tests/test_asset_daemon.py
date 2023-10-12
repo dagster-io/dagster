@@ -124,6 +124,8 @@ def test_daemon_ticks(daemon_paused_instance):
         assert ticks[0].timestamp == freeze_datetime.timestamp()
         assert ticks[0].tick_data.end_timestamp == freeze_datetime.timestamp()
         assert len(ticks[0].tick_data.run_ids) == 1
+        assert ticks[0].tick_data.auto_materialize_evaluation_id == 1
+        assert ticks[0].tick_data.run_requests == scenario.expected_run_requests
 
     freeze_datetime = pendulum.now("UTC").add(seconds=40)
     with pendulum.test(freeze_datetime):
@@ -142,6 +144,8 @@ def test_daemon_ticks(daemon_paused_instance):
         assert ticks[0].status == TickStatus.SKIPPED
         assert ticks[0].timestamp == freeze_datetime.timestamp()
         assert ticks[0].tick_data.end_timestamp == freeze_datetime.timestamp()
+        assert ticks[0].tick_data.auto_materialize_evaluation_id == 2
+        assert ticks[0].tick_data.run_requests == []
 
 
 def test_error_daemon_tick(daemon_not_paused_instance):
@@ -161,6 +165,8 @@ def test_error_daemon_tick(daemon_not_paused_instance):
         assert ticks[0].status == TickStatus.FAILURE
         assert ticks[0].timestamp == freeze_datetime.timestamp()
         assert ticks[0].tick_data.end_timestamp == freeze_datetime.timestamp()
+        assert ticks[0].tick_data.auto_materialize_evaluation_id == 1
+        assert ticks[0].tick_data.run_requests == []
         assert error_asset_scenario.expected_error_message in str(ticks[0].tick_data.error)
 
 
@@ -345,6 +351,19 @@ def test_daemon(scenario_item, daemon_not_paused_instance):
         assert run.asset_selection is not None
         assert set(run.asset_selection) == set(expected_run_request.asset_selection)
         assert run.tags.get(PARTITION_NAME_TAG) == expected_run_request.partition_key
+
+    ticks = daemon_not_paused_instance.get_ticks(
+        origin_id=FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
+        selector_id=FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
+    )
+    tick = ticks[0]
+    if tick.status == TickStatus.SUCCESS and scenario.expected_evaluations:
+        assert tick.requested_asset_materialization_count == sum(
+            [spec.num_requested for spec in scenario.expected_evaluations]
+        )
+        assert tick.requested_asset_keys == {
+            AssetKey.from_coercible(spec.asset_key) for spec in scenario.expected_evaluations
+        }
 
 
 def test_daemon_run_tags():

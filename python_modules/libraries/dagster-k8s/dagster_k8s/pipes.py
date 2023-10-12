@@ -80,6 +80,9 @@ class PipesK8sPodLogsMessageReader(PipesMessageReader):
             for log_line in log_chunk.split("\n"):
                 extract_message_or_forward_to_stdout(handler, log_line)
 
+    def no_messages_debug_text(self) -> str:
+        return "Attempted to read messages by extracting them from kubernetes pod logs directly."
+
 
 @experimental
 class _PipesK8sClient(PipesClient):
@@ -121,17 +124,21 @@ class _PipesK8sClient(PipesClient):
             or PipesK8sPodLogsMessageReader()
         )
 
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
+
     def run(
         self,
         *,
         context: OpExecutionContext,
+        extras: Optional[PipesExtras] = None,
         image: Optional[str] = None,
         command: Optional[Union[str, Sequence[str]]] = None,
         namespace: Optional[str] = None,
         env: Optional[Mapping[str, str]] = None,
         base_pod_meta: Optional[Mapping[str, Any]] = None,
         base_pod_spec: Optional[Mapping[str, Any]] = None,
-        extras: Optional[PipesExtras] = None,
     ) -> PipesClientCompletedInvocation:
         """Publish a kubernetes pod and wait for it to complete, enriched with the pipes protocol.
 
@@ -179,7 +186,7 @@ class _PipesK8sClient(PipesClient):
                 image=image,
                 command=command,
                 env_vars={
-                    **pipes_session.get_pipes_env_vars(),
+                    **pipes_session.get_bootstrap_env_vars(),
                     **(self.env or {}),
                     **(env or {}),
                 },

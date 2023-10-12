@@ -1,13 +1,18 @@
 import asyncio
 import os
 import sys
-from typing import TYPE_CHECKING, Any, AsyncIterator, Optional, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, Any, AsyncIterator, Mapping, Optional, Sequence, Tuple, Union
 
 # re-exports
 import dagster._check as check
 from dagster._annotations import deprecated
 from dagster._core.definitions.events import AssetKey
-from dagster._core.events import EngineEventData
+from dagster._core.events import (
+    AssetMaterialization,
+    AssetObservation,
+    DagsterEventType,
+    EngineEventData,
+)
 from dagster._core.instance import (
     DagsterInstance,
 )
@@ -47,6 +52,7 @@ if TYPE_CHECKING:
     from ...schema.roots.mutation import (
         GrapheneAssetWipeSuccess,
         GrapheneDeletePipelineRunSuccess,
+        GrapheneReportRunlessAssetEventsSuccess,
         GrapheneTerminateRunFailure,
         GrapheneTerminateRunsResult,
         GrapheneTerminateRunSuccess,
@@ -370,3 +376,47 @@ def wipe_assets(
     instance = graphene_info.context.instance
     instance.wipe_assets(asset_keys)
     return GrapheneAssetWipeSuccess(assetKeys=asset_keys)
+
+
+def create_asset_event(
+    event_type: DagsterEventType,
+    asset_key: AssetKey,
+    partition_key: Optional[str],
+    description: Optional[str],
+    tags: Optional[Mapping[str, str]],
+) -> Union[AssetMaterialization, AssetObservation]:
+    if event_type == DagsterEventType.ASSET_MATERIALIZATION:
+        return AssetMaterialization(
+            asset_key=asset_key, partition=partition_key, description=description, tags=tags
+        )
+    elif event_type == DagsterEventType.ASSET_OBSERVATION:
+        return AssetObservation(
+            asset_key=asset_key, partition=partition_key, description=description, tags=tags
+        )
+    else:
+        check.failed(f"Unexpected event type {event_type}")
+
+
+def report_runless_asset_events(
+    graphene_info: "ResolveInfo",
+    event_type: DagsterEventType,
+    asset_key: AssetKey,
+    partition_keys: Optional[Sequence[str]] = None,
+    description: Optional[str] = None,
+    tags: Optional[Mapping[str, str]] = None,
+) -> "GrapheneReportRunlessAssetEventsSuccess":
+    from ...schema.roots.mutation import GrapheneReportRunlessAssetEventsSuccess
+
+    instance = graphene_info.context.instance
+
+    if partition_keys is not None:
+        for partition_key in partition_keys:
+            instance.report_runless_asset_event(
+                create_asset_event(event_type, asset_key, partition_key, description, tags)
+            )
+    else:
+        instance.report_runless_asset_event(
+            create_asset_event(event_type, asset_key, None, description, tags)
+        )
+
+    return GrapheneReportRunlessAssetEventsSuccess(assetKey=asset_key)

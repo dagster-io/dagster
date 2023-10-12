@@ -22,6 +22,7 @@ from dagster._core.workspace.permissions import Permissions
 
 from dagster_graphql.implementation.fetch_auto_materialize_asset_evaluations import (
     fetch_auto_materialize_asset_evaluations,
+    fetch_auto_materialize_asset_evaluations_for_evaluation_id,
 )
 from dagster_graphql.implementation.fetch_env_vars import get_utilized_env_vars_or_error
 from dagster_graphql.implementation.fetch_logs import get_captured_log_metadata
@@ -487,7 +488,15 @@ class GrapheneQuery(graphene.ObjectType):
         assetKey=graphene.Argument(graphene.NonNull(GrapheneAssetKeyInput)),
         limit=graphene.Argument(graphene.NonNull(graphene.Int)),
         cursor=graphene.Argument(graphene.String),
-        description="Retrieve the auto materialization evaluation records for all assets.",
+        description="Retrieve the auto materialization evaluation records for an asset.",
+    )
+
+    autoMaterializeEvaluationsForEvaluationId = graphene.Field(
+        GrapheneAutoMaterializeAssetEvaluationRecordsOrError,
+        evaluationId=graphene.Argument(graphene.NonNull(graphene.Int)),
+        description=(
+            "Retrieve the auto materialization evaluation records for a given evaluation ID."
+        ),
     )
 
     autoMaterializeTicks = graphene.Field(
@@ -659,7 +668,7 @@ class GrapheneQuery(graphene.ObjectType):
 
     @capture_error
     def resolve_unloadableInstigationStatesOrError(
-        self, graphene_info: ResolveInfo, instigationType: Optional[GrapheneInstigationType] = None
+        self, graphene_info: ResolveInfo, instigationType: Optional[GrapheneInstigationType] = None  # type: ignore (idk)
     ):
         instigation_type = InstigatorType(instigationType) if instigationType else None
         return get_unloadable_instigator_states_or_error(graphene_info, instigation_type)
@@ -1031,6 +1040,15 @@ class GrapheneQuery(graphene.ObjectType):
     ):
         return fetch_auto_materialize_asset_evaluations(
             graphene_info=graphene_info, graphene_asset_key=assetKey, cursor=cursor, limit=limit
+        )
+
+    def resolve_autoMaterializeEvaluationsForEvaluationId(
+        self,
+        graphene_info: ResolveInfo,
+        evaluationId: int,
+    ):
+        return fetch_auto_materialize_asset_evaluations_for_evaluation_id(
+            graphene_info=graphene_info, evaluation_id=evaluationId
         )
 
     def resolve_autoMaterializeTicks(

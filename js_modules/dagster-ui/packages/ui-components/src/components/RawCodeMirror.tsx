@@ -81,5 +81,5 @@ export const RawCodeMirror = (props: Props) => {
     }
   }, [options]);
 
-  return <div ref={target} />;
+  return <div style={{height: '100%', overflow: 'hidden'}} ref={target} />;
 };

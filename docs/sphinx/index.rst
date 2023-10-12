@@ -45,6 +45,7 @@
    sections/api/apidocs/libraries/dagster-duckdb-pandas
    sections/api/apidocs/libraries/dagster-duckdb-pyspark
    sections/api/apidocs/libraries/dagster-duckdb-polars
+   sections/api/apidocs/libraries/dagster-embedded-elt
    sections/api/apidocs/libraries/dagster-fivetran
    sections/api/apidocs/libraries/dagster-docker
    sections/api/apidocs/libraries/dagster-gcp

@@ -1,7 +1,8 @@
 import memoize from 'lodash/memoize';
 import * as React from 'react';
 
-import {AssetKeyInput} from '../graphql/types';
+import {AssetKeyInput, AssetCheck} from '../graphql/types';
+import {useSetStateUpdateCallback} from '../hooks/useSetStateUpdateCallback';
 import {getJSONForKey, useStateWithStorage} from '../hooks/useStateWithStorage';
 import {
   LaunchpadSessionPartitionSetsFragment,
@@ -42,6 +43,9 @@ export interface IExecutionSession {
   mode: string | null;
   needsRefresh: boolean;
   assetSelection: {assetKey: AssetKeyInput; opNames: string[]}[] | null;
+  // Nullable for backwards compatibility
+  assetChecksAvailable?: Pick<AssetCheck, 'name' | 'canExecuteIndividually' | 'assetKey'>[];
+  includeSeparatelyExecutableChecks: boolean;
   solidSelection: string[] | null;
   solidSelectionQuery: string | null;
   flattenGraphs: boolean;
@@ -94,6 +98,8 @@ export const createSingleSession = (initial: IExecutionSessionChanges = {}, key?
     base: null,
     needsRefresh: false,
     assetSelection: null,
+    assetChecksAvailable: [],
+    includeSeparatelyExecutableChecks: true,
     solidSelection: null,
     solidSelectionQuery: '*',
     flattenGraphs: false,
@@ -125,7 +131,7 @@ export function applyCreateSession(
   };
 }
 
-type StorageHook = [IStorageData, (data: IStorageData) => void];
+type StorageHook = [IStorageData, (data: React.SetStateAction<IStorageData>) => void];
 
 const buildValidator =
   (initial: Partial<IExecutionSession> = {}) =>
@@ -164,7 +170,10 @@ export function useExecutionSessionStorage(
   );
 
   const [state, setState] = useStateWithStorage(key, validator);
-  const wrappedSetState = writeLaunchpadSessionToStorage(setState);
+  const wrappedSetState = useSetStateUpdateCallback(
+    state,
+    writeLaunchpadSessionToStorage(setState),
+  );
 
   return [state, wrappedSetState];
 }

@@ -59,7 +59,7 @@ from ..implementation.loader import (
     CrossRepoAssetDependedByLoader,
     StaleStatusLoader,
 )
-from ..schema.asset_checks import GrapheneAssetCheck, GrapheneAssetCheckNeedsMigrationError
+from ..schema.asset_checks import GrapheneAssetCheck, GrapheneAssetChecks
 from . import external
 from .asset_key import GrapheneAssetKey
 from .auto_materialize_policy import GrapheneAutoMaterializePolicy
@@ -1098,7 +1098,7 @@ class GrapheneAssetNode(graphene.ObjectType):
 
     def resolve_assetChecks(self, graphene_info: ResolveInfo) -> List[GrapheneAssetCheck]:
         res = fetch_asset_checks(graphene_info, self._external_asset_node.asset_key)
-        if isinstance(res, GrapheneAssetCheckNeedsMigrationError):
+        if not isinstance(res, GrapheneAssetChecks):
             return []
         return res.checks
 

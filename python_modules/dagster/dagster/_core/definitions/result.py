@@ -19,7 +19,7 @@ class MaterializeResult(
         [
             ("asset_key", PublicAttr[Optional[AssetKey]]),
             ("metadata", PublicAttr[Optional[MetadataUserInput]]),
-            ("check_results", PublicAttr[Optional[Sequence[AssetCheckResult]]]),
+            ("check_results", PublicAttr[Sequence[AssetCheckResult]]),
             ("data_version", PublicAttr[Optional[DataVersion]]),
         ],
     )
@@ -51,8 +51,15 @@ class MaterializeResult(
                 "metadata",
                 key_type=str,
             ),
-            check_results=check.opt_nullable_sequence_param(
+            check_results=check.opt_sequence_param(
                 check_results, "check_results", of_type=AssetCheckResult
             ),
             data_version=check.opt_inst_param(data_version, "data_version", DataVersion),
         )
+
+    def check_result_named(self, check_name: str) -> AssetCheckResult:
+        for check_result in self.check_results:
+            if check_result.check_name == check_name:
+                return check_result
+
+        check.failed(f"Could not find check result named {check_name}")

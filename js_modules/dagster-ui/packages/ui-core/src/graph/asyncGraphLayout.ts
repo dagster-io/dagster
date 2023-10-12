@@ -36,16 +36,38 @@ const asyncGetFullOpLayout = asyncMemoize((ops: ILayoutOp[], opts: LayoutOpGraph
 const _assetLayoutCacheKey = (graphData: GraphData) => {
   // Note: The "show secondary edges" toggle means that we need a cache key that incorporates
   // both the displayed nodes and the displayed edges.
+
+  // Make the cache key deterministic by alphabetically sorting all of the keys since the order
+  // of the keys is not guaranteed to be consistent even when the graph hasn't changed.
+
+  function recreateObjectWithKeysSorted(obj: Record<string, Record<string, boolean>>) {
+    const newObj: Record<string, Record<string, boolean>> = {};
+    Object.keys(obj)
+      .sort()
+      .forEach((key) => {
+        newObj[key] = Object.keys(obj[key]!)
+          .sort()
+          .reduce(
+            (acc, k) => {
+              acc[k] = obj[key]![k]!;
+              return acc;
+            },
+            {} as Record<string, boolean>,
+          );
+      });
+    return newObj;
+  }
+
   return JSON.stringify({
-    downstream: graphData.downstream,
-    upstream: graphData.upstream,
-    nodes: Object.keys(graphData),
+    downstream: recreateObjectWithKeysSorted(graphData.downstream),
+    upstream: recreateObjectWithKeysSorted(graphData.upstream),
+    nodes: Object.keys(graphData.nodes).sort(),
   });
 };
 
 const getFullAssetLayout = memoize(layoutAssetGraph, _assetLayoutCacheKey);
 
-const asyncGetFullAssetLayoutIndexDB = indexedDBAsyncMemoize(
+export const asyncGetFullAssetLayoutIndexDB = indexedDBAsyncMemoize(
   (graphData: GraphData, opts: LayoutAssetGraphOptions) => {
     return new Promise<AssetGraphLayout>((resolve) => {
       const worker = new Worker(new URL('../workers/dagre_layout.worker', import.meta.url));

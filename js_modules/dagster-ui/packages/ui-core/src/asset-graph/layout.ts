@@ -54,7 +54,7 @@ export const layoutAssetGraph = (
           marginx: MARGIN,
           marginy: MARGIN,
           nodesep: -10,
-          edgesep: 10,
+          edgesep: 90,
           ranksep: 60,
         }
       : {
@@ -272,16 +272,16 @@ export const getAssetNodeDimensions = (def: {
   } else {
     let height = 100; // top tags area + name + description
 
-    if (def.isPartitioned) {
-      height += 40;
-    }
     if (def.isSource) {
-      height += 30; // observed
+      height += 30; // last observed
     } else {
       height += 26; // status row
+      if (def.isPartitioned) {
+        height += 40;
+      }
     }
 
-    height += 30; // tag
+    height += 30; // tags beneath
 
     return {width, height};
   }

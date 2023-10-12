@@ -1,11 +1,11 @@
 from contextlib import contextmanager
 from dataclasses import dataclass
 from queue import Queue
-from typing import Any, Dict, Iterator, Mapping, Optional, Set, Union
+from typing import TYPE_CHECKING, Any, Dict, Iterator, Mapping, Optional, Set, Union
 
 from dagster_pipes import (
-    DAGSTER_PIPES_ENV_KEYS,
-    IS_DAGSTER_PIPES_PROCESS,
+    DAGSTER_PIPES_CONTEXT_ENV_VAR,
+    DAGSTER_PIPES_MESSAGES_ENV_VAR,
     PIPES_METADATA_TYPE_INFER,
     PipesContextData,
     PipesDataProvenance,
@@ -32,9 +32,12 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
     has_one_dimension_time_window_partitioning,
 )
+from dagster._core.errors import DagsterPipesExecutionError
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.execution.context.invocation import BoundOpExecutionContext
-from dagster._core.pipes.client import PipesMessageReader
+
+if TYPE_CHECKING:
+    from dagster._core.pipes.client import PipesMessageReader
 
 PipesExecutionResult: TypeAlias = Union[MaterializeResult, AssetCheckResult]
 
@@ -53,9 +56,11 @@ class PipesMessageHandler:
         self._result_queue: Queue[PipesExecutionResult] = Queue()
         # Only read by the main thread after all messages are handled, so no need for a lock
         self._unmaterialized_assets: Set[AssetKey] = set(context.selected_asset_keys)
+        self._received_any_msg = False
+        self._received_closed_msg = False
 
     @contextmanager
-    def handle_messages(self, message_reader: PipesMessageReader) -> Iterator[PipesParams]:
+    def handle_messages(self, message_reader: "PipesMessageReader") -> Iterator[PipesParams]:
         with message_reader.read_messages(self) as params:
             yield params
         for key in self._unmaterialized_assets:
@@ -64,6 +69,14 @@ class PipesMessageHandler:
     def clear_result_queue(self) -> Iterator[PipesExecutionResult]:
         while not self._result_queue.empty():
             yield self._result_queue.get()
+
+    @property
+    def received_any_message(self) -> bool:
+        return self._received_any_msg
+
+    @property
+    def received_closed_message(self) -> bool:
+        return self._received_closed_msg
 
     def _resolve_metadata(
         self, metadata: Mapping[str, PipesMetadataValue]
@@ -108,12 +121,28 @@ class PipesMessageHandler:
 
     # Type ignores because we currently validate in individual handlers
     def handle_message(self, message: PipesMessage) -> None:
-        if message["method"] == "report_asset_materialization":
+        if self._received_closed_msg:
+            self._context.log.warn(f"[pipes] unexpected message received after closed: `{message}`")
+
+        if not self._received_any_msg:
+            self._received_any_msg = True
+            self._context.log.info("[pipes] external process successfully opened dagster pipes.")
+
+        if message["method"] == "opened":
+            pass
+        elif message["method"] == "closed":
+            self._handle_closed()
+        elif message["method"] == "report_asset_materialization":
             self._handle_report_asset_materialization(**message["params"])  # type: ignore
         elif message["method"] == "report_asset_check":
             self._handle_report_asset_check(**message["params"])  # type: ignore
         elif message["method"] == "log":
             self._handle_log(**message["params"])  # type: ignore
+        else:
+            raise DagsterPipesExecutionError(f"Unknown message method: {message['method']}")
+
+    def _handle_closed(self) -> None:
+        self._received_closed_msg = True
 
     def _handle_report_asset_materialization(
         self,
@@ -165,15 +194,6 @@ class PipesMessageHandler:
         self._context.log.log(level, message)
 
 
-def _ext_params_as_env_vars(
-    context_injector_params: PipesParams, message_reader_params: PipesParams
-) -> Mapping[str, str]:
-    return {
-        DAGSTER_PIPES_ENV_KEYS["context"]: encode_env_var(context_injector_params),
-        DAGSTER_PIPES_ENV_KEYS["messages"]: encode_env_var(message_reader_params),
-    }
-
-
 @experimental
 @dataclass
 class PipesSession:
@@ -186,7 +206,7 @@ class PipesSession:
     on a `PipesSession` object.
 
     During the session, an external process should be started and the parameters injected into its
-    environment. The typical way to do this is to call :py:meth:`PipesSession.get_pipes_env_vars`
+    environment. The typical way to do this is to call :py:meth:`PipesSession.get_bootstrap_env_vars`
     and pass the result as environment variables.
 
     During execution, results (e.g. asset materializations) are reported by the external process and
@@ -212,7 +232,7 @@ class PipesSession:
     message_reader_params: PipesParams
 
     @public
-    def get_pipes_env_vars(self) -> Dict[str, str]:
+    def get_bootstrap_env_vars(self) -> Dict[str, str]:
         """Encode context injector and message reader params as environment variables.
 
         Passing environment variables is the typical way to expose the pipes I/O parameters
@@ -220,14 +240,26 @@ class PipesSession:
 
         Returns:
             Mapping[str, str]: Environment variables to pass to the external process. The values are
-            base-64-encoded and compressed with gzip.
+            serialized as json, compressed with gzip, and then base-64-encoded.
         """
         return {
-            DAGSTER_PIPES_ENV_KEYS[IS_DAGSTER_PIPES_PROCESS]: encode_env_var(True),
-            **_ext_params_as_env_vars(
-                context_injector_params=self.context_injector_params,
-                message_reader_params=self.message_reader_params,
-            ),
+            param_name: encode_env_var(param_value)
+            for param_name, param_value in self.get_bootstrap_params().items()
+        }
+
+    @public
+    def get_bootstrap_params(self) -> Dict[str, Any]:
+        """Get the params necessary to bootstrap a launched pipes process. These parameters are typically
+        are as environment variable. See `get_bootstrap_env_vars`. It is the context injector's
+        responsibility to decide how to pass these parameters to the external environment.
+
+        Returns:
+            Mapping[str, str]: Parameters to pass to the external process and their corresponding
+            values that must be passed by the context injector.
+        """
+        return {
+            DAGSTER_PIPES_CONTEXT_ENV_VAR: self.context_injector_params,
+            DAGSTER_PIPES_MESSAGES_ENV_VAR: self.message_reader_params,
         }
 
     @public

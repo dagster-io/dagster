@@ -163,7 +163,7 @@ def databricks_asset(context: AssetExecutionContext):
         # `pipes_session`. Yield them all after Databricks execution is finished.
 
         # Dict[str, str] with environment variables containing Pipes comms info.
-        env_vars = pipes_session.get_pipes_env_vars()
+        env_vars = pipes_session.get_pipes_bootstrap_env_vars()
 
         # Some function that handles launching/monitoring of the Databricks job.
         # It must ensure that the `env_vars` are set on the executing cluster.
@@ -175,7 +175,7 @@ def databricks_asset(context: AssetExecutionContext):
         # pipes_session.get_results()` as often as you like. `get_results` returns
         # an iterator that your custom code can `yield from` to forward the
         # results back to the materialize function. Note you will need to extract
-        # the env vars by calling `pipes_session.get_pipes_env_vars()`,
+        # the env vars by calling `pipes_session.get_pipes_bootstrap_env_vars()`,
         # and launch the Databricks job in the same way as with (1).
 
         # The function should return an `Iterator[MaterializeResult]`.

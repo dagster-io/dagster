@@ -303,7 +303,7 @@ def get_manifest_and_translator_from_dbt_assets(
     check.invariant(len(dbt_assets) == 1, "Exactly one dbt AssetsDefinition is required")
     dbt_assets_def = dbt_assets[0]
     metadata_by_key = dbt_assets_def.metadata_by_key or {}
-    first_asset_key = next(iter(dbt_assets_def.keys))
+    first_asset_key = next(iter(dbt_assets_def.metadata_by_key.keys()))
     first_metadata = metadata_by_key.get(first_asset_key, {})
     manifest_wrapper: Optional["DbtManifestWrapper"] = first_metadata.get(MANIFEST_METADATA_KEY)
     if manifest_wrapper is None:
@@ -518,15 +518,6 @@ def default_description_fn(dbt_resource_props: Mapping[str, Any], display_raw_sq
     return "\n\n".join(filter(None, description_sections))
 
 
-def is_asset_check_from_dbt_resource_props(
-    dagster_dbt_translator_settings: "DagsterDbtTranslatorSettings",
-    dbt_resource_props: Mapping[str, Any],
-) -> bool:
-    return dagster_dbt_translator_settings.enable_asset_checks or dbt_resource_props["meta"].get(
-        "dagster", {}
-    ).get("asset_check", False)
-
-
 def is_generic_test_on_attached_node_from_dbt_resource_props(
     unique_id: str, dbt_resource_props: Mapping[str, Any]
 ) -> bool:
@@ -542,14 +533,16 @@ def default_asset_check_fn(
     dagster_dbt_translator_settings: "DagsterDbtTranslatorSettings",
     dbt_resource_props: Mapping[str, Any],
 ) -> Optional[AssetCheckSpec]:
-    is_asset_check = is_asset_check_from_dbt_resource_props(
-        dagster_dbt_translator_settings, dbt_resource_props
-    )
     is_generic_test_on_attached_node = is_generic_test_on_attached_node_from_dbt_resource_props(
         unique_id, dbt_resource_props
     )
 
-    if not all([is_asset_check, is_generic_test_on_attached_node]):
+    if not all(
+        [
+            dagster_dbt_translator_settings.enable_asset_checks,
+            is_generic_test_on_attached_node,
+        ]
+    ):
         return None
 
     return AssetCheckSpec(

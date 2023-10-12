@@ -1,72 +1,62 @@
 import json
 import os
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 import pytest
-from dagster import AssetCheckResult, AssetExecutionContext, AssetKey, materialize
+from dagster import AssetCheckResult, AssetExecutionContext, AssetKey, AssetSelection, materialize
 from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.asset_defs import load_assets_from_dbt_manifest
 from dagster_dbt.core.resources_v2 import DbtCliResource
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
+from dbt.version import __version__ as dbt_version
+from packaging import version
 
 pytest.importorskip("dbt.version", minversion="1.4")
+
+is_dbt_1_4 = version.parse("1.4.0") <= version.parse(dbt_version) < version.parse("1.5.0")
 
 
 test_asset_checks_dbt_project_dir = (
     Path(__file__).joinpath("..", "dbt_projects", "test_dagster_asset_checks").resolve()
 )
-no_asset_checks_manifest_path = test_asset_checks_dbt_project_dir.joinpath(
-    "manifest_no_asset_checks.json"
-).resolve()
-asset_checks_manifest_path = test_asset_checks_dbt_project_dir.joinpath(
-    "manifest_with_asset_checks.json"
-).resolve()
-manifest_no_asset_checks_json = json.loads(no_asset_checks_manifest_path.read_bytes())
-manifest_asset_checks_json = json.loads(asset_checks_manifest_path.read_bytes())
+manifest_path = test_asset_checks_dbt_project_dir.joinpath("manifest.json").resolve()
+manifest = json.loads(manifest_path.read_bytes())
+
+dagster_dbt_translator_with_checks = DagsterDbtTranslator(
+    settings=DagsterDbtTranslatorSettings(enable_asset_checks=True)
+)
 
 
 def test_with_asset_checks() -> None:
-    @dbt_assets(manifest=manifest_no_asset_checks_json)
+    @dbt_assets(manifest=manifest)
     def my_dbt_assets_no_checks(): ...
 
-    [load_my_dbt_assets_no_checks] = load_assets_from_dbt_manifest(
-        manifest=manifest_no_asset_checks_json
-    )
+    [load_my_dbt_assets_no_checks] = load_assets_from_dbt_manifest(manifest=manifest)
 
     # dbt tests are present, but are not modeled as Dagster asset checks
     for asset_def in [my_dbt_assets_no_checks, load_my_dbt_assets_no_checks]:
-        assert any(
-            unique_id.startswith("test")
-            for unique_id in manifest_no_asset_checks_json["nodes"].keys()
-        )
+        assert any(unique_id.startswith("test") for unique_id in manifest["nodes"].keys())
         assert not asset_def.check_specs_by_output_name
 
-    @dbt_assets(manifest=manifest_asset_checks_json)
+    @dbt_assets(
+        manifest=manifest,
+        dagster_dbt_translator=dagster_dbt_translator_with_checks,
+    )
     def my_dbt_assets_with_checks(): ...
 
-    @dbt_assets(
-        manifest=manifest_no_asset_checks_json,
-        dagster_dbt_translator=DagsterDbtTranslator(
-            settings=DagsterDbtTranslatorSettings(enable_asset_checks=True)
-        ),
-    )
-    def my_dbt_assets_with_checks_from_translator(): ...
-
     [load_my_dbt_assets_with_checks] = load_assets_from_dbt_manifest(
-        manifest=manifest_asset_checks_json
+        manifest=manifest_path,
+        dagster_dbt_translator=dagster_dbt_translator_with_checks,
     )
 
     # dbt tests are present, and are modeled as Dagster asset checks
     for asset_def in [
         my_dbt_assets_with_checks,
-        my_dbt_assets_with_checks_from_translator,
         load_my_dbt_assets_with_checks,
     ]:
-        assert any(
-            unique_id.startswith("test") for unique_id in manifest_asset_checks_json["nodes"].keys()
-        )
+        assert any(unique_id.startswith("test") for unique_id in manifest["nodes"].keys())
         assert asset_def.check_specs_by_output_name
 
         # dbt singular tests are not modeled as Dagster asset checks
@@ -124,10 +114,40 @@ def test_enable_asset_checks_with_custom_translator() -> None:
         ],
     ],
 )
-def test_asset_check_execution(dbt_commands: List[List[str]]) -> None:
+@pytest.mark.parametrize(
+    "selection",
+    [
+        None,
+        pytest.param(
+            AssetSelection.keys(AssetKey(["customers"])),
+            marks=pytest.mark.xfail(
+                is_dbt_1_4,
+                reason="DBT_INDIRECT_SELECTION=empty is not supported in dbt 1.4",
+            ),
+        ),
+        pytest.param(
+            AssetSelection.keys(AssetKey(["customers"])).without_checks(),
+            marks=pytest.mark.xfail(
+                is_dbt_1_4,
+                reason="DBT_INDIRECT_SELECTION=empty is not supported in dbt 1.4",
+            ),
+        ),
+        AssetSelection.keys(AssetKey(["customers"]))
+        - AssetSelection.keys(AssetKey(["customers"])).without_checks(),
+    ],
+    ids=[
+        "no selection",
+        "select customers with checks",
+        "select customers without checks",
+        "select only checks for customers",
+    ],
+)
+def test_asset_check_execution(
+    dbt_commands: List[List[str]], selection: Optional[AssetSelection]
+) -> None:
     dbt = DbtCliResource(project_dir=os.fspath(test_asset_checks_dbt_project_dir))
 
-    @dbt_assets(manifest=manifest_asset_checks_json)
+    @dbt_assets(manifest=manifest, dagster_dbt_translator=dagster_dbt_translator_with_checks)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         for dbt_command in dbt_commands:
             yield from dbt.cli(dbt_command, context=context).stream()
@@ -137,6 +157,7 @@ def test_asset_check_execution(dbt_commands: List[List[str]]) -> None:
         resources={
             "dbt": dbt,
         },
+        selection=selection,
     )
 
     assert result.success
@@ -144,7 +165,11 @@ def test_asset_check_execution(dbt_commands: List[List[str]]) -> None:
     events = []
     invocation_id = ""
     for dbt_command in dbt_commands:
-        dbt_cli_invocation = dbt.cli(dbt_command, manifest=manifest_asset_checks_json)
+        dbt_cli_invocation = dbt.cli(
+            dbt_command,
+            manifest=manifest,
+            dagster_dbt_translator=dagster_dbt_translator_with_checks,
+        )
 
         events += list(dbt_cli_invocation.stream())
         invocation_id = dbt_cli_invocation.get_artifact("run_results.json")["metadata"][

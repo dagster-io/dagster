@@ -112,6 +112,8 @@ const BATCHING_INTERVAL = 250;
 export const SUBSCRIPTION_IDLE_POLL_RATE = 30 * 1000;
 const SUBSCRIPTION_MAX_POLL_RATE = 2 * 1000;
 
+export const LiveDataPollRateContext = React.createContext<number>(SUBSCRIPTION_IDLE_POLL_RATE);
+
 type DataForNodeListener = (stringKey: string, data?: LiveDataForNode) => void;
 
 const AssetLiveDataContext = React.createContext<{
@@ -179,6 +181,8 @@ export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) =
     setOldestDataTimestamp(oldestDataTimestamp === Infinity ? 0 : oldestDataTimestamp);
   }, []);
 
+  const pollRate = React.useContext(LiveDataPollRateContext);
+
   React.useEffect(() => {
     if (!isDocumentVisible) {
       return;
@@ -186,26 +190,29 @@ export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) =
     // Check for assets to fetch every 5 seconds to simplify logic
     // This means assets will be fetched at most 5 + SUBSCRIPTION_IDLE_POLL_RATE after their first fetch
     // but then will be fetched every SUBSCRIPTION_IDLE_POLL_RATE after that
-    const interval = setInterval(() => fetchData(client, onUpdatingOrUpdated), 5000);
-    fetchData(client, onUpdatingOrUpdated);
+    const interval = setInterval(
+      () => fetchData(client, pollRate, onUpdatingOrUpdated),
+      Math.min(pollRate, 5000),
+    );
+    fetchData(client, pollRate, onUpdatingOrUpdated);
     return () => {
       clearInterval(interval);
     };
-  }, [client, isDocumentVisible, onUpdatingOrUpdated]);
+  }, [client, pollRate, isDocumentVisible, onUpdatingOrUpdated]);
 
   React.useEffect(() => {
     if (!needsImmediateFetch) {
       return;
     }
     const timeout = setTimeout(() => {
-      fetchData(client, onUpdatingOrUpdated);
+      fetchData(client, pollRate, onUpdatingOrUpdated);
       setNeedsImmediateFetch(false);
       // Wait BATCHING_INTERVAL before doing fetch in case the component is unmounted quickly (eg. in the case of scrolling/filtering quickly)
     }, BATCHING_INTERVAL);
     return () => {
       clearTimeout(timeout);
     };
-  }, [client, needsImmediateFetch, onUpdatingOrUpdated]);
+  }, [client, needsImmediateFetch, pollRate, onUpdatingOrUpdated]);
 
   React.useEffect(() => {
     providerListener = (stringKey, assetData) => {
@@ -297,6 +304,7 @@ let isFetching = false;
 async function _batchedQueryAssets(
   assetKeys: AssetKeyInput[],
   client: ApolloClient<any>,
+  pollRate: number,
   setData: (data: Record<string, LiveDataForNode>) => void,
   onUpdatingOrUpdated: () => void,
 ) {
@@ -313,19 +321,29 @@ async function _batchedQueryAssets(
     };
   });
   onUpdatingOrUpdated();
-  const data = await _queryAssetKeys(client, assetKeys);
-  const fetchedTime = Date.now();
-  assetKeys.forEach((key) => {
-    lastFetchedOrRequested[tokenForAssetKey(key)] = {
-      fetched: fetchedTime,
-    };
-  });
-  setData(data);
-  onUpdatingOrUpdated();
-  isFetching = false;
-  const nextAssets = _determineAssetsToFetch();
-  if (nextAssets.length) {
-    _batchedQueryAssets(nextAssets, client, setData, onUpdatingOrUpdated);
+
+  function doNextFetch(pollRate: number) {
+    isFetching = false;
+    const nextAssets = _determineAssetsToFetch(pollRate);
+    if (nextAssets.length) {
+      _batchedQueryAssets(nextAssets, client, pollRate, setData, onUpdatingOrUpdated);
+    }
+  }
+  try {
+    const data = await _queryAssetKeys(client, assetKeys);
+    const fetchedTime = Date.now();
+    assetKeys.forEach((key) => {
+      lastFetchedOrRequested[tokenForAssetKey(key)] = {
+        fetched: fetchedTime,
+      };
+    });
+    setData(data);
+    onUpdatingOrUpdated();
+    doNextFetch(pollRate);
+  } catch (e) {
+    console.error(e);
+    // Retry fetching in 5 seconds if theres a network error
+    setTimeout(doNextFetch, 5000);
   }
 }
 
@@ -359,7 +377,7 @@ function _unsubscribeToAssetKey(assetKey: AssetKeyInput, setData: DataForNodeLis
 }
 
 // Determine assets to fetch taking into account the last time they were fetched and whether they are already being fetched.
-function _determineAssetsToFetch() {
+function _determineAssetsToFetch(pollRate: number) {
   const assetsToFetch: AssetKeyInput[] = [];
   const assetsWithoutData: AssetKeyInput[] = [];
   const allKeys = Object.keys(_assetKeyListeners);
@@ -370,7 +388,7 @@ function _determineAssetsToFetch() {
       continue;
     }
     const lastFetchTime = lastFetchedOrRequested[key]?.fetched ?? null;
-    if (lastFetchTime !== null && Date.now() - lastFetchTime < SUBSCRIPTION_IDLE_POLL_RATE) {
+    if (lastFetchTime !== null && Date.now() - lastFetchTime < pollRate) {
       continue;
     }
     if (lastFetchTime && isDocumentVisible()) {
@@ -384,10 +402,11 @@ function _determineAssetsToFetch() {
   return assetsWithoutData.concat(assetsToFetch).slice(0, BATCH_SIZE);
 }
 
-function fetchData(client: ApolloClient<any>, onUpdatingOrUpdated: () => void) {
+function fetchData(client: ApolloClient<any>, pollRate: number, onUpdatingOrUpdated: () => void) {
   _batchedQueryAssets(
-    _determineAssetsToFetch(),
+    _determineAssetsToFetch(pollRate),
     client,
+    pollRate,
     (data) => {
       Object.entries(data).forEach(([key, assetData]) => {
         const listeners = _assetKeyListeners[key];

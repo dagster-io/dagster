@@ -246,13 +246,15 @@ class AssetBackfillData(NamedTuple):
         ) -> Union[PartitionedAssetBackfillStatus, UnpartitionedAssetBackfillStatus]:
             if self.target_subset.asset_graph.get_partitions_def(asset_key) is not None:
                 materialized_subset = self.materialized_subset.get_partitions_subset(asset_key)
-                failed_partitions = set(
-                    self.failed_and_downstream_subset.get_partitions_subset(
-                        asset_key
-                    ).get_partition_keys()
-                )
-                requested_partitions = set(
-                    self.requested_subset.get_partitions_subset(asset_key).get_partition_keys()
+                failed_subset = self.failed_and_downstream_subset.get_partitions_subset(asset_key)
+                requested_subset = self.requested_subset.get_partitions_subset(asset_key)
+
+                # The failed subset includes partitions that failed and their downstream partitions.
+                # The downstream partitions are not included in the requested subset, so we determine
+                # the in progress subset by subtracting partitions that are failed and requested.
+                requested_and_failed_subset = failed_subset & requested_subset
+                in_progress_subset = requested_subset - (
+                    requested_and_failed_subset | materialized_subset
                 )
 
                 return PartitionedAssetBackfillStatus(
@@ -260,10 +262,8 @@ class AssetBackfillData(NamedTuple):
                     len(self.target_subset.get_partitions_subset(asset_key)),
                     {
                         AssetBackfillStatus.MATERIALIZED: len(materialized_subset),
-                        AssetBackfillStatus.FAILED: len(failed_partitions),
-                        AssetBackfillStatus.IN_PROGRESS: len(requested_partitions) - (
-                            len(failed_partitions & requested_partitions) + len(materialized_subset)
-                        ),
+                        AssetBackfillStatus.FAILED: len(failed_subset - materialized_subset),
+                        AssetBackfillStatus.IN_PROGRESS: len(in_progress_subset),
                     },
                 )
             else:
@@ -629,10 +629,17 @@ def _submit_runs_and_update_backfill_in_chunks(
         instance.update_backfill(updated_backfill)
 
     if not mid_iteration_cancel_requested:
-        check.invariant(
-            submitted_partitions == asset_backfill_iteration_result.backfill_data.requested_subset,
-            "Did not submit run requests for all expected partitions",
-        )
+        if submitted_partitions != asset_backfill_iteration_result.backfill_data.requested_subset:
+            missing_partitions = list(
+                (
+                    asset_backfill_iteration_result.backfill_data.requested_subset
+                    - submitted_partitions
+                ).iterate_asset_partitions()
+            )
+            check.failed(
+                "Did not submit run requests for all expected partitions. \n\nPartitions not"
+                f" submitted: {missing_partitions}",
+            )
 
     yield backfill_data_with_submitted_runs
 

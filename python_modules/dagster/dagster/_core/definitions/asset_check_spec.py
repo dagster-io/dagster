@@ -56,7 +56,7 @@ class AssetCheckSpec(
         ],
     )
 ):
-    """Defines information about an check, except how to execute it.
+    """Defines information about an asset check, except how to execute it.
 
     AssetCheckSpec is often used as an argument to decorators that decorator a function that can
     execute multiple checks - e.g. `@asset`, and `@multi_asset`. It defines one of the checks that

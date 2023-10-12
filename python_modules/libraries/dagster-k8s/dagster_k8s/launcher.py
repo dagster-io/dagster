@@ -206,7 +206,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         pod_name = job_name
 
         job_origin = check.not_none(run.job_code_origin)
-        user_defined_k8s_config = container_context.get_run_user_defined_k8s_config()
+        user_defined_k8s_config = container_context.run_k8s_config
         repository_origin = job_origin.repository_origin
 
         job_config = container_context.get_k8s_job_config(
@@ -362,7 +362,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
 
         job_name = get_job_name_from_run_id(run.run_id, resume_attempt_number=resume_attempt_number)
         namespace = container_context.namespace
-        user_defined_k8s_config = container_context.get_run_user_defined_k8s_config()
+        user_defined_k8s_config = container_context.run_k8s_config
         container_name = user_defined_k8s_config.container_config.get("name", "dagster")
         pod_names = self._api_client.get_pod_names_in_job(job_name, namespace=namespace)
         full_msg = ""

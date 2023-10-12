@@ -1,6 +1,8 @@
 import graphene
 import pendulum
+from dagster._core.events import DagsterEventType
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
+from dagster._utils import check
 
 from .pipelines.status import GrapheneRunStatus
 from .runs import GrapheneRunConfigData
@@ -188,6 +190,34 @@ class GrapheneLaunchBackfillParams(graphene.InputObjectType):
         name = "LaunchBackfillParams"
 
 
+class GrapheneRunlessAssetEventType(graphene.Enum):
+    """The event type of an asset event."""
+
+    ASSET_MATERIALIZATION = "ASSET_MATERIALIZATION"
+    ASSET_OBSERVATION = "ASSET_OBSERVATION"
+
+    class Meta:
+        name = "AssetEventType"
+
+    def to_dagster_event_type(self) -> DagsterEventType:
+        if self == GrapheneRunlessAssetEventType.ASSET_MATERIALIZATION:
+            return DagsterEventType.ASSET_MATERIALIZATION
+        elif self == GrapheneRunlessAssetEventType.ASSET_OBSERVATION:
+            return DagsterEventType.ASSET_OBSERVATION
+        else:
+            check.assert_never(self)
+
+
+class GrapheneReportRunlessAssetEventsParams(graphene.InputObjectType):
+    eventType = graphene.NonNull(GrapheneRunlessAssetEventType)
+    assetKey = graphene.NonNull(GrapheneAssetKeyInput)
+    partitionKeys = graphene.InputField(graphene.List(graphene.String))
+    description = graphene.String()
+
+    class Meta:
+        name = "ReportRunlessAssetEventsParams"
+
+
 class GrapheneSensorSelector(graphene.InputObjectType):
     repositoryName = graphene.NonNull(graphene.String)
     repositoryLocationName = graphene.NonNull(graphene.String)
@@ -348,4 +378,5 @@ types = [
     GrapheneStepExecution,
     GrapheneStepOutputHandle,
     GrapheneInputTag,
+    GrapheneReportRunlessAssetEventsParams,
 ]

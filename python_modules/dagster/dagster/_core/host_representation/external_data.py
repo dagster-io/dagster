@@ -45,7 +45,7 @@ from dagster._core.definitions import (
     ScheduleDefinition,
     SourceAsset,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckSpec
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_sensor_definition import AssetSensorDefinition
 from dagster._core.definitions.asset_spec import (
     SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
@@ -1099,6 +1099,7 @@ class ExternalAssetCheck(
             ("name", str),
             ("asset_key", AssetKey),
             ("description", Optional[str]),
+            ("atomic_execution_unit_id", Optional[str]),
         ],
     )
 ):
@@ -1109,21 +1110,21 @@ class ExternalAssetCheck(
         name: str,
         asset_key: AssetKey,
         description: Optional[str],
+        atomic_execution_unit_id: Optional[str] = None,
     ):
         return super(ExternalAssetCheck, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
             asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
             description=check.opt_str_param(description, "description"),
+            atomic_execution_unit_id=check.opt_str_param(
+                atomic_execution_unit_id, "automic_execution_unit_id"
+            ),
         )
 
-    @classmethod
-    def from_spec(cls, spec: AssetCheckSpec):
-        return cls(
-            name=spec.name,
-            asset_key=spec.asset_key,
-            description=spec.description,
-        )
+    @property
+    def key(self) -> AssetCheckKey:
+        return AssetCheckKey(asset_key=self.asset_key, name=self.name)
 
 
 @whitelist_for_serdes(
@@ -1447,16 +1448,22 @@ def external_asset_checks_from_defs(
         # checks defined with @asset_check
         for asset_check_def in asset_layer.asset_checks_defs:
             for spec in asset_check_def.specs:
-                check_specs_dict[(spec.asset_key, spec.name)] = spec
+                check_specs_dict[(spec.asset_key, spec.name)] = ExternalAssetCheck(
+                    name=spec.name, asset_key=spec.asset_key, description=spec.description
+                )
 
         # checks defined on @asset
         for asset_def in asset_layer.assets_defs_by_key.values():
             for spec in asset_def.check_specs:
-                check_specs_dict[(spec.asset_key, spec.name)] = spec
+                atomic_execution_unit_id = asset_def.unique_id if not asset_def.can_subset else None
+                check_specs_dict[(spec.asset_key, spec.name)] = ExternalAssetCheck(
+                    name=spec.name,
+                    asset_key=spec.asset_key,
+                    description=spec.description,
+                    atomic_execution_unit_id=atomic_execution_unit_id,
+                )
 
-    check_specs = sorted(check_specs_dict.values(), key=lambda spec: (spec.asset_key, spec.name))
-
-    return [ExternalAssetCheck.from_spec(spec) for spec in check_specs]
+    return sorted(check_specs_dict.values(), key=lambda check: (check.asset_key, check.name))
 
 
 def external_asset_nodes_from_defs(
@@ -1479,14 +1486,16 @@ def external_asset_nodes_from_defs(
     code_version_by_asset_key: Dict[AssetKey, Optional[str]] = dict()
     group_name_by_asset_key: Dict[AssetKey, str] = {}
     descriptions_by_asset_key: Dict[AssetKey, str] = {}
-    atomic_execution_unit_ids_by_asset_key: Dict[AssetKey, str] = {}
+    atomic_execution_unit_ids_by_key: Dict[Union[AssetKey, AssetCheckKey], str] = {}
 
     for job_def in job_defs:
         asset_layer = job_def.asset_layer
         asset_info_by_node_output = asset_layer.asset_info_by_node_output_handle
 
         for node_output_handle, asset_info in asset_info_by_node_output.items():
-            if not asset_info.is_required:
+            if not asset_info.is_required or not asset_layer.is_materializable_for_asset(
+                asset_info.key
+            ):
                 continue
             output_key = asset_info.key
             if output_key not in op_names_by_asset_key:
@@ -1531,7 +1540,9 @@ def external_asset_nodes_from_defs(
                 atomic_execution_unit_id = assets_def.unique_id
 
                 for asset_key in assets_def.keys:
-                    atomic_execution_unit_ids_by_asset_key[asset_key] = atomic_execution_unit_id
+                    atomic_execution_unit_ids_by_key[asset_key] = atomic_execution_unit_id
+            if len(assets_def.keys) == 1 and assets_def.check_keys and not assets_def.can_subset:
+                atomic_execution_unit_ids_by_key[assets_def.key] = assets_def.unique_id
 
         group_name_by_asset_key.update(asset_layer.group_names_by_assets())
 
@@ -1654,7 +1665,7 @@ def external_asset_nodes_from_defs(
                 freshness_policy=freshness_policy_by_asset_key.get(asset_key),
                 auto_materialize_policy=auto_materialize_policy_by_asset_key.get(asset_key),
                 backfill_policy=backfill_policy_by_asset_key.get(asset_key),
-                atomic_execution_unit_id=atomic_execution_unit_ids_by_asset_key.get(asset_key),
+                atomic_execution_unit_id=atomic_execution_unit_ids_by_key.get(asset_key),
                 required_top_level_resources=required_top_level_resources,
             )
         )
@@ -1792,8 +1803,13 @@ def external_resource_data_from_def(
     # use the resource function name as the resource type if it's a function resource
     # (ie direct instantiation of ResourceDefinition or IOManagerDefinition)
     if type(resource_type_def) in (ResourceDefinition, IOManagerDefinition):
-        module_name = check.not_none(inspect.getmodule(resource_type_def.resource_fn)).__name__
-        resource_type = f"{module_name}.{resource_type_def.resource_fn.__name__}"
+        original_resource_fn = (
+            resource_type_def._hardcoded_resource_type  # noqa: SLF001
+            if resource_type_def._hardcoded_resource_type  # noqa: SLF001
+            else resource_type_def.resource_fn
+        )
+        module_name = check.not_none(inspect.getmodule(original_resource_fn)).__name__
+        resource_type = f"{module_name}.{original_resource_fn.__name__}"
     # if it's a Pythonic resource, get the underlying Pythonic class name
     elif isinstance(
         resource_type_def,

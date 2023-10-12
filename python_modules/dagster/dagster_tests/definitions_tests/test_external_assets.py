@@ -7,14 +7,17 @@ from dagster import (
     AssetsDefinition,
     AutoMaterializePolicy,
     DagsterInstance,
+    DataVersion,
     Definitions,
     IOManager,
     JobDefinition,
     SourceAsset,
     _check as check,
     asset,
+    observable_source_asset,
 )
 from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.external_asset import (
     create_external_asset_from_source_asset,
     external_assets_from_specs,
@@ -49,6 +52,26 @@ def test_external_asset_basic_creation() -> None:
     assert assets_def.group_names_by_key[expected_key] == "a_group"
     assert assets_def.descriptions_by_key[expected_key] == "desc"
     assert assets_def.is_asset_executable(expected_key) is False
+
+
+def test_multi_external_asset_basic_creation() -> None:
+    for assets_def in external_assets_from_specs(
+        specs=[
+            AssetSpec(
+                key="external_asset_one",
+                description="desc",
+                metadata={"user_metadata": "value"},
+                group_name="a_group",
+            ),
+            AssetSpec(
+                key=AssetKey(["value", "another_spec"]),
+                description="desc",
+                metadata={"user_metadata": "value"},
+                group_name="a_group",
+            ),
+        ]
+    ):
+        assert isinstance(assets_def, AssetsDefinition)
 
 
 def test_invalid_external_asset_creation() -> None:
@@ -202,3 +225,75 @@ def test_how_partitioned_source_assets_are_backwards_compatible() -> None:
 
     assert result_two.success
     assert result_two.output_for_node("an_asset") == "hardcoded-computed-2021-01-03"
+
+
+def test_observable_source_asset_decorator() -> None:
+    @observable_source_asset
+    def an_observable_source_asset() -> DataVersion:
+        return DataVersion("foo")
+
+    assets_def = create_external_asset_from_source_asset(an_observable_source_asset)
+    assert assets_def.is_asset_executable(an_observable_source_asset.key)
+    defs = Definitions(assets=[assets_def])
+
+    instance = DagsterInstance.ephemeral()
+    result = defs.get_implicit_global_asset_job_def().execute_in_process(instance=instance)
+
+    assert result.success
+    assert result.output_for_node("an_observable_source_asset") is None
+
+    all_observations = result.get_asset_observation_events()
+    assert len(all_observations) == 1
+    observation_event = all_observations[0]
+    assert observation_event.asset_observation_data.asset_observation.data_version == "foo"
+
+    all_materializations = result.get_asset_materialization_events()
+    assert len(all_materializations) == 0
+
+
+def test_external_assets_with_dependencies_manual_construction() -> None:
+    upstream_asset = AssetSpec("upstream_asset")
+    downstream_asset = AssetSpec("downstream_asset", deps=[upstream_asset])
+
+    @multi_asset(name="_generated_asset_def_1", specs=[upstream_asset])
+    def _upstream_def(context: AssetExecutionContext) -> None:
+        raise Exception("do not execute")
+
+    @multi_asset(name="_generated_asset_def_2", specs=[downstream_asset])
+    def _downstream_asset(context: AssetExecutionContext) -> None:
+        raise Exception("do not execute")
+
+    defs = Definitions(assets=[_upstream_def, _downstream_asset])
+    assert defs
+
+    assert defs.get_implicit_global_asset_job_def().asset_layer.asset_deps[
+        AssetKey("downstream_asset")
+    ] == {AssetKey("upstream_asset")}
+
+
+def test_external_asset_multi_asset() -> None:
+    upstream_asset = AssetSpec("upstream_asset")
+    downstream_asset = AssetSpec("downstream_asset", deps=[upstream_asset])
+
+    @multi_asset(specs=[downstream_asset, upstream_asset])
+    def _generated_asset_def(context: AssetExecutionContext):
+        raise Exception("do not execute")
+
+    defs = Definitions(assets=[_generated_asset_def])
+    assert defs
+
+    assert defs.get_implicit_global_asset_job_def().asset_layer.asset_deps[
+        AssetKey("downstream_asset")
+    ] == {AssetKey("upstream_asset")}
+
+
+def test_external_assets_with_dependencies() -> None:
+    upstream_asset = AssetSpec("upstream_asset")
+    downstream_asset = AssetSpec("downstream_asset", deps=[upstream_asset])
+
+    defs = Definitions(assets=external_assets_from_specs([upstream_asset, downstream_asset]))
+    assert defs
+
+    assert defs.get_implicit_global_asset_job_def().asset_layer.asset_deps[
+        AssetKey("downstream_asset")
+    ] == {AssetKey("upstream_asset")}

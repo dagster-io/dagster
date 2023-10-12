@@ -5,6 +5,17 @@ description: Dagster can orchestrate dbt alongside other technologies.
 
 # dbt + Dagster
 
+<Note>
+  <b>Using Dagster Cloud?</b> Automatically load your dbt models as Dagster
+  assets by{" "}
+  <a
+    target="_blank"
+    href="https://dagster.cloud/signup?next=/prod/getting-started%3Ftab%3Dimport_dbt_core_project%26serverless%3D1"
+  >
+    importing an existing dbt project in Dagster Cloud
+  </a>
+</Note>
+
 Dagster orchestrates dbt alongside other technologies, so you can schedule dbt with Spark, Python, etc. in a single data pipeline.
 
 Dagster's [Software-defined Asset](/concepts/assets/software-defined-assets) approach allows Dagster to understand dbt at the level of individual dbt models. This means that you can:
@@ -63,6 +74,7 @@ There are a few ways to get started with Dagster and dbt:
 - Play around with a [working dbt + Dagster project](https://github.com/dagster-io/dagster/tree/master/examples/assets_dbt_python).
 - Browse the [dagster-dbt integration reference](/integrations/dbt/reference) for short lessons on Dagster + dbt topics.
 - Review the [API docs](/\_apidocs/libraries/dagster-dbt) for the dagster-dbt library.
+- Automatically load your dbt models as Dagster assets by [importing an existing dbt project into Dagster Cloud](https://dagster.cloud/signup?next=/prod/getting-started%3Ftab%3Dimport_dbt_core_project%26serverless%3D1).
 
 ---
 

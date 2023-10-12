@@ -15,6 +15,7 @@ from typing import (
 
 import dagster._check as check
 from dagster._core.assets import AssetDetails
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.event_api import EventHandlerFn, EventLogRecord, EventRecordsFilter
 from dagster._core.events import DagsterEventType
@@ -495,17 +496,19 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     def supports_asset_checks(self):
         return True
 
-    def get_asset_check_executions(
+    @abstractmethod
+    def get_asset_check_execution_history(
         self,
-        asset_key: AssetKey,
-        check_name: str,
+        check_key: AssetCheckKey,
         limit: int,
         cursor: Optional[int] = None,
-        materialization_event_storage_id: Optional[int] = None,
-        include_planned: bool = True,
     ) -> Sequence[AssetCheckExecutionRecord]:
-        """Get the executions for an asset check, sorted by recency. If materialization_event_storage_id
-        is set and include_planned is True, the returned Sequence will include executions that are planned
-        but do not have a target materialization yet (since we don't set the target until the check is executed).
-        """
-        raise NotImplementedError()
+        """Get executions for one asset check, sorted by recency."""
+        pass
+
+    @abstractmethod
+    def get_latest_asset_check_execution_by_key(
+        self, check_keys: Sequence[AssetCheckKey]
+    ) -> Mapping[AssetCheckKey, AssetCheckExecutionRecord]:
+        """Get the latest executions for a list of asset checks."""
+        pass

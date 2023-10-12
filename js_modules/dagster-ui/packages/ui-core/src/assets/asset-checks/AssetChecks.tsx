@@ -11,7 +11,13 @@ import {AssetFeatureContext} from '../AssetFeatureContext';
 import {assetDetailsPathForKey} from '../assetDetailsPathForKey';
 import {AssetKey} from '../types';
 
-import {AssetCheckDetailModal, MigrationRequired, NoChecks} from './AssetCheckDetailModal';
+import {
+  AssetCheckDetailModal,
+  MigrationRequired,
+  NeedsUserCodeUpgrade,
+  AgentUpgradeRequired,
+  NoChecks,
+} from './AssetCheckDetailModal';
 import {
   EXECUTE_CHECKS_BUTTON_ASSET_NODE_FRAGMENT,
   EXECUTE_CHECKS_BUTTON_CHECK_FRAGMENT,
@@ -45,6 +51,12 @@ export const AssetChecks = ({
     const result = data.assetChecksOrError!;
     if (result.__typename === 'AssetCheckNeedsMigrationError') {
       return <MigrationRequired />;
+    }
+    if (result.__typename === 'AssetCheckNeedsUserCodeUpgrade') {
+      return <NeedsUserCodeUpgrade />;
+    }
+    if (result.__typename === 'AssetCheckNeedsAgentUpgradeError') {
+      return <AgentUpgradeRequired />;
     }
     const checks = result.checks;
     if (!checks.length) {

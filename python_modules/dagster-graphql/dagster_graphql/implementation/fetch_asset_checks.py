@@ -3,12 +3,14 @@ from typing import TYPE_CHECKING, List, Optional, Union, cast
 import dagster._check as check
 from dagster import AssetKey
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
+from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.host_representation.external_data import ExternalAssetCheck
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,
     AssetCheckExecutionRecordStatus,
     AssetCheckExecutionResolvedStatus,
+    AssetCheckInstanceSupport,
 )
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from packaging import version
@@ -17,7 +19,9 @@ from ..schema.asset_checks import (
     GrapheneAssetCheck,
     GrapheneAssetCheckCanExecuteIndividually,
     GrapheneAssetCheckExecution,
+    GrapheneAssetCheckNeedsAgentUpgradeError,
     GrapheneAssetCheckNeedsMigrationError,
+    GrapheneAssetCheckNeedsUserCodeUpgrade,
     GrapheneAssetChecks,
 )
 
@@ -25,53 +29,82 @@ if TYPE_CHECKING:
     from ..schema.util import ResolveInfo
 
 
-def _fetch_asset_checks(
-    graphene_info: "ResolveInfo",
-    asset_key: AssetKey,
-    check_name: Optional[str] = None,
-) -> GrapheneAssetChecks:
-    external_asset_checks = []
-    for location in graphene_info.context.code_locations:
-        # check if the code location is too old to support executing asset checks individually
-        code_location_version = (location.get_dagster_library_versions() or {}).get("dagster")
-        if code_location_version and version.parse(code_location_version) < version.parse("1.4.14"):
-            can_execute_individually = (
-                GrapheneAssetCheckCanExecuteIndividually.NEEDS_USER_CODE_UPGRADE
-            )
-        else:
-            can_execute_individually = GrapheneAssetCheckCanExecuteIndividually.CAN_EXECUTE
-
-        for repository in location.get_repositories().values():
-            for external_check in repository.external_repository_data.external_asset_checks or []:
-                if external_check.asset_key == asset_key:
-                    if not check_name or check_name == external_check.name:
-                        external_asset_checks.append((external_check, can_execute_individually))
-
-    return GrapheneAssetChecks(
-        checks=[
-            GrapheneAssetCheck(asset_check=check, can_execute_individually=can_execute_individually)
-            for check, can_execute_individually in external_asset_checks
-        ]
-    )
-
-
 def has_asset_checks(
     graphene_info: "ResolveInfo",
     asset_key: AssetKey,
 ) -> bool:
-    return bool(_fetch_asset_checks(graphene_info, asset_key).checks)
+    for location in graphene_info.context.code_locations:
+        for repository in location.get_repositories().values():
+            for external_check in repository.external_repository_data.external_asset_checks or []:
+                if external_check.asset_key == asset_key:
+                    return True
+    return False
 
 
 def fetch_asset_checks(
     graphene_info: "ResolveInfo",
     asset_key: AssetKey,
     check_name: Optional[str] = None,
-) -> Union[GrapheneAssetCheckNeedsMigrationError, GrapheneAssetChecks]:
-    if not graphene_info.context.instance.event_log_storage.supports_asset_checks:
+) -> Union[
+    GrapheneAssetCheckNeedsMigrationError,
+    GrapheneAssetCheckNeedsUserCodeUpgrade,
+    GrapheneAssetCheckNeedsAgentUpgradeError,
+    GrapheneAssetChecks,
+]:
+    asset_check_support = graphene_info.context.instance.get_asset_check_support()
+    if asset_check_support == AssetCheckInstanceSupport.NEEDS_MIGRATION:
         return GrapheneAssetCheckNeedsMigrationError(
             message="Asset checks require an instance migration. Run `dagster instance migrate`."
         )
-    return _fetch_asset_checks(graphene_info, asset_key, check_name)
+    elif asset_check_support == AssetCheckInstanceSupport.NEEDS_AGENT_UPGRADE:
+        return GrapheneAssetCheckNeedsAgentUpgradeError(
+            "Asset checks require an agent upgrade to 1.5.0 or greater."
+        )
+    else:
+        check.invariant(
+            asset_check_support == AssetCheckInstanceSupport.SUPPORTED,
+            f"Unexpected asset check support status {asset_check_support}",
+        )
+
+    external_asset_checks = []
+    for location in graphene_info.context.code_locations:
+        for repository in location.get_repositories().values():
+            for external_check in repository.external_repository_data.external_asset_checks or []:
+                if external_check.asset_key == asset_key:
+                    if not check_name or check_name == external_check.name:
+                        # check if the code location is too old to support executing asset checks individually
+                        code_location_version = (location.get_dagster_library_versions() or {}).get(
+                            "dagster"
+                        )
+                        if code_location_version and version.parse(
+                            code_location_version
+                        ) < version.parse("1.5"):
+                            return GrapheneAssetCheckNeedsUserCodeUpgrade(
+                                message=(
+                                    "Asset checks require dagster>=1.5. Upgrade your dagster"
+                                    " version for this code location."
+                                )
+                            )
+                        external_asset_checks.append((external_check))
+
+    asset_graph = ExternalAssetGraph.from_workspace(graphene_info.context)
+
+    graphene_checks = []
+    for external_check in external_asset_checks:
+        can_execute_individually = (
+            GrapheneAssetCheckCanExecuteIndividually.CAN_EXECUTE
+            if len(asset_graph.get_required_asset_and_check_keys(external_check.key) or []) <= 1
+            # NOTE: once we support multi checks, we'll need to add a case for
+            # non subsettable multi checks
+            else GrapheneAssetCheckCanExecuteIndividually.REQUIRES_MATERIALIZATION
+        )
+        graphene_checks.append(
+            GrapheneAssetCheck(
+                asset_check=external_check, can_execute_individually=can_execute_individually
+            )
+        )
+
+    return GrapheneAssetChecks(checks=graphene_checks)
 
 
 def _get_asset_check_execution_status(
@@ -104,9 +137,8 @@ def _get_asset_check_execution_status(
 def fetch_executions(
     instance: DagsterInstance, asset_check: ExternalAssetCheck, limit: int, cursor: Optional[str]
 ) -> List[GrapheneAssetCheckExecution]:
-    executions = instance.event_log_storage.get_asset_check_executions(
-        asset_key=asset_check.asset_key,
-        check_name=asset_check.name,
+    executions = instance.event_log_storage.get_asset_check_execution_history(
+        check_key=asset_check.key,
         limit=limit,
         cursor=int(cursor) if cursor else None,
     )
@@ -149,9 +181,7 @@ def _execution_targets_latest_materialization(
     ]:
         evaluation = cast(
             AssetCheckEvaluation,
-            check.not_none(
-                check.not_none(execution.evaluation_event).dagster_event
-            ).event_specific_data,
+            check.not_none(check.not_none(execution.event).dagster_event).event_specific_data,
         )
         if not evaluation.target_materialization_data:
             # check ran before the materialization was created
@@ -189,9 +219,8 @@ def fetch_execution_for_latest_materialization(
     # we hide executions if they aren't for the latest asset materialization.
     # currently we only consider the most recently launched check.
 
-    executions = instance.event_log_storage.get_asset_check_executions(
-        asset_key=external_asset_check.asset_key,
-        check_name=external_asset_check.name,
+    executions = instance.event_log_storage.get_asset_check_execution_history(
+        check_key=external_asset_check.key,
         limit=1,
         cursor=None,
     )

@@ -35,6 +35,7 @@ from .runs.base import RunStorage
 from .schedules.base import ScheduleStorage
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.asset_check_spec import AssetCheckKey
     from dagster._core.definitions.run_request import InstigatorType
     from dagster._core.events import DagsterEvent, DagsterEventType
     from dagster._core.events.log import EventLogEntry
@@ -607,23 +608,23 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     def free_concurrency_slot_for_step(self, run_id: str, step_key: str) -> None:
         return self._storage.event_log_storage.free_concurrency_slot_for_step(run_id, step_key)
 
-    def get_asset_check_executions(
+    def get_asset_check_execution_history(
         self,
-        asset_key: AssetKey,
-        check_name: str,
+        check_key: "AssetCheckKey",
         limit: int,
         cursor: Optional[int] = None,
-        materialization_event_storage_id: Optional[int] = None,
-        include_planned: bool = True,
     ) -> Sequence[AssetCheckExecutionRecord]:
-        return self._storage.event_log_storage.get_asset_check_executions(
-            asset_key=asset_key,
-            check_name=check_name,
+        return self._storage.event_log_storage.get_asset_check_execution_history(
+            check_key=check_key,
             limit=limit,
             cursor=cursor,
-            materialization_event_storage_id=materialization_event_storage_id,
-            include_planned=include_planned,
         )
+
+    def get_latest_asset_check_execution_by_key(
+        self,
+        check_keys: Sequence["AssetCheckKey"],
+    ) -> Mapping["AssetCheckKey", Optional[AssetCheckExecutionRecord]]:
+        return self._storage.event_log_storage.get_latest_asset_check_execution_by_key(check_keys)
 
 
 class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
@@ -741,10 +742,17 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
         )
 
     def get_auto_materialize_asset_evaluations(
-        self, asset_key: "AssetKey", limit: int, cursor: Optional[int] = None
+        self, asset_key: AssetKey, limit: int, cursor: Optional[int] = None
     ) -> Sequence["AutoMaterializeAssetEvaluationRecord"]:
         return self._storage.schedule_storage.get_auto_materialize_asset_evaluations(
             asset_key, limit, cursor
+        )
+
+    def get_auto_materialize_evaluations_for_evaluation_id(
+        self, evaluation_id: int
+    ) -> Sequence["AutoMaterializeAssetEvaluationRecord"]:
+        return self._storage.schedule_storage.get_auto_materialize_evaluations_for_evaluation_id(
+            evaluation_id
         )
 
     def purge_asset_evaluations(self, before: float):

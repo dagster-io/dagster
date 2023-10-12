@@ -1,5 +1,4 @@
-from dagster_pipes import init_dagster_pipes
+from dagster_pipes import open_dagster_pipes
 
-context = init_dagster_pipes()
-
-context.log.info(f"Got tickers: {context.extras['tickers']}")
+with open_dagster_pipes() as context:
+    context.log.info(f"Got tickers: {context.extras['tickers']}")

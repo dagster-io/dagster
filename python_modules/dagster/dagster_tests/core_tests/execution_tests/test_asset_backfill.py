@@ -30,6 +30,7 @@ from dagster import (
     StaticPartitionsDefinition,
     WeeklyPartitionsDefinition,
     asset,
+    materialize,
 )
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
@@ -666,7 +667,7 @@ def external_asset_graph_from_assets_by_repo_name(
         )
 
     return ExternalAssetGraph.from_repository_handles_and_external_asset_nodes(
-        from_repository_handles_and_external_asset_nodes
+        from_repository_handles_and_external_asset_nodes, external_asset_checks=[]
     )
 
 
@@ -851,6 +852,64 @@ def test_asset_backfill_status_counts():
     assert counts[2].partitions_counts_by_status[AssetBackfillStatus.FAILED] == 1
     assert counts[2].partitions_counts_by_status[AssetBackfillStatus.IN_PROGRESS] == 0
     assert counts[2].num_targeted_partitions == 1
+
+
+def test_asset_backfill_status_counts_with_reexecution():
+    @asset(partitions_def=DailyPartitionsDefinition("2023-01-01"), key="upstream")
+    def upstream_fail():
+        raise Exception("noo")
+
+    @asset(partitions_def=DailyPartitionsDefinition("2023-01-01"), key="upstream")
+    def upstream_success():
+        pass
+
+    assets_by_repo_name = {
+        "repo": [
+            upstream_fail,
+        ]
+    }
+    asset_graph = get_asset_graph(assets_by_repo_name)
+    instance = DagsterInstance.ephemeral()
+
+    backfill_data = AssetBackfillData.from_asset_partitions(
+        partition_names=["2023-01-01"],
+        asset_graph=asset_graph,
+        asset_selection=[
+            upstream_fail.key,
+        ],
+        dynamic_partitions_store=MagicMock(),
+        all_partitions=False,
+        backfill_start_time=pendulum.now("UTC"),
+    )
+
+    backfill_data = _single_backfill_iteration(
+        "fake_id", backfill_data, asset_graph, instance, assets_by_repo_name
+    )
+    backfill_data = _single_backfill_iteration(
+        "fake_id", backfill_data, asset_graph, instance, assets_by_repo_name
+    )
+
+    counts = backfill_data.get_backfill_status_per_asset_key()
+    assert counts[0].asset_key == upstream_fail.key
+    assert counts[0].partitions_counts_by_status[AssetBackfillStatus.MATERIALIZED] == 0
+    assert counts[0].partitions_counts_by_status[AssetBackfillStatus.FAILED] == 1
+    assert counts[0].partitions_counts_by_status[AssetBackfillStatus.IN_PROGRESS] == 0
+
+    materialize(
+        [upstream_success],
+        instance=instance,
+        partition_key="2023-01-01",
+        tags={BACKFILL_ID_TAG: "fake_id"},
+    )
+
+    backfill_data = _single_backfill_iteration(
+        "fake_id", backfill_data, asset_graph, instance, assets_by_repo_name
+    )
+    counts = backfill_data.get_backfill_status_per_asset_key()
+    assert counts[0].asset_key == upstream_fail.key
+    assert counts[0].partitions_counts_by_status[AssetBackfillStatus.MATERIALIZED] == 1
+    assert counts[0].partitions_counts_by_status[AssetBackfillStatus.FAILED] == 0
+    assert counts[0].partitions_counts_by_status[AssetBackfillStatus.IN_PROGRESS] == 0
 
 
 def test_asset_backfill_selects_only_existent_partitions():

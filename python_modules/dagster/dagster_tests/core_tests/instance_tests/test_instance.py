@@ -22,6 +22,7 @@ from dagster._cli.utils import get_instance_for_cli
 from dagster._config import Field
 from dagster._core.definitions import build_assets_job
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetMaterialization, AssetObservation
 from dagster._core.errors import (
     DagsterHomeNotSetError,
@@ -773,9 +774,8 @@ def test_report_runless_asset_event():
                 metadata={},
             )
         )
-        records = instance.event_log_storage.get_asset_check_executions(
-            asset_key=my_asset_key,
-            check_name=my_check,
+        records = instance.event_log_storage.get_asset_check_execution_history(
+            check_key=AssetCheckKey(asset_key=my_asset_key, name=my_check),
             limit=1,
         )
         assert len(records) == 1

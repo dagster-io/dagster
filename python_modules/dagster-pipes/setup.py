@@ -15,13 +15,15 @@ def get_version() -> str:
 ver = get_version()
 # dont pin dev installs to avoid pip dep resolver issues
 pin = "" if ver == "1!0+dev" else f"=={ver}"
+desc = "Toolkit for Dagster integrations with transform logic outside of Dagster"
 setup(
     name="dagster-pipes",
     version=get_version(),
     author="Dagster Labs",
     author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
-    description="Toolkit for Dagster integrations with transform logic outside of Dagster",
+    description=desc,
+    long_description=desc,
     url="https://github.com/dagster-io/dagster/tree/master/python_modules/dagster-pipes",
     classifiers=[
         "Programming Language :: Python :: 3.8",

@@ -29,9 +29,9 @@ def test_default():
     @asset
     def number_x(
         context: AssetExecutionContext,
-        pipes_docker_client: PipesDockerClient,
+        pipes_client: PipesDockerClient,
     ):
-        return pipes_docker_client.run(
+        return pipes_client.run(
             image=docker_image,
             command=[
                 "python",
@@ -45,7 +45,7 @@ def test_default():
 
     result = materialize(
         [number_x],
-        resources={"pipes_docker_client": PipesDockerClient(**ext_config)},
+        resources={"pipes_client": PipesDockerClient(**ext_config)},
         raise_on_error=False,
     )
     assert result.success
@@ -69,7 +69,7 @@ def test_file_io():
         @asset
         def number_x(
             context: AssetExecutionContext,
-            pipes_docker_client: PipesDockerClient,
+            pipes_client: PipesDockerClient,
         ):
             instance_storage = context.instance.storage_directory()
             host_storage = os.path.join(instance_storage, "number_example")
@@ -88,7 +88,7 @@ def test_file_io():
                 },
             }
 
-            return pipes_docker_client.run(
+            return pipes_client.run(
                 image=docker_image,
                 command=[
                     "python",
@@ -107,7 +107,7 @@ def test_file_io():
         result = materialize(
             [number_x],
             resources={
-                "pipes_docker_client": PipesDockerClient(
+                "pipes_client": PipesDockerClient(
                     context_injector=PipesFileContextInjector(os.path.join(tempdir, "context")),
                 )
             },
@@ -116,3 +116,48 @@ def test_file_io():
         assert result.success
         mats = result.asset_materializations_for_node(number_x.op.name)
         assert mats[0].metadata["path"]
+
+
+_print_script = """
+import sys
+import time
+
+sys.stdout.write('w1')
+print('p1')
+sys.stdout.write('w2')
+print('p2')
+"""
+
+
+@pytest.mark.integration
+def test_bytes_logs():
+    # docker_image = get_test_project_docker_image()
+
+    # ext_config = {}
+
+    # if IS_BUILDKITE:
+    #     ext_config["registry"] = get_buildkite_registry_config()
+    # else:
+    #     find_local_test_image(docker_image)
+
+    @asset
+    def bytes_logs(
+        context: AssetExecutionContext,
+    ):
+        c = PipesDockerClient()
+
+        return c.run(
+            context=context,
+            image="python:3.10-slim",
+            command=[
+                "python",
+                "-c",
+                _print_script,
+            ],
+        ).get_results()
+
+    result = materialize(
+        [bytes_logs],
+        raise_on_error=False,
+    )
+    assert result.success

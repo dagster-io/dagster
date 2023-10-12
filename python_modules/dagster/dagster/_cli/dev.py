@@ -81,6 +81,13 @@ def dev_command_options(f):
     help="Host to use for the Dagster webserver.",
     required=False,
 )
+@click.option(
+    "--live-data-poll-rate",
+    help="Rate at which the dagster UI polls for updated asset data (in milliseconds)",
+    default="2000",
+    show_default=True,
+    required=False,
+)
 @deprecated(
     breaking_version="2.0", subject="--dagit-port and --dagit-host args", emit_runtime_warning=False
 )
@@ -89,6 +96,7 @@ def dev_command(
     log_level: str,
     port: Optional[str],
     host: Optional[str],
+    live_data_poll_rate: Optional[str],
     **kwargs: ClickArgValue,
 ) -> None:
     # check if dagster-webserver installed, crash if not
@@ -163,6 +171,7 @@ def dev_command(
             + (["--port", port] if port else [])
             + (["--host", host] if host else [])
             + (["--dagster-log-level", log_level])
+            + (["--live-data-poll-rate", live_data_poll_rate] if live_data_poll_rate else [])
             + args
         )
         daemon_process = open_ipc_subprocess(

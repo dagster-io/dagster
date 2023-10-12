@@ -8,6 +8,7 @@ from dagster._core.definitions.asset_check_evaluation import (
     AssetCheckEvaluationTargetMaterializationData,
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSeverity
+from dagster._core.events import DagsterEventType
 from dagster._core.host_representation.external_data import ExternalAssetCheck
 from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,
@@ -89,6 +90,7 @@ class GrapheneAssetCheckExecution(graphene.ObjectType):
     timestamp = graphene.Field(
         graphene.NonNull(graphene.Float), description="When the check run started"
     )
+    stepKey = graphene.Field(graphene.String)
 
     class Meta:
         name = "AssetCheckExecution"
@@ -103,11 +105,13 @@ class GrapheneAssetCheckExecution(graphene.ObjectType):
         self.runId = execution.run_id
         self.status = status
         self.evaluation = (
-            GrapheneAssetCheckEvaluation(execution.evaluation_event)
-            if execution.evaluation_event
+            GrapheneAssetCheckEvaluation(execution.event)
+            if execution.event
+            and execution.event.dagster_event_type == DagsterEventType.ASSET_CHECK_EVALUATION
             else None
         )
         self.timestamp = execution.create_timestamp
+        self.stepKey = execution.event.step_key if execution.event else None
 
 
 class GrapheneAssetCheckCanExecuteIndividually(graphene.Enum):
@@ -115,6 +119,7 @@ class GrapheneAssetCheckCanExecuteIndividually(graphene.Enum):
         name = "AssetCheckCanExecuteIndividually"
 
     CAN_EXECUTE = "CAN_EXECUTE"
+    REQUIRES_MATERIALIZATION = "REQUIRES_MATERIALIZATION"
     NEEDS_USER_CODE_UPGRADE = "NEEDS_USER_CODE_UPGRADE"
 
 
@@ -136,7 +141,7 @@ class GrapheneAssetCheck(graphene.ObjectType):
     def __init__(
         self,
         asset_check: ExternalAssetCheck,
-        can_execute_individually: GrapheneAssetCheckCanExecuteIndividually,
+        can_execute_individually,
     ):
         self._asset_check = asset_check
         self._can_execute_individually = can_execute_individually
@@ -191,11 +196,29 @@ class GrapheneAssetCheckNeedsMigrationError(graphene.ObjectType):
         name = "AssetCheckNeedsMigrationError"
 
 
+class GrapheneAssetCheckNeedsAgentUpgradeError(graphene.ObjectType):
+    message = graphene.NonNull(graphene.String)
+
+    class Meta:
+        interfaces = (GrapheneError,)
+        name = "AssetCheckNeedsAgentUpgradeError"
+
+
+class GrapheneAssetCheckNeedsUserCodeUpgrade(graphene.ObjectType):
+    message = graphene.NonNull(graphene.String)
+
+    class Meta:
+        interfaces = (GrapheneError,)
+        name = "AssetCheckNeedsUserCodeUpgrade"
+
+
 class GrapheneAssetChecksOrError(graphene.Union):
     class Meta:
         types = (
             GrapheneAssetChecks,
             GrapheneAssetCheckNeedsMigrationError,
+            GrapheneAssetCheckNeedsUserCodeUpgrade,
+            GrapheneAssetCheckNeedsAgentUpgradeError,
         )
         name = "AssetChecksOrError"
 

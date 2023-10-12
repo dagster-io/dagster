@@ -2,6 +2,7 @@ from enum import Enum
 from typing import Mapping, NamedTuple, Sequence, Union
 
 import dagster._check as check
+from dagster._config.field_utils import EnvVar, IntEnvVar
 from dagster._utils.error import SerializableErrorInfo
 
 from .config_type import ConfigTypeKind
@@ -378,19 +379,23 @@ def create_scalar_error(context: ContextData, config_value: object) -> Evaluatio
     )
 
 
-def create_pydantic_env_var_error(context: ContextData, config_value: object) -> EvaluationError:
-    correct_env_var = str({"env": config_value})
+def create_pydantic_env_var_error(
+    context: ContextData, config_value: Union[EnvVar, IntEnvVar]
+) -> EvaluationError:
+    env_var_name = config_value.env_var_name
+
+    correct_env_var = str({"env": env_var_name})
     return EvaluationError(
         stack=context.stack,
         reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
         message=(
-            f'Invalid use of environment variable wrapper. Value "{config_value}" is wrapped with'
+            f'Invalid use of environment variable wrapper. Value "{env_var_name}" is wrapped with'
             " EnvVar(), which is reserved for passing to structured pydantic config objects only."
             " To provide an environment variable to a run config dictionary, replace"
-            f' EnvVar("{config_value}") with {correct_env_var}, or pass a structured RunConfig'
+            f' EnvVar("{env_var_name}") with {correct_env_var}, or pass a structured RunConfig'
             " object."
         ),
-        error_data=RuntimeMismatchErrorData(context.config_type_snap, repr(config_value)),
+        error_data=RuntimeMismatchErrorData(context.config_type_snap, repr(env_var_name)),
     )
 
 

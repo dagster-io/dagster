@@ -15,6 +15,7 @@ import {
   getCommonJob,
   LAUNCH_ASSET_LOADER_QUERY,
 } from './LaunchAssetExecutionButton';
+import {asAssetKeyInput} from './asInput';
 import {
   LaunchAssetExecutionAssetNodeFragment,
   LaunchAssetLoaderQuery,
@@ -73,7 +74,7 @@ export const LaunchAssetObservationButton: React.FC<{
 
     const result = await client.query<LaunchAssetLoaderQuery, LaunchAssetLoaderQueryVariables>({
       query: LAUNCH_ASSET_LOADER_QUERY,
-      variables: {assetKeys: scopeAssets.map((a) => ({path: a.assetKey.path}))},
+      variables: {assetKeys: scopeAssets.map(asAssetKeyInput)},
     });
 
     if (result.data.assetNodeDefinitionCollisions.length) {

@@ -2,7 +2,7 @@ import gzip
 import io
 import uuid
 from os import path, walk
-from typing import Generic, List, TypeVar
+from typing import Generic, List, Optional, TypeVar
 
 import dagster._check as check
 from dagster import __version__ as dagster_version
@@ -27,13 +27,12 @@ from starlette.responses import (
     JSONResponse,
     PlainTextResponse,
     RedirectResponse,
-    Response,
     StreamingResponse,
-    guess_type,
 )
 from starlette.routing import Mount, Route, WebSocketRoute
 from starlette.types import Message
 
+from .external_assets import handle_report_asset_materialization_request
 from .graphql import GraphQLServer
 from .version import __version__
 
@@ -48,9 +47,11 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
         self,
         process_context: T_IWorkspaceProcessContext,
         app_path_prefix: str = "",
+        live_data_poll_rate: Optional[int] = None,
         uses_app_path_prefix: bool = True,
     ):
         self._process_context = process_context
+        self._live_data_poll_rate = live_data_poll_rate
         self._uses_app_path_prefix = uses_app_path_prefix
         super().__init__(app_path_prefix)
 
@@ -197,6 +198,10 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
         filebase = "__".join(log_key)
         return FileResponse(location, filename=f"{filebase}.{file_extension}")
 
+    async def report_asset_materialization_endpoint(self, request: Request) -> JSONResponse:
+        context = self.make_request_context(request)
+        return await handle_report_asset_materialization_request(context, request)
+
     def index_html_endpoint(self, request: Request):
         """Serves root html."""
         index_path = self.relative_path("webapp/build/index.html")
@@ -211,7 +216,7 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                     **{"Content-Security-Policy": self.make_csp_header(nonce)},
                     **self.make_security_headers(),
                 }
-                return HTMLResponse(
+                content = (
                     rendered_template.replace(
                         "BUILDTIME_ASSETPREFIX_REPLACE_ME", f"{self._app_path_prefix}"
                     )
@@ -219,9 +224,14 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                     .replace(
                         '"__TELEMETRY_ENABLED__"', str(context.instance.telemetry_enabled).lower()
                     )
-                    .replace("NONCE-PLACEHOLDER", nonce),
-                    headers=headers,
+                    .replace("NONCE-PLACEHOLDER", nonce)
                 )
+
+                if self._live_data_poll_rate:
+                    content = content.replace(
+                        "__LIVE_DATA_POLL_RATE__", str(self._live_data_poll_rate)
+                    )
+                return HTMLResponse(content, headers=headers)
         except FileNotFoundError:
             raise Exception("""
                 Can't find webapp files.
@@ -231,16 +241,6 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                 """)
 
     def build_static_routes(self):
-        def next_file_response(file_path):
-            with open(file_path, encoding="utf8") as f:
-                content = f.read().replace(
-                    "BUILDTIME_ASSETPREFIX_REPLACE_ME", f"{self._app_path_prefix}"
-                )
-                return Response(content=content, media_type=guess_type(file_path)[0])
-
-        def _next_static_file(path, file_path):
-            return Route(path, lambda _: next_file_response(file_path), name="next_static")
-
         def _static_file(path, file_path):
             return Route(
                 path,
@@ -253,16 +253,9 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
         for subdir, _, files in walk(base_dir):
             for file in files:
                 full_path = path.join(subdir, file)
-
                 # Replace path.sep to make sure our routes use forward slashes on windows
                 mount_path = "/" + full_path[len(base_dir) :].replace(path.sep, "/")
-                # We only need to replace BUILDTIME_ASSETPREFIX_REPLACE_ME in javascript files
-                if self._uses_app_path_prefix and (
-                    file.endswith(".js") or file.endswith(".js.map")
-                ):
-                    routes.append(_next_static_file(mount_path, full_path))
-                else:
-                    routes.append(_static_file(mount_path, full_path))
+                routes.append(_static_file(mount_path, full_path))
 
         # No build directory, this happens in a test environment. Don't fail loudly since we already have other tests that will fail loudly if
         # there is in fact no build
@@ -322,6 +315,11 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                 Route(
                     "/download_debug/{run_id:str}",
                     self.download_debug_file_endpoint,
+                ),
+                Route(
+                    "/report_asset_materialization/{asset_key:path}",
+                    self.report_asset_materialization_endpoint,
+                    methods=["POST"],
                 ),
                 Route("/{path:path}", self.index_html_endpoint),
                 Route("/", self.index_html_endpoint),

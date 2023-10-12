@@ -2,10 +2,11 @@ import {Box, Checkbox, IconName, Popover} from '@dagster-io/ui-components';
 import React from 'react';
 
 import {useUpdatingRef} from '../../hooks/useUpdatingRef';
+import {LaunchpadHooksContext} from '../../launchpad/LaunchpadHooksContext';
 
 import {FilterObject, FilterTag, FilterTagHighlightedText} from './useFilter';
 
-type SetFilterValue<T> = {
+export type SetFilterValue<T> = {
   value: T;
   match: string[];
 };
@@ -33,7 +34,7 @@ export function useStaticSetFilter<TValue>({
   name,
   icon,
   getKey,
-  allValues,
+  allValues: _unsortedValues,
   renderLabel,
   renderActiveStateLabel,
   initialState,
@@ -43,6 +44,16 @@ export function useStaticSetFilter<TValue>({
   allowMultipleSelections = true,
   matchType = 'any-of',
 }: Args<TValue>): StaticSetFilter<TValue> {
+  const {StaticFilterSorter} = React.useContext(LaunchpadHooksContext);
+
+  const allValues = React.useMemo(() => {
+    const sorter = StaticFilterSorter?.[name];
+    if (sorter) {
+      return _unsortedValues.sort(sorter);
+    }
+    return _unsortedValues;
+  }, [StaticFilterSorter, name, _unsortedValues]);
+
   const [state, setState] = React.useState(() => new Set(initialState || []));
 
   React.useEffect(() => {

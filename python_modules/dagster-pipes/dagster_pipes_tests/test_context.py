@@ -1,3 +1,5 @@
+from contextlib import contextmanager
+from typing import Iterator
 from unittest.mock import MagicMock
 
 import pytest
@@ -7,13 +9,15 @@ from dagster_pipes import (
     DagsterPipesError,
     PipesContext,
     PipesContextData,
+    PipesContextLoader,
     PipesDataProvenance,
     PipesMessage,
+    PipesParams,
     PipesPartitionKeyRange,
     PipesTimeWindow,
 )
 
-TEST_EXT_CONTEXT_DEFAULTS = PipesContextData(
+TEST_PIPES_CONTEXT_DEFAULTS = PipesContextData(
     asset_keys=None,
     code_version_by_asset_key=None,
     provenance_by_asset_key=None,
@@ -27,11 +31,21 @@ TEST_EXT_CONTEXT_DEFAULTS = PipesContextData(
 )
 
 
+class _DirectContextLoader(PipesContextLoader):
+    def __init__(self, context_data: PipesContextData):
+        self._context_data = context_data
+
+    @contextmanager
+    def load_context(self, params: PipesParams) -> Iterator[PipesContextData]:
+        yield self._context_data
+
+
 def _make_external_execution_context(**kwargs):
-    kwargs = {**TEST_EXT_CONTEXT_DEFAULTS, **kwargs}
+    kwargs = {**TEST_PIPES_CONTEXT_DEFAULTS, **kwargs}
     return PipesContext(
-        data=PipesContextData(**kwargs),
-        message_channel=MagicMock(),
+        params_loader=MagicMock(),
+        context_loader=_DirectContextLoader(PipesContextData(**kwargs)),
+        message_writer=MagicMock(),
     )
 
 
@@ -219,3 +233,19 @@ def test_log():
     context._message_channel.write_message.assert_called_with(  # noqa: SLF001
         _make_pipes_message(method="log", params={"level": "DEBUG", "message": "foo"})
     )
+
+
+def test_message_after_close():
+    context = _make_external_execution_context(asset_keys=["foo"])
+    context.close()
+    with pytest.raises(
+        DagsterPipesError, match="Cannot send message after pipes context is closed"
+    ):
+        context.log.info("foo")
+
+
+def test_multiple_close():
+    context = _make_external_execution_context(asset_keys=["foo"])
+    # `close` is idempotent, multiple calls should not raise an error
+    context.close()
+    context.close()

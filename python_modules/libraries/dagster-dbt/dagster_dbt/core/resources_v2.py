@@ -34,13 +34,13 @@ from dagster._core.errors import DagsterInvalidPropertyError
 from dagster._core.execution.context.compute import OpExecutionContext
 from dbt.contracts.results import NodeStatus, TestStatus
 from dbt.node_types import NodeType
+from dbt.version import __version__ as dbt_version
 from packaging import version
 from pydantic import Field, root_validator, validator
 from typing_extensions import Literal
 
 from ..asset_utils import (
     get_manifest_and_translator_from_dbt_assets,
-    is_asset_check_from_dbt_resource_props,
     output_name_fn,
 )
 from ..dagster_dbt_translator import DagsterDbtTranslator
@@ -148,9 +148,7 @@ class DbtCliEventMessage:
                 "status": node_status,
             }
 
-            is_asset_check = is_asset_check_from_dbt_resource_props(
-                dagster_dbt_translator.settings, test_resource_props
-            )
+            is_asset_check = dagster_dbt_translator.settings.enable_asset_checks
             attached_node_unique_id = test_resource_props.get("attached_node")
             is_generic_test = bool(attached_node_unique_id)
 
@@ -584,8 +582,6 @@ class DbtCliResource(ConfigurableResource):
     @root_validator(pre=True)
     def validate_dbt_version(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate that the dbt version is supported."""
-        from dbt.version import __version__ as dbt_version
-
         if version.parse(dbt_version) < version.parse("1.4.0"):
             raise ValueError(
                 "To use `dagster_dbt.DbtCliResource`, you must use `dbt-core>=1.4.0`. Currently,"
@@ -622,6 +618,7 @@ class DbtCliResource(ConfigurableResource):
         manifest: Optional[DbtManifestParam] = None,
         dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
         context: Optional[OpExecutionContext] = None,
+        target_path: Optional[Path] = None,
     ) -> DbtCliInvocation:
         """Create a subprocess to execute a dbt CLI command.
 
@@ -636,6 +633,9 @@ class DbtCliResource(ConfigurableResource):
                 provided to the context argument, then the dagster_dbt_translator provided to
                 `@dbt_assets` will be used.
             context (Optional[OpExecutionContext]): The execution context from within `@dbt_assets`.
+            target_path (Optional[Path]): An explicit path to a target folder to use to store and
+                retrieve dbt artifacts when running a dbt CLI command. If not provided, a unique
+                target path will be generated.
 
         Returns:
             DbtCliInvocation: A invocation instance that can be used to retrieve the output of the
@@ -744,7 +744,7 @@ class DbtCliResource(ConfigurableResource):
                     dbt_macro_args = {"key": "value"}
                     dbt.cli(["run-operation", "my-macro", json.dumps(dbt_macro_args)]).wait()
         """
-        target_path = self._get_unique_target_path(context=context)
+        target_path = target_path or self._get_unique_target_path(context=context)
         env = {
             **os.environ.copy(),
             # Run dbt with unbuffered output.
@@ -779,6 +779,16 @@ class DbtCliResource(ConfigurableResource):
             manifest, dagster_dbt_translator = get_manifest_and_translator_from_dbt_assets(
                 [assets_def]
             )
+
+            # When dbt is enabled with asset checks, we turn off any indirection with dbt selection.
+            # This way, the Dagster context completely determines what is executed in a dbt
+            # invocation with a subsetted selection.
+            if (
+                version.parse(dbt_version) >= version.parse("1.5.0")
+                and dagster_dbt_translator.settings.enable_asset_checks
+            ):
+                env["DBT_INDIRECT_SELECTION"] = "empty"
+
             selection_args = get_subset_selection_for_context(
                 context=context,
                 manifest=manifest,
@@ -843,6 +853,7 @@ def get_subset_selection_for_context(
         default_dbt_selection += ["--exclude", exclude]
 
     dbt_resource_props_by_output_name = get_dbt_resource_props_by_output_name(manifest)
+    dbt_resource_props_by_test_name = get_dbt_resource_props_by_test_name(manifest)
 
     # TODO: this should be a property on the context if this is a permanent indicator for
     # determining whether the current execution context is performing a subsetted execution.
@@ -863,6 +874,15 @@ def get_subset_selection_for_context(
         # Explicitly select a dbt resource by its fully qualified name (FQN).
         # https://docs.getdbt.com/reference/node-selection/methods#the-file-or-fqn-method
         fqn_selector = f"fqn:{'.'.join(dbt_resource_props['fqn'])}"
+
+        selected_dbt_resources.append(fqn_selector)
+
+    for _, check_name in context.selected_asset_check_keys:
+        test_resource_props = dbt_resource_props_by_test_name[check_name]
+
+        # Explicitly select a dbt resource by its fully qualified name (FQN).
+        # https://docs.getdbt.com/reference/node-selection/methods#the-file-or-fqn-method
+        fqn_selector = f"fqn:{'.'.join(test_resource_props['fqn'])}"
 
         selected_dbt_resources.append(fqn_selector)
 
@@ -887,4 +907,14 @@ def get_dbt_resource_props_by_output_name(
         output_name_fn(node): node
         for node in node_info_by_dbt_unique_id.values()
         if node["resource_type"] in ASSET_RESOURCE_TYPES
+    }
+
+
+def get_dbt_resource_props_by_test_name(
+    manifest: Mapping[str, Any]
+) -> Mapping[str, Mapping[str, Any]]:
+    return {
+        dbt_resource_props["name"]: dbt_resource_props
+        for unique_id, dbt_resource_props in manifest["nodes"].items()
+        if unique_id.startswith("test")
     }

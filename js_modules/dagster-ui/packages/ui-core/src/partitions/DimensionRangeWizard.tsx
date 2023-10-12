@@ -10,6 +10,7 @@ import {
   MenuItem,
   TagSelectorWithSearch,
   TagSelectorDropdownItemProps,
+  MiddleTruncate,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
@@ -171,14 +172,23 @@ const OrdinalPartitionSelector: React.FC<{
                 <MenuItem
                   tagName="div"
                   text={
-                    <Box flex={{alignItems: 'center', gap: 12}}>
+                    <div
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'auto auto minmax(0, 1fr)',
+                        alignItems: 'center',
+                        gap: 12,
+                      }}
+                    >
                       <Checkbox
                         checked={dropdownItemProps.selected}
                         onChange={dropdownItemProps.toggle}
                       />
                       {dotForPartitionKey(tag)}
-                      <span>{tag}</span>
-                    </Box>
+                      <div data-tooltip={tag} data-tooltip-style={DropdownItemTooltipStyle}>
+                        <MiddleTruncate text={tag} />
+                      </div>
+                    </div>
                   }
                 />
               </label>
@@ -274,3 +284,10 @@ const LinkText = styled(Box)`
     line-height: 24px;
   }
 `;
+
+const DropdownItemTooltipStyle = JSON.stringify({
+  background: Colors.Gray100,
+  border: `1px solid ${Colors.Gray200}`,
+  color: Colors.Dark,
+  fontSize: '14px',
+});

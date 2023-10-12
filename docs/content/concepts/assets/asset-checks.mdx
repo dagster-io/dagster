@@ -160,6 +160,67 @@ There are a variety of types supported via the <PyObject object="MetadataValue" 
 
 ---
 
-## Executing checks via the UI
+## Executing checks
+
+### Via the UI
 
 Materializing an asset from the UI will also execute any checks that are defined for that asset. You can also execute checks without materializing the asset from the Checks tab of the asset’s detail page.
+
+### Via sensors and schedules
+
+You can use <PyObject object="define_asset_job" /> to define jobs that execute sets of both assets and checks, and then trigger those jobs via [sensors](/concepts/partitions-schedules-sensors/sensors) or [schedules](/concepts/partitions-schedules-sensors/schedules). By default, checks are included with the assets they check. You can also define jobs that include only checks, or only assets.
+
+```python file=/concepts/assets/asset_checks/jobs.py
+from dagster import (
+    AssetSelection,
+    Definitions,
+    ScheduleDefinition,
+    asset,
+    asset_check,
+    define_asset_job,
+)
+
+
+@asset
+def my_asset():
+    ...
+
+
+@asset_check(asset=my_asset)
+def check_1():
+    ...
+
+
+@asset_check(asset=my_asset)
+def check_2():
+    ...
+
+
+# includes my_asset and both checks
+my_job = define_asset_job("my_job", selection=AssetSelection.assets(my_asset))
+
+
+# includes only my_asset
+my_asset_only_job = define_asset_job(
+    "my_asset_only_job",
+    selection=AssetSelection.assets(my_asset).without_checks(),
+)
+
+# includes check_1 and check_2, but not my_asset
+checks_only_job = define_asset_job(
+    "checks_only_job", selection=AssetSelection.checks_for_assets(my_asset)
+)
+
+# includes only check_1
+check_1_job = define_asset_job("check_1_job", selection=AssetSelection.checks(check_1))
+
+# schedule my_job to run every day at midnight
+basic_schedule = ScheduleDefinition(job=my_job, cron_schedule="0 0 * * *")
+
+defs = Definitions(
+    assets=[my_asset],
+    asset_checks=[check_1, check_2],
+    jobs=[my_job, my_asset_only_job, checks_only_job, check_1_job],
+    schedules=[basic_schedule],
+)
+```

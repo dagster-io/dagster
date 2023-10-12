@@ -105,6 +105,10 @@
           {
             "title": "Asset checks (Experimental)",
             "path": "/concepts/assets/asset-checks"
+          },
+          {
+            "title": "External assets (Experimental)",
+            "path": "/concepts/assets/external-assets"
           }
         ]
       },
@@ -573,6 +577,26 @@
             ]
           },
           {
+            "title": "Insights",
+            "path": "/dagster-cloud/insights",
+            "children": [
+              {
+                "title": "Integrating external metrics",
+                "path": "/dagster-cloud/insights/integrating-external-metrics",
+                "children": [
+                  {
+                    "title": "Snowflake + dbt",
+                    "path": "/dagster-cloud/insights/integrating-snowflake-and-dbt"
+                  }
+                ]
+              },
+              {
+                "title": "Exporting metrics",
+                "path": "/dagster-cloud/insights/exporting-insights-metrics"
+              }
+            ]
+          },
+          {
             "title": "dagster-cloud CLI",
             "path": "/dagster-cloud/managing-deployments/dagster-cloud-cli"
           }
@@ -688,6 +712,10 @@
             "path": "/integrations/duckdb/reference"
           }
         ]
+      },
+      {
+        "title": "Embedded ELT",
+        "path": "/integrations/embedded-elt"
       },
       {
         "title": "Fivetran",
@@ -833,6 +861,30 @@
           {
             "title": "Re-executing jobs",
             "path": "/guides/dagster/re-execution"
+          }
+        ]
+      },
+      {
+        "title": "Dagster Pipes (Experimental)",
+        "path": "/guides/dagster-pipes",
+        "children": [
+          {
+            "title": "Dagster Pipes tutorial",
+            "path": "/guides/dagster-pipes/subprocess",
+            "children": [
+              {
+                "title": "Part 1: Define a Dagster asset",
+                "path": "/guides/dagster-pipes/subprocess/create-subprocess-asset"
+              },
+              {
+                "title": "Part 2: Modify external code",
+                "path": "/guides/dagster-pipes/subprocess/modify-external-code"
+              },
+              {
+                "title": "Dagster Pipes + subprocess reference",
+                "path": "/guides/dagster-pipes/subprocess/reference"
+              }
+            ]
           }
         ]
       },

@@ -794,28 +794,6 @@ class JobDefinition(IHasInternalInit):
                 " or job."
             )
 
-        # Test that selected asset checks can be run individually. Currently this is only supported
-        # on checks defined with @asset_check, which will have an AssetChecksDefinition.
-        all_check_keys_in_checks_defs = set()
-        for asset_checks_def in self.asset_layer.asset_checks_defs:
-            for spec in asset_checks_def.specs:
-                all_check_keys_in_checks_defs.add(spec.key)
-
-        non_checks_defs_asset_checks = [
-            asset_check
-            for asset_check in asset_check_selection or set()
-            if asset_check not in all_check_keys_in_checks_defs
-        ]
-        non_checks_defs_asset_check_strings = [
-            asset_check.name for asset_check in non_checks_defs_asset_checks
-        ]
-        if non_checks_defs_asset_checks:
-            raise DagsterInvalidSubsetError(
-                f"Can't execute asset checks [{', '.join(non_checks_defs_asset_check_strings)}],"
-                " because they weren't defined with @asset_check or AssetChecksDefinition. To"
-                " execute these checks, materialize the asset."
-            )
-
         asset_selection_data = AssetSelectionData(
             asset_selection=asset_selection,
             asset_check_selection=asset_check_selection,
@@ -1047,6 +1025,12 @@ class JobDefinition(IHasInternalInit):
     @property
     def asset_selection(self) -> Optional[AbstractSet[AssetKey]]:
         return self.asset_selection_data.asset_selection if self.asset_selection_data else None
+
+    @property
+    def asset_check_selection(self) -> Optional[AbstractSet[AssetCheckKey]]:
+        return (
+            self.asset_selection_data.asset_check_selection if self.asset_selection_data else None
+        )
 
     @property
     def resolved_op_selection(self) -> Optional[AbstractSet[str]]:

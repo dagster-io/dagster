@@ -16,7 +16,7 @@ def scope_compile_dbt_manifest(manifest):
     # If DAGSTER_DBT_PARSE_PROJECT_ON_LOAD is set, a manifest will be created at runtime.
     # Otherwise, we expect a manifest to be present in the project's target directory.
     if os.getenv("DAGSTER_DBT_PARSE_PROJECT_ON_LOAD"):
-        dbt_parse_invocation = dbt.cli(["parse"], manifest={}).wait()
+        dbt_parse_invocation = dbt.cli(["parse"]).wait()
         dbt_manifest_path = dbt_parse_invocation.target_path.joinpath("manifest.json")
     else:
         dbt_manifest_path = dbt_project_dir.joinpath("target", "manifest.json")
@@ -310,3 +310,29 @@ def scope_custom_freshness_policy_dagster_dbt_translator():
         yield from dbt.cli(["build"], context=context).stream()
 
     # end_custom_freshness_policy_dagster_dbt_translator
+
+
+def scope_enable_asset_check_dagster_dbt_translator():
+    # start_enable_asset_check_dagster_dbt_translator
+    from pathlib import Path
+    from dagster import AssetExecutionContext
+    from dagster_dbt import (
+        DagsterDbtTranslator,
+        DagsterDbtTranslatorSettings,
+        DbtCliResource,
+        dbt_assets,
+    )
+
+    manifest_path = Path("path/to/dbt_project/target/manifest.json")
+    dagster_dbt_translator = DagsterDbtTranslator(
+        settings=DagsterDbtTranslatorSettings(enable_asset_checks=True)
+    )
+
+    @dbt_assets(
+        manifest=manifest_path,
+        dagster_dbt_translator=dagster_dbt_translator,
+    )
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream()
+
+    # end_enable_asset_check_dagster_dbt_translator

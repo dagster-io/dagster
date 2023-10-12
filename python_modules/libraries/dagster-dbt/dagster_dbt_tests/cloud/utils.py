@@ -5,8 +5,14 @@ SAMPLE_PROJECT_ID = 35000
 SAMPLE_JOB_ID = 40000
 SAMPLE_RUN_ID = 5000000
 
-SAMPLE_API_PREFIX = f"https://cloud.getdbt.com/api/v2/accounts/{SAMPLE_ACCOUNT_ID}"
-SAMPLE_API_V3_PREFIX = f"https://cloud.getdbt.com/api/v3/accounts/{SAMPLE_ACCOUNT_ID}"
+DBT_CLOUD_US_HOST = "https://cloud.getdbt.com/"
+DBT_CLOUD_EMEA_HOST = "https://emea.dbt.com/"
+
+SAMPLE_API_PREFIX = f"{DBT_CLOUD_US_HOST}api/v2/accounts/{SAMPLE_ACCOUNT_ID}"
+SAMPLE_API_V3_PREFIX = f"{DBT_CLOUD_US_HOST}api/v3/accounts/{SAMPLE_ACCOUNT_ID}"
+
+SAMPLE_EMEA_API_PREFIX = f"{DBT_CLOUD_EMEA_HOST}api/v2/accounts/{SAMPLE_ACCOUNT_ID}"
+SAMPLE_EMEA_API_V3_PREFIX = f"{DBT_CLOUD_EMEA_HOST}api/v3/accounts/{SAMPLE_ACCOUNT_ID}"
 
 
 def job_details_data(job_id: int):

@@ -24,6 +24,7 @@ from dagster_dbt.core.resources_v2 import (
     DbtCliEventMessage,
     DbtCliResource,
 )
+from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 from dagster_dbt.dbt_manifest import DbtManifestParam
 from dagster_dbt.errors import DagsterDbtCliRuntimeError
 from pydantic import ValidationError
@@ -135,8 +136,25 @@ def test_dbt_cli_get_artifact() -> None:
     assert manifest_json_1 != manifest_json_2
 
 
+def test_dbt_cli_target_path(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setenv("DBT_TARGET_PATH", os.fspath(tmp_path))
+    dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR)
+
+    dbt_cli_invocation_1 = dbt.cli(["compile"]).wait()
+    manifest_st_mtime_1 = dbt_cli_invocation_1.target_path.joinpath("manifest.json").stat().st_mtime
+
+    dbt_cli_invocation_2 = dbt.cli(["compile"], target_path=dbt_cli_invocation_1.target_path).wait()
+    manifest_st_mtime_2 = dbt_cli_invocation_2.target_path.joinpath("manifest.json").stat().st_mtime
+
+    # The target path should be the same for both invocations
+    assert dbt_cli_invocation_1.target_path == dbt_cli_invocation_2.target_path
+
+    # Which results in the manifest.json being overwritten
+    assert manifest_st_mtime_1 != manifest_st_mtime_2
+
+
 @pytest.mark.parametrize("target_path", [Path("tmp"), Path("/tmp")])
-def test_dbt_cli_target_path(monkeypatch: pytest.MonkeyPatch, target_path: Path) -> None:
+def test_dbt_cli_target_path_env_var(monkeypatch: pytest.MonkeyPatch, target_path: Path) -> None:
     dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR)
     expected_target_path = (
         target_path if target_path.is_absolute() else Path(TEST_PROJECT_DIR).joinpath(target_path)
@@ -446,7 +464,6 @@ def test_dbt_tests_to_events(is_asset_check: bool) -> None:
                     "severity": "ERROR",
                 },
                 "name": "test.a",
-                "meta": {"dagster": {"asset_check": is_asset_check}},
                 "attached_node": "model.a" if is_asset_check else None,
             },
         },
@@ -472,8 +489,15 @@ def test_dbt_tests_to_events(is_asset_check: bool) -> None:
             },
         },
     }
+
+    dagster_dbt_translator = DagsterDbtTranslator(
+        settings=DagsterDbtTranslatorSettings(enable_asset_checks=is_asset_check)
+    )
+
     asset_events = list(
-        DbtCliEventMessage(raw_event=raw_event).to_default_asset_events(manifest=manifest)
+        DbtCliEventMessage(raw_event=raw_event).to_default_asset_events(
+            manifest=manifest, dagster_dbt_translator=dagster_dbt_translator
+        )
     )
 
     expected_event_type = AssetCheckResult if is_asset_check else AssetObservation

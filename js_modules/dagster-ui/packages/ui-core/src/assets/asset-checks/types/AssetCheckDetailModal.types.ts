@@ -137,7 +137,9 @@ export type AssetCheckDetailsQueryVariables = Types.Exact<{
 export type AssetCheckDetailsQuery = {
   __typename: 'Query';
   assetChecksOrError:
+    | {__typename: 'AssetCheckNeedsAgentUpgradeError'}
     | {__typename: 'AssetCheckNeedsMigrationError'; message: string}
+    | {__typename: 'AssetCheckNeedsUserCodeUpgrade'}
     | {
         __typename: 'AssetChecks';
         checks: Array<{

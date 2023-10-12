@@ -531,10 +531,7 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
                 "Cannot call `context.asset_key` in a multi_asset with more than one asset. Use"
                 " `context.asset_key_for_output` instead."
             )
-        # pass in the output name to handle the case when a multi_asset has a single AssetOut
-        return self.asset_key_for_output(
-            output_name=next(iter(self.assets_def.keys_by_output_name.keys()))
-        )
+        return next(iter(self.assets_def.keys_by_output_name.values()))
 
     @public
     @property

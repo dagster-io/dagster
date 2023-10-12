@@ -8,6 +8,7 @@ import {
   Icon,
   Tooltip,
   TextInputContainer,
+  Box,
 } from '@dagster-io/ui-components';
 import pickBy from 'lodash/pickBy';
 import uniq from 'lodash/uniq';
@@ -26,7 +27,6 @@ import {closestNodeInDirection, isNodeOffscreen} from '../graph/common';
 import {
   GraphExplorerOptions,
   OptionsOverlay,
-  QueryOverlay,
   RightInfoPanel,
   RightInfoPanelContent,
 } from '../pipelines/GraphExplorer';
@@ -38,7 +38,7 @@ import {
 } from '../pipelines/GraphNotices';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
-import {Loading} from '../ui/Loading';
+import {Loading, LoadingSpinner} from '../ui/Loading';
 
 import {AssetEdges} from './AssetEdges';
 import {AssetGraphJobSidebar} from './AssetGraphJobSidebar';
@@ -47,7 +47,7 @@ import {AssetNode, AssetNodeMinimal} from './AssetNode';
 import {AssetNodeLink} from './ForeignNode';
 import {SidebarAssetInfo} from './SidebarAssetInfo';
 import {GraphData, graphHasCycles, GraphNode, tokenForAssetKey} from './Utils';
-import {AssetGraphLayout} from './layout';
+import {AssetGraphLayout, AssetLayoutEdge} from './layout';
 import {AssetGraphExplorerSidebar} from './sidebar/Sidebar';
 import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
 import {AssetGraphFetchScope, AssetGraphQueryItem, useAssetGraphData} from './useAssetGraphData';
@@ -78,7 +78,12 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
     graphQueryItems,
     allAssetKeys,
     applyingEmptyDefault,
+    isCalculating,
   } = useAssetGraphData(props.explorerPath.opsQuery, props.fetchOptions);
+
+  if (isCalculating) {
+    return <LoadingSpinner purpose="page" />;
+  }
 
   return (
     <Loading allowStaleData queryResult={fetchResult}>
@@ -326,7 +331,12 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
                     viewportRect={viewportRect}
                     selected={selectedGraphNodes.map((n) => n.id)}
                     highlighted={highlighted}
-                    edges={layout.edges}
+                    edges={filterEdges(
+                      layout.edges,
+                      allowGroupsOnlyZoomLevel,
+                      scale,
+                      assetGraphData,
+                    )}
                     strokeWidth={allowGroupsOnlyZoomLevel ? Math.max(4, 3 / scale) : 4}
                     baseColor={
                       allowGroupsOnlyZoomLevel && scale < GROUPS_ONLY_SCALE
@@ -419,16 +429,30 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
             </OptionsOverlay>
           )}
 
-          <TopbarWrapper>
+          <TopbarWrapper style={{paddingLeft: showSidebar || !flagDAGSidebar ? 12 : 24}}>
+            {showSidebar || !flagDAGSidebar ? undefined : (
+              <Tooltip content="Show sidebar">
+                <Button
+                  icon={<Icon name="panel_show_left" />}
+                  onClick={() => {
+                    setShowSidebar(true);
+                  }}
+                />
+              </Tooltip>
+            )}
             <div>{fetchOptionFilters}</div>
-            <GraphQueryInput
-              type="asset_graph"
-              items={graphQueryItems}
-              value={explorerPath.opsQuery}
-              placeholder="Type an asset subset…"
-              onChange={(opsQuery) => onChangeExplorerPath({...explorerPath, opsQuery}, 'replace')}
-              popoverPosition="bottom-left"
-            />
+            <GraphQueryInputFlexWrap>
+              <GraphQueryInput
+                type="asset_graph"
+                items={graphQueryItems}
+                value={explorerPath.opsQuery}
+                placeholder="Type an asset subset…"
+                onChange={(opsQuery) =>
+                  onChangeExplorerPath({...explorerPath, opsQuery}, 'replace')
+                }
+                popoverPosition="bottom-left"
+              />
+            </GraphQueryInputFlexWrap>
             <Button
               onClick={() => {
                 onChangeExplorerPath({...explorerPath, opsQuery: ''}, 'push');
@@ -454,18 +478,6 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
               }
             />
           </TopbarWrapper>
-          <QueryOverlay>
-            {showSidebar || !flagDAGSidebar ? null : (
-              <Tooltip content="Show sidebar">
-                <Button
-                  icon={<Icon name="panel_show_left" />}
-                  onClick={() => {
-                    setShowSidebar(true);
-                  }}
-                />
-              </Tooltip>
-            )}
-          </QueryOverlay>
         </ErrorBoundary>
       }
       second={
@@ -590,20 +602,45 @@ const TopbarWrapper = styled.div`
   top: 0;
   left: 0;
   right: 0;
-  display: grid;
+  display: flex;
   background: white;
-  grid-template-columns: auto 1fr auto auto auto auto;
   gap: 12px;
   align-items: center;
-  padding: 12px 15px;
+  padding: 12px;
   border-bottom: 1px solid ${Colors.KeylineGray};
-  ${TextInputContainer} {
-    width: 100%;
-  }
-  > :nth-child(2) {
+`;
+
+const GraphQueryInputFlexWrap = styled.div`
+  flex: 1;
+
+  > ${Box} {
+    ${TextInputContainer} {
+      width: 100%;
+    }
     > * {
       display: block;
       width: 100%;
     }
   }
 `;
+
+function filterEdges(
+  edges: AssetLayoutEdge[],
+  allowGroupsOnlyZoomLevel: boolean,
+  scale: number,
+  graphData: GraphData,
+) {
+  if (allowGroupsOnlyZoomLevel && scale < GROUPS_ONLY_SCALE) {
+    return edges.filter((e) => {
+      const fromAsset = graphData.nodes[e.fromId];
+      const toAsset = graphData.nodes[e.toId];
+      // If the assets are in the same asset group then filter out the edge
+      return (
+        fromAsset?.definition.groupName !== toAsset?.definition.groupName ||
+        fromAsset?.definition.repository.id !== toAsset?.definition.repository.id ||
+        fromAsset?.definition.repository.location.id !== toAsset?.definition.repository.location.id
+      );
+    });
+  }
+  return edges;
+}

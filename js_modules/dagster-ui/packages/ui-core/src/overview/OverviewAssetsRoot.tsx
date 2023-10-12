@@ -1,15 +1,15 @@
 import {useQuery} from '@apollo/client';
 import {
   Box,
-  Spinner,
+  Caption,
   Colors,
   Icon,
-  Tag,
-  useViewport,
-  Select,
   MenuItem,
-  Caption,
+  Select,
+  Spinner,
+  Tag,
   TextInput,
+  useViewport,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
@@ -21,7 +21,7 @@ import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useAssetsLiveData} from '../asset-data/AssetLiveDataProvider';
 import {StatusCase, buildAssetNodeStatusContent} from '../asset-graph/AssetNodeStatusContent';
-import {displayNameForAssetKey, toGraphId} from '../asset-graph/Utils';
+import {displayNameForAssetKey, tokenForAssetKey} from '../asset-graph/Utils';
 import {partitionCountString} from '../assets/AssetNodePartitionCounts';
 import {ASSET_CATALOG_TABLE_QUERY} from '../assets/AssetsCatalogTable';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
@@ -241,13 +241,13 @@ function VirtualRow({height, start, group}: RowProps) {
     }
     Object.keys(liveDataByNode).forEach((key) => {
       const assetLiveData = liveDataByNode[key];
-      const asset = group.assets.find((asset) => toGraphId(asset.key) === key);
+      const asset = group.assets.find((asset) => tokenForAssetKey(asset.key) === key);
       if (!asset?.definition) {
         console.warn('Expected a definition for asset with key', key);
         return;
       }
       const status = buildAssetNodeStatusContent({
-        assetKey: {path: JSON.parse(key)},
+        assetKey: asset.key,
         definition: asset.definition,
         liveData: assetLiveData,
         expanded: true,

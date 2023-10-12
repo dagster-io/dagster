@@ -32,6 +32,7 @@ export const BackfillTable = ({
             <th>Created</th>
             {showBackfillTarget ? <th>Backfill target</th> : null}
             <th>Requested</th>
+            <th>Launched by</th>
             <th>Backfill status</th>
             <th>Run status</th>
             <th style={{width: 80}} />
@@ -75,6 +76,10 @@ export const BACKFILL_TABLE_FRAGMENT = gql`
     }
     assetSelection {
       path
+    }
+    tags {
+      key
+      value
     }
     error {
       ...PythonErrorFragment
