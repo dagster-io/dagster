@@ -87,7 +87,7 @@ const TickDetailsDialogImpl = ({
 
   if (!tick) {
     return (
-      <Box padding={32}>
+      <Box style={{padding: 32}} flex={{alignItems: 'center', justifyContent: 'center'}}>
         <Spinner purpose="section" />
       </Box>
     );

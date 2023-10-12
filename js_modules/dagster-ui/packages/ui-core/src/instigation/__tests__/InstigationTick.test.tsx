@@ -40,6 +40,11 @@ describe('TickTag', () => {
 
       const tag = screen.queryByText(/0 requested/i);
       expect(tag).toBeVisible();
+
+      await userEvent.hover(tag as HTMLElement);
+      await waitFor(() => {
+        expect(screen.queryByText(/2 runs requested, but skipped/i)).toBeVisible();
+      });
     });
   });
 });
