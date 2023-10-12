@@ -351,7 +351,6 @@ class AssetDaemonContext:
                 to_materialize.update(asset_partitions)
             self._logger.debug("Done evaluating materialize rule")
 
-        # TODO: make this a skip rule
         for candidate in list(to_materialize):
             if candidate in self.instance_queryer.get_active_backfill_target_asset_graph_subset():
                 to_materialize.remove(candidate)
