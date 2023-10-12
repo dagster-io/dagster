@@ -16,6 +16,10 @@ from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.context.compute import AssetExecutionContext
 
 
+def external_asset_from_spec(spec: AssetSpec) -> AssetsDefinition:
+    return external_assets_from_specs([spec])[0]
+
+
 def external_assets_from_specs(specs: Sequence[AssetSpec]) -> List[AssetsDefinition]:
     """Create an external assets definition from a sequence of asset specs.
 
