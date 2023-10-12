@@ -2,22 +2,23 @@ import {BaseTag, Box, Colors, Icon, Spinner, Tag} from '@dagster-io/ui-component
 import * as React from 'react';
 
 import {assertUnreachable} from '../../app/Util';
-import {AssetCheckExecutionResolvedStatus, AssetCheckSeverity} from '../../graphql/types';
+import {
+  AssetCheckEvaluation,
+  AssetCheckExecution,
+  AssetCheckExecutionResolvedStatus,
+  AssetCheckSeverity,
+} from '../../graphql/types';
+import {linkToRunEvent} from '../../runs/RunUtils';
 import {TagActionsPopover} from '../../ui/TagActions';
 
 export const AssetCheckStatusTag = ({
   execution,
 }: {
-  check: {
-    name: string;
-  };
-  execution: {
-    runId: string;
-    status: AssetCheckExecutionResolvedStatus;
-    evaluation?: {
-      severity: AssetCheckSeverity;
-    } | null;
-  } | null;
+  execution:
+    | (Pick<AssetCheckExecution, 'runId' | 'status' | 'timestamp' | 'stepKey'> & {
+        evaluation: Pick<AssetCheckEvaluation, 'severity'> | null;
+      })
+    | null;
 }) => {
   // Note: this uses BaseTag for a "grayer" style than the default tag intent
   if (!execution) {
@@ -83,7 +84,10 @@ export const AssetCheckStatusTag = ({
       actions={[
         {
           label: 'View in run logs',
-          to: `/runs/${runId}`,
+          to: linkToRunEvent(
+            {id: runId},
+            {stepKey: execution.stepKey, timestamp: execution.timestamp},
+          ),
         },
       ]}
     >

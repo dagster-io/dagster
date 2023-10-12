@@ -38,6 +38,8 @@ export type AssetChecksQuery = {
             id: string;
             runId: string;
             status: Types.AssetCheckExecutionResolvedStatus;
+            stepKey: string | null;
+            timestamp: number;
             evaluation: {
               __typename: 'AssetCheckEvaluation';
               severity: Types.AssetCheckSeverity;

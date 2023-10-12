@@ -222,14 +222,14 @@ export function _buildAssetNodeStatusContent({
     const numMissing = numPartitions - numFailed - numMaterialized;
     const {background, foreground, border} =
       StyleForAssetPartitionStatus[
-        overdue || numFailed
+        overdue || numFailed || checksFailed
           ? AssetPartitionStatus.FAILED
           : numMissing
           ? AssetPartitionStatus.MISSING
           : AssetPartitionStatus.MATERIALIZED
       ];
     const statusCase =
-      overdue || numFailed
+      overdue || numFailed || checksFailed
         ? (StatusCase.PARTITIONS_FAILED as const)
         : numMissing
         ? (StatusCase.PARTITIONS_MISSING as const)
@@ -302,8 +302,10 @@ export function _buildAssetNodeStatusContent({
             </OverdueLineagePopover>
           ) : runWhichFailedToMaterialize ? (
             <span style={{color: Colors.Red700}}>Failed</span>
-          ) : (
+          ) : lastMaterialization ? (
             <span style={{color: Colors.Red700}}>Materialized</span>
+          ) : (
+            <span style={{color: Colors.Red700}}>Never materialized</span>
           )}
 
           {expanded && <SpacerDot />}

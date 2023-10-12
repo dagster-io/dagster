@@ -5,6 +5,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {linkToRunEvent} from '../../runs/RunUtils';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 import {testId} from '../../testing/testId';
 import {HeaderCell, Row, RowCell, Container, Inner} from '../../ui/VirtualizedTable';
@@ -86,12 +87,17 @@ export const VirtualizedAssetCheckRow = ({assetNode, height, start, row}: AssetC
         </RowCell>
         <RowCell style={{flexDirection: 'row', alignItems: 'center'}}>
           <div>
-            <AssetCheckStatusTag check={row} execution={row.executionForLatestMaterialization} />
+            <AssetCheckStatusTag execution={row.executionForLatestMaterialization} />
           </div>
         </RowCell>
         <RowCell style={{flexDirection: 'row', alignItems: 'center'}}>
           {timestamp ? (
-            <Link to={`/runs/${execution.runId}`}>
+            <Link
+              to={linkToRunEvent(
+                {id: execution.runId},
+                {stepKey: execution.stepKey, timestamp: execution.timestamp},
+              )}
+            >
               <TimestampDisplay timestamp={timestamp} />
             </Link>
           ) : (

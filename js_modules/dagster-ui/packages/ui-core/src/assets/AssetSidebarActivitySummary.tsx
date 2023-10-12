@@ -175,10 +175,7 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
               }}
             >
               <MiddleTruncate text={`${check.name}`} />
-              <AssetCheckStatusTag
-                check={check}
-                execution={check.executionForLatestMaterialization}
-              />
+              <AssetCheckStatusTag execution={check.executionForLatestMaterialization} />
             </Box>
           ))}
           {liveData.assetChecks.length > 10 && (
