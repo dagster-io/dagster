@@ -1,4 +1,4 @@
-import {ApolloClient, useApolloClient} from '@apollo/client';
+import {ApolloClient, gql, useApolloClient} from '@apollo/client';
 import uniq from 'lodash/uniq';
 import React from 'react';
 
@@ -9,6 +9,11 @@ import {isDocumentVisible, useDocumentVisibility} from '../hooks/useDocumentVisi
 import {useDidLaunchEvent} from '../runs/RunUtils';
 
 import {AssetDataRefreshButton} from './AssetDataRefreshButton';
+import {
+  AssetGraphLiveQuery,
+  AssetGraphLiveQueryVariables,
+  AssetNodeLiveFragment,
+} from './types/AssetLiveDataProvider.types';
 
 const _assetKeyListeners: Record<string, Array<DataForNodeListener>> = {};
 let providerListener = (_key: string, _data?: LiveDataForNode) => {};
