@@ -1,3 +1,6 @@
+# pyright: reportGeneralTypeIssues=none
+# pyright: reportOptionalMemberAccess=none
+
 import os
 
 from dagster_embedded_elt.sling import (
