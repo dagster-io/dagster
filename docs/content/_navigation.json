@@ -851,6 +851,30 @@
         ]
       },
       {
+        "title": "Dagster Pipes (Experimental)",
+        "path": "/guides/dagster-pipes",
+        "children": [
+          {
+            "title": "Dagster Pipes tutorial",
+            "path": "/guides/dagster-pipes/subprocess",
+            "children": [
+              {
+                "title": "Part 1: Define a Dagster asset",
+                "path": "/guides/dagster-pipes/subprocess/create-subprocess-asset"
+              },
+              {
+                "title": "Part 2: Modify external code",
+                "path": "/guides/dagster-pipes/subprocess/modify-external-code"
+              },
+              {
+                "title": "Dagster Pipes + subprocess reference",
+                "path": "/guides/dagster-pipes/subprocess/reference"
+              }
+            ]
+          }
+        ]
+      },
+      {
         "title": "Version migration",
         "path": "/migration",
         "isNotDynamic": true
@@ -912,30 +936,6 @@
           {
             "title": "Experimental features",
             "children": [
-              {
-                "title": "Dagster Pipes",
-                "path": "/guides/dagster-pipes",
-                "children": [
-                  {
-                    "title": "Dagster Pipes tutorial",
-                    "path": "/guides/dagster-pipes/subprocess",
-                    "children": [
-                      {
-                        "title": "Part 1: Define a Dagster asset",
-                        "path": "/guides/dagster-pipes/subprocess/create-subprocess-asset"
-                      },
-                      {
-                        "title": "Part 2: Modify external code",
-                        "path": "/guides/dagster-pipes/subprocess/modify-external-code"
-                      },
-                      {
-                        "title": "Dagster Pipes + subprocess reference",
-                        "path": "/guides/dagster-pipes/subprocess/reference"
-                      }
-                    ]
-                  }
-                ]
-              },
               {
                 "title": "Using custom run coordinators",
                 "path": "/guides/dagster/run-attribution"
