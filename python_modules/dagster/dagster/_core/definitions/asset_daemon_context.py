@@ -377,7 +377,6 @@ class AssetDaemonContext:
         to_materialize.difference_update(to_skip)
 
         # this is treated separately from other rules, for now
-        discard_context = dataclasses.replace(skip_context, candidates=to_materialize)
         if auto_materialize_policy.max_materializations_per_minute is not None:
             rule = DiscardOnMaxMaterializationsExceededRule(
                 limit=auto_materialize_policy.max_materializations_per_minute
@@ -386,7 +385,9 @@ class AssetDaemonContext:
 
             self._verbose_log_fn(f"Evaluating discard rule: {rule_snapshot}")
 
-            for evaluation_data, asset_partitions in rule.evaluate_for_asset(discard_context):
+            for evaluation_data, asset_partitions in rule.evaluate_for_asset(
+                dataclasses.replace(skip_context, candidates=to_materialize)
+            ):
                 all_results.append(
                     (
                         AutoMaterializeRuleEvaluation(
