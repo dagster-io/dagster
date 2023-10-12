@@ -86,7 +86,11 @@ const TickDetailsDialogImpl = ({
   }, [tick?.dynamicPartitionsRequestResults]);
 
   if (!tick) {
-    return <Spinner purpose="section" />;
+    return (
+      <Box padding={32}>
+        <Spinner purpose="section" />
+      </Box>
+    );
   }
 
   return (
