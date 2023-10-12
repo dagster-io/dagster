@@ -3,13 +3,9 @@ import {Alert, Box, NonIdealState, Spinner, Tag, ErrorBoundary} from '@dagster-i
 import * as React from 'react';
 import {Link, useLocation} from 'react-router-dom';
 
-import {
-  FIFTEEN_SECONDS,
-  QueryRefreshCountdown,
-  useMergedRefresh,
-  useQueryRefreshAtInterval,
-} from '../app/QueryRefresh';
+import {QueryRefreshCountdown} from '../app/QueryRefresh';
 import {Timestamp} from '../app/time/Timestamp';
+import {AssetLiveDataRefresh, useAssetsLiveData} from '../asset-data/AssetLiveDataProvider';
 import {
   GraphData,
   LiveDataForNode,
@@ -18,7 +14,6 @@ import {
   tokenForAssetKey,
 } from '../asset-graph/Utils';
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
-import {useLiveDataForAssetKeys} from '../asset-graph/useLiveDataForAssetKeys';
 import {StaleReasonsTags} from '../assets/Stale';
 import {AssetComputeKindTag} from '../graph/OpTags';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
@@ -83,13 +78,11 @@ export const AssetView = ({assetKey}: Props) => {
 
   // Observe the live state of the visible assets. Note: We use the "last materialization"
   // provided by this hook to trigger resets of the datasets inside the Activity / Plots tabs
-  const {liveDataRefreshState, liveDataByNode} = useLiveDataForAssetKeys(
-    visibleAssetGraph.graphAssetKeys,
-  );
+  const {liveDataByNode, refresh} = useAssetsLiveData(visibleAssetGraph.graphAssetKeys);
 
   // The "live" data is preferable and more current, but only available for SDAs. Fallback
   // to the materialization timestamp we loaded from assetOrError if live data is not available.
-  const liveDataForAsset: LiveDataForNode | undefined = liveDataByNode[toGraphId(assetKey)];
+  const liveDataForAsset: LiveDataForNode | undefined = liveDataByNode[tokenForAssetKey(assetKey)];
   const lastMaterializedAt = (liveDataForAsset?.lastMaterialization || lastMaterialization)
     ?.timestamp;
 
@@ -100,11 +93,6 @@ export const AssetView = ({assetKey}: Props) => {
   const dataRefreshHint = liveDataForAsset
     ? healthRefreshHintFromLiveData(liveDataForAsset)
     : lastMaterialization?.timestamp;
-
-  const refreshState = useMergedRefresh(
-    useQueryRefreshAtInterval(definitionQueryResult, FIFTEEN_SECONDS),
-    liveDataRefreshState,
-  );
 
   const renderDefinitionTab = () => {
     if (definitionQueryResult.loading && !definitionQueryResult.previousData) {
@@ -247,7 +235,7 @@ export const AssetView = ({assetKey}: Props) => {
           repository: definition.repository,
         }
       : null,
-    refreshState.refetch,
+    refresh,
   );
 
   return (
@@ -267,11 +255,9 @@ export const AssetView = ({assetKey}: Props) => {
         tabs={
           <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}>
             <AssetTabs selectedTab={selectedTab} tabs={tabList} />
-            {refreshState && (
-              <Box padding={{bottom: 8}}>
-                <QueryRefreshCountdown refreshState={refreshState} />
-              </Box>
-            )}
+            <Box padding={{bottom: 8}}>
+              <AssetLiveDataRefresh />
+            </Box>
           </Box>
         }
         right={
