@@ -17,6 +17,7 @@ from dagster import (
     observable_source_asset,
 )
 from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.external_asset import (
     create_external_asset_from_source_asset,
     external_assets_from_specs,
@@ -248,3 +249,51 @@ def test_observable_source_asset_decorator() -> None:
 
     all_materializations = result.get_asset_materialization_events()
     assert len(all_materializations) == 0
+
+
+def test_external_assets_with_dependencies_manual_construction() -> None:
+    upstream_asset = AssetSpec("upstream_asset")
+    downstream_asset = AssetSpec("downstream_asset", deps=[upstream_asset])
+
+    @multi_asset(name="_generated_asset_def_1", specs=[upstream_asset])
+    def _upstream_def(context: AssetExecutionContext) -> None:
+        raise Exception("do not execute")
+
+    @multi_asset(name="_generated_asset_def_2", specs=[downstream_asset])
+    def _downstream_asset(context: AssetExecutionContext) -> None:
+        raise Exception("do not execute")
+
+    defs = Definitions(assets=[_upstream_def, _downstream_asset])
+    assert defs
+
+    assert defs.get_implicit_global_asset_job_def().asset_layer.asset_deps[
+        AssetKey("downstream_asset")
+    ] == {AssetKey("upstream_asset")}
+
+
+def test_external_asset_multi_asset() -> None:
+    upstream_asset = AssetSpec("upstream_asset")
+    downstream_asset = AssetSpec("downstream_asset", deps=[upstream_asset])
+
+    @multi_asset(specs=[downstream_asset, upstream_asset])
+    def _generated_asset_def(context: AssetExecutionContext):
+        raise Exception("do not execute")
+
+    defs = Definitions(assets=[_generated_asset_def])
+    assert defs
+
+    assert defs.get_implicit_global_asset_job_def().asset_layer.asset_deps[
+        AssetKey("downstream_asset")
+    ] == {AssetKey("upstream_asset")}
+
+
+def test_external_assets_with_dependencies() -> None:
+    upstream_asset = AssetSpec("upstream_asset")
+    downstream_asset = AssetSpec("downstream_asset", deps=[upstream_asset])
+
+    defs = Definitions(assets=external_assets_from_specs([upstream_asset, downstream_asset]))
+    assert defs
+
+    assert defs.get_implicit_global_asset_job_def().asset_layer.asset_deps[
+        AssetKey("downstream_asset")
+    ] == {AssetKey("upstream_asset")}

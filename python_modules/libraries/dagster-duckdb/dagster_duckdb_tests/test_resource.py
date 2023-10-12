@@ -28,14 +28,14 @@ def test_resource(tmp_path):
 
 
 @pytest.mark.parametrize(
-    "config",
+    "connection_config",
     [{"arrow_large_buffer_size": False}, {"arrow_large_buffer_size": True}],
 )
-def test_config(tmp_path, config):
+def test_config(tmp_path, connection_config):
     @op(required_resource_keys={"duckdb"})
     def check_config_op(context):
         with context.resources.duckdb.get_connection() as conn:
-            for name, value in config.items():
+            for name, value in connection_config.items():
                 res = conn.execute(f"SELECT current_setting('{name}')").fetchone()
 
                 assert res[0] == value
@@ -43,7 +43,8 @@ def test_config(tmp_path, config):
     @job(
         resource_defs={
             "duckdb": DuckDBResource(
-                database=os.path.join(tmp_path, "unit_test.duckdb"), config=config
+                database=os.path.join(tmp_path, "unit_test.duckdb"),
+                connection_config=connection_config,
             )
         }
     )

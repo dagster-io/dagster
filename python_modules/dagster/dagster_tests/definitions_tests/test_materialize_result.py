@@ -319,6 +319,31 @@ def test_materialize_result_output_typing():
         resources={"io_manager": TestingIOManager()},
     ).success
 
+    @asset(
+        check_specs=[
+            AssetCheckSpec(name="check_one", asset="with_checks"),
+            AssetCheckSpec(name="check_two", asset="with_checks"),
+        ]
+    )
+    def with_checks(context: AssetExecutionContext) -> MaterializeResult:
+        return MaterializeResult(
+            check_results=[
+                AssetCheckResult(
+                    check_name="check_one",
+                    passed=True,
+                ),
+                AssetCheckResult(
+                    check_name="check_two",
+                    passed=True,
+                ),
+            ]
+        )
+
+    assert materialize(
+        [with_checks],
+        resources={"io_manager": TestingIOManager()},
+    ).success
+
 
 @pytest.mark.skip(
     "Generator return types are interpreted as Any. See"

@@ -30,7 +30,6 @@ from .attach_other_object_to_context import (
 )
 from .config import Config
 from .conversion_utils import TResValue
-from .inheritance_utils import safe_is_subclass
 from .resource import (
     AllowDelayedDependencies,
     ConfigurableResourceFactory,
@@ -39,6 +38,7 @@ from .resource import (
     ResourceWithKeyMapping,
     Self,
 )
+from .type_check_utils import safe_is_subclass
 
 try:
     from functools import cached_property  # type: ignore  # (py37 compat)
