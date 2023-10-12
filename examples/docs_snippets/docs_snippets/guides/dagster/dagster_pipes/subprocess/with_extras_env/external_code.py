@@ -10,11 +10,11 @@ def main():
     orders_df = pd.DataFrame({"order_id": [1, 2], "item_id": [432, 878]})
     total_orders = len(orders_df)
     # get the Dagster Pipes context
-    context = PipesContext.get()
+    pipes = PipesContext.get()
     # get all extras provided by Dagster asset
-    print(context.extras)
+    print(pipes.extras)
     # get the value of an extra
-    print(context.get_extra("foo"))
+    print(pipes.get_extra("foo"))
     # get env var
     print(os.environ["MY_ENV_VAR_IN_SUBPROCESS"])
 

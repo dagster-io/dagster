@@ -11,8 +11,8 @@ class SomeSqlClient:
 if __name__ == "__main__":
     sql = sys.argv[1]
 
-    with open_dagster_pipes() as context:
+    with open_dagster_pipes() as pipes:
         client = SomeSqlClient()
         client.query(sql)
-        context.report_asset_materialization(metadata={"sql": sql})
-        context.log.info(f"Ran {sql}")
+        pipes.report_asset_materialization(metadata={"sql": sql})
+        pipes.log.info(f"Ran {sql}")

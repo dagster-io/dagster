@@ -10,12 +10,12 @@ def main():
     total_users = orders_df["user_id"].nunique()
 
     # get the Dagster Pipes context
-    context = PipesContext.get()
+    pipes = PipesContext.get()
     # send structured metadata back to Dagster. asset_key is required when there are multiple assets
-    context.report_asset_materialization(
+    pipes.report_asset_materialization(
         asset_key="orders", metadata={"total_orders": total_orders}
     )
-    context.report_asset_materialization(
+    pipes.report_asset_materialization(
         asset_key="users", metadata={"total_users": total_users}
     )
 

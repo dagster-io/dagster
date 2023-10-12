@@ -2,8 +2,8 @@ import numpy as np
 import pandas as pd
 from dagster_pipes import open_dagster_pipes
 
-with open_dagster_pipes() as context:
-    context.log.info("joining iot telem data in partition ({context.partition_key})....")
+with open_dagster_pipes() as pipes:
+    pipes.log.info("joining iot telem data in partition ({pipes.partition_key})....")
     data = pd.DataFrame(
         {
             "trace_id": range(1000),
@@ -12,4 +12,4 @@ with open_dagster_pipes() as context:
             ),
         }
     )
-    context.report_asset_materialization(metadata={"row_count": len(data)})
+    pipes.report_asset_materialization(metadata={"row_count": len(data)})

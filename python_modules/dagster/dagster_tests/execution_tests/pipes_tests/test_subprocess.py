@@ -202,8 +202,8 @@ def test_pipes_subprocess_client_no_return():
     def script_fn():
         from dagster_pipes import open_dagster_pipes
 
-        with open_dagster_pipes() as context:
-            context.report_asset_materialization()
+        with open_dagster_pipes() as pipes:
+            pipes.report_asset_materialization()
 
     @asset
     def foo(context: OpExecutionContext, client: PipesSubprocessClient):
@@ -227,11 +227,11 @@ def test_pipes_multi_asset():
     def script_fn():
         from dagster_pipes import open_dagster_pipes
 
-        with open_dagster_pipes() as context:
-            context.report_asset_materialization(
+        with open_dagster_pipes() as pipes:
+            pipes.report_asset_materialization(
                 {"foo_meta": "ok"}, data_version="alpha", asset_key="foo"
             )
-            context.report_asset_materialization(data_version="alpha", asset_key="bar")
+            pipes.report_asset_materialization(data_version="alpha", asset_key="bar")
 
     @multi_asset(specs=[AssetSpec("foo"), AssetSpec("bar")])
     def foo_bar(context: AssetExecutionContext, pipes_subprocess_client: PipesSubprocessClient):
@@ -286,8 +286,8 @@ def test_pipes_typed_metadata():
     def script_fn():
         from dagster_pipes import open_dagster_pipes
 
-        with open_dagster_pipes() as context:
-            context.report_asset_materialization(
+        with open_dagster_pipes() as pipes:
+            pipes.report_asset_materialization(
                 metadata={
                     "infer_meta": "bar",
                     "text_meta": {"raw_value": "bar", "type": "text"},
@@ -366,8 +366,8 @@ def test_pipes_asset_invocation():
     def script_fn():
         from dagster_pipes import open_dagster_pipes
 
-        with open_dagster_pipes() as context:
-            context.log.info("hello world")
+        with open_dagster_pipes() as pipes:
+            pipes.log.info("hello world")
 
     @asset
     def foo(context: AssetExecutionContext, pipes_subprocess_client: PipesSubprocessClient):
@@ -392,10 +392,10 @@ def test_pipes_no_orchestration():
         loader = PipesEnvVarParamsLoader()
         assert not loader.is_dagster_pipes_process()
         with open_dagster_pipes(params_loader=loader) as _:
-            context = PipesContext.get()
-            context.log.info("hello world")
-            context.report_asset_materialization(
-                metadata={"bar": context.get_extra("bar")},
+            pipes = PipesContext.get()
+            pipes.log.info("hello world")
+            pipes.report_asset_materialization(
+                metadata={"bar": pipes.get_extra("bar")},
                 data_version="alpha",
             )
 
