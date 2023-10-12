@@ -3,7 +3,6 @@ import {Alert, Box, NonIdealState, Spinner, Tag, ErrorBoundary} from '@dagster-i
 import * as React from 'react';
 import {Link, useLocation} from 'react-router-dom';
 
-import {QueryRefreshCountdown} from '../app/QueryRefresh';
 import {Timestamp} from '../app/time/Timestamp';
 import {AssetLiveDataRefresh, useAssetsLiveData} from '../asset-data/AssetLiveDataProvider';
 import {
