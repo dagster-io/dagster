@@ -1035,6 +1035,10 @@
             "path": "/_apidocs/asset-checks"
           },
           {
+            "title": "External Assets (Experimental)",
+            "path": "/_apidocs/external-assets"
+          },
+          {
             "title": "Job versioning & memoization (Deprecated)",
             "path": "/_apidocs/memoization"
           },
