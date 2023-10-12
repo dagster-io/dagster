@@ -85,6 +85,28 @@ def test_with_rules():
     )
 
 
+def test_with_rules_override_existing_instance():
+    simple_policy = AutoMaterializePolicy(
+        rules={
+            AutoMaterializeRule.materialize_on_parent_updated(),
+            AutoMaterializeRule.skip_on_backfill_in_progress(),
+        }
+    )
+
+    simple_policy_with_override = simple_policy.with_rules(
+        AutoMaterializeRule.skip_on_backfill_in_progress(
+            skip_all_partitions_of_backfilling_asset=True
+        ),
+    )
+
+    assert simple_policy_with_override.rules == {
+        AutoMaterializeRule.skip_on_backfill_in_progress(
+            skip_all_partitions_of_backfilling_asset=True
+        ),
+        AutoMaterializeRule.materialize_on_parent_updated(),
+    }
+
+
 @pytest.mark.parametrize(
     "serialized_amp, expected_amp",
     [

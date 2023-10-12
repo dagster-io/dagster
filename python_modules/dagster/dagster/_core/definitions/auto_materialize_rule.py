@@ -302,7 +302,7 @@ class AutoMaterializeRule(ABC):
     def skip_on_backfill_in_progress(
         skip_all_partitions_of_backfilling_asset: bool = False,
     ) -> "SkipOnBackfillInProgressRule":
-        """Skip an asset's partitions if the asset is currently being backfilled.
+        """Skip an asset's partitions if targeted by an in-progress backfill.
 
         Attributes:
             skip_all_partitions_of_backfilling_asset (Optional[bool]): If true, skips
@@ -704,7 +704,7 @@ class SkipOnBackfillInProgressRule(
 
     @property
     def description(self) -> str:
-        return "asset is currently being backfilled"
+        return "asset is targeted by an in-progress backfill"
 
     def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
         backfill_in_progress_candidates: AbstractSet[AssetKeyPartitionKey] = set()
