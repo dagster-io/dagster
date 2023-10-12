@@ -1011,7 +1011,6 @@ auto_materialize_policy_scenarios = {
             # C must wait for B to be materialized
             expected_run_requests=[],
         ),
-        # manually run C
         expected_run_requests=[],
         unevaluated_runs=[],
     ),
