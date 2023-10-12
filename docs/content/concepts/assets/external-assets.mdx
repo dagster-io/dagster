@@ -5,13 +5,9 @@ description: External assets model assets in Dagster that are not scheduled or m
 
 # External Assets (Experimental)
 
-An **external asset** is an asset that is not materialized by Dagster, but is tracked in the asset graph and asset catalog. This allows you to model assets in Dagster, attach metadata and events to those assets, but without scheduling their materialization with Dagster.
+An **external asset** is an asset that is visible in Dagster but executed by an external process. For example, you have a process that loads data from Kafka into Amazon S3 every day. You want the S3 asset to be visible alongside your other data assets, but not triggered by Dagster.
 
-External assets are a good fit if:
-
-- **An external source creates the data**. For example: An external file created every day, or Kafka loading data into Amazon S3
-- **Dagster isn't required for materialization**. For example: An existing pipeline materializes data using its own scheduling mechanism
-- **Data is created and processed manually.** For example: Manually entering data into a spreadsheet
+In this case, you could use an external asset to leverage Dagster's event log and tooling without using the orchestrator. This allows you to maintain data lineage, observability, and data quality without unnecessary migrations.
 
 ### What about Source Assets?
 
@@ -23,10 +19,10 @@ External assets can accomplish this, and more. As a result, Source Assets will b
 
 ## Uses and limitations
 
-With an external asset, you can:
+Using external assets, you can:
 
-- Attach metadata to its definition for documentation, tracking ownership, and so on
-- Track its [data quality](/concepts/assets/asset-checks) and [version](/guides/dagster/asset-versioning-and-caching) in Dagster
+- Attach metadata to asset definitions for documentation, tracking ownership, and so on
+- Track the assets' [data quality](/concepts/assets/asset-checks) and [version](/guides/dagster/asset-versioning-and-caching) in Dagster
 - Use [asset sensors](/concepts/partitions-schedules-sensors/asset-sensors) or auto-materialize policies to update downstream assets based on updates to external assets
 
 ### Limitations
@@ -179,17 +175,21 @@ To keep your external assets updated, you can use any of the following approache
 
 - [A REST API](#using-the-rest-api)
 - [Sensors](#using-sensors)
-- [Using the Python API](#using-the-python-api)
+- [A Python API](#using-the-python-api)
 - [Logging events in ops](#logging-events-in-ops)
 
 ### Using the REST API
 
-Whether you're using Dagster OSS or Dagster Cloud, you can use a REST endpoint for reporting asset materializations. Refer to the following tabs for examples using `curl` and Python to communicate with the API.
+Whether you're using Dagster OSS or Dagster Cloud, you can use a REST endpoint for reporting asset materializations. The API also has endpoints for reporting [asset observations](/concepts/assets/asset-observations) and [asset check evaluations](/concepts/assets/asset-checks).
+
+Refer to the following tabs for examples using `curl` and Python to communicate with the API.
+
+#### Using curl
 
 <TabGroup>
-<TabItem name="Using curl">
+<TabItem name="Dagser Cloud">
 
-#### Dagster Cloud
+##### Dagster Cloud
 
 ```bash
 curl --request POST \
@@ -203,7 +203,12 @@ curl --request POST \
 }'
 ```
 
-#### Dagster OSS
+---
+
+</TabItem>
+<TabItem name="Dagster OSS">
+
+##### Dagster OSS
 
 ```bash
 curl --request POST \
@@ -216,10 +221,17 @@ curl --request POST \
 }'
 ```
 
-</TabItem>
-<TabItem name="Using Python">
+---
 
-#### Dagster Cloud
+</TabItem>
+</TabGroup>
+
+#### Using Python
+
+<TabGroup>
+<TabItem name="Dagster Cloud">
+
+##### Dagster Cloud
 
 ```python
 import requests
@@ -231,7 +243,12 @@ headers = { "Content-Type": "application/json", "Dagster-Cloud-Api-Token": "{tok
 response = requests.request("POST", url, json=payload, headers=headers)
 ```
 
-#### Dagster OSS
+---
+
+</TabItem>
+<TabItem name="Dagster OSS">
+
+##### Dagster OSS
 
 ```python
 import requests
@@ -243,10 +260,10 @@ headers = { "Content-Type": "application/json" }
 response = requests.request("POST", url, json=payload, headers=headers)
 ```
 
+---
+
 </TabItem>
 </TabGroup>
-
-The API also has endpoints for reporting [asset observations](/concepts/assets/asset-observations) and [asset check evaluations](/concepts/assets/asset-checks).
 
 ### Using sensors
 
