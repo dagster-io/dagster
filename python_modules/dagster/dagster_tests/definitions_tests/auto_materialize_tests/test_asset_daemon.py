@@ -458,7 +458,9 @@ def test_daemon(scenario_item, daemon_not_paused_instance):
             [spec.num_requested for spec in scenario.expected_evaluations]
         )
         assert tick.requested_asset_keys == {
-            AssetKey.from_coercible(spec.asset_key) for spec in scenario.expected_evaluations
+            AssetKey.from_coercible(spec.asset_key)
+            for spec in scenario.expected_evaluations
+            if spec.num_requested > 0
         }
 
 
