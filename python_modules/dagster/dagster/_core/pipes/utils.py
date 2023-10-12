@@ -4,10 +4,10 @@ import os
 import sys
 import tempfile
 import time
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from threading import Event, Thread
-from typing import Iterator, Optional
+from typing import Iterator, Optional, TextIO
 
 from dagster_pipes import (
     PIPES_PROTOCOL_VERSION_FIELD,
@@ -144,7 +144,7 @@ class PipesFileMessageReader(PipesMessageReader):
         self,
         handler: "PipesMessageHandler",
     ) -> Iterator[PipesParams]:
-        """Set up a thread to read streaming messages from teh external process by tailing the
+        """Set up a thread to read streaming messages from the external process by tailing the
         target file.
 
         Args:
@@ -208,6 +208,12 @@ class PipesTempFileMessageReader(PipesMessageReader):
         return "Attempted to read messages from a local temporary file."
 
 
+# Number of seconds to wait after an external process has completed for stdio logs to become
+# available. If this is exceeded, proceed with exiting without picking up logs.
+WAIT_FOR_STDIO_LOGS_TIMEOUT = 60
+
+
+@experimental
 class PipesBlobStoreMessageReader(PipesMessageReader):
     """Message reader that reads a sequence of message chunks written by an external process into a
     blob store such as S3, Azure blob storage, or GCS.
@@ -221,16 +227,37 @@ class PipesBlobStoreMessageReader(PipesMessageReader):
     counter (starting from 1) on successful write, keeping counters on the read and write end in
     sync.
 
+    If `stdout_reader` or `stderr_reader` are passed, this reader will also start them when
+    `read_messages` is called. If they are not passed, then the reader performs no stdout/stderr
+    forwarding.
+
     Args:
         interval (float): interval in seconds between attempts to download a chunk
+        stdout_reader (Optional[PipesBlobStoreStdioReader]): A reader for reading stdout logs.
+        stderr_reader (Optional[PipesBlobStoreStdioReader]): A reader for reading stderr logs.
     """
 
     interval: float
     counter: int
+    stdout_reader: "PipesBlobStoreStdioReader"
+    stderr_reader: "PipesBlobStoreStdioReader"
 
-    def __init__(self, interval: float = 10):
+    def __init__(
+        self,
+        interval: float = 10,
+        stdout_reader: Optional["PipesBlobStoreStdioReader"] = None,
+        stderr_reader: Optional["PipesBlobStoreStdioReader"] = None,
+    ):
         self.interval = interval
         self.counter = 1
+        self.stdout_reader = (
+            check.opt_inst_param(stdout_reader, "stdout_reader", PipesBlobStoreStdioReader)
+            or PipesNoOpStdioReader()
+        )
+        self.stderr_reader = (
+            check.opt_inst_param(stderr_reader, "stderr_reader", PipesBlobStoreStdioReader)
+            or PipesNoOpStdioReader()
+        )
 
     @contextmanager
     def read_messages(
@@ -249,23 +276,34 @@ class PipesBlobStoreMessageReader(PipesMessageReader):
         """
         with self.get_params() as params:
             is_task_complete = Event()
-            thread = None
+            messages_thread = None
             try:
-                thread = Thread(
-                    target=self._reader_thread,
-                    args=(
-                        handler,
-                        params,
-                        is_task_complete,
-                    ),
-                    daemon=True,
+                messages_thread = Thread(
+                    target=self._messages_thread, args=(handler, params, is_task_complete)
                 )
-                thread.start()
+                messages_thread.start()
+                self.stdout_reader.start(params, is_task_complete)
+                self.stderr_reader.start(params, is_task_complete)
                 yield params
             finally:
+                self.wait_for_stdio_logs(params)
                 is_task_complete.set()
-                if thread:
-                    thread.join()
+                if messages_thread:
+                    messages_thread.join()
+                self.stdout_reader.stop()
+                self.stderr_reader.stop()
+
+    # In cases where we are forwarding logs, in some cases the logs might not be written out until
+    # after the run completes. We wait for them to exist.
+    def wait_for_stdio_logs(self, params):
+        start_or_last_download = datetime.datetime.now()
+        while (
+            datetime.datetime.now() - start_or_last_download
+        ).seconds <= WAIT_FOR_STDIO_LOGS_TIMEOUT and (
+            (self.stdout_reader and not self.stdout_reader.is_ready(params))
+            or (self.stderr_reader and not self.stderr_reader.is_ready(params))
+        ):
+            time.sleep(5)
 
     @abstractmethod
     @contextmanager
@@ -280,15 +318,18 @@ class PipesBlobStoreMessageReader(PipesMessageReader):
     @abstractmethod
     def download_messages_chunk(self, index: int, params: PipesParams) -> Optional[str]: ...
 
-    def _reader_thread(
-        self, handler: "PipesMessageHandler", params: PipesParams, is_task_complete: Event
+    def _messages_thread(
+        self,
+        handler: "PipesMessageHandler",
+        params: PipesParams,
+        is_task_complete: Event,
     ) -> None:
         start_or_last_download = datetime.datetime.now()
         while True:
             now = datetime.datetime.now()
             if (now - start_or_last_download).seconds > self.interval or is_task_complete.is_set():
-                chunk = self.download_messages_chunk(self.counter, params)
                 start_or_last_download = now
+                chunk = self.download_messages_chunk(self.counter, params)
                 if chunk:
                     for line in chunk.split("\n"):
                         message = json.loads(line)
@@ -299,12 +340,83 @@ class PipesBlobStoreMessageReader(PipesMessageReader):
             time.sleep(1)
 
 
+class PipesBlobStoreStdioReader(ABC):
+    @abstractmethod
+    def start(self, params: PipesParams, is_task_complete: Event) -> None: ...
+
+    @abstractmethod
+    def stop(self) -> None: ...
+
+    @abstractmethod
+    def is_ready(self, params: PipesParams) -> bool: ...
+
+
+@experimental
+class PipesChunkedStdioReader(PipesBlobStoreStdioReader):
+    """Reader for reading stdout/stderr logs from a blob store such as S3, Azure blob storage, or GCS.
+
+    Args:
+        interval (float): interval in seconds between attempts to download a chunk.
+        target_stream (TextIO): The stream to which to write the logs. Typcially `sys.stdout` or `sys.stderr`.
+    """
+
+    def __init__(self, *, interval: float = 10, target_stream: TextIO):
+        self.interval = interval
+        self.target_stream = target_stream
+        self.thread: Optional[Thread] = None
+
+    @abstractmethod
+    def download_log_chunk(self, params: PipesParams) -> Optional[str]: ...
+
+    def start(self, params: PipesParams, is_task_complete: Event) -> None:
+        self.thread = Thread(target=self._reader_thread, args=(params, is_task_complete))
+        self.thread.start()
+
+    def stop(self) -> None:
+        if self.thread:
+            self.thread.join()
+
+    def _reader_thread(
+        self,
+        params: PipesParams,
+        is_task_complete: Event,
+    ) -> None:
+        start_or_last_download = datetime.datetime.now()
+        while True:
+            now = datetime.datetime.now()
+            if (
+                (now - start_or_last_download).seconds > self.interval or is_task_complete.is_set()
+            ) and self.is_ready(params):
+                start_or_last_download = now
+                chunk = self.download_log_chunk(params)
+                if chunk:
+                    self.target_stream.write(chunk)
+                elif is_task_complete.is_set():
+                    break
+            time.sleep(self.interval)
+
+
+class PipesNoOpStdioReader(PipesBlobStoreStdioReader):
+    """Default implementation for a pipes stdio reader that does nothing."""
+
+    def start(self, params: PipesParams, is_task_complete: Event) -> None:
+        pass
+
+    def stop(self) -> None:
+        pass
+
+    def is_ready(self, params: PipesParams) -> bool:
+        return True
+
+
 def extract_message_or_forward_to_stdout(handler: "PipesMessageHandler", log_line: str):
     # exceptions as control flow, you love to see it
     try:
         message = json.loads(log_line)
         if PIPES_PROTOCOL_VERSION_FIELD in message.keys():
             handler.handle_message(message)
+        else:
+            sys.stdout.writelines((log_line, "\n"))
     except Exception:
         # move non-message logs in to stdout for compute log capture
         sys.stdout.writelines((log_line, "\n"))

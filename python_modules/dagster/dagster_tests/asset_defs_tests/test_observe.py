@@ -1,7 +1,7 @@
 from typing import Optional
 
 import pytest
-from dagster import DataVersionsByPartition, StaticPartitionsDefinition
+from dagster import DataVersionsByPartition, IOManager, StaticPartitionsDefinition
 from dagster._core.definitions.data_version import (
     DataVersion,
     extract_data_version_from_entry,
@@ -142,3 +142,20 @@ def test_observe_config(is_valid, config_value):
     else:
         with pytest.raises(DagsterInvalidConfigError, match="Error in config for job"):
             observe([foo], instance=instance, run_config=config_value)
+
+
+def test_observe_handle_output():
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            raise NotImplementedError("Shouldn't get here")
+
+        def load_input(self, context):
+            raise NotImplementedError("Shouldn't get here")
+
+    @observable_source_asset
+    def foo() -> DataVersion:
+        return DataVersion("alpha")
+
+    instance = DagsterInstance.ephemeral()
+
+    assert observe([foo], instance=instance, resources={"io_manager": MyIOManager()}).success

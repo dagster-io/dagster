@@ -193,7 +193,7 @@ const RecursiveNavigation = ({
     itemOrSection === currentSection ||
     itemOrSection.path === asPathWithoutAnchor ||
     (itemOrSection.children &&
-      itemOrSection.children.find((item) => item.path === asPathWithoutAnchor));
+      itemOrSection.children.find((item) => asPathWithoutAnchor.startsWith(item.path)));
 
   const expanded = Boolean(navKeysToExpanded[navKey]);
 

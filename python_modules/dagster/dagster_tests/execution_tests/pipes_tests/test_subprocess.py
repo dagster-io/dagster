@@ -385,13 +385,13 @@ def test_pipes_no_orchestration():
     def script_fn():
         from dagster_pipes import (
             PipesContext,
-            is_dagster_pipes_process,
+            PipesEnvVarParamsLoader,
             open_dagster_pipes,
         )
 
-        assert not is_dagster_pipes_process()
-
-        with open_dagster_pipes() as _:
+        loader = PipesEnvVarParamsLoader()
+        assert not loader.is_dagster_pipes_process()
+        with open_dagster_pipes(params_loader=loader) as _:
             context = PipesContext.get()
             context.log.info("hello world")
             context.report_asset_materialization(

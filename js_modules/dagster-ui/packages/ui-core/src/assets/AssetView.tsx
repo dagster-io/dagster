@@ -136,7 +136,6 @@ export const AssetView = ({assetKey}: Props) => {
         params={params}
         setParams={setParams}
         assetKey={assetKey}
-        liveDataByNode={liveDataByNode}
         requestedDepth={visible.requestedDepth}
         assetGraphData={visibleAssetGraph.assetGraphData}
         graphQueryItems={visibleAssetGraph.graphQueryItems}

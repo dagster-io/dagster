@@ -10,7 +10,7 @@ import {
 import * as React from 'react';
 import styled from 'styled-components';
 
-import {GraphData, LiveData} from '../asset-graph/Utils';
+import {GraphData} from '../asset-graph/Utils';
 import {AssetGraphQueryItem, calculateGraphDistances} from '../asset-graph/useAssetGraphData';
 import {AssetKeyInput} from '../graphql/types';
 
@@ -23,18 +23,9 @@ export const AssetNodeLineage: React.FC<{
   setParams: (params: AssetViewParams) => void;
   assetKey: AssetKeyInput;
   assetGraphData: GraphData;
-  liveDataByNode: LiveData;
   requestedDepth: number;
   graphQueryItems: AssetGraphQueryItem[];
-}> = ({
-  params,
-  setParams,
-  assetKey,
-  liveDataByNode,
-  assetGraphData,
-  graphQueryItems,
-  requestedDepth,
-}) => {
+}> = ({params, setParams, assetKey, assetGraphData, graphQueryItems, requestedDepth}) => {
   const maxDistances = React.useMemo(
     () => calculateGraphDistances(graphQueryItems, assetKey),
     [graphQueryItems, assetKey],
@@ -76,7 +67,6 @@ export const AssetNodeLineage: React.FC<{
         {Object.values(assetGraphData.nodes).length > 1 ? (
           <LaunchAssetExecutionButton
             intent="none"
-            liveDataForStale={liveDataByNode}
             scope={{all: Object.values(assetGraphData.nodes).map((n) => n.definition)}}
           />
         ) : (

@@ -35,7 +35,8 @@ export default function Document() {
             __html: `
     {
       "pathPrefix": "__PATH_PREFIX__",
-      "telemetryEnabled": "__TELEMETRY_ENABLED__"
+      "telemetryEnabled": "__TELEMETRY_ENABLED__",
+      "liveDataPollRate": "__LIVE_DATA_POLL_RATE__"
     }
   `,
           }}

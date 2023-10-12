@@ -5,22 +5,6 @@
         dict({
           '__typename': 'UsedSolid',
           'definition': dict({
-            'name': '_external_assets_def',
-          }),
-          'invocations': list([
-            dict({
-              'pipeline': dict({
-                'name': 'executable_test_job',
-              }),
-              'solidHandle': dict({
-                'handleID': '_external_assets_def',
-              }),
-            }),
-          ]),
-        }),
-        dict({
-          '__typename': 'UsedSolid',
-          'definition': dict({
             'name': 'add_four',
           }),
           'invocations': list([
@@ -2718,6 +2702,22 @@
               }),
               'solidHandle': dict({
                 'handleID': 'unconnected',
+              }),
+            }),
+          ]),
+        }),
+        dict({
+          '__typename': 'UsedSolid',
+          'definition': dict({
+            'name': 'unexecutable_asset',
+          }),
+          'invocations': list([
+            dict({
+              'pipeline': dict({
+                'name': 'executable_test_job',
+              }),
+              'solidHandle': dict({
+                'handleID': 'unexecutable_asset',
               }),
             }),
           ]),

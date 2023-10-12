@@ -4,8 +4,8 @@ from queue import Queue
 from typing import TYPE_CHECKING, Any, Dict, Iterator, Mapping, Optional, Set, Union
 
 from dagster_pipes import (
-    DAGSTER_PIPES_BOOTSTRAP_PARAM_NAMES,
-    IS_DAGSTER_PIPES_PROCESS,
+    DAGSTER_PIPES_CONTEXT_ENV_VAR,
+    DAGSTER_PIPES_MESSAGES_ENV_VAR,
     PIPES_METADATA_TYPE_INFER,
     PipesContextData,
     PipesDataProvenance,
@@ -258,9 +258,8 @@ class PipesSession:
             values that must be passed by the context injector.
         """
         return {
-            DAGSTER_PIPES_BOOTSTRAP_PARAM_NAMES[IS_DAGSTER_PIPES_PROCESS]: True,
-            DAGSTER_PIPES_BOOTSTRAP_PARAM_NAMES["context"]: self.context_injector_params,
-            DAGSTER_PIPES_BOOTSTRAP_PARAM_NAMES["messages"]: self.message_reader_params,
+            DAGSTER_PIPES_CONTEXT_ENV_VAR: self.context_injector_params,
+            DAGSTER_PIPES_MESSAGES_ENV_VAR: self.message_reader_params,
         }
 
     @public

@@ -3,9 +3,10 @@ import json
 import os
 import random
 import string
+import sys
 import time
-from contextlib import contextmanager
-from typing import Iterator, Mapping, Optional
+from contextlib import ExitStack, contextmanager
+from typing import Iterator, Literal, Mapping, Optional, TextIO
 
 import dagster._check as check
 from dagster._annotations import experimental
@@ -20,9 +21,12 @@ from dagster._core.pipes.client import (
 )
 from dagster._core.pipes.utils import (
     PipesBlobStoreMessageReader,
+    PipesBlobStoreStdioReader,
+    PipesChunkedStdioReader,
     open_pipes_session,
 )
 from dagster_pipes import (
+    DAGSTER_PIPES_MESSAGES_ENV_VAR,
     PipesContextData,
     PipesExtras,
     PipesParams,
@@ -30,6 +34,10 @@ from dagster_pipes import (
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service import files, jobs
 from pydantic import Field
+
+# Number of seconds between status checks on Databricks jobs launched by the
+# `PipesDatabricksClient`.
+_RUN_POLL_INTERVAL = 5
 
 
 @experimental
@@ -69,7 +77,19 @@ class _PipesDatabricksClient(PipesClient):
             message_reader,
             "message_reader",
             PipesMessageReader,
-        ) or PipesDbfsMessageReader(client=self.client)
+        ) or PipesDbfsMessageReader(
+            client=self.client,
+            stdout_reader=PipesDbfsStdioReader(
+                client=self.client, remote_log_name="stdout", target_stream=sys.stdout
+            ),
+            stderr_reader=PipesDbfsStdioReader(
+                client=self.client, remote_log_name="stderr", target_stream=sys.stderr
+            ),
+        )
+
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
 
     def run(
         self,
@@ -109,6 +129,13 @@ class _PipesDatabricksClient(PipesClient):
                 **(self.env or {}),
                 **pipes_session.get_bootstrap_env_vars(),
             }
+            cluster_log_root = pipes_session.get_bootstrap_params()[
+                DAGSTER_PIPES_MESSAGES_ENV_VAR
+            ].get("cluster_log_root")
+            if cluster_log_root is not None:
+                submit_task_dict["new_cluster"]["cluster_log_conf"] = {
+                    "dbfs": {"destination": f"dbfs:{cluster_log_root}"}
+                }
             task = jobs.SubmitTask.from_dict(submit_task_dict)
             run_id = self.client.jobs.submit(
                 tasks=[task],
@@ -134,7 +161,7 @@ class _PipesDatabricksClient(PipesClient):
                     raise DagsterPipesExecutionError(
                         f"Error running Databricks job: {run.state.state_message}"
                     )
-                time.sleep(5)
+                time.sleep(_RUN_POLL_INTERVAL)
         return PipesClientCompletedInvocation(tuple(pipes_session.get_results()))
 
 
@@ -197,25 +224,45 @@ class PipesDbfsMessageReader(PipesBlobStoreMessageReader):
     """Message reader that reads messages by periodically reading message chunks from an
     automatically-generated temporary directory on DBFS.
 
+    If `stdout_reader` or `stderr_reader` are passed, this reader will also start them when
+    `read_messages` is called. If they are not passed, then the reader performs no stdout/stderr
+    forwarding.
+
     Args:
         interval (float): interval in seconds between attempts to download a chunk
         client (WorkspaceClient): A databricks `WorkspaceClient` object.
+        cluster_log_root (Optional[str]): The root path on DBFS where the cluster logs are written.
+            If set, this will be used to read stderr/stdout logs.
+        stdout_reader (Optional[PipesBlobStoreStdioReader]): A reader for reading stdout logs.
+        stderr_reader (Optional[PipesBlobStoreStdioReader]): A reader for reading stderr logs.
     """
 
-    def __init__(self, *, interval: int = 10, client: WorkspaceClient):
-        super().__init__(interval=interval)
+    def __init__(
+        self,
+        *,
+        interval: float = 10,
+        client: WorkspaceClient,
+        stdout_reader: Optional[PipesBlobStoreStdioReader] = None,
+        stderr_reader: Optional[PipesBlobStoreStdioReader] = None,
+    ):
+        super().__init__(
+            interval=interval, stdout_reader=stdout_reader, stderr_reader=stderr_reader
+        )
         self.dbfs_client = files.DbfsAPI(client.api_client)
 
     @contextmanager
     def get_params(self) -> Iterator[PipesParams]:
-        with dbfs_tempdir(self.dbfs_client) as tempdir:
-            yield {"path": tempdir}
+        with ExitStack() as stack:
+            params: PipesParams = {}
+            params["path"] = stack.enter_context(dbfs_tempdir(self.dbfs_client))
+            if self.stdout_reader or self.stderr_reader:
+                params["cluster_log_root"] = stack.enter_context(dbfs_tempdir(self.dbfs_client))
+            yield params
 
     def download_messages_chunk(self, index: int, params: PipesParams) -> Optional[str]:
         message_path = os.path.join(params["path"], f"{index}.json")
         try:
             raw_message = self.dbfs_client.read(message_path)
-
             # Files written to dbfs using the Python IO interface used in PipesDbfsMessageWriter are
             # base64-encoded.
             return base64.b64decode(raw_message.data).decode("utf-8")
@@ -231,3 +278,57 @@ class PipesDbfsMessageReader(PipesBlobStoreMessageReader):
             " PipesDbfsMessageWriter to be explicitly passed to open_dagster_pipes in the external"
             " process."
         )
+
+
+@experimental
+class PipesDbfsStdioReader(PipesChunkedStdioReader):
+    """Reader that reads stdout/stderr logs from DBFS.
+
+    Args:
+        interval (float): interval in seconds between attempts to download a log chunk
+        remote_log_name (Literal["stdout", "stderr"]): The name of the log file to read.
+        target_stream (TextIO): The stream to which to forward log chunk that have been read.
+        client (WorkspaceClient): A databricks `WorkspaceClient` object.
+    """
+
+    def __init__(
+        self,
+        *,
+        interval: float = 10,
+        remote_log_name: Literal["stdout", "stderr"],
+        target_stream: TextIO,
+        client: WorkspaceClient,
+    ):
+        super().__init__(interval=interval, target_stream=target_stream)
+        self.dbfs_client = files.DbfsAPI(client.api_client)
+        self.remote_log_name = remote_log_name
+        self.log_position = 0
+        self.log_path = None
+
+    def download_log_chunk(self, params: PipesParams) -> Optional[str]:
+        log_path = self._get_log_path(params)
+        if log_path is None:
+            return None
+        else:
+            try:
+                read_response = self.dbfs_client.read(log_path)
+                assert read_response.data
+                content = base64.b64decode(read_response.data).decode("utf-8")
+                chunk = content[self.log_position :]
+                self.log_position = len(content)
+                return chunk
+            except IOError:
+                return None
+
+    def is_ready(self, params: PipesParams) -> bool:
+        return self._get_log_path(params) is not None
+
+    # The directory containing logs will not exist until either 5 minutes have elapsed or the
+    # job has finished.
+    def _get_log_path(self, params: PipesParams) -> Optional[str]:
+        if self.log_path is None:
+            log_root_path = os.path.join(params["cluster_log_root"])
+            child_dirs = list(self.dbfs_client.list(log_root_path))
+            if len(child_dirs) > 0:
+                self.log_path = f"dbfs:{child_dirs[0].path}/driver/{self.remote_log_name}"
+        return self.log_path
