@@ -291,8 +291,9 @@ class AutoMaterializeRule(ABC):
     def skip_on_required_but_nonexistent_parents() -> "SkipOnRequiredButNonexistentParentsRule":
         """Skip an asset partition if it depends on parent partitions that do not exist.
 
-        E.g. downstream asset B is partitioned starting 2022, but upstream asset A is partitioned
-        starting 2023. This rule will skip 2022 partitions in B.
+        For example, imagine a downstream asset is time-partitioned, starting in 2022, but has a
+        time-partitioned parent which starts in 2023. This rule will skip attempting to materialize
+        downstream partitions from before 2023, since the parent partitions do not exist.
         """
         return SkipOnRequiredButNonexistentParentsRule()
 
