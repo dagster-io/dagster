@@ -122,7 +122,7 @@ class AutoMaterializeRuleEvaluation(NamedTuple):
     evaluation_data: Optional[AutoMaterializeRuleEvaluationData]
 
 
-@dataclass
+@dataclass(frozen=True)
 class RuleEvaluationContext:
     asset_key: AssetKey
     cursor: "AssetDaemonCursor"
