@@ -40,7 +40,7 @@ from .scenarios.scenarios import ASSET_RECONCILIATION_SCENARIOS
 )
 def test_reconciliation(scenario, respect_materialization_data_versions):
     instance = DagsterInstance.ephemeral()
-    run_requests, cursor, evaluations = scenario.do_sensor_scenario(
+    run_requests, _, evaluations = scenario.do_sensor_scenario(
         instance, respect_materialization_data_versions=respect_materialization_data_versions
     )
 

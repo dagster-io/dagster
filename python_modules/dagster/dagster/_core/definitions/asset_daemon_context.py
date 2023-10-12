@@ -22,7 +22,6 @@ from typing import (
 import pendulum
 
 import dagster._check as check
-from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
@@ -296,7 +295,6 @@ class AssetDaemonContext:
         AutoMaterializeAssetEvaluation,
         AbstractSet[AssetKeyPartitionKey],
         AbstractSet[AssetKeyPartitionKey],
-        AbstractSet[AssetKeyPartitionKey],
     ]:
         """Evaluates the auto materialize policy of a given asset key.
 
@@ -313,7 +311,6 @@ class AssetDaemonContext:
             - An AutoMaterializeAssetEvaluation object representing serializable information about
                 this evaluation.
             - The set of AssetKeyPartitionKeys that should be materialized.
-            - The set of AssetKeyPartitionKeys that should be skipped.
             - The set of AssetKeyPartitionKeys that should be discarded.
         """
         auto_materialize_policy = check.not_none(
@@ -416,7 +413,6 @@ class AssetDaemonContext:
                 dynamic_partitions_store=self.instance_queryer,
             ),
             to_materialize,
-            to_skip,
             to_discard,
         )
 
@@ -462,7 +458,6 @@ class AssetDaemonContext:
             (
                 evaluation,
                 to_materialize_for_asset,
-                to_skip_for_asset,
                 to_discard_for_asset,
             ) = self.evaluate_asset(asset_key, will_materialize_mapping, expected_data_time_mapping)
 
@@ -487,7 +482,6 @@ class AssetDaemonContext:
 
             evaluations_by_key[asset_key] = evaluation
             will_materialize_mapping[asset_key] = to_materialize_for_asset
-            to_skip.update(to_skip_for_asset)
             to_discard.update(to_discard_for_asset)
 
             expected_data_time = get_expected_data_time_for_asset_key(
@@ -514,9 +508,6 @@ class AssetDaemonContext:
                     to_materialize_for_neighbor = {
                         ap._replace(asset_key=neighbor_key) for ap in to_materialize_for_asset
                     }
-                    to_skip_for_neighbor = {
-                        ap._replace(asset_key=neighbor_key) for ap in to_skip_for_asset
-                    }
                     to_discard_for_neighbor = {
                         ap._replace(asset_key=neighbor_key) for ap in to_discard_for_asset
                     }
@@ -526,7 +517,6 @@ class AssetDaemonContext:
                         rule_snapshots=auto_materialize_policy.rule_snapshots,  # Neighbors can have different rule snapshots
                     )
                     will_materialize_mapping[neighbor_key] = to_materialize_for_neighbor
-                    to_skip.update(to_skip_for_neighbor)
                     to_discard.update(to_discard_for_neighbor)
 
                     expected_data_time_mapping[neighbor_key] = expected_data_time
@@ -587,9 +577,6 @@ class AssetDaemonContext:
                     for asset_key in cast(Sequence[AssetKey], run_request.asset_selection)
                 ],
                 observe_request_timestamp=observe_request_timestamp,
-                skipped_on_last_tick_subset=AssetGraphSubset.from_asset_partition_set(
-                    to_skip, self.asset_graph
-                ),
                 evaluations=list(evaluations_by_asset_key.values()),
             ),
             # only record evaluations where something happened

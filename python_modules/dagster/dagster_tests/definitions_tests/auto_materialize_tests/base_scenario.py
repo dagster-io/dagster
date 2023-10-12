@@ -343,9 +343,7 @@ class AssetReconciliationScenario(
                     )
 
                 # make sure we can deserialize it using the new asset graph
-                cursor = AssetDaemonCursor.from_serialized(
-                    cursor.serialize(instance), repo.asset_graph
-                )
+                cursor = AssetDaemonCursor.from_serialized(cursor.serialize(), repo.asset_graph)
 
             else:
                 cursor = AssetDaemonCursor.empty()
@@ -399,7 +397,9 @@ class AssetReconciliationScenario(
                     asset_graph = ExternalAssetGraph.from_workspace(workspace)
 
             target_asset_keys = (
-                self.asset_selection.resolve(asset_graph) if self.asset_selection else None
+                self.asset_selection.resolve(asset_graph)
+                if self.asset_selection
+                else asset_graph.materializable_asset_keys
             )
 
             run_requests, cursor, evaluations = AssetDaemonContext(

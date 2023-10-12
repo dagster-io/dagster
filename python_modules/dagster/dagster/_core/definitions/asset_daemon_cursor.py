@@ -3,6 +3,7 @@ import itertools
 import json
 from collections import defaultdict
 from typing import (
+    TYPE_CHECKING,
     AbstractSet,
     Dict,
     Iterable,
@@ -15,14 +16,12 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeAssetEvaluation
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
 )
-from dagster._core.instance import DynamicPartitionsStore
 from dagster._serdes.serdes import deserialize_value, serialize_value
 
 from .asset_graph import AssetGraph
@@ -30,6 +29,9 @@ from .partition import (
     PartitionsDefinition,
     PartitionsSubset,
 )
+
+if TYPE_CHECKING:
+    from dagster._core.instance import DynamicPartitionsStore
 
 
 class AssetDaemonCursor(NamedTuple):
@@ -56,7 +58,6 @@ class AssetDaemonCursor(NamedTuple):
     handled_root_partitions_by_asset_key: Mapping[AssetKey, PartitionsSubset]
     evaluation_id: int
     last_observe_request_timestamp_by_asset_key: Mapping[AssetKey, float]
-    skipped_on_last_tick_subset: Optional[AssetGraphSubset]
     latest_evaluation_by_asset_key: Mapping[AssetKey, AutoMaterializeAssetEvaluation]
 
     def was_previously_handled(self, asset_key: AssetKey) -> bool:
@@ -91,7 +92,6 @@ class AssetDaemonCursor(NamedTuple):
         asset_graph: AssetGraph,
         newly_observe_requested_asset_keys: Sequence[AssetKey],
         observe_request_timestamp: float,
-        skipped_on_last_tick_subset: AssetGraphSubset,
         evaluations: Sequence[AutoMaterializeAssetEvaluation],
     ) -> "AssetDaemonCursor":
         """Returns a cursor that represents this cursor plus the updates that have happened within the
@@ -160,7 +160,6 @@ class AssetDaemonCursor(NamedTuple):
             handled_root_partitions_by_asset_key=result_handled_root_partitions_by_asset_key,
             evaluation_id=evaluation_id,
             last_observe_request_timestamp_by_asset_key=result_last_observe_request_timestamp_by_asset_key,
-            skipped_on_last_tick_subset=skipped_on_last_tick_subset,
             latest_evaluation_by_asset_key=result_latest_evaluation_by_asset_key,
         )
 
@@ -172,7 +171,6 @@ class AssetDaemonCursor(NamedTuple):
             handled_root_asset_keys=set(),
             evaluation_id=0,
             last_observe_request_timestamp_by_asset_key={},
-            skipped_on_last_tick_subset=None,
             latest_evaluation_by_asset_key={},
         )
 
@@ -190,7 +188,6 @@ class AssetDaemonCursor(NamedTuple):
 
             evaluation_id = data[3] if len(data) == 4 else 0
             serialized_last_observe_request_timestamp_by_asset_key = {}
-            serialized_skipped_on_last_tick_subset = {}
             serialized_latest_evaluation_by_asset_key = {}
         else:
             latest_storage_id = data["latest_storage_id"]
@@ -202,7 +199,6 @@ class AssetDaemonCursor(NamedTuple):
             serialized_last_observe_request_timestamp_by_asset_key = data.get(
                 "last_observe_request_timestamp_by_asset_key", {}
             )
-            serialized_skipped_on_last_tick_subset = data.get("skipped_on_last_tick_subset", {})
             serialized_latest_evaluation_by_asset_key = data.get(
                 "latest_evaluation_by_asset_key", {}
             )
@@ -259,15 +255,6 @@ class AssetDaemonCursor(NamedTuple):
                 AssetKey.from_user_string(key_str): timestamp
                 for key_str, timestamp in serialized_last_observe_request_timestamp_by_asset_key.items()
             },
-            skipped_on_last_tick_subset=(
-                AssetGraphSubset.from_storage_dict(
-                    serialized_skipped_on_last_tick_subset,
-                    asset_graph=asset_graph,
-                    allow_partial=True,
-                )
-                if serialized_skipped_on_last_tick_subset
-                else None
-            ),
             latest_evaluation_by_asset_key=latest_evaluation_by_asset_key,
         )
 
@@ -280,7 +267,7 @@ class AssetDaemonCursor(NamedTuple):
         else:
             return data["evaluation_id"]
 
-    def serialize(self, dynamic_partitions_store: DynamicPartitionsStore) -> str:
+    def serialize(self) -> str:
         serializable_handled_root_partitions_by_asset_key = {
             key.to_user_string(): subset.serialize()
             for key, subset in self.handled_root_partitions_by_asset_key.items()
@@ -299,11 +286,6 @@ class AssetDaemonCursor(NamedTuple):
                     key.to_user_string(): timestamp
                     for key, timestamp in self.last_observe_request_timestamp_by_asset_key.items()
                 },
-                "skipped_on_last_tick_subset": (
-                    self.skipped_on_last_tick_subset.to_storage_dict(dynamic_partitions_store)
-                    if self.skipped_on_last_tick_subset
-                    else None
-                ),
                 "latest_evaluation_by_asset_key": {
                     key.to_user_string(): serialize_value(evaluation)
                     for key, evaluation in self.latest_evaluation_by_asset_key.items()

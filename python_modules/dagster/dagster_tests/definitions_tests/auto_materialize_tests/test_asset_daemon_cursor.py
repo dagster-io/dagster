@@ -29,7 +29,6 @@ def test_asset_reconciliation_cursor_evaluation_id_backcompat():
         {AssetKey("my_asset"): partitions.empty_subset().with_partition_keys(["a"])},
         0,
         {},
-        None,
         {},
     )
 
@@ -43,15 +42,14 @@ def test_asset_reconciliation_cursor_evaluation_id_backcompat():
         asset_graph,
         [],
         0,
-        AssetGraphSubset(asset_graph),
         [],
     )
 
-    serdes_c2 = AssetDaemonCursor.from_serialized(c2.serialize(None), asset_graph)
+    serdes_c2 = AssetDaemonCursor.from_serialized(c2.serialize(), asset_graph)
     assert serdes_c2 == c2
     assert serdes_c2.evaluation_id == 1
 
-    assert AssetDaemonCursor.get_evaluation_id_from_serialized(c2.serialize(None)) == 1
+    assert AssetDaemonCursor.get_evaluation_id_from_serialized(c2.serialize()) == 1
 
 
 def test_asset_reconciliation_cursor_auto_observe_backcompat():
