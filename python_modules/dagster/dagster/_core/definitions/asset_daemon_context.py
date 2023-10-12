@@ -1,6 +1,5 @@
 import dataclasses
 import datetime
-import functools
 import itertools
 import logging
 from collections import defaultdict
@@ -21,7 +20,6 @@ from typing import (
 )
 
 import pendulum
-from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 
 import dagster._check as check
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
@@ -353,8 +351,7 @@ class AssetDaemonContext:
                 to_materialize.update(asset_partitions)
             self._logger.debug("Done evaluating materialize rule")
 
-        # these should be rules, but aren't currently, so we just manually strip out things
-        # from our materialization set
+        # TODO: make this a skip rule
         for candidate in list(to_materialize):
             if candidate in self.instance_queryer.get_active_backfill_target_asset_graph_subset():
                 to_materialize.remove(candidate)
@@ -382,7 +379,6 @@ class AssetDaemonContext:
         to_materialize.difference_update(to_skip)
 
         # this is treated separately from other rules, for now
-        discard_context = dataclasses.replace(skip_context, candidates=to_materialize)
         if auto_materialize_policy.max_materializations_per_minute is not None:
             rule = DiscardOnMaxMaterializationsExceededRule(
                 limit=auto_materialize_policy.max_materializations_per_minute
@@ -391,7 +387,9 @@ class AssetDaemonContext:
 
             self._logger.debug(f"Evaluating discard rule: {rule_snapshot}")
 
-            for evaluation_data, asset_partitions in rule.evaluate_for_asset(discard_context):
+            for evaluation_data, asset_partitions in rule.evaluate_for_asset(
+                dataclasses.replace(skip_context, candidates=to_materialize)
+            ):
                 all_results.append(
                     (
                         AutoMaterializeRuleEvaluation(
@@ -484,7 +482,6 @@ class AssetDaemonContext:
 
             evaluations_by_key[asset_key] = evaluation
             will_materialize_mapping[asset_key] = to_materialize_for_asset
-            to_skip.update(to_skip_for_asset)
             to_discard.update(to_discard_for_asset)
 
             expected_data_time = get_expected_data_time_for_asset_key(
@@ -520,7 +517,6 @@ class AssetDaemonContext:
                         rule_snapshots=auto_materialize_policy.rule_snapshots,  # Neighbors can have different rule snapshots
                     )
                     will_materialize_mapping[neighbor_key] = to_materialize_for_neighbor
-                    to_skip.update(to_skip_for_neighbor)
                     to_discard.update(to_discard_for_neighbor)
 
                     expected_data_time_mapping[neighbor_key] = expected_data_time
