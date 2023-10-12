@@ -1,5 +1,48 @@
 # Changelog
 
+# 1.5.3 / 0.21.3 (libraries)
+
+### New
+
+- Alert policies can now be set on assets + asset checks (currently experimental). Check out the alerting [docs](https://docs.dagster.io/dagster-cloud/managing-deployments/setting-up-alerts#setting-up-alerts-in-dagster-cloud) for more information.
+- Added a new flag `--live-data-poll-rate` that allows configuring how often the UI polls for new asset data when viewing the asset graph, asset catalog, or overview assets page. It defaults to 2000 ms.
+- Added back the ability to materialize changed and missing assets from the global asset-graph. A dialog will open allowing you to preview and select which assets to materialize.
+- Added an experimental AMP Timeline page to give more visibility into the automaterialization daemon. You can enable it under user settings
+- Added  a `report_asset_materialization` REST API endpoint for creating external asset materialization events. This is available in cloud as well.
+- [dbt] The `@dbt_assets` decorator now accepts a `backfill_policy` argument, for controlling how the assets are backfilled.
+- [dbt] The `@dbt_assets` decorator now accepts a `op_tags` argument, for passing tags to the op underlying the produced `AssetsDefinition`.
+- [pipes] Added `get_materialize_result` & `get_asset_check_result` to `PipesClientCompletedInvocation`
+- [dagster-datahub] The `acryl-datahub` pin in the `dagster-datahub` package has been removed.
+- [dagster-databricks] The `PipesDatabricksClient` now performs stdout/stderr forwarding from the Databricks master node to Dagster.
+- [dagster-dbt] The hostname of the dbt API can now be configured when executing the `dagster-dbt-cloud` CLI.
+- [dagster-k8s] Added the ability to customize how raw k8s config tags set on an individual Dagster job are merged with raw k8s config set on the `K8sRunLauncher`. See [the docs](https://docs.dagster.io/deployment/guides/kubernetes/customizing-your-deployment#precedence-rules) for more information.
+
+### Bugfixes
+
+- Previously, the asset backfill page would display negative counts if failed partitions were manually re-executed. This has been fixed.
+- Fixed an issue where the run list dialog for viewing the runs occupying global op concurrency slots did not expand to fit the content size.
+- Fixed an issue where selecting a partition would clear the launchpad and typing in the launchpad would clear the partition selection
+- Fixed various issues with the asset-graph displaying the wrong graph
+- The IO manager’s `handle_output` method is no longer invoked when observing an observable source asset.
+
+- [ui] Fixed an issue where the run config dialog could not be scrolled.
+- [pipes] Fixed an issue in the `PipesDockerClient` with parsing logs fetched via the docker client.
+- [external assets] Fixed an issue in `external_assets_from_specs` where providing multiple specs would error
+- [external assets] Correct copy in tooltip to explain why Materialize button is disabled on an external asset.
+
+### Breaking Changes
+
+- [pipes] A change has been made to the environment variables used to detect if the external process has been launched with pipes. Update the `dagster-pipes` version used in the external process.
+- [pipes] The top level function `is_dagster_pipes_process` has been removed from the `dagster-pipes` package.
+
+### Community Contributions
+
+- Override a method in the azure data lake IO manager (thanks @[0xfabioo](https://github.com/0xfabioo))!
+- Add support of external launch types in ECS run launcher (thanks @[cuttius](https://github.com/cuttius))!
+
+### Experimental
+
+- The Python GraphQL client is considered stable and is no longer marked as experimental.
 
 # 1.5.2 / 0.21.2 (libraries)
 
