@@ -191,11 +191,7 @@ const SensorStateRow = ({sensorState}: {sensorState: InstigationStateFragment}) 
       </td>
       <td>
         {latestTick ? (
-          <TickStatusTag
-            status={latestTick.status}
-            error={latestTick.error}
-            count={latestTick.runIds.length}
-          />
+          <TickStatusTag tick={latestTick} />
         ) : (
           <span style={{color: Colors.Gray300}}>None</span>
         )}
@@ -283,15 +279,7 @@ const ScheduleStateRow: React.FC<{
           )}
         </div>
       </td>
-      <td>
-        {latestTick ? (
-          <TickStatusTag
-            status={latestTick.status}
-            error={latestTick.error}
-            count={latestTick.runIds.length}
-          />
-        ) : null}
-      </td>
+      <td>{latestTick ? <TickStatusTag tick={latestTick} /> : null}</td>
       <td>
         <InstigatedRunStatus instigationState={scheduleState} />
       </td>

@@ -140,11 +140,7 @@ export const SensorDetails: React.FC<{
                     style={{marginTop: '-2px'}}
                   >
                     <TimestampDisplay timestamp={latestTick.timestamp} />
-                    <TickStatusTag
-                      count={latestTick.runIds.length}
-                      status={latestTick.status}
-                      error={latestTick.error}
-                    />
+                    <TickStatusTag tick={latestTick} />
                   </Box>
                 </>
               ) : (

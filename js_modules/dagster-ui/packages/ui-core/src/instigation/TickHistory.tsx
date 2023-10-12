@@ -345,7 +345,7 @@ function TickRow({
         />
       </td>
       <td>
-        <TickStatusTag count={tick.runIds.length} status={tick.status} error={tick.error} />
+        <TickStatusTag tick={tick} />
       </td>
       <td>
         <TimeElapsed startUnix={tick.timestamp} endUnix={tick.endTimestamp || Date.now() / 1000} />

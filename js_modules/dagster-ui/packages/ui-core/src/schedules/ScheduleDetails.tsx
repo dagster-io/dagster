@@ -146,11 +146,7 @@ export const ScheduleDetails: React.FC<{
                     timezone={executionTimezone}
                     timeFormat={TIME_FORMAT}
                   />
-                  <TickStatusTag
-                    status={latestTick.status}
-                    error={latestTick.error}
-                    count={latestTick.runIds.length}
-                  />
+                  <TickStatusTag tick={latestTick} />
                 </Group>
               ) : (
                 'Schedule has never run'

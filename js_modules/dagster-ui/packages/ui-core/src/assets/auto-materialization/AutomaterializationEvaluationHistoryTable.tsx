@@ -140,11 +140,7 @@ export const AutomaterializationEvaluationHistoryTable = ({
                 <Timestamp timestamp={{unix: tick.timestamp}} />
               </td>
               <td>
-                <TickStatusTag
-                  error={tick.error}
-                  status={tick.status}
-                  count={tick.requestedAssetMaterializationCount}
-                />
+                <TickStatusTag tick={tick} />
               </td>
               <td>
                 <TimeElapsed
