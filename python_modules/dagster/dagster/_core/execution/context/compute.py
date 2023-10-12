@@ -1330,7 +1330,7 @@ def build_execution_context(
     op            None                      OpExecutionContext
     """
     is_sda_step = step_context.is_sda_step
-    is_op_in_graph_asset = is_sda_step and step_context.is_op_in_graph
+    is_op_in_graph_asset = step_context.is_in_graph_asset
     is_asset_check = step_context.is_asset_check_step
     context_annotation = EmptyAnnotation
     compute_fn = step_context.op_def._compute_fn  # noqa: SLF001
@@ -1345,7 +1345,12 @@ def build_execution_context(
 
     # It would be nice to do this check at definition time, rather than at run time, but we don't
     # know if the op is part of an op job or a graph-backed asset until we have the step execution context
-    if context_annotation is AssetExecutionContext and not is_sda_step and not is_asset_check:
+    if (
+        context_annotation is AssetExecutionContext
+        and not is_sda_step
+        and not is_asset_check
+        and not is_op_in_graph_asset
+    ):
         # AssetExecutionContext requires an AssetsDefinition during init, so an op in an op job
         # cannot be annotated with AssetExecutionContext
         raise DagsterInvalidDefinitionError(
