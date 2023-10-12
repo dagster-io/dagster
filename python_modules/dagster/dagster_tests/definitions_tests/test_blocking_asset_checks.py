@@ -6,7 +6,7 @@ from dagster import (
     ExecuteInProcessResult,
     asset,
     asset_check,
-    materialize
+    materialize,
 )
 from dagster._core.definitions.asset_checks import build_asset_with_blocking_check
 from dagster._core.definitions.asset_in import AssetIn
@@ -74,10 +74,10 @@ def test_graph_backed_asset():
 
     materialize([the_graph])
 
+
 def test_check_pass():
     result = execute_assets_and_checks(
         assets=[upstream_asset, blocking_asset, downstream_asset],
-        # asset_checks=[pass_check, fail_check_if_tagged],
         raise_on_error=False,
     )
     assert result.success
