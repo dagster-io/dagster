@@ -851,46 +851,6 @@
         ]
       },
       {
-        "title": "Dagster Pipes",
-        "path": "/guides/dagster-pipes",
-        "children": [
-          {
-            "title": "Dagster Pipes tutorial",
-            "path": "/guides/dagster-pipes/subprocess",
-            "children": [
-              {
-                "title": "Part 1: Define a Dagster asset",
-                "path": "/guides/dagster-pipes/subprocess/create-subprocess-asset"
-              },
-              {
-                "title": "Part 2: Modify external code",
-                "path": "/guides/dagster-pipes/subprocess/modify-external-code"
-              },
-              {
-                "title": "Dagster Pipes + subprocess reference",
-                "path": "/guides/dagster-pipes/subprocess/reference"
-              }
-            ]
-          },
-          {
-            "title": "Dagster Pipes + Databricks",
-            "path": "/guides/dagster-pipes/integrating-databricks-with-dagster-pipes"
-          },
-          {
-            "title": "Dagster Pipes + Kubernetes",
-            "path": "/guides/dagster-pipes/integrating-kubernetes-with-dagster-pipes"
-          },
-          {
-            "title": "Dagster Pipes + Docker",
-            "path": "/guides/dagster-pipes/integrating-docker-with-dagster-pipes"
-          },
-          {
-            "title": "Customizing Dagster Pipes protocols",
-            "path": "/guides/dagster-pipes/customizing-dagster-pipes-protocols"
-          }
-        ]
-      },
-      {
         "title": "Version migration",
         "path": "/migration",
         "isNotDynamic": true
@@ -954,7 +914,27 @@
             "children": [
               {
                 "title": "Dagster Pipes",
-                "path": "/guides/dagster-pipes"
+                "path": "/guides/dagster-pipes",
+                "children": [
+                  {
+                    "title": "Dagster Pipes tutorial",
+                    "path": "/guides/dagster-pipes/subprocess",
+                    "children": [
+                      {
+                        "title": "Part 1: Define a Dagster asset",
+                        "path": "/guides/dagster-pipes/subprocess/create-subprocess-asset"
+                      },
+                      {
+                        "title": "Part 2: Modify external code",
+                        "path": "/guides/dagster-pipes/subprocess/modify-external-code"
+                      },
+                      {
+                        "title": "Dagster Pipes + subprocess reference",
+                        "path": "/guides/dagster-pipes/subprocess/reference"
+                      }
+                    ]
+                  }
+                ]
               },
               {
                 "title": "Using custom run coordinators",
