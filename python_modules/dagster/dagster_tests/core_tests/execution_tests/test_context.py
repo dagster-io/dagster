@@ -366,7 +366,7 @@ def test_context_provided_to_blocking_asset_check():
 
     @asset_check(asset=to_check)
     def no_annotation(context):
-        assert isinstance(context, AssetExecutionContext)
+        assert isinstance(context, OpExecutionContext)
         return AssetCheckResult(passed=True, check_name="no_annotation")
 
     no_annotation_blocking_asset = build_asset_with_blocking_check(
