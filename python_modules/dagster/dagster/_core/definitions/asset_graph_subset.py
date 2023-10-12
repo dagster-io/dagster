@@ -47,7 +47,7 @@ class AssetGraphSubset:
         } | self._non_partitioned_asset_keys
 
     @property
-    def num_partitions_and_non_partitioned_assets(self) -> int:
+    def num_partitions_and_non_partitioned_assets(self):
         return len(self._non_partitioned_asset_keys) + sum(
             len(subset) for subset in self._partitions_subsets_by_asset_key.values()
         )
@@ -190,10 +190,10 @@ class AssetGraphSubset:
         partitions_by_asset_key = defaultdict(set)
         non_partitioned_asset_keys = set()
         for asset_key, partition_key in asset_partitions_set:
-            if not asset_graph.is_partitioned(asset_key):
-                non_partitioned_asset_keys.add(asset_key)
-            elif partition_key is not None:
+            if partition_key is not None:
                 partitions_by_asset_key[asset_key].add(partition_key)
+            else:
+                non_partitioned_asset_keys.add(asset_key)
 
         return AssetGraphSubset(
             partitions_subsets_by_asset_key={
