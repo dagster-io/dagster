@@ -286,6 +286,17 @@ class AutoMaterializeRule(ABC):
         """
         return SkipOnNotAllParentsUpdatedRule(require_update_for_all_parent_partitions)
 
+    @public
+    @staticmethod
+    def skip_on_required_but_nonexistent_parents() -> "SkipOnRequiredButNonexistentParentsRule":
+        """Skip an asset partition if it depends on parent partitions that do not exist.
+
+        For example, imagine a downstream asset is time-partitioned, starting in 2022, but has a
+        time-partitioned parent which starts in 2023. This rule will skip attempting to materialize
+        downstream partitions from before 2023, since the parent partitions do not exist.
+        """
+        return SkipOnRequiredButNonexistentParentsRule()
+
     def to_snapshot(self) -> AutoMaterializeRuleSnapshot:
         """Returns a serializable snapshot of this rule for historical evaluations."""
         return AutoMaterializeRuleSnapshot.from_rule(self)
@@ -621,6 +632,47 @@ class DiscardOnMaxMaterializationsExceededRule(
         )
         if rate_limited_asset_partitions:
             return [(None, rate_limited_asset_partitions)]
+        return []
+
+
+@whitelist_for_serdes
+class SkipOnRequiredButNonexistentParentsRule(
+    AutoMaterializeRule, NamedTuple("_SkipOnRequiredButNonexistentParentsRule", [])
+):
+    @property
+    def decision_type(self) -> AutoMaterializeDecisionType:
+        return AutoMaterializeDecisionType.SKIP
+
+    @property
+    def description(self) -> str:
+        return "required parent partitions do not exist"
+
+    def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
+        asset_partitions_by_nonexistent_but_required_parent_keys = defaultdict(set)
+
+        for candidate in context.candidates:
+            nonexistent_parent_partitions = context.asset_graph.get_parents_partitions(
+                context.instance_queryer,
+                context.instance_queryer.evaluation_time,
+                candidate.asset_key,
+                candidate.partition_key,
+            ).required_but_nonexistent_parents_partitions
+
+            nonexistent_parent_keys = {parent.asset_key for parent in nonexistent_parent_partitions}
+            if nonexistent_parent_keys:
+                asset_partitions_by_nonexistent_but_required_parent_keys[
+                    frozenset(nonexistent_parent_keys)
+                ].add(candidate)
+
+        if asset_partitions_by_nonexistent_but_required_parent_keys:
+            return [
+                (
+                    WaitingOnAssetsRuleEvaluationData(waiting_on_asset_keys=k),
+                    v,
+                )
+                for k, v in asset_partitions_by_nonexistent_but_required_parent_keys.items()
+            ]
+
         return []
 
 

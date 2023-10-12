@@ -30,6 +30,7 @@ from ..base_scenario import (
 from .basic_scenarios import diamond
 from .exotic_partition_mapping_scenarios import (
     one_parent_starts_later_and_nonexistent_upstream_partitions_allowed,
+    one_parent_starts_later_and_nonexistent_upstream_partitions_not_allowed,
 )
 from .freshness_policy_scenarios import (
     daily_to_unpartitioned,
@@ -804,5 +805,138 @@ auto_materialize_policy_scenarios = {
             'You have attempted to fetch the environment variable "VAR_THAT_DOES_NOT_EXIST" which'
             " is not set"
         ),
+    ),
+    "test_skip_on_required_but_nonexistent_parents": AssetReconciliationScenario(
+        assets=with_auto_materialize_policy(
+            one_parent_starts_later_and_nonexistent_upstream_partitions_not_allowed,
+            AutoMaterializePolicy.eager(max_materializations_per_minute=None).without_rules(
+                AutoMaterializeRule.skip_on_parent_outdated()
+            ),
+        ),
+        unevaluated_runs=[
+            run(["asset1"], partition_key="2023-01-01-03:00"),
+            run(["asset2"], partition_key="2023-01-01-03:00"),
+            run(["asset2"], partition_key="2023-01-01-02:00"),
+            run(["asset2"], partition_key="2023-01-01-01:00"),
+            run(["asset2"], partition_key="2023-01-01-00:00"),
+        ],
+        current_time=create_pendulum_time(year=2023, month=1, day=1, hour=4),
+        expected_run_requests=[run_request(["asset3"], "2023-01-01-03:00")],
+        expected_evaluations=[
+            AssetEvaluationSpec(
+                asset_key="asset3",
+                rule_evaluations=[
+                    (
+                        AutoMaterializeRuleEvaluation(
+                            AutoMaterializeRule.skip_on_required_but_nonexistent_parents().to_snapshot(),
+                            evaluation_data=WaitingOnAssetsRuleEvaluationData(
+                                frozenset({AssetKey("asset1")})
+                            ),
+                        ),
+                        # Assert that we discard on required but nonexistent parents
+                        ["2023-01-01-00:00", "2023-01-01-01:00", "2023-01-01-02:00"],
+                    ),
+                    (
+                        AutoMaterializeRuleEvaluation(
+                            AutoMaterializeRule.materialize_on_missing().to_snapshot(),
+                            evaluation_data=None,
+                        ),
+                        [
+                            "2023-01-01-00:00",
+                            "2023-01-01-01:00",
+                            "2023-01-01-02:00",
+                            "2023-01-01-03:00",
+                        ],
+                    ),
+                    (
+                        AutoMaterializeRuleEvaluation(
+                            AutoMaterializeRule.materialize_on_parent_updated().to_snapshot(),
+                            evaluation_data=ParentUpdatedRuleEvaluationData(
+                                frozenset({AssetKey("asset1"), AssetKey("asset2")}),
+                                will_update_asset_keys=frozenset(),
+                            ),
+                        ),
+                        ["2023-01-01-03:00"],
+                    ),
+                    (
+                        AutoMaterializeRuleEvaluation(
+                            AutoMaterializeRule.materialize_on_parent_updated().to_snapshot(),
+                            evaluation_data=ParentUpdatedRuleEvaluationData(
+                                frozenset({AssetKey("asset2")}),
+                                will_update_asset_keys=frozenset(),
+                            ),
+                        ),
+                        ["2023-01-01-00:00", "2023-01-01-01:00", "2023-01-01-02:00"],
+                    ),
+                ],
+                num_requested=1,
+                num_skipped=3,
+            ),
+        ],
+    ),
+    "test_no_skip_when_nonexistent_upstream_partitions_allowed": AssetReconciliationScenario(
+        assets=with_auto_materialize_policy(
+            one_parent_starts_later_and_nonexistent_upstream_partitions_allowed,
+            AutoMaterializePolicy.eager(max_materializations_per_minute=None).without_rules(
+                AutoMaterializeRule.skip_on_parent_outdated()
+            ),
+        ),
+        unevaluated_runs=[
+            run(["asset1"], partition_key="2023-01-01-03:00"),
+            run(["asset2"], partition_key="2023-01-01-03:00"),
+            run(["asset2"], partition_key="2023-01-01-02:00"),
+            run(["asset2"], partition_key="2023-01-01-01:00"),
+            run(["asset2"], partition_key="2023-01-01-00:00"),
+        ],
+        current_time=create_pendulum_time(year=2023, month=1, day=1, hour=4),
+        expected_run_requests=[
+            run_request(["asset3"], "2023-01-01-00:00"),
+            run_request(["asset3"], "2023-01-01-01:00"),
+            run_request(["asset3"], "2023-01-01-02:00"),
+            run_request(["asset3"], "2023-01-01-03:00"),
+        ],
+        expected_evaluations=[
+            AssetEvaluationSpec(
+                asset_key="asset3",
+                rule_evaluations=[
+                    (
+                        AutoMaterializeRuleEvaluation(
+                            AutoMaterializeRule.materialize_on_missing().to_snapshot(),
+                            evaluation_data=None,
+                        ),
+                        [
+                            "2023-01-01-00:00",
+                            "2023-01-01-01:00",
+                            "2023-01-01-02:00",
+                            "2023-01-01-03:00",
+                        ],
+                    ),
+                    (
+                        AutoMaterializeRuleEvaluation(
+                            AutoMaterializeRule.materialize_on_parent_updated().to_snapshot(),
+                            evaluation_data=ParentUpdatedRuleEvaluationData(
+                                frozenset({AssetKey("asset1"), AssetKey("asset2")}),
+                                will_update_asset_keys=frozenset(),
+                            ),
+                        ),
+                        [
+                            "2023-01-01-03:00",
+                        ],
+                    ),
+                    (
+                        AutoMaterializeRuleEvaluation(
+                            AutoMaterializeRule.materialize_on_parent_updated().to_snapshot(),
+                            evaluation_data=ParentUpdatedRuleEvaluationData(
+                                frozenset({AssetKey("asset2")}),
+                                will_update_asset_keys=frozenset(),
+                            ),
+                        ),
+                        ["2023-01-01-00:00", "2023-01-01-01:00", "2023-01-01-02:00"],
+                    ),
+                ],
+                num_requested=4,
+                num_discarded=0,
+            ),
+        ],
     ),
 }
