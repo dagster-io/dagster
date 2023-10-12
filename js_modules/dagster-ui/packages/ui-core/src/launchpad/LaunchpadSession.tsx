@@ -320,13 +320,15 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
   const [showChecks, setShowChecks] = React.useState<
     typeof currentSession.assetChecksAvailable | null
   >(null);
-  const includedChecks = currentSession.assetChecksAvailable.filter(
-    (a) => a.canExecuteIndividually === AssetCheckCanExecuteIndividually.REQUIRES_MATERIALIZATION,
-  );
+  const includedChecks =
+    currentSession.assetChecksAvailable?.filter(
+      (a) => a.canExecuteIndividually === AssetCheckCanExecuteIndividually.REQUIRES_MATERIALIZATION,
+    ) ?? [];
 
-  const executableChecks = currentSession.assetChecksAvailable.filter(
-    (a) => a.canExecuteIndividually === AssetCheckCanExecuteIndividually.CAN_EXECUTE,
-  );
+  const executableChecks =
+    currentSession.assetChecksAvailable?.filter(
+      (a) => a.canExecuteIndividually === AssetCheckCanExecuteIndividually.CAN_EXECUTE,
+    ) ?? [];
 
   const buildExecutionVariables = () => {
     if (!currentSession) {
