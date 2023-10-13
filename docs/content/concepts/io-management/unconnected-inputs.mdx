@@ -225,7 +225,8 @@ class MyIOManager(ConfigurableIOManager):
         write_dataframe_to_table(name=table_name, dataframe=obj)
 
     def load_input(self, context: InputContext):
-        return read_dataframe_from_table(name=context.upstream_output.name)
+        if context.upstream_output:
+            return read_dataframe_from_table(name=context.upstream_output.name)
 
 
 @input_manager

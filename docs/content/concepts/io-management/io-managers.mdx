@@ -623,8 +623,9 @@ class DataframeTableIOManager(ConfigurableIOManager):
 
     def load_input(self, context: InputContext):
         # upstream_output.name is the name given to the Out that we're loading for
-        table_name = context.upstream_output.name
-        return read_dataframe_from_table(name=table_name)
+        if context.upstream_output:
+            table_name = context.upstream_output.name
+            return read_dataframe_from_table(name=table_name)
 
 
 @job(resource_defs={"io_manager": DataframeTableIOManager()})
@@ -725,14 +726,16 @@ In this case, the table names are encoded in the job definition. If, instead, yo
 ```python file=/concepts/io_management/metadata.py startafter=io_manager_start_marker endbefore=io_manager_end_marker
 class MyIOManager(ConfigurableIOManager):
     def handle_output(self, context: OutputContext, obj):
-        table_name = context.metadata["table"]
-        schema = context.metadata["schema"]
-        write_dataframe_to_table(name=table_name, schema=schema, dataframe=obj)
+        if context.metadata:
+            table_name = context.metadata["table"]
+            schema = context.metadata["schema"]
+            write_dataframe_to_table(name=table_name, schema=schema, dataframe=obj)
 
     def load_input(self, context: InputContext):
-        table_name = context.upstream_output.metadata["table"]
-        schema = context.upstream_output.metadata["schema"]
-        return read_dataframe_from_table(name=table_name, schema=schema)
+        if context.upstream_output and context.upstream_output.metadata:
+            table_name = context.upstream_output.metadata["table"]
+            schema = context.upstream_output.metadata["schema"]
+            return read_dataframe_from_table(name=table_name, schema=schema)
 ```
 
 ### Per-input loading in assets
@@ -809,9 +812,10 @@ class MyIOManager(IOManager):
         self.storage_dict[(context.step_key, context.name)] = obj
 
     def load_input(self, context: InputContext):
-        return self.storage_dict[
-            (context.upstream_output.step_key, context.upstream_output.name)
-        ]
+        if context.upstream_output:
+            return self.storage_dict[
+                (context.upstream_output.step_key, context.upstream_output.name)
+            ]
 
 
 def test_my_io_manager_handle_output():
