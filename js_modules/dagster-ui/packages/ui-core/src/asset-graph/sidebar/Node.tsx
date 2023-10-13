@@ -356,7 +356,7 @@ const GrayOnHoverBox = styled(Box)`
 `;
 
 function StatusDot({node}: {node: GraphNode}) {
-  const liveData = useAssetLiveData(node.assetKey);
+  const {liveData} = useAssetLiveData(node.assetKey);
   if (!liveData) {
     return <StatusCaseDot statusCase={StatusCase.LOADING} />;
   }

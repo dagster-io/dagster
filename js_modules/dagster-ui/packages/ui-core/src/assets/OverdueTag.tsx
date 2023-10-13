@@ -43,7 +43,7 @@ export const OverdueTag: React.FC<{
   policy: Pick<FreshnessPolicy, 'cronSchedule' | 'cronScheduleTimezone' | 'maximumLagMinutes'>;
   assetKey: AssetKeyInput;
 }> = ({policy, assetKey}) => {
-  const liveData = useAssetLiveData(assetKey);
+  const {liveData} = useAssetLiveData(assetKey);
 
   if (!liveData?.freshnessInfo) {
     return null;

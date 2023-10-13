@@ -28,7 +28,7 @@ export const AssetNode: React.FC<{
   const displayName = definition.assetKey.path[definition.assetKey.path.length - 1]!;
   const isSource = definition.isSource;
 
-  const liveData = useAssetLiveData(definition.assetKey);
+  const {liveData} = useAssetLiveData(definition.assetKey);
   return (
     <AssetInsetForHoverEffect>
       <AssetTopTags definition={definition} liveData={liveData} />
@@ -210,7 +210,7 @@ export const AssetNodeMinimal: React.FC<{
   definition: AssetNodeFragment;
 }> = ({selected, definition}) => {
   const {isSource, assetKey} = definition;
-  const liveData = useAssetLiveData(assetKey);
+  const {liveData} = useAssetLiveData(assetKey);
   const {border, background} = buildAssetNodeStatusContent({assetKey, definition, liveData});
   const displayName = assetKey.path[assetKey.path.length - 1]!;
 
