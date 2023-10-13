@@ -45,6 +45,8 @@ export type AssetNodeLiveFragment = {
       id: string;
       runId: string;
       status: Types.AssetCheckExecutionResolvedStatus;
+      timestamp: number;
+      stepKey: string | null;
       evaluation: {__typename: 'AssetCheckEvaluation'; severity: Types.AssetCheckSeverity} | null;
     } | null;
   }>;
@@ -110,6 +112,8 @@ export type AssetGraphLiveQuery = {
         id: string;
         runId: string;
         status: Types.AssetCheckExecutionResolvedStatus;
+        timestamp: number;
+        stepKey: string | null;
         evaluation: {__typename: 'AssetCheckEvaluation'; severity: Types.AssetCheckSeverity} | null;
       } | null;
     }>;

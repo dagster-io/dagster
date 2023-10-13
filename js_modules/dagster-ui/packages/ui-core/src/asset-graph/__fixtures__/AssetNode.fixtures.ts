@@ -697,6 +697,16 @@ export const AssetNodeScenariosBase = [
   },
 
   {
+    title: 'Never Materialized, Failed Check',
+    liveData: {
+      ...LiveDataForNodeNeverMaterialized,
+      assetChecks: LiveDataForNodeMaterializedWithChecks.assetChecks,
+    },
+    definition: AssetNodeFragmentBasic,
+    expectedText: ['Never materialized'],
+  },
+
+  {
     title: 'Materialized',
     liveData: LiveDataForNodeMaterialized,
     definition: AssetNodeFragmentBasic,

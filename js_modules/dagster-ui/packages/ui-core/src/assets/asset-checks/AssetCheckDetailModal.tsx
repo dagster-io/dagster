@@ -26,6 +26,7 @@ import {AssetKeyInput} from '../../graphql/types';
 import {useDocumentTitle} from '../../hooks/useDocumentTitle';
 import {METADATA_ENTRY_FRAGMENT, MetadataEntries} from '../../metadata/MetadataEntry';
 import {MetadataEntryFragment} from '../../metadata/types/MetadataEntry.types';
+import {linkToRunEvent} from '../../runs/RunUtils';
 import {useCursorPaginatedQuery} from '../../runs/useCursorPaginatedQuery';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 
@@ -173,11 +174,16 @@ const AssetCheckDetailModalImpl = ({
                 <tr key={execution.id}>
                   <td>
                     {execution.evaluation?.timestamp ? (
-                      <Link to={`/runs/${execution.runId}`}>
+                      <Link
+                        to={linkToRunEvent(
+                          {id: execution.runId},
+                          {stepKey: execution.stepKey, timestamp: execution.timestamp},
+                        )}
+                      >
                         <TimestampDisplay timestamp={execution.evaluation.timestamp} />
                       </Link>
                     ) : (
-                      ' - '
+                      <TimestampDisplay timestamp={execution.timestamp} />
                     )}
                   </td>
                   <td>
@@ -192,7 +198,7 @@ const AssetCheckDetailModalImpl = ({
                     )}
                   </td>
                   <td>
-                    <AssetCheckStatusTag check={check} execution={execution} />
+                    <AssetCheckStatusTag execution={execution} />
                   </td>
                   <td>
                     <MetadataCell metadataEntries={execution.evaluation?.metadataEntries} />
@@ -255,6 +261,8 @@ export const ASSET_CHECK_EXECUTION_FRAGMENT = gql`
     id
     runId
     status
+    stepKey
+    timestamp
     evaluation {
       severity
       timestamp

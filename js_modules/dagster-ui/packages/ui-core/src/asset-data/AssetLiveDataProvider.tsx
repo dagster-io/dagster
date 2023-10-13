@@ -508,6 +508,8 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
         id
         runId
         status
+        timestamp
+        stepKey
         evaluation {
           severity
         }

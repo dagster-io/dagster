@@ -36,7 +36,7 @@ export function assetKeysForRun(run: {
 
 export function linkToRunEvent(
   run: {id: string},
-  event: {timestamp?: string; stepKey: string | null},
+  event: {timestamp?: string | number; stepKey: string | null},
 ) {
   return `/runs/${run.id}?${qs.stringify({
     focusedTime: event.timestamp ? Number(event.timestamp) : undefined,
