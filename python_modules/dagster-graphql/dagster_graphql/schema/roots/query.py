@@ -506,6 +506,8 @@ class GrapheneQuery(graphene.ObjectType):
         limit=graphene.Int(),
         cursor=graphene.String(),
         statuses=graphene.List(graphene.NonNull(GrapheneInstigationTickStatus)),
+        beforeTimestamp=graphene.Float(),
+        afterTimestamp=graphene.Float(),
         description="Fetch the history of auto-materialization ticks",
     )
 
@@ -1052,7 +1054,15 @@ class GrapheneQuery(graphene.ObjectType):
         )
 
     def resolve_autoMaterializeTicks(
-        self, graphene_info, dayRange=None, dayOffset=None, limit=None, cursor=None, statuses=None
+        self,
+        graphene_info,
+        dayRange=None,
+        dayOffset=None,
+        limit=None,
+        cursor=None,
+        statuses=None,
+        beforeTimestamp=None,
+        afterTimestamp=None,
     ):
         from dagster._daemon.asset_daemon import (
             FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
@@ -1070,6 +1080,8 @@ class GrapheneQuery(graphene.ObjectType):
             limit=limit,
             cursor=cursor,
             status_strings=statuses,
+            before=beforeTimestamp,
+            after=afterTimestamp,
         )
 
     def resolve_assetChecksOrError(
