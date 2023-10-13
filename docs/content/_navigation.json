@@ -511,7 +511,7 @@
                   },
                   {
                     "title": "PingOne",
-                    "path": "dagster-cloud/account/authentication/setting-up-pingone-saml-sso"
+                    "path": "/dagster-cloud/account/authentication/setting-up-pingone-saml-sso"
                   }
                 ]
               }
