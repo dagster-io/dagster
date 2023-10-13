@@ -452,6 +452,8 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "dbt_14X",
             "dbt_15X",
             "dbt_16X",
+            "dbt_14X_pydantic1",
+            "dbt_14X_legacy_pydantic1"
         ],
     ),
     PackageSpec(
