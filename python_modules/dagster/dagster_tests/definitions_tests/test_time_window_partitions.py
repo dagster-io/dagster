@@ -1,6 +1,6 @@
+import random
 from datetime import datetime
 from typing import Optional, Sequence, cast
-import random
 
 import pendulum.parser
 import pytest
