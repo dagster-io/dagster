@@ -47,6 +47,11 @@ export const AutomaterializationRoot = () => {
 
   const queryResult = useQuery<AssetDaemonTicksQuery, AssetDaemonTicksQueryVariables>(
     ASSET_DAMEON_TICKS_QUERY,
+    {
+      variables: {
+        limit: 15,
+      },
+    },
   );
   const [isPaused, setIsPaused] = React.useState(false);
   useQueryRefreshAtInterval(queryResult, isPaused ? Infinity : 2 * 1000);
