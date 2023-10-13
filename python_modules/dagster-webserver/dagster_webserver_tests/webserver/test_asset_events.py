@@ -3,6 +3,7 @@ import inspect
 from dagster import (
     DagsterInstance,
 )
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.data_version import (
     DATA_VERSION_IS_USER_PROVIDED_TAG,
     DATA_VERSION_TAG,
@@ -10,7 +11,7 @@ from dagster._core.definitions.data_version import (
 from dagster._core.definitions.events import AssetKey, AssetMaterialization
 from dagster._seven import json
 from dagster_pipes import PipesContext
-from dagster_webserver.external_assets import ReportAssetMatParam
+from dagster_webserver.external_assets import ReportAssetCheckEvalParam, ReportAssetMatParam
 from starlette.testclient import TestClient
 
 
@@ -176,5 +177,60 @@ def test_report_asset_materialization_apis_consistent(
     params = [p for p in sig.parameters if p not in skip_set]
 
     KNOWN_DIFF = {"partition", "description"}
+
+    assert set(sample_payload.keys()).difference(set(params)) == KNOWN_DIFF
+
+
+def test_report_asset_check_evaluation_apis_consistent(
+    instance: DagsterInstance, test_client: TestClient
+):
+    # ensure the ext report_asset_check_result and the API endpoint have the same capabilities
+    sample_payload = {
+        "asset_key": "sample_key",
+        "check_name": "sample_check",
+        "metadata": {"meta": "data"},
+        "severity": "WARN",
+        "passed": False,
+    }
+
+    # sample has entry for all supported params (banking on usage of enum)
+    assert set(sample_payload.keys()) == set(
+        {v for k, v in vars(ReportAssetCheckEvalParam).items() if not k.startswith("__")}
+    )
+
+    response = test_client.post("/report_asset_check/", json=sample_payload)
+    assert response.status_code == 200, response.json()
+    check_key = AssetCheckKey(name="sample_check", asset_key=AssetKey("sample_key"))
+    results = instance.event_log_storage.get_latest_asset_check_execution_by_key([check_key])
+    assert results
+    record = results[check_key]
+    assert record
+    assert record.event
+    evt = record.event.dagster_event
+    assert evt
+    evaluation = evt.asset_check_evaluation_data
+
+    for k, v in sample_payload.items():
+        if k == "check_name":
+            assert evaluation.check_name == v
+        elif k == "asset_key":
+            assert evaluation.asset_key == AssetKey(v)
+        elif k == "metadata":
+            assert evaluation.metadata.keys() == v.keys()
+        elif k == "passed":
+            assert evaluation.passed == v
+        elif k == "severity":
+            assert evaluation.severity.value == v
+        else:
+            assert (
+                False
+            ), "need to add validation that sample payload content was written successfully"
+
+    # all ext report_asset_materialization kwargs should be in sample payload
+    sig = inspect.signature(PipesContext.report_asset_check)
+    skip_set = {"self"}
+    params = [p for p in sig.parameters if p not in skip_set]
+
+    KNOWN_DIFF = set()
 
     assert set(sample_payload.keys()).difference(set(params)) == KNOWN_DIFF
