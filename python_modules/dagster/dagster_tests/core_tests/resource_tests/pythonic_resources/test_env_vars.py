@@ -74,7 +74,7 @@ def test_env_var_data_structure() -> None:
             assets=[an_asset],
             resources={
                 "a_resource": ResourceWithString(
-                    my_list=[EnvVar("FOO"), EnvVar("BAR")],
+                    my_list=[EnvVar("FOO"), EnvVar("BAR")],  # type: ignore[arg-type]
                     my_dict={
                         "foo": EnvVar("FOO"),
                         "bar": EnvVar("BAR"),
