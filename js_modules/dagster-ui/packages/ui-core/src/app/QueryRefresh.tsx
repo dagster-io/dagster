@@ -34,7 +34,7 @@ export interface QueryRefreshState {
  *
  */
 export function useQueryRefreshAtInterval(
-  queryResult: QueryResult<any, any>,
+  queryResult: Pick<QueryResult<any, any>, 'refetch' | 'loading' | 'networkStatus'>,
   intervalMs: number,
   enabled = true,
   customRefetch?: () => void,

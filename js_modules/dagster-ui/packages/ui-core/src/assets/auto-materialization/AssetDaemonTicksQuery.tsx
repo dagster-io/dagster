@@ -9,6 +9,8 @@ export const ASSET_DAMEON_TICKS_QUERY = gql`
     $statuses: [InstigationTickStatus!]
     $limit: Int
     $cursor: String
+    $beforeTimestamp: Float
+    $afterTimestamp: Float
   ) {
     autoMaterializeTicks(
       dayRange: $dayRange
@@ -16,6 +18,8 @@ export const ASSET_DAMEON_TICKS_QUERY = gql`
       statuses: $statuses
       limit: $limit
       cursor: $cursor
+      beforeTimestamp: $beforeTimestamp
+      afterTimestamp: $afterTimestamp
     ) {
       id
       ...AssetDaemonTickFragment
