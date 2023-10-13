@@ -43,7 +43,7 @@ export const SidebarAssetInfo: React.FC<{
   graphNode: GraphNode;
 }> = ({graphNode}) => {
   const {assetKey, definition} = graphNode;
-  const liveData = useAssetLiveData(assetKey);
+  const {liveData} = useAssetLiveData(assetKey);
   const partitionHealthRefreshHint = healthRefreshHintFromLiveData(liveData);
   const partitionHealthData = usePartitionHealthData(
     [assetKey],

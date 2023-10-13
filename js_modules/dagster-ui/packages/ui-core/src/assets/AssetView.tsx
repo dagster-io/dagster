@@ -4,7 +4,7 @@ import * as React from 'react';
 import {Link, useLocation} from 'react-router-dom';
 
 import {Timestamp} from '../app/time/Timestamp';
-import {AssetLiveDataRefresh, useAssetsLiveData} from '../asset-data/AssetLiveDataProvider';
+import {AssetLiveDataRefresh, useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
 import {
   GraphData,
   LiveDataForNode,
@@ -75,22 +75,18 @@ export const AssetView = ({assetKey}: Props) => {
   const {upstream, downstream} = useNeighborsFromGraph(visibleAssetGraph.assetGraphData, assetKey);
   const node = visibleAssetGraph.assetGraphData?.nodes[toGraphId(assetKey)];
 
-  // Observe the live state of the visible assets. Note: We use the "last materialization"
-  // provided by this hook to trigger resets of the datasets inside the Activity / Plots tabs
-  const {liveDataByNode, refresh} = useAssetsLiveData(visibleAssetGraph.graphAssetKeys);
+  const {liveData, refresh} = useAssetLiveData(assetKey);
 
   // The "live" data is preferable and more current, but only available for SDAs. Fallback
   // to the materialization timestamp we loaded from assetOrError if live data is not available.
-  const liveDataForAsset: LiveDataForNode | undefined = liveDataByNode[tokenForAssetKey(assetKey)];
-  const lastMaterializedAt = (liveDataForAsset?.lastMaterialization || lastMaterialization)
-    ?.timestamp;
+  const lastMaterializedAt = (liveData?.lastMaterialization || lastMaterialization)?.timestamp;
 
   const viewingMostRecent = !params.asOf || Number(lastMaterializedAt) <= Number(params.asOf);
 
   // Some tabs make expensive queries that should be refreshed after materializations or failures.
   // We build a hint string from the live summary info and refresh the views when the hint changes.
-  const dataRefreshHint = liveDataForAsset
-    ? healthRefreshHintFromLiveData(liveDataForAsset)
+  const dataRefreshHint = liveData
+    ? healthRefreshHintFromLiveData(liveData)
     : lastMaterialization?.timestamp;
 
   const renderDefinitionTab = () => {
@@ -158,7 +154,7 @@ export const AssetView = ({assetKey}: Props) => {
         params={params}
         paramsTimeWindowOnly={!!params.asOf}
         setParams={setParams}
-        liveData={definition ? liveDataByNode[toGraphId(definition.assetKey)] : undefined}
+        liveData={definition ? liveData : undefined}
       />
     );
   };
@@ -247,7 +243,7 @@ export const AssetView = ({assetKey}: Props) => {
         tags={
           <AssetViewPageHeaderTags
             definition={definition}
-            liveData={liveDataForAsset}
+            liveData={liveData}
             onShowUpstream={() => setParams({...params, view: 'lineage', lineageScope: 'upstream'})}
           />
         }

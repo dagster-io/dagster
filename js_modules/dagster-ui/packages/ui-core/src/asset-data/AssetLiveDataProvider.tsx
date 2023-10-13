@@ -20,8 +20,14 @@ let providerListener = (_key: string, _data?: LiveDataForNode) => {};
 const _cache: Record<string, LiveDataForNode> = {};
 
 export function useAssetLiveData(assetKey: AssetKeyInput) {
-  const {liveDataByNode} = useAssetsLiveData(React.useMemo(() => [assetKey], [assetKey]));
-  return liveDataByNode[tokenForAssetKey(assetKey)];
+  const {liveDataByNode, refresh, refreshing} = useAssetsLiveData(
+    React.useMemo(() => [assetKey], [assetKey]),
+  );
+  return {
+    liveData: liveDataByNode[tokenForAssetKey(assetKey)],
+    refresh,
+    refreshing,
+  };
 }
 
 export function useAssetsLiveData(assetKeys: AssetKeyInput[]) {
