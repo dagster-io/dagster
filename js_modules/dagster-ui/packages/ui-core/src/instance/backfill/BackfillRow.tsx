@@ -275,7 +275,7 @@ const BackfillTarget: React.FC<{
 
   const buildPipelineOrAssets = () => {
     if (assetSelection?.length) {
-      return <AssetKeyTagCollection assetKeys={assetSelection} modalTitle="Assets in backfill" />;
+      return <AssetKeyTagCollection assetKeys={assetSelection} dialogTitle="Assets in backfill" />;
     }
     if (partitionSet && repo) {
       return (
