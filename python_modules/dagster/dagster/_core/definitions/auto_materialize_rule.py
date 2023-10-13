@@ -146,7 +146,7 @@ class RuleEvaluationContext:
     def previous_tick_requested_or_discarded_asset_partitions(
         self,
     ) -> AbstractSet[AssetKeyPartitionKey]:
-        """Returns the set of asset partitions that were skipped on the previous tick."""
+        """Returns the set of asset partitions that were requested or discarded on the previous tick."""
         if not self.previous_tick_evaluation:
             return set()
         return self.previous_tick_evaluation.get_requested_or_discarded_asset_partitions(
@@ -326,7 +326,10 @@ class AutoMaterializeRule(ABC):
         ],
         should_use_past_data_fn: Callable[[AssetKeyPartitionKey], bool],
     ) -> "RuleEvaluationResults":
-        """Combines a given set of evaluation data with evaluation data from the previous tick.
+        """Combines a given set of evaluation data with evaluation data from the previous tick. The
+        returned value will include the union of the evaluation data contained within
+        `asset_partitions_by_evaluation_data` and the evaluation data calculated for asset
+        partitions on the previous tick for which `should_use_past_data_fn` evaluates to `True`.
 
         Args:
             context: The current RuleEvaluationContext.
@@ -759,6 +762,31 @@ class SkipOnNotAllParentsUpdatedRule(
 
 
 @whitelist_for_serdes
+class DiscardOnMaxMaterializationsExceededRule(
+    AutoMaterializeRule, NamedTuple("_DiscardOnMaxMaterializationsExceededRule", [("limit", int)])
+):
+    @property
+    def decision_type(self) -> AutoMaterializeDecisionType:
+        return AutoMaterializeDecisionType.DISCARD
+
+    @property
+    def description(self) -> str:
+        return f"exceeds {self.limit} materialization(s) per minute"
+
+    def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
+        # the set of asset partitions which exceed the limit
+        rate_limited_asset_partitions = set(
+            sorted(
+                context.candidates,
+                key=lambda x: sort_key_for_asset_partition(context.asset_graph, x),
+            )[self.limit :]
+        )
+        if rate_limited_asset_partitions:
+            return [(None, rate_limited_asset_partitions)]
+        return []
+
+
+@whitelist_for_serdes
 class SkipOnRequiredButNonexistentParentsRule(
     AutoMaterializeRule, NamedTuple("_SkipOnRequiredButNonexistentParentsRule", [])
 ):
@@ -796,31 +824,6 @@ class SkipOnRequiredButNonexistentParentsRule(
 
 
 @whitelist_for_serdes
-class DiscardOnMaxMaterializationsExceededRule(
-    AutoMaterializeRule, NamedTuple("_DiscardOnMaxMaterializationsExceededRule", [("limit", int)])
-):
-    @property
-    def decision_type(self) -> AutoMaterializeDecisionType:
-        return AutoMaterializeDecisionType.DISCARD
-
-    @property
-    def description(self) -> str:
-        return f"exceeds {self.limit} materialization(s) per minute"
-
-    def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
-        # the set of asset partitions which exceed the limit
-        rate_limited_asset_partitions = set(
-            sorted(
-                context.candidates,
-                key=lambda x: sort_key_for_asset_partition(context.asset_graph, x),
-            )[self.limit :]
-        )
-        if rate_limited_asset_partitions:
-            return [(None, rate_limited_asset_partitions)]
-        return []
-
-
-@whitelist_for_serdes
 class AutoMaterializeAssetEvaluation(NamedTuple):
     """Represents the results of the auto-materialize logic for a single asset.
 
@@ -831,6 +834,12 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
             tuples, where the first element is the condition and the second element is the
             serialized subset of partitions that the condition applies to. If it's not partitioned,
             the second element will be None.
+        num_requested (int): The number of asset partitions that were requested to be materialized
+        num_skipped (int): The number of asset partitions that were skipped
+        num_discarded (int): The number of asset partitions that were discarded
+        run_ids (Set[str]): The set of run IDs created for this evaluation
+        rule_snapshots (Optional[Sequence[AutoMaterializeRuleSnapshot]]): The snapshots of the
+            rules on the policy at the time it was evaluated.
     """
 
     asset_key: AssetKey
@@ -895,17 +904,15 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
                 rule_snapshots=auto_materialize_policy.rule_snapshots,
             )
 
-    def _deserialize_result(
+    def _deserialize_rule_evaluation_result(
         self,
-        serialized_result: Tuple[
-            AutoMaterializeRuleEvaluation, Optional[SerializedPartitionsSubset]
-        ],
+        rule_evaluation: AutoMaterializeRuleEvaluation,
+        serialized_subset: Optional[SerializedPartitionsSubset],
         asset_graph: AssetGraph,
     ) -> Optional[
         Tuple[Optional[AutoMaterializeRuleEvaluationData], AbstractSet[AssetKeyPartitionKey]]
     ]:
         partitions_def = asset_graph.get_partitions_def(self.asset_key)
-        rule_evaluation, serialized_subset = serialized_result
         if serialized_subset is None:
             if partitions_def is None:
                 return (rule_evaluation.evaluation_data, {AssetKeyPartitionKey(self.asset_key)})
@@ -927,11 +934,13 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
     ) -> RuleEvaluationResults:
         """For a given rule snapshot, returns the calculated evaluations for that rule."""
         results = []
-        for serialized_result in self.partition_subsets_by_condition:
+        for rule_evaluation, serialized_subset in self.partition_subsets_by_condition:
             # filter for the same rule
-            if serialized_result[0].rule_snapshot != rule_snapshot:
+            if rule_evaluation.rule_snapshot != rule_snapshot:
                 continue
-            deserialized_result = self._deserialize_result(serialized_result, asset_graph)
+            deserialized_result = self._deserialize_rule_evaluation_result(
+                rule_evaluation, serialized_subset, asset_graph
+            )
             if deserialized_result:
                 results.append(deserialized_result)
         return results
@@ -941,10 +950,12 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
     ) -> AbstractSet[AssetKeyPartitionKey]:
         """Returns the set of asset partitions with a given decision type applied to them."""
         asset_partitions = set()
-        for serialized_result in self.partition_subsets_by_condition:
-            if serialized_result[0].rule_snapshot.decision_type != decision_type:
+        for rule_evaluation, serialized_subset in self.partition_subsets_by_condition:
+            if rule_evaluation.rule_snapshot.decision_type != decision_type:
                 continue
-            deserialized_result = self._deserialize_result(serialized_result, asset_graph)
+            deserialized_result = self._deserialize_rule_evaluation_result(
+                rule_evaluation, serialized_subset, asset_graph
+            )
             if deserialized_result is None:
                 continue
             asset_partitions.update(deserialized_result[1])
@@ -988,7 +999,8 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
         sorted_results = sorted(self.partition_subsets_by_condition)
         sorted_stored_results = sorted(stored_evaluation.partition_subsets_by_condition)
         return (
-            set(self.rule_snapshots or []) == set(stored_evaluation.rule_snapshots or [])
+            self.asset_key == stored_evaluation.asset_key
+            and set(self.rule_snapshots or []) == set(stored_evaluation.rule_snapshots or [])
             # if num_requested / num_discarded > 0 on the stored evaluation, then something changed
             # in the global state on the previous tick
             and stored_evaluation.num_requested == 0
@@ -1001,8 +1013,14 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
                 sorted_results == [tuple(x) for x in sorted_stored_results]
                 # however, not all identical partition subsets are serialized to the same string,
                 # so sometimes we need to deserialize the keys to be sure
-                or [self._deserialize_result(x, asset_graph) for x in sorted_results]
-                == [self._deserialize_result(x, asset_graph) for x in sorted_stored_results]
+                or [
+                    self._deserialize_rule_evaluation_result(re, ss, asset_graph)
+                    for re, ss in sorted_results
+                ]
+                == [
+                    self._deserialize_rule_evaluation_result(re, ss, asset_graph)
+                    for re, ss in sorted_stored_results
+                ]
             )
         )
 
