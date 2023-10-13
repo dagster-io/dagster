@@ -77,7 +77,7 @@ def test_dbt_cli_manifest_argument(manifest: DbtManifestParam) -> None:
 
 
 def test_dbt_cli_project_dir_path() -> None:
-    dbt = DbtCliResource(project_dir=Path(TEST_PROJECT_DIR))
+    dbt = DbtCliResource(project_dir=Path(TEST_PROJECT_DIR))  # type: ignore
 
     assert Path(dbt.project_dir).is_absolute()
     assert dbt.cli(["run"]).is_successful()
@@ -219,7 +219,7 @@ def test_dbt_profile_configuration() -> None:
 def test_dbt_profiles_dir_configuration(profiles_dir: Union[str, Path]) -> None:
     dbt = DbtCliResource(
         project_dir=TEST_PROJECT_DIR,
-        profiles_dir=profiles_dir,
+        profiles_dir=profiles_dir,  # type: ignore
     )
 
     assert dbt.cli(["parse"]).is_successful()

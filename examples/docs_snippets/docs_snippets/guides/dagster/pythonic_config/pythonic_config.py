@@ -45,7 +45,7 @@ def permissive_schema_config() -> None:
         return requests.get("https://my-api.com/listings", params=url_params).json()
 
     # can pass in any fields, including those not defined in the schema
-    filtered_listings(FilterConfig(title="hotel", beds=4))
+    filtered_listings(FilterConfig(title="hotel", beds=4))  # type: ignore
     # end_permissive_schema_config
 
 
@@ -165,10 +165,10 @@ def nested_schema_config() -> None:
                 "average_age": MyNestedConfig(
                     user_data={
                         "Alice": UserData(
-                            age=10, email="alice@gmail.com", profile_picture_url=...
+                            age=10, email="alice@gmail.com", profile_picture_url=...  # type: ignore
                         ),
                         "Bob": UserData(
-                            age=20, email="bob@gmail.com", profile_picture_url=...
+                            age=20, email="bob@gmail.com", profile_picture_url=...  # type: ignore
                         ),
                     }
                 )
@@ -290,13 +290,13 @@ def execute_with_bad_config() -> None:
 
     op_result = greeting_job.execute_in_process(
         run_config=RunConfig(
-            {"print_greeting": MyOpConfig(nonexistent_config_value=1)}
+            {"print_greeting": MyOpConfig(nonexistent_config_value=1)}  # type: ignore
         ),
     )
 
     asset_result = materialize(
         [greeting],
-        run_config=RunConfig({"greeting": MyAssetConfig(nonexistent_config_value=1)}),
+        run_config=RunConfig({"greeting": MyAssetConfig(nonexistent_config_value=1)}),  # type: ignore
     )
 
     # end_execute_with_bad_config

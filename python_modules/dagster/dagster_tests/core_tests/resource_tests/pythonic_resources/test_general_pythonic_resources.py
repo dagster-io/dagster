@@ -100,7 +100,7 @@ def test_invalid_config() -> None:
     with pytest.raises(
         ValidationError,
     ):
-        MyResource(foo="why")
+        MyResource(foo="why")  # type: ignore
 
 
 @pytest.mark.skipif(sys.version_info < (3, 8), reason="requires python3.8")
@@ -918,7 +918,7 @@ def test_context_on_resource_basic() -> None:
     # Can access context after binding one
     ContextUsingResource().with_replaced_resource_context(
         build_init_resource_context()
-    ).access_context()  # type: ignore  # (??)
+    ).access_context()
 
     @asset
     def my_test_asset(context_using: ContextUsingResource) -> None:
@@ -962,7 +962,7 @@ def test_context_on_resource_use_instance() -> None:
             assert (
                 OutputDirResource(output_dir=None)
                 .with_replaced_resource_context(build_init_resource_context(instance=instance))
-                .get_effective_output_dir()  # type: ignore  # (??)
+                .get_effective_output_dir()
                 == "/tmp"
             )
 

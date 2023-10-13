@@ -741,7 +741,7 @@ def test_structured_run_config_optional() -> None:
         a_struct_config_op()
 
     a_job.execute_in_process(
-        RunConfig(ops={"a_struct_config_op": ANewConfigOpConfig(a_string=None)})
+        RunConfig(ops={"a_struct_config_op": ANewConfigOpConfig(a_string=None)})  # type: ignore
     )
     assert executed["yes"]
 
@@ -850,7 +850,7 @@ def test_structured_run_config_assets_optional() -> None:
         [my_asset],
         run_config=RunConfig(
             ops={
-                "my_asset": AnAssetConfig(),
+                "my_asset": AnAssetConfig(),  # type: ignore
             }
         ),
     )

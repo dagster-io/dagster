@@ -112,7 +112,7 @@ def test_struct_config_persmissive_cached_method() -> None:
             calls["plus"] += 1
             return self.x + self.y
 
-    plus_config = PlusConfig(x=1, y=2, z=10)
+    plus_config = PlusConfig(x=1, y=2, z=10)  # type: ignore
 
     assert plus_config.plus() == 3
     assert calls["plus"] == 1
@@ -262,8 +262,8 @@ def test_complex_config_schema() -> None:
     )
     assert executed["yes"]
 
-    a_struct_config_op(AnOpConfig(a_complex_thing={5: [{"foo": 1, "bar": 2, "baz": None}]}))
-    a_struct_config_op(config=AnOpConfig(a_complex_thing={5: [{"foo": 1, "bar": 2, "baz": None}]}))
+    a_struct_config_op(AnOpConfig(a_complex_thing={5: [{"foo": 1, "bar": 2, "baz": None}]}))  # type: ignore
+    a_struct_config_op(config=AnOpConfig(a_complex_thing={5: [{"foo": 1, "bar": 2, "baz": None}]}))  # type: ignore
     a_struct_config_op({"a_complex_thing": {5: [{"foo": 1, "bar": 2, "baz": None}]}})
     a_struct_config_op(config={"a_complex_thing": {5: [{"foo": 1, "bar": 2, "baz": None}]}})
 
