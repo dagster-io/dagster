@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Optional, Sequence, cast
+import random
 
 import pendulum.parser
 import pytest
@@ -790,6 +791,25 @@ def test_partition_subset_get_partition_keys_not_in_subset(case_str: str):
     expected_range_count = case_str.count("-+") + (1 if case_str[0] == "+" else 0)
     assert len(subset.included_time_windows) == expected_range_count, case_str
     assert len(subset) == case_str.count("+")
+
+
+def test_time_partitions_subset_identical_serialization():
+    # serialized subsets should be equal if the original subsets are equal
+    partitions_def = DailyPartitionsDefinition(start_date="2015-01-01")
+    partition_keys = [
+        *[f"2015-02-{i:02d}" for i in range(1, 20)],
+        *[f"2016-03-{i:02d}" for i in range(1, 15)],
+        *[f"2017-04-{i:02d}" for i in range(1, 10)],
+        *[f"2018-05-{i:02d}" for i in range(1, 5)],
+        *[f"2018-06-{i:02d}" for i in range(1, 10)],
+        *[f"2019-07-{i:02d}" for i in range(1, 15)],
+        *[f"2020-08-{i:02d}" for i in range(1, 20)],
+    ]
+    serialized1 = partitions_def.subset_with_partition_keys(partition_keys).serialize()
+    serialized2 = partitions_def.subset_with_partition_keys(
+        random.shuffle(partition_keys)
+    ).serialize()
+    assert serialized1 == serialized2
 
 
 @pytest.mark.parametrize(
