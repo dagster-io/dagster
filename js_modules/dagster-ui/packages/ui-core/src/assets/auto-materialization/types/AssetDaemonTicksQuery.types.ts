@@ -8,6 +8,8 @@ export type AssetDaemonTicksQueryVariables = Types.Exact<{
   statuses?: Types.InputMaybe<Array<Types.InstigationTickStatus> | Types.InstigationTickStatus>;
   limit?: Types.InputMaybe<Types.Scalars['Int']>;
   cursor?: Types.InputMaybe<Types.Scalars['String']>;
+  beforeTimestamp?: Types.InputMaybe<Types.Scalars['Float']>;
+  afterTimestamp?: Types.InputMaybe<Types.Scalars['Float']>;
 }>;
 
 export type AssetDaemonTicksQuery = {
