@@ -65,6 +65,11 @@ def test_struct_config_permissive() -> None:
 
         # Can pull out config dict to access permissive fields
         assert config.dict() == {"a_string": "foo", "an_int": 2, "a_bool": True}
+        assert config._convert_to_config_dictionary() == {  # noqa: SLF001
+            "a_string": "foo",
+            "an_int": 2,
+            "a_bool": True,
+        }
 
     from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 
@@ -107,7 +112,7 @@ def test_struct_config_persmissive_cached_method() -> None:
             calls["plus"] += 1
             return self.x + self.y
 
-    plus_config = PlusConfig(x=1, y=2)
+    plus_config = PlusConfig(x=1, y=2, z=10)
 
     assert plus_config.plus() == 3
     assert calls["plus"] == 1
