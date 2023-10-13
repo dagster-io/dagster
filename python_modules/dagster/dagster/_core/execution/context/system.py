@@ -917,6 +917,17 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                 return True
         return False
 
+    @property
+    def is_in_graph_asset(self) -> bool:
+        """If the step is an op in a graph-backed asset returns True. Checks by first confirming the
+        step is in a graph, then checking that the node corresponds to an AssetsDefinitions in the asset layer.
+        """
+        return (
+            self.is_op_in_graph
+            and self.job_def.asset_layer.assets_defs_by_node_handle.get(self.node_handle)
+            is not None
+        )
+
     def set_data_version(self, asset_key: AssetKey, data_version: "DataVersion") -> None:
         self._data_version_cache[asset_key] = data_version
 
