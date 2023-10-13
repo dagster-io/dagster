@@ -7,6 +7,8 @@ Abstractions for the orchestration side of the Dagster Pipes protocol.
 
 .. autoclass:: PipesClient
 
+.. autoclass:: PipesSubprocessClient
+
 .. autoclass:: PipesContextInjector
 
 .. autoclass:: PipesMessageReader
