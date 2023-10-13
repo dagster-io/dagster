@@ -38,8 +38,8 @@ from dagster_graphql_tests.graphql.graphql_context_test_suite import (
 from dagster_graphql_tests.graphql.repo import static_partitions_def
 
 TICKS_QUERY = """
-query AssetDameonTicksQuery($dayRange: Int, $dayOffset: Int, $statuses: [InstigationTickStatus!], $limit: Int, $cursor: String) {
-    autoMaterializeTicks(dayRange: $dayRange, dayOffset: $dayOffset, statuses: $statuses, limit: $limit, cursor: $cursor) {
+query AssetDameonTicksQuery($dayRange: Int, $dayOffset: Int, $statuses: [InstigationTickStatus!], $limit: Int, $cursor: String, $beforeTimestamp: Float, $afterTimestamp: Float) {
+    autoMaterializeTicks(dayRange: $dayRange, dayOffset: $dayOffset, statuses: $statuses, limit: $limit, cursor: $cursor, beforeTimestamp: $beforeTimestamp, afterTimestamp: $afterTimestamp) {
         id
         timestamp
         endTimestamp
@@ -151,6 +151,21 @@ class TestAutoMaterializeTicks(ExecutingGraphQLContextTestMatrix):
         }
 
         assert tick["requestedAssetMaterializationCount"] == 4
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            TICKS_QUERY,
+            variables={
+                "beforeTimestamp": success_2.timestamp + 1,
+                "afterTimestamp": success_2.timestamp - 1,
+            },
+        )
+        assert len(result.data["autoMaterializeTicks"]) == 1
+        tick = result.data["autoMaterializeTicks"][0]
+        assert (
+            tick["autoMaterializeAssetEvaluationId"]
+            == success_2.tick_data.auto_materialize_evaluation_id
+        )
 
         result = execute_dagster_graphql(
             graphql_context,

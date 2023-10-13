@@ -1520,6 +1520,8 @@ export type InstigationStateTickArgs = {
 };
 
 export type InstigationStateTicksArgs = {
+  afterTimestamp?: InputMaybe<Scalars['Float']>;
+  beforeTimestamp?: InputMaybe<Scalars['Float']>;
   cursor?: InputMaybe<Scalars['String']>;
   dayOffset?: InputMaybe<Scalars['Int']>;
   dayRange?: InputMaybe<Scalars['Int']>;
@@ -2954,6 +2956,8 @@ export type QueryAutoMaterializeEvaluationsForEvaluationIdArgs = {
 };
 
 export type QueryAutoMaterializeTicksArgs = {
+  afterTimestamp?: InputMaybe<Scalars['Float']>;
+  beforeTimestamp?: InputMaybe<Scalars['Float']>;
   cursor?: InputMaybe<Scalars['String']>;
   dayOffset?: InputMaybe<Scalars['Int']>;
   dayRange?: InputMaybe<Scalars['Int']>;
