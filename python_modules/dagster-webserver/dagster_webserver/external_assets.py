@@ -74,13 +74,11 @@ async def handle_report_asset_materialization_request(
             status_code=400,
         )
 
-    tags = None
+    tags = context.get_reporting_user_tags()
     data_version = _value_from_body_or_params(ReportAssetMatParam.data_version, request, json_body)
     if data_version is not None:
-        tags = {
-            DATA_VERSION_TAG: data_version,
-            DATA_VERSION_IS_USER_PROVIDED_TAG: "true",
-        }
+        tags[DATA_VERSION_TAG] = data_version
+        tags[DATA_VERSION_IS_USER_PROVIDED_TAG] = "true"
 
     partition = _value_from_body_or_params(ReportAssetMatParam.partition, request, json_body)
     description = _value_from_body_or_params(ReportAssetMatParam.description, request, json_body)
