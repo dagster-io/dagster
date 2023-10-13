@@ -529,6 +529,8 @@ class GrapheneInstigationState(graphene.ObjectType):
         limit=graphene.Int(),
         cursor=graphene.String(),
         statuses=graphene.List(graphene.NonNull(GrapheneInstigationTickStatus)),
+        beforeTimestamp=graphene.Float(),
+        afterTimestamp=graphene.Float(),
     )
     nextTick = graphene.Field(GrapheneDryRunInstigationTick)
     runningCount = graphene.NonNull(graphene.Int)  # remove with cron scheduler
@@ -654,7 +656,15 @@ class GrapheneInstigationState(graphene.ObjectType):
         return GrapheneInstigationTick(graphene_info, matches[0]) if matches else None
 
     def resolve_ticks(
-        self, graphene_info, dayRange=None, dayOffset=None, limit=None, cursor=None, statuses=None
+        self,
+        graphene_info,
+        dayRange=None,
+        dayOffset=None,
+        limit=None,
+        cursor=None,
+        statuses=None,
+        beforeTimestamp=None,
+        afterTimestamp=None,
     ):
         return get_instigation_ticks(
             graphene_info=graphene_info,
@@ -667,6 +677,8 @@ class GrapheneInstigationState(graphene.ObjectType):
             limit=limit,
             cursor=cursor,
             status_strings=statuses,
+            before=beforeTimestamp,
+            after=afterTimestamp,
         )
 
     def resolve_nextTick(self, graphene_info: ResolveInfo):

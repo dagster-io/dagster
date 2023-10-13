@@ -2357,6 +2357,8 @@ type InstigationState {
     limit: Int
     cursor: String
     statuses: [InstigationTickStatus!]
+    beforeTimestamp: Float
+    afterTimestamp: Float
   ): [InstigationTick!]!
   nextTick: DryRunInstigationTick
   runningCount: Int!
@@ -3082,6 +3084,8 @@ type Query {
     limit: Int
     cursor: String
     statuses: [InstigationTickStatus!]
+    beforeTimestamp: Float
+    afterTimestamp: Float
   ): [InstigationTick!]!
   assetChecksOrError(assetKey: AssetKeyInput!, checkName: String): AssetChecksOrError!
 }

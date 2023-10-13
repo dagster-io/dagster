@@ -23,25 +23,29 @@ def get_instigation_ticks(
     limit: Optional[int],
     cursor: Optional[str],
     status_strings: Optional[Sequence[str]],
+    before: Optional[float],
+    after: Optional[float],
 ):
     from ..schema.instigation import GrapheneInstigationTick
 
-    before = None
-    if dayOffset:
-        before = pendulum.now("UTC").subtract(days=dayOffset).timestamp()
-    elif cursor:
-        parts = cursor.split(":")
-        if parts:
-            try:
-                before = float(parts[-1])
-            except (ValueError, IndexError):
-                warnings.warn(f"Invalid cursor for ticks: {cursor}")
+    if before is None:
+        if dayOffset:
+            before = pendulum.now("UTC").subtract(days=dayOffset).timestamp()
+        elif cursor:
+            parts = cursor.split(":")
+            if parts:
+                try:
+                    before = float(parts[-1])
+                except (ValueError, IndexError):
+                    warnings.warn(f"Invalid cursor for ticks: {cursor}")
 
-    after = (
-        pendulum.now("UTC").subtract(days=dayRange + (dayOffset or 0)).timestamp()
-        if dayRange
-        else None
-    )
+    if after is None:
+        after = (
+            pendulum.now("UTC").subtract(days=dayRange + (dayOffset or 0)).timestamp()
+            if dayRange
+            else None
+        )
+
     statuses = [TickStatus(status) for status in status_strings] if status_strings else None
 
     if batch_loader and limit and not cursor and not before and not after:
