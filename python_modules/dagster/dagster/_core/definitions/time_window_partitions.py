@@ -1417,7 +1417,7 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
         last_tw = self._partitions_def.get_last_partition_window(current_time=current_time)
 
         if not first_tw or not last_tw:
-            check.failed("No partitions found")
+            return []
 
         if len(self.included_time_windows) == 0:
             return [TimeWindow(first_tw.start, last_tw.end)]

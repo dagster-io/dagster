@@ -792,6 +792,14 @@ def test_partition_subset_get_partition_keys_not_in_subset(case_str: str):
     assert len(subset) == case_str.count("+")
 
 
+def test_future_start_date() -> None:
+    with pendulum.test(pendulum.parse("2023-01-01")):
+        partitions_def = DailyPartitionsDefinition(start_date="2024-01-01")
+        assert partitions_def.get_partition_keys() == []
+        assert partitions_def.empty_subset().get_partition_keys() == []
+        assert partitions_def.empty_subset().get_partition_keys_not_in_subset() == []
+
+
 @pytest.mark.parametrize(
     "initial, added",
     [
