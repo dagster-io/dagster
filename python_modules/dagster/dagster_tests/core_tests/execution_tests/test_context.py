@@ -181,11 +181,6 @@ def test_context_provided_to_graph_asset():
         return x + 1
 
     @op
-    def layered_op(context: AssetExecutionContext, x):
-        assert isinstance(context, AssetExecutionContext)
-        return x + 1
-
-    @op
     def no_annotation_op(context):
         assert isinstance(context, OpExecutionContext)
         # AssetExecutionContext is an instance of OpExecutionContext, so add this additional check
@@ -225,11 +220,6 @@ def test_context_provided_to_graph_asset():
 
 def test_context_provided_to_graph_multi_asset():
     # op so that the ops to check context type are layered deeper in the graph
-    @op
-    def layered_op(context: AssetExecutionContext, x):
-        assert isinstance(context, AssetExecutionContext)
-        return x + 1
-
     @op
     def layered_op(context: AssetExecutionContext, x):
         assert isinstance(context, AssetExecutionContext)
