@@ -17,7 +17,8 @@ from dagster import (
     )
 )
 def multi_partitions_asset(context: AssetExecutionContext):
-    context.log.info(context.partition_key.keys_by_dimension)
+    if isinstance(context.partition_key, MultiPartitionKey):
+        context.log.info(context.partition_key.keys_by_dimension)
 
 
 # end_multi_partitions_marker

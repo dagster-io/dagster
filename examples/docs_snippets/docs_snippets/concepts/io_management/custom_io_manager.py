@@ -110,8 +110,9 @@ class DataframeTableIOManager(ConfigurableIOManager):
 
     def load_input(self, context: InputContext):
         # upstream_output.name is the name given to the Out that we're loading for
-        table_name = context.upstream_output.name
-        return read_dataframe_from_table(name=table_name)
+        if context.upstream_output:
+            table_name = context.upstream_output.name
+            return read_dataframe_from_table(name=table_name)
 
 
 @job(resource_defs={"io_manager": DataframeTableIOManager()})

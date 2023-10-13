@@ -15,9 +15,10 @@ class MyIOManager(IOManager):
         self.storage_dict[(context.step_key, context.name)] = obj
 
     def load_input(self, context: InputContext):
-        return self.storage_dict[
-            (context.upstream_output.step_key, context.upstream_output.name)
-        ]
+        if context.upstream_output:
+            return self.storage_dict[
+                (context.upstream_output.step_key, context.upstream_output.name)
+            ]
 
 
 def test_my_io_manager_handle_output():

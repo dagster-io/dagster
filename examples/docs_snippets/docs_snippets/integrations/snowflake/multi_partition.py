@@ -1,5 +1,8 @@
+import pandas as pd
+
+
 def get_iris_data_for_date(*args, **kwargs):
-    pass
+    return pd.DataFrame()
 
 
 # start_example
@@ -9,6 +12,7 @@ import pandas as pd
 from dagster import (
     AssetExecutionContext,
     DailyPartitionsDefinition,
+    MultiPartitionKey,
     MultiPartitionsDefinition,
     StaticPartitionsDefinition,
     asset,
@@ -29,7 +33,7 @@ from dagster import (
     },
 )
 def iris_dataset_partitioned(context: AssetExecutionContext) -> pd.DataFrame:
-    partition = partition = context.partition_key.keys_by_dimension
+    partition = context.partition_key.keys_by_dimension  # type: ignore
     species = partition["species"]
     date = partition["date"]
 
