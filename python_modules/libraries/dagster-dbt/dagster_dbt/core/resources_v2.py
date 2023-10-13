@@ -524,7 +524,6 @@ class DbtCliResource(ConfigurableResource):
     """
 
     project_dir: str = Field(
-        ...,
         description=(
             "The path to your dbt project directory. This directory should contain a"
             " `dbt_project.yml`. See https://docs.getdbt.com/reference/dbt_project.yml for more"

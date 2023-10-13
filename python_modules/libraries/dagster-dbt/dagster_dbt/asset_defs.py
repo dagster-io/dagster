@@ -348,7 +348,7 @@ def _get_dbt_op(
         if partition_key_to_vars_fn:
             kwargs["vars"] = partition_key_to_vars_fn(context.partition_key)
         # merge in any additional kwargs from the config
-        kwargs = deep_merge_dicts(kwargs, context.op_config)
+        kwargs = deep_merge_dicts(kwargs, {k:v for k, v in context.op_config if v is not None})
 
         if _can_stream_events(dbt_resource):
             yield from _stream_event_iterator(
