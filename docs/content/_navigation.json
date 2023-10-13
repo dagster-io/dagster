@@ -871,6 +871,10 @@
                 "path": "/guides/dagster-pipes/subprocess/reference"
               }
             ]
+          },
+          {
+            "title": "Details and customization",
+            "path": "/guides/dagster-pipes/dagster-pipes-details-and-customization"
           }
         ]
       },
