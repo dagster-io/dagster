@@ -6,3 +6,8 @@ jaffle_shop:
       type: duckdb
       path: 'jaffle_shop.duckdb'
       threads: 24
+
+    error_dev:
+      type: duckdb
+      path: 'jaffle_shop.duckdb'
+      threads: '{{ env_var("DBT_DUCKDB_THREADS")}}'

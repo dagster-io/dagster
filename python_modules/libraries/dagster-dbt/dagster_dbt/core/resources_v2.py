@@ -6,7 +6,7 @@ import subprocess
 import sys
 import uuid
 from contextlib import suppress
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import (
     Any,
@@ -204,6 +204,7 @@ class DbtCliInvocation:
     project_dir: Path
     target_path: Path
     raise_on_error: bool
+    _error_messages: List[str] = field(init=False, default_factory=list)
 
     @classmethod
     def run(
@@ -350,6 +351,11 @@ class DbtCliInvocation:
                 try:
                     event = DbtCliEventMessage.from_log(log=log)
 
+                    # Parse the error message from the event, if it exists.
+                    is_error_message = event.raw_event["info"]["level"] == "error"
+                    if is_error_message:
+                        self._error_messages.append(str(event))
+
                     # Re-emit the logs from dbt CLI process into stdout.
                     sys.stdout.write(str(event) + "\n")
                     sys.stdout.flush()
@@ -399,17 +405,33 @@ class DbtCliInvocation:
 
         return orjson.loads(artifact_path.read_bytes())
 
+    def _format_error_messages(self) -> str:
+        """Format the error messages from the dbt CLI process."""
+        if not self._error_messages:
+            return ""
+
+        error_description = "\n".join(self._error_messages)
+
+        return f"\n\nErrors parsed from dbt logs:\n{error_description}"
+
     def _raise_on_error(self) -> None:
         """Ensure that the dbt CLI process has completed. If the process has not successfully
         completed, then optionally raise an error.
         """
         if not self.is_successful() and self.raise_on_error:
+            log_path = self.target_path.joinpath("dbt.log")
+            extra_description = ""
+
+            if log_path.exists():
+                extra_description = f", or view the dbt debug log: {log_path}"
+
             raise DagsterDbtCliRuntimeError(
                 description=(
                     f"The dbt CLI process failed with exit code {self.process.returncode}. Check"
-                    " the Dagster compute logs for the full information about the error, or view"
-                    f" the dbt debug log file: {self.target_path.joinpath('dbt.log')}."
-                )
+                    " the stdout in the Dagster compute logs for the full information about the"
+                    f" error{extra_description}."
+                    f"{self._format_error_messages()}"
+                ),
             )
 
 
