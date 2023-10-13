@@ -1,11 +1,13 @@
 ---
 title: "Dagster Pipes details and customization | Dagster Docs"
-description: ""
+description: "Learn about Dagster Pipes APIs and how to compose them to create a custom solution for your data platform."
 ---
 
 # Dagster Pipes details and customization
 
-Dagster Pipes is a protocol for interfacing Dagster with an arbitrary external compute environment. While many users will be well-served by the simplified interface offered by our Pipes client objects (e.g. `PipesSubprocessClient`, `PipesDatabricksClient`), others will need a greater level of control over Pipes. This is particularly the case for users seeking to connect large existing codebases to Dagster. This guide will cover the lower level Pipes APIs and how you can compose them to provide a custom solution for your data platform.
+[Dagster Pipes](/guides/dagster-pipes) is a protocol for interfacing Dagster with an arbitrary external compute environment. While many users will be well-served by the simplified interface offered by our Pipes client objects (e.g. `PipesSubprocessClient`, `PipesDatabricksClient`), others will need a greater level of control over Pipes. This is particularly the case for users seeking to connect large existing codebases to Dagster.
+
+This guide will cover the lower level Pipes APIs and how you can compose them to provide a custom solution for your data platform.
 
 ---
 
@@ -28,7 +30,7 @@ height={1313}
     <tr>
       <th
         style={{
-          width: "15%",
+          width: "25%",
         }}
       >
         Term
@@ -38,20 +40,26 @@ height={1313}
   </thead>
   <tbody>
     <tr>
-      <td>External environment</td>
+      <td>
+        <strong>External environment</strong>
+      </td>
       <td>
         An environment external to Dagster, for example: Databricks, Kubernetes,
         Docker
       </td>
     </tr>
     <tr>
-      <td>Orchestration process</td>
+      <td>
+        <strong>Orchestration process</strong>
+      </td>
       <td>
         A process running Dagster code to materialize an asset or execute an op.
       </td>
     </tr>
     <tr>
-      <td>External process</td>
+      <td>
+        <strong>External process</strong>
+      </td>
       <td>
         A process running in an external environment, from which logs and events
         are reported back to the orchestration process. The orchestration
@@ -59,7 +67,9 @@ height={1313}
       </td>
     </tr>
     <tr>
-      <td>Bootstrap payload</td>
+      <td>
+        <strong>Bootstrap payload</strong>
+      </td>
       <td>
         A small bundle of key/value pairs that is written by the orchestration
         process to some globally accessible key-value store in the external
@@ -69,20 +79,24 @@ height={1313}
       </td>
     </tr>
     <tr>
-      <td>Context payload</td>
+      <td>
+        <strong>Context payload</strong>
+      </td>
       <td>
         A JSON object containing information derived from the execution context
-        (<code>OpExecutionContext</code> or <code>AssetExecutionContext</code>)
-        in the orchestration process. This includes in-scope asset keys,
-        partition keys, etc. The context payload is written by the orchestration
-        process to some location accessible to the external process. The
-        external process obtains the location of the context payload (e.g. an
-        object url on Amazon S3) from the bootstrap payload and reads the
-        context payload.
+        (<PyObject object="OpExecutionContext" /> or{" "}
+        <PyObject object="AssetExecutionContext" /> ) in the orchestration
+        process. This includes in-scope asset keys, partition keys, etc. The
+        context payload is written by the orchestration process to some location
+        accessible to the external process. The external process obtains the
+        location of the context payload (e.g. an object url on Amazon S3) from
+        the bootstrap payload and reads the context payload.
       </td>
     </tr>
     <tr>
-      <td>Messages</td>
+      <td>
+        <strong>Messages</strong>
+      </td>
       <td>
         JSON objects written by the external process for consumption by the
         orchestration process. Messages can report asset materializations and
@@ -90,7 +104,9 @@ height={1313}
       </td>
     </tr>
     <tr>
-      <td>Params loader</td>
+      <td>
+        <strong>Params loader</strong>
+      </td>
       <td>
         An entity in the external process that reads the bootstrap payload from
         some globally accessible key-value store. The default params loader
@@ -98,7 +114,9 @@ height={1313}
       </td>
     </tr>
     <tr>
-      <td>Context injector</td>
+      <td>
+        <strong>Context injector</strong>
+      </td>
       <td>
         An entity in the orchestration process that writes the context payload
         to an externally accessible location and yields a set of parameters
@@ -106,14 +124,18 @@ height={1313}
       </td>
     </tr>
     <tr>
-      <td>Context loader</td>
+      <td>
+        <strong>Context loader</strong>
+      </td>
       <td>
         An entity in the external process that loads the context payload from
         the location specified in the bootstrap payload.
       </td>
     </tr>
     <tr>
-      <td>Message reader</td>
+      <td>
+        <strong>Message reader</strong>
+      </td>
       <td>
         An entity in the orchestration process that reads message from an
         externally accessible location and yields a set of parameters encoding
@@ -121,7 +143,9 @@ height={1313}
       </td>
     </tr>
     <tr>
-      <td>Message writer</td>
+      <td>
+        <strong>Message writer</strong>
+      </td>
       <td>
         An entity in the external process that writes messages to the location
         specified in the bootstrap payload.
@@ -140,7 +164,7 @@ A **pipes session** is the time spanning:
 2. The launching and terminating of the external process;
 3. The processing of all messages reported by the external process and the closing of communications channels.
 
-Pipes sessions are created in the orchestration process with the `open_pipes_session` context manager. This function is exported by `dagster` and should be called inside of an asset or op compute function— somewhere where an `OpExecutionContext` or `AssetExecutionContext` is available:
+Pipes sessions are created in the orchestration process with the <PyObject object="open_pipes_session" /> context manager. This function is exported by `dagster` and should be called inside of an asset or op compute function - somewhere where an <PyObject object="OpExecutionContext" /> or <PyObject object="AssetExecutionContext" /> is available:
 
 ```python
 ### ORCHESTRATION PROCESS
@@ -183,12 +207,12 @@ def some_pipes_asset(context: AssetExecutionContext) -> Iterator[PipesResult]:
 
 ```
 
-Above we see that `open_pipes_session` takes four parameters:
+Above we see that <PyObject object="open_pipes_session" /> takes four parameters:
 
-- `context`: An execution context (`OpExecutionContext` or `AssetExecutionContext`) that will be used to derive the context payload.
+- `context`: An execution context (<PyObject object="OpExecutionContext" /> or <PyObject object="AssetExecutionContext" />) that will be used to derive the context payload.
 - `extras`: A bundle of arbitrary **extras** in the form of a JSON-serializable dictionary. This is slotted into the context payload. It should contain any other information from the orchestration process that you want to expose to the external process.
-- `context_injector`: A **context injector**, responsible for writing the serialized context payload to some location and expressing that location as bootstrap parameters readable by the external process. Above we used the built-in (and default) `PipesTempFileContextInjector`, which writes the serialized context payload to an automatically created local temp file and exposes the path to that file as a bootstrap parameter.
-- `message_reader`: A **message reader**, responsible for reading streaming messages written to some location, and expressing that location as bootstrap parameters readable by the external process. Above we used the built-in (and default) `PipesTempFileMessageReader`, which tails an automatically created local temp file and exposes the path to that file as a bootstrap parameter.
+- `context_injector`: A **context injector**, responsible for writing the serialized context payload to some location and expressing that location as bootstrap parameters readable by the external process. Above we used the built-in (and default) <PyObject object="PipesTempFileContextInjector" />, which writes the serialized context payload to an automatically created local temp file and exposes the path to that file as a bootstrap parameter.
+- `message_reader`: A **message reader**, responsible for reading streaming messages written to some location, and expressing that location as bootstrap parameters readable by the external process. Above we used the built-in (and default) <PyObject object="PipesTempFileMessageReader" />, which tails an automatically created local temp file and exposes the path to that file as a bootstrap parameter.
 
 Python context manager invocations have three parts:
 
@@ -196,7 +220,7 @@ Python context manager invocations have three parts:
 2. A body, containing user code;
 3. A closing routine (`__exit__`, executed at the end of a `with` block.
 
-For `open_pipes_session`, these three parts perform the following:
+For <PyObject object="open_pipes_session" />, these three parts perform the following:
 
 - **Opening routine**: Writes the context payload and starts a thread to read messages. This may involve the creation of temporary resources, such as a temporary file (locally or on some remote system) for the context payload or a temporary directory to which messages will be written.
 - **Body**: The external process should be launched, polled, and terminated here. This is also the place where intermediate results can be yielded to Dagster.
@@ -208,9 +232,9 @@ For `open_pipes_session`, these three parts perform the following:
 
 In order to work with Dagster Pipes, an external process needs to be launched by a Dagster orchestration process. The orchestration process must inject a bootstrap payload into the environment of the launched external process. The user code in the external process must load a Dagster Pipes integration library. This library knows how to interpret the bootstrap payload and spin up a context loader and message writer.
 
-At present the only official Dagster Pipes integration library is Python’s `dagster-pipes`, available on PyPI. The library has no dependencies and fits in a single file, so it may also be trivially vendored.
+At present the only official Dagster Pipes integration library is Python’s [`dagster-pipes`](/\_apidocs/libraries/dagster-pipes), available on [PyPI](https://pypi.org/project/dagster-pipes/). The library has no dependencies and fits in a single file, so it may also be trivially vendored.
 
-The API for connecting to a pipes session in the external process is `open_dagster_pipes`:
+The API for connecting to a pipes session in the external process is <PyObject object="open_dagster_pipes" />:
 
 ```python
 ### EXTERNAL PROCESS
@@ -236,16 +260,16 @@ with open_dagster_pipes(
     )
 ```
 
-Above we see that `open_dagster_pipes` takes three parameters:
+Above we see that <PyObject object="open_dagster_pipes" /> takes three parameters:
 
-- `params_loader`: A params loader, responsible for loading the bootstrap payload injected into the external process at launch. The standard approach is to inject the bootstrap payload into predetermined environment variables that the `PipesEnvVarParamsLoader` knows how to read. However, a different bootstrap parameter loader can be substituted in environments where it is not possible to modify environment variables.
-- `context_loader`: A context loader, responsible for loading the context payload from a location specified in the bootstrap payload. Above we use `PipesDefaultContextLoader`, which will look for a `path` key in the bootstrap params for a file path to target. The `PipesTempFileContextInjector` used earlier on the orchestration side writes this `path` key, but the `PipesDefaultContextLoader` does not otherwise depend on a specific context injector.
-- `message_writer:` A message writer, responsible for writing streaming messages to a location specified in the bootstrap payload. Above we use `PipesDefaultMessageWriter`, which will look for a `path` key in the bootstrap params for a file path to target. The `PipesTempFileMessageReader` used earlier on the orchestration side writes this `path` key, but the `PipesDefaultMessageWriter` does not otherwise depend on a specific context injector.
+- `params_loader`: A params loader, responsible for loading the bootstrap payload injected into the external process at launch. The standard approach is to inject the bootstrap payload into predetermined environment variables that the <PyObject object="PipesEnvVarParamsLoader" module="dagster_pipes" /> knows how to read. However, a different bootstrap parameter loader can be substituted in environments where it is not possible to modify environment variables.
+- `context_loader`: A context loader, responsible for loading the context payload from a location specified in the bootstrap payload. Above we use <PyObject object="PipesDefaultContextLoader" />, which will look for a `path` key in the bootstrap params for a file path to target. The <PyObject object="PipesTempFileContextInjector" /> used earlier on the orchestration side writes this `path` key, but the <PyObject object="PipesDefaultContextLoader" /> does not otherwise depend on a specific context injector.
+- `message_writer:` A message writer, responsible for writing streaming messages to a location specified in the bootstrap payload. Above we use <PyObject object="PipesDefaultMessageWriter" />, which will look for a `path` key in the bootstrap params for a file path to target. The <PyObject object="PipesTempFileMessageReader" /> used earlier on the orchestration side writes this `path` key, but the <PyObject object="PipesDefaultMessageWriter" /> does not otherwise depend on a specific context injector.
 
-As with the orchestration-side `open_pipes_session`, `open_dagster_pipes` is a context manager. Its three parts perform the following functions:
+As with the orchestration-side <PyObject object="open_pipes_session" />, <PyObject object="open_dagster_pipes" /> is a context manager. Its three parts perform the following functions:
 
 - **Opening routine**: Reads the bootstrap payload from the environment and then the context payload. Sets up the message writer.
-- **Body**: Business logic goes here, and can use the yielded `PipesContext` (in the `pipes` variable above) to read context information or write messages
+- **Body**: Business logic goes here, and can use the yielded <PyObject object="PipesContext" module="dagster_pipes" /> (in the `pipes` variable above) to read context information or write messages
 - **Closing routine**: Ensures that any messages submitted by business logic have been written before the process exits. This is necessary because some message readers buffer messages between writes.
 
 ---
@@ -256,7 +280,7 @@ Users may implement custom params loaders, context loader/injector pairs, and me
 
 ### Custom params loader
 
-Params loaders need to inherit from `PipesParamsLoader`. Here is an example that loads parameters from an object called `METADATA` imported from a fictional package called `external_environment_utils`. It is assumed that `external_environment_utils` is available in the environment on some target compute platform, and that the API for launching processes in “external environment” allows you to set arbitrary key-value pairs in `METADATA`.
+Params loaders need to inherit from <PyObject object="PipesParamsLoader" />. Here is an example that loads parameters from an object called `METADATA` imported from a fictional package called `external_environment_utils`. It is assumed that `external_environment_utils` is available in the environment on some target compute platform, and that the API for launching processes in “external environment” allows you to set arbitrary key-value pairs in `METADATA`.
 
 ```python
 ### EXTERNAL PROCESS
@@ -276,11 +300,11 @@ class MyCustomParamsLoader(PipesParamsLoader):
         return METADATA[DAGSTER_PIPES_MESSAGES_ENV_VAR]
 ```
 
----
+### Custom context injector/loader
 
-## Custom context injector/loader
+Context injectors must inherit from <PyObject object="PipesContextInjector" module="dagster" displayText="dagster.PipesContextInjector" /> and context loaders from <PyObject object="PipesContextLoader" module="dagster_pipes" displayText="dagster_pipes.PipesContextLoader" />.
 
-Context injectors must inherit from `dagster.PipesContextInjector` and context loaders from `dagster_pipes.PipesContextLoader`. In general if you are implementing a custom variant of one, you will want to implement a matching variant of the other. Below is a simple example that uses a fictional `cloud_service` key/value store to write the context:
+In general if you are implementing a custom variant of one, you will want to implement a matching variant of the other. Below is a simple example that uses a fictional `cloud_service` key/value store to write the context:
 
 ```python
 ### ORCHESTRATION PROCESS
@@ -323,13 +347,15 @@ class MyCustomCloudServiceContextLoader(PipesContextLoader):
         yield json.loads(data)
 ```
 
----
+### Custom message reader/writer
 
-## Custom message reader/writer
+Message readers must inherit from <PyObject module="dagster" object="PipesMessageReader" displayText="dagster.PipesMessageReader" /> and message writers from <PyObject module="dagster_pipes" object="PipesMessageWriter" displayText="dagster_pipes.PipesMessageWriter" />.
 
-Message readers must inherit from `dagster.PipesMessageReader` and message writers from `dagster_pipes.PipesMessageWriter`. In general if you are implementing a custom variant of one, you will want to implement a matching variant of the other. Also, message writers internally create a `PipesBlobStoreMessageWriterChannel` subcomponent-- see below for details.
+In general if you are implementing a custom variant of one, you will want to implement a matching variant of the other. Also, message writers internally create a `PipesBlobStoreMessageWriterChannel` subcomponent -- see below for details.
 
-Below is a simple example that uses a fictional `cloud_service` key/value store as a storage layer for message chunks. This example is a little more sophisticated than the context injector/loader example because we are going to inherit from `PipesBlobStoreMessageReader` and `PipesBlobStoreMessageWriter` instead of the plain abstract base classes. The blob store reader/writer provide infrastructure for chunking messages, preventing the need to read/write a cloud service blob store for _every_ message (which could get expensive).
+Below is a simple example that uses a fictional `cloud_service` key/value store as a storage layer for message chunks. This example is a little more sophisticated than the context injector/loader example because we are going to inherit from `PipesBlobStoreMessageReader` and `PipesBlobStoreMessageWriter` instead of the plain abstract base classes.
+
+The blob store reader/writer provide infrastructure for chunking messages, preventing the need to read/write a cloud service blob store for _every_ message (which could get expensive).
 
 ```python
 ### ORCHESTRATION PROCESS
@@ -378,3 +404,18 @@ class MyCustomCloudServiceMessageWriterChannel(PipesBlobStoreMessageWriterChanne
         key = f"{self.key_prefix}/{index}.json"
         cloud_service.write(key, json.dumps(payload.read())
 ```
+
+---
+
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    title="Dagster Pipes"
+    href="/guides/dagster-pipes"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Dagster Pipes tutorial"
+    href="/guides/dagster-pipes/subprocess"
+  ></ArticleListItem>
+</ArticleList>
