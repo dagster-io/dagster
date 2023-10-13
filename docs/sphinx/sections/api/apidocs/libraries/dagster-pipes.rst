@@ -2,7 +2,7 @@ Pipes (dagster-pipes)
 -----------------------
 
 This library is intended for inclusion in an external process that integrates
-with Dagster using teh Pipes protocol.
+with Dagster using the Pipes protocol.
 
 .. currentmodule:: dagster_pipes
 
