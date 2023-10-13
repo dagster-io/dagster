@@ -1,28 +1,33 @@
-import {ApolloClient, useApolloClient} from '@apollo/client';
+import {ApolloClient, gql, useApolloClient} from '@apollo/client';
 import uniq from 'lodash/uniq';
 import React from 'react';
 
 import {observeAssetEventsInRuns} from '../asset-graph/AssetRunLogObserver';
 import {LiveDataForNode, buildLiveDataForNode, tokenForAssetKey} from '../asset-graph/Utils';
-import {
-  AssetGraphLiveQuery,
-  AssetGraphLiveQueryVariables,
-  AssetNodeLiveFragment,
-} from '../asset-graph/types/useLiveDataForAssetKeys.types';
-import {ASSETS_GRAPH_LIVE_QUERY} from '../asset-graph/useLiveDataForAssetKeys';
 import {AssetKeyInput} from '../graphql/types';
 import {isDocumentVisible, useDocumentVisibility} from '../hooks/useDocumentVisibility';
 import {useDidLaunchEvent} from '../runs/RunUtils';
 
 import {AssetDataRefreshButton} from './AssetDataRefreshButton';
+import {
+  AssetGraphLiveQuery,
+  AssetGraphLiveQueryVariables,
+  AssetNodeLiveFragment,
+} from './types/AssetLiveDataProvider.types';
 
 const _assetKeyListeners: Record<string, Array<DataForNodeListener>> = {};
 let providerListener = (_key: string, _data?: LiveDataForNode) => {};
 const _cache: Record<string, LiveDataForNode> = {};
 
 export function useAssetLiveData(assetKey: AssetKeyInput) {
-  const {liveDataByNode} = useAssetsLiveData(React.useMemo(() => [assetKey], [assetKey]));
-  return liveDataByNode[tokenForAssetKey(assetKey)];
+  const {liveDataByNode, refresh, refreshing} = useAssetsLiveData(
+    React.useMemo(() => [assetKey], [assetKey]),
+  );
+  return {
+    liveData: liveDataByNode[tokenForAssetKey(assetKey)],
+    refresh,
+    refreshing,
+  };
 }
 
 export function useAssetsLiveData(assetKeys: AssetKeyInput[]) {
@@ -458,3 +463,104 @@ export function AssetLiveDataRefresh() {
     />
   );
 }
+
+export const ASSET_LATEST_INFO_FRAGMENT = gql`
+  fragment AssetLatestInfoFragment on AssetLatestInfo {
+    id
+    assetKey {
+      path
+    }
+    unstartedRunIds
+    inProgressRunIds
+    latestRun {
+      id
+      ...AssetLatestInfoRun
+    }
+  }
+
+  fragment AssetLatestInfoRun on Run {
+    status
+    endTime
+    id
+  }
+`;
+
+export const ASSET_NODE_LIVE_FRAGMENT = gql`
+  fragment AssetNodeLiveFragment on AssetNode {
+    id
+    opNames
+    repository {
+      id
+    }
+    assetKey {
+      path
+    }
+    assetMaterializations(limit: 1) {
+      ...AssetNodeLiveMaterialization
+    }
+    assetObservations(limit: 1) {
+      ...AssetNodeLiveObservation
+    }
+    assetChecks {
+      name
+      canExecuteIndividually
+      executionForLatestMaterialization {
+        id
+        runId
+        status
+        evaluation {
+          severity
+        }
+      }
+    }
+    freshnessInfo {
+      ...AssetNodeLiveFreshnessInfo
+    }
+    staleStatus
+    staleCauses {
+      key {
+        path
+      }
+      reason
+      category
+      dependency {
+        path
+      }
+    }
+    partitionStats {
+      numMaterialized
+      numMaterializing
+      numPartitions
+      numFailed
+    }
+  }
+
+  fragment AssetNodeLiveFreshnessInfo on AssetFreshnessInfo {
+    currentMinutesLate
+  }
+
+  fragment AssetNodeLiveMaterialization on MaterializationEvent {
+    timestamp
+    runId
+  }
+
+  fragment AssetNodeLiveObservation on ObservationEvent {
+    timestamp
+    runId
+  }
+`;
+
+export const ASSETS_GRAPH_LIVE_QUERY = gql`
+  query AssetGraphLiveQuery($assetKeys: [AssetKeyInput!]!) {
+    assetNodes(assetKeys: $assetKeys, loadMaterializations: true) {
+      id
+      ...AssetNodeLiveFragment
+    }
+    assetsLatestInfo(assetKeys: $assetKeys) {
+      ...AssetLatestInfoFragment
+    }
+  }
+
+  ${ASSET_NODE_LIVE_FRAGMENT}
+  ${ASSET_LATEST_INFO_FRAGMENT}
+`;
