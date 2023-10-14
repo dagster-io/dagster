@@ -262,15 +262,39 @@ def test_dbt_with_partial_parse() -> None:
     original_target_path = Path(TEST_PROJECT_DIR, "target", PARTIAL_PARSE_FILE_NAME)
 
     original_target_path.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy(partial_parse_file_path, Path(TEST_PROJECT_DIR, "target", PARTIAL_PARSE_FILE_NAME))
+    shutil.copy(partial_parse_file_path, original_target_path)
 
     # Assert that partial parsing was used.
     dbt_cli_compile_with_partial_parse_invocation = dbt.cli(["compile"])
+    partial_parse_original_st_mtime = (
+        dbt_cli_compile_with_partial_parse_invocation.target_path.joinpath(PARTIAL_PARSE_FILE_NAME)
+        .stat()
+        .st_mtime
+    )
 
     assert dbt_cli_compile_with_partial_parse_invocation.is_successful()
     assert not any(
         "Unable to do partial parsing" in event.raw_event["info"]["msg"]
         for event in dbt_cli_compile_with_partial_parse_invocation.stream_raw_events()
+    )
+
+    # Assert that partial parsing is continues to happen when the target directory is reused.
+    dbt_cli_compile_with_reused_partial_parse_invocation = dbt.cli(
+        ["compile"], target_path=dbt_cli_compile_with_partial_parse_invocation.target_path
+    )
+    partial_parse_new_st_mtime = (
+        dbt_cli_compile_with_reused_partial_parse_invocation.target_path.joinpath(
+            PARTIAL_PARSE_FILE_NAME
+        )
+        .stat()
+        .st_mtime
+    )
+
+    assert partial_parse_original_st_mtime == partial_parse_new_st_mtime
+    assert dbt_cli_compile_with_reused_partial_parse_invocation.is_successful()
+    assert not any(
+        "Unable to do partial parsing" in event.raw_event["info"]["msg"]
+        for event in dbt_cli_compile_with_reused_partial_parse_invocation.stream_raw_events()
     )
 
 

@@ -231,7 +231,7 @@ class DbtCliInvocation:
         )
         partial_parse_destination_target_path = target_path.joinpath(PARTIAL_PARSE_FILE_NAME)
 
-        if partial_parse_file_path.exists():
+        if partial_parse_file_path.exists() and not partial_parse_destination_target_path.exists():
             logger.info(
                 f"Copying `{partial_parse_file_path}` to `{partial_parse_destination_target_path}`"
                 " to take advantage of partial parsing."
