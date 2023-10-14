@@ -9,6 +9,7 @@ from dagster._core.definitions.metadata import (
 )
 from dagster._core.types.dagster_type import DagsterType, DagsterTypeKind
 from dagster._serdes import whitelist_for_serdes
+from dagster._serdes.ergonomics import serdes_tuple_class
 
 
 def build_dagster_type_namespace_snapshot(
@@ -58,28 +59,25 @@ class DagsterTypeNamespaceSnapshot(
         return self.all_dagster_type_snaps_by_key[key]
 
 
+class IDagsterTypeSnap:
+    kind: DagsterTypeKind
+    key: str
+    name: Optional[str]
+    description: Optional[str]
+    display_name: str
+    is_builtin: bool
+    type_param_keys: Sequence[str]
+    loader_schema_key: Optional[str]
+    materializer_schema_key: Optional[str]
+    metadata: Mapping[str, MetadataValue]
+
+
 @whitelist_for_serdes(
     skip_when_empty_fields={"metadata"},
     storage_field_names={"metadata": "metadata_entries"},
     field_serializers={"metadata": MetadataFieldSerializer},
 )
-class DagsterTypeSnap(
-    NamedTuple(
-        "_DagsterTypeSnap",
-        [
-            ("kind", DagsterTypeKind),
-            ("key", str),
-            ("name", Optional[str]),
-            ("description", Optional[str]),
-            ("display_name", str),
-            ("is_builtin", bool),
-            ("type_param_keys", Sequence[str]),
-            ("loader_schema_key", Optional[str]),
-            ("materializer_schema_key", Optional[str]),
-            ("metadata", Mapping[str, MetadataValue]),
-        ],
-    )
-):
+class DagsterTypeSnap(serdes_tuple_class(IDagsterTypeSnap), IDagsterTypeSnap):
     def __new__(
         cls,
         kind,
