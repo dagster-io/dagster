@@ -157,7 +157,7 @@ def main():
             )
             create_external_asset_materialization(data)
             time.sleep(1)
-        time.sleep(30)
+        time.sleep(10)
         today = today + datetime.timedelta(days=1)
 
 

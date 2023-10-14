@@ -1,8 +1,10 @@
 from dagster import (
+    AssetCheckResult,
     AssetExecutionContext,
     AssetKey,
     DailyPartitionsDefinition,
     EventLogEntry,
+    MaterializeResult,
     RunRequest,
     SensorEvaluationContext,
     asset,
@@ -31,7 +33,7 @@ pod_spec_for_kind = {
     group_name="pipes",
     partitions_def=DailyPartitionsDefinition("2023-10-01"),
 )
-def telem_post_processing(context: AssetExecutionContext, k8s_pipes_client: PipesK8sClient):
+def telem_post_processing(context: AssetExecutionContext, k8s_pipes_client: PipesK8sClient) -> MaterializeResult:
     return k8s_pipes_client.run(
         context=context,
         namespace="default",
@@ -42,7 +44,7 @@ def telem_post_processing(context: AssetExecutionContext, k8s_pipes_client: Pipe
 
 
 @asset_check(asset="telem_post_processing")
-def telem_post_processing_check(context, k8s_pipes_client: PipesK8sClient):
+def telem_post_processing_check(context, k8s_pipes_client: PipesK8sClient) -> AssetCheckResult:
     return k8s_pipes_client.run(
         context=context,
         namespace="default",
@@ -62,4 +64,5 @@ def telem_post_processing_sensor(context: SensorEvaluationContext, asset_event: 
     return RunRequest(
         run_key=context.cursor,
         run_config={},
+        partition_key="2023-10-10", # hardcode partition for now
     )
