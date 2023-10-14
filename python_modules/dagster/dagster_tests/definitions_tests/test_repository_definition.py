@@ -116,14 +116,7 @@ def test_dupe_op_repo_definition():
             }
         }
 
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match=(
-            "Conflicting definitions found in repository with name 'same'. Op/Graph definition"
-            " names must be unique within a repository."
-        ),
-    ):
-        error_repo.get_all_jobs()
+    error_repo.get_all_jobs()
 
 
 def test_non_lazy_job_dict():
@@ -446,17 +439,7 @@ def test_dupe_graph_defs():
 
         return graph_collide
 
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match="Op/Graph definition names must be unique within a repository",
-    ):
-        get_collision_repo().get_all_jobs()
-
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match="Op/Graph definition names must be unique within a repository",
-    ):
-        get_collision_repo().get_all_jobs()
+    get_collision_repo().get_all_jobs()
 
 
 def test_dupe_unresolved_job_defs():

@@ -17,7 +17,6 @@ import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
-from dagster._core.definitions.graph_definition import SubselectedGraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.definitions.resource_definition import ResourceDefinition
@@ -392,7 +391,6 @@ class CachingRepositoryData(RepositoryData):
             return self._all_jobs
 
         self._all_jobs = self._jobs.get_all_definitions()
-        self._check_node_defs(self._all_jobs)
         return self._all_jobs
 
     def get_job(self, job_name: str) -> JobDefinition:
@@ -466,29 +464,6 @@ class CachingRepositoryData(RepositoryData):
 
     def get_assets_defs_by_key(self) -> Mapping[AssetKey, "AssetsDefinition"]:
         return self._assets_defs_by_key
-
-    def _check_node_defs(self, job_defs: Sequence[JobDefinition]) -> None:
-        node_defs = {}
-        node_to_job = {}
-        for job_def in job_defs:
-            for node_def in [*job_def.all_node_defs, job_def.graph]:
-                # skip checks for subselected graphs because they don't have their own names
-                if isinstance(node_def, SubselectedGraphDefinition):
-                    break
-
-                if node_def.name not in node_defs:
-                    node_defs[node_def.name] = node_def
-                    node_to_job[node_def.name] = job_def.name
-
-                if node_defs[node_def.name] is not node_def:
-                    first_name, second_name = sorted([node_to_job[node_def.name], job_def.name])
-                    raise DagsterInvalidDefinitionError(
-                        f"Conflicting definitions found in repository with name '{node_def.name}'."
-                        " Op/Graph definition names must be unique within a repository."
-                        f" {node_def.__class__.__name__} is defined in"
-                        f" job '{first_name}' and in"
-                        f" job '{second_name}'."
-                    )
 
     def _validate_job(self, job: JobDefinition) -> JobDefinition:
         return job
