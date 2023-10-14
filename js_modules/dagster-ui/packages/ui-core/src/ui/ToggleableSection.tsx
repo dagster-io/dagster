@@ -21,7 +21,7 @@ export const ToggleableSection = ({
         background={background ?? Colors.Gray50}
         border="bottom"
         flex={{alignItems: 'center', direction: 'row'}}
-        padding={{vertical: 12, horizontal: 24}}
+        padding={{vertical: 12, right: 20, left: 16}}
         style={{cursor: 'pointer'}}
       >
         <Rotateable $rotate={!isOpen}>
