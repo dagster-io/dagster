@@ -851,6 +851,18 @@ def test_group_name_requirements():
         def bad_name():
             return 2
 
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=(
+            "You have passed an empty string for group_name."
+            "Set group_name=None to use the default group_name or set non-empty string"
+        ),
+    ):
+
+        @asset(group_name="")
+        def empty_name():
+            return 3
+
 
 def test_from_graph_w_key_prefix():
     @op

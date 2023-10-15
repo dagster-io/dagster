@@ -132,6 +132,11 @@ def validate_group_name(group_name: Optional[str]) -> str:
     if group_name:
         check_valid_chars(group_name)
         return group_name
+    elif group_name == "":
+        raise DagsterInvalidDefinitionError(
+            "You have passed an empty string for group_name."
+            "Set group_name=None to use the default group_name or set non-empty string"
+        )
     return DEFAULT_GROUP_NAME
 
 
