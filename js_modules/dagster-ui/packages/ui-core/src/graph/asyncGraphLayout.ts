@@ -33,10 +33,7 @@ const asyncGetFullOpLayout = asyncMemoize((ops: ILayoutOp[], opts: LayoutOpGraph
 
 // Asset Graph
 
-const _assetLayoutCacheKey = (graphData: GraphData, opts?: LayoutAssetGraphOptions) => {
-  if (!opts) {
-    debugger;
-  }
+const _assetLayoutCacheKey = (graphData: GraphData, opts: LayoutAssetGraphOptions) => {
   // Note: The "show secondary edges" toggle means that we need a cache key that incorporates
   // both the displayed nodes and the displayed edges.
 
