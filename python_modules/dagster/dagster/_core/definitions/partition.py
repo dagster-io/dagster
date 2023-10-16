@@ -1135,7 +1135,13 @@ class DefaultPartitionsSubset(PartitionsSubset[T_str]):
     def serialize(self) -> str:
         # Serialize version number, so attempting to deserialize old versions can be handled gracefully.
         # Any time the serialization format changes, we should increment the version number.
-        return json.dumps({"version": self.SERIALIZATION_VERSION, "subset": list(self._subset)})
+        return json.dumps(
+            {
+                "version": self.SERIALIZATION_VERSION,
+                # sort to ensure that equivalent partition subsets have identical serialized forms
+                "subset": sorted(list(self._subset)),
+            }
+        )
 
     @classmethod
     def from_serialized(
