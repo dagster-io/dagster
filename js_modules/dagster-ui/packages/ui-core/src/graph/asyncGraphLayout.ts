@@ -183,7 +183,7 @@ export function useAssetLayout(graphData: GraphData) {
   const {flagDisableDAGCache} = useFeatureFlags();
 
   React.useEffect(() => {
-    const opts = {horizontalDAGs: flags.flagHorizontalDAGs};
+    const opts = {horizontalDAGs: flags.flagHorizontalDAGs, tightTree: flags.flagTightTreeDag};
 
     async function runAsyncLayout() {
       dispatch({type: 'loading'});

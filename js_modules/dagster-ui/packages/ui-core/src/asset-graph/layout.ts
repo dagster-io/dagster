@@ -39,7 +39,7 @@ const GROUP_NODE_PREFIX = 'group__';
 
 const MARGIN = 100;
 
-export type LayoutAssetGraphOptions = {horizontalDAGs: boolean};
+export type LayoutAssetGraphOptions = {horizontalDAGs: boolean; tightTree: boolean};
 
 export const layoutAssetGraph = (
   graphData: GraphData,
@@ -139,6 +139,10 @@ export const layoutAssetGraph = (
     const label = path[path.length - 1] || '';
     g.setNode(id, getAssetLinkDimensions(label, opts));
   });
+
+  if (opts.tightTree) {
+    g.graph().ranker = 'tight-tree';
+  }
 
   dagre.layout(g);
 
