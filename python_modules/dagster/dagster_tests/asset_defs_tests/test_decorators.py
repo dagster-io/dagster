@@ -10,6 +10,7 @@ from dagster import (
     DailyPartitionsDefinition,
     DimensionPartitionMapping,
     FreshnessPolicy,
+    GraphIn,
     IdentityPartitionMapping,
     In,
     MultiPartitionMapping,
@@ -23,6 +24,7 @@ from dagster import (
     TimeWindowPartitionMapping,
     _check as check,
     build_asset_context,
+    graph,
     graph_asset,
     graph_multi_asset,
     io_manager,
@@ -1250,3 +1252,21 @@ def test_dynamic_graph_asset_ins():
         return wait_until_job_done(run_id)
 
     assert materialize([some_graph_asset, foo]).success
+
+
+def test_graph_inputs_error():
+    try:
+
+        @graph_asset(ins={"start": AssetIn(dagster_type=Nothing)})
+        def _(): ...
+
+    except DagsterInvalidDefinitionError as err:
+        assert "except for Ins that have the Nothing dagster_type" not in str(err)
+
+    try:
+
+        @graph(ins={"start": GraphIn()})
+        def _(): ...
+
+    except DagsterInvalidDefinitionError as err:
+        assert "except for Ins that have the Nothing dagster_type" not in str(err)
