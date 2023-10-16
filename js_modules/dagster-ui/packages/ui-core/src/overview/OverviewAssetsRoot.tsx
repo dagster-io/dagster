@@ -300,6 +300,7 @@ function VirtualRow({height, start, group}: RowProps) {
   const {containerProps, viewport} = useViewport();
 
   const isBatchStillLoading = assetKeys.length !== Object.keys(liveDataByNode).length;
+  const zeroOrBlank = isBatchStillLoading ? '' : '0';
 
   return (
     <Row $height={height} $start={start}>
@@ -358,7 +359,7 @@ function VirtualRow({height, start, group}: RowProps) {
               </Tag>
             </SelectOnHover>
           ) : (
-            0
+            zeroOrBlank
           )}
         </Cell>
         <Cell>
@@ -390,7 +391,7 @@ function VirtualRow({height, start, group}: RowProps) {
               </Tag>
             </SelectOnHover>
           ) : (
-            0
+            zeroOrBlank
           )}
         </Cell>
         <Cell>
@@ -410,7 +411,7 @@ function VirtualRow({height, start, group}: RowProps) {
               </Tag>
             </SelectOnHover>
           ) : (
-            0
+            zeroOrBlank
           )}
         </Cell>
         <Cell>
@@ -440,7 +441,7 @@ function VirtualRow({height, start, group}: RowProps) {
               </Tag>
             </SelectOnHover>
           ) : (
-            0
+            zeroOrBlank
           )}
         </Cell>
       </RowGrid>
