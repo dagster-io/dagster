@@ -1461,7 +1461,11 @@ class DagsterInstance(DynamicPartitionsStore):
         check.opt_set_param(asset_selection, "asset_selection", of_type=AssetKey)
         check.opt_set_param(asset_check_selection, "asset_check_selection", of_type=AssetCheckKey)
 
-        if asset_selection is not None or asset_check_selection is not None:
+        # asset_selection will always be None on an op job, but asset_check_selection may be
+        # None or []. This is because [] and None are different for asset checks: None means
+        # include all asset checks on selected assets, while [] means include no asset checks.
+        # In an op job (which has no asset checks), these two are equivalent.
+        if asset_selection is not None or asset_check_selection:
             check.invariant(
                 op_selection is None,
                 "Cannot pass op_selection with either of asset_selection or asset_check_selection",

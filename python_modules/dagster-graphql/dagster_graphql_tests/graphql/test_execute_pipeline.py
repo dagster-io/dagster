@@ -687,6 +687,33 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert step_did_not_run(logs, "plus_one")
         assert step_did_not_run(logs, "subgraph.op_2")
 
+    def test_nested_graph_op_selection_and_config_with_non_null_asset_and_check_selection(
+        self, graphql_context: WorkspaceRequestContext
+    ):
+        selector = infer_pipeline_selector(
+            graphql_context,
+            "nested_job",
+            ["subgraph.adder", "subgraph.op_1"],
+            asset_selection=[],
+            asset_check_selection=[],
+        )
+        run_config = {"ops": {"subgraph": {"ops": {"adder": {"inputs": {"num2": 20}}}}}}
+        result = sync_execute_get_run_log_data(
+            context=graphql_context,
+            variables={
+                "executionParams": {
+                    "selector": selector,
+                    "runConfigData": run_config,
+                }
+            },
+        )
+        logs = result["messages"]
+        assert isinstance(logs, list)
+        assert step_did_succeed(logs, "subgraph.adder")
+        assert step_did_succeed(logs, "subgraph.op_1")
+        assert step_did_not_run(logs, "plus_one")
+        assert step_did_not_run(logs, "subgraph.op_2")
+
     def test_memoization_job(self, graphql_context: WorkspaceRequestContext):
         selector = infer_pipeline_selector(graphql_context, "memoization_job")
         run_config = {}
