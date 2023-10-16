@@ -195,14 +195,16 @@ def infer_pipeline_selector(
     graphql_context: WorkspaceRequestContext,
     pipeline_name: str,
     op_selection: Optional[Sequence[str]] = None,
+    asset_selection: Optional[Sequence[GqlAssetKey]] = None,
+    asset_check_selection: Optional[Sequence[GqlAssetCheckHandle]] = None,
 ) -> Selector:
     selector = infer_repository_selector(graphql_context)
     selector.update(
         {
             "pipelineName": pipeline_name,
             "solidSelection": op_selection,
-            "assetSelection": [],
-            "assetCheckSelection": [],
+            "assetSelection": asset_selection,
+            "assetCheckSelection": asset_check_selection,
         }
     )
     return selector
