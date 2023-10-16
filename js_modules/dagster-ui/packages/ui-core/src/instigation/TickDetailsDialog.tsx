@@ -11,7 +11,6 @@ import {
   DialogHeader,
   ButtonLink,
   Tag,
-  DialogBody,
   MiddleTruncate,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
@@ -21,7 +20,6 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {formatElapsedTime} from '../app/Util';
 import {Timestamp} from '../app/time/Timestamp';
-import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {AssetDaemonTickFragment} from '../assets/auto-materialization/types/AssetDaemonTicksQuery.types';
 import {
   DynamicPartitionsRequestResult,
