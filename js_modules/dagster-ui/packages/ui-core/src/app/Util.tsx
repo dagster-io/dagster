@@ -164,10 +164,15 @@ export function indexedDBAsyncMemoize<T, R, U extends (arg: T, ...rest: any[]) =
     const hash = hashFn ? hashFn(arg, ...rest) : arg;
 
     const encoder = new TextEncoder();
-    const data = encoder.encode(hash.toString());
-    const hashBuffer = await crypto.subtle.digest('SHA-1', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer)); // convert buffer to byte array
-    return hashArray.map((b) => b.toString(16).padStart(2, '0')).join(''); // convert bytes to hex string
+    // Crypto.subtle isn't defined in insecure contexts... fallback to using the full string as a key
+    // https://stackoverflow.com/questions/46468104/how-to-use-subtlecrypto-in-chrome-window-crypto-subtle-is-undefined
+    if (crypto.subtle?.digest) {
+      const data = encoder.encode(hash.toString());
+      const hashBuffer = await crypto.subtle.digest('SHA-1', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer)); // convert buffer to byte array
+      return hashArray.map((b) => b.toString(16).padStart(2, '0')).join(''); // convert bytes to hex string
+    }
+    return hash.toString();
   }
 
   const ret = (async (arg: T, ...rest: any[]) => {

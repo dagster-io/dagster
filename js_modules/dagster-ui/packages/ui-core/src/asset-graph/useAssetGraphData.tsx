@@ -4,7 +4,6 @@ import keyBy from 'lodash/keyBy';
 import reject from 'lodash/reject';
 import React from 'react';
 
-import {useFeatureFlags} from '../app/Flags';
 import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
 import {AssetKey} from '../assets/types';
 import {asyncGetFullAssetLayoutIndexDB} from '../graph/asyncGraphLayout';
@@ -73,8 +72,6 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     [fullGraphQueryItems],
   );
 
-  const {flagTightTreeDag} = useFeatureFlags();
-
   const {assetGraphData, graphAssetKeys, allAssetKeys, applyingEmptyDefault} = React.useMemo(() => {
     if (repoFilteredNodes === undefined || graphQueryItems === undefined) {
       return {
@@ -89,7 +86,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     // In the future it might be ideal to move this server-side, but we currently
     // get to leverage the useQuery cache almost 100% of the time above, making this
     // super fast after the first load vs a network fetch on every page view.
-    const {all, applyingEmptyDefault} = filterByQuery(graphQueryItems, opsQuery, flagTightTreeDag);
+    const {all, applyingEmptyDefault} = filterByQuery(graphQueryItems, opsQuery);
 
     // Assemble the response into the data structure used for layout, traversal, etc.
     const assetGraphData = buildGraphData(all.map((n) => n.node));
@@ -104,13 +101,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
       graphQueryItems,
       applyingEmptyDefault,
     };
-  }, [
-    repoFilteredNodes,
-    graphQueryItems,
-    opsQuery,
-    options.hideEdgesToNodesOutsideQuery,
-    flagTightTreeDag,
-  ]);
+  }, [repoFilteredNodes, graphQueryItems, opsQuery, options.hideEdgesToNodesOutsideQuery]);
 
   // Used to avoid showing "query error"
   const [isCalculating, setIsCalculating] = React.useState<boolean>(true);
