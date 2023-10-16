@@ -33,7 +33,10 @@ const asyncGetFullOpLayout = asyncMemoize((ops: ILayoutOp[], opts: LayoutOpGraph
 
 // Asset Graph
 
-const _assetLayoutCacheKey = (graphData: GraphData, opts: LayoutAssetGraphOptions) => {
+const _assetLayoutCacheKey = (graphData: GraphData, opts?: LayoutAssetGraphOptions) => {
+  if (!opts) {
+    debugger;
+  }
   // Note: The "show secondary edges" toggle means that we need a cache key that incorporates
   // both the displayed nodes and the displayed edges.
 
@@ -58,8 +61,8 @@ const _assetLayoutCacheKey = (graphData: GraphData, opts: LayoutAssetGraphOption
     return newObj;
   }
 
-  return `${opts.horizontalDAGs ? 'horizontal:' : ''}${
-    opts.tightTree ? 'tight-tree:' : ''
+  return `${opts?.horizontalDAGs ? 'horizontal:' : ''}${
+    opts?.tightTree ? 'tight-tree:' : ''
   }${JSON.stringify({
     downstream: recreateObjectWithKeysSorted(graphData.downstream),
     upstream: recreateObjectWithKeysSorted(graphData.upstream),
@@ -178,15 +181,15 @@ export function useAssetLayout(graphData: GraphData) {
   const [state, dispatch] = React.useReducer(reducer, initialState);
   const flags = useFeatureFlags();
 
-  const cacheKey = _assetLayoutCacheKey(graphData);
+  const opts = {horizontalDAGs: flags.flagHorizontalDAGs, tightTree: flags.flagTightTreeDag};
+
+  const cacheKey = _assetLayoutCacheKey(graphData, opts);
   const nodeCount = Object.keys(graphData.nodes).length;
   const runAsync = nodeCount >= ASYNC_LAYOUT_SOLID_COUNT;
 
   const {flagDisableDAGCache} = useFeatureFlags();
 
   React.useEffect(() => {
-    const opts = {horizontalDAGs: flags.flagHorizontalDAGs, tightTree: flags.flagTightTreeDag};
-
     async function runAsyncLayout() {
       dispatch({type: 'loading'});
       let layout;
