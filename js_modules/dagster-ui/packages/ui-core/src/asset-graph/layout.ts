@@ -56,6 +56,7 @@ export const layoutAssetGraph = (
           nodesep: -10,
           edgesep: 90,
           ranksep: 60,
+          ranker: opts.tightTree ? 'tight-tree' : 'network-simplex',
         }
       : {
           rankdir: 'TB',
@@ -64,6 +65,7 @@ export const layoutAssetGraph = (
           nodesep: 40,
           edgesep: 10,
           ranksep: 10,
+          ranker: opts.tightTree ? 'tight-tree' : 'network-simplex',
         },
   );
   g.setDefaultEdgeLabel(() => ({}));
@@ -139,10 +141,6 @@ export const layoutAssetGraph = (
     const label = path[path.length - 1] || '';
     g.setNode(id, getAssetLinkDimensions(label, opts));
   });
-
-  if (opts.tightTree) {
-    g.graph().ranker = 'tight-tree';
-  }
 
   dagre.layout(g);
 
