@@ -33,7 +33,7 @@ const asyncGetFullOpLayout = asyncMemoize((ops: ILayoutOp[], opts: LayoutOpGraph
 
 // Asset Graph
 
-const _assetLayoutCacheKey = (graphData: GraphData) => {
+const _assetLayoutCacheKey = (graphData: GraphData, opts: LayoutAssetGraphOptions) => {
   // Note: The "show secondary edges" toggle means that we need a cache key that incorporates
   // both the displayed nodes and the displayed edges.
 
@@ -58,11 +58,13 @@ const _assetLayoutCacheKey = (graphData: GraphData) => {
     return newObj;
   }
 
-  return JSON.stringify({
+  return `${opts?.horizontalDAGs ? 'horizontal:' : ''}${
+    opts?.tightTree ? 'tight-tree:' : ''
+  }${JSON.stringify({
     downstream: recreateObjectWithKeysSorted(graphData.downstream),
     upstream: recreateObjectWithKeysSorted(graphData.upstream),
     nodes: Object.keys(graphData.nodes).sort(),
-  });
+  })}`;
 };
 
 const getFullAssetLayout = memoize(layoutAssetGraph, _assetLayoutCacheKey);
@@ -176,15 +178,18 @@ export function useAssetLayout(graphData: GraphData) {
   const [state, dispatch] = React.useReducer(reducer, initialState);
   const flags = useFeatureFlags();
 
-  const cacheKey = _assetLayoutCacheKey(graphData);
+  const opts = React.useMemo(
+    () => ({horizontalDAGs: flags.flagHorizontalDAGs, tightTree: flags.flagTightTreeDag}),
+    [flags],
+  );
+
+  const cacheKey = _assetLayoutCacheKey(graphData, opts);
   const nodeCount = Object.keys(graphData.nodes).length;
   const runAsync = nodeCount >= ASYNC_LAYOUT_SOLID_COUNT;
 
   const {flagDisableDAGCache} = useFeatureFlags();
 
   React.useEffect(() => {
-    const opts = {horizontalDAGs: flags.flagHorizontalDAGs, tightTree: flags.flagTightTreeDag};
-
     async function runAsyncLayout() {
       dispatch({type: 'loading'});
       let layout;
@@ -202,7 +207,7 @@ export function useAssetLayout(graphData: GraphData) {
     } else {
       void runAsyncLayout();
     }
-  }, [cacheKey, graphData, runAsync, flags, flagDisableDAGCache]);
+  }, [cacheKey, graphData, runAsync, flags, flagDisableDAGCache, opts]);
 
   return {
     loading: state.loading || !state.layout || state.cacheKey !== cacheKey,

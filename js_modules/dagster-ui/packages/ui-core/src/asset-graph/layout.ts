@@ -47,27 +47,31 @@ export const layoutAssetGraph = (
 ): AssetGraphLayout => {
   const g = new dagre.graphlib.Graph({compound: true});
 
-  g.setGraph(
-    opts.horizontalDAGs
-      ? {
-          rankdir: 'LR',
-          marginx: MARGIN,
-          marginy: MARGIN,
-          nodesep: -10,
-          edgesep: 90,
-          ranksep: 60,
-          ranker: opts.tightTree ? 'tight-tree' : 'network-simplex',
-        }
-      : {
-          rankdir: 'TB',
-          marginx: MARGIN,
-          marginy: MARGIN,
-          nodesep: 40,
-          edgesep: 10,
-          ranksep: 10,
-          ranker: opts.tightTree ? 'tight-tree' : 'network-simplex',
-        },
-  );
+  const option1 = {
+    rankdir: 'LR',
+    marginx: MARGIN,
+    marginy: MARGIN,
+    nodesep: -10,
+    edgesep: 90,
+    ranksep: 60,
+    ranker: opts.tightTree ? 'tight-tree' : 'network-simplex',
+  };
+  const option2 = {
+    rankdir: 'TB',
+    marginx: MARGIN,
+    marginy: MARGIN,
+    nodesep: 40,
+    edgesep: 10,
+    ranksep: 10,
+    ranker: opts.tightTree ? 'tight-tree' : 'network-simplex',
+  };
+  let horizontal = option1;
+  let vertical = option2;
+  if (opts.tightTree) {
+    horizontal = option2;
+    vertical = option1;
+  }
+  g.setGraph(opts.horizontalDAGs ? horizontal : vertical);
   g.setDefaultEdgeLabel(() => ({}));
 
   const parentNodeIdForNode = (node: GraphNode) =>
