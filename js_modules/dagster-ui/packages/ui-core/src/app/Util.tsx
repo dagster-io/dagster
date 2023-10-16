@@ -165,6 +165,7 @@ export function indexedDBAsyncMemoize<T, R, U extends (arg: T, ...rest: any[]) =
 
     const encoder = new TextEncoder();
     // Crypto.subtle isn't defined in insecure contexts... fallback to using the full string as a key
+    // https://stackoverflow.com/questions/46468104/how-to-use-subtlecrypto-in-chrome-window-crypto-subtle-is-undefined
     if (crypto.subtle?.digest) {
       const data = encoder.encode(hash.toString());
       const hashBuffer = await crypto.subtle.digest('SHA-1', data);
