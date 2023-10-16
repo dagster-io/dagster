@@ -179,7 +179,11 @@ export function useAssetLayout(graphData: GraphData) {
   const flags = useFeatureFlags();
 
   const opts = React.useMemo(
-    () => ({horizontalDAGs: flags.flagHorizontalDAGs, tightTree: flags.flagTightTreeDag}),
+    () => ({
+      horizontalDAGs: flags.flagHorizontalDAGs,
+      tightTree: flags.flagTightTreeDag,
+      longestPath: flags.flagLongestPathDag,
+    }),
     [flags],
   );
 
@@ -188,12 +192,6 @@ export function useAssetLayout(graphData: GraphData) {
   const runAsync = nodeCount >= ASYNC_LAYOUT_SOLID_COUNT;
 
   React.useEffect(() => {
-    const opts = {
-      horizontalDAGs: flags.flagHorizontalDAGs,
-      tightTree: flags.flagTightTreeDag,
-      longesPath: flags.flagLongestPathDag,
-    };
-
     async function runAsyncLayout() {
       dispatch({type: 'loading'});
       let layout;
@@ -211,7 +209,7 @@ export function useAssetLayout(graphData: GraphData) {
     } else {
       void runAsyncLayout();
     }
-  }, [cacheKey, graphData, runAsync, flags]);
+  }, [cacheKey, graphData, runAsync, flags, opts]);
 
   return {
     loading: state.loading || !state.layout || state.cacheKey !== cacheKey,
