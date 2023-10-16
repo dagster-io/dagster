@@ -354,7 +354,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
 
     def resolve_partitionsTargetedForAssetKey(
         self, graphene_info: ResolveInfo, asset_key
-    ) -> PartitionsSubset:
+    ) -> Optional[PartitionsSubset]:
         from dagster._core.definitions.events import AssetKey
 
         if not self._backfill_job.is_asset_backfill:
@@ -365,6 +365,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         )
         if not root_partitions_subset:
             return None
+
         return GrapheneAssetBackfillTargetPartitions(root_partitions_subset)
 
     def resolve_assetBackfillData(

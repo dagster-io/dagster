@@ -176,6 +176,7 @@ describe('PartitionSelection', () => {
         numPartitions={3}
         rootTargetedPartitions={buildAssetBackfillTargetPartitions({
           partitionKeys: ['1', '2', '3'],
+          ranges: null,
         })}
       />,
     );
@@ -191,6 +192,7 @@ describe('PartitionSelection', () => {
         numPartitions={4}
         rootTargetedPartitions={buildAssetBackfillTargetPartitions({
           partitionKeys: ['1', '2', '3', '4'],
+          ranges: null,
         })}
       />,
     );
@@ -208,6 +210,7 @@ describe('PartitionSelection', () => {
       <PartitionSelection
         numPartitions={1}
         rootTargetedPartitions={buildAssetBackfillTargetPartitions({
+          partitionKeys: null,
           ranges: [buildPartitionKeyRange({start: '1', end: '2'})],
         })}
       />,
@@ -221,6 +224,7 @@ describe('PartitionSelection', () => {
       <PartitionSelection
         numPartitions={2}
         rootTargetedPartitions={buildAssetBackfillTargetPartitions({
+          partitionKeys: null,
           ranges: [
             buildPartitionKeyRange({start: '1', end: '2'}),
             buildPartitionKeyRange({start: '3', end: '4'}),
