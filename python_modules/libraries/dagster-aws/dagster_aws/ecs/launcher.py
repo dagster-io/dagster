@@ -717,6 +717,9 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         if "Timeout waiting for network interface provisioning to complete" in stopped_reason:
             return True
 
+        if "Timeout waiting for EphemeralStorage provisioning to complete" in stopped_reason:
+            return True
+
         if "CannotPullContainerError" in stopped_reason and "i/o timeout" in stopped_reason:
             return True
 
