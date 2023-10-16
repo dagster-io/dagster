@@ -1637,13 +1637,12 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
         return json.dumps(
             {
                 "version": self.SERIALIZATION_VERSION,
-                # sort to ensure that equivalent partition subsets have identical serialized forms
-                "time_windows": sorted(
-                    [
-                        (window.start.timestamp(), window.end.timestamp())
-                        for window in self.included_time_windows
-                    ]
-                ),
+                # included_time_windows is already sorted, so no need to sort here to guarantee
+                # stable serialization between identical subsets
+                "time_windows": [
+                    (window.start.timestamp(), window.end.timestamp())
+                    for window in self.included_time_windows
+                ],
                 "num_partitions": self._num_partitions,
             }
         )
