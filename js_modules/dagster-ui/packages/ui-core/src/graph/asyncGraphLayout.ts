@@ -33,7 +33,7 @@ const asyncGetFullOpLayout = asyncMemoize((ops: ILayoutOp[], opts: LayoutOpGraph
 
 // Asset Graph
 
-const _assetLayoutCacheKey = (graphData: GraphData) => {
+const _assetLayoutCacheKey = (graphData: GraphData, opts: LayoutAssetGraphOptions) => {
   // Note: The "show secondary edges" toggle means that we need a cache key that incorporates
   // both the displayed nodes and the displayed edges.
 
@@ -58,11 +58,13 @@ const _assetLayoutCacheKey = (graphData: GraphData) => {
     return newObj;
   }
 
-  return JSON.stringify({
+  return `${opts.horizontalDAGs ? 'horizontal:' : ''}${
+    opts.tightTree ? 'tight-tree:' : ''
+  }${JSON.stringify({
     downstream: recreateObjectWithKeysSorted(graphData.downstream),
     upstream: recreateObjectWithKeysSorted(graphData.upstream),
     nodes: Object.keys(graphData.nodes).sort(),
-  });
+  })}`;
 };
 
 const getFullAssetLayout = memoize(layoutAssetGraph, _assetLayoutCacheKey);
