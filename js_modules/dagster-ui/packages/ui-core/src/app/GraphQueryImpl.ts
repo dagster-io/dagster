@@ -84,14 +84,18 @@ function expansionDepthForClause(clause: string) {
   return clause.includes('*') ? Number.MAX_SAFE_INTEGER : clause.length;
 }
 
-export function filterByQuery<T extends GraphQueryItem>(items: T[], query: string) {
+export function filterByQuery<T extends GraphQueryItem>(
+  items: T[],
+  query: string,
+  flagTightTreeDag?: boolean,
+) {
   if (query === '*') {
     return {all: items, applyingEmptyDefault: false, focus: []};
   }
   if (query === '') {
     return {
-      all: items.length >= MAX_RENDERED_FOR_EMPTY_QUERY ? [] : items,
-      applyingEmptyDefault: items.length >= MAX_RENDERED_FOR_EMPTY_QUERY,
+      all: !flagTightTreeDag && items.length >= MAX_RENDERED_FOR_EMPTY_QUERY ? [] : items,
+      applyingEmptyDefault: !flagTightTreeDag && items.length >= MAX_RENDERED_FOR_EMPTY_QUERY,
       focus: [],
     };
   }

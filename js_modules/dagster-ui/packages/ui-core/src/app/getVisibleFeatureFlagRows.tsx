@@ -61,4 +61,8 @@ export const getVisibleFeatureFlagRows = () => [
     key: 'Experimental Auto-materialize policy timeline page',
     flagType: FeatureFlag.flagEnableAMPTimeline,
   },
+  {
+    key: 'Experimental fast tight tree DAG algorithm',
+    flagType: FeatureFlag.flagTightTreeDag,
+  },
 ];

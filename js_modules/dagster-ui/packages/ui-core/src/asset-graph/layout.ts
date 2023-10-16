@@ -39,7 +39,7 @@ const GROUP_NODE_PREFIX = 'group__';
 
 const MARGIN = 100;
 
-export type LayoutAssetGraphOptions = {horizontalDAGs: boolean};
+export type LayoutAssetGraphOptions = {horizontalDAGs: boolean; tightTree: boolean};
 
 export const layoutAssetGraph = (
   graphData: GraphData,
@@ -56,6 +56,7 @@ export const layoutAssetGraph = (
           nodesep: -10,
           edgesep: 90,
           ranksep: 60,
+          ranker: opts.tightTree ? 'tight-tree' : 'network-simplex',
         }
       : {
           rankdir: 'TB',
@@ -64,6 +65,7 @@ export const layoutAssetGraph = (
           nodesep: 40,
           edgesep: 10,
           ranksep: 10,
+          ranker: opts.tightTree ? 'tight-tree' : 'network-simplex',
         },
   );
   g.setDefaultEdgeLabel(() => ({}));
