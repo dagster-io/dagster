@@ -604,19 +604,22 @@ class DbtCliResource(ConfigurableResource):
         return os.fspath(resolved_project_dir)
 
     @validator("profiles_dir")
-    def validate_profiles_dir(cls, profiles_dir: str) -> str:
-        resolved_project_dir = cls._validate_absolute_path_exists(profiles_dir)
+    def validate_profiles_dir(cls, profiles_dir: Optional[str]) -> Optional[str]:
+        if profiles_dir is None:
+            return None
+
+        resolved_profiles_dir = cls._validate_absolute_path_exists(profiles_dir)
 
         cls._validate_path_contains_file(
-            path=resolved_project_dir,
+            path=resolved_profiles_dir,
             file_name=DBT_PROFILES_YML_NAME,
             error_message=(
-                f"{resolved_project_dir} does not contain a {DBT_PROFILES_YML_NAME} file. Please"
+                f"{resolved_profiles_dir} does not contain a {DBT_PROFILES_YML_NAME} file. Please"
                 " specify a valid path to a dbt profile directory."
             ),
         )
 
-        return os.fspath(resolved_project_dir)
+        return os.fspath(resolved_profiles_dir)
 
     @validator("dbt_executable")
     def validate_dbt_executable(cls, dbt_executable: str) -> str:
