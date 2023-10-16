@@ -4,6 +4,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {LastRunSummary} from '../instance/LastRunSummary';
 import {RunStatusIndicator} from '../runs/RunStatusDots';
 import {RUN_TIME_FRAGMENT, titleForRun} from '../runs/RunUtils';
@@ -93,4 +94,44 @@ export const StatusTable = styled.table`
   &&&&& tbody > tr > td:first-child {
     color: ${Colors.Gray500};
   }
+`;
+
+export const DYNAMIC_PARTITIONS_REQUEST_RESULT_FRAGMENT = gql`
+  fragment DynamicPartitionsRequestResultFragment on DynamicPartitionsRequestResult {
+    partitionsDefName
+    partitionKeys
+    skippedPartitionKeys
+    type
+  }
+`;
+
+export const HISTORY_TICK_FRAGMENT = gql`
+  fragment HistoryTick on InstigationTick {
+    id
+    status
+    timestamp
+    endTimestamp
+    cursor
+    instigationType
+    skipReason
+    runIds
+    runs {
+      id
+      status
+      ...RunStatusFragment
+    }
+    originRunIds
+    error {
+      ...PythonErrorFragment
+    }
+    logKey
+    ...TickTagFragment
+    dynamicPartitionsRequestResults {
+      ...DynamicPartitionsRequestResultFragment
+    }
+  }
+  ${RUN_STATUS_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
+  ${TICK_TAG_FRAGMENT}
+  ${DYNAMIC_PARTITIONS_REQUEST_RESULT_FRAGMENT}
 `;

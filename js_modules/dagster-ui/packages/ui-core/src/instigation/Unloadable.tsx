@@ -13,7 +13,7 @@ import * as React from 'react';
 
 import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
-import {InstigationStatus, InstigationType} from '../graphql/types';
+import {InstigationStatus} from '../graphql/types';
 import {
   displayScheduleMutationErrors,
   STOP_SCHEDULE_MUTATION,
@@ -28,9 +28,9 @@ import {
   StopRunningSensorMutation,
   StopRunningSensorMutationVariables,
 } from '../sensors/types/SensorMutations.types';
+import {TickStatusTag} from '../ticks/TickStatusTag';
 import {InstigatorSelectorInformation} from '../workspace/RepositoryInformation';
 
-import {TickTag} from './InstigationTick';
 import {InstigatedRunStatus} from './InstigationUtils';
 import {InstigationStateFragment} from './types/InstigationUtils.types';
 
@@ -191,7 +191,7 @@ const SensorStateRow = ({sensorState}: {sensorState: InstigationStateFragment}) 
       </td>
       <td>
         {latestTick ? (
-          <TickTag tick={latestTick} instigationType={InstigationType.SENSOR} />
+          <TickStatusTag tick={latestTick} />
         ) : (
           <span style={{color: Colors.Gray300}}>None</span>
         )}
@@ -279,11 +279,7 @@ const ScheduleStateRow: React.FC<{
           )}
         </div>
       </td>
-      <td>
-        {latestTick ? (
-          <TickTag tick={latestTick} instigationType={InstigationType.SCHEDULE} />
-        ) : null}
-      </td>
+      <td>{latestTick ? <TickStatusTag tick={latestTick} /> : null}</td>
       <td>
         <InstigatedRunStatus instigationState={scheduleState} />
       </td>

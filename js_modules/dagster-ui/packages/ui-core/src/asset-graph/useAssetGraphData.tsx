@@ -104,7 +104,13 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
       graphQueryItems,
       applyingEmptyDefault,
     };
-  }, [repoFilteredNodes, graphQueryItems, opsQuery, options.hideEdgesToNodesOutsideQuery]);
+  }, [
+    repoFilteredNodes,
+    graphQueryItems,
+    opsQuery,
+    options.hideEdgesToNodesOutsideQuery,
+    flagTightTreeDag,
+  ]);
 
   // Used to avoid showing "query error"
   const [isCalculating, setIsCalculating] = React.useState<boolean>(true);
