@@ -215,8 +215,8 @@ def test_dbt_profile_configuration() -> None:
     assert dbt_cli_invocation.is_successful()
 
 
-@pytest.mark.parametrize("profiles_dir", [TEST_PROJECT_DIR, Path(TEST_PROJECT_DIR)])
-def test_dbt_profile_dir_configuration(profiles_dir: Union[str, Path]) -> None:
+@pytest.mark.parametrize("profiles_dir", [None, TEST_PROJECT_DIR, Path(TEST_PROJECT_DIR)])
+def test_dbt_profiles_dir_configuration(profiles_dir: Union[str, Path]) -> None:
     dbt = DbtCliResource(
         project_dir=TEST_PROJECT_DIR,
         profiles_dir=profiles_dir,  # type: ignore
