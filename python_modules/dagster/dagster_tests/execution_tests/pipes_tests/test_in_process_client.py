@@ -229,7 +229,9 @@ def test_get_asset_check_result() -> None:
         called["yes"] = True
 
     @asset_check(asset="an_asset")
-    def an_asset_check(context, inprocess_client: InProcessPipesClient) -> AssetCheckResult:
+    def an_asset_check(
+        context: AssetExecutionContext, inprocess_client: InProcessPipesClient
+    ) -> AssetCheckResult:
         return inprocess_client.run(context=context, fn=_impl).get_asset_check_result()
 
     result = (

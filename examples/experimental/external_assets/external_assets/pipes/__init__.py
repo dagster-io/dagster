@@ -42,7 +42,7 @@ def telem_post_processing(context: AssetExecutionContext, k8s_pipes_client: Pipe
 
 
 @asset_check(asset="telem_post_processing")
-def telem_post_processing_check(context, k8s_pipes_client: PipesK8sClient):
+def telem_post_processing_check(context: AssetExecutionContext, k8s_pipes_client: PipesK8sClient):
     return k8s_pipes_client.run(
         context=context,
         namespace="default",
