@@ -20,6 +20,7 @@ import {AssetCheckStatusTag} from './asset-checks/AssetCheckStatusTag';
 import {ExecuteChecksButton} from './asset-checks/ExecuteChecksButton';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {useGroupedEvents} from './groupByPartition';
+import {isRunlessEvent} from './isRunlessEvent';
 import {useRecentAssetEvents} from './useRecentAssetEvents';
 
 interface Props {
@@ -99,7 +100,13 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
       {loadedPartitionKeys.length > 1 ? null : (
         <>
           <SidebarSection
-            title={!isSourceAsset ? 'Materialization in last run' : 'Observation in last run'}
+            title={
+              !isSourceAsset
+                ? displayedEvent && isRunlessEvent(displayedEvent)
+                  ? 'Last reported materialization'
+                  : 'Materialization in last run'
+                : 'Observation in last run'
+            }
           >
             {displayedEvent ? (
               <div style={{margin: -1, maxWidth: '100%', overflowX: 'auto'}}>

@@ -78,6 +78,7 @@ export function buildAssetNodeStatusContent({
 }
 
 export function _buildSourceAssetNodeStatusContent({
+  assetKey,
   definition,
   liveData,
   expanded,
@@ -101,7 +102,7 @@ export function _buildSourceAssetNodeStatusContent({
             Observing...
           </span>
           {expanded && <SpacerDot />}
-          <AssetRunLink runId={materializingRunId} />
+          <AssetRunLink assetKey={assetKey} runId={materializingRunId} />
         </>
       ),
     };
@@ -118,6 +119,7 @@ export function _buildSourceAssetNodeStatusContent({
           {expanded && <SpacerDot />}
           <span style={{textAlign: 'right', overflow: 'hidden'}}>
             <AssetRunLink
+              assetKey={assetKey}
               runId={liveData.lastObservation.runId}
               event={{
                 stepKey: stepKeyForAsset(definition),
@@ -210,7 +212,7 @@ export function _buildAssetNodeStatusContent({
           </span>
           {expanded && <SpacerDot />}
           {!numMaterializing || numMaterializing === 1 ? (
-            <AssetRunLink runId={materializingRunId} />
+            <AssetRunLink assetKey={assetKey} runId={materializingRunId} />
           ) : undefined}
         </>
       ),
@@ -265,6 +267,7 @@ export function _buildAssetNodeStatusContent({
   const lastMaterializationLink = lastMaterialization ? (
     <span style={{overflow: 'hidden'}}>
       <AssetRunLink
+        assetKey={assetKey}
         runId={lastMaterialization.runId}
         event={{stepKey: stepKeyForAsset(definition), timestamp: lastMaterialization.timestamp}}
       >
@@ -312,7 +315,7 @@ export function _buildAssetNodeStatusContent({
 
           {runWhichFailedToMaterialize ? (
             <span style={{overflow: 'hidden'}}>
-              <AssetRunLink runId={runWhichFailedToMaterialize.id}>
+              <AssetRunLink assetKey={assetKey} runId={runWhichFailedToMaterialize.id}>
                 <TimestampDisplay
                   timestamp={Number(runWhichFailedToMaterialize.endTime)}
                   timeFormat={{showSeconds: false, showTimezone: false}}
