@@ -132,8 +132,9 @@ class DataframeTableIOManagerWithMetadata(ConfigurableIOManager):
         context.add_output_metadata({"num_rows": len(obj), "table_name": table_name})
 
     def load_input(self, context: InputContext):
-        table_name = context.upstream_output.name
-        return read_dataframe_from_table(name=table_name)
+        if context.upstream_output:
+            table_name = context.upstream_output.name
+            return read_dataframe_from_table(name=table_name)
 
 
 # end_metadata_marker
