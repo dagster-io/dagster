@@ -806,9 +806,8 @@ def test_time_partitions_subset_identical_serialization():
         *[f"2020-08-{i:02d}" for i in range(1, 20)],
     ]
     serialized1 = partitions_def.subset_with_partition_keys(partition_keys).serialize()
-    serialized2 = partitions_def.subset_with_partition_keys(
-        random.shuffle(partition_keys)
-    ).serialize()
+    random.shuffle(partition_keys)
+    serialized2 = partitions_def.subset_with_partition_keys(partition_keys).serialize()
     assert serialized1 == serialized2
 
 
