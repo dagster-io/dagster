@@ -63,6 +63,7 @@ SINGLE_BACKFILL_QUERY = """
             runStatus
           }
         }
+        blockedReason
       }
     }
   }
@@ -374,6 +375,19 @@ def test_launch_asset_backfill():
             assert single_backfill_result.data
             assert (
                 single_backfill_result.data["partitionBackfillOrError"]["partitionStatuses"] is None
+            )
+
+            backfill = instance.get_backfill(backfill_id)
+            instance.update_backfill(
+                backfill.with_status(backfill.status, blocked_reason="WARNING WARNING")
+            )
+
+            single_backfill_result = execute_dagster_graphql(
+                context, SINGLE_BACKFILL_QUERY, variables={"backfillId": backfill_id}
+            )
+            assert (
+                single_backfill_result.data["partitionBackfillOrError"]["blockedReason"]
+                == "WARNING WARNING"
             )
 
 

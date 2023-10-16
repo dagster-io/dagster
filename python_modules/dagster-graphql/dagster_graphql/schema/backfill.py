@@ -154,6 +154,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         limit=graphene.Int(),
     )
     error = graphene.Field(GraphenePythonError)
+    blockedReason = graphene.Field(graphene.String)
     partitionStatuses = graphene.Field(
         "dagster_graphql.schema.partition_sets.GraphenePartitionStatuses"
     )
@@ -396,6 +397,9 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         if self._backfill_job.error:
             return GraphenePythonError(self._backfill_job.error)
         return None
+
+    def resolve_blockedReason(self, _graphene_info: ResolveInfo) -> Optional[str]:
+        return self._backfill_job.blocked_reason
 
     def resolve_hasCancelPermission(self, graphene_info: ResolveInfo) -> bool:
         if self._backfill_job.partition_set_origin is None:

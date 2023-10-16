@@ -10,10 +10,11 @@ import {BulkActionStatus} from '../../graphql/types';
 type BackfillState = {
   status: BulkActionStatus;
   error: PythonErrorFragment | null;
+  blockedReason: string | null;
 };
 
 export const BackfillStatusTagForPage = ({backfill}: {backfill: BackfillState}) => {
-  const {status, error} = backfill;
+  const {status, error, blockedReason} = backfill;
   function errorState(status: string) {
     return (
       <Box margin={{bottom: 12}}>
@@ -28,10 +29,23 @@ export const BackfillStatusTagForPage = ({backfill}: {backfill: BackfillState}) 
     );
   }
 
+  function blockedState(status: string, blockedReason: string) {
+    return (
+      <Box margin={{bottom: 12}}>
+        <TagButton onClick={() => showCustomAlert({title: 'Warning', body: blockedReason})}>
+          <Tag intent="warning">{status}</Tag>
+        </TagButton>
+      </Box>
+    );
+  }
+
   switch (status) {
     case BulkActionStatus.REQUESTED:
-      return <Tag>In progress</Tag>;
-
+      if (blockedReason) {
+        return blockedState('Blocked', blockedReason);
+      } else {
+        return <Tag>In progress</Tag>;
+      }
     case BulkActionStatus.CANCELING:
       return errorState('Canceling');
     case BulkActionStatus.CANCELED:

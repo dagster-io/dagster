@@ -84,6 +84,7 @@ export const BACKFILL_TABLE_FRAGMENT = gql`
     error {
       ...PythonErrorFragment
     }
+    blockedReason
     ...BackfillActionsBackfillFragment
   }
 

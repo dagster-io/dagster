@@ -397,6 +397,7 @@ export const BACKFILL_DETAILS_QUERY = gql`
     error {
       ...PythonErrorFragment
     }
+    blockedReason
     assetBackfillData {
       rootAssetTargetedRanges {
         start

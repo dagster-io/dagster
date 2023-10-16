@@ -2608,6 +2608,7 @@ type PartitionBackfill {
   runs(limit: Int): [Run!]!
   unfinishedRuns(limit: Int): [Run!]!
   error: PythonError
+  blockedReason: String
   partitionStatuses: PartitionStatuses
   partitionStatusCounts: [PartitionStatusCounts!]!
   isAssetBackfill: Boolean!

@@ -394,7 +394,19 @@ export const BackfillStatusTag = ({
 
   switch (backfill.status) {
     case BulkActionStatus.REQUESTED:
-      return <Tag>In progress</Tag>;
+      if (backfill.blockedReason) {
+        return (
+          <Box margin={{bottom: 12}}>
+            <TagButton
+              onClick={() => showCustomAlert({title: 'Warning', body: backfill.blockedReason})}
+            >
+              <Tag intent="warning">Blocked</Tag>
+            </TagButton>
+          </Box>
+        );
+      } else {
+        return <Tag>In progress</Tag>;
+      }
     case BulkActionStatus.FAILED:
       return (
         <Box margin={{bottom: 12}}>

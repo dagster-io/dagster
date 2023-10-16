@@ -2344,6 +2344,7 @@ export type PartitionBackfill = {
   __typename: 'PartitionBackfill';
   assetBackfillData: Maybe<AssetBackfillData>;
   assetSelection: Maybe<Array<AssetKey>>;
+  blockedReason: Maybe<Scalars['String']>;
   endTimestamp: Maybe<Scalars['Float']>;
   error: Maybe<PythonError>;
   fromFailure: Scalars['Boolean'];
@@ -8832,6 +8833,8 @@ export const buildPartitionBackfill = (
         : buildAssetBackfillData({}, relationshipsToOmit),
     assetSelection:
       overrides && overrides.hasOwnProperty('assetSelection') ? overrides.assetSelection! : [],
+    blockedReason:
+      overrides && overrides.hasOwnProperty('blockedReason') ? overrides.blockedReason! : 'omnis',
     endTimestamp:
       overrides && overrides.hasOwnProperty('endTimestamp') ? overrides.endTimestamp! : 0.33,
     error:

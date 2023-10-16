@@ -1,6 +1,5 @@
 import json
 import logging
-import os
 from datetime import datetime
 from enum import Enum
 from typing import (
@@ -37,7 +36,6 @@ from dagster._core.definitions.partition import PartitionsDefinition, Partitions
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import JobSubsetSelector, PartitionsByAssetSelector
 from dagster._core.errors import (
-    DagsterAssetBackfillDataLoadError,
     DagsterBackfillFailedError,
     DagsterDefinitionChangedDeserializationError,
     DagsterInvariantViolationError,
@@ -671,21 +669,29 @@ def execute_asset_backfill_iteration(
         )
     except DagsterDefinitionChangedDeserializationError as ex:
         unloadable_locations_error = (
-            "This could be because it's inside a code location that's failing to load:"
-            f" {unloadable_locations}"
+            "This could be because it's inside one of the following code location that's failing"
+            f" to load: {','.join(unloadable_locations)}. "
             if unloadable_locations
             else ""
         )
-        if os.environ.get("DAGSTER_BACKFILL_RETRY_DEFINITION_CHANGED_ERROR"):
-            logger.error(
-                f"Backfill {backfill.backfill_id} was unable to continue due to a missing asset or"
-                " partition in the asset graph. The backfill will resume once it is available"
-                f" again.\n{ex}. {unloadable_locations_error}"
-            )
-            yield None
-            return
-        else:
-            raise DagsterAssetBackfillDataLoadError(f"{ex}. {unloadable_locations_error}")
+        blocked_reason = (
+            f"Backfill {backfill.backfill_id} was unable to continue due to a missing asset or"
+            + f" partition in the asset graph: {ex}. {unloadable_locations_error}The backfill will"
+            " resume once it is available"
+            + " again."
+        )
+
+        logger.warning(blocked_reason)
+
+        instance.update_backfill(
+            backfill.with_status(backfill.status, blocked_reason=blocked_reason)
+        )
+        yield None
+        return
+
+    # Clear out warning message if it is set
+    if backfill.blocked_reason:
+        instance.update_backfill(backfill.with_status(backfill.status, blocked_reason=None))
 
     backfill_start_time = utc_datetime_from_timestamp(backfill.backfill_timestamp)
 

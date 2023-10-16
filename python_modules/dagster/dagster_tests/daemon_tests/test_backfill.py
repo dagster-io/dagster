@@ -56,7 +56,6 @@ from dagster._core.storage.tags import (
     PARTITION_NAME_TAG,
 )
 from dagster._core.test_utils import (
-    environ,
     step_did_not_run,
     step_failed,
     step_succeeded,
@@ -682,7 +681,7 @@ def test_unloadable_backfill(instance, workspace_context):
 def test_unloadable_backfill_retry(
     instance, workspace_context, unloadable_location_workspace_context
 ):
-    asset_selection = [AssetKey("asset_a"), AssetKey("asset_b"), AssetKey("asset_c")]
+    asset_selection = [AssetKey("asset_a")]
 
     partition_keys = partitions_a.get_partition_keys()
     instance.add_backfill(
@@ -701,34 +700,41 @@ def test_unloadable_backfill_retry(
     )
     assert instance.get_runs_count() == 0
 
-    with environ({"DAGSTER_BACKFILL_RETRY_DEFINITION_CHANGED_ERROR": "1"}):
-        # backfill can't start, but doesn't error
-        list(
-            execute_backfill_iteration(
-                unloadable_location_workspace_context, get_default_daemon_logger("BackfillDaemon")
-            )
+    # backfill can't start, but doesn't error
+    list(
+        execute_backfill_iteration(
+            unloadable_location_workspace_context, get_default_daemon_logger("BackfillDaemon")
         )
-        assert instance.get_runs_count() == 0
-        backfill = instance.get_backfill("retry_backfill")
-        assert backfill.status == BulkActionStatus.REQUESTED
+    )
+    assert instance.get_runs_count() == 0
+    backfill = instance.get_backfill("retry_backfill")
+    assert backfill.status == BulkActionStatus.REQUESTED
 
-        # retries, still not loadable
-        list(
-            execute_backfill_iteration(
-                unloadable_location_workspace_context, get_default_daemon_logger("BackfillDaemon")
-            )
-        )
-        assert instance.get_runs_count() == 0
-        backfill = instance.get_backfill("retry_backfill")
-        assert backfill.status == BulkActionStatus.REQUESTED
+    expected_warning_message = (
+        "Backfill retry_backfill was unable to continue due to a missing asset or partition in the"
+        " asset graph: Asset asset_a existed at storage-time, but no longer does. This could be"
+        " because it's inside one of the following code location that's failing to load:"
+        " unloadable. The backfill will resume once it is available again."
+    )
+    assert backfill.blocked_reason == expected_warning_message
 
-        # continues once the code location is loadable again
-        list(
-            execute_backfill_iteration(
-                workspace_context, get_default_daemon_logger("BackfillDaemon")
-            )
+    # retries, still not loadable
+    list(
+        execute_backfill_iteration(
+            unloadable_location_workspace_context, get_default_daemon_logger("BackfillDaemon")
         )
-        assert instance.get_runs_count() == 1
+    )
+    assert instance.get_runs_count() == 0
+    backfill = instance.get_backfill("retry_backfill")
+    assert backfill.status == BulkActionStatus.REQUESTED
+    assert backfill.blocked_reason == expected_warning_message
+
+    # continues once the code location is loadable again
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+    assert instance.get_runs_count() == 1
+    backfill = instance.get_backfill("retry_backfill")
+    assert backfill.status == BulkActionStatus.REQUESTED
+    assert not backfill.blocked_reason
 
 
 def test_backfill_from_partitioned_job(

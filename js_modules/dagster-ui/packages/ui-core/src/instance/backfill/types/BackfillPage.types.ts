@@ -17,6 +17,7 @@ export type BackfillStatusesByAssetQuery = {
         timestamp: number;
         endTimestamp: number | null;
         numPartitions: number | null;
+        blockedReason: string | null;
         hasCancelPermission: boolean;
         hasResumePermission: boolean;
         isAssetBackfill: boolean;
@@ -88,6 +89,7 @@ export type PartitionBackfillFragment = {
   timestamp: number;
   endTimestamp: number | null;
   numPartitions: number | null;
+  blockedReason: string | null;
   hasCancelPermission: boolean;
   hasResumePermission: boolean;
   isAssetBackfill: boolean;

@@ -56,6 +56,7 @@ class PartitionBackfill(
             ("reexecution_steps", Optional[Sequence[str]]),
             # only used by asset backfills
             ("serialized_asset_backfill_data", Optional[str]),
+            ("blocked_reason", Optional[str]),
         ],
     ),
 ):
@@ -73,6 +74,7 @@ class PartitionBackfill(
         last_submitted_partition_name: Optional[str] = None,
         reexecution_steps: Optional[Sequence[str]] = None,
         serialized_asset_backfill_data: Optional[str] = None,
+        blocked_reason: Optional[str] = None,
     ):
         check.invariant(
             not (asset_selection and reexecution_steps),
@@ -101,6 +103,7 @@ class PartitionBackfill(
             check.opt_str_param(last_submitted_partition_name, "last_submitted_partition_name"),
             check.opt_nullable_sequence_param(reexecution_steps, "reexecution_steps", of_type=str),
             check.opt_str_param(serialized_asset_backfill_data, "serialized_asset_backfill_data"),
+            check.opt_str_param(blocked_reason, "blocked_reason"),
         )
 
     @property
@@ -248,7 +251,7 @@ class PartitionBackfill(
         )
         return max(0, total_count - checkpoint_idx)
 
-    def with_status(self, status):
+    def with_status(self, status, blocked_reason: Optional[str] = None):
         check.inst_param(status, "status", BulkActionStatus)
         return PartitionBackfill(
             status=status,
@@ -263,6 +266,7 @@ class PartitionBackfill(
             error=self.error,
             asset_selection=self.asset_selection,
             serialized_asset_backfill_data=self.serialized_asset_backfill_data,
+            blocked_reason=blocked_reason,
         )
 
     def with_partition_checkpoint(self, last_submitted_partition_name):
@@ -280,6 +284,7 @@ class PartitionBackfill(
             error=self.error,
             asset_selection=self.asset_selection,
             serialized_asset_backfill_data=self.serialized_asset_backfill_data,
+            blocked_reason=self.blocked_reason,
         )
 
     def with_error(self, error):
@@ -297,6 +302,7 @@ class PartitionBackfill(
             error=error,
             asset_selection=self.asset_selection,
             serialized_asset_backfill_data=self.serialized_asset_backfill_data,
+            blocked_reason=self.blocked_reason,
         )
 
     def with_asset_backfill_data(
@@ -319,6 +325,7 @@ class PartitionBackfill(
             serialized_asset_backfill_data=asset_backfill_data.serialize(
                 dynamic_partitions_store=dynamic_partitions_store
             ),
+            blocked_reason=self.blocked_reason,
         )
 
     @classmethod

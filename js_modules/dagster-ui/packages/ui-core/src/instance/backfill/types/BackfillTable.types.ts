@@ -12,6 +12,7 @@ export type BackfillTableFragment = {
   numPartitions: number | null;
   timestamp: number;
   partitionSetName: string | null;
+  blockedReason: string | null;
   hasCancelPermission: boolean;
   hasResumePermission: boolean;
   numCancelable: number;
