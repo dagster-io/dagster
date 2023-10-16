@@ -187,13 +187,17 @@ export function useAssetLayout(graphData: GraphData) {
   const nodeCount = Object.keys(graphData.nodes).length;
   const runAsync = nodeCount >= ASYNC_LAYOUT_SOLID_COUNT;
 
-  const {flagDisableDAGCache} = useFeatureFlags();
-
   React.useEffect(() => {
+    const opts = {
+      horizontalDAGs: flags.flagHorizontalDAGs,
+      tightTree: flags.flagTightTreeDag,
+      longesPath: flags.flagLongestPathDag,
+    };
+
     async function runAsyncLayout() {
       dispatch({type: 'loading'});
       let layout;
-      if (!flagDisableDAGCache) {
+      if (!flags.flagDisableDAGCache) {
         layout = await asyncGetFullAssetLayoutIndexDB(graphData, opts);
       } else {
         layout = await asyncGetFullAssetLayout(graphData, opts);
@@ -207,7 +211,7 @@ export function useAssetLayout(graphData: GraphData) {
     } else {
       void runAsyncLayout();
     }
-  }, [cacheKey, graphData, runAsync, flags, flagDisableDAGCache, opts]);
+  }, [cacheKey, graphData, runAsync, flags]);
 
   return {
     loading: state.loading || !state.layout || state.cacheKey !== cacheKey,

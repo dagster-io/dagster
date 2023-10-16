@@ -1,5 +1,7 @@
 import {isPlannedDynamicStep, dynamicKeyWithoutIndex} from '../gantt/DynamicStepSupport';
 
+import {featureEnabled, FeatureFlag} from './Flags';
+
 const MAX_RENDERED_FOR_EMPTY_QUERY = 100;
 
 export interface GraphQueryItem {
@@ -84,18 +86,16 @@ function expansionDepthForClause(clause: string) {
   return clause.includes('*') ? Number.MAX_SAFE_INTEGER : clause.length;
 }
 
-export function filterByQuery<T extends GraphQueryItem>(
-  items: T[],
-  query: string,
-  flagTightTreeDag?: boolean,
-) {
+export function filterByQuery<T extends GraphQueryItem>(items: T[], query: string) {
   if (query === '*') {
     return {all: items, applyingEmptyDefault: false, focus: []};
   }
+  const fastDag =
+    featureEnabled(FeatureFlag.flagTightTreeDag) || featureEnabled(FeatureFlag.flagLongestPathDag);
   if (query === '') {
     return {
-      all: !flagTightTreeDag && items.length >= MAX_RENDERED_FOR_EMPTY_QUERY ? [] : items,
-      applyingEmptyDefault: !flagTightTreeDag && items.length >= MAX_RENDERED_FOR_EMPTY_QUERY,
+      all: !fastDag && items.length >= MAX_RENDERED_FOR_EMPTY_QUERY ? [] : items,
+      applyingEmptyDefault: !fastDag && items.length >= MAX_RENDERED_FOR_EMPTY_QUERY,
       focus: [],
     };
   }
