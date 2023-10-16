@@ -176,32 +176,21 @@ class AssetBackfillData(NamedTuple):
         return True
 
     def get_target_root_asset_partitions(self) -> Iterable[AssetKeyPartitionKey]:
-        connected_asset_sets = []
-        all_visited_asset_keys = set()
-
-        for asset_key in self.target_subset.asset_keys:
-            if asset_key in all_visited_asset_keys:
-                continue
-
-            connected_asset_set = self.target_subset.get_connected_asset_keys_in_subset(asset_key)
-            connected_asset_sets.append(connected_asset_set)
-            all_visited_asset_keys |= connected_asset_set
-
-        root_asset_partitions = []
-
-        for connected_asset_set in connected_asset_sets:
-            root_asset_keys = (
-                AssetSelection.keys(*connected_asset_set)
-                .sources()
-                .resolve(self.target_subset.asset_graph)
+        assets_with_no_parents_in_target_subset = {
+            asset_key
+            for asset_key in self.target_subset.asset_keys
+            if all(
+                parent not in self.target_subset.asset_keys
+                for parent in self.target_subset.asset_graph.get_parents(asset_key)
+                - {asset_key}  # Do not include an asset as its own parent
             )
-            root_asset_partitions.extend(
-                list(
-                    self.target_subset.filter_asset_keys(root_asset_keys).iterate_asset_partitions()
-                )
-            )
+        }
 
-        return root_asset_partitions
+        return list(
+            self.target_subset.filter_asset_keys(
+                assets_with_no_parents_in_target_subset
+            ).iterate_asset_partitions()
+        )
 
     def get_target_root_partitions_subset(self) -> PartitionsSubset:
         """Returns the most upstream partitions subset that was targeted by the backfill."""

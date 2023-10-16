@@ -265,7 +265,7 @@ def test_scenario_to_completion(scenario: AssetBackfillScenario, failures: str, 
                 target_subset = AssetGraphSubset.all(
                     asset_graph,
                     dynamic_partitions_store=instance,
-                    current_time=datetime.datetime.now(),
+                    current_time=scenario.evaluation_time,
                 )
             elif some_or_all == "some":
                 if scenario.target_root_partition_keys is None:
@@ -615,7 +615,7 @@ def run_backfill_to_completion(
             )
 
         assert iteration_count <= len(requested_asset_partitions) + 1
-    return (backfill_data, requested_asset_partitions, fail_and_downstream_asset_partitions)
+    return backfill_data, requested_asset_partitions, fail_and_downstream_asset_partitions
 
 
 def _requested_asset_partitions_in_run_request(

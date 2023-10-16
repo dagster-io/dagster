@@ -57,30 +57,6 @@ class AssetGraphSubset:
 
         return self.partitions_subsets_by_asset_key.get(asset_key, partitions_def.empty_subset())
 
-    def get_connected_asset_keys_in_subset(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
-        """Returns the asset keys that are connected to the given asset key in the subset.
-        Each connecting asset must also be in the subset.
-        """
-
-        def _get_connected_assets(asset_key: AssetKey, upstream: bool) -> AbstractSet[AssetKey]:
-            connected_assets: Set[AssetKey] = {asset_key}
-            for connected_asset in (
-                self.asset_graph.get_parents(asset_key)
-                if upstream
-                else self.asset_graph.get_children(asset_key)
-            ):
-                if connected_asset in self.asset_keys:
-                    connected_assets.add(connected_asset)
-                    connected_assets |= _get_connected_assets(connected_asset, upstream)
-
-            return connected_assets
-
-        check.invariant(asset_key in self.asset_keys)
-
-        return _get_connected_assets(asset_key, upstream=True) | _get_connected_assets(
-            asset_key, upstream=False
-        )
-
     def iterate_asset_partitions(self) -> Iterable[AssetKeyPartitionKey]:
         for asset_key, partitions_subset in self.partitions_subsets_by_asset_key.items():
             for partition_key in partitions_subset.get_partition_keys():
