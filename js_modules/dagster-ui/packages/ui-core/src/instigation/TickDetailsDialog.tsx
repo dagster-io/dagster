@@ -12,9 +12,11 @@ import {
   ButtonLink,
   Tag,
   DialogBody,
+  MiddleTruncate,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 
+import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {formatElapsedTime} from '../app/Util';
@@ -139,8 +141,6 @@ const TickDetailsDialogImpl = ({
 };
 
 export function TickDetailSummary({tick}: {tick: HistoryTickFragment | AssetDaemonTickFragment}) {
-  const [showPythonError, setShowPythonError] = React.useState<PythonErrorFragment | null>(null);
-
   const intent = React.useMemo(() => {
     switch (tick?.status) {
       case InstigationTickStatus.FAILURE:
@@ -157,30 +157,6 @@ export function TickDetailSummary({tick}: {tick: HistoryTickFragment | AssetDaem
 
   return (
     <>
-      {showPythonError ? (
-        <Dialog
-          title="Error"
-          isOpen={!!showPythonError}
-          onClose={() => {
-            setShowPythonError(null);
-          }}
-          style={{width: '80vw'}}
-        >
-          <DialogBody>
-            <PythonErrorInfo error={showPythonError} />
-          </DialogBody>
-          <DialogFooter topBorder>
-            <Button
-              intent="primary"
-              onClick={() => {
-                setShowPythonError(null);
-              }}
-            >
-              Close
-            </Button>
-          </DialogFooter>
-        </Dialog>
-      ) : null}
       <div style={{display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12}}>
         <Box flex={{direction: 'column', gap: 4}}>
           <Subtitle2>Status</Subtitle2>
@@ -200,7 +176,10 @@ export function TickDetailSummary({tick}: {tick: HistoryTickFragment | AssetDaem
             {tick.error ? (
               <ButtonLink
                 onClick={() => {
-                  setShowPythonError(tick.error!);
+                  showCustomAlert({
+                    title: 'Tick error',
+                    body: <PythonErrorInfo error={tick.error!} />,
+                  });
                 }}
               >
                 View error
@@ -230,7 +209,7 @@ function PartitionsTable({partitions}: {partitions: DynamicPartitionsRequestResu
     <Table>
       <thead>
         <tr>
-          <th>Asset</th>
+          <th>Partition Definition</th>
           <th>Partition</th>
         </tr>
       </thead>
@@ -239,8 +218,12 @@ function PartitionsTable({partitions}: {partitions: DynamicPartitionsRequestResu
           (partition) =>
             partition.partitionKeys?.map((key) => (
               <tr key={key}>
-                <td>{partition.partitionsDefName}</td>
-                <td>{key}</td>
+                <td>
+                  <MiddleTruncate text={partition.partitionsDefName} />
+                </td>
+                <td>
+                  <MiddleTruncate text={key} />
+                </td>
               </tr>
             )),
         )}
