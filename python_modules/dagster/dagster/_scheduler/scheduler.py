@@ -16,7 +16,10 @@ from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.definitions.utils import validate_tags
-from dagster._core.errors import DagsterUserCodeUnreachableError
+from dagster._core.errors import (
+    DagsterCodeLocationLoadError,
+    DagsterUserCodeUnreachableError,
+)
 from dagster._core.host_representation import ExternalSchedule
 from dagster._core.host_representation.code_location import CodeLocation
 from dagster._core.host_representation.external import ExternalJob
@@ -553,7 +556,7 @@ def launch_scheduled_runs_for_schedule_iterator(
                     schedule_debug_crash_flags,
                 )
             except Exception as e:
-                if isinstance(e, DagsterUserCodeUnreachableError):
+                if isinstance(e, (DagsterUserCodeUnreachableError, DagsterCodeLocationLoadError)):
                     try:
                         raise DagsterSchedulerError(
                             f"Unable to reach the user code server for schedule {schedule_name}."
