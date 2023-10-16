@@ -169,11 +169,18 @@ def test_context_provided_to_multi_asset():
 
 
 def test_context_provided_to_graph_asset():
+    # op so that the ops to check context type are layered deeper in the graph
+    @op
+    def layered_op(context: AssetExecutionContext, x):
+        assert isinstance(context, AssetExecutionContext)
+        return x + 1
+
     @op
     def no_annotation_op(context):
         assert isinstance(context, OpExecutionContext)
         # AssetExecutionContext is an instance of OpExecutionContext, so add this additional check
         assert not isinstance(context, AssetExecutionContext)
+        return 1
 
     @graph_asset
     def no_annotation_asset():
@@ -184,10 +191,11 @@ def test_context_provided_to_graph_asset():
     @op
     def asset_annotation_op(context: AssetExecutionContext):
         assert isinstance(context, AssetExecutionContext)
+        return 1
 
     @graph_asset
     def asset_annotation_asset():
-        return asset_annotation_op()
+        return layered_op(asset_annotation_op())
 
     materialize([asset_annotation_asset])
 
@@ -196,38 +204,47 @@ def test_context_provided_to_graph_asset():
         assert isinstance(context, OpExecutionContext)
         # AssetExecutionContext is an instance of OpExecutionContext, so add this additional check
         assert not isinstance(context, AssetExecutionContext)
+        return 1
 
     @graph_asset
     def op_annotation_asset():
-        return op_annotation_op()
+        return layered_op(op_annotation_op())
 
     materialize([op_annotation_asset])
 
 
 def test_context_provided_to_graph_multi_asset():
+    # op so that the ops to check context type are layered deeper in the graph
+    @op
+    def layered_op(context: AssetExecutionContext, x):
+        assert isinstance(context, AssetExecutionContext)
+        return x + 1
+
     @op
     def no_annotation_op(context):
         assert isinstance(context, OpExecutionContext)
         # AssetExecutionContext is an instance of OpExecutionContext, so add this additional check
         assert not isinstance(context, AssetExecutionContext)
+        return 1
 
     @graph_multi_asset(
         outs={"out1": AssetOut(dagster_type=None), "out2": AssetOut(dagster_type=None)}
     )
     def no_annotation_asset():
-        return no_annotation_op(), no_annotation_op()
+        return layered_op(no_annotation_op()), layered_op(no_annotation_op())
 
     materialize([no_annotation_asset])
 
     @op
     def asset_annotation_op(context: AssetExecutionContext):
         assert isinstance(context, AssetExecutionContext)
+        return 1
 
     @graph_multi_asset(
         outs={"out1": AssetOut(dagster_type=None), "out2": AssetOut(dagster_type=None)}
     )
     def asset_annotation_asset():
-        return asset_annotation_op(), asset_annotation_op()
+        return layered_op(asset_annotation_op()), layered_op(asset_annotation_op())
 
     materialize([asset_annotation_asset])
 
@@ -236,12 +253,13 @@ def test_context_provided_to_graph_multi_asset():
         assert isinstance(context, OpExecutionContext)
         # AssetExecutionContext is an instance of OpExecutionContext, so add this additional check
         assert not isinstance(context, AssetExecutionContext)
+        return 1
 
     @graph_multi_asset(
         outs={"out1": AssetOut(dagster_type=None), "out2": AssetOut(dagster_type=None)}
     )
     def op_annotation_asset():
-        return op_annotation_op(), op_annotation_op()
+        return layered_op(op_annotation_op()), layered_op(op_annotation_op())
 
     materialize([op_annotation_asset])
 
