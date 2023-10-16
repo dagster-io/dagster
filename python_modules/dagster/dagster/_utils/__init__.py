@@ -82,6 +82,21 @@ SingleInstigatorDebugCrashFlags: TypeAlias = Mapping[str, int]
 DebugCrashFlags: TypeAlias = Mapping[str, SingleInstigatorDebugCrashFlags]
 
 
+def check_for_debug_crash(
+    debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags], key: str
+) -> None:
+    if not debug_crash_flags:
+        return
+
+    kill_signal = debug_crash_flags.get(key)
+    if not kill_signal:
+        return
+
+    os.kill(os.getpid(), kill_signal)
+    time.sleep(10)
+    raise Exception("Process didn't terminate after sending crash signal")
+
+
 # Use this to get the "library version" (pre-1.0 version) from the "core version" (post 1.0
 # version). 16 is from the 0.16.0 that library versions stayed on when core went to 1.0.0.
 def library_version_from_core_version(core_version: str) -> str:
