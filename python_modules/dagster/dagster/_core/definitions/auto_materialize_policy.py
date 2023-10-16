@@ -230,17 +230,13 @@ class AutoMaterializePolicy(
     @public
     def with_rules(self, *rules_to_add: "AutoMaterializeRule") -> "AutoMaterializePolicy":
         """Constructs a copy of this policy with the specified rules added. If an instance of a
-        provided rule already exists in this policy, it will be replaced.
+        provided rule with the same type exists on this policy, it will be replaced.
         """
+        new_rule_types = {type(rule) for rule in rules_to_add}
         return self._replace(
-            rules={
-                *set(rules_to_add),
-                *{
-                    rule
-                    for rule in self.rules
-                    if not any(isinstance(rule, type(rule_to_add)) for rule_to_add in rules_to_add)
-                },
-            }
+            rules=set(rules_to_add).union(
+                {rule for rule in self.rules if type(rule) not in new_rule_types}
+            )
         )
 
     @property

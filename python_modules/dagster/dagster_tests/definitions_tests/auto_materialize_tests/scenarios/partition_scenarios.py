@@ -478,11 +478,7 @@ partition_scenarios = {
                 AutoMaterializeRule.skip_on_parent_outdated(),
                 AutoMaterializeRule.skip_on_required_but_nonexistent_parents(),
             )
-            .with_rules(
-                AutoMaterializeRule.skip_on_backfill_in_progress(
-                    skip_all_partitions_of_backfilling_asset=True
-                )
-            ),
+            .with_rules(AutoMaterializeRule.skip_on_backfill_in_progress(all_partitions=True)),
         ),
         active_backfill_targets=[
             {
@@ -515,7 +511,9 @@ partition_scenarios = {
                     ),
                     (
                         AutoMaterializeRuleEvaluation(
-                            AutoMaterializeRule.skip_on_backfill_in_progress().to_snapshot(),
+                            AutoMaterializeRule.skip_on_backfill_in_progress(
+                                all_partitions=True
+                            ).to_snapshot(),
                             evaluation_data=None,
                         ),
                         [

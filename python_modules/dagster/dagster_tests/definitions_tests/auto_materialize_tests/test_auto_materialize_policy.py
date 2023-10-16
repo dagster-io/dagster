@@ -94,15 +94,11 @@ def test_with_rules_override_existing_instance():
     )
 
     simple_policy_with_override = simple_policy.with_rules(
-        AutoMaterializeRule.skip_on_backfill_in_progress(
-            skip_all_partitions_of_backfilling_asset=True
-        ),
+        AutoMaterializeRule.skip_on_backfill_in_progress(all_partitions=True),
     )
 
     assert simple_policy_with_override.rules == {
-        AutoMaterializeRule.skip_on_backfill_in_progress(
-            skip_all_partitions_of_backfilling_asset=True
-        ),
+        AutoMaterializeRule.skip_on_backfill_in_progress(all_partitions=True),
         AutoMaterializeRule.materialize_on_parent_updated(),
     }
 

@@ -300,17 +300,16 @@ class AutoMaterializeRule(ABC):
     @public
     @staticmethod
     def skip_on_backfill_in_progress(
-        skip_all_partitions_of_backfilling_asset: bool = False,
+        all_partitions: bool = False,
     ) -> "SkipOnBackfillInProgressRule":
         """Skip an asset's partitions if targeted by an in-progress backfill.
 
         Attributes:
-            skip_all_partitions_of_backfilling_asset (Optional[bool]): If true, skips
-                all partitions of the backfilling asset, regardless of whether the partition
-                is being backfilled. If false, skips only partitions that are being backfilled.
-                Defaults to false.
+            all_partitions (bool): If True, skips all partitions of the asset being backfilled,
+                regardless of whether the specific partition is targeted by a backfill.
+                If False, skips only partitions targeted by a backfill. Defaults to False.
         """
-        return SkipOnBackfillInProgressRule(skip_all_partitions_of_backfilling_asset)
+        return SkipOnBackfillInProgressRule(all_partitions)
 
     def to_snapshot(self) -> AutoMaterializeRuleSnapshot:
         """Returns a serializable snapshot of this rule for historical evaluations."""
@@ -694,9 +693,7 @@ class SkipOnRequiredButNonexistentParentsRule(
 @whitelist_for_serdes
 class SkipOnBackfillInProgressRule(
     AutoMaterializeRule,
-    NamedTuple(
-        "_SkipOnBackfillInProgressRule", [("skip_all_partitions_of_backfilling_asset", bool)]
-    ),
+    NamedTuple("_SkipOnBackfillInProgressRule", [("all_partitions", bool)]),
 ):
     @property
     def decision_type(self) -> AutoMaterializeDecisionType:
@@ -704,7 +701,10 @@ class SkipOnBackfillInProgressRule(
 
     @property
     def description(self) -> str:
-        return "asset is targeted by an in-progress backfill"
+        if self.all_partitions:
+            return "part of an asset targeted by an in-progress backfill"
+        else:
+            return "targeted by an in-progress backfill"
 
     def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
         backfill_in_progress_candidates: AbstractSet[AssetKeyPartitionKey] = set()
@@ -713,13 +713,16 @@ class SkipOnBackfillInProgressRule(
             context.instance_queryer.get_active_backfill_target_asset_graph_subset()
         )
 
-        for candidate in context.candidates:
-            if self.skip_all_partitions_of_backfilling_asset:
-                if candidate.asset_key in backfilling_subset.asset_keys:
-                    backfill_in_progress_candidates.add(candidate)
-            else:
-                if candidate in backfilling_subset:
-                    backfill_in_progress_candidates.add(candidate)
+        if self.all_partitions:
+            backfill_in_progress_candidates = {
+                candidate
+                for candidate in context.candidates
+                if candidate.asset_key in backfilling_subset.asset_keys
+            }
+        else:
+            backfill_in_progress_candidates = {
+                candidate for candidate in context.candidates if candidate in backfilling_subset
+            }
 
         if backfill_in_progress_candidates:
             return [(None, backfill_in_progress_candidates)]
