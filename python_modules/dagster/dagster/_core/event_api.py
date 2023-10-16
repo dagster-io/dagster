@@ -244,7 +244,7 @@ class AssetRecordsFilter(
     NamedTuple(
         "_AssetRecordsFilter",
         [
-            ("asset_key", PublicAttr[Optional[AssetKey]]),
+            ("asset_key", PublicAttr[AssetKey]),
             ("asset_partitions", PublicAttr[Optional[Sequence[str]]]),
             ("after_timestamp", PublicAttr[Optional[float]]),
             ("before_timestamp", PublicAttr[Optional[float]]),
@@ -278,7 +278,7 @@ class AssetRecordsFilter(
 
     def __new__(
         cls,
-        asset_key: Optional[AssetKey] = None,
+        asset_key: AssetKey,
         asset_partitions: Optional[Sequence[str]] = None,
         after_timestamp: Optional[float] = None,
         before_timestamp: Optional[float] = None,
@@ -289,7 +289,7 @@ class AssetRecordsFilter(
     ):
         return super(AssetRecordsFilter, cls).__new__(
             cls,
-            asset_key=check.opt_inst_param(asset_key, "asset_key", AssetKey),
+            asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
             asset_partitions=check.opt_nullable_sequence_param(
                 asset_partitions, "asset_partitions", of_type=str
             ),

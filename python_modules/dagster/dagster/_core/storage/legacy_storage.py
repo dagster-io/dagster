@@ -454,47 +454,45 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
             event_records_filter, limit, ascending  # type: ignore
         )
 
-    def get_materialization_records(
+    def fetch_materializations(
         self,
-        filters: Optional[Union[AssetKey, "AssetRecordsFilter"]],
+        filters: Union[AssetKey, "AssetRecordsFilter"],
         limit: int,
         cursor: Optional[str] = None,
         ascending: bool = False,
     ) -> EventRecordsResult:
-        return self._storage.event_log_storage.get_materialization_records(
+        return self._storage.event_log_storage.fetch_materializations(
             filters, limit, cursor, ascending
         )
 
-    def get_observation_records(
+    def fetch_observations(
         self,
-        filters: Optional[Union[AssetKey, "AssetRecordsFilter"]],
+        filters: Union[AssetKey, "AssetRecordsFilter"],
         limit: int,
         cursor: Optional[str] = None,
         ascending: bool = False,
     ) -> EventRecordsResult:
-        return self._storage.event_log_storage.get_observation_records(
-            filters, limit, cursor, ascending
-        )
+        return self._storage.event_log_storage.fetch_observations(filters, limit, cursor, ascending)
 
-    def get_planned_materialization_records(
+    def fetch_planned_materializations(
         self,
-        filters: Optional[Union[AssetKey, "AssetRecordsFilter"]],
+        filters: Union[AssetKey, "AssetRecordsFilter"],
         limit: int,
         cursor: Optional[str] = None,
         ascending: bool = False,
     ) -> EventRecordsResult:
-        return self._storage.event_log_storage.get_planned_materialization_records(
+        return self._storage.event_log_storage.fetch_planned_materializations(
             filters, limit, cursor, ascending
         )
 
-    def get_run_status_change_records(
+    def fetch_run_status_changes(
         self,
         filters: Union["DagsterEventType", "RunStatusChangeRecordsFilter"],
         limit: int,
         cursor: Optional[str] = None,
         ascending: bool = False,
     ) -> EventRecordsResult:
-        return self._storage.event_log_storage.get_run_status_change_records(
+        return self._storage.event_log_storage.fetch_run_status_changes(
             filters, limit, cursor, ascending
         )
 

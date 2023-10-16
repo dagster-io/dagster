@@ -374,7 +374,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         return event_records[:limit]
 
-    def get_run_status_change_records(
+    def fetch_run_status_changes(
         self,
         records_filter: Union[DagsterEventType, RunStatusChangeRecordsFilter],
         limit: int,

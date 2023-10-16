@@ -1042,9 +1042,9 @@ class SqlEventLogStorage(EventLogStorage):
         has_more = len(records) == limit
         return EventRecordsResult(records, cursor=new_cursor, has_more=has_more)
 
-    def get_materialization_records(
+    def fetch_materializations(
         self,
-        records_filter: Optional[Union[AssetKey, AssetRecordsFilter]],
+        records_filter: Union[AssetKey, AssetRecordsFilter],
         limit: int,
         cursor: Optional[str] = None,
         ascending: bool = False,
@@ -1058,7 +1058,7 @@ class SqlEventLogStorage(EventLogStorage):
             )
         else:
             before_cursor, after_cursor = EventRecordsFilter.get_cursor_params(cursor, ascending)
-            asset_key = records_filter if isinstance(records_filter, AssetKey) else None
+            asset_key = records_filter
             event_records_filter = EventRecordsFilter(
                 event_type=DagsterEventType.ASSET_MATERIALIZATION,
                 asset_key=asset_key,
@@ -1068,9 +1068,9 @@ class SqlEventLogStorage(EventLogStorage):
 
         return self._get_event_records_result(event_records_filter, limit, cursor, ascending)
 
-    def get_observation_records(
+    def fetch_observations(
         self,
-        records_filter: Optional[Union[AssetKey, AssetRecordsFilter]],
+        records_filter: Union[AssetKey, AssetRecordsFilter],
         limit: int,
         cursor: Optional[str] = None,
         ascending: bool = False,
@@ -1084,7 +1084,7 @@ class SqlEventLogStorage(EventLogStorage):
             )
         else:
             before_cursor, after_cursor = EventRecordsFilter.get_cursor_params(cursor, ascending)
-            asset_key = records_filter if isinstance(records_filter, AssetKey) else None
+            asset_key = records_filter
             event_records_filter = EventRecordsFilter(
                 event_type=DagsterEventType.ASSET_OBSERVATION,
                 asset_key=asset_key,
@@ -1094,7 +1094,7 @@ class SqlEventLogStorage(EventLogStorage):
 
         return self._get_event_records_result(event_records_filter, limit, cursor, ascending)
 
-    def get_planned_materialization_records(
+    def fetch_planned_materializations(
         self,
         records_filter: Optional[Union[AssetKey, AssetRecordsFilter]],
         limit: int,
@@ -1110,7 +1110,7 @@ class SqlEventLogStorage(EventLogStorage):
             )
         else:
             before_cursor, after_cursor = EventRecordsFilter.get_cursor_params(cursor, ascending)
-            asset_key = records_filter if isinstance(records_filter, AssetKey) else None
+            asset_key = records_filter
             event_records_filter = EventRecordsFilter(
                 event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
                 asset_key=asset_key,
@@ -1119,7 +1119,7 @@ class SqlEventLogStorage(EventLogStorage):
             )
         return self._get_event_records_result(event_records_filter, limit, cursor, ascending)
 
-    def get_run_status_change_records(
+    def fetch_run_status_changes(
         self,
         records_filter: Union[DagsterEventType, RunStatusChangeRecordsFilter],
         limit: int,

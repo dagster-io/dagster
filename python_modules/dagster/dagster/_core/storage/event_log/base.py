@@ -473,9 +473,9 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         pass
 
     @abstractmethod
-    def get_materialization_records(
+    def fetch_materializations(
         self,
-        records_filter: Optional[Union[AssetKey, AssetRecordsFilter]],
+        records_filter: Union[AssetKey, AssetRecordsFilter],
         limit: int,
         cursor: Optional[str] = None,
         ascending: bool = False,
@@ -483,9 +483,9 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_observation_records(
+    def fetch_observations(
         self,
-        records_filter: Optional[Union[AssetKey, AssetRecordsFilter]],
+        records_filter: Union[AssetKey, AssetRecordsFilter],
         limit: int,
         cursor: Optional[str] = None,
         ascending: bool = False,
@@ -493,9 +493,9 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_planned_materialization_records(
+    def fetch_planned_materializations(
         self,
-        records_filter: Optional[Union[AssetKey, AssetRecordsFilter]],
+        records_filter: Union[AssetKey, AssetRecordsFilter],
         limit: int,
         cursor: Optional[str] = None,
         ascending: bool = False,
@@ -503,7 +503,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_run_status_change_records(
+    def fetch_run_status_changes(
         self,
         records_filter: Union[DagsterEventType, RunStatusChangeRecordsFilter],
         limit: int,

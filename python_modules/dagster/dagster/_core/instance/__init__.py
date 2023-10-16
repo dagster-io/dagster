@@ -1913,9 +1913,9 @@ class DagsterInstance(DynamicPartitionsStore):
 
     @public
     @traced
-    def get_materialization_records(
+    def fetch_materializations(
         self,
-        records_filter: Optional[Union[AssetKey, "AssetRecordsFilter"]],
+        records_filter: Union[AssetKey, "AssetRecordsFilter"],
         limit: int,
         cursor: Optional[str] = None,
         ascending: bool = False,
@@ -1933,15 +1933,13 @@ class DagsterInstance(DynamicPartitionsStore):
         Returns:
             EventRecordsResult: Object containing a list of event log records and a cursor string
         """
-        return self._event_storage.get_materialization_records(
-            records_filter, limit, cursor, ascending
-        )
+        return self._event_storage.fetch_materializations(records_filter, limit, cursor, ascending)
 
     @public
     @traced
-    def get_planned_materialization_records(
+    def fetch_planned_materializations(
         self,
-        records_filter: Optional[Union[AssetKey, "AssetRecordsFilter"]],
+        records_filter: Union[AssetKey, "AssetRecordsFilter"],
         limit: int,
         cursor: Optional[str] = None,
         ascending: bool = False,
@@ -1959,15 +1957,15 @@ class DagsterInstance(DynamicPartitionsStore):
         Returns:
             EventRecordsResult: Object containing a list of event log records and a cursor string
         """
-        return self._event_storage.get_planned_materialization_records(
+        return self._event_storage.fetch_planned_materializations(
             records_filter, limit, cursor, ascending
         )
 
     @public
     @traced
-    def get_observation_records(
+    def fetch_observations(
         self,
-        records_filter: Optional[Union[AssetKey, "AssetRecordsFilter"]],
+        records_filter: Union[AssetKey, "AssetRecordsFilter"],
         limit: int,
         cursor: Optional[str] = None,
         ascending: bool = False,
@@ -1985,11 +1983,11 @@ class DagsterInstance(DynamicPartitionsStore):
         Returns:
             EventRecordsResult: Object containing a list of event log records and a cursor string
         """
-        return self._event_storage.get_observation_records(records_filter, limit, cursor, ascending)
+        return self._event_storage.fetch_observations(records_filter, limit, cursor, ascending)
 
     @public
     @traced
-    def get_run_status_change_records(
+    def fetch_run_status_changes(
         self,
         records_filter: Union["DagsterEventType", "RunStatusChangeRecordsFilter"],
         limit: int,
@@ -2009,7 +2007,7 @@ class DagsterInstance(DynamicPartitionsStore):
         Returns:
             EventRecordsResult: Object containing a list of event log records and a cursor string
         """
-        return self._event_storage.get_run_status_change_records(
+        return self._event_storage.fetch_run_status_changes(
             records_filter, limit, cursor, ascending
         )
 

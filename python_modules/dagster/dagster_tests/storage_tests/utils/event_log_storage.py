@@ -1028,7 +1028,7 @@ class TestEventLogStorage:
             assert record.event_log_entry.dagster_event.asset_key == asset_key
 
             # new API
-            result = storage.get_materialization_records(asset_key, limit=100)
+            result = storage.fetch_materializations(asset_key, limit=100)
             assert isinstance(result, EventRecordsResult)
             assert len(result.records) == 1
             record = result.records[0]
@@ -1412,14 +1412,14 @@ class TestEventLogStorage:
             _store_run_events(run_id_2)
             _store_run_events(run_id_3)
 
-            all_success_events = storage.get_run_status_change_records(
+            all_success_events = storage.fetch_run_status_changes(
                 DagsterEventType.RUN_SUCCESS, limit=100
             ).records
             assert len(all_success_events) == 3
             assert all_success_events[0].storage_id > all_success_events[2].storage_id
             assert (
                 len(
-                    storage.get_run_status_change_records(
+                    storage.fetch_run_status_changes(
                         DagsterEventType.RUN_SUCCESS,
                         cursor=str(
                             EventLogCursor.from_storage_id(all_success_events[1].storage_id)
@@ -1431,7 +1431,7 @@ class TestEventLogStorage:
             )
             assert [
                 i.storage_id
-                for i in storage.get_run_status_change_records(
+                for i in storage.fetch_run_status_changes(
                     DagsterEventType.RUN_SUCCESS,
                     ascending=True,
                     limit=2,
@@ -2775,7 +2775,7 @@ class TestEventLogStorage:
             assert len(records) == 1
 
             # new API
-            result = storage.get_observation_records(a, limit=100)
+            result = storage.fetch_observations(a, limit=100)
             assert isinstance(result, EventRecordsResult)
             assert len(result.records) == 1
             record = result.records[0]
@@ -2810,7 +2810,7 @@ class TestEventLogStorage:
         assert len(records) == 1
 
         # new API
-        result = storage.get_planned_materialization_records(a, limit=100)
+        result = storage.fetch_planned_materializations(a, limit=100)
         assert isinstance(result, EventRecordsResult)
         assert len(result.records) == 1
         record = result.records[0]
