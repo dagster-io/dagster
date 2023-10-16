@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING, Optional, Sequence
 
 import dagster._check as check
 import graphene
+from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsSubset,
 )
@@ -115,6 +116,34 @@ class GrapheneBulkActionStatus(graphene.Enum):
         name = "BulkActionStatus"
 
 
+class GrapheneAssetBackfillTargetPartitions(graphene.ObjectType):
+    class Meta:
+        name = "AssetBackfillTargetPartitions"
+
+    ranges = graphene.List(
+        graphene.NonNull("dagster_graphql.schema.partition_sets.GraphenePartitionKeyRange")
+    )
+    partitionKeys = graphene.List(graphene.NonNull(graphene.String))
+
+    def __init__(self, partition_subset: PartitionsSubset):
+        from dagster_graphql.schema.partition_sets import GraphenePartitionKeyRange
+
+        if isinstance(partition_subset, TimeWindowPartitionsSubset):
+            ranges = [
+                GraphenePartitionKeyRange(start, end)
+                for start, end in partition_subset.get_partition_key_ranges()
+            ]
+            partition_keys = None
+        else:  # Default partitions subset
+            ranges = None
+            partition_keys = partition_subset.get_partition_keys()
+
+        super().__init__(
+            ranges=ranges,
+            partitionKeys=partition_keys,
+        )
+
+
 class GrapheneAssetBackfillData(graphene.ObjectType):
     class Meta:
         name = "AssetBackfillData"
@@ -122,10 +151,9 @@ class GrapheneAssetBackfillData(graphene.ObjectType):
     assetBackfillStatuses = non_null_list(
         "dagster_graphql.schema.partition_sets.GrapheneAssetBackfillStatus"
     )
-    rootAssetTargetedRanges = graphene.List(
-        graphene.NonNull("dagster_graphql.schema.partition_sets.GraphenePartitionKeyRange")
+    rootTargetedPartitions = graphene.NonNull(
+        "dagster_graphql.schema.backfill.GrapheneAssetBackfillTargetPartitions",
     )
-    rootAssetTargetedPartitions = graphene.List(graphene.NonNull(graphene.String))
 
 
 class GraphenePartitionBackfill(graphene.ObjectType):
@@ -159,6 +187,10 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     )
     partitionStatusCounts = non_null_list(
         "dagster_graphql.schema.partition_sets.GraphenePartitionStatusCounts"
+    )
+    partitionsTargetedForAssetKey = graphene.Field(
+        "dagster_graphql.schema.backfill.GrapheneAssetBackfillTargetPartitions",
+        asset_key=graphene.Argument("dagster_graphql.schema.inputs.GrapheneAssetKeyInput"),
     )
     isAssetBackfill = graphene.NonNull(graphene.Boolean)
     assetBackfillData = graphene.Field(GrapheneAssetBackfillData)
@@ -320,12 +352,26 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     def resolve_isAssetBackfill(self, _graphene_info: ResolveInfo) -> bool:
         return self._backfill_job.is_asset_backfill
 
+    def resolve_partitionsTargetedForAssetKey(
+        self, graphene_info: ResolveInfo, asset_key
+    ) -> PartitionsSubset:
+        from dagster._core.definitions.events import AssetKey
+
+        if not self._backfill_job.is_asset_backfill:
+            return None
+
+        root_partitions_subset = self._backfill_job.get_target_partitions_subset(
+            graphene_info.context, AssetKey.from_graphql_input(asset_key)
+        )
+        if not root_partitions_subset:
+            return None
+        return GrapheneAssetBackfillTargetPartitions(root_partitions_subset)
+
     def resolve_assetBackfillData(
         self, graphene_info: ResolveInfo
     ) -> Optional[GrapheneAssetBackfillData]:
         from dagster_graphql.schema.partition_sets import (
             GrapheneAssetPartitionsStatusCounts,
-            GraphenePartitionKeyRange,
             GrapheneUnpartitionedAssetStatus,
         )
 
@@ -373,23 +419,14 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             graphene_info.context
         )
 
-        if not root_partitions_subset:
-            root_targeted_ranges = None
-            root_targeted_partitions = None
-        elif isinstance(root_partitions_subset, TimeWindowPartitionsSubset):
-            root_targeted_ranges = [
-                GraphenePartitionKeyRange(start, end)
-                for start, end in root_partitions_subset.get_partition_key_ranges()
-            ]
-            root_targeted_partitions = None
-        else:  # Default partitions subset
-            root_targeted_ranges = None
-            root_targeted_partitions = root_partitions_subset.get_partition_keys()
+        if root_partitions_subset:
+            root_targeted = GrapheneAssetBackfillTargetPartitions(root_partitions_subset)
+        else:
+            root_targeted = None
 
         return GrapheneAssetBackfillData(
             assetBackfillStatuses=asset_partition_status_counts,
-            rootAssetTargetedRanges=root_targeted_ranges,
-            rootAssetTargetedPartitions=root_targeted_partitions,
+            rootTargetedPartitions=root_targeted,
         )
 
     def resolve_error(self, _graphene_info: ResolveInfo) -> Optional[GraphenePythonError]:

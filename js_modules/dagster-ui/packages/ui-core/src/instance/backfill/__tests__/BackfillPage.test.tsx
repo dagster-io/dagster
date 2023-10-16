@@ -8,6 +8,7 @@ import {AnalyticsContext} from '../../../app/analytics';
 import {
   BulkActionStatus,
   buildAssetBackfillData,
+  buildAssetBackfillTargetPartitions,
   buildAssetKey,
   buildAssetPartitionsStatusCounts,
   buildPartitionBackfill,
@@ -39,8 +40,11 @@ const mocks = [
       data: {
         partitionBackfillOrError: buildPartitionBackfill({
           assetBackfillData: buildAssetBackfillData({
-            rootAssetTargetedPartitions: ['1', '2', '3'],
-            rootAssetTargetedRanges: [buildPartitionKeyRange({start: '1', end: '2'})],
+            rootTargetedPartitions: {
+              __typename: 'AssetBackfillTargetPartitions',
+              partitionKeys: ['1', '2', '3'],
+              ranges: [buildPartitionKeyRange({start: '1', end: '2'})],
+            },
             assetBackfillStatuses: [
               {
                 ...buildAssetPartitionsStatusCounts({
@@ -168,7 +172,12 @@ describe('BackfillPage', () => {
 describe('PartitionSelection', () => {
   it('renders the targeted partitions when rootAssetTargetedPartitions is provided and length <= 3', async () => {
     const {getByText} = render(
-      <PartitionSelection numPartitions={3} rootAssetTargetedPartitions={['1', '2', '3']} />,
+      <PartitionSelection
+        numPartitions={3}
+        rootTargetedPartitions={buildAssetBackfillTargetPartitions({
+          partitionKeys: ['1', '2', '3'],
+        })}
+      />,
     );
 
     expect(getByText('1')).toBeInTheDocument();
@@ -178,7 +187,12 @@ describe('PartitionSelection', () => {
 
   it('renders the targeted partitions in a dialog when rootAssetTargetedPartitions is provided and length > 3', async () => {
     const {getByText} = render(
-      <PartitionSelection numPartitions={4} rootAssetTargetedPartitions={['1', '2', '3', '4']} />,
+      <PartitionSelection
+        numPartitions={4}
+        rootTargetedPartitions={buildAssetBackfillTargetPartitions({
+          partitionKeys: ['1', '2', '3', '4'],
+        })}
+      />,
     );
 
     await userEvent.click(getByText('4 partitions'));
@@ -193,7 +207,9 @@ describe('PartitionSelection', () => {
     const {getByText} = render(
       <PartitionSelection
         numPartitions={1}
-        rootAssetTargetedRanges={[buildPartitionKeyRange({start: '1', end: '2'})]}
+        rootTargetedPartitions={buildAssetBackfillTargetPartitions({
+          ranges: [buildPartitionKeyRange({start: '1', end: '2'})],
+        })}
       />,
     );
 
@@ -204,10 +220,12 @@ describe('PartitionSelection', () => {
     const {getByText} = render(
       <PartitionSelection
         numPartitions={2}
-        rootAssetTargetedRanges={[
-          buildPartitionKeyRange({start: '1', end: '2'}),
-          buildPartitionKeyRange({start: '3', end: '4'}),
-        ]}
+        rootTargetedPartitions={buildAssetBackfillTargetPartitions({
+          ranges: [
+            buildPartitionKeyRange({start: '1', end: '2'}),
+            buildPartitionKeyRange({start: '3', end: '4'}),
+          ],
+        })}
       />,
     );
 

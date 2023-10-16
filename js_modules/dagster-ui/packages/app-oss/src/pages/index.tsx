@@ -39,6 +39,8 @@ if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
     }
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    return originalError(...args);
+    const err = originalError(...args);
+    Object.setPrototypeOf(err, window.Error.prototype);
+    return err;
   };
 }
