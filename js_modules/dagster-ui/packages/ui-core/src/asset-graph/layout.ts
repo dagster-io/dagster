@@ -47,6 +47,12 @@ export const layoutAssetGraph = (
 ): AssetGraphLayout => {
   const g = new dagre.graphlib.Graph({compound: true});
 
+  const ranker = opts.tightTree
+    ? 'tight-tree'
+    : opts.longestPath
+    ? 'longest-path'
+    : 'network-simplex';
+
   g.setGraph(
     opts.horizontalDAGs
       ? {
@@ -56,7 +62,7 @@ export const layoutAssetGraph = (
           nodesep: -10,
           edgesep: 90,
           ranksep: 60,
-          ranker: opts.tightTree ? 'tight-tree' : 'network-simplex',
+          ranker,
         }
       : {
           rankdir: 'TB',
@@ -65,7 +71,7 @@ export const layoutAssetGraph = (
           nodesep: 40,
           edgesep: 10,
           ranksep: 10,
-          ranker: opts.tightTree ? 'tight-tree' : 'network-simplex',
+          ranker,
         },
   );
   g.setDefaultEdgeLabel(() => ({}));
