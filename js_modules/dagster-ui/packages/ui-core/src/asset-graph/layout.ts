@@ -39,7 +39,11 @@ const GROUP_NODE_PREFIX = 'group__';
 
 const MARGIN = 100;
 
-export type LayoutAssetGraphOptions = {horizontalDAGs: boolean; tightTree: boolean};
+export type LayoutAssetGraphOptions = {
+  horizontalDAGs: boolean;
+  tightTree: boolean;
+  longestPath: boolean;
+};
 
 export const layoutAssetGraph = (
   graphData: GraphData,
