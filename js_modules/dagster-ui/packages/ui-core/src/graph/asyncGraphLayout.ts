@@ -178,7 +178,10 @@ export function useAssetLayout(graphData: GraphData) {
   const [state, dispatch] = React.useReducer(reducer, initialState);
   const flags = useFeatureFlags();
 
-  const opts = {horizontalDAGs: flags.flagHorizontalDAGs, tightTree: flags.flagTightTreeDag};
+  const opts = React.useMemo(
+    () => ({horizontalDAGs: flags.flagHorizontalDAGs, tightTree: flags.flagTightTreeDag}),
+    [flags],
+  );
 
   const cacheKey = _assetLayoutCacheKey(graphData, opts);
   const nodeCount = Object.keys(graphData.nodes).length;
@@ -204,7 +207,7 @@ export function useAssetLayout(graphData: GraphData) {
     } else {
       void runAsyncLayout();
     }
-  }, [cacheKey, graphData, runAsync, flags, flagDisableDAGCache]);
+  }, [cacheKey, graphData, runAsync, flags, flagDisableDAGCache, opts]);
 
   return {
     loading: state.loading || !state.layout || state.cacheKey !== cacheKey,
