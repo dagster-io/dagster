@@ -87,13 +87,12 @@ function expansionDepthForClause(clause: string) {
 export function filterByQuery<T extends GraphQueryItem>(
   items: T[],
   query: string,
-  flagTightTreeDag: boolean,
+  flagTightTreeDag?: boolean,
 ) {
   if (query === '*') {
     return {all: items, applyingEmptyDefault: false, focus: []};
   }
   if (query === '') {
-    console.log(flagTightTreeDag);
     return {
       all: !flagTightTreeDag && items.length >= MAX_RENDERED_FOR_EMPTY_QUERY ? [] : items,
       applyingEmptyDefault: !flagTightTreeDag && items.length >= MAX_RENDERED_FOR_EMPTY_QUERY,
