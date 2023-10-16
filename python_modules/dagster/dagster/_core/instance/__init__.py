@@ -1461,7 +1461,9 @@ class DagsterInstance(DynamicPartitionsStore):
         check.opt_set_param(asset_selection, "asset_selection", of_type=AssetKey)
         check.opt_set_param(asset_check_selection, "asset_check_selection", of_type=AssetCheckKey)
 
-        if asset_selection is not None or asset_check_selection is not None:
+        # asset_selection gets coerced from [] to None, but asset_check_selection doesn't. We
+        # allow asset_check_selection to be [] when op_selection is set.
+        if asset_selection is not None or asset_check_selection:
             check.invariant(
                 op_selection is None,
                 "Cannot pass op_selection with either of asset_selection or asset_check_selection",

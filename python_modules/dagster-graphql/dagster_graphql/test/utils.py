@@ -201,6 +201,8 @@ def infer_pipeline_selector(
         {
             "pipelineName": pipeline_name,
             "solidSelection": op_selection,
+            "assetSelection": [],
+            "assetCheckSelection": [],
         }
     )
     return selector
