@@ -809,7 +809,7 @@ class DbtCliResource(ConfigurableResource):
                     dbt_macro_args = {"key": "value"}
                     dbt.cli(["run-operation", "my-macro", json.dumps(dbt_macro_args)]).wait()
         """
-        dagster_dbt_translator = check.inst_param(
+        dagster_dbt_translator = check.opt_inst_param(
             dagster_dbt_translator,
             "dagster_dbt_translator",
             DagsterDbtTranslator,

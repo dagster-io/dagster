@@ -646,10 +646,10 @@ def get_asset_deps(
     Dict[str, List[str]],
     Dict[str, Dict[str, Any]],
 ]:
-
     from .dagster_dbt_translator import (
         DagsterDbtTranslator,
     )
+
     dagster_dbt_translator = check.inst_param(
         dagster_dbt_translator,
         "dagster_dbt_translator",
