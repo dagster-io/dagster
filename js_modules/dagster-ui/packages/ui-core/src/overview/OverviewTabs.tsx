@@ -17,7 +17,6 @@ export const OverviewTabs = <TData extends Record<string, any>>(props: Props<TDa
   const {refreshState, tab} = props;
 
   const automaterialize = useAutomaterializeDaemonStatus();
-  const {flagEnableAMPTimeline} = useFeatureFlags();
 
   return (
     <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}>
@@ -26,30 +25,28 @@ export const OverviewTabs = <TData extends Record<string, any>>(props: Props<TDa
         <TabLink id="jobs" title="Jobs" to="/overview/jobs" />
         <TabLink id="schedules" title="Schedules" to="/overview/schedules" />
         <TabLink id="sensors" title="Sensors" to="/overview/sensors" />
-        {flagEnableAMPTimeline ? (
-          <TabLink
-            id="amp"
-            title={
-              <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-                <div>Auto-materialize</div>
-                {automaterialize.loading ? (
-                  <Spinner purpose="body-text" />
-                ) : (
-                  <div
-                    style={{
-                      width: '10px',
-                      height: '10px',
-                      borderRadius: '50%',
-                      backgroundColor:
-                        automaterialize.paused === false ? Colors.Blue200 : Colors.Gray200,
-                    }}
-                  />
-                )}
-              </Box>
-            }
-            to="/overview/amp"
-          />
-        ) : null}
+        <TabLink
+          id="amp"
+          title={
+            <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+              <div>Auto-materialize</div>
+              {automaterialize.loading ? (
+                <Spinner purpose="body-text" />
+              ) : (
+                <div
+                  style={{
+                    width: '10px',
+                    height: '10px',
+                    borderRadius: '50%',
+                    backgroundColor:
+                      automaterialize.paused === false ? Colors.Blue200 : Colors.Gray200,
+                  }}
+                />
+              )}
+            </Box>
+          }
+          to="/overview/automaterialize"
+        />
         <TabLink id="resources" title="Resources" to="/overview/resources" />
         <TabLink id="backfills" title="Backfills" to="/overview/backfills" />
       </Tabs>

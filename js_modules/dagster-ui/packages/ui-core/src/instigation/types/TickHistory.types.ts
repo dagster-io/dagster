@@ -8,6 +8,8 @@ export type TickHistoryQueryVariables = Types.Exact<{
   limit?: Types.InputMaybe<Types.Scalars['Int']>;
   cursor?: Types.InputMaybe<Types.Scalars['String']>;
   statuses?: Types.InputMaybe<Array<Types.InstigationTickStatus> | Types.InstigationTickStatus>;
+  beforeTimestamp?: Types.InputMaybe<Types.Scalars['Float']>;
+  afterTimestamp?: Types.InputMaybe<Types.Scalars['Float']>;
 }>;
 
 export type TickHistoryQuery = {

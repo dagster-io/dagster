@@ -13,7 +13,6 @@ import {OverviewSchedulesRoot} from './OverviewSchedulesRoot';
 import {OverviewSensorsRoot} from './OverviewSensorsRoot';
 
 export const OverviewRoot = () => {
-  const {flagEnableAMPTimeline} = useFeatureFlags();
   return (
     <Switch>
       <Route path="/overview/activity">
@@ -28,11 +27,9 @@ export const OverviewRoot = () => {
       <Route path="/overview/sensors">
         <OverviewSensorsRoot />
       </Route>
-      {flagEnableAMPTimeline ? (
-        <Route path="/overview/amp">
-          <AutomaterializationRoot />
-        </Route>
-      ) : null}
+      <Route path="/overview/automaterialize">
+        <AutomaterializationRoot />
+      </Route>
       <Route path="/overview/backfills/:backfillId">
         <BackfillPage />
       </Route>
