@@ -10,9 +10,15 @@ from dagster._core.definitions.data_version import (
     DATA_VERSION_TAG,
 )
 from dagster._core.definitions.events import AssetKey, AssetMaterialization
+from dagster._core.event_api import EventRecordsFilter
+from dagster._core.events import DagsterEventType
 from dagster._seven import json
 from dagster_pipes import PipesContext
-from dagster_webserver.external_assets import ReportAssetCheckEvalParam, ReportAssetMatParam
+from dagster_webserver.external_assets import (
+    ReportAssetCheckEvalParam,
+    ReportAssetMatParam,
+    ReportAssetObsParam,
+)
 from starlette.testclient import TestClient
 
 
@@ -261,3 +267,72 @@ def test_report_asset_check_evaluation_apis_consistent(
     KNOWN_DIFF = set()
 
     assert set(sample_payload.keys()).difference(set(params)) == KNOWN_DIFF
+
+
+def _assert_stored_obs(instance: DagsterInstance, asset_key: str):
+    records = instance.get_event_records(
+        EventRecordsFilter(
+            event_type=DagsterEventType.ASSET_OBSERVATION,
+            asset_key=AssetKey(asset_key),
+        ),
+        limit=1,
+    )
+    assert records
+    evt = records[0]
+    assert evt.event_log_entry.dagster_event
+    assert evt.event_log_entry.dagster_event.asset_observation_data
+    return evt.event_log_entry.dagster_event.asset_observation_data.asset_observation
+
+
+def test_report_asset_obs_endpoint(instance: DagsterInstance, test_client: TestClient):
+    my_asset_key = "my_asset"
+    response = test_client.post(f"/report_asset_observation/{my_asset_key}")
+    assert response.status_code == 200, response.json()
+    _assert_stored_obs(instance, my_asset_key)
+
+    response = test_client.post(f"/report_asset_observation/{my_asset_key}?data_version=fresh")
+    assert response.status_code == 200, response.json()
+    obs = _assert_stored_obs(instance, my_asset_key)
+    assert obs.data_version == "fresh"
+
+
+def test_report_asset_observation_apis_consistent(
+    instance: DagsterInstance, test_client: TestClient
+):
+    sample_payload = {
+        "asset_key": "sample_key",
+        "metadata": {"meta": "data"},
+        "data_version": "so_new",
+        "partition": "2023-09-23",
+        "description": "boo",
+    }
+
+    # sample has entry for all supported params (banking on usage of enum)
+    assert set(sample_payload.keys()) == set(
+        {v for k, v in vars(ReportAssetObsParam).items() if not k.startswith("__")}
+    )
+
+    response = test_client.post("/report_asset_observation/", json=sample_payload)
+    assert response.status_code == 200, response.json()
+    obs = _assert_stored_obs(instance, "sample_key")
+
+    for k, v in sample_payload.items():
+        if k == "asset_key":
+            assert obs.asset_key == AssetKey(v)
+        elif k == "metadata":
+            assert obs.metadata.keys() == v.keys()
+        elif k == "data_version":
+            tags = obs.tags
+            assert tags
+            assert tags[DATA_VERSION_TAG] == v
+            assert tags[DATA_VERSION_IS_USER_PROVIDED_TAG]
+        elif k == "partition":
+            assert obs.partition == v
+        elif k == "description":
+            assert obs.description == v
+        else:
+            assert (
+                False
+            ), "need to add validation that sample payload content was written successfully"
+
+    # expect test to cover PipesContext.report_asset_observation once added

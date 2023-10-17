@@ -1,6 +1,7 @@
 from typing import Any
 
 import dagster._check as check
+from dagster import AssetObservation
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.data_version import (
@@ -217,6 +218,86 @@ async def handle_report_asset_check_request(
     return JSONResponse({})
 
 
+async def handle_report_asset_observation_request(
+    context: BaseWorkspaceRequestContext,
+    request: Request,
+) -> JSONResponse:
+    # Record a runless asset observation event.
+    # The asset key is passed as url path with / delimiting parts or as a query param.
+    # Properties can be passed as json post body or query params, with that order of precedence.
+
+    body_content_type = request.headers.get("content-type")
+    if body_content_type is None:
+        json_body = {}
+    elif body_content_type == "application/json":
+        json_body = await request.json()
+    else:
+        return JSONResponse(
+            {
+                "error": (
+                    f"Unhandled content type {body_content_type}, expect no body or"
+                    " application/json"
+                ),
+            },
+            status_code=400,
+        )
+
+    asset_key = _asset_key_from_request(ReportAssetObsParam.asset_key, request, json_body)
+    if asset_key is None:
+        return JSONResponse(
+            {
+                "error": (
+                    "Empty asset key, must provide asset key as url path after"
+                    " /report_asset_materialization/ or query param asset_key."
+                ),
+            },
+            status_code=400,
+        )
+
+    metadata = {}
+    if ReportAssetObsParam.metadata in json_body:
+        metadata = json_body[ReportAssetObsParam.metadata]
+    elif ReportAssetObsParam.metadata in request.query_params:
+        try:
+            metadata = json.loads(request.query_params[ReportAssetObsParam.metadata])
+        except Exception as exc:
+            return JSONResponse(
+                {
+                    "error": f"Error parsing metadata json: {exc}",
+                },
+                status_code=400,
+            )
+
+    partition = _value_from_body_or_params(ReportAssetObsParam.partition, request, json_body)
+    description = _value_from_body_or_params(ReportAssetObsParam.description, request, json_body)
+
+    tags = context.get_reporting_user_tags()
+    data_version = _value_from_body_or_params(ReportAssetObsParam.data_version, request, json_body)
+    if data_version is not None:
+        tags[DATA_VERSION_TAG] = data_version
+        tags[DATA_VERSION_IS_USER_PROVIDED_TAG] = "true"
+
+    try:
+        observation = AssetObservation(
+            asset_key=asset_key,
+            partition=partition,
+            metadata=metadata,
+            description=description,
+            tags=tags,
+        )
+    except Exception as exc:
+        return JSONResponse(
+            {
+                "error": f"Error constructing AssetMaterialization: {exc}",
+            },
+            status_code=400,
+        )
+
+    context.instance.report_runless_asset_event(observation)
+
+    return JSONResponse({})
+
+
 # note: Enum not used to avoid value type problems X(str, Enum) doesn't work as partition conflicts with keyword
 class ReportAssetMatParam:
     """Class to collect all supported args by report_asset_materialization endpoint
@@ -231,7 +312,7 @@ class ReportAssetMatParam:
 
 
 class ReportAssetCheckEvalParam:
-    """Class to collect all supported args by report_asset_check_evaluation endpoint
+    """Class to collect all supported args by report_asset_check endpoint
     to ensure consistency with related APIs.
     """
 
@@ -240,3 +321,15 @@ class ReportAssetCheckEvalParam:
     metadata = "metadata"
     severity = "severity"
     passed = "passed"
+
+
+class ReportAssetObsParam:
+    """Class to collect all supported args by report_asset_observation endpoint
+    to ensure consistency with related APIs.
+    """
+
+    asset_key = "asset_key"
+    data_version = "data_version"
+    metadata = "metadata"
+    description = "description"
+    partition = "partition"
