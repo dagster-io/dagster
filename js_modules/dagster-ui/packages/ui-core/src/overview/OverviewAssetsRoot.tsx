@@ -454,6 +454,7 @@ const RowGrid = styled(Box)`
   grid-template-columns: ${TEMPLATE_COLUMNS};
   height: 100%;
   > * {
+    vertical-align: middle;
   }
 `;
 
