@@ -9,6 +9,7 @@ import {
   Table,
 } from '@dagster-io/ui-components';
 import React from 'react';
+import styled from 'styled-components';
 
 import {useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {Timestamp} from '../../app/time/Timestamp';
@@ -149,13 +150,13 @@ export const AutomaterializationEvaluationHistoryTable = ({
           />
         </Box>
       </Box>
-      <Table>
+      <TableWrapper>
         <thead>
           <tr>
-            <th>Timestamp</th>
-            <th>Status</th>
-            <th>Duration</th>
-            <th>Result</th>
+            <th style={{width: 120}}>Timestamp</th>
+            <th style={{width: 90}}>Status</th>
+            <th style={{width: 90}}>Duration</th>
+            <th style={{width: 180}}>Result</th>
           </tr>
         </thead>
         <tbody>
@@ -194,7 +195,7 @@ export const AutomaterializationEvaluationHistoryTable = ({
             </tr>
           ))}
         </tbody>
-      </Table>
+      </TableWrapper>
       <div style={{paddingBottom: '16px'}}>
         <CursorHistoryControls {...paginationProps} />
       </div>
@@ -234,3 +235,10 @@ function StatusCheckbox({
     />
   );
 }
+
+const TableWrapper = styled(Table)`
+  th,
+  td {
+    vertical-align: middle !important;
+  }
+`;

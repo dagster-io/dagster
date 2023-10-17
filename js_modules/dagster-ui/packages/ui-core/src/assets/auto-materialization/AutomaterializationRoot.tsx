@@ -134,7 +134,21 @@ export const AutomaterializationRoot = () => {
         <Alert
           intent="info"
           title="[Experimental] Dagster can automatically materialize assets when criteria are met."
-          description="Auto-materialization enables a declarative approach to asset scheduling – instead of defining imperative workflows to materialize your assets, you just describe the conditions under which they should be materialized. Learn more about auto-materialization here."
+          description={
+            <>
+              Auto-materialization enables a declarative approach to asset scheduling – instead of
+              defining imperative workflows to materialize your assets, you just describe the
+              conditions under which they should be materialized.{' '}
+              <a
+                href="https://docs.dagster.io/concepts/assets/asset-auto-execution"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Learn more about auto-materialization here
+              </a>
+              .
+            </>
+          }
         />
       </Box>
       <Table>
