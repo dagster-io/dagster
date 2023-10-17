@@ -122,7 +122,7 @@ setup(
             "pytest-mock==3.3.1",
             "pytest-rerunfailures==10.0",
             "pytest-runner==5.2",
-            "pytest-xdist==2.1.0",
+            "pytest-xdist==3.3.1",
             "pytest>=7.0.1",
             "responses<=0.23.1",  # https://github.com/getsentry/responses/issues/654
             "syrupy<4",  # 3.7 compatible,
