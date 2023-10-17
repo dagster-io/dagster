@@ -704,7 +704,6 @@ def _store_output(
     # don't store asset check outputs or asset observation outputs
     step_output = step_context.step.step_output_named(step_output_handle.output_name)
     asset_key = step_output.properties.asset_key
-    print("output_manager", type(output_manager))
     if step_output.properties.asset_check_key or (
         step_context.output_observes_source_asset(step_output_handle.output_name)
     ):
@@ -720,7 +719,6 @@ def _store_output(
     elif not inspect.isgeneratorfunction(output_manager.handle_output):
 
         def _gen_fn():
-            print("output_manager", type(output_manager))
             gen_output = output_manager.handle_output(output_context, output.value)
             for event in output_context.consume_events():
                 yield event

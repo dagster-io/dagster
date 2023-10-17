@@ -495,7 +495,6 @@ class ConfigurableResourceFactory(
                 for attr_name, resource in resources_to_update.items()
                 if attr_name not in partial_resources_to_update
             }
-            print("RESOURCES_TO_UPDATE", resources_to_update)
 
             to_update = {**resources_to_update, **partial_resources_to_update}
             yield self._with_updated_values(to_update)
