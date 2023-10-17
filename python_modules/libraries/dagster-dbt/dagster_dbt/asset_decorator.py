@@ -10,7 +10,6 @@ from typing import (
     Tuple,
 )
 
-import dagster._check as check
 from dagster import (
     AssetCheckSpec,
     AssetKey,
@@ -30,7 +29,7 @@ from .asset_utils import (
     default_code_version_fn,
     get_deps,
 )
-from .dagster_dbt_translator import DagsterDbtTranslator, DbtManifestWrapper
+from .dagster_dbt_translator import DagsterDbtTranslator, DbtManifestWrapper, validate_translator
 from .dbt_manifest import DbtManifestParam, validate_manifest
 from .utils import (
     ASSET_RESOURCE_TYPES,
@@ -249,15 +248,7 @@ def dbt_assets(
                 yield from dbt.cli(dbt_build_args, context=context).stream()
 
     """
-    check.inst_param(
-        dagster_dbt_translator,
-        "dagster_dbt_translator",
-        DagsterDbtTranslator,
-        additional_message=(
-            "Ensure that the argument is an instantiated class that subclasses"
-            " DagsterDbtTranslator."
-        ),
-    )
+    dagster_dbt_translator = validate_translator(dagster_dbt_translator)
     manifest = validate_manifest(manifest)
 
     unique_ids = select_unique_ids_from_manifest(

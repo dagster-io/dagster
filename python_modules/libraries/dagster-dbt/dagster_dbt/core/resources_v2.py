@@ -27,7 +27,6 @@ from dagster import (
     AssetsDefinition,
     ConfigurableResource,
     Output,
-    _check as check,
     get_dagster_logger,
 )
 from dagster._annotations import public
@@ -44,8 +43,15 @@ from ..asset_utils import (
     get_manifest_and_translator_from_dbt_assets,
     output_name_fn,
 )
-from ..dagster_dbt_translator import DagsterDbtTranslator
-from ..dbt_manifest import DbtManifestParam, validate_manifest
+from ..dagster_dbt_translator import (
+    DagsterDbtTranslator,
+    validate_translator,
+    validate_translator_opt,
+)
+from ..dbt_manifest import (
+    DbtManifestParam,
+    validate_manifest,
+)
 from ..errors import DagsterDbtCliRuntimeError
 from ..utils import ASSET_RESOURCE_TYPES, get_dbt_resource_props_by_dbt_unique_id_from_manifest
 
@@ -106,16 +112,7 @@ class DbtCliEventMessage:
                 - AssetObservation for dbt test results that are not enabled as asset checks.
                 - AssetCheckResult for dbt test results that are enabled as asset checks.
         """
-        manifest = check.inst_param(manifest, "manifest", (Mapping[str, Any], str, Path))
-        dagster_dbt_translator = check.inst_param(
-            dagster_dbt_translator,
-            "dagster_dbt_translator",
-            DagsterDbtTranslator,
-            additional_message=(
-                "Ensure that the argument is an instantiated class that subclasses"
-                " DagsterDbtTranslator."
-            ),
-        )
+        dagster_dbt_translator = validate_translator(dagster_dbt_translator)
 
         if self.raw_event["info"]["level"] == "debug":
             return
@@ -809,15 +806,7 @@ class DbtCliResource(ConfigurableResource):
                     dbt_macro_args = {"key": "value"}
                     dbt.cli(["run-operation", "my-macro", json.dumps(dbt_macro_args)]).wait()
         """
-        dagster_dbt_translator = check.opt_inst_param(
-            dagster_dbt_translator,
-            "dagster_dbt_translator",
-            DagsterDbtTranslator,
-            additional_message=(
-                "Ensure that the argument is an instantiated class that subclasses"
-                " DagsterDbtTranslator."
-            ),
-        )
+        dagster_dbt_translator = validate_translator_opt(dagster_dbt_translator)
 
         target_path = target_path or self._get_unique_target_path(context=context)
         env = {

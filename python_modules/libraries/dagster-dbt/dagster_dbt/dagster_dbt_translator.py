@@ -1,7 +1,12 @@
 from dataclasses import dataclass
 from typing import Any, Mapping, Optional
 
-from dagster import AssetKey, AutoMaterializePolicy, FreshnessPolicy
+from dagster import (
+    AssetKey,
+    AutoMaterializePolicy,
+    FreshnessPolicy,
+    _check as check,
+)
 from dagster._annotations import public
 from dagster._core.definitions.events import (
     CoercibleToAssetKeyPrefix,
@@ -368,3 +373,29 @@ class KeyPrefixDagsterDbtTranslator(DagsterDbtTranslator):
 @dataclass
 class DbtManifestWrapper:
     manifest: Mapping[str, Any]
+
+
+def validate_translator(dagster_dbt_translator: DagsterDbtTranslator) -> DagsterDbtTranslator:
+    return check.inst_param(
+        dagster_dbt_translator,
+        "dagster_dbt_translator",
+        DagsterDbtTranslator,
+        additional_message=(
+            "Ensure that the argument is an instantiated class that subclasses"
+            " DagsterDbtTranslator."
+        ),
+    )
+
+
+def validate_translator_opt(
+    dagster_dbt_translator: Optional[DagsterDbtTranslator],
+) -> Optional[DagsterDbtTranslator]:
+    return check.opt_inst_param(
+        dagster_dbt_translator,
+        "dagster_dbt_translator",
+        DagsterDbtTranslator,
+        additional_message=(
+            "Ensure that the argument is an instantiated class that subclasses"
+            " DagsterDbtTranslator."
+        ),
+    )

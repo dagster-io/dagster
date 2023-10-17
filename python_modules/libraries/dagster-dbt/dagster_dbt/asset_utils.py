@@ -646,19 +646,9 @@ def get_asset_deps(
     Dict[str, List[str]],
     Dict[str, Dict[str, Any]],
 ]:
-    from .dagster_dbt_translator import (
-        DagsterDbtTranslator,
-    )
+    from .dagster_dbt_translator import validate_translator
 
-    dagster_dbt_translator = check.inst_param(
-        dagster_dbt_translator,
-        "dagster_dbt_translator",
-        DagsterDbtTranslator,
-        additional_message=(
-            "Ensure that the argument is an instantiated class that subclasses"
-            " DagsterDbtTranslator."
-        ),
-    )
+    dagster_dbt_translator = validate_translator(dagster_dbt_translator)
 
     from .dagster_dbt_translator import DbtManifestWrapper
 
