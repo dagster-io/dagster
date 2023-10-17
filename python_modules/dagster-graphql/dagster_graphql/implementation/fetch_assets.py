@@ -381,8 +381,9 @@ def get_partition_subsets(
             else partitions_def.empty_subset()
         )
 
+        partition_entries = instance.get_asset_partition_entries(asset_key)
         failed_subset, in_progress_subset, _ = build_failed_and_in_progress_partition_subset(
-            instance, asset_key, partitions_def, dynamic_partitions_loader
+            instance, partition_entries, partitions_def, dynamic_partitions_loader
         )
 
         return materialized_subset, failed_subset, in_progress_subset
