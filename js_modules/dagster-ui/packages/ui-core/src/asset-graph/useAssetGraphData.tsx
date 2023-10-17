@@ -4,6 +4,7 @@ import keyBy from 'lodash/keyBy';
 import reject from 'lodash/reject';
 import React from 'react';
 
+import {useFeatureFlags} from '../app/Flags';
 import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
 import {AssetKey} from '../assets/types';
 import {asyncGetFullAssetLayoutIndexDB} from '../graph/asyncGraphLayout';
@@ -109,13 +110,15 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
   const [assetGraphDataMaybeCached, setAssetGraphDataMaybeCached] =
     React.useState<GraphData | null>(null);
 
+  const {flagDisableDAGCache} = useFeatureFlags();
+
   React.useLayoutEffect(() => {
     setAssetGraphDataMaybeCached(null);
     setIsCached(false);
     setIsCalculating(true);
     (async () => {
       let fullAssetGraphData = null;
-      if (applyingEmptyDefault && repoFilteredNodes) {
+      if (applyingEmptyDefault && repoFilteredNodes && !flagDisableDAGCache) {
         // build the graph data anyways to check if it's cached
         const {all} = filterByQuery(graphQueryItems, '*');
         fullAssetGraphData = buildGraphData(all.map((n) => n.node));
@@ -142,6 +145,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     options.hideEdgesToNodesOutsideQuery,
     repoFilteredNodes,
     assetGraphData,
+    flagDisableDAGCache,
   ]);
 
   return {
