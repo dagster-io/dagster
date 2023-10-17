@@ -7,6 +7,7 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
+import {InstigationTickStatus} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
@@ -31,6 +32,19 @@ export const SensorRoot: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) 
     ...repoAddressToSelector(repoAddress),
     sensorName,
   };
+
+  const [statuses, setStatuses] = React.useState<undefined | InstigationTickStatus[]>(undefined);
+  const [timeRange, setTimerange] = React.useState<undefined | [number, number]>(undefined);
+  const variables = React.useMemo(() => {
+    if (timeRange || statuses) {
+      return {
+        afterTimestamp: timeRange?.[0],
+        beforeTimestamp: timeRange?.[1],
+        statuses,
+      };
+    }
+    return {};
+  }, [statuses, timeRange]);
 
   const [selectedTab, setSelectedTab] = useQueryPersistedState<'evaluations' | 'runs'>(
     React.useMemo(
@@ -96,10 +110,20 @@ export const SensorRoot: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) 
                 padding={{vertical: 16, horizontal: 24}}
               />
             ) : null}
-            <TickHistoryTimeline repoAddress={repoAddress} name={sensorOrError.name} />
+            <TickHistoryTimeline
+              repoAddress={repoAddress}
+              name={sensorOrError.name}
+              {...variables}
+            />
             <Box margin={{top: 32}} border="top">
               {selectedTab === 'evaluations' ? (
-                <TicksTable tabs={tabs} repoAddress={repoAddress} name={sensorOrError.name} />
+                <TicksTable
+                  tabs={tabs}
+                  repoAddress={repoAddress}
+                  name={sensorOrError.name}
+                  setParentStatuses={setStatuses}
+                  setTimerange={setTimerange}
+                />
               ) : (
                 <SensorPreviousRuns repoAddress={repoAddress} sensor={sensorOrError} tabs={tabs} />
               )}

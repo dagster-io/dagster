@@ -26,7 +26,7 @@ import {showSharedToaster} from '../app/DomUtils';
 import {useFeatureFlags} from '../app/Flags';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {ONE_MONTH, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useCopyToClipboard} from '../app/browser';
 import {
   DynamicPartitionsRequestType,
@@ -80,10 +80,14 @@ export const TicksTable = ({
   name,
   repoAddress,
   tabs,
+  setTimerange,
+  setParentStatuses,
 }: {
   name: string;
   repoAddress: RepoAddress;
   tabs?: React.ReactElement;
+  setTimerange?: (range?: [number, number]) => void;
+  setParentStatuses?: (statuses?: InstigationTickStatus[]) => void;
 }) => {
   const [shownStates, setShownStates] = useQueryPersistedState<ShownStatusState>({
     encode: (states) => {
@@ -106,9 +110,14 @@ export const TicksTable = ({
   });
   const {flagSensorScheduleLogging} = useFeatureFlags();
   const instigationSelector = {...repoAddressToSelector(repoAddress), name};
-  const statuses = Object.keys(shownStates)
-    .filter((status) => shownStates[status as keyof typeof shownStates])
-    .map((status) => status as InstigationTickStatus);
+  const statuses = React.useMemo(
+    () =>
+      Object.keys(shownStates)
+        .filter((status) => shownStates[status as keyof typeof shownStates])
+        .map((status) => status as InstigationTickStatus),
+    [shownStates],
+  );
+
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
     TickHistoryQuery,
     TickHistoryQueryVariables
@@ -132,11 +141,52 @@ export const TicksTable = ({
     query: JOB_TICK_HISTORY_QUERY,
     pageSize: PAGE_SIZE,
   });
+
+  const state = queryResult?.data?.instigationStateOrError;
+  const ticks = React.useMemo(
+    () => (state?.__typename === 'InstigationState' ? state.ticks : []),
+    [state],
+  );
+
+  React.useEffect(() => {
+    if (paginationProps.hasPrevCursor) {
+      if (ticks && ticks.length) {
+        const start = ticks[ticks.length - 1]?.timestamp;
+        const end = ticks[0]?.endTimestamp;
+        if (start && end) {
+          setTimerange?.([start, end]);
+        }
+      }
+    } else {
+      setTimerange?.(undefined);
+    }
+  }, [paginationProps.hasPrevCursor, ticks, setTimerange]);
+
+  React.useEffect(() => {
+    if (paginationProps.hasPrevCursor) {
+      setParentStatuses?.(Array.from(statuses));
+    } else {
+      setParentStatuses?.(undefined);
+    }
+  }, [paginationProps.hasPrevCursor, setParentStatuses, statuses]);
+
+  React.useEffect(() => {
+    if (paginationProps.hasPrevCursor && !ticks.length && !queryResult.loading) {
+      paginationProps.reset();
+    }
+    // paginationProps.reset isn't memoized
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ticks, queryResult.loading, paginationProps.hasPrevCursor]);
+
   const [logTick, setLogTick] = React.useState<InstigationTick>();
   const {data} = queryResult;
 
   if (!data) {
-    return null;
+    return (
+      <Box padding={{vertical: 48}}>
+        <Spinner purpose="page" />
+      </Box>
+    );
   }
 
   if (data.instigationStateOrError.__typename === 'PythonError') {
@@ -151,7 +201,7 @@ export const TicksTable = ({
     );
   }
 
-  const {ticks, instigationType} = data.instigationStateOrError;
+  const {instigationType} = data.instigationStateOrError;
 
   if (!ticks.length && statuses.length === Object.keys(DEFAULT_SHOWN_STATUS_STATE).length) {
     return null;
@@ -230,10 +280,16 @@ export const TickHistoryTimeline = ({
   name,
   repoAddress,
   onHighlightRunIds,
+  beforeTimestamp,
+  afterTimestamp,
+  statuses,
 }: {
   name: string;
   repoAddress: RepoAddress;
   onHighlightRunIds?: (runIds: string[]) => void;
+  beforeTimestamp?: number;
+  afterTimestamp?: number;
+  statuses?: InstigationTickStatus[];
 }) => {
   const [selectedTime, setSelectedTime] = useQueryPersistedState<number | undefined>({
     encode: (timestamp) => ({time: timestamp}),
@@ -246,12 +302,22 @@ export const TickHistoryTimeline = ({
   const queryResult = useQuery<TickHistoryQuery, TickHistoryQueryVariables>(
     JOB_TICK_HISTORY_QUERY,
     {
-      variables: {instigationSelector, limit: 15},
+      variables: {
+        instigationSelector,
+        beforeTimestamp,
+        afterTimestamp,
+        statuses,
+        limit: beforeTimestamp ? undefined : 15,
+      },
       notifyOnNetworkStatusChange: true,
     },
   );
 
-  useQueryRefreshAtInterval(queryResult, pollingPaused ? ONE_MONTH : 1000);
+  useQueryRefreshAtInterval(
+    queryResult,
+    1000,
+    !(pollingPaused || (beforeTimestamp && afterTimestamp)),
+  );
   const {data, error} = queryResult;
 
   if (!data || error) {
@@ -290,7 +356,6 @@ export const TickHistoryTimeline = ({
       pausePolling(true);
     }
   };
-
   return (
     <>
       <TickDetailsDialog
@@ -303,7 +368,14 @@ export const TickHistoryTimeline = ({
         <Subheading>Recent ticks</Subheading>
       </Box>
       <Box border="top">
-        <LiveTickTimeline ticks={ticks} onHoverTick={onTickHover} onSelectTick={onTickClick} />
+        <LiveTickTimeline
+          ticks={ticks}
+          onHoverTick={onTickHover}
+          onSelectTick={onTickClick}
+          exactRange={
+            beforeTimestamp && afterTimestamp ? [afterTimestamp, beforeTimestamp] : undefined
+          }
+        />
       </Box>
     </>
   );
@@ -437,12 +509,21 @@ const JOB_TICK_HISTORY_QUERY = gql`
     $limit: Int
     $cursor: String
     $statuses: [InstigationTickStatus!]
+    $beforeTimestamp: Float
+    $afterTimestamp: Float
   ) {
     instigationStateOrError(instigationSelector: $instigationSelector) {
       ... on InstigationState {
         id
         instigationType
-        ticks(dayRange: $dayRange, limit: $limit, cursor: $cursor, statuses: $statuses) {
+        ticks(
+          dayRange: $dayRange
+          limit: $limit
+          cursor: $cursor
+          statuses: $statuses
+          beforeTimestamp: $beforeTimestamp
+          afterTimestamp: $afterTimestamp
+        ) {
           id
           ...HistoryTick
         }

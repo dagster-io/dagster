@@ -11,6 +11,7 @@ import {AssetDaemonTickFragment} from '../assets/auto-materialization/types/Asse
 import {InstigationTickStatus} from '../graphql/types';
 
 import {HistoryTickFragment} from './types/InstigationUtils.types';
+import {isOldTickWithoutEndtimestamp} from './util';
 
 dayjs.extend(relativeTime);
 
@@ -47,6 +48,7 @@ export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTick
   ticks,
   onHoverTick,
   onSelectTick,
+  exactRange,
   timeRange = MINUTE * 5, // 5 minutes,
   tickGrid = MINUTE, // 1 minute
   timeAfter = MINUTE, // 1 minute
@@ -54,6 +56,7 @@ export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTick
   ticks: T[];
   onHoverTick: (InstigationTick?: T) => void;
   onSelectTick: (InstigationTick: T) => void;
+  exactRange?: [number, number];
   timeRange?: number;
   tickGrid?: number;
   timeAfter?: number;
@@ -62,16 +65,18 @@ export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTick
   const [isPaused, setPaused] = React.useState<boolean>(false);
 
   React.useEffect(() => {
-    const interval = setInterval(() => {
-      if (!isPaused) {
+    if (!isPaused && !exactRange) {
+      const interval = setInterval(() => {
         setNow(Date.now());
-      }
-    }, REFRESH_INTERVAL);
-    return () => clearInterval(interval);
-  });
+      }, REFRESH_INTERVAL);
+      return () => clearInterval(interval);
+    }
+    return () => {};
+  }, [exactRange, isPaused]);
 
-  const minX = now - timeRange;
-  const maxX = now + timeAfter;
+  const maxX = exactRange?.[1] ? exactRange[1] * 1000 : now + timeAfter;
+  const minX = exactRange?.[0] ? Math.min(exactRange[0] * 1000, maxX - timeRange) : now - timeRange;
+
   const fullRange = maxX - minX;
 
   const {viewport, containerProps} = useViewport();
@@ -84,15 +89,10 @@ export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTick
   const ticksToDisplay = React.useMemo(() => {
     return ticksReversed.map((tick) => {
       const startX = getX(1000 * tick.timestamp!, viewport.width, minX, fullRange);
-      const endX =
-        'endTimestamp' in tick
-          ? getX(
-              tick.endTimestamp ? tick.endTimestamp * 1000 : now,
-              viewport.width,
-              minX,
-              fullRange,
-            )
-          : 0;
+      const endTimestamp = isOldTickWithoutEndtimestamp(tick)
+        ? tick.timestamp
+        : tick.endTimestamp ?? now;
+      const endX = 'endTimestamp' in tick ? getX(endTimestamp, viewport.width, minX, fullRange) : 0;
       return {
         ...tick,
         width: Math.max(endX - startX, MIN_WIDTH),
@@ -102,81 +102,84 @@ export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTick
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [minX, now, ticksReversed, fullRange, viewport.width]);
 
-  const startTickGridX = Math.ceil(minX / tickGrid) * tickGrid;
+  const tickGridDelta = Math.max((maxX - minX) / 25, tickGrid);
+  const startTickGridX = Math.ceil(minX / tickGridDelta) * tickGridDelta;
   const gridTicks = React.useMemo(() => {
     const ticks = [];
-    for (let i = startTickGridX; i <= maxX; i += 60000) {
+    for (let i = startTickGridX; i <= maxX; i += tickGridDelta) {
       ticks.push({
         time: i,
         x: getX(i, viewport.width, minX, fullRange),
-        showLabel: i % tickGrid === 0,
+        showLabel: i % tickGridDelta === 0,
       });
     }
     return ticks;
-  }, [startTickGridX, maxX, tickGrid, viewport.width, minX, fullRange]);
+  }, [startTickGridX, maxX, tickGridDelta, viewport.width, minX, fullRange]);
 
   const {
     timezone: [timezone],
   } = React.useContext(TimeContext);
 
   return (
-    <div {...containerProps}>
-      <TicksWrapper>
-        {gridTicks.map((tick) => (
-          <GridTick
-            key={tick.time}
-            style={{
-              transform: `translateX(${tick.x}px)`,
-            }}
-          >
-            <GridTickLine />
-            {tick.showLabel ? (
-              <GridTickTime>
-                <Caption>{timestampFormat(timezone).format(new Date(tick.time))}</Caption>
-              </GridTickTime>
-            ) : null}
-          </GridTick>
-        ))}
-        {ticksToDisplay.map((tick) => {
-          const isAssetDaemonTick = 'requestedAssetMaterializationCount' in tick;
-          const count =
-            (isAssetDaemonTick ? tick.requestedAssetMaterializationCount : tick.runIds?.length) ??
-            0;
-          return (
-            <Tick
-              key={tick.id}
+    <div style={{marginRight: '8px'}}>
+      <div {...containerProps}>
+        <TicksWrapper>
+          {gridTicks.map((tick) => (
+            <GridTick
+              key={tick.time}
               style={{
-                transform: `translateX(${tick.startX}px)`,
-                width: `${tick.width}px`,
-              }}
-              status={tick.status}
-              onMouseEnter={() => {
-                onHoverTick(tick);
-                setPaused(true);
-              }}
-              onMouseLeave={() => {
-                onHoverTick();
-                setPaused(false);
-              }}
-              onClick={() => {
-                onSelectTick(tick);
+                transform: `translateX(${tick.x}px)`,
               }}
             >
-              <Tooltip content={<TickTooltip tick={tick} />}>
-                <div style={{width: tick.width + 'px', height: '80px'}}>
-                  {count > 0 ? count : null}
-                </div>
-              </Tooltip>
-            </Tick>
-          );
-        })}
-        <NowIndicator
-          style={{
-            transform: `translateX(${getX(now, viewport.width, minX, fullRange)}px)`,
-          }}
-        />
-      </TicksWrapper>
-      <TimeAxisWrapper></TimeAxisWrapper>
+              <GridTickLine />
+              {tick.showLabel ? (
+                <GridTickTime>
+                  <Caption>{timestampFormat(timezone).format(new Date(tick.time))}</Caption>
+                </GridTickTime>
+              ) : null}
+            </GridTick>
+          ))}
+          {ticksToDisplay.map((tick) => {
+            const isAssetDaemonTick = 'requestedAssetMaterializationCount' in tick;
+            const count =
+              (isAssetDaemonTick ? tick.requestedAssetMaterializationCount : tick.runIds?.length) ??
+              0;
+            return (
+              <Tick
+                key={tick.id}
+                style={{
+                  transform: `translateX(${tick.startX}px)`,
+                  width: `${tick.width}px`,
+                }}
+                status={tick.status}
+                onMouseEnter={() => {
+                  onHoverTick(tick);
+                  setPaused(true);
+                }}
+                onMouseLeave={() => {
+                  onHoverTick();
+                  setPaused(false);
+                }}
+                onClick={() => {
+                  onSelectTick(tick);
+                }}
+              >
+                <Tooltip content={<TickTooltip tick={tick} />}>
+                  <div style={{width: tick.width + 'px', height: '80px'}}>
+                    {count > 0 ? count : null}
+                  </div>
+                </Tooltip>
+              </Tick>
+            );
+          })}
+          <NowIndicator
+            style={{
+              transform: `translateX(${getX(now, viewport.width, minX, fullRange)}px)`,
+            }}
+          />
+        </TicksWrapper>
+        <TimeAxisWrapper></TimeAxisWrapper>
+      </div>
     </div>
   );
 };
