@@ -40,13 +40,11 @@ from dagster._core.definitions.decorators.asset_decorator import (
 from dagster._utils.merger import merge_dicts
 from dagster._utils.warnings import deprecation_warning
 
-from .dagster_dbt_translator import (
-    DagsterDbtTranslator,
-)
 from .utils import input_name_fn, output_name_fn
 
 if TYPE_CHECKING:
     from .dagster_dbt_translator import (
+        DagsterDbtTranslator,
         DagsterDbtTranslatorSettings,
         DbtManifestWrapper,
     )
@@ -648,6 +646,10 @@ def get_asset_deps(
     Dict[str, List[str]],
     Dict[str, Dict[str, Any]],
 ]:
+
+    from .dagster_dbt_translator import (
+        DagsterDbtTranslator,
+    )
     dagster_dbt_translator = check.inst_param(
         dagster_dbt_translator,
         "dagster_dbt_translator",
