@@ -432,11 +432,16 @@ def resolve_checked_op_fn_inputs(
     undeclared_inputs = explicit_names - used_inputs
     if not has_kwargs and undeclared_inputs:
         undeclared_inputs_printed = ", '".join(undeclared_inputs)
+        nothing_exemption = (
+            ", except for Ins that have the Nothing dagster_type"
+            if decorator_name not in {"@graph", "@graph_asset"}
+            else ""
+        )
         raise DagsterInvalidDefinitionError(
             f"{decorator_name} '{fn_name}' decorated function does not have argument(s)"
             f" '{undeclared_inputs_printed}'. {decorator_name}-decorated functions should have a"
-            " keyword argument for each of their Ins, except for Ins that have the Nothing"
-            " dagster_type. Alternatively, they can accept **kwargs."
+            f" keyword argument for each of their Ins{nothing_exemption}. Alternatively, they can"
+            " accept **kwargs."
         )
 
     inferred_props = {

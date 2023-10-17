@@ -9,6 +9,7 @@ import {
   Table,
 } from '@dagster-io/ui-components';
 import React from 'react';
+import styled from 'styled-components';
 
 import {useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {Timestamp} from '../../app/time/Timestamp';
@@ -30,9 +31,13 @@ const PAGE_SIZE = 15;
 export const AutomaterializationEvaluationHistoryTable = ({
   setSelectedTick,
   setTableView,
+  setTimerange,
+  setParentStatuses,
 }: {
   setSelectedTick: (tick: AssetDaemonTickFragment | null) => void;
   setTableView: (view: 'evaluations' | 'runs') => void;
+  setTimerange: (range?: [number, number]) => void;
+  setParentStatuses: (statuses?: InstigationTickStatus[]) => void;
 }) => {
   const [statuses, setStatuses] = useQueryPersistedState<Set<InstigationTickStatus>>({
     queryKey: 'statuses',
@@ -44,7 +49,6 @@ export const AutomaterializationEvaluationHistoryTable = ({
               InstigationTickStatus.STARTED,
               InstigationTickStatus.SUCCESS,
               InstigationTickStatus.FAILURE,
-              InstigationTickStatus.SKIPPED,
             ],
       );
     }, []),
@@ -77,7 +81,30 @@ export const AutomaterializationEvaluationHistoryTable = ({
     pageSize: PAGE_SIZE,
   });
   // Only refresh if we're on the first page
-  useQueryRefreshAtInterval(queryResult, !paginationProps.hasPrevCursor ? 10000 : 60 * 60 * 1000);
+  useQueryRefreshAtInterval(queryResult, 10000, !paginationProps.hasPrevCursor);
+
+  React.useEffect(() => {
+    if (paginationProps.hasPrevCursor) {
+      const ticks = queryResult.data?.autoMaterializeTicks;
+      if (ticks && ticks.length) {
+        const start = ticks[ticks.length - 1]?.timestamp;
+        const end = ticks[0]?.endTimestamp;
+        if (start && end) {
+          setTimerange([start, end]);
+        }
+      }
+    } else {
+      setTimerange(undefined);
+    }
+  }, [paginationProps.hasPrevCursor, queryResult.data?.autoMaterializeTicks, setTimerange]);
+
+  React.useEffect(() => {
+    if (paginationProps.hasPrevCursor) {
+      setParentStatuses(Array.from(statuses));
+    } else {
+      setParentStatuses(undefined);
+    }
+  }, [paginationProps.hasPrevCursor, setParentStatuses, statuses]);
 
   return (
     <Box>
@@ -123,13 +150,13 @@ export const AutomaterializationEvaluationHistoryTable = ({
           />
         </Box>
       </Box>
-      <Table>
+      <TableWrapper>
         <thead>
           <tr>
-            <th>Timestamp</th>
-            <th>Status</th>
-            <th>Duration</th>
-            <th>Result</th>
+            <th style={{width: 120}}>Timestamp</th>
+            <th style={{width: 90}}>Status</th>
+            <th style={{width: 90}}>Duration</th>
+            <th style={{width: 180}}>Result</th>
           </tr>
         </thead>
         <tbody>
@@ -168,7 +195,7 @@ export const AutomaterializationEvaluationHistoryTable = ({
             </tr>
           ))}
         </tbody>
-      </Table>
+      </TableWrapper>
       <div style={{paddingBottom: '16px'}}>
         <CursorHistoryControls {...paginationProps} />
       </div>
@@ -208,3 +235,10 @@ function StatusCheckbox({
     />
   );
 }
+
+const TableWrapper = styled(Table)`
+  th,
+  td {
+    vertical-align: middle !important;
+  }
+`;

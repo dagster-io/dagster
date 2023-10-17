@@ -3,6 +3,7 @@ import inspect
 from dagster import (
     DagsterInstance,
 )
+from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.data_version import (
     DATA_VERSION_IS_USER_PROVIDED_TAG,
@@ -181,6 +182,40 @@ def test_report_asset_materialization_apis_consistent(
     assert set(sample_payload.keys()).difference(set(params)) == KNOWN_DIFF
 
 
+def _assert_stored_check_eval(
+    instance: DagsterInstance, asset_key: str, check_name: str
+) -> AssetCheckEvaluation:
+    check_key = AssetCheckKey(name=check_name, asset_key=AssetKey(asset_key))
+    results = instance.event_log_storage.get_latest_asset_check_execution_by_key([check_key])
+    assert results
+    record = results[check_key]
+    assert record
+    assert record.event
+    evt = record.event.dagster_event
+    assert evt
+    return evt.asset_check_evaluation_data
+
+
+def test_report_asset_check_endpoint(instance: DagsterInstance, test_client: TestClient):
+    my_asset_key = "my_asset"
+    my_check = "my_check"
+    response = test_client.post(
+        f"/report_asset_check/{my_asset_key}?passed=false&check_name={my_check}",
+    )
+    assert response.status_code == 200, response.json()
+
+    evaluation = _assert_stored_check_eval(instance, my_asset_key, my_check)
+    assert not evaluation.passed
+
+    response = test_client.post(
+        f"/report_asset_check/{my_asset_key}?passed=true&check_name={my_check}",
+    )
+    assert response.status_code == 200, response.json()
+
+    evaluation = _assert_stored_check_eval(instance, my_asset_key, my_check)
+    assert evaluation.passed
+
+
 def test_report_asset_check_evaluation_apis_consistent(
     instance: DagsterInstance, test_client: TestClient
 ):
@@ -200,15 +235,7 @@ def test_report_asset_check_evaluation_apis_consistent(
 
     response = test_client.post("/report_asset_check/", json=sample_payload)
     assert response.status_code == 200, response.json()
-    check_key = AssetCheckKey(name="sample_check", asset_key=AssetKey("sample_key"))
-    results = instance.event_log_storage.get_latest_asset_check_execution_by_key([check_key])
-    assert results
-    record = results[check_key]
-    assert record
-    assert record.event
-    evt = record.event.dagster_event
-    assert evt
-    evaluation = evt.asset_check_evaluation_data
+    evaluation = _assert_stored_check_eval(instance, "sample_key", "sample_check")
 
     for k, v in sample_payload.items():
         if k == "check_name":

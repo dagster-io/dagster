@@ -32,10 +32,13 @@ export function flatten(yx: any, parentKey = '') {
   }, []);
 }
 
+const FULL_URL_REGEX = /https?:\/\//;
+
 export const latestAllPaths = () => {
-  // include path like /changelog which doesn't go through the markdoc renderer
+  // Include paths like /changelog, which don't go through the markdoc renderer.
+  // Skip any full URLs, as these don't belong in the sitemap.
   return flatten(navigation)
-    .filter((n: {path: any}) => n.path)
+    .filter((n: {path: any}) => n.path && !FULL_URL_REGEX.test(n.path))
     .map(({path}) => path.split('/').splice(1))
     .map((page: string[]) => {
       return {

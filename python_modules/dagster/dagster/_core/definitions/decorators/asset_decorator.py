@@ -1049,7 +1049,7 @@ def graph_asset(
                 ...
 
             @op
-            def store_files_in_table(files) -> None:
+            def store_files(files) -> None:
                 files.to_sql(name="slack_files", con=create_db_connection())
 
             @graph_asset
