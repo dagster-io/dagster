@@ -162,7 +162,7 @@ export const ResourceRoot: React.FC<Props> = (props) => {
           return (
             <div style={{height: '100%', display: 'flex'}}>
               <SplitPanelContainer
-                identifier="explorer"
+                identifier="resource-explorer"
                 firstInitialPercent={50}
                 firstMinSize={400}
                 first={

@@ -294,7 +294,7 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
   const explorer = (
     <SplitPanelContainer
       key="explorer"
-      identifier="explorer"
+      identifier="asset-graph-explorer"
       firstInitialPercent={70}
       firstMinSize={400}
       first={
