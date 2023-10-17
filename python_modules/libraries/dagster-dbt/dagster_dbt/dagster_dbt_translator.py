@@ -387,7 +387,7 @@ def validate_translator(dagster_dbt_translator: DagsterDbtTranslator) -> Dagster
     )
 
 
-def validate_translator_opt(
+def validate_opt_translator(
     dagster_dbt_translator: Optional[DagsterDbtTranslator],
 ) -> Optional[DagsterDbtTranslator]:
     return check.opt_inst_param(

@@ -45,8 +45,8 @@ from ..asset_utils import (
 )
 from ..dagster_dbt_translator import (
     DagsterDbtTranslator,
+    validate_opt_translator,
     validate_translator,
-    validate_translator_opt,
 )
 from ..dbt_manifest import (
     DbtManifestParam,
@@ -806,7 +806,7 @@ class DbtCliResource(ConfigurableResource):
                     dbt_macro_args = {"key": "value"}
                     dbt.cli(["run-operation", "my-macro", json.dumps(dbt_macro_args)]).wait()
         """
-        dagster_dbt_translator = validate_translator_opt(dagster_dbt_translator)
+        dagster_dbt_translator = validate_opt_translator(dagster_dbt_translator)
 
         target_path = target_path or self._get_unique_target_path(context=context)
         env = {
