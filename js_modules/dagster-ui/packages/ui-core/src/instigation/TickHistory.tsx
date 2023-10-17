@@ -86,8 +86,8 @@ export const TicksTable = ({
   name: string;
   repoAddress: RepoAddress;
   tabs?: React.ReactElement;
-  setTimerange: (range?: [number, number]) => void;
-  setParentStatuses: (statuses?: InstigationTickStatus[]) => void;
+  setTimerange?: (range?: [number, number]) => void;
+  setParentStatuses?: (statuses?: InstigationTickStatus[]) => void;
 }) => {
   const [shownStates, setShownStates] = useQueryPersistedState<ShownStatusState>({
     encode: (states) => {
@@ -154,19 +154,19 @@ export const TicksTable = ({
         const start = ticks[ticks.length - 1]?.timestamp;
         const end = ticks[0]?.endTimestamp;
         if (start && end) {
-          setTimerange([start, end]);
+          setTimerange?.([start, end]);
         }
       }
     } else {
-      setTimerange(undefined);
+      setTimerange?.(undefined);
     }
   }, [paginationProps.hasPrevCursor, ticks, setTimerange]);
 
   React.useEffect(() => {
     if (paginationProps.hasPrevCursor) {
-      setParentStatuses(Array.from(statuses));
+      setParentStatuses?.(Array.from(statuses));
     } else {
-      setParentStatuses(undefined);
+      setParentStatuses?.(undefined);
     }
   }, [paginationProps.hasPrevCursor, setParentStatuses, statuses]);
 
