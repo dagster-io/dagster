@@ -11,7 +11,7 @@ amqp==5.1.1
 aniso8601==9.0.1
 ansiwrap==0.8.4
 anyio==4.0.0
-apache-airflow==2.7.1
+apache-airflow==2.7.2
 apache-airflow-providers-apache-spark==4.1.5
 apache-airflow-providers-cncf-kubernetes==7.6.0
 apache-airflow-providers-common-sql==1.7.2
