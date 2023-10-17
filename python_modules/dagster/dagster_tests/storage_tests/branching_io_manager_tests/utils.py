@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from typing import Any, List, Optional, Sequence, Union
+from typing import Any, Dict, List, Optional, Sequence, Union
 
 from dagster import (
     AssetKey,
@@ -10,9 +10,12 @@ from dagster import (
     IOManager,
     OutputContext,
 )
+from dagster._config.pythonic_config.io_manager import ConfigurableIOManager
 from dagster._core.definitions.events import CoercibleToAssetKey
 from dagster._core.event_api import EventLogRecord, EventRecordsFilter
 from dagster._core.events import DagsterEventType
+from dagster._core.execution.context.init import InitResourceContext
+from pydantic import PrivateAttr
 
 
 class DefinitionsRunner:
@@ -96,6 +99,49 @@ class AssetBasedInMemoryIOManager(IOManager):
 
     def get_value(self, asset_key: CoercibleToAssetKey, partition_key: Optional[str] = None) -> Any:
         return self.values.get(self._get_key(AssetKey.from_coercible(asset_key), partition_key))
+
+    def _key_from_context(self, context: Union[InputContext, OutputContext]):
+        return self._get_key(
+            context.asset_key, context.partition_key if context.has_partition_key else None
+        )
+
+    def _get_key(self, asset_key: AssetKey, partition_key: Optional[str]) -> tuple:
+        return tuple([*asset_key.path] + [partition_key] if partition_key is not None else [])
+
+
+LOG = []
+
+
+class ConfigurableAssetBasedInMemoryIOManager(ConfigurableIOManager):
+    """In memory I/O manager for testing asset-based jobs and workflows. Can handle both
+    partitioned and unpartitioned assets.
+    """
+
+    name: str
+    _values: Dict = PrivateAttr(default={})
+
+    def setup_for_execution(self, context: InitResourceContext) -> None:
+        self._values = {}
+        LOG.append(f"setup_for_execution {self.name}")
+
+    def teardown_after_execution(self, context: InitResourceContext) -> None:
+        LOG.append(f"teardown_after_execution {self.name}")
+
+    def handle_output(self, context: OutputContext, obj: Any):
+        key = self._key_from_context(context)
+        self._values[key] = obj
+
+    def load_input(self, context: InputContext) -> Any:
+        key = self._key_from_context(context)
+        return self._values[key]
+
+    def has_value(
+        self, asset_key: CoercibleToAssetKey, partition_key: Optional[str] = None
+    ) -> bool:
+        return self._get_key(AssetKey.from_coercible(asset_key), partition_key) in self._values
+
+    def get_value(self, asset_key: CoercibleToAssetKey, partition_key: Optional[str] = None) -> Any:
+        return self._values.get(self._get_key(AssetKey.from_coercible(asset_key), partition_key))
 
     def _key_from_context(self, context: Union[InputContext, OutputContext]):
         return self._get_key(
