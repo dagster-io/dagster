@@ -113,8 +113,8 @@ LOG = []
 
 
 class ConfigurableAssetBasedInMemoryIOManager(ConfigurableIOManager):
-    """In memory I/O manager for testing asset-based jobs and workflows. Can handle both
-    partitioned and unpartitioned assets.
+    """ConfigurableResource version of the above. This is useful for testing
+    that the config system is working correctly & to test the setup/teardown logic.
     """
 
     name: str
