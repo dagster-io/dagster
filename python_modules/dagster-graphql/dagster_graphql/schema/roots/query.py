@@ -909,7 +909,7 @@ class GrapheneQuery(graphene.ObjectType):
             asset_graph=load_asset_graph,
         )
 
-        return [
+        nodes = [
             GrapheneAssetNode(
                 node.repository_location,
                 node.external_repository,
@@ -921,6 +921,7 @@ class GrapheneQuery(graphene.ObjectType):
             )
             for node in results
         ]
+        return sorted(nodes, key=lambda node: node.id)
 
     def resolve_assetNodeOrError(self, graphene_info: ResolveInfo, assetKey: GrapheneAssetKeyInput):
         asset_key_input = cast(Mapping[str, Sequence[str]], assetKey)
