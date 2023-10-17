@@ -175,7 +175,25 @@ class AssetBackfillData(NamedTuple):
 
         return True
 
-    def get_target_root_asset_partitions(self) -> Iterable[AssetKeyPartitionKey]:
+    def get_target_root_asset_partitions(
+        self, instance_queryer: CachingInstanceQueryer
+    ) -> Iterable[AssetKeyPartitionKey]:
+        def _get_self_and_downstream_targeted_subset(
+            asset_partitions: Iterable[AssetKeyPartitionKey],
+        ) -> AssetGraphSubset:
+            return AssetGraphSubset.from_asset_partition_set(
+                self.target_subset.asset_graph.bfs_filter_asset_partitions(
+                    instance_queryer,
+                    lambda asset_partitions, _: any(
+                        asset_partition in self.target_subset
+                        for asset_partition in asset_partitions
+                    ),
+                    asset_partitions,
+                    evaluation_time=instance_queryer.evaluation_time,
+                ),
+                self.target_subset.asset_graph,
+            )
+
         assets_with_no_parents_in_target_subset = {
             asset_key
             for asset_key in self.target_subset.asset_keys
@@ -186,11 +204,37 @@ class AssetBackfillData(NamedTuple):
             )
         }
 
-        return list(
+        all_root_target_partitions = set(
             self.target_subset.filter_asset_keys(
                 assets_with_no_parents_in_target_subset
             ).iterate_asset_partitions()
         )
+
+        will_be_targeted_partitions = _get_self_and_downstream_targeted_subset(
+            all_root_target_partitions
+        )
+
+        while will_be_targeted_partitions != self.target_subset:
+            untargeted_subset = self.target_subset - will_be_targeted_partitions
+
+            root_asset_keys = (
+                AssetSelection.keys(*untargeted_subset.asset_keys)
+                .sources()
+                .resolve(untargeted_subset.asset_graph)
+            )
+            new_target_root_partitions = untargeted_subset.filter_asset_keys(
+                root_asset_keys
+            ).iterate_asset_partitions()
+
+            all_root_target_partitions = all_root_target_partitions | set(
+                new_target_root_partitions
+            )
+            will_be_targeted_partitions = (
+                will_be_targeted_partitions
+                | _get_self_and_downstream_targeted_subset(new_target_root_partitions)
+            )
+
+        return list(all_root_target_partitions)
 
     def get_target_root_partitions_subset(self) -> PartitionsSubset:
         """Returns the most upstream partitions subset that was targeted by the backfill."""
@@ -1016,7 +1060,9 @@ def execute_asset_backfill_iteration_inner(
     initial_candidates: Set[AssetKeyPartitionKey] = set()
     request_roots = not asset_backfill_data.requested_runs_for_target_roots
     if request_roots:
-        initial_candidates.update(asset_backfill_data.get_target_root_asset_partitions())
+        initial_candidates.update(
+            asset_backfill_data.get_target_root_asset_partitions(instance_queryer)
+        )
 
         next_latest_storage_id = instance_queryer.get_latest_storage_id_for_event_type(
             event_type=DagsterEventType.ASSET_MATERIALIZATION

@@ -17,6 +17,7 @@ import mock
 import pendulum
 import pytest
 from dagster import (
+    AssetIn,
     AssetKey,
     AssetsDefinition,
     DagsterInstance,
@@ -24,10 +25,12 @@ from dagster import (
     DailyPartitionsDefinition,
     Definitions,
     HourlyPartitionsDefinition,
+    Nothing,
     PartitionKeyRange,
     PartitionsDefinition,
     RunRequest,
     StaticPartitionsDefinition,
+    TimeWindowPartitionMapping,
     WeeklyPartitionsDefinition,
     asset,
     materialize,
@@ -1172,3 +1175,45 @@ def test_asset_backfill_target_asset_and_differently_partitioned_grandchild():
         "fake_id", asset_backfill_data, asset_graph, instance, assets_by_repo_name
     )
     assert asset_backfill_data.requested_subset == asset_backfill_data.target_subset
+
+
+def test_asset_backfill_nonexistent_parent_partitions():
+    instance = DagsterInstance.ephemeral()
+
+    @asset(partitions_def=DailyPartitionsDefinition("2023-10-05"))
+    def foo():
+        pass
+
+    @asset(
+        partitions_def=DailyPartitionsDefinition("2023-10-01"),
+        ins={
+            "foo": AssetIn(
+                key=foo.key,
+                partition_mapping=TimeWindowPartitionMapping(
+                    allow_nonexistent_upstream_partitions=True
+                ),
+                dagster_type=Nothing,
+            )
+        },
+    )
+    def foo_child():
+        pass
+
+    assets_by_repo_name = {
+        "repo": [
+            foo,
+            foo_child,
+        ]
+    }
+    asset_graph = get_asset_graph(assets_by_repo_name)
+
+    asset_backfill_data = AssetBackfillData.from_asset_partitions(
+        asset_graph=asset_graph,
+        partition_names=None,
+        asset_selection=[foo.key, foo_child.key],
+        dynamic_partitions_store=MagicMock(),
+        all_partitions=True,
+        backfill_start_time=pendulum.datetime(2023, 10, 8, 0, 0, 0),
+    )
+
+    run_backfill_to_completion(asset_graph, assets_by_repo_name, asset_backfill_data, [], instance)
