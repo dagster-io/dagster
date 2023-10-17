@@ -408,7 +408,7 @@ def make_backfill_data(
         target_subset = AssetGraphSubset.all(
             asset_graph,
             dynamic_partitions_store=instance,
-            current_time=datetime.datetime.now(),
+            current_time=current_time,
         )
     elif some_or_all == "some":
         target_subset = make_random_subset(asset_graph, instance, current_time)
