@@ -2,7 +2,6 @@ import {QueryResult} from '@apollo/client';
 import {Box, Colors, Spinner, Tabs} from '@dagster-io/ui-components';
 import * as React from 'react';
 
-import {useFeatureFlags} from '../app/Flags';
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
 import {useAutomaterializeDaemonStatus} from '../assets/AutomaterializeDaemonStatusTag';
 import {TabLink} from '../ui/TabLink';
