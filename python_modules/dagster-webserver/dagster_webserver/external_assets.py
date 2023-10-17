@@ -162,6 +162,26 @@ async def handle_report_asset_check_request(
     if severity is None:
         severity = "ERROR"  # default
 
+    if ReportAssetCheckEvalParam.passed in json_body:
+        passed = json_body[ReportAssetCheckEvalParam.passed]
+    elif ReportAssetCheckEvalParam.passed in request.query_params:
+        try:
+            passed = json.loads(request.query_params[ReportAssetCheckEvalParam.passed])
+        except Exception as exc:
+            return JSONResponse(
+                {
+                    "error": f"Error parsing 'passed': {exc}",
+                },
+                status_code=400,
+            )
+    else:
+        return JSONResponse(
+            {
+                "error": "Missing required parameter 'passed'.",
+            },
+            status_code=400,
+        )
+
     metadata = {}
     if ReportAssetCheckEvalParam.metadata in json_body:
         metadata = json_body[ReportAssetCheckEvalParam.metadata]
