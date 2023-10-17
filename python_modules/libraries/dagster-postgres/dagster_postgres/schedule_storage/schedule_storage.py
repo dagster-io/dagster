@@ -1,4 +1,4 @@
-from typing import ContextManager, Optional
+from typing import ContextManager, Optional, Sequence
 
 import dagster._check as check
 import pendulum
@@ -6,10 +6,14 @@ import sqlalchemy as db
 import sqlalchemy.dialects as db_dialects
 import sqlalchemy.pool as db_pool
 from dagster._config.config_schema import UserConfigSchema
+from dagster._core.definitions.auto_materialize_rule import AutoMaterializeAssetEvaluation
 from dagster._core.scheduler.instigation import InstigatorState
 from dagster._core.storage.config import PostgresStorageConfig, pg_config
 from dagster._core.storage.schedules import ScheduleStorageSqlMetadata, SqlScheduleStorage
-from dagster._core.storage.schedules.schema import InstigatorsTable
+from dagster._core.storage.schedules.schema import (
+    AssetDaemonAssetEvaluationsTable,
+    InstigatorsTable,
+)
 from dagster._core.storage.sql import (
     AlembicVersion,
     check_alembic_revision,
@@ -171,6 +175,43 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
                 },
             )
         )
+
+    def add_auto_materialize_asset_evaluations(
+        self,
+        evaluation_id: int,
+        asset_evaluations: Sequence[AutoMaterializeAssetEvaluation],
+    ):
+        if not asset_evaluations:
+            return
+
+        insert_stmt = db_dialects.postgresql.insert(AssetDaemonAssetEvaluationsTable).values(
+            [
+                {
+                    "evaluation_id": evaluation_id,
+                    "asset_key": evaluation.asset_key.to_string(),
+                    "asset_evaluation_body": serialize_value(evaluation),
+                    "num_requested": evaluation.num_requested,
+                    "num_skipped": evaluation.num_skipped,
+                    "num_discarded": evaluation.num_discarded,
+                }
+                for evaluation in asset_evaluations
+            ]
+        )
+        upsert_stmt = insert_stmt.on_conflict_do_update(
+            index_elements=[
+                AssetDaemonAssetEvaluationsTable.c.evaluation_id,
+                AssetDaemonAssetEvaluationsTable.c.asset_key,
+            ],
+            set_={
+                "asset_evaluation_body": insert_stmt.excluded.asset_evaluation_body,
+                "num_requested": insert_stmt.excluded.num_requested,
+                "num_skipped": insert_stmt.excluded.num_skipped,
+                "num_discarded": insert_stmt.excluded.num_discarded,
+            },
+        )
+
+        with self.connect() as conn:
+            conn.execute(upsert_stmt)
 
     def alembic_version(self) -> AlembicVersion:
         alembic_config = pg_alembic_config(__file__)
