@@ -278,10 +278,16 @@ export const AssetGraphExplorerSidebar = React.memo(
             ? renderedNodes.findIndex((node) => 'path' in node && node.path === selectedNode.path)
             : -1;
         } else {
-          return renderedNodes.findIndex(
-            (node) =>
-              nodePathKey(node) === nodePathKey(selectedNode) || node.id === selectedNode.id,
-          );
+          return renderedNodes.findIndex((node) => {
+            // If you select a node via the search dropdown or from the graph directly then
+            // selectedNode will have an `id` field and not a path. The nodes in renderedNodes
+            // will always have a path so we need to explicitly check if the id's match
+            if (!('path' in selectedNode)) {
+              return node.id === selectedNode.id;
+            } else {
+              return nodePathKey(node) === nodePathKey(selectedNode);
+            }
+          });
         }
       },
       // eslint-disable-next-line react-hooks/exhaustive-deps
