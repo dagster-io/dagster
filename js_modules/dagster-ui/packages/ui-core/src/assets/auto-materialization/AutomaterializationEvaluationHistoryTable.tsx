@@ -30,9 +30,13 @@ const PAGE_SIZE = 15;
 export const AutomaterializationEvaluationHistoryTable = ({
   setSelectedTick,
   setTableView,
+  setTimerange,
+  setParentStatuses,
 }: {
   setSelectedTick: (tick: AssetDaemonTickFragment | null) => void;
   setTableView: (view: 'evaluations' | 'runs') => void;
+  setTimerange: (range?: [number, number]) => void;
+  setParentStatuses: (statuses?: InstigationTickStatus[]) => void;
 }) => {
   const [statuses, setStatuses] = useQueryPersistedState<Set<InstigationTickStatus>>({
     queryKey: 'statuses',
@@ -44,7 +48,6 @@ export const AutomaterializationEvaluationHistoryTable = ({
               InstigationTickStatus.STARTED,
               InstigationTickStatus.SUCCESS,
               InstigationTickStatus.FAILURE,
-              InstigationTickStatus.SKIPPED,
             ],
       );
     }, []),
@@ -77,7 +80,30 @@ export const AutomaterializationEvaluationHistoryTable = ({
     pageSize: PAGE_SIZE,
   });
   // Only refresh if we're on the first page
-  useQueryRefreshAtInterval(queryResult, !paginationProps.hasPrevCursor ? 10000 : 60 * 60 * 1000);
+  useQueryRefreshAtInterval(queryResult, 10000, !paginationProps.hasPrevCursor);
+
+  React.useEffect(() => {
+    if (paginationProps.hasPrevCursor) {
+      const ticks = queryResult.data?.autoMaterializeTicks;
+      if (ticks && ticks.length) {
+        const start = ticks[ticks.length - 1]?.timestamp;
+        const end = ticks[0]?.endTimestamp;
+        if (start && end) {
+          setTimerange([start, end]);
+        }
+      }
+    } else {
+      setTimerange(undefined);
+    }
+  }, [paginationProps.hasPrevCursor, queryResult.data?.autoMaterializeTicks, setTimerange]);
+
+  React.useEffect(() => {
+    if (paginationProps.hasPrevCursor) {
+      setParentStatuses(Array.from(statuses));
+    } else {
+      setParentStatuses(undefined);
+    }
+  }, [paginationProps.hasPrevCursor, setParentStatuses, statuses]);
 
   return (
     <Box>

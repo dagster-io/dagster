@@ -20,6 +20,7 @@ import {useTrackPageView} from '../../app/analytics';
 import {InstigationTickStatus} from '../../graphql/types';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {LiveTickTimeline} from '../../instigation/LiveTickTimeline2';
+import {isOldTickWithoutEndtimestamp} from '../../instigation/util';
 import {OverviewTabs} from '../../overview/OverviewTabs';
 import {useAutomaterializeDaemonStatus} from '../AutomaterializeDaemonStatusTag';
 
@@ -49,16 +50,28 @@ export const AutomaterializationRoot = () => {
     ASSET_DAEMON_TICKS_QUERY,
   );
   const [isPaused, setIsPaused] = React.useState(false);
+  const [statuses, setStatuses] = React.useState<undefined | InstigationTickStatus[]>(undefined);
+  const [timeRange, setTimerange] = React.useState<undefined | [number, number]>(undefined);
+  const variables: AssetDaemonTicksQueryVariables = React.useMemo(() => {
+    if (timeRange || statuses) {
+      return {
+        afterTimestamp: timeRange?.[0],
+        beforeTimestamp: timeRange?.[1],
+        statuses,
+      };
+    }
+    return {
+      afterTimestamp: (Date.now() - TWENTY_MINUTES) / 1000,
+    };
+  }, [statuses, timeRange]);
   function fetchData() {
     fetch({
-      variables: {
-        afterTimestamp: (Date.now() - TWENTY_MINUTES) / 1000,
-      },
+      variables,
     });
   }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useLayoutEffect(fetchData, []);
-  useQueryRefreshAtInterval(queryResult, 2 * 1000, !isPaused, fetchData);
+  useLayoutEffect(fetchData, [variables]);
+  useQueryRefreshAtInterval(queryResult, 2 * 1000, !isPaused && !timeRange && !statuses, fetchData);
 
   const [selectedTick, setSelectedTick] = React.useState<AssetDaemonTickFragment | null>(null);
 
@@ -89,10 +102,10 @@ export const AutomaterializationRoot = () => {
       const ticks = data?.autoMaterializeTicks;
       return (
         ticks?.map((tick, index) => {
-          // For ticks that get stuck in "Started" state without an endtimestamp.
-          if (!tick.endTimestamp && index !== 0) {
+          // For ticks that get stuck in "Started" state without an endTimestamp.
+          if (index !== 0 && !isOldTickWithoutEndtimestamp(tick)) {
             const copy = {...tick};
-            copy.endTimestamp = ticks[index + 1]!.timestamp;
+            copy.endTimestamp = ticks[index - 1]!.timestamp;
             copy.status = InstigationTickStatus.FAILURE;
             return copy;
           }
@@ -170,6 +183,7 @@ export const AutomaterializationRoot = () => {
             ticks={ticks}
             onHoverTick={onHoverTick}
             onSelectTick={setSelectedTick}
+            exactRange={timeRange}
             timeRange={TWENTY_MINUTES}
             tickGrid={FIVE_MINUTES}
             timeAfter={THREE_MINUTES}
@@ -186,6 +200,8 @@ export const AutomaterializationRoot = () => {
             <AutomaterializationEvaluationHistoryTable
               setSelectedTick={setSelectedTick}
               setTableView={setTableView}
+              setParentStatuses={setStatuses}
+              setTimerange={setTimerange}
             />
           ) : (
             <AutomaterializeRunHistoryTable setTableView={setTableView} />
