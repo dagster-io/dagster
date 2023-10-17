@@ -58,8 +58,8 @@ const _assetLayoutCacheKey = (graphData: GraphData, opts: LayoutAssetGraphOption
     return newObj;
   }
 
-  return `${opts?.horizontalDAGs ? 'horizontal:' : ''}${
-    opts?.tightTree ? 'tight-tree:' : ''
+  return `${opts?.horizontalDAGs ? 'horizontal:' : ''}${opts?.tightTree ? 'tight-tree:' : ''}${
+    opts?.longestPath ? 'longest-path' : ''
   }${JSON.stringify({
     downstream: recreateObjectWithKeysSorted(graphData.downstream),
     upstream: recreateObjectWithKeysSorted(graphData.upstream),
