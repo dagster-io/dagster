@@ -36,6 +36,7 @@ class AutoMaterializePolicySerializer(NamedTupleSerializer):
                 AutoMaterializeRule.skip_on_parent_outdated(),
                 AutoMaterializeRule.skip_on_parent_missing(),
                 AutoMaterializeRule.skip_on_required_but_nonexistent_parents(),
+                AutoMaterializeRule.skip_on_backfill_in_progress(),
             }
             for backcompat_key, rule in backcompat_map.items():
                 if unpacked_dict.get(backcompat_key):
@@ -177,6 +178,7 @@ class AutoMaterializePolicy(
                 AutoMaterializeRule.skip_on_parent_outdated(),
                 AutoMaterializeRule.skip_on_parent_missing(),
                 AutoMaterializeRule.skip_on_required_but_nonexistent_parents(),
+                AutoMaterializeRule.skip_on_backfill_in_progress(),
             },
             max_materializations_per_minute=check.opt_int_param(
                 max_materializations_per_minute, "max_materializations_per_minute"
@@ -202,6 +204,7 @@ class AutoMaterializePolicy(
                 AutoMaterializeRule.skip_on_parent_outdated(),
                 AutoMaterializeRule.skip_on_parent_missing(),
                 AutoMaterializeRule.skip_on_required_but_nonexistent_parents(),
+                AutoMaterializeRule.skip_on_backfill_in_progress(),
             },
             max_materializations_per_minute=check.opt_int_param(
                 max_materializations_per_minute, "max_materializations_per_minute"
@@ -226,8 +229,15 @@ class AutoMaterializePolicy(
 
     @public
     def with_rules(self, *rules_to_add: "AutoMaterializeRule") -> "AutoMaterializePolicy":
-        """Constructs a copy of this policy with the specified rules added."""
-        return self._replace(rules=self.rules.union(set(rules_to_add)))
+        """Constructs a copy of this policy with the specified rules added. If an instance of a
+        provided rule with the same type exists on this policy, it will be replaced.
+        """
+        new_rule_types = {type(rule) for rule in rules_to_add}
+        return self._replace(
+            rules=set(rules_to_add).union(
+                {rule for rule in self.rules if type(rule) not in new_rule_types}
+            )
+        )
 
     @property
     def policy_type(self) -> AutoMaterializePolicyType:

@@ -297,6 +297,20 @@ class AutoMaterializeRule(ABC):
         """
         return SkipOnRequiredButNonexistentParentsRule()
 
+    @public
+    @staticmethod
+    def skip_on_backfill_in_progress(
+        all_partitions: bool = False,
+    ) -> "SkipOnBackfillInProgressRule":
+        """Skip an asset's partitions if targeted by an in-progress backfill.
+
+        Attributes:
+            all_partitions (bool): If True, skips all partitions of the asset being backfilled,
+                regardless of whether the specific partition is targeted by a backfill.
+                If False, skips only partitions targeted by a backfill. Defaults to False.
+        """
+        return SkipOnBackfillInProgressRule(all_partitions)
+
     def to_snapshot(self) -> AutoMaterializeRuleSnapshot:
         """Returns a serializable snapshot of this rule for historical evaluations."""
         return AutoMaterializeRuleSnapshot.from_rule(self)
@@ -672,6 +686,46 @@ class SkipOnRequiredButNonexistentParentsRule(
                 )
                 for k, v in asset_partitions_by_nonexistent_but_required_parent_keys.items()
             ]
+
+        return []
+
+
+@whitelist_for_serdes
+class SkipOnBackfillInProgressRule(
+    AutoMaterializeRule,
+    NamedTuple("_SkipOnBackfillInProgressRule", [("all_partitions", bool)]),
+):
+    @property
+    def decision_type(self) -> AutoMaterializeDecisionType:
+        return AutoMaterializeDecisionType.SKIP
+
+    @property
+    def description(self) -> str:
+        if self.all_partitions:
+            return "part of an asset targeted by an in-progress backfill"
+        else:
+            return "targeted by an in-progress backfill"
+
+    def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
+        backfill_in_progress_candidates: AbstractSet[AssetKeyPartitionKey] = set()
+
+        backfilling_subset = (
+            context.instance_queryer.get_active_backfill_target_asset_graph_subset()
+        )
+
+        if self.all_partitions:
+            backfill_in_progress_candidates = {
+                candidate
+                for candidate in context.candidates
+                if candidate.asset_key in backfilling_subset.asset_keys
+            }
+        else:
+            backfill_in_progress_candidates = {
+                candidate for candidate in context.candidates if candidate in backfilling_subset
+            }
+
+        if backfill_in_progress_candidates:
+            return [(None, backfill_in_progress_candidates)]
 
         return []
 
