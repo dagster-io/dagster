@@ -275,12 +275,13 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
     def with_status(self, status: TickStatus, **kwargs: Any):
         check.inst_param(status, "status", TickStatus)
         end_timestamp = pendulum.now("UTC").timestamp() if status != TickStatus.STARTED else None
-        return self._replace(
-            tick_data=self.tick_data.with_status(status, end_timestamp=end_timestamp, **kwargs)
-        )
+        kwargs["end_timestamp"] = end_timestamp
+        return self._replace(tick_data=self.tick_data.with_status(status, **kwargs))
 
-    def with_run_requests(self, run_requests: Sequence[RunRequest]) -> "InstigatorTick":
-        return self._replace(tick_data=self.tick_data.with_run_requests(run_requests))
+    def with_run_requests(
+        self, run_requests: Sequence[RunRequest], **kwargs: Any
+    ) -> "InstigatorTick":
+        return self._replace(tick_data=self.tick_data.with_run_requests(run_requests, **kwargs))
 
     def with_reason(self, skip_reason: str) -> "InstigatorTick":
         check.opt_str_param(skip_reason, "skip_reason")
@@ -438,6 +439,10 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
 
         return set(self.requested_assets_and_partitions.keys())
 
+    @property
+    def run_requests(self) -> Optional[Sequence[RunRequest]]:
+        return self.tick_data.run_requests
+
 
 @whitelist_for_serdes(
     old_storage_names={"JobTickData"},
@@ -472,6 +477,7 @@ class TickData(
             ("end_timestamp", Optional[float]),  # Time the tick finished
             ("run_requests", Optional[Sequence[RunRequest]]),  # run requests created by the tick
             ("auto_materialize_evaluation_id", Optional[int]),
+            ("reserved_run_ids", Optional[Sequence[str]]),
         ],
     )
 ):
@@ -519,6 +525,7 @@ class TickData(
         end_timestamp: Optional[float] = None,
         run_requests: Optional[Sequence[RunRequest]] = None,
         auto_materialize_evaluation_id: Optional[int] = None,
+        reserved_run_ids: Optional[Sequence[str]] = None,
     ):
         _validate_tick_args(instigator_type, status, run_ids, error, skip_reason)
         check.opt_list_param(log_key, "log_key", of_type=str)
@@ -546,30 +553,21 @@ class TickData(
             end_timestamp=end_timestamp,
             run_requests=check.opt_sequence_param(run_requests, "run_requests"),
             auto_materialize_evaluation_id=auto_materialize_evaluation_id,
+            reserved_run_ids=check.opt_sequence_param(reserved_run_ids, "reserved_run_ids"),
         )
 
     def with_status(
         self,
         status: TickStatus,
-        error: Optional[SerializableErrorInfo] = None,
-        timestamp: Optional[float] = None,
-        failure_count: Optional[int] = None,
-        end_timestamp: Optional[float] = None,
+        **kwargs,
     ) -> "TickData":
         return TickData(
             **merge_dicts(
                 self._asdict(),
                 {
                     "status": status,
-                    "error": error,
-                    "timestamp": timestamp if timestamp is not None else self.timestamp,
-                    "failure_count": (
-                        failure_count if failure_count is not None else self.failure_count
-                    ),
-                    "end_timestamp": (
-                        end_timestamp if end_timestamp is not None else self.end_timestamp
-                    ),
                 },
+                kwargs,
             )
         )
 
@@ -596,12 +594,19 @@ class TickData(
             )
         )
 
-    def with_run_requests(self, run_requests: Sequence[RunRequest]) -> "TickData":
+    def with_run_requests(
+        self,
+        run_requests: Sequence[RunRequest],
+        reserved_run_ids: Optional[Sequence[str]] = None,
+        cursor: Optional[str] = None,
+    ) -> "TickData":
         return TickData(
             **merge_dicts(
                 self._asdict(),
                 {
                     "run_requests": run_requests,
+                    "reserved_run_ids": reserved_run_ids,
+                    "cursor": cursor,
                 },
             )
         )
