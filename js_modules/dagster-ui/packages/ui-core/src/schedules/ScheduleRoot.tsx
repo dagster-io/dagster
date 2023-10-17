@@ -45,19 +45,6 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
 
   const [selectedTab, setSelectedTab] = React.useState<string>('ticks');
 
-  const [statuses, setStatuses] = React.useState<undefined | InstigationTickStatus[]>(undefined);
-  const [timeRange, setTimerange] = React.useState<undefined | [number, number]>(undefined);
-  const variables = React.useMemo(() => {
-    if (timeRange || statuses) {
-      return {
-        afterTimestamp: timeRange?.[0],
-        beforeTimestamp: timeRange?.[1],
-        statuses,
-      };
-    }
-    return {};
-  }, [statuses, timeRange]);
-
   const queryResult = useQuery<ScheduleRootQuery, ScheduleRootQueryVariables>(SCHEDULE_ROOT_QUERY, {
     variables: {
       scheduleSelector,
