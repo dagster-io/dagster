@@ -148,6 +148,7 @@ if TYPE_CHECKING:
     from dagster._core.storage.daemon_cursor import DaemonCursorStorage
     from dagster._core.storage.event_log import EventLogStorage
     from dagster._core.storage.event_log.base import (
+        AssetPartitionEntry,
         AssetRecord,
         EventLogConnection,
         EventLogRecord,
@@ -2021,6 +2022,12 @@ class DagsterInstance(DynamicPartitionsStore):
         return self._event_storage.get_materialized_partitions(
             asset_key, before_cursor=before_cursor, after_cursor=after_cursor
         )
+
+    @traced
+    def get_asset_partition_entries(
+        self, asset_key: AssetKey, after_storage_id: Optional[int] = None
+    ) -> Sequence["AssetPartitionEntry"]:
+        return self._event_storage.get_asset_partition_entries(asset_key, after_storage_id)
 
     @traced
     def get_latest_storage_id_by_partition(

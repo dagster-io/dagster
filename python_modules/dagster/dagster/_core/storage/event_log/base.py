@@ -147,6 +147,17 @@ class AssetRecord(NamedTuple):
     asset_entry: AssetEntry
 
 
+class AssetPartitionEntry(NamedTuple):
+    """Internal representation of an asset partition record."""
+
+    asset_key: AssetKey
+    partition_key: str
+    last_materialization_event_id: Optional[int]
+    last_materialization_run_id: Optional[str]
+    last_planned_materialization_event_id: Optional[int]
+    last_planned_materialization_run_id: Optional[str]
+
+
 class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     """Abstract base class for storing structured event logs from pipeline runs.
 
@@ -511,4 +522,11 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         self, check_keys: Sequence[AssetCheckKey]
     ) -> Mapping[AssetCheckKey, AssetCheckExecutionRecord]:
         """Get the latest executions for a list of asset checks."""
+        pass
+
+    @abstractmethod
+    def get_asset_partition_entries(
+        self, asset_key: AssetKey, after_storage_id: Optional[int] = None
+    ) -> Sequence[AssetPartitionEntry]:
+        """Get the latest status for all asset partitions of an asset."""
         pass

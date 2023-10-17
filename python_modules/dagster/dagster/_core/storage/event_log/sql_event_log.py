@@ -74,6 +74,7 @@ from dagster._utils.concurrency import (
 from ..dagster_run import DagsterRunStatsSnapshot
 from .base import (
     AssetEntry,
+    AssetPartitionEntry,
     AssetRecord,
     EventLogConnection,
     EventLogCursor,
@@ -2702,6 +2703,63 @@ class SqlEventLogStorage(EventLogStorage):
     @property
     def supports_asset_checks(self):
         return self.has_table(AssetCheckExecutionsTable.name)
+
+    def get_asset_partition_entries(
+        self, asset_key: AssetKey, after_storage_id: Optional[int] = None
+    ) -> Sequence[AssetPartitionEntry]:
+        """Get the latest status for all asset partitions of an asset."""
+        event_records = [
+            *self.get_event_records(
+                event_records_filter=EventRecordsFilter(
+                    event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                    asset_key=asset_key,
+                    after_cursor=after_storage_id,
+                )
+            ),
+            *self.get_event_records(
+                event_records_filter=EventRecordsFilter(
+                    event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                    asset_key=asset_key,
+                    after_cursor=after_storage_id,
+                )
+            ),
+        ]
+
+        partitions: Set[str] = set()
+        planned_records: Dict[str, EventLogRecord] = {}
+        materialized_records: Dict[str, EventLogRecord] = {}
+        for record in sorted(event_records, key=lambda r: r.storage_id):
+            event = check.not_none(record.event_log_entry.dagster_event)
+            if event.is_asset_materialization_planned and event.partition:
+                partitions.add(event.partition)
+                planned_records[event.partition] = record
+            if event.is_step_materialization and event.partition:
+                partitions.add(event.partition)
+                materialized_records[event.partition] = record
+
+        return [
+            AssetPartitionEntry(
+                asset_key=asset_key,
+                partition_key=partition,
+                last_materialization_event_id=(
+                    materialized_records[partition].storage_id
+                    if partition in materialized_records
+                    else None
+                ),
+                last_materialization_run_id=(
+                    materialized_records[partition].run_id
+                    if partition in materialized_records
+                    else None
+                ),
+                last_planned_materialization_event_id=(
+                    planned_records[partition].storage_id if partition in planned_records else None
+                ),
+                last_planned_materialization_run_id=(
+                    planned_records[partition].run_id if partition in planned_records else None
+                ),
+            )
+            for partition in partitions
+        ]
 
 
 def _get_from_row(row: SqlAlchemyRow, column: str) -> object:

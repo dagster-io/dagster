@@ -25,6 +25,7 @@ from dagster._utils.concurrency import ConcurrencyClaimStatus, ConcurrencyKeyInf
 
 from .base_storage import DagsterStorage
 from .event_log.base import (
+    AssetPartitionEntry,
     AssetRecord,
     EventLogConnection,
     EventLogRecord,
@@ -564,6 +565,14 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     ) -> None:
         self._storage.event_log_storage.update_asset_cached_status_data(
             asset_key=asset_key, cache_values=cache_values
+        )
+
+    def get_asset_partition_entries(
+        self, asset_key: AssetKey, after_storage_id: Optional[int] = None
+    ) -> Sequence[AssetPartitionEntry]:
+        """Get the latest status for all asset partitions of an asset."""
+        return self._storage.event_log_storage.get_asset_partition_entries(
+            asset_key, after_storage_id
         )
 
     def get_records_for_run(
