@@ -251,7 +251,7 @@ const RowGrid = styled(Box)`
   grid-template-columns: ${TEMPLATE_COLUMNS};
   height: 100%;
   > * {
-    padding-top: 26px 0px;
+    justify-content: center;
   }
 `;
 

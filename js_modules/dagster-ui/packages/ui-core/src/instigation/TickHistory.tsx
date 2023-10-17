@@ -49,7 +49,7 @@ import {LiveTickTimeline} from './LiveTickTimeline2';
 import {TickDetailsDialog} from './TickDetailsDialog';
 import {HistoryTickFragment} from './types/InstigationUtils.types';
 import {TickHistoryQuery, TickHistoryQueryVariables} from './types/TickHistory.types';
-import {truncate} from './util';
+import {isOldTickWithoutEndtimestamp, truncate} from './util';
 
 Chart.register(zoomPlugin);
 
@@ -238,7 +238,7 @@ export const TicksTable = ({
         </Box>
       </Box>
       {ticks.length ? (
-        <Table>
+        <TableWrapper>
           <thead>
             <tr>
               <th style={{width: 120}}>Timestamp</th>
@@ -261,7 +261,7 @@ export const TicksTable = ({
               />
             ))}
           </tbody>
-        </Table>
+        </TableWrapper>
       ) : (
         <Box padding={{vertical: 32}} flex={{justifyContent: 'center'}}>
           <NonIdealState icon="no-results" title="No ticks to display" />
@@ -420,7 +420,14 @@ function TickRow({
         <TickStatusTag tick={tick} />
       </td>
       <td>
-        <TimeElapsed startUnix={tick.timestamp} endUnix={tick.endTimestamp || Date.now() / 1000} />
+        {isOldTickWithoutEndtimestamp(tick) ? (
+          '- '
+        ) : (
+          <TimeElapsed
+            startUnix={tick.timestamp}
+            endUnix={tick.endTimestamp || Date.now() / 1000}
+          />
+        )}
       </td>
       {tick.instigationType === InstigationType.SENSOR ? (
         <td style={{width: 120}}>
@@ -557,5 +564,12 @@ const CopyButton = styled.button`
 
   :focus ${IconWrapper} {
     background-color: ${Colors.Link};
+  }
+`;
+
+const TableWrapper = styled(Table)`
+  th,
+  td {
+    vertical-align: middle !important;
   }
 `;
