@@ -5,7 +5,7 @@ description: "Learn to integrate Dagster Pipes with Kubernetes to launch externa
 
 # Integrating Kubernetes with Dagster Pipes
 
-In this guide, we’ll show you how to use [Dagster Pipes](/guides/dagster-pipes) with Dagster’s Kubernetes integration to launch Kubernetes images.
+In this guide, we’ll show you how to use [Dagster Pipes](/guides/dagster-pipes) with Dagster’s Kubernetes integration to launch Kubernetes pods and execute external code.
 
 Pipes allows your Kubernetes code to execute outside of a full Dagster environment. Instead, the environment only needs to contain `dagster-pipes`, a single-file Python package with no dependencies that can be installed from PyPI or easily vendored. `dagster-pipes` handles streaming `stdout`/`stderr` and Dagster events back to the orchestration process.
 
