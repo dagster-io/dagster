@@ -576,3 +576,35 @@ def test_subprocess_env_precedence():
         assert mat_evts[0].materialization.metadata["A"].value == "parent"
         assert mat_evts[0].materialization.metadata["B"].value == "client"
         assert mat_evts[0].materialization.metadata["C"].value == "callsite"
+
+
+def test_pipes_exception():
+    def script_fn():
+        from dagster_pipes import open_dagster_pipes
+
+        with open_dagster_pipes():
+            raise Exception("oops")
+
+    @asset
+    def raises(context: OpExecutionContext, pipes_client: PipesSubprocessClient):
+        with temp_script(script_fn) as script_path:
+            cmd = [_PYTHON_EXECUTABLE, script_path]
+            return pipes_client.run(command=cmd, context=context).get_results()
+
+    with instance_for_test() as instance:
+        result = materialize(
+            [raises],
+            instance=instance,
+            resources={"pipes_client": PipesSubprocessClient()},
+            raise_on_error=False,
+        )
+        assert not result.success
+        conn = instance.get_records_for_run(result.run_id)
+        pipes_msgs = [
+            record.event_log_entry.user_message
+            for record in conn.records
+            if record.event_log_entry.user_message.startswith("[pipes]")
+        ]
+        assert len(pipes_msgs) == 2
+        assert "successfully opened" in pipes_msgs[0]
+        assert "external process pipes closed with exception" in pipes_msgs[1]
