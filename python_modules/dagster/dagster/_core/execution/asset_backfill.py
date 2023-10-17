@@ -204,37 +204,31 @@ class AssetBackfillData(NamedTuple):
             )
         }
 
-        all_root_target_partitions = set(
+        root_partitions = set(
             self.target_subset.filter_asset_keys(
                 assets_with_no_parents_in_target_subset
             ).iterate_asset_partitions()
         )
+        root_and_downstream_partitions = _get_self_and_downstream_targeted_subset(root_partitions)
 
-        will_be_targeted_partitions = _get_self_and_downstream_targeted_subset(
-            all_root_target_partitions
-        )
+        while root_and_downstream_partitions != self.target_subset:
+            unreachable_targets = self.target_subset - root_and_downstream_partitions
 
-        while will_be_targeted_partitions != self.target_subset:
-            untargeted_subset = self.target_subset - will_be_targeted_partitions
-
-            root_asset_keys = (
-                AssetSelection.keys(*untargeted_subset.asset_keys)
-                .sources()
-                .resolve(untargeted_subset.asset_graph)
-            )
-            new_target_root_partitions = untargeted_subset.filter_asset_keys(
-                root_asset_keys
-            ).iterate_asset_partitions()
-
-            all_root_target_partitions = all_root_target_partitions | set(
-                new_target_root_partitions
-            )
-            will_be_targeted_partitions = (
-                will_be_targeted_partitions
-                | _get_self_and_downstream_targeted_subset(new_target_root_partitions)
+            unreachable_target_root_partitions = set(
+                unreachable_targets.filter_asset_keys(
+                    AssetSelection.keys(*unreachable_targets.asset_keys)
+                    .sources()
+                    .resolve(unreachable_targets.asset_graph)
+                ).iterate_asset_partitions()
             )
 
-        return list(all_root_target_partitions)
+            root_partitions = root_partitions | unreachable_target_root_partitions
+            root_and_downstream_partitions = (
+                root_and_downstream_partitions
+                | _get_self_and_downstream_targeted_subset(unreachable_target_root_partitions)
+            )
+
+        return list(root_partitions)
 
     def get_target_root_partitions_subset(self) -> PartitionsSubset:
         """Returns the most upstream partitions subset that was targeted by the backfill."""

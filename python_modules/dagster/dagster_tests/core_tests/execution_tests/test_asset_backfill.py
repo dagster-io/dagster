@@ -1216,4 +1216,24 @@ def test_asset_backfill_nonexistent_parent_partitions():
         backfill_start_time=pendulum.datetime(2023, 10, 8, 0, 0, 0),
     )
 
-    run_backfill_to_completion(asset_graph, assets_by_repo_name, asset_backfill_data, [], instance)
+    backfill_data, _, _ = run_backfill_to_completion(
+        asset_graph, assets_by_repo_name, asset_backfill_data, [], instance
+    )
+
+    assert set(backfill_data.target_subset.get_partitions_subset(foo.key).get_partition_keys()) == {
+        "2023-10-05",
+        "2023-10-06",
+        "2023-10-07",
+    }
+    assert set(
+        backfill_data.target_subset.get_partitions_subset(foo_child.key).get_partition_keys()
+    ) == {
+        "2023-10-01",
+        "2023-10-02",
+        "2023-10-03",
+        "2023-10-04",
+        "2023-10-05",
+        "2023-10-06",
+        "2023-10-07",
+    }
+    assert backfill_data.target_subset == backfill_data.materialized_subset
