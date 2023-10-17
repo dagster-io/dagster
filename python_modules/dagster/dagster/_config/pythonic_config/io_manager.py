@@ -116,7 +116,7 @@ class IOManagerWithKeyMapping(ResourceWithKeyMapping, IOManagerDefinition):
         )
 
 
-class ConfigurableIOManagerFactory(ConfigurableResourceFactory, Generic[TResValue]):
+class ConfigurableIOManagerFactory(ConfigurableResourceFactory[TIOManagerValue]):
     """Base class for Dagster IO managers that utilize structured config. This base class
     is useful for cases in which the returned IO manager is not the same as the class itself
     (e.g. when it is a wrapper around the actual IO manager implementation).
@@ -165,11 +165,11 @@ class ConfigurableIOManagerFactory(ConfigurableResourceFactory, Generic[TResValu
         ConfigurableResourceFactory.__init__(self, **data)
 
     @abstractmethod
-    def create_io_manager(self, context) -> TResValue:
+    def create_io_manager(self, context) -> TIOManagerValue:
         """Implement as one would implement a @io_manager decorator function."""
         raise NotImplementedError()
 
-    def create_resource(self, context: InitResourceContext) -> TResValue:
+    def create_resource(self, context: InitResourceContext) -> TIOManagerValue:
         return self.create_io_manager(context)
 
     @classmethod
@@ -234,7 +234,7 @@ class PartialIOManager(Generic[TResValue], PartialResource[TResValue]):
             nested_resources=self._state__internal__.nested_resources,
             input_config_schema=input_config_schema,
             output_config_schema=output_config_schema,
-            dagster_maintained=self.resource_cls._is_dagster_maintained(),  # noqa: SLF001 # type: ignore
+            dagster_maintained=self.resource_cls._is_dagster_maintained(),  # noqa: SLF001
         )
 
 

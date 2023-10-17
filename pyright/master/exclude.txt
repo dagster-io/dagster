@@ -11,4 +11,3 @@ examples/assets_smoke_test
 examples/project_analytics
 examples/project_dagster_university_start
 examples/tutorial
-helm

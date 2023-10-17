@@ -11,6 +11,7 @@ from typing import (
     Union,
 )
 
+from pydantic import ConstrainedFloat, ConstrainedInt, ConstrainedStr
 from typing_extensions import Annotated, get_args, get_origin
 
 from dagster import (
@@ -46,6 +47,10 @@ except ImportError:
         pass
 
 
+from pydantic.fields import (
+    ModelField,
+)
+
 import dagster._check as check
 from dagster import Field, Selector
 from dagster._config.field_utils import (
@@ -54,7 +59,7 @@ from dagster._config.field_utils import (
     convert_potential_field,
 )
 
-from .pydantic_compat_layer import ModelFieldCompat, PydanticUndefined, model_fields
+from .pydantic_compat_layer import ModelFieldCompat, model_fields
 from .type_check_utils import is_optional, safe_is_subclass
 
 
@@ -109,6 +114,22 @@ def _curry_config_schema(schema_field: Field, data: Any) -> DefinitionConfigSche
 TResValue = TypeVar("TResValue")
 
 
+def _get_inner_field_if_exists(shape_type: Type, field: ModelField) -> Optional[ModelField]:
+    """Grabs the inner Pydantic field type for a data structure such as a list or dictionary.
+
+    Returns None for types which have no inner field.
+    """
+    # See https://github.com/pydantic/pydantic/blob/v1.10.3/pydantic/fields.py#L758 for
+    # where sub_fields is set.
+    if safe_is_subclass(get_origin(shape_type), list):
+        return check.not_none(get_args(shape_type))[0]
+    if safe_is_subclass(get_origin(shape_type), dict) or safe_is_subclass(
+        get_origin(shape_type), Mapping
+    ):
+        return check.not_none(get_args(shape_type))[1]
+    return None
+
+
 def _convert_pydantic_field(
     pydantic_field: ModelFieldCompat, model_cls: Optional[Type] = None
 ) -> Field:
@@ -116,7 +137,7 @@ def _convert_pydantic_field(
 
 
     Args:
-        pydantic_field (ModelFieldCompat): The Pydantic field to convert.
+        pydantic_field (ModelField): The Pydantic field to convert.
         model_cls (Optional[Type]): The Pydantic model class that the field belongs to. This is
             used for error messages.
     """
@@ -144,7 +165,7 @@ def _convert_pydantic_field(
             is_required=pydantic_field.is_required() and not is_optional(field_type),
             default_value=(
                 pydantic_field.default
-                if pydantic_field.default is not PydanticUndefined
+                if pydantic_field.default is not None
                 else FIELD_NO_DEFAULT_PROVIDED
             ),
         )
@@ -171,21 +192,14 @@ def _config_type_for_type_on_pydantic_field(
     """
     potential_dagster_type = strip_wrapping_annotated_types(potential_dagster_type)
 
-    try:
-        # Pydantic 1.x
-        from pydantic import ConstrainedFloat, ConstrainedInt, ConstrainedStr
-
-        # special case pydantic constrained types to their source equivalents
-        if safe_is_subclass(potential_dagster_type, ConstrainedStr):
-            return StringSource
-        # no FloatSource, so we just return float
-        elif safe_is_subclass(potential_dagster_type, ConstrainedFloat):
-            potential_dagster_type = float
-        elif safe_is_subclass(potential_dagster_type, ConstrainedInt):
-            return IntSource
-    except ImportError:
-        # These types do not exist in Pydantic 2.x
-        pass
+    # special case pydantic constrained types to their source equivalents
+    if safe_is_subclass(potential_dagster_type, ConstrainedStr):
+        return StringSource
+    # no FloatSource, so we just return float
+    elif safe_is_subclass(potential_dagster_type, ConstrainedFloat):
+        potential_dagster_type = float
+    elif safe_is_subclass(potential_dagster_type, ConstrainedInt):
+        return IntSource
 
     if safe_is_subclass(get_origin(potential_dagster_type), List):
         list_inner_type = get_args(potential_dagster_type)[0]

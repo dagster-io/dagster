@@ -716,7 +716,7 @@ class PartialResourceState(NamedTuple):
 
 class PartialResource(Generic[TResValue], AllowDelayedDependencies, MakeConfigCacheable):
     data: Dict[str, Any]
-    resource_cls: Type[Any]
+    resource_cls: Type[ConfigurableResourceFactory[TResValue]]
 
     def __init__(
         self,
@@ -769,7 +769,7 @@ class PartialResource(Generic[TResValue], AllowDelayedDependencies, MakeConfigCa
             description=self._state__internal__.description,
             resolve_resource_keys=self._resolve_required_resource_keys,
             nested_resources=self.nested_resources,
-            dagster_maintained=self.resource_cls._is_dagster_maintained(),  # noqa: SLF001 # type: ignore
+            dagster_maintained=self.resource_cls._is_dagster_maintained(),  # noqa: SLF001
         )
 
 
