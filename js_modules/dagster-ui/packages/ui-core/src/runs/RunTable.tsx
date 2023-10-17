@@ -483,7 +483,11 @@ const RunRow: React.FC<{
       </td>
       {hideCreatedBy ? null : (
         <td>
-          <CreatedByTagCell repoAddress={repoAddressGuess} tags={run.tags || []} />
+          <CreatedByTagCell
+            repoAddress={repoAddressGuess}
+            tags={run.tags || []}
+            onAddTag={onAddTag}
+          />
         </td>
       )}
       <td>
