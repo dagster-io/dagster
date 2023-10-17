@@ -278,7 +278,10 @@ export const AssetGraphExplorerSidebar = React.memo(
             ? renderedNodes.findIndex((node) => 'path' in node && node.path === selectedNode.path)
             : -1;
         } else {
-          return renderedNodes.findIndex((node) => nodePathKey(node) === nodePathKey(selectedNode));
+          return renderedNodes.findIndex(
+            (node) =>
+              nodePathKey(node) === nodePathKey(selectedNode) || node.id === selectedNode.id,
+          );
         }
       },
       // eslint-disable-next-line react-hooks/exhaustive-deps
