@@ -40,11 +40,13 @@ from dagster._core.definitions.decorators.asset_decorator import (
 from dagster._utils.merger import merge_dicts
 from dagster._utils.warnings import deprecation_warning
 
+from .dagster_dbt_translator import (
+    DagsterDbtTranslator,
+)
 from .utils import input_name_fn, output_name_fn
 
 if TYPE_CHECKING:
     from .dagster_dbt_translator import (
-        DagsterDbtTranslator,
         DagsterDbtTranslatorSettings,
         DbtManifestWrapper,
     )
@@ -646,6 +648,16 @@ def get_asset_deps(
     Dict[str, List[str]],
     Dict[str, Dict[str, Any]],
 ]:
+    dagster_dbt_translator = check.inst_param(
+        dagster_dbt_translator,
+        "dagster_dbt_translator",
+        DagsterDbtTranslator,
+        additional_message=(
+            "Ensure that the argument is an instantiated class that subclasses"
+            " DagsterDbtTranslator."
+        ),
+    )
+
     from .dagster_dbt_translator import DbtManifestWrapper
 
     asset_deps: Dict[AssetKey, Set[AssetKey]] = {}

@@ -596,6 +596,15 @@ def load_assets_from_dbt_project(
     target_dir = check.opt_str_param(target_dir, "target_dir", os.path.join(project_dir, "target"))
     select = check.opt_str_param(select, "select", "fqn:*")
     exclude = check.opt_str_param(exclude, "exclude", "")
+    dagster_dbt_translator = check.opt_inst_param(
+        dagster_dbt_translator,
+        "dagster_dbt_translator",
+        DagsterDbtTranslator,
+        additional_message=(
+            "Ensure that the argument is an instantiated class that subclasses"
+            " DagsterDbtTranslator."
+        ),
+    )
 
     _raise_warnings_for_deprecated_args(
         "load_assets_from_dbt_manifest",
@@ -796,6 +805,15 @@ def load_assets_from_dbt_manifest(
             this flag to False is advised to reduce the size of the resulting snapshot. Deprecated:
             instead, provide a custom DagsterDbtTranslator that overrides node_info_to_description.
     """
+    dagster_dbt_translator = check.opt_inst_param(
+        dagster_dbt_translator,
+        "dagster_dbt_translator",
+        DagsterDbtTranslator,
+        additional_message=(
+            "Ensure that the argument is an instantiated class that subclasses"
+            " DagsterDbtTranslator."
+        ),
+    )
     manifest = normalize_renamed_param(
         manifest,
         "manifest",

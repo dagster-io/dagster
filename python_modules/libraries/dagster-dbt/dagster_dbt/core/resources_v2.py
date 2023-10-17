@@ -27,6 +27,7 @@ from dagster import (
     AssetsDefinition,
     ConfigurableResource,
     Output,
+    _check as check,
     get_dagster_logger,
 )
 from dagster._annotations import public
@@ -105,6 +106,17 @@ class DbtCliEventMessage:
                 - AssetObservation for dbt test results that are not enabled as asset checks.
                 - AssetCheckResult for dbt test results that are enabled as asset checks.
         """
+        manifest = check.inst_param(manifest, "manifest", (Mapping[str, Any], str, Path))
+        dagster_dbt_translator = check.inst_param(
+            dagster_dbt_translator,
+            "dagster_dbt_translator",
+            DagsterDbtTranslator,
+            additional_message=(
+                "Ensure that the argument is an instantiated class that subclasses"
+                " DagsterDbtTranslator."
+            ),
+        )
+
         if self.raw_event["info"]["level"] == "debug":
             return
 
@@ -797,6 +809,16 @@ class DbtCliResource(ConfigurableResource):
                     dbt_macro_args = {"key": "value"}
                     dbt.cli(["run-operation", "my-macro", json.dumps(dbt_macro_args)]).wait()
         """
+        dagster_dbt_translator = check.inst_param(
+            dagster_dbt_translator,
+            "dagster_dbt_translator",
+            DagsterDbtTranslator,
+            additional_message=(
+                "Ensure that the argument is an instantiated class that subclasses"
+                " DagsterDbtTranslator."
+            ),
+        )
+
         target_path = target_path or self._get_unique_target_path(context=context)
         env = {
             **os.environ.copy(),
