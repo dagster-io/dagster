@@ -495,6 +495,7 @@ class ConfigurableResourceFactory(
                 for attr_name, resource in resources_to_update.items()
                 if attr_name not in partial_resources_to_update
             }
+            print("RESOURCES_TO_UPDATE", resources_to_update)
 
             to_update = {**resources_to_update, **partial_resources_to_update}
             yield self._with_updated_values(to_update)
@@ -947,8 +948,10 @@ def _call_resource_fn_with_default(
     else:
         result = cast(ResourceFunctionWithoutContext, obj.resource_fn)()
 
-    is_fn_generator = inspect.isgenerator(obj.resource_fn) or isinstance(
-        obj.resource_fn, contextlib.ContextDecorator
+    is_fn_generator = (
+        inspect.isgenerator(obj.resource_fn)
+        or isinstance(obj.resource_fn, contextlib.ContextDecorator)
+        or isinstance(result, contextlib.AbstractContextManager)
     )
     if is_fn_generator:
         return stack.enter_context(cast(contextlib.AbstractContextManager, result))
