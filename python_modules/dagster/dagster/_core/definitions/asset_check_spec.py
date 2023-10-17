@@ -3,7 +3,11 @@ from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Union
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental
-from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
+from dagster._core.definitions.events import (
+    AssetKey,
+    CoercibleToAssetKey,
+    CoercibleToAssetKeyPrefix,
+)
 from dagster._serdes.serdes import whitelist_for_serdes
 
 if TYPE_CHECKING:
@@ -43,6 +47,9 @@ class AssetCheckKey(NamedTuple):
             asset_key=AssetKey.from_graphql_input(graphql_input["assetKey"]),
             name=graphql_input["name"],
         )
+
+    def with_asset_key_prefix(self, prefix: CoercibleToAssetKeyPrefix) -> "AssetCheckKey":
+        return self._replace(asset_key=self.asset_key.with_prefix(prefix))
 
 
 @experimental
@@ -92,3 +99,6 @@ class AssetCheckSpec(
     @property
     def key(self) -> AssetCheckKey:
         return AssetCheckKey(self.asset_key, self.name)
+
+    def with_asset_key_prefix(self, prefix: CoercibleToAssetKeyPrefix) -> "AssetCheckSpec":
+        return self._replace(asset_key=self.asset_key.with_prefix(prefix))

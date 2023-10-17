@@ -14,7 +14,10 @@ from typing import (
 from dagster import _check as check
 from dagster._annotations import experimental, public
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
-from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.events import (
+    AssetKey,
+    CoercibleToAssetKeyPrefix,
+)
 from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.resource_requirement import (
@@ -34,6 +37,20 @@ if TYPE_CHECKING:
 class AssetChecksDefinitionInputOutputProps(NamedTuple):
     asset_check_keys_by_output_name: Mapping[str, AssetCheckKey]
     asset_keys_by_input_name: Mapping[str, AssetKey]
+
+    def with_asset_key_prefix(
+        self, prefix: CoercibleToAssetKeyPrefix
+    ) -> "AssetChecksDefinitionInputOutputProps":
+        return self._replace(
+            asset_check_keys_by_output_name={
+                output_name: check_key.with_asset_key_prefix(prefix)
+                for output_name, check_key in self.asset_check_keys_by_output_name.items()
+            },
+            asset_keys_by_input_name={
+                input_name: asset_key.with_prefix(prefix)
+                for input_name, asset_key in self.asset_keys_by_input_name.items()
+            },
+        )
 
 
 @experimental
@@ -143,6 +160,21 @@ class AssetChecksDefinition(ResourceAddable, RequiresResources):
             specs=self._specs,
             input_output_props=self._input_output_props,
         )
+
+    def with_attributes(
+        self,
+        asset_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    ) -> "AssetChecksDefinition":
+        attributes_dict = self.get_attributes_dict()
+        if asset_key_prefix is not None:
+            attributes_dict["specs"] = [
+                spec.with_asset_key_prefix(asset_key_prefix) for spec in self._specs
+            ]
+            attributes_dict["input_output_props"] = self._input_output_props.with_asset_key_prefix(
+                asset_key_prefix
+            )
+
+        return AssetChecksDefinition(**attributes_dict)
 
 
 @experimental
