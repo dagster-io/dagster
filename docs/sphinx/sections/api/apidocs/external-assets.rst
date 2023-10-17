@@ -79,7 +79,7 @@ Returns JSON:
        * **Query parameter**: Accepts JSON encoded object.
    * - data_version
      - Optional
-     - **May be passed in JSON body or as query parameter.** Value is passed to the :py:class:`AssetMaterialization` constructor.
+     - **May be passed in JSON body or as query parameter.** Value is passed to :py:class:`AssetMaterialization` via `tags`.
    * - description
      - Optional
      - **May be passed in JSON body or as query parameter.** Value is passed to the :py:class:`AssetMaterialization` constructor.
@@ -211,4 +211,79 @@ Returns JSON:
             "metadata": {
                 "null_rows": 3
             },
+        }'
+
+
+/report_asset_observation/
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+A ``POST`` request made to this endpoint with the required information will result in an `AssetObservation` event being recorded.
+
+Parameters can be passed in multiple ways and will be considered in the following order:
+
+1. URL (``asset_key`` only)
+2. JSON body (`Content-Type: application/json` header)
+3. Query parameter
+
+Refer to the following table for the list of parameters and how each one can be passed to the API.
+
+Returns JSON:
+* empty object with status 200 on success
+* `{error: ...}` with status 400 on invalid input
+
+**Params**
+
+.. list-table::
+   :widths: 15 15 70
+   :header-rows: 1
+
+   * - **Name**
+     - **Required/Optional**
+     - **Description**
+   * - asset_key
+     - Required
+     - **May be passed as URL path components, JSON, or a query parameter**:
+       * **URL**: The asset key can be specified as path components after `/report_asset_observation/`, where each `/` delimits parts of a multipart :py:class:`AssetKey`.
+
+       * **JSON body**: Value is passed to the :py:class:`AssetKey` constructor.
+
+       * **Query parameter**: Accepts string or JSON encoded array for multipart keys.
+   * - metadata
+     - Optional
+     - **May be passed as JSON or a query parameter**:
+       * **JSON body**: Value is passed to the :py:class:`AssetObservation` constructor.
+
+       * **Query parameter**: Accepts JSON encoded object.
+   * - data_version
+     - Optional
+     - **May be passed in JSON body or as query parameter.** Value is passed to :py:class:`AssetObservation` via `tags`.
+   * - description
+     - Optional
+     - **May be passed in JSON body or as query parameter.** Value is passed to the :py:class:`AssetObservation` constructor.
+   * - partition
+     - Optional
+     - **May be passed in JSON body or as query parameter.** Value is passed to the :py:class:`AssetObservation` constructor.
+
+
+
+**Example:** report an asset observation with data version against locally running webserver
+
+.. code-block:: bash
+
+    curl -X POST "localhost:3000/report_asset_observation/example_asset?data_version=example_data_version"
+
+**Example:** report an asset observation against Dagster Cloud with json body via curl (required authentication done via `Dagster-Cloud-Api-Token` header).
+
+.. code-block:: bash
+
+    curl --request POST \
+        --url https://example-org.dagster.cloud/example-deployment/report_asset_observation/ \
+        --header 'Content-Type: application/json' \
+        --header 'Dagster-Cloud-Api-Token: example-token' \
+        --data '{
+            "asset_key": "example_asset",
+            "metadata": {
+                "rows": 10
+            },
+            "data_version": "example_data_version",
         }'
