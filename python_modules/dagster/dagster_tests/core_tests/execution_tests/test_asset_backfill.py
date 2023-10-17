@@ -262,7 +262,11 @@ def test_scenario_to_completion(scenario: AssetBackfillScenario, failures: str, 
 
             asset_graph = get_asset_graph(assets_by_repo_name)
             if some_or_all == "all":
-                target_subset = AssetGraphSubset.all(asset_graph, dynamic_partitions_store=instance)
+                target_subset = AssetGraphSubset.all(
+                    asset_graph,
+                    dynamic_partitions_store=instance,
+                    current_time=scenario.evaluation_time,
+                )
             elif some_or_all == "some":
                 if scenario.target_root_partition_keys is None:
                     target_subset = make_random_subset(
@@ -401,7 +405,11 @@ def make_backfill_data(
     current_time: datetime.datetime,
 ) -> AssetBackfillData:
     if some_or_all == "all":
-        target_subset = AssetGraphSubset.all(asset_graph, dynamic_partitions_store=instance)
+        target_subset = AssetGraphSubset.all(
+            asset_graph,
+            dynamic_partitions_store=instance,
+            current_time=current_time,
+        )
     elif some_or_all == "some":
         target_subset = make_random_subset(asset_graph, instance, current_time)
     else:
@@ -1056,3 +1064,111 @@ def test_asset_backfill_cancellation():
         ).get_partition_keys()
         == []
     )
+
+
+def test_asset_backfill_target_asset_and_same_partitioning_grandchild():
+    instance = DagsterInstance.ephemeral()
+
+    @asset(partitions_def=DailyPartitionsDefinition("2023-10-01"))
+    def foo():
+        pass
+
+    @asset(partitions_def=DailyPartitionsDefinition("2023-10-01"), deps=[foo])
+    def foo_child():
+        pass
+
+    @asset(partitions_def=DailyPartitionsDefinition("2023-10-01"), deps=[foo_child])
+    def foo_grandchild():
+        pass
+
+    assets_by_repo_name = {
+        "repo": [
+            foo,
+            foo_child,
+            foo_grandchild,
+        ]
+    }
+    asset_graph = get_asset_graph(assets_by_repo_name)
+
+    asset_selection = [
+        foo.key,
+        foo_grandchild.key,
+    ]
+    all_partitions = [f"2023-10-0{x}" for x in range(1, 5)]
+
+    asset_backfill_data = AssetBackfillData.from_asset_partitions(
+        asset_graph=asset_graph,
+        partition_names=None,
+        asset_selection=asset_selection,
+        dynamic_partitions_store=MagicMock(),
+        all_partitions=True,
+        backfill_start_time=pendulum.datetime(2023, 10, 5, 0, 0, 0),
+    )
+    assert set(asset_backfill_data.target_subset.iterate_asset_partitions()) == {
+        AssetKeyPartitionKey(asset_key, partition_key)
+        for asset_key in [foo.key, foo_grandchild.key]
+        for partition_key in all_partitions
+    }
+
+    asset_backfill_data = _single_backfill_iteration(
+        "fake_id", asset_backfill_data, asset_graph, instance, assets_by_repo_name
+    )
+    assert asset_backfill_data.requested_subset == asset_backfill_data.target_subset
+
+
+def test_asset_backfill_target_asset_and_differently_partitioned_grandchild():
+    instance = DagsterInstance.ephemeral()
+
+    @asset(partitions_def=DailyPartitionsDefinition("2023-10-01"))
+    def foo():
+        pass
+
+    @asset(partitions_def=DailyPartitionsDefinition("2023-10-01"), deps={foo})
+    def foo_child():
+        pass
+
+    @asset(partitions_def=WeeklyPartitionsDefinition("2023-10-01"), deps={foo_child})
+    def foo_grandchild():
+        pass
+
+    assets_by_repo_name = {
+        "repo": [
+            foo,
+            foo_child,
+            foo_grandchild,
+        ]
+    }
+    asset_graph = get_asset_graph(assets_by_repo_name)
+
+    asset_selection = [
+        foo.key,
+        foo_grandchild.key,
+    ]
+
+    asset_backfill_data = AssetBackfillData.from_asset_partitions(
+        asset_graph=asset_graph,
+        partition_names=None,
+        asset_selection=asset_selection,
+        dynamic_partitions_store=MagicMock(),
+        all_partitions=True,
+        backfill_start_time=pendulum.datetime(2023, 10, 8, 0, 0, 0),
+    )
+
+    expected_targeted_partitions = {
+        AssetKeyPartitionKey(foo_grandchild.key, "2023-10-01"),
+        *{
+            AssetKeyPartitionKey(asset_key, partition_key)
+            for asset_key in [foo.key]
+            for partition_key in [f"2023-10-0{x}" for x in range(1, 8)]
+        },
+    }
+
+    assert (
+        set(asset_backfill_data.target_subset.iterate_asset_partitions())
+        == expected_targeted_partitions
+    )
+
+    asset_backfill_data = _single_backfill_iteration(
+        "fake_id", asset_backfill_data, asset_graph, instance, assets_by_repo_name
+    )
+    assert asset_backfill_data.requested_subset == asset_backfill_data.target_subset

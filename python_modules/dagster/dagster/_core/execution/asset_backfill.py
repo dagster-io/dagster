@@ -176,13 +176,20 @@ class AssetBackfillData(NamedTuple):
         return True
 
     def get_target_root_asset_partitions(self) -> Iterable[AssetKeyPartitionKey]:
-        root_asset_keys = (
-            AssetSelection.keys(*self.target_subset.asset_keys)
-            .sources()
-            .resolve(self.target_subset.asset_graph)
-        )
+        assets_with_no_parents_in_target_subset = {
+            asset_key
+            for asset_key in self.target_subset.asset_keys
+            if all(
+                parent not in self.target_subset.asset_keys
+                for parent in self.target_subset.asset_graph.get_parents(asset_key)
+                - {asset_key}  # Do not include an asset as its own parent
+            )
+        }
+
         return list(
-            self.target_subset.filter_asset_keys(root_asset_keys).iterate_asset_partitions()
+            self.target_subset.filter_asset_keys(
+                assets_with_no_parents_in_target_subset
+            ).iterate_asset_partitions()
         )
 
     def get_target_root_partitions_subset(self) -> PartitionsSubset:
@@ -422,7 +429,7 @@ class AssetBackfillData(NamedTuple):
 
         if all_partitions:
             target_subset = AssetGraphSubset.from_asset_keys(
-                asset_selection, asset_graph, dynamic_partitions_store
+                asset_selection, asset_graph, dynamic_partitions_store, backfill_start_time
             )
         elif partition_names is not None:
             partitioned_asset_keys = {
