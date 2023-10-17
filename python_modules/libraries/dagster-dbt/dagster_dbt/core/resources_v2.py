@@ -30,13 +30,14 @@ from dagster import (
     get_dagster_logger,
 )
 from dagster._annotations import public
+from dagster._config.pythonic_config.pydantic_compat_layer import compat_model_validator
 from dagster._core.errors import DagsterInvalidPropertyError
 from dagster._core.execution.context.compute import OpExecutionContext
 from dbt.contracts.results import NodeStatus, TestStatus
 from dbt.node_types import NodeType
 from dbt.version import __version__ as dbt_version
 from packaging import version
-from pydantic import Field, root_validator, validator
+from pydantic import Field, validator
 from typing_extensions import Literal
 
 from ..asset_utils import (
@@ -523,7 +524,6 @@ class DbtCliResource(ConfigurableResource):
     """
 
     project_dir: str = Field(
-        ...,
         description=(
             "The path to your dbt project directory. This directory should contain a"
             " `dbt_project.yml`. See https://docs.getdbt.com/reference/dbt_project.yml for more"
@@ -641,7 +641,7 @@ class DbtCliResource(ConfigurableResource):
 
         return dbt_executable
 
-    @root_validator(pre=True)
+    @compat_model_validator(mode="before")
     def validate_dbt_version(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate that the dbt version is supported."""
         if version.parse(dbt_version) < version.parse("1.4.0"):
