@@ -116,6 +116,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     setAssetGraphDataMaybeCached(null);
     setIsCached(false);
     setIsCalculating(true);
+    let cancel = false;
     (async () => {
       let fullAssetGraphData = null;
       if (applyingEmptyDefault && repoFilteredNodes && !flagDisableDAGCache) {
@@ -127,6 +128,9 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
         }
         if (fullAssetGraphData) {
           const isCached = await asyncGetFullAssetLayoutIndexDB.isCached(fullAssetGraphData);
+          if (cancel) {
+            return;
+          }
           if (isCached) {
             setAssetGraphDataMaybeCached(fullAssetGraphData);
             setIsCached(true);
@@ -139,6 +143,10 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
       setIsCached(false);
       setIsCalculating(false);
     })();
+
+    return () => {
+      cancel = true;
+    };
   }, [
     applyingEmptyDefault,
     graphQueryItems,
