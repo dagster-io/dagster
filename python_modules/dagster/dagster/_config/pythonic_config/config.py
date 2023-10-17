@@ -45,6 +45,7 @@ from .pydantic_compat_layer import (
     model_config,
     model_fields,
 )
+from .type_check_utils import is_literal
 from .typing_utils import BaseConfigMeta
 
 try:
@@ -270,7 +271,7 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
             field = model_fields(self).get(key)
 
             if field:
-                if value == field.default:
+                if not is_literal(field.annotation) and value == field.default:
                     continue
 
                 resolved_field_name = field.alias or key
