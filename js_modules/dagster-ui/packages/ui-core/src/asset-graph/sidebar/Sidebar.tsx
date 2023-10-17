@@ -367,6 +367,7 @@ export const AssetGraphExplorerSidebar = React.memo(
                         viewType={viewType}
                         isOpen={openNodes.has(nodePathKey(node))}
                         graphData={graphData}
+                        fullAssetGraphData={fullAssetGraphData}
                         node={row}
                         level={node.level}
                         isSelected={

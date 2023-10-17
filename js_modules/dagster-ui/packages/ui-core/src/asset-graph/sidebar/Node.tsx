@@ -29,6 +29,7 @@ import {FolderNodeNonAssetType, StatusCaseDot, getDisplayName} from './util';
 
 export const Node = ({
   graphData,
+  fullAssetGraphData,
   node,
   level,
   toggleOpen,
@@ -41,6 +42,7 @@ export const Node = ({
   viewType,
 }: {
   graphData: GraphData;
+  fullAssetGraphData: GraphData;
   node: GraphNode | FolderNodeNonAssetType;
   level: number;
   toggleOpen: () => void;
@@ -112,7 +114,7 @@ export const Node = ({
       {launchpadElement}
       <UpstreamDownstreamDialog
         title="Parent assets"
-        graphData={graphData}
+        graphData={fullAssetGraphData}
         assetKeys={upstream}
         isOpen={showParents}
         setIsOpen={setShowParents}
@@ -355,7 +357,7 @@ const GrayOnHoverBox = styled(Box)`
   }
 `;
 
-function StatusDot({node}: {node: GraphNode}) {
+function StatusDot({node}: {node: Pick<GraphNode, 'assetKey' | 'definition'>}) {
   const {liveData} = useAssetLiveData(node.assetKey);
   if (!liveData) {
     return <StatusCaseDot statusCase={StatusCase.LOADING} />;
