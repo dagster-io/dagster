@@ -1,7 +1,6 @@
 import * as React from 'react';
 import {Redirect, Route, Switch} from 'react-router-dom';
 
-import {useFeatureFlags} from '../app/Flags';
 import {AutomaterializationRoot} from '../assets/auto-materialization/AutomaterializationRoot';
 import {InstanceBackfills} from '../instance/InstanceBackfills';
 import {BackfillPage} from '../instance/backfill/BackfillPage';
