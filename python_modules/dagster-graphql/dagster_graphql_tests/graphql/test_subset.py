@@ -1,7 +1,7 @@
 from typing import AbstractSet, Any, Mapping
 
 from dagster._core.workspace.context import WorkspaceRequestContext
-from dagster_graphql.test.utils import GqlResult, execute_dagster_graphql, infer_pipeline_selector
+from dagster_graphql.test.utils import GqlResult, execute_dagster_graphql, infer_job_selector
 
 from .graphql_context_test_suite import NonLaunchableGraphQLContextTestMatrix
 
@@ -52,7 +52,7 @@ class TestSolidSelections(NonLaunchableGraphQLContextTestMatrix):
     def test_csv_hello_world_pipeline_or_error_subset_wrong_solid_name(
         self, graphql_context: WorkspaceRequestContext
     ):
-        selector = infer_pipeline_selector(graphql_context, "csv_hello_world", ["nope"])
+        selector = infer_job_selector(graphql_context, "csv_hello_world", ["nope"])
         result = execute_dagster_graphql(
             graphql_context, SCHEMA_OR_ERROR_SUBSET_QUERY, {"selector": selector}
         )
@@ -63,7 +63,7 @@ class TestSolidSelections(NonLaunchableGraphQLContextTestMatrix):
         assert "No qualified ops to execute" in result.data["runConfigSchemaOrError"]["message"]
 
     def test_pipeline_with_invalid_definition_error(self, graphql_context: WorkspaceRequestContext):
-        selector = infer_pipeline_selector(
+        selector = infer_job_selector(
             graphql_context, "job_with_invalid_definition_error", ["fail_subset"]
         )
         result = execute_dagster_graphql(

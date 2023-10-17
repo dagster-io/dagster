@@ -33,8 +33,7 @@ from dagster_graphql.test.utils import (
     GqlTag,
     define_out_of_process_context,
     execute_dagster_graphql,
-    infer_job_or_pipeline_selector,
-    infer_pipeline_selector,
+    infer_job_selector,
     infer_repository_selector,
 )
 
@@ -640,11 +639,11 @@ def _create_run(
     tags: Optional[Sequence[GqlTag]] = None,
 ) -> str:
     if asset_selection:
-        selector = infer_job_or_pipeline_selector(
+        selector = infer_job_selector(
             graphql_context, pipeline_name, asset_selection=asset_selection
         )
     else:
-        selector = infer_pipeline_selector(
+        selector = infer_job_selector(
             graphql_context,
             pipeline_name,
         )
@@ -947,7 +946,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert second_timestamp == int(materializations[0]["timestamp"])
 
     def test_asset_node_in_pipeline(self, graphql_context: WorkspaceRequestContext):
-        selector = infer_pipeline_selector(graphql_context, "two_assets_job")
+        selector = infer_job_selector(graphql_context, "two_assets_job")
         result = execute_dagster_graphql(
             graphql_context,
             GET_ASSET_NODES_FROM_KEYS,
@@ -979,7 +978,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert asset_node["id"] == 'test.test_repo.["asset_one"]'
 
     def test_asset_node_is_executable(self, graphql_context: WorkspaceRequestContext):
-        selector = infer_pipeline_selector(graphql_context, "executable_test_job")
+        selector = infer_job_selector(graphql_context, "executable_test_job")
         result = execute_dagster_graphql(
             graphql_context,
             GET_ASSET_IS_EXECUTABLE,
@@ -1001,7 +1000,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert unexec_asset_node["isExecutable"] is False
 
     def test_asset_partitions_in_pipeline(self, graphql_context: WorkspaceRequestContext):
-        selector = infer_pipeline_selector(graphql_context, "two_assets_job")
+        selector = infer_job_selector(graphql_context, "two_assets_job")
         result = execute_dagster_graphql(
             graphql_context,
             GET_ASSET_PARTITIONS,
@@ -1014,7 +1013,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         asset_node = result.data["assetNodes"][0]
         assert asset_node["partitionKeys"] == []
 
-        selector = infer_pipeline_selector(graphql_context, "static_partitioned_assets_job")
+        selector = infer_job_selector(graphql_context, "static_partitioned_assets_job")
         result = execute_dagster_graphql(
             graphql_context,
             GET_ASSET_PARTITIONS,
@@ -1043,7 +1042,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             "f",
         ]
 
-        selector = infer_pipeline_selector(graphql_context, "time_partitioned_assets_job")
+        selector = infer_job_selector(graphql_context, "time_partitioned_assets_job")
         result = execute_dagster_graphql(
             graphql_context,
             GET_ASSET_PARTITIONS,
@@ -1064,7 +1063,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
     def test_latest_materialization_per_partition(self, graphql_context: WorkspaceRequestContext):
         _create_partitioned_run(graphql_context, "partition_materialization_job", partition_key="c")
 
-        selector = infer_pipeline_selector(graphql_context, "partition_materialization_job")
+        selector = infer_job_selector(graphql_context, "partition_materialization_job")
         result = execute_dagster_graphql(
             graphql_context,
             GET_LATEST_MATERIALIZATION_PER_PARTITION,
@@ -1111,7 +1110,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             graphql_context, "partition_materialization_job", partition_key="a"
         )
 
-        selector = infer_pipeline_selector(graphql_context, "partition_materialization_job")
+        selector = infer_job_selector(graphql_context, "partition_materialization_job")
         result = execute_dagster_graphql(
             graphql_context,
             GET_LATEST_RUN_FOR_PARTITION,
@@ -1160,7 +1159,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 
     def test_default_partitions(self, graphql_context: WorkspaceRequestContext) -> None:
         # test for unpartitioned asset
-        selector = infer_pipeline_selector(graphql_context, "two_assets_job")
+        selector = infer_job_selector(graphql_context, "two_assets_job")
         result = execute_dagster_graphql(
             graphql_context,
             GET_1D_ASSET_PARTITIONS,
@@ -1191,7 +1190,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 
         # Test for static partitioned asset with partitions [a, b, c, d]
         # First test that no partitions are materialized
-        selector = infer_pipeline_selector(graphql_context, "partition_materialization_job")
+        selector = infer_job_selector(graphql_context, "partition_materialization_job")
         result = execute_dagster_graphql(
             graphql_context,
             GET_1D_ASSET_PARTITIONS,
@@ -1232,7 +1231,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         # Test that when partition a is materialized that the materialized partitions are a
         _create_partitioned_run(graphql_context, "partition_materialization_job", partition_key="a")
 
-        selector = infer_pipeline_selector(graphql_context, "partition_materialization_job")
+        selector = infer_job_selector(graphql_context, "partition_materialization_job")
         result = execute_dagster_graphql(
             graphql_context,
             GET_1D_ASSET_PARTITIONS,
@@ -1272,7 +1271,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         _create_partitioned_run(
             graphql_context, "fail_partition_materialization_job", partition_key="b"
         )
-        selector = infer_pipeline_selector(graphql_context, "fail_partition_materialization_job")
+        selector = infer_job_selector(graphql_context, "fail_partition_materialization_job")
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -1364,7 +1363,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 
     def test_dynamic_partitions(self, graphql_context: WorkspaceRequestContext):
         traced_counter.set(Counter())
-        selector = infer_pipeline_selector(graphql_context, "dynamic_partitioned_assets_job")
+        selector = infer_job_selector(graphql_context, "dynamic_partitioned_assets_job")
 
         def _get_materialized_partitions():
             return execute_dagster_graphql(
@@ -1435,7 +1434,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 
         # Test for hourly partitioned asset
         # First test that no partitions are materialized
-        selector = infer_pipeline_selector(graphql_context, "time_partitioned_assets_job")
+        selector = infer_job_selector(graphql_context, "time_partitioned_assets_job")
         result = execute_dagster_graphql(
             graphql_context,
             GET_1D_ASSET_PARTITIONS,
@@ -1457,7 +1456,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             graphql_context, "time_partitioned_assets_job", partition_key=time_0
         )
 
-        selector = infer_pipeline_selector(graphql_context, "time_partitioned_assets_job")
+        selector = infer_job_selector(graphql_context, "time_partitioned_assets_job")
         result = execute_dagster_graphql(
             graphql_context,
             GET_1D_ASSET_PARTITIONS,
@@ -1744,7 +1743,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert events[0].get_dagster_event().asset_key == AssetKey("bar")
         assert run.asset_selection == {AssetKey("bar")}
 
-        selector = infer_job_or_pipeline_selector(
+        selector = infer_job_selector(
             graphql_context, "foo_job", asset_selection=[{"path": ["bar"]}]
         )
         result = execute_dagster_graphql(
@@ -1805,7 +1804,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         ) == expected_default_group_members
 
     def test_typed_assets(self, graphql_context: WorkspaceRequestContext):
-        selector = infer_pipeline_selector(graphql_context, "typed_assets")
+        selector = infer_job_selector(graphql_context, "typed_assets")
         result = execute_dagster_graphql(
             graphql_context,
             GET_ASSET_TYPE,
@@ -1914,7 +1913,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
     def test_multipartitions_get_materialization_status(
         self, graphql_context: WorkspaceRequestContext
     ):
-        selector = infer_pipeline_selector(graphql_context, "no_multipartitions_job")
+        selector = infer_job_selector(graphql_context, "no_multipartitions_job")
         result = execute_dagster_graphql(
             graphql_context,
             GET_2D_ASSET_PARTITIONS,
@@ -1933,7 +1932,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             )
 
         # Test that when unmaterialized, no materialized partitions are returned
-        selector = infer_pipeline_selector(graphql_context, "multipartitions_job")
+        selector = infer_job_selector(graphql_context, "multipartitions_job")
         result = execute_dagster_graphql(
             graphql_context,
             GET_2D_ASSET_PARTITIONS,
@@ -2051,7 +2050,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             )
 
         # Test that when unmaterialized, no materialized partitions are returned
-        selector = infer_pipeline_selector(graphql_context, "multipartitions_fail_job")
+        selector = infer_job_selector(graphql_context, "multipartitions_fail_job")
         result = execute_dagster_graphql(
             graphql_context,
             GET_2D_ASSET_PARTITIONS,
@@ -2171,9 +2170,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 
     def test_dynamic_dim_in_multipartitions_def(self, graphql_context: WorkspaceRequestContext):
         # Test that when unmaterialized, no materialized partitions are returned
-        selector = infer_pipeline_selector(
-            graphql_context, "dynamic_in_multipartitions_success_job"
-        )
+        selector = infer_job_selector(graphql_context, "dynamic_in_multipartitions_success_job")
         result = execute_dagster_graphql(
             graphql_context,
             GET_2D_ASSET_PARTITIONS,
@@ -2356,7 +2353,7 @@ class TestAssetEventsReadOnly(ReadonlyGraphQLContextTestMatrix):
 
 class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):
     def test_asset_in_progress(self, graphql_context: WorkspaceRequestContext):
-        selector = infer_pipeline_selector(graphql_context, "hanging_job")
+        selector = infer_job_selector(graphql_context, "hanging_job")
 
         with safe_tempfile_path() as path:
             result = execute_dagster_graphql(
@@ -2419,7 +2416,7 @@ class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):
             assert assets_live_info[2]["inProgressRunIds"] == []
 
     def test_graph_asset_in_progress(self, graphql_context: WorkspaceRequestContext):
-        selector = infer_pipeline_selector(graphql_context, "hanging_graph_asset_job")
+        selector = infer_job_selector(graphql_context, "hanging_graph_asset_job")
 
         with safe_tempfile_path() as path:
             result = execute_dagster_graphql(
@@ -2476,7 +2473,7 @@ class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):
             assert assets_live_info[0]["inProgressRunIds"] == []
 
     def test_partitioned_asset_in_progress(self, graphql_context: WorkspaceRequestContext):
-        selector = infer_pipeline_selector(graphql_context, "hanging_partition_asset_job")
+        selector = infer_job_selector(graphql_context, "hanging_partition_asset_job")
 
         with safe_tempfile_path() as path:
             result = execute_dagster_graphql(
@@ -2657,7 +2654,7 @@ def test_1d_subset_backcompat():
         with define_out_of_process_context(
             __file__, "get_partitioned_asset_repo", instance
         ) as graphql_context:
-            abc_selector = infer_pipeline_selector(graphql_context, "abc_asset_job")
+            abc_selector = infer_job_selector(graphql_context, "abc_asset_job")
             result = execute_dagster_graphql(
                 graphql_context,
                 GET_1D_ASSET_PARTITIONS,
@@ -2695,7 +2692,7 @@ def test_1d_subset_backcompat():
                 "b",
             }
 
-            daily_job_selector = infer_pipeline_selector(graphql_context, "daily_asset_job")
+            daily_job_selector = infer_job_selector(graphql_context, "daily_asset_job")
             result = execute_dagster_graphql(
                 graphql_context,
                 GET_1D_ASSET_PARTITIONS,
@@ -2740,9 +2737,7 @@ def test_2d_subset_backcompat():
         with define_out_of_process_context(
             __file__, "get_partitioned_asset_repo", instance
         ) as graphql_context:
-            multipartitions_selector = infer_pipeline_selector(
-                graphql_context, "multipartitions_job"
-            )
+            multipartitions_selector = infer_job_selector(graphql_context, "multipartitions_job")
             result = execute_dagster_graphql(
                 graphql_context,
                 GET_2D_ASSET_PARTITIONS,
