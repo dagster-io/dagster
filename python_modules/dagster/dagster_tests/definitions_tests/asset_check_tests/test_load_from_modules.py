@@ -28,7 +28,7 @@ def test_load_asset_checks_from_modules():
 
 
 def test_load_asset_checks_from_modules_prefix():
-    checks = load_asset_checks_from_modules([checks_module], key_prefix="foo")
+    checks = load_asset_checks_from_modules([checks_module], asset_key_prefix="foo")
     assert len(checks) == 1
 
     assert checks[0].spec.asset_key == AssetKey(["foo", "asset_1"])
