@@ -12,6 +12,8 @@ from dagster._annotations import experimental
 
 from dagster_embedded_elt.sling.resources import SlingMode, SlingResource
 
+ASSET_KEY_SPLIT_REGEX = re.compile("[^a-zA-Z0-9_]")
+
 
 @experimental
 def build_sling_asset(
@@ -73,7 +75,12 @@ def build_sling_asset(
         update_key = [update_key]
 
     @multi_asset(
-        compute_kind="sling", specs=[asset_spec], required_resource_keys={sling_resource_key}
+        name="sling_"
+        + re.sub(ASSET_KEY_SPLIT_REGEX, "_", source_stream)
+        + re.sub(ASSET_KEY_SPLIT_REGEX, "_", target_object),
+        compute_kind="sling",
+        specs=[asset_spec],
+        required_resource_keys={sling_resource_key},
     )
     def sync(context: AssetExecutionContext) -> MaterializeResult:
         sling: SlingResource = getattr(context.resources, sling_resource_key)
