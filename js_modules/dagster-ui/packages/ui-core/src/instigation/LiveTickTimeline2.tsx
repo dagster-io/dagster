@@ -42,6 +42,7 @@ const timestampFormat = memoize((timezone: string) => {
     second: '2-digit',
     hourCycle: 'h23',
     timeZone: timezone === 'Automatic' ? browserTimezone() : timezone,
+    timeZoneName: 'short',
   });
 });
 export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTickFragment>({
