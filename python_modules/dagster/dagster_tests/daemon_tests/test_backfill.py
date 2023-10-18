@@ -1254,7 +1254,6 @@ def test_error_code_location(
     assert (
         "dagster._core.errors.DagsterAssetBackfillDataLoadError: Asset asset_a existed at"
         " storage-time, but no longer does. This could be because it's inside a code location"
-        " that's failing to load"
-        in errors[0].message
+        " that's failing to load" in errors[0].message
     )
     assert "Failure loading location" in caplog.text

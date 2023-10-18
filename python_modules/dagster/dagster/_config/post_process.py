@@ -90,11 +90,13 @@ def _recurse_in_to_scalar_union(
 ) -> EvaluateValueResult[Any]:
     if isinstance(config_value, (dict, list)):
         return _recursively_process_config(
-            context.for_new_config_type(context.config_type.non_scalar_type), config_value  # type: ignore
+            context.for_new_config_type(context.config_type.non_scalar_type),
+            config_value,  # type: ignore
         )
     else:
         return _recursively_process_config(
-            context.for_new_config_type(context.config_type.scalar_type), config_value  # type: ignore
+            context.for_new_config_type(context.config_type.scalar_type),
+            config_value,  # type: ignore
         )
 
 

@@ -627,7 +627,11 @@ class SqlRunStorage(RunStorage):
 
         row = self.fetchone(query)
 
-        return defensively_unpack_execution_plan_snapshot_query(logging, [row["snapshot_body"]]) if row else None  # type: ignore
+        return (
+            defensively_unpack_execution_plan_snapshot_query(logging, [row["snapshot_body"]])
+            if row
+            else None
+        )  # type: ignore
 
     def get_run_partition_data(self, runs_filter: RunsFilter) -> Sequence[RunPartitionData]:
         if self.has_built_index(RUN_PARTITIONS) and self.has_run_stats_index_cols():

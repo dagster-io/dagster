@@ -625,7 +625,8 @@ class ExternalExecutionParamsErrorData(
 
 class ExternalPartitionsDefinitionData(ABC):
     @abstractmethod
-    def get_partitions_definition(self) -> PartitionsDefinition: ...
+    def get_partitions_definition(self) -> PartitionsDefinition:
+        ...
 
 
 @whitelist_for_serdes
@@ -1470,9 +1471,9 @@ def external_asset_nodes_from_defs(
     job_defs: Sequence[JobDefinition],
     source_assets_by_key: Mapping[AssetKey, SourceAsset],
 ) -> Sequence[ExternalAssetNode]:
-    node_defs_by_asset_key: Dict[AssetKey, List[Tuple[NodeOutputHandle, JobDefinition]]] = (
-        defaultdict(list)
-    )
+    node_defs_by_asset_key: Dict[
+        AssetKey, List[Tuple[NodeOutputHandle, JobDefinition]]
+    ] = defaultdict(list)
     asset_info_by_asset_key: Dict[AssetKey, AssetOutputInfo] = dict()
     freshness_policy_by_asset_key: Dict[AssetKey, FreshnessPolicy] = dict()
     metadata_by_asset_key: Dict[AssetKey, MetadataUserInput] = dict()

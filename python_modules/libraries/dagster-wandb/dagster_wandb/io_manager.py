@@ -179,8 +179,8 @@ class ArtifactsIOManager(IOManager):
             serialization_module_parameters = serialization_module.get("parameters", {})
             serialization_module_parameters_with_protocol = {
                 "protocol": (
-                    pickle.HIGHEST_PROTOCOL
-                ),  # we use the highest available protocol if we don't pass one
+                    pickle.HIGHEST_PROTOCOL  # we use the highest available protocol if we don't pass one
+                ),
                 **serialization_module_parameters,
             }
 

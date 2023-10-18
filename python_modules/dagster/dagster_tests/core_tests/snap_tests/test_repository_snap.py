@@ -114,8 +114,7 @@ def test_repository_snap_definitions_resources_nested() -> None:
 
     assert len(foo) == 1
     assert (
-        foo[0].resource_type
-        == "dagster_tests.core_tests.snap_tests.test_repository_snap."
+        foo[0].resource_type == "dagster_tests.core_tests.snap_tests.test_repository_snap."
         "test_repository_snap_definitions_resources_nested.<locals>.MyOuterResource"
     )
 
@@ -154,8 +153,7 @@ def test_repository_snap_definitions_resources_nested_top_level() -> None:
     assert "inner" in foo[0].nested_resources
     assert foo[0].nested_resources["inner"] == NestedResource(NestedResourceType.TOP_LEVEL, "inner")
     assert (
-        foo[0].resource_type
-        == "dagster_tests.core_tests.snap_tests.test_repository_snap."
+        foo[0].resource_type == "dagster_tests.core_tests.snap_tests.test_repository_snap."
         "test_repository_snap_definitions_resources_nested_top_level.<locals>.MyOuterResource"
     )
 
@@ -163,8 +161,7 @@ def test_repository_snap_definitions_resources_nested_top_level() -> None:
     assert "foo" in inner[0].parent_resources
     assert inner[0].parent_resources["foo"] == "inner"
     assert (
-        inner[0].resource_type
-        == "dagster_tests.core_tests.snap_tests.test_repository_snap."
+        inner[0].resource_type == "dagster_tests.core_tests.snap_tests.test_repository_snap."
         "test_repository_snap_definitions_resources_nested_top_level.<locals>.MyInnerResource"
     )
 
@@ -611,10 +608,12 @@ def test_asset_check():
         pass
 
     @asset_check(asset=my_asset)
-    def my_asset_check(): ...
+    def my_asset_check():
+        ...
 
     @asset_check(asset=my_asset)
-    def my_asset_check_2(): ...
+    def my_asset_check_2():
+        ...
 
     defs = Definitions(
         assets=[my_asset],
@@ -640,7 +639,8 @@ def test_asset_check_in_asset_op():
         pass
 
     @asset_check(asset=my_asset)
-    def my_asset_check(): ...
+    def my_asset_check():
+        ...
 
     defs = Definitions(
         assets=[my_asset],
@@ -666,7 +666,8 @@ def test_asset_check_multiple_jobs():
         pass
 
     @asset_check(asset=my_asset)
-    def my_asset_check(): ...
+    def my_asset_check():
+        ...
 
     my_job = build_assets_job("my_job", [my_asset])
 

@@ -255,8 +255,9 @@ class InProgressCompositionContext:
 
         if self._invocations.get(node_name):
             raise DagsterInvalidDefinitionError(
-                "{source} {name} invoked the same node ({node_name}) twice without aliasing."
-                .format(source=self.source, name=self.name, node_name=node_name)
+                "{source} {name} invoked the same node ({node_name}) twice without aliasing.".format(
+                    source=self.source, name=self.name, node_name=node_name
+                )
             )
 
         self._invocations[node_name] = InvokedNode(

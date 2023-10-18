@@ -132,7 +132,9 @@ query GetLatestExecution($assetKey: AssetKeyInput!) {
 }
 """
 
-LAUNCH_PIPELINE_EXECUTION_MUTATION = ERROR_FRAGMENT + """
+LAUNCH_PIPELINE_EXECUTION_MUTATION = (
+    ERROR_FRAGMENT
+    + """
 mutation($executionParams: ExecutionParams!) {
   launchPipelineExecution(executionParams: $executionParams) {
     __typename
@@ -189,6 +191,7 @@ mutation($executionParams: ExecutionParams!) {
   }
 }
 """
+)
 
 RUN_QUERY = """
 query RunQuery($runId: ID!) {

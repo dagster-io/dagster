@@ -149,7 +149,9 @@ def host_mode_execution_context_event_generator(
                 error_info=error_info,
             )
             log_manager.log_dagster_event(
-                level=logging.ERROR, msg=event.message, dagster_event=event  # type: ignore
+                level=logging.ERROR,
+                msg=event.message,
+                dagster_event=event,  # type: ignore
             )
             yield event
         else:

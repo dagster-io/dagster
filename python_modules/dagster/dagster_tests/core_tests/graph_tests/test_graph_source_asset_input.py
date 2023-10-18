@@ -14,7 +14,8 @@ from dagster import (
 
 def make_io_manager(source_asset: SourceAsset, input_value=5, expected_metadata={}):
     class MyIOManager(IOManager):
-        def handle_output(self, context, obj): ...
+        def handle_output(self, context, obj):
+            ...
 
         def load_input(self, context):
             self.loaded_input = True
@@ -67,7 +68,8 @@ def test_partitioned_source_asset_input_value():
     asset1 = SourceAsset("asset1", partitions_def=partitions_def)
 
     class MyIOManager(IOManager):
-        def handle_output(self, context, obj): ...
+        def handle_output(self, context, obj):
+            ...
 
         def load_input(self, context):
             self.loaded_input = True
@@ -97,7 +99,8 @@ def test_non_partitioned_job_partitioned_source_asset():
     asset1 = SourceAsset("asset1", partitions_def=partitions_def)
 
     class MyIOManager(IOManager):
-        def handle_output(self, context, obj): ...
+        def handle_output(self, context, obj):
+            ...
 
         def load_input(self, context):
             self.loaded_input = True

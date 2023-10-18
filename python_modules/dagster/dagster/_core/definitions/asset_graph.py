@@ -158,9 +158,9 @@ class AssetGraph:
         assets_defs: List[AssetsDefinition] = []
         source_assets: List[SourceAsset] = []
         partitions_defs_by_key: Dict[AssetKey, Optional[PartitionsDefinition]] = {}
-        partition_mappings_by_key: Dict[AssetKey, Optional[Mapping[AssetKey, PartitionMapping]]] = (
-            {}
-        )
+        partition_mappings_by_key: Dict[
+            AssetKey, Optional[Mapping[AssetKey, PartitionMapping]]
+        ] = {}
         group_names_by_key: Dict[AssetKey, Optional[str]] = {}
         freshness_policies_by_key: Dict[AssetKey, Optional[FreshnessPolicy]] = {}
         auto_materialize_policies_by_key: Dict[AssetKey, Optional[AutoMaterializePolicy]] = {}
@@ -178,9 +178,9 @@ class AssetGraph:
                 partitions_defs_by_key[asset.key] = asset.partitions_def
                 group_names_by_key[asset.key] = asset.group_name
                 is_observable_by_key[asset.key] = asset.is_observable
-                auto_observe_interval_minutes_by_key[asset.key] = (
-                    asset.auto_observe_interval_minutes
-                )
+                auto_observe_interval_minutes_by_key[
+                    asset.key
+                ] = asset.auto_observe_interval_minutes
             else:  # AssetsDefinition
                 assets_defs.append(asset)
                 partition_mappings_by_key.update(

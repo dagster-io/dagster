@@ -156,7 +156,8 @@ class NamedConfigurableDefinition(ConfigurableDefinition):
         name: str,
         description: Optional[str],
         config_schema: IDefinitionConfigSchema,
-    ) -> Self: ...
+    ) -> Self:
+        ...
 
 
 def _check_configurable_param(configurable: ConfigurableDefinition) -> None:

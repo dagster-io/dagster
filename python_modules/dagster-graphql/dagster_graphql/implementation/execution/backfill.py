@@ -117,8 +117,9 @@ def create_and_launch_partition_backfill(
 
         check.invariant(
             len(matches) == 1,
-            "Partition set names must be unique: found {num} matches for {partition_set_name}"
-            .format(num=len(matches), partition_set_name=partition_set_name),
+            "Partition set names must be unique: found {num} matches for {partition_set_name}".format(
+                num=len(matches), partition_set_name=partition_set_name
+            ),
         )
         external_partition_set = next(iter(matches))
 

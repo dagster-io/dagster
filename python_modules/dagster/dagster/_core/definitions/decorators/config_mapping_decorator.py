@@ -74,7 +74,8 @@ class _ConfigMapping:
 @overload
 def config_mapping(
     config_fn: ConfigMappingFn,
-) -> ConfigMapping: ...
+) -> ConfigMapping:
+    ...
 
 
 @overload
@@ -82,7 +83,8 @@ def config_mapping(
     *,
     config_schema: UserConfigSchema = ...,
     receive_processed_config_values: Optional[bool] = ...,
-) -> Callable[[ConfigMappingFn], ConfigMapping]: ...
+) -> Callable[[ConfigMappingFn], ConfigMapping]:
+    ...
 
 
 def config_mapping(

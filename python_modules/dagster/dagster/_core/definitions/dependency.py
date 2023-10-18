@@ -240,7 +240,8 @@ class Node(ABC):
         return self._retry_policy
 
     @abstractmethod
-    def describe_node(self) -> str: ...
+    def describe_node(self) -> str:
+        ...
 
     @abstractmethod
     def get_resource_requirements(
@@ -248,7 +249,8 @@ class Node(ABC):
         outer_container: "GraphDefinition",
         parent_handle: Optional["NodeHandle"] = None,
         asset_layer: Optional["AssetLayer"] = None,
-    ) -> Iterator["ResourceRequirement"]: ...
+    ) -> Iterator["ResourceRequirement"]:
+        ...
 
 
 class GraphNode(Node):

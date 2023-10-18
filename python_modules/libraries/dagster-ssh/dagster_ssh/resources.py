@@ -70,8 +70,7 @@ class SSHResource:
         if not self.username:
             logger.debug(
                 "username to ssh to host: %s is not specified. Using system's default provided by"
-                " getpass.getuser()"
-                % self.remote_host
+                " getpass.getuser()" % self.remote_host
             )
             self.username = getpass.getuser()
 

@@ -154,9 +154,7 @@ class OptType(SchemaType):
     def annotation(
         self, scope: Optional[str] = None, quote: bool = False, hide_default: bool = False
     ):
-        return (
-            f"Optional[{self.inner.annotation(scope, quote, hide_default)}]{' = None' if not hide_default else ''}"
-        )
+        return f"Optional[{self.inner.annotation(scope, quote, hide_default)}]{' = None' if not hide_default else ''}"
 
     def get_check(self, name: str, scope: Optional[str] = None):
         inner_check = self.inner.get_check(name, scope)

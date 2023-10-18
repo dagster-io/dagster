@@ -299,8 +299,7 @@ def test_invalid_instance_run():
                         with pytest.raises(
                             DagsterLaunchFailedError,
                             match=re.escape(
-                                "gRPC server could not load run {run_id} in order to execute it"
-                                .format(run_id=run.run_id)
+                                f"gRPC server could not load run {run.run_id} in order to execute it"
                             ),
                         ):
                             instance.launch_run(run_id=run.run_id, workspace=workspace)
@@ -544,8 +543,7 @@ def test_cleanup_after_force_terminate(
         if any(
             [
                 "Computational resources were cleaned up after the run was forcibly marked as"
-                " canceled."
-                in str(event)
+                " canceled." in str(event)
                 for event in logs
             ]
         ):

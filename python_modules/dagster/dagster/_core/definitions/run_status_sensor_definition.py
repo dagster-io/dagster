@@ -340,7 +340,8 @@ def build_run_status_sensor_context(
 @overload
 def run_failure_sensor(
     name: RunFailureSensorEvaluationFn,
-) -> SensorDefinition: ...
+) -> SensorDefinition:
+    ...
 
 
 @overload
@@ -376,7 +377,11 @@ def run_failure_sensor(
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     request_job: Optional[ExecutableDefinition] = None,
     request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
-) -> Callable[[RunFailureSensorEvaluationFn], SensorDefinition,]: ...
+) -> Callable[
+    [RunFailureSensorEvaluationFn],
+    SensorDefinition,
+]:
+    ...
 
 
 @deprecated_param(
@@ -416,7 +421,13 @@ def run_failure_sensor(
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     request_job: Optional[ExecutableDefinition] = None,
     request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
-) -> Union[SensorDefinition, Callable[[RunFailureSensorEvaluationFn], SensorDefinition,]]:
+) -> Union[
+    SensorDefinition,
+    Callable[
+        [RunFailureSensorEvaluationFn],
+        SensorDefinition,
+    ],
+]:
     """Creates a sensor that reacts to job failure events, where the decorated function will be
     run when a run fails.
 
@@ -876,7 +887,10 @@ def run_status_sensor(
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     request_job: Optional[ExecutableDefinition] = None,
     request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
-) -> Callable[[RunStatusSensorEvaluationFunction], RunStatusSensorDefinition,]:
+) -> Callable[
+    [RunStatusSensorEvaluationFunction],
+    RunStatusSensorDefinition,
+]:
     """Creates a sensor that reacts to a given status of job execution, where the decorated
     function will be run when a job is at the given status.
 
