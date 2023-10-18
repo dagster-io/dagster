@@ -249,7 +249,7 @@ def migrate_bulk_actions(run_storage: RunStorage, print_fn: Optional[PrintFn] = 
 
             has_more = len(rows) >= CHUNK_SIZE
             for row in rows:
-                backfill = deserialize_value(row[0], PartitionBackfill)
+                backfill = deserialize_value(row[0], PartitionBackfill)  # type: ignore  # (pyright bug)
                 storage_id = row[1]
                 conn.execute(
                     BulkActionsTable.update()
