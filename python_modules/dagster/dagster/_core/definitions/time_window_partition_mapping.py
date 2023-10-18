@@ -192,10 +192,21 @@ class TimeWindowPartitionMapping(
             from_partitions_def.equal_except_for_start_or_end(to_partitions_def)
             and start_offset == 0
             and end_offset == 0
-            and from_partitions_subset.first_start >= to_partitions_def.start
+            and (
+                from_partitions_subset.first_start >= to_partitions_def.start
+                or self.allow_nonexistent_upstream_partitions
+            )
             and to_partitions_def.end is None
         ):
-            return UpstreamPartitionsResult(from_partitions_subset, [])
+            return UpstreamPartitionsResult(
+                TimeWindowPartitionsSubset(
+                    partitions_def=to_partitions_def,
+                    num_partitions=from_partitions_subset.num_partitions,
+                    included_time_windows=from_partitions_subset._included_time_windows,
+                    included_partition_keys=from_partitions_subset._included_partition_keys,
+                ),
+                [],
+            )
 
         # skip fancy mapping logic if mapping from daily to hourly
         if (
@@ -203,9 +214,36 @@ class TimeWindowPartitionMapping(
             and to_partitions_def.cron_schedule == "0 * * * *"
             and start_offset == 0
             and end_offset == 0
-            and from_partitions_subset._included_partition_keys is None
+            and (
+                from_partitions_subset.first_start >= to_partitions_def.start
+                or self.allow_nonexistent_upstream_partitions
+            )
         ):
-            return UpstreamPartitionsResult(from_partitions_subset, [])
+            return UpstreamPartitionsResult(
+                TimeWindowPartitionsSubset(
+                    partitions_def=to_partitions_def,
+                    num_partitions=from_partitions_subset.num_partitions,
+                    included_time_windows=from_partitions_subset.included_time_windows,
+                    included_partition_keys=None,
+                ),
+                [],
+            )
+
+        if from_partitions_subset.last_end < to_partitions_def.start:
+            if self.allow_nonexistent_upstream_partitions:
+                required_but_nonexistent_partition_keys = []
+            else:
+                required_but_nonexistent_partition_keys = [
+                    pk
+                    for time_window in from_partitions_subset.included_time_windows
+                    for pk in to_partitions_def.get_partition_keys_in_time_window(
+                        time_window=time_window
+                    )
+                ]
+
+            return UpstreamPartitionsResult(
+                to_partitions_def.empty_subset(), required_but_nonexistent_partition_keys
+            )
 
         time_windows = []
         for from_partition_time_window in from_partitions_subset.included_time_windows:

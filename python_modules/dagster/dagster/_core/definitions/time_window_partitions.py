@@ -777,8 +777,7 @@ class TimeWindowPartitionsDefinition(
         return bool(self._get_validated_time_window_for_partition_key(partition_key, current_time))
 
     def equal_except_for_start_or_end(self, other: "TimeWindowPartitionsDefinition") -> bool:
-        """
-        Returns True iff this is identical to other, except they're allowed to have different
+        """Returns True iff this is identical to other, except they're allowed to have different
         start and end datetimes.
         """
         return (
@@ -1395,10 +1394,10 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
         self._included_time_windows = included_time_windows
         self._num_partitions = num_partitions
 
-        check.param_invariant(
-            not (included_partition_keys and included_time_windows),
-            "Cannot specify both included_partition_keys and included_time_windows",
-        )
+        # check.param_invariant(
+        #     not (included_partition_keys and included_time_windows),
+        #     "Cannot specify both included_partition_keys and included_time_windows",
+        # )
         self._included_time_windows = check.opt_nullable_sequence_param(
             included_time_windows, "included_time_windows", of_type=TimeWindow
         )
@@ -1417,6 +1416,18 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
             )
             self._included_time_windows = result_time_windows
         return self._included_time_windows
+
+    @property
+    def first_start(self) -> datetime:
+        return self.included_time_windows[0].start
+
+    @property
+    def last_end(self) -> datetime:
+        return self.included_time_windows[-1].end
+
+    @property
+    def num_partitions(self) -> int:
+        return self._num_partitions
 
     def _get_partition_time_windows_not_in_subset(
         self,
