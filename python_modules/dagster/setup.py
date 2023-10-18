@@ -130,9 +130,6 @@ setup(
             "yamllint",
             "morefs[asynclocal]; python_version>='3.8'",
         ],
-        "black": [
-            "black[jupyter]==23.9.1",
-        ],
         "mypy": [
             "mypy==0.991",
         ],

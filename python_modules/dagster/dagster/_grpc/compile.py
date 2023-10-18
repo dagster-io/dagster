@@ -94,41 +94,18 @@ def protoc(generated_dir: str):
 
     installed_pkgs = {pkg.key for pkg in pkg_resources.working_set}
 
-    # Run black if it's available. This is under a conditional because black may not be available in
-    # a test environment.
-    if "black" in installed_pkgs:
-        _res = subprocess.check_output(
+    # Run `ruff format` if it's available. This is under a conditional because
+    # ruff may not be available in a test environment.
+    if "ruff" in installed_pkgs:
+        subprocess.check_output(
             [
-                sys.executable,
-                "-m",
-                "black",
-                "-l",
+                "ruff"
+                "format"
+                "--line-length",
                 "100",
-                "-t",
-                "py38",
-                "-t",
-                "py39",
-                "-t",
-                "py310",
-                "-t",
-                "py311",
                 generated_dir,
             ]
         )
-
-    # Run isort if it's available. This is under a conditional because isort may not be available in
-    # a test environment.
-    if "isort" in installed_pkgs:
-        _res = subprocess.check_output(
-            [
-                "isort",
-                "--settings-path",
-                ISORT_SETTINGS_PATH,
-                generated_pb2_path,
-                generated_grpc_path,
-            ]
-        )
-
 
 if __name__ == "__main__":
     protoc(sys.argv[1] if len(sys.argv) > 1 else GENERATED_DIR)

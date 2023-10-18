@@ -1,21 +1,4 @@
 repos:
-- repo: https://github.com/psf/black-pre-commit-mirror
-  rev: refs/tags/23.9.1:refs/tags/23.9.1
-
-  # We need two instances of the black pre-commit hook because black can only run with a single
-  # config, but we need different configs for docs_snippets and the rest of the repo due to
-  # differing line lengths.
-  hooks:
-    - id: black-jupyter
-      exclude: "examples/docs_snippets|snapshots/"
-      # Make sure black reads its config from root `pyproject.toml`. This is necessary for commits
-      # where all files share a common root with a pyproject.toml file. Black config will by default
-      # resolve to this pyproject.toml, which will cause use of default line-length instead of the
-      # length specified in the root config.
-      args: ["--config", "pyproject.toml"]
-    - id: black-jupyter
-      name: black-jupyter [docs-snippets]
-      files: "^examples/docs_snippets/.*.py"
 - repo: https://github.com/charliermarsh/ruff-pre-commit
   rev: v0.1.0
   hooks:

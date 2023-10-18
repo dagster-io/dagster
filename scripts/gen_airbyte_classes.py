@@ -591,7 +591,7 @@ from dagster._annotations import public
                 if failure[0] not in EXPECTED_FAILURES:
                     raise failure[1]
 
-            subprocess.call(["black", out_file])
+            subprocess.call(["ruff", "format", out_file])
 
 
 if __name__ == "__main__":

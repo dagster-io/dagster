@@ -1,23 +1,9 @@
-# NOTE: This is special config file just for docs_snippets. It's needed because we use a different
-# line length in docs_snippets to ensure readability of code blocks in the browser. Unless otherwise
-# noted, it should simply copy (except `line-length`) all of the black options from the root
-# pyproject.toml (consult that file for explanations of options). This is necessary because
-# unfortunately there is no inheritance functionality for black config.
-
-[tool.black]
-line-length = 88
-
-# disabled to maintain dummy function bodies on a dedicated line
-preview = false
-required-version = "23.9.1"
-target-versions = ['py38', 'py39', 'py310', 'py311']
-
 [tool.ruff]
 
 # Extend example root configuration.
 extend = "../pyproject.toml"
 
-# Match black. Note that this also checks comment line length, but black does not format comments.
+# Shorter line length for docs snippets for better browser formatting.
 line-length = 88
 
 # Use extend-ignore so that we ignore all the same codes ignored in root.
