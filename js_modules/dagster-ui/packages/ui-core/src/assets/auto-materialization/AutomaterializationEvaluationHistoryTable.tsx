@@ -164,7 +164,7 @@ export const AutomaterializationEvaluationHistoryTable = ({
           {(queryResult.data || queryResult.previousData)?.autoMaterializeTicks.map((tick) => (
             <tr key={tick.id}>
               <td>
-                <Timestamp timestamp={{unix: tick.timestamp}} />
+                <Timestamp timestamp={{unix: tick.timestamp}} timeFormat={{showTimezone: true}} />
               </td>
               <td>
                 <TickStatusTag tick={tick} />
