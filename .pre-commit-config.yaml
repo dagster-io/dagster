@@ -17,6 +17,6 @@ repos:
       name: black-jupyter [docs-snippets]
       files: "^examples/docs_snippets/.*.py"
 - repo: https://github.com/charliermarsh/ruff-pre-commit
-  rev: v0.0.289
+  rev: v0.1.0
   hooks:
     - id: ruff

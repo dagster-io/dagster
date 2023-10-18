@@ -253,7 +253,7 @@ select = [
 ]
 
 # Fail if Ruff is not running this version.
-required-version = "0.0.289"
+required-version = "0.1.0"
 
 [tool.ruff.flake8-builtins]
 
