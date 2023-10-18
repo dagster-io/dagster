@@ -776,6 +776,18 @@ class TimeWindowPartitionsDefinition(
     ) -> bool:
         return bool(self._get_validated_time_window_for_partition_key(partition_key, current_time))
 
+    def equal_except_for_start_or_end(self, other: "TimeWindowPartitionsDefinition") -> bool:
+        """
+        Returns True iff this is identical to other, except they're allowed to have different
+        start and end datetimes.
+        """
+        return (
+            self.timezone == other.timezone
+            and self.fmt == other.fmt
+            and self.cron_schedule == other.cron_schedule
+            and self.end_offset == other.end_offset
+        )
+
 
 class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
     """A set of daily partitions.

@@ -188,6 +188,25 @@ class TimeWindowPartitionMapping(
         if from_partitions_def == to_partitions_def and start_offset == 0 and end_offset == 0:
             return UpstreamPartitionsResult(from_partitions_subset, [])
 
+        if (
+            from_partitions_def.equal_except_for_start_or_end(to_partitions_def)
+            and start_offset == 0
+            and end_offset == 0
+            and from_partitions_subset.first_start >= to_partitions_def.start
+            and to_partitions_def.end is None
+        ):
+            return UpstreamPartitionsResult(from_partitions_subset, [])
+
+        # skip fancy mapping logic if mapping from daily to hourly
+        if (
+            from_partitions_def.cron_schedule == "0 0 * * *"
+            and to_partitions_def.cron_schedule == "0 * * * *"
+            and start_offset == 0
+            and end_offset == 0
+            and from_partitions_subset._included_partition_keys is None
+        ):
+            return UpstreamPartitionsResult(from_partitions_subset, [])
+
         time_windows = []
         for from_partition_time_window in from_partitions_subset.included_time_windows:
             from_start_dt, from_end_dt = from_partition_time_window
