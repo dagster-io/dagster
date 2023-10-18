@@ -139,13 +139,7 @@ export const AutomaterializationTickDetailDialog = React.memo(
             title={
               tick ? (
                 <div>
-                  <Timestamp
-                    timestamp={{unix: tick.timestamp}}
-                    timeFormat={{
-                      ...DEFAULT_TIME_FORMAT,
-                      showTimezone: true,
-                    }}
-                  />
+                  <Timestamp timestamp={{unix: tick.timestamp}} timeFormat={{showTimezone: true}} />
                 </div>
               ) : (
                 ''

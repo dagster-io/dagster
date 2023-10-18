@@ -13,6 +13,7 @@ import styled from 'styled-components';
 
 import {useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {Timestamp} from '../../app/time/Timestamp';
+import {DEFAULT_TIME_FORMAT} from '../../app/time/TimestampFormat';
 import {InstigationTickStatus} from '../../graphql/types';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {TimeElapsed} from '../../runs/TimeElapsed';
@@ -164,7 +165,7 @@ export const AutomaterializationEvaluationHistoryTable = ({
           {(queryResult.data || queryResult.previousData)?.autoMaterializeTicks.map((tick) => (
             <tr key={tick.id}>
               <td>
-                <Timestamp timestamp={{unix: tick.timestamp}} />
+                <Timestamp timestamp={{unix: tick.timestamp}} timeFormat={{showTimezone: true}} />
               </td>
               <td>
                 <TickStatusTag tick={tick} />

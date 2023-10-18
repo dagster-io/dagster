@@ -190,13 +190,7 @@ export function TickDetailSummary({tick}: {tick: HistoryTickFragment | AssetDaem
           <Subtitle2>Timestamp</Subtitle2>
           <div>
             {tick ? (
-              <Timestamp
-                timestamp={{unix: tick.timestamp}}
-                timeFormat={{
-                  ...DEFAULT_TIME_FORMAT,
-                  showTimezone: true,
-                }}
-              />
+              <Timestamp timestamp={{unix: tick.timestamp}} timeFormat={{showTimezone: true}} />
             ) : (
               '–'
             )}
