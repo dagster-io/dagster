@@ -24,6 +24,18 @@ def _exact_match(cron_expression: str, dt: datetime.datetime) -> bool:
     """The default croniter match function only checks that the given datetime is within 60 seconds
     of a cron schedule tick. This function checks that the given datetime is exactly on a cron tick.
     """
+    if (
+        cron_expression == "0 0 * * *"
+        and dt.hour == 0
+        and dt.minute == 0
+        and dt.second == 0
+        and dt.microsecond == 0
+    ):
+        return True
+
+    if cron_expression == "0 * * * *" and dt.minute == 0 and dt.second == 0 and dt.microsecond == 0:
+        return True
+
     cron = CroniterShim(
         cron_expression, dt + datetime.timedelta(microseconds=1), ret_type=datetime.datetime
     )
