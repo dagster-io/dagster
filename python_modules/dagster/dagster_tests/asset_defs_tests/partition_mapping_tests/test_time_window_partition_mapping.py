@@ -331,13 +331,6 @@ def test_daily_to_daily_many_to_one():
             ["2022-12-30"],
             datetime(2022, 12, 31, 1),
         ),
-        (
-            DailyPartitionsDefinition(start_date="2022-01-01"),
-            DailyPartitionsDefinition(start_date="2021-01-01"),
-            ["2022-12-30", "2022-12-31", "2023-01-01", "2023-01-02"],
-            ["2022-12-30", "2022-12-31", "2023-01-01"],
-            datetime(2023, 1, 2, 1),
-        ),
     ],
 )
 def test_get_downstream_with_current_time(

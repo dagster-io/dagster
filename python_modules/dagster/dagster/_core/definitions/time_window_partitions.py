@@ -1670,6 +1670,21 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
             }
         )
 
+    def with_partitions_def(
+        self, partitions_def: TimeWindowPartitionsDefinition
+    ) -> "TimeWindowPartitionsSubset":
+        check.invariant(
+            partitions_def.cron_schedule == self._partitions_def.cron_schedule,
+            "num_partitions would become inaccurate if the partitions_defs had different cron"
+            " schedules",
+        )
+        return TimeWindowPartitionsSubset(
+            partitions_def=partitions_def,
+            num_partitions=self.num_partitions,
+            included_time_windows=self._included_time_windows,
+            included_partition_keys=self._included_partition_keys,
+        )
+
     @property
     def partitions_def(self) -> PartitionsDefinition:
         return self._partitions_def
