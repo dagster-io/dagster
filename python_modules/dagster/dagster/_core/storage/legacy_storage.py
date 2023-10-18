@@ -449,9 +449,9 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         # type ignored because `get_event_records` does not accept None. Unclear which type
         # annotation is wrong.
         return self._storage.event_log_storage.get_event_records(
-            event_records_filter,
+            event_records_filter,  # type: ignore
             limit,
-            ascending,  # type: ignore
+            ascending,
         )
 
     def get_asset_records(

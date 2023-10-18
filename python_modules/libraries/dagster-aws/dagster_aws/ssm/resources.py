@@ -242,9 +242,9 @@ class ParameterStoreResource(ResourceWithBoto3Configuration):
             results.append(
                 get_parameters_by_paths(
                     ssm_manager,
-                    parameter_paths_to_fetch,
+                    parameter_paths_to_fetch,  # type: ignore
                     self.with_decryption,
-                    recursive=True,  # type: ignore
+                    recursive=True,
                 )
             )
         if not results:

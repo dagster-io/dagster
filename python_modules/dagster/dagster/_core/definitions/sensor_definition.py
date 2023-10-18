@@ -1222,8 +1222,8 @@ def _run_requests_with_base_asset_jobs(
         base_job = context.repository_def.get_implicit_job_def_for_assets(asset_keys)  # type: ignore  # (possible none)
         result.append(
             run_request.with_replaced_attrs(
-                job_name=base_job.name,
-                asset_selection=list(asset_keys),  # type: ignore  # (possible none)
+                job_name=base_job.name,  # type: ignore  # (possible none)
+                asset_selection=list(asset_keys),
             )
         )
 

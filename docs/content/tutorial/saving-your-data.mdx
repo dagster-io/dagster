@@ -45,7 +45,8 @@ from dagster import (
 hackernews_job = define_asset_job("hackernews_job", selection=AssetSelection.all())
 
 hackernews_schedule = ScheduleDefinition(
-    job=hackernews_job, cron_schedule="0 * * * *"  # every hour
+    job=hackernews_job,
+    cron_schedule="0 * * * *",  # every hour
 )
 
 io_manager = FilesystemIOManager(

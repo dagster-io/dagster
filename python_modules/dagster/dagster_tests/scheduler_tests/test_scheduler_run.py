@@ -2018,8 +2018,8 @@ class TestSchedulerRun:
 
             assert (
                 "Error occurred during the execution of should_execute for schedule bad_should_execute_on_odd_days_schedule"
-                in bad_ticks[0].error.message
-            )  # type: ignore  # (possible none)
+                in bad_ticks[0].error.message  # type: ignore  # (possible none)
+            )
 
             unloadable_ticks = scheduler_instance.get_ticks(
                 unloadable_origin.get_id(), "fake_selector"

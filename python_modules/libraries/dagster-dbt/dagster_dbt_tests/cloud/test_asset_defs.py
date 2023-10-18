@@ -70,8 +70,8 @@ def dbt_cloud_service_fixture(resource_type) -> Any:
         yield (
             DbtCloudClientResource(auth_token=DBT_CLOUD_API_TOKEN, account_id=DBT_CLOUD_ACCOUNT_ID)
             .with_replaced_resource_context(build_init_resource_context())
-            .get_dbt_client()
-        )  # type: ignore
+            .get_dbt_client()  # type: ignore
+        )
     else:
         yield dbt_cloud_resource(
             build_init_resource_context(

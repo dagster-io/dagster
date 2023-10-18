@@ -798,8 +798,10 @@ def _evaluate_sensor(
     for raw_run_request in sensor_runtime_data.run_requests:
         if raw_run_request.stale_assets_only:
             stale_assets = resolve_stale_or_missing_assets(
-                workspace_process_context, raw_run_request, external_sensor
-            )  # type: ignore
+                workspace_process_context,  # type: ignore
+                raw_run_request,
+                external_sensor,
+            )
             # asset selection is empty set after filtering for stale
             if len(stale_assets) == 0:
                 continue
