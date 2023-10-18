@@ -20,7 +20,6 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {formatElapsedTime} from '../app/Util';
 import {Timestamp} from '../app/time/Timestamp';
-import {DEFAULT_TIME_FORMAT} from '../app/time/TimestampFormat';
 import {AssetDaemonTickFragment} from '../assets/auto-materialization/types/AssetDaemonTicksQuery.types';
 import {
   DynamicPartitionsRequestResult,
@@ -190,13 +189,7 @@ export function TickDetailSummary({tick}: {tick: HistoryTickFragment | AssetDaem
           <Subtitle2>Timestamp</Subtitle2>
           <div>
             {tick ? (
-              <Timestamp
-                timestamp={{unix: tick.timestamp}}
-                timeFormat={{
-                  ...DEFAULT_TIME_FORMAT,
-                  showTimezone: true,
-                }}
-              />
+              <Timestamp timestamp={{unix: tick.timestamp}} timeFormat={{showTimezone: true}} />
             ) : (
               '–'
             )}

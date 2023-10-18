@@ -6,7 +6,6 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {Timestamp} from '../../app/time/Timestamp';
-import {DEFAULT_TIME_FORMAT} from '../../app/time/TimestampFormat';
 import {tokenForAssetKey} from '../../asset-graph/Utils';
 import {AssetKeyInput, InstigationTickStatus} from '../../graphql/types';
 import {TickDetailSummary} from '../../instigation/TickDetailsDialog';
@@ -139,13 +138,7 @@ export const AutomaterializationTickDetailDialog = React.memo(
             title={
               tick ? (
                 <div>
-                  <Timestamp
-                    timestamp={{unix: tick.timestamp}}
-                    timeFormat={{
-                      ...DEFAULT_TIME_FORMAT,
-                      showTimezone: true,
-                    }}
-                  />
+                  <Timestamp timestamp={{unix: tick.timestamp}} timeFormat={{showTimezone: true}} />
                 </div>
               ) : (
                 ''
