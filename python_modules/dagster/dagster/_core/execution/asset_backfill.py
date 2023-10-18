@@ -210,8 +210,13 @@ class AssetBackfillData(NamedTuple):
             ).iterate_asset_partitions()
         )
         root_and_downstream_partitions = _get_self_and_downstream_targeted_subset(root_partitions)
+        previous_root_and_downstream_partitions = None
 
-        while root_and_downstream_partitions != self.target_subset:
+        while (
+            root_and_downstream_partitions != self.target_subset
+            and root_and_downstream_partitions
+            != previous_root_and_downstream_partitions  # Check against previous iteration result to exit if no new partitions are targeted
+        ):
             unreachable_targets = self.target_subset - root_and_downstream_partitions
 
             unreachable_target_root_partitions = set(
@@ -223,9 +228,19 @@ class AssetBackfillData(NamedTuple):
             )
 
             root_partitions = root_partitions | unreachable_target_root_partitions
+
+            previous_root_and_downstream_partitions = root_and_downstream_partitions
             root_and_downstream_partitions = (
                 root_and_downstream_partitions
                 | _get_self_and_downstream_targeted_subset(unreachable_target_root_partitions)
+            )
+
+        if root_and_downstream_partitions == previous_root_and_downstream_partitions:
+            raise DagsterInvariantViolationError(
+                "Unable to determine root partitions for backfill. The following asset partitions"
+                " are not targeted:"
+                f" \n\n{list((self.target_subset - root_and_downstream_partitions).iterate_asset_partitions())} \n\n"
+                " This is likely a system error. Please report this issue to the Dagster team."
             )
 
         return list(root_partitions)
