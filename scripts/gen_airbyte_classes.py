@@ -361,9 +361,11 @@ def create_connector_class_definition(
         nested_defs = "\n".join([textwrap.indent(nested_def, "    ") for nested_def in nested])
     fields_in = ", ".join(
         [
-            f"{field_name}: {field_type} = None"
-            if isinstance(field_type, OptType)
-            else f"{field_name}: {field_type.annotation(scope=cls_name, quote=True)}"
+            (
+                f"{field_name}: {field_type} = None"
+                if isinstance(field_type, OptType)
+                else f"{field_name}: {field_type.annotation(scope=cls_name, quote=True)}"
+            )
             for field_name, field_type in sorted(
                 cls_def.items(), key=lambda x: isinstance(x[1], OptType)
             )
@@ -399,9 +401,11 @@ def create_connector_class_definition(
         self_fields=self_fields,
         nested_defs=nested_defs,
         human_readable_name=connector_name_human_readable,
-        docs_url=f"\n        Documentation can be found at {docs_url}\n"
-        if docs_url and docs_url != "https://docsurl.com"
-        else "",
+        docs_url=(
+            f"\n        Documentation can be found at {docs_url}\n"
+            if docs_url and docs_url != "https://docsurl.com"
+            else ""
+        ),
     )
 
 
