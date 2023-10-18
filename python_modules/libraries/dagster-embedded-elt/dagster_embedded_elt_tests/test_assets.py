@@ -82,4 +82,5 @@ def test_can_build_two_assets():
             resources={"sling_resource": sling_resource},
         )
 
-        assert defs
+        assert defs.get_assets_def("asset1")
+        assert defs.get_assets_def("asset2")
