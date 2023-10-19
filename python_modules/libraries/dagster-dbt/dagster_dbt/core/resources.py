@@ -481,7 +481,7 @@ class DbtCliClientResource(ConfigurableResourceWithCliFlags, IAttachDifferentObj
         context = self.get_resource_context()
         default_flags = {
             k: v
-            for k, v in self._get_non_default_public_field_values().items()
+            for k, v in self._get_non_none_public_field_values().items()
             if k not in COMMON_OPTION_KEYS
         }
 

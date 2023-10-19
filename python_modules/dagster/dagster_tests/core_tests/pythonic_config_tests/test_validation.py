@@ -1,5 +1,3 @@
-from typing import Optional
-
 import pytest
 from dagster import job, op
 from dagster._config.pythonic_config import Config
@@ -65,63 +63,3 @@ def test_validators_basic() -> None:
             {"ops": {"greet_user": {"config": {"name": "Arthur", "username": "arthur"}}}}
         )
     assert not executed
-
-
-def test_validator_default_contract() -> None:
-    # ensures Pydantic's validator decorator works as expected
-    # in particular that it does not validate default values
-    # but does validate any explicit inputs matching the default
-    class UserConfig(Config):
-        name: Optional[str] = None
-
-        @validator("name")
-        def name_must_not_be_provided(cls, name):
-            raise ValueError("I always error with a non-default value!")
-
-    UserConfig()
-    with pytest.raises(ValidationError, match="I always error with a non-default value!"):
-        UserConfig(name="Arthur Miller")
-    with pytest.raises(ValidationError, match="I always error with a non-default value!"):
-        UserConfig(name=None)
-
-
-def test_validator_default_contract_nested() -> None:
-    # as above, more complex case
-    class InnerConfig(Config):
-        name: Optional[str] = None
-
-        @validator("name")
-        def name_must_not_be_provided(cls, name):
-            raise ValueError("Inner always errors with a non-default value!")
-
-    class OuterConfig(Config):
-        inner: InnerConfig
-        name: Optional[str] = None
-
-        @validator("name")
-        def name_must_not_be_provided(cls, name):
-            raise ValueError("Outer always errors with a non-default value!")
-
-    OuterConfig(inner=InnerConfig())
-    with pytest.raises(ValidationError, match="Outer always errors with a non-default value!"):
-        OuterConfig(inner=InnerConfig(), name=None)
-    with pytest.raises(ValidationError, match="Inner always errors with a non-default value!"):
-        OuterConfig(inner=InnerConfig(name=None))
-
-    executed = {}
-
-    @op
-    def my_op(config: OuterConfig) -> None:
-        executed["my_op"] = True
-
-    @job
-    def my_job() -> None:
-        my_op()
-
-    assert my_job.execute_in_process().success
-    assert executed["my_op"]
-
-    executed.clear()
-
-    with pytest.raises(ValidationError, match="Outer always errors with a non-default value!"):
-        my_job.execute_in_process({"ops": {"my_op": {"config": {"name": None}}}})
