@@ -167,6 +167,7 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
                 </Box>
               ) : liveData?.lastMaterialization ? (
                 <AssetRunLink
+                  assetKey={{path}}
                   runId={liveData.lastMaterialization.runId}
                   event={{
                     stepKey: liveData.stepKey,
