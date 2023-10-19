@@ -161,39 +161,53 @@ export const AutomaterializationEvaluationHistoryTable = ({
         </thead>
         <tbody>
           {/* Use previous data to stop page from jumping while new data loads */}
-          {(queryResult.data || queryResult.previousData)?.autoMaterializeTicks.map((tick) => (
-            <tr key={tick.id}>
-              <td>
-                <Timestamp timestamp={{unix: tick.timestamp}} timeFormat={{showTimezone: true}} />
-              </td>
-              <td>
-                <TickStatusTag tick={tick} />
-              </td>
-              <td>
-                <TimeElapsed
-                  startUnix={tick.timestamp}
-                  endUnix={tick.endTimestamp || Date.now() / 1000}
-                />
-              </td>
-              <td>
-                {[InstigationTickStatus.SKIPPED, InstigationTickStatus.SUCCESS].includes(
-                  tick.status,
-                ) ? (
-                  <ButtonLink
-                    onClick={() => {
-                      setSelectedTick(tick);
-                    }}
-                  >
-                    <Body2>
-                      {tick.requestedAssetMaterializationCount} materializations requested
-                    </Body2>
-                  </ButtonLink>
-                ) : (
-                  ' - '
-                )}
-              </td>
-            </tr>
-          ))}
+          {(queryResult.data || queryResult.previousData)?.autoMaterializeTicks.map(
+            (tick, index) => {
+              // This is a hack for ticks that get stuck in started
+              const isTickStuckInStartedState =
+                index !== 0 &&
+                tick.status === InstigationTickStatus.STARTED &&
+                !paginationProps.hasPrevCursor;
+
+              return (
+                <tr key={tick.id}>
+                  <td>
+                    <Timestamp
+                      timestamp={{unix: tick.timestamp}}
+                      timeFormat={{showTimezone: true}}
+                    />
+                  </td>
+                  <td>
+                    <TickStatusTag tick={tick} isStuckStarted={isTickStuckInStartedState} />
+                  </td>
+                  <td>
+                    {isTickStuckInStartedState ? (
+                      ' - '
+                    ) : (
+                      <TimeElapsed startUnix={tick.timestamp} endUnix={tick.endTimestamp} />
+                    )}
+                  </td>
+                  <td>
+                    {[InstigationTickStatus.SKIPPED, InstigationTickStatus.SUCCESS].includes(
+                      tick.status,
+                    ) ? (
+                      <ButtonLink
+                        onClick={() => {
+                          setSelectedTick(tick);
+                        }}
+                      >
+                        <Body2>
+                          {tick.requestedAssetMaterializationCount} materializations requested
+                        </Body2>
+                      </ButtonLink>
+                    ) : (
+                      ' - '
+                    )}
+                  </td>
+                </tr>
+              );
+            },
+          )}
         </tbody>
       </TableWrapper>
       <div style={{paddingBottom: '16px'}}>
