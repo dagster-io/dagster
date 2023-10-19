@@ -59,7 +59,8 @@ function buildURLRegex() {
     // NO  - dagsterlabs.ai
     '(',
     // scheme, ala https:// (mandatory)
-    '([A-Za-z]{3,9}:(?:\\/\\/))',
+    // '([A-Za-z]{3,9}:(?:\\/\\/))', << more open ended
+    '((http|https):(?:\\/\\/))',
 
     // username:password (optional)
     '(?:[\\-;:&=\\+\\$,\\w]+@)?',
@@ -78,7 +79,7 @@ function buildURLRegex() {
     '|',
 
     // scheme, ala https:// (mandatory)
-    '([A-Za-z]{3,9}:(?:\\/\\/))',
+    '((http|https):(?:\\/\\/))',
 
     // username:password (optional)
     '(?:[\\-;:&=\\+\\$,\\w]+@)?',
@@ -97,18 +98,13 @@ function buildURLRegex() {
 
     // :port (optional)
     '(?::d*)?',
-
-    '|',
-
-    // mailto:username@password.com
-    'mailto:\\/*(?:\\w+\\.|[\\-;:&=\\+\\$.,\\w]+@)[A-Za-z0-9\\.\\-]+',
     ')',
 
     // optionally followed by:
     '(',
     // URL components
     // (last character must not be puncation, hence two groups)
-    '(?:[\\+=~%\\/\\.\\w\\-_@:]*[\\+~%\\/\\w\\-:_])?',
+    '(?:[\\+=~%\\/\\.\\w\\-_@:,!]*[\\+~%\\/\\w\\-:_])?',
 
     // optionally followed by one or more query string ?asd=asd&as=asd type sections
     "(?:\\?[\\-\\+=&;:%@$\\(\\)'\\*\\/~\\!\\.,\\w_]*[\\-\\+=&;~%@\\w_\\/])*",
