@@ -19,10 +19,12 @@ import {HistoryTickFragment} from '../instigation/types/InstigationUtils.types';
 
 export const TickStatusTag = ({
   tick,
+  isStuckStarted,
 }: {
   tick:
     | Pick<AssetDaemonTickFragment, 'status' | 'error' | 'requestedAssetMaterializationCount'>
     | Pick<HistoryTickFragment, 'status' | 'skipReason' | 'runIds' | 'runKeys' | 'error'>;
+  isStuckStarted?: boolean;
 }) => {
   const [showErrors, setShowErrors] = React.useState(false);
   const tag = React.useMemo(() => {
@@ -31,7 +33,7 @@ export const TickStatusTag = ({
       case InstigationTickStatus.STARTED:
         return (
           <Tag intent="primary" icon="spinner">
-            Evaluating
+            {isStuckStarted ? 'Started' : 'Evaluating'}
           </Tag>
         );
       case InstigationTickStatus.SKIPPED:
