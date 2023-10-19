@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import NamedTuple, Optional, cast
 
 import dagster._check as check
@@ -203,35 +203,50 @@ class TimeWindowPartitionMapping(
             )
             offsetted_end_dt = _offsetted_datetime(from_partitions_def, from_end_dt, end_offset)
 
-            to_start_partition_key = (
-                to_partitions_def.get_partition_key_for_timestamp(
-                    offsetted_start_dt.timestamp(), end_closed=False
+            if (from_partitions_def.cron_schedule == to_partitions_def.cron_schedule) or (
+                from_partitions_def.cron_schedule == "0 0 * * *"
+                and to_partitions_def.cron_schedule == "0 * * * *"
+            ):
+                # If the above conditions hold true, then we're confident that the partition
+                # boundaries in the PartitionsDefinition that we're mapping from match up with
+                # boundaries in the PartitionsDefinition that we're mapping to. That means
+                # we can just use these boundaries directly instead of finding nearby boundaries.
+                window_start = offsetted_start_dt
+                window_end = offsetted_end_dt
+                time_windows.append(TimeWindow(window_start, window_end))
+            else:
+                # The partition boundaries that we're mapping from might land in the middle of
+                # partitions that we're mapping to, so find those partitions.
+                to_start_partition_key = (
+                    to_partitions_def.get_partition_key_for_timestamp(
+                        offsetted_start_dt.timestamp(),
+                        end_closed=False,
+                    )
+                    if offsetted_start_dt is not None
+                    else None
                 )
-                if offsetted_start_dt is not None
-                else None
-            )
-            to_end_partition_key = (
-                to_partitions_def.get_partition_key_for_timestamp(
-                    offsetted_end_dt.timestamp(), end_closed=True
+                to_end_partition_key = (
+                    to_partitions_def.get_partition_key_for_timestamp(
+                        offsetted_end_dt.timestamp(), end_closed=True
+                    )
+                    if offsetted_end_dt is not None
+                    else None
                 )
-                if offsetted_end_dt is not None
-                else None
-            )
 
-            if to_start_partition_key is not None or to_end_partition_key is not None:
-                window_start = (
-                    to_partitions_def.start_time_for_partition_key(to_start_partition_key)
-                    if to_start_partition_key
-                    else cast(TimeWindow, to_partitions_def.get_first_partition_window()).start
-                )
-                window_end = (
-                    to_partitions_def.end_time_for_partition_key(to_end_partition_key)
-                    if to_end_partition_key
-                    else cast(TimeWindow, to_partitions_def.get_last_partition_window()).end
-                )
+                if to_start_partition_key is not None or to_end_partition_key is not None:
+                    window_start = (
+                        to_partitions_def.start_time_for_partition_key(to_start_partition_key)
+                        if to_start_partition_key
+                        else cast(TimeWindow, to_partitions_def.get_first_partition_window()).start
+                    )
+                    window_end = (
+                        to_partitions_def.end_time_for_partition_key(to_end_partition_key)
+                        if to_end_partition_key
+                        else cast(TimeWindow, to_partitions_def.get_last_partition_window()).end
+                    )
 
-                if window_start < window_end:
-                    time_windows.append(TimeWindow(window_start, window_end))
+                    if window_start < window_end:
+                        time_windows.append(TimeWindow(window_start, window_end))
 
         first_window = to_partitions_def.get_first_partition_window(current_time=current_time)
         last_window = to_partitions_def.get_last_partition_window(current_time=current_time)
@@ -280,12 +295,7 @@ class TimeWindowPartitionMapping(
 
         return UpstreamPartitionsResult(
             TimeWindowPartitionsSubset(
-                to_partitions_def,
-                num_partitions=sum(
-                    len(to_partitions_def.get_partition_keys_in_time_window(time_window))
-                    for time_window in filtered_time_windows
-                ),
-                included_time_windows=filtered_time_windows,
+                to_partitions_def, num_partitions=None, included_time_windows=filtered_time_windows
             ),
             sorted(list(required_but_nonexistent_partition_keys)),
         )
@@ -342,15 +352,16 @@ class TimeWindowPartitionMapping(
             return UpstreamPartitionsResult(
                 TimeWindowPartitionsSubset(
                     partitions_def=to_partitions_def,
-                    num_partitions=from_partitions_subset.num_partitions,
+                    num_partitions=None,
                     included_time_windows=from_partitions_subset.included_time_windows,
-                    included_partition_keys=None,
                 ),
                 [],
             )
 
         # The subset we're mapping from doesn't exist in the PartitionsDefinition we're mapping to
-        if from_partitions_subset.last_end < to_partitions_def.start:
+        if from_partitions_subset.cheap_ends_before(
+            to_partitions_def.start, to_partitions_def.cron_schedule
+        ):
             if self.allow_nonexistent_upstream_partitions:
                 required_but_nonexistent_partition_keys = []
             else:
@@ -371,20 +382,20 @@ class TimeWindowPartitionMapping(
 
 def _offsetted_datetime(
     partitions_def: TimeWindowPartitionsDefinition, dt: datetime, offset: int
-) -> Optional[datetime]:
+) -> datetime:
+    if partitions_def.cron_schedule == "0 0 * * *" and offset != 0:
+        return dt + timedelta(days=offset)
+
     for _ in range(abs(offset)):
         if offset < 0:
-            prev_window = partitions_def.get_prev_partition_window(dt)
-            if prev_window is None:
-                return None
-
+            prev_window = cast(
+                TimeWindow, partitions_def.get_prev_partition_window(dt, respect_bounds=False)
+            )
             dt = prev_window.start
         else:
-            # TODO: what if we're at the end of the line?
-            next_window = partitions_def.get_next_partition_window(dt)
-            if next_window is None:
-                return None
-
+            next_window = cast(
+                TimeWindow, partitions_def.get_next_partition_window(dt, respect_bounds=False)
+            )
             dt = next_window.end
 
     return dt
