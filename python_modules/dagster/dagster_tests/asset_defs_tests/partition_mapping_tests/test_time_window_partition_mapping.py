@@ -244,6 +244,47 @@ def test_daily_to_daily_lag():
     ).partitions_subset.get_partition_keys() == ["2021-05-05", "2021-05-06"]
 
 
+def test_exotic_cron_schedule_lag():
+    # every 4 hours
+    downstream_partitions_def = upstream_partitions_def = TimeWindowPartitionsDefinition(
+        start="2021-05-05_00", cron_schedule="0 */4 * * *", fmt="%Y-%m-%d_%H"
+    )
+    mapping = TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
+    # single partition key
+    assert mapping.get_upstream_mapped_partitions_result_for_partitions(
+        subset_with_keys(downstream_partitions_def, ["2021-05-06_04"]), upstream_partitions_def
+    ).partitions_subset.get_partition_keys() == ["2021-05-06_00"]
+
+    assert mapping.get_downstream_partitions_for_partitions(
+        subset_with_keys(upstream_partitions_def, ["2021-05-06_00"]), downstream_partitions_def
+    ).get_partition_keys() == ["2021-05-06_04"]
+
+    # first partition key
+    assert (
+        mapping.get_upstream_mapped_partitions_result_for_partitions(
+            subset_with_keys(downstream_partitions_def, ["2021-05-05_00"]), upstream_partitions_def
+        ).partitions_subset.get_partition_keys()
+        == []
+    )
+
+    # range of partition keys
+    assert mapping.get_upstream_mapped_partitions_result_for_partitions(
+        subset_with_key_range(downstream_partitions_def, "2021-05-07_04", "2021-05-07_12"),
+        upstream_partitions_def,
+    ).partitions_subset.get_partition_keys() == ["2021-05-07_00", "2021-05-07_04", "2021-05-07_08"]
+
+    assert mapping.get_downstream_partitions_for_partitions(
+        subset_with_key_range(downstream_partitions_def, "2021-05-07_04", "2021-05-07_12"),
+        downstream_partitions_def,
+    ).get_partition_keys() == ["2021-05-07_08", "2021-05-07_12", "2021-05-07_16"]
+
+    # range overlaps start
+    assert mapping.get_upstream_mapped_partitions_result_for_partitions(
+        subset_with_key_range(downstream_partitions_def, "2021-05-05_00", "2021-05-05_08"),
+        upstream_partitions_def,
+    ).partitions_subset.get_partition_keys() == ["2021-05-05_00", "2021-05-05_04"]
+
+
 def test_daily_to_daily_lag_different_start_date():
     upstream_partitions_def = DailyPartitionsDefinition(start_date="2021-05-05")
     downstream_partitions_def = DailyPartitionsDefinition(start_date="2021-05-06")
