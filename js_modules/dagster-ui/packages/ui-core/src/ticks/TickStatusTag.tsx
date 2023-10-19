@@ -86,7 +86,7 @@ export const TickStatusTag = ({
         }
         return successTag;
     }
-  }, [tick]);
+  }, [isStuckStarted, tick]);
 
   return (
     <>
