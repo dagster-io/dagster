@@ -173,6 +173,7 @@ class SlingResource(ConfigurableResource):
 
         with self._setup_config():
             config = {
+                "mode": mode,
                 "source": {
                     "conn": "SLING_SOURCE",
                     "stream": source_stream,

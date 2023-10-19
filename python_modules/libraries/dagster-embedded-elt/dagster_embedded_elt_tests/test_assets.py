@@ -1,14 +1,19 @@
 import os
 import sqlite3
 import tempfile
+from typing import Literal
 
+import pytest
 from dagster import AssetSpec, Definitions, file_relative_path
 from dagster._core.definitions import build_assets_job
 from dagster_embedded_elt.sling import SlingMode, SlingResource, build_sling_asset
 from dagster_embedded_elt.sling.resources import SlingSourceConnection, SlingTargetConnection
 
 
-def test_build_sling_asset():
+@pytest.mark.parametrize(
+    "mode,runs,expected", [(SlingMode.INCREMENTAL, 1, 3), (SlingMode.SNAPSHOT, 2, 6)]
+)
+def test_build_sling_asset(mode: SlingMode, runs: int, expected: int):
     with tempfile.TemporaryDirectory() as tmpdir_path:
         fpath = os.path.abspath(file_relative_path(__file__, "test.csv"))
         dbpath = os.path.join(tmpdir_path, "sqlite.db")
@@ -30,7 +35,7 @@ def test_build_sling_asset():
             asset_spec=asset_spec,
             source_stream=f"file://{fpath}",
             target_object="main.tbl",
-            mode=SlingMode.INCREMENTAL,
+            mode=mode,
             primary_key="SPECIES_CODE",
             sling_resource_key="sling_resource",
         )
@@ -41,10 +46,12 @@ def test_build_sling_asset():
             resource_defs={"sling_resource": sling_resource},
         )
 
-        res = sling_job.execute_in_process()
-        assert res.success
-        counts = sqlite3.connect(dbpath).execute("SELECT count(1) FROM main.tbl").fetchone()
-        assert counts[0] == 3
+        counts = None
+        for n in range(runs):
+            res = sling_job.execute_in_process()
+            assert res.success
+            counts = sqlite3.connect(dbpath).execute("SELECT count(1) FROM main.tbl").fetchone()[0]
+        assert counts == expected
 
 
 def test_can_build_two_assets():
