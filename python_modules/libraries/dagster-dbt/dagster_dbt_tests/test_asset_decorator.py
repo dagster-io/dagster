@@ -157,6 +157,16 @@ def test_selections(
     assert my_dbt_assets.op.tags.get("dagster-dbt/exclude") == exclude
 
 
+@pytest.mark.parametrize("name", [None, "custom"])
+def test_with_custom_name(name: Optional[str]) -> None:
+    @dbt_assets(manifest=manifest, name=name)
+    def my_dbt_assets(): ...
+
+    expected_name = name or "my_dbt_assets"
+
+    assert my_dbt_assets.op.name == expected_name
+
+
 @pytest.mark.parametrize(
     "partitions_def", [None, DailyPartitionsDefinition(start_date="2023-01-01")]
 )
