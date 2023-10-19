@@ -165,7 +165,9 @@ export const AutomaterializationEvaluationHistoryTable = ({
             (tick, index) => {
               // This is a hack for ticks that get stuck in started
               const isTickStuckInStartedState =
-                index !== 0 && tick.status === InstigationTickStatus.STARTED;
+                index !== 0 &&
+                tick.status === InstigationTickStatus.STARTED &&
+                !paginationProps.hasPrevCursor;
 
               return (
                 <tr key={tick.id}>
