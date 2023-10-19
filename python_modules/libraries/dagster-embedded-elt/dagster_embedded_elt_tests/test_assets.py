@@ -1,7 +1,6 @@
 import os
 import sqlite3
 import tempfile
-from typing import Literal
 
 import pytest
 from dagster import AssetSpec, Definitions, file_relative_path
