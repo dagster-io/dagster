@@ -26,6 +26,9 @@ import pendulum
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.instance import DynamicPartitionsStore
+from dagster._serdes import deserialize_value, serialize_value, whitelist_for_serdes
+from dagster._serdes.serdes import FieldSerializer
+from dagster._utils import utc_datetime_from_timestamp
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 from dagster._utils.schedules import (
     cron_string_iterator,
@@ -60,15 +63,34 @@ class TimeWindow(NamedTuple):
     end: PublicAttr[datetime]
 
 
+class DatetimeFieldSerializer(FieldSerializer):
+    """TODO add docstring."""
+
+    # TODO test this
+
+    def pack(self, datetime: Optional[datetime], **_kwargs) -> Optional[float]:
+        return datetime.timestamp() if datetime else None
+
+    def unpack(
+        self,
+        datetime_float: Optional[float],
+        **_kwargs,
+    ) -> Optional[datetime]:
+        return utc_datetime_from_timestamp(datetime_float) if datetime_float else None
+
+
+@whitelist_for_serdes(
+    field_serializers={"start": DatetimeFieldSerializer, "end": DatetimeFieldSerializer}
+)
 class TimeWindowPartitionsDefinition(
     PartitionsDefinition,
     NamedTuple(
         "_TimeWindowPartitionsDefinition",
         [
             ("start", PublicAttr[datetime]),
+            ("fmt", PublicAttr[str]),
             ("timezone", PublicAttr[str]),
             ("end", PublicAttr[Optional[datetime]]),
-            ("fmt", PublicAttr[str]),
             ("end_offset", PublicAttr[int]),
             ("cron_schedule", PublicAttr[str]),
         ],
@@ -106,14 +128,15 @@ class TimeWindowPartitionsDefinition(
         cls,
         start: Union[datetime, str],
         fmt: str,
-        end: Union[datetime, str, None] = None,
-        schedule_type: Optional[ScheduleType] = None,
         timezone: Optional[str] = None,
+        end: Union[datetime, str, None] = None,
         end_offset: int = 0,
+        cron_schedule: Optional[str] = None,
+        # Fields below will not be serialized
+        schedule_type: Optional[ScheduleType] = None,
         minute_offset: Optional[int] = None,
         hour_offset: Optional[int] = None,
         day_offset: Optional[int] = None,
-        cron_schedule: Optional[str] = None,
     ):
         check.opt_str_param(timezone, "timezone")
         timezone = timezone or "UTC"
@@ -154,7 +177,7 @@ class TimeWindowPartitionsDefinition(
             )
 
         return super(TimeWindowPartitionsDefinition, cls).__new__(
-            cls, start_dt, timezone, end_dt, fmt, end_offset, cron_schedule
+            cls, start_dt, fmt, timezone, end_dt, end_offset, cron_schedule
         )
 
     def get_current_timestamp(self, current_time: Optional[datetime] = None) -> float:
@@ -1367,8 +1390,8 @@ def weekly_partitioned_config(
 
 class TimeWindowPartitionsSubset(PartitionsSubset):
     # Every time we change the serialization format, we should increment the version number.
-    # This will ensure that we can gracefully degrade when deserializing old data.
-    SERIALIZATION_VERSION = 1
+    # This will ensure that we can gracefully handle deserializing old data.
+    SERIALIZATION_VERSION = 2
 
     def __init__(
         self,
@@ -1634,6 +1657,7 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
         return cls(partitions_def, 0, [], set())
 
     def serialize(self) -> str:
+        partitions_def = cast(TimeWindowPartitionsDefinition, self.partitions_def)
         return json.dumps(
             {
                 "version": self.SERIALIZATION_VERSION,
@@ -1644,6 +1668,16 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
                     for window in self.included_time_windows
                 ],
                 "num_partitions": self._num_partitions,
+                "time_partitions_def": serialize_value(
+                    TimeWindowPartitionsDefinition(
+                        start=partitions_def.start,
+                        fmt=partitions_def.fmt,
+                        timezone=partitions_def.timezone,
+                        end=partitions_def.end,
+                        end_offset=partitions_def.end_offset,
+                        cron_schedule=partitions_def.cron_schedule,
+                    )
+                ),
             }
         )
 
