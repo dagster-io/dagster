@@ -1351,6 +1351,44 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
 def _copy_docs_from_op_execution_context(obj):
     setattr(obj, "__doc__", getattr(OpExecutionContext, obj.__name__).__doc__)
     return obj
+###############################
+######## AssetExecutionContext
+###############################
+
+OP_EXECUTION_CONTEXT_ONLY_METHODS = set(
+    [
+        "describe_op",
+        "file_manager",
+        "has_assets_def",
+        "get_mapping_key",
+        "get_step_execution_context",
+        "job_def",
+        "node_handle",
+        "op",
+        "op_config",
+        "op_def",
+        "op_handle",
+        "step_launcher",
+        "has_events",
+        "consume_events",
+        "log_event",
+        "get_asset_provenance",
+    ]
+)
+
+
+def _get_deprecation_kwargs(attr: str):
+    deprecation_kwargs = {"breaking_version": "1.8.0"}
+    deprecation_kwargs["subject"] = f"AssetExecutionContext.{attr}"
+
+    if attr in OP_EXECUTION_CONTEXT_ONLY_METHODS:
+        deprecation_kwargs["additional_warn_text"] = (
+            f"You have called the deprecated method {attr} on AssetExecutionContext. Use"
+            " the underlying OpExecutionContext instead by calling"
+            f" context.op_execution_context.{attr}."
+        )
+
+    return deprecation_kwargs
 
 
 class AssetExecutionContext(OpExecutionContext):
