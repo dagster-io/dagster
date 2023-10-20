@@ -6,7 +6,7 @@ from dagster import ConfigurableResource
 # resources.py
 
 
-class StubHNClient(ConfigurableResource):
+class StubHNClient:
     """Hacker News Client that returns fake data."""
 
     def __init__(self):
