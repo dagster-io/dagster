@@ -25,20 +25,20 @@ A software-defined asset includes the following:
 
 - An <PyObject object="AssetKey" />, which is a handle for referring to the asset.
 - A set of upstream asset keys, which refer to assets that the contents of the software-defined asset are derived from.
-- An [op](/concepts/ops-jobs-graphs/ops), which is a function responsible for computing the contents of the asset from its upstream dependencies.
+- A Python function, which is responsible for computing the contents of the asset from its upstream dependencies.
 
-  **Note**: A crucial distinction between software-defined assets and [ops](/concepts/ops-jobs-graphs/ops) is that software-defined assets know about their dependencies, while ops do not. Ops aren't connected to dependencies until they're placed inside a [graph](/concepts/ops-jobs-graphs/graphs).
+  **Note**: Behind-the-scenes, the Python function is an [op](/concepts/ops-jobs-graphs/ops). Ops are an advanced topic that isn't required to get started with Dagster. A crucial distinction between Software-Defined Assets and ops is that Software-Defined Assets know about their dependencies, while ops do not. Ops aren't connected to dependencies until they're placed inside a [graph](/concepts/ops-jobs-graphs/graphs).
 
-**Materializing** an asset is the act of running its op and saving the results to persistent storage. You can initiate materializations from [the Dagster UI](/concepts/webserver/ui) or by invoking Python APIs. By default, assets are materialized to pickle files on your local filesystem, but materialization behavior is fully customizable using [I/O managers](/concepts/io-management/io-managers#applying-io-managers-to-assets). It's possible to materialize an asset in multiple storage environments, such as production and staging.
+**Materializing** an asset is the act of running its function and saving the results to persistent storage. You can initiate materializations from [the Dagster UI](/concepts/webserver/ui) or by invoking Python APIs. By default, assets are materialized to pickle files on your local filesystem, but materialization behavior is fully customizable using [I/O managers](/concepts/io-management/io-managers#applying-io-managers-to-assets). It's possible to materialize an asset in multiple storage environments, such as production and staging.
 
 ---
 
 ## Relevant APIs
 
-| Name                                  | Description                                                                                                                                                                                                                          |
-| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| <PyObject object="asset" decorator /> | A decorator used to define assets.                                                                                                                                                                                                   |
-| <PyObject object="SourceAsset" />     | A class that describes an asset, but doesn't define how to compute it. <PyObject object="SourceAsset" />s are used to represent assets that other assets or jobs depend on, in settings where they can't be materialized themselves. |
+| Name                                  | Description                                                                                                                                                                                                                  |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| <PyObject object="asset" decorator /> | A decorator used to define assets.                                                                                                                                                                                           |
+| <PyObject object="SourceAsset" />     | A class that describes an asset, but doesn't define how to compute it. <PyObject object="SourceAsset" />s are used to represent assets that other assets depend on, in settings where they can't be materialized themselves. |
 
 ---
 
@@ -63,7 +63,7 @@ def my_asset():
     return [1, 2, 3]
 ```
 
-By default, the name of the decorated function, `my_asset`, is used as the asset key. The decorated function forms the asset's op: it's responsible for producing the asset's contents. The asset in this example doesn't depend on any other assets.
+By default, the name of the decorated function, `my_asset`, is used as the asset key. The decorated function is responsible for producing the asset's contents. The asset in this example doesn't depend on any other assets.
 
 ### Assets with dependencies
 
@@ -213,11 +213,11 @@ defs = Definitions(
 )
 ```
 
-Using source assets has a few advantages over having the code inside of an asset's op load the data:
+Using source assets has a few advantages over having the code inside of an asset's function load the data without specifying any dependencies:
 
 - **The UI can show asset lineage that includes the source assets**. If different asset definitions in different code locations have the same asset key as a <PyObject object="SourceAsset" /> and both code locations are loaded into the underlying webserver, the UI can represent the asset lineage across the code locations. This can be accomplished using [workspace files](/concepts/code-locations/workspace-files).
 - **Dagster can use data-loading code factored into an <PyObject object="IOManager" /> to load the contents of the source asset**.
-- **Asset dependencies can be written in a consistent way,** independent of whether they're downstream from a source asset or a derived asset. This makes it easy to swap out a source asset for a derived asset and vice versa.
+- **Asset dependencies can be written in a consistent way,** independent of whether they're downstream from a source asset or a software-defined asset. This makes it easy to swap out a source asset for a software-defined asset and vice versa.
 
 ### Graph-backed assets and multi-assets
 
@@ -228,7 +228,7 @@ If you'd like to define more complex assets, Dagster offers augmented software-d
 
 ### Asset configuration
 
-Like ops, assets in Dagster can specify a config schema. The configuration system is explained in detail in the [Config schema documentation](/concepts/configuration/config-schema).
+Assets in Dagster can specify a config schema. This allows you to provide values to assets at run time. The configuration system is explained in detail in the [Config schema documentation](/concepts/configuration/config-schema).
 
 Asset functions can specify an annotated `config` parameter for the assets's configuration. The config class, which subclasses <PyObject object="Config"/> (which inherits from [`pydantic.BaseModel`](https://docs.pydantic.dev/usage/models/#basic-model-usage)) specifies the configuration schema for the asset.
 
@@ -259,7 +259,7 @@ Refer to the [Config schema documentation](/concepts/configuration/config-schema
 
 When writing an asset, users can optionally provide a first parameter, `context`. When this parameter is supplied, Dagster will supply an <PyObject object="AssetExecutionContext"/> object to the body of the asset which provides access to system information like loggers and the current run id.
 
-For example, to access the logger and log a info message:
+For example, to access the logger and log an info message:
 
 ```python file=/concepts/assets/asset_w_context.py startafter=start_w_context endbefore=end_w_context
 from dagster import AssetExecutionContext, asset
@@ -547,7 +547,7 @@ def test_uses_resource() -> None:
     assert result == {"foo": "bar"}
 ```
 
-If you use a context object in your function, you can use <PyObject object="build_op_context" /> to generate the `context` object, because under the hood the function decorated by `@asset` is an op.
+If you use a context object in your function, you can use <PyObject object="build_asset_context" /> to generate the `context` object, because under the hood the function decorated by `@asset` is an op.
 
 Consider the following asset that uses a context object:
 
@@ -558,11 +558,11 @@ def uses_context(context):
     return "bar"
 ```
 
-When writing a unit test, use <PyObject object="build_op_context" /> to mock the `context` and provide values for testing:
+When writing a unit test, use <PyObject object="build_asset_context" /> to mock the `context` and provide values for testing:
 
 ```python file=/concepts/assets/asset_testing.py startafter=start_test_with_context_asset endbefore=end_test_with_context_asset
 def test_uses_context():
-    context = build_op_context()
+    context = build_asset_context()
     result = uses_context(context)
     assert result == "bar"
 ```
@@ -615,7 +615,7 @@ def downstream_asset(upstream_asset):
 
 ### Recording materialization metadata
 
-Dagster supports attaching arbitrary [metadata](/\_apidocs/ops#dagster.MetadataValue) to asset materializations. This metadata will be displayed on the "Activity" tab of the "Asset Details" page in the UI. If it's numeric, it will be plotted. To attach metadata, your asset's op can return an <PyObject object="Output" /> object that contains the output value and a dictionary of metadata:
+Dagster supports attaching arbitrary [metadata](/\_apidocs/ops#dagster.MetadataValue) to asset materializations. This metadata will be displayed on the "Activity" tab of the "Asset Details" page in the UI. If it's numeric, it will be plotted. To attach metadata, your asset can return an <PyObject object="Output" /> object that contains the output value and a dictionary of metadata:
 
 ```python file=/concepts/assets/asset_materialization_metadata.py
 from pandas import DataFrame
