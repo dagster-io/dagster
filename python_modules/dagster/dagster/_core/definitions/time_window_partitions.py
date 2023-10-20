@@ -1579,6 +1579,52 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
         )
 
     @classmethod
+    def tuples_to_time_windows(
+        cls, partitions_def: TimeWindowPartitionsDefinition, tuples: Sequence[Tuple[float, float]]
+    ) -> Sequence[TimeWindow]:
+        return [
+            TimeWindow(
+                pendulum.from_timestamp(tup[0], tz=partitions_def.timezone),
+                pendulum.from_timestamp(tup[1], tz=partitions_def.timezone),
+            )
+            for tup in tuples
+        ]
+
+    @classmethod
+    def _deserialize(
+        cls, serialized: str, partitions_def: TimeWindowPartitionsDefinition
+    ) -> Tuple[TimeWindowPartitionsDefinition, Sequence[TimeWindow], int]:
+        loaded = json.loads(serialized)
+
+        if isinstance(loaded, list):
+            # backwards compatibility
+            time_windows = cls.tuples_to_time_windows(partitions_def, loaded)
+            num_partitions = sum(
+                len(partitions_def.get_partition_keys_in_time_window(time_window))
+                for time_window in time_windows
+            )
+        else:
+            check.invariant(isinstance(loaded, dict))
+
+            version = loaded.get("version")
+            if version is None or version == 1:
+                time_windows = cls.tuples_to_time_windows(partitions_def, loaded["time_windows"])
+                num_partitions = loaded["num_partitions"]
+            elif version == 2:
+                partitions_def = deserialize_value(
+                    loaded["time_partitions_def"], TimeWindowPartitionsDefinition
+                )
+                time_windows = cls.tuples_to_time_windows(partitions_def, loaded["time_windows"])
+                num_partitions = loaded["num_partitions"]
+            else:
+                raise DagsterInvalidDeserializationVersionError(
+                    "Attempted to deserialize partition subset with version"
+                    f" {loaded.get('version')}, but only versions 1 and 2 are supported."
+                )
+
+        return partitions_def, time_windows, num_partitions
+
+    @classmethod
     def from_serialized(
         cls, partitions_def: PartitionsDefinition, serialized: str
     ) -> "PartitionsSubset":
@@ -1586,34 +1632,7 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
             check.failed("Partitions definition must be a TimeWindowPartitionsDefinition")
         partitions_def = cast(TimeWindowPartitionsDefinition, partitions_def)
 
-        loaded = json.loads(serialized)
-
-        def tuples_to_time_windows(tuples):
-            return [
-                TimeWindow(
-                    pendulum.from_timestamp(tup[0], tz=partitions_def.timezone),
-                    pendulum.from_timestamp(tup[1], tz=partitions_def.timezone),
-                )
-                for tup in tuples
-            ]
-
-        if isinstance(loaded, list):
-            # backwards compatibility
-            time_windows = tuples_to_time_windows(loaded)
-            num_partitions = sum(
-                len(partitions_def.get_partition_keys_in_time_window(time_window))
-                for time_window in time_windows
-            )
-        elif isinstance(loaded, dict) and (
-            "version" not in loaded or loaded["version"] == cls.SERIALIZATION_VERSION
-        ):  # version 1
-            time_windows = tuples_to_time_windows(loaded["time_windows"])
-            num_partitions = loaded["num_partitions"]
-        else:
-            raise DagsterInvalidDeserializationVersionError(
-                f"Attempted to deserialize partition subset with version {loaded.get('version')},"
-                f" but only version {cls.SERIALIZATION_VERSION} is supported."
-            )
+        _, time_windows, num_partitions = cls._deserialize(serialized, partitions_def)
 
         return TimeWindowPartitionsSubset(
             partitions_def, num_partitions=num_partitions, included_time_windows=time_windows
