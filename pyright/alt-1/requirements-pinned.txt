@@ -1,5 +1,5 @@
 agate==1.7.1
-aiobotocore==2.5.4
+aiobotocore==2.7.0
 aiofile==3.8.8
 aiohttp==3.8.6
 aioitertools==0.11.0
@@ -13,7 +13,7 @@ argon2-cffi-bindings==21.2.0
 arrow==1.3.0
 asn1crypto==1.5.1
 -e examples/assets_pandas_type_metadata
-astroid==3.0.0
+astroid==3.0.1
 asttokens==2.4.0
 async-lru==2.0.4
 async-timeout==4.0.3
@@ -23,8 +23,8 @@ backcall==0.2.0
 backoff==2.2.1
 beautifulsoup4==4.12.2
 bleach==6.1.0
-boto3==1.28.17
-botocore==1.31.17
+boto3==1.28.64
+botocore==1.31.64
 buildkite-test-collector==0.1.7
 cachetools==5.3.1
 caio==0.9.13
@@ -38,7 +38,7 @@ coloredlogs==14.0
 comm==0.1.4
 contourpy==1.1.1
 coverage==7.3.2
-croniter==1.4.1
+croniter==2.0.1
 cryptography==41.0.4
 cycler==0.12.1
 -e python_modules/dagster
@@ -59,8 +59,8 @@ cycler==0.12.1
 -e python_modules/libraries/dagster-snowflake-pyspark
 -e python_modules/libraries/dagster-spark
 -e python_modules/dagster-webserver
-dbt-core==1.6.5
-dbt-duckdb==1.6.0
+dbt-core==1.6.6
+dbt-duckdb==1.6.1
 dbt-extractor==0.4.1
 dbt-semantic-interfaces==0.2.2
 dbt-snowflake==1.6.4
@@ -71,7 +71,7 @@ dill==0.3.7
 distlib==0.3.7
 docker==6.1.3
 docstring-parser==0.15
-duckdb==0.9.0
+duckdb==0.9.1
 exceptiongroup==1.1.3
 execnet==2.0.2
 executing==2.0.0
@@ -83,13 +83,13 @@ frozenlist==1.4.0
 fsspec==2023.9.2
 gcsfs==2023.9.2
 google-api-core==2.12.0
-google-auth==2.23.2
+google-auth==2.23.3
 google-auth-oauthlib==1.1.0
 google-cloud-core==2.3.3
-google-cloud-storage==2.11.0
+google-cloud-storage==2.12.0
 google-crc32c==1.5.0
 google-resumable-media==2.6.0
-googleapis-common-protos==1.60.0
+googleapis-common-protos==1.61.0
 gql==3.4.1
 graphene==3.3
 graphql-core==3.2.3
@@ -99,7 +99,7 @@ grpcio-health-checking==1.59.0
 grpcio-tools==1.59.0
 h11==0.14.0
 hologram==0.0.16
-httptools==0.6.0
+httptools==0.6.1
 humanfriendly==10.0
 idna==3.4
 importlib-metadata==6.8.0
@@ -118,13 +118,13 @@ json5==0.9.14
 jsonpointer==2.4
 jsonschema==4.19.1
 jsonschema-specifications==2023.7.1
-jupyter-events==0.7.0
+jupyter-events==0.8.0
 jupyter-lsp==2.2.0
-jupyter_client==8.3.1
-jupyter_core==5.3.2
-jupyter_server==2.7.3
+jupyter_client==8.4.0
+jupyter_core==5.4.0
+jupyter_server==2.8.0
 jupyter_server_terminals==0.4.4
-jupyterlab==4.0.6
+jupyterlab==4.0.7
 jupyterlab-pygments==0.2.2
 jupyterlab_server==2.25.0
 keyring==24.2.0
@@ -147,7 +147,7 @@ morefs==0.1.2
 msgpack==1.0.7
 multidict==6.0.4
 multimethod==1.10
-mypy==1.5.1
+mypy==1.6.1
 mypy-extensions==1.0.0
 nbclient==0.8.0
 nbconvert==7.9.2
@@ -156,10 +156,10 @@ nest-asyncio==1.5.8
 networkx==3.1
 nodeenv==1.8.0
 notebook_shim==0.2.3
-numpy==1.26.0
+numpy==1.26.1
 oauthlib==3.2.2
 objgraph==3.6.0
-orjson==3.9.7
+orjson==3.9.9
 oscrypto==1.3.0
 overrides==7.4.0
 packaging==23.2
@@ -173,14 +173,14 @@ pathspec==0.11.2
 pendulum==2.1.2
 pexpect==4.8.0
 pickleshare==0.7.5
-Pillow==10.0.1
+Pillow==10.1.0
 platformdirs==3.11.0
 pluggy==1.3.0
 -e examples/project_fully_featured
 prometheus-client==0.17.1
 prompt-toolkit==3.0.39
 protobuf==4.24.4
-psutil==5.9.5
+psutil==5.9.6
 psycopg2-binary==2.9.9
 ptyprocess==0.7.0
 pure-eval==0.2.2
@@ -197,16 +197,15 @@ PyJWT==2.8.0
 pylint==3.0.1
 pyOpenSSL==23.2.0
 pyparsing==3.1.1
-pyright==1.1.327
+pyright==1.1.332
 pyspark==3.5.0
-pytest==7.0.1
+pytest==7.4.2
 pytest-cov==2.10.1
 pytest-dependency==0.5.1
-pytest-forked==1.6.0
 pytest-mock==3.3.1
 pytest-rerunfailures==10.0
 pytest-runner==5.2
-pytest-xdist==2.1.0
+pytest-xdist==3.3.1
 python-dateutil==2.8.2
 python-dotenv==1.0.0
 python-json-logger==2.0.7
@@ -224,10 +223,10 @@ responses==0.23.1
 rfc3339-validator==0.1.4
 rfc3986-validator==0.1.1
 rich==13.6.0
-rpds-py==0.10.4
+rpds-py==0.10.6
 rsa==4.9
-s3fs==2023.9.2
-s3transfer==0.6.2
+s3fs==0.6.0
+s3transfer==0.7.0
 scikit-learn==1.3.1
 scipy==1.11.3
 seaborn==0.13.0
@@ -235,7 +234,7 @@ Send2Trash==1.8.2
 six==1.16.0
 slack-sdk==3.23.0
 sniffio==1.3.0
-snowflake-connector-python==3.2.1
+snowflake-connector-python==3.3.0
 snowflake-sqlalchemy==1.5.0
 sortedcontainers==2.4.0
 soupsieve==2.5
@@ -262,7 +261,7 @@ typer==0.9.0
 types-backports==0.1.3
 types-certifi==2021.10.8.3
 types-chardet==5.0.4.6
-types-croniter==1.4.0.1
+types-croniter==2.0.0.0
 types-cryptography==3.3.23.2
 types-mock==5.1.0.2
 types-paramiko==3.3.0.0
@@ -284,12 +283,12 @@ typing_extensions==4.8.0
 tzdata==2023.3
 universal-pathlib==0.1.3
 uri-template==1.3.0
-urllib3==1.26.17
+urllib3==1.26.18
 uvicorn==0.23.2
-uvloop==0.17.0
+uvloop==0.18.0
 virtualenv==20.24.5
 watchdog==3.0.0
-watchfiles==0.20.0
+watchfiles==0.21.0
 wcwidth==0.2.8
 webcolors==1.13
 webencodings==0.5.1
