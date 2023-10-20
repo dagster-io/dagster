@@ -684,7 +684,7 @@ def execute_asset_backfill_iteration(
             else ""
         )
         if os.environ.get("DAGSTER_BACKFILL_RETRY_DEFINITION_CHANGED_ERROR"):
-            logger.error(
+            logger.warning(
                 f"Backfill {backfill.backfill_id} was unable to continue due to a missing asset or"
                 " partition in the asset graph. The backfill will resume once it is available"
                 f" again.\n{ex}. {unloadable_locations_error}"
