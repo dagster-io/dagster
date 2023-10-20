@@ -346,7 +346,10 @@ def freshness_policy_sensor(
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-) -> Callable[[Callable[..., None]], FreshnessPolicySensorDefinition,]:
+) -> Callable[
+    [Callable[..., None]],
+    FreshnessPolicySensorDefinition,
+]:
     """Define a sensor that reacts to the status of a given set of asset freshness policies, where the
     decorated function will be evaluated on every tick for each asset in the selection that has a
     FreshnessPolicy defined.

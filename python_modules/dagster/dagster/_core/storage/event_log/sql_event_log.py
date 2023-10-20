@@ -1377,7 +1377,9 @@ class SqlEventLogStorage(EventLogStorage):
         )
         with self.index_connection() as conn:
             backcompat_rows = db_fetch_mappings(conn, backcompat_query)
-        return {AssetKey.from_db_string(row["asset_key"]): row["timestamp"] for row in backcompat_rows}  # type: ignore
+        return {
+            AssetKey.from_db_string(row["asset_key"]): row["timestamp"] for row in backcompat_rows
+        }  # type: ignore
 
     def _can_mark_assets_as_migrated(self, rows):
         if not self.has_asset_key_index_cols():

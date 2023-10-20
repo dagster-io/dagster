@@ -325,10 +325,12 @@ def test_raise_on_error():
 
 def test_selection():
     @asset
-    def upstream(): ...
+    def upstream():
+        ...
 
     @asset
-    def downstream(upstream): ...
+    def downstream(upstream):
+        ...
 
     assets = [upstream, downstream]
 

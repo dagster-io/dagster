@@ -517,7 +517,11 @@ class AssetDaemonContext:
 
     def evaluate(
         self,
-    ) -> Tuple[Sequence[RunRequest], AssetDaemonCursor, Sequence[AutoMaterializeAssetEvaluation],]:
+    ) -> Tuple[
+        Sequence[RunRequest],
+        AssetDaemonCursor,
+        Sequence[AutoMaterializeAssetEvaluation],
+    ]:
         observe_request_timestamp = pendulum.now().timestamp()
         auto_observe_run_requests = (
             get_auto_observe_run_requests(

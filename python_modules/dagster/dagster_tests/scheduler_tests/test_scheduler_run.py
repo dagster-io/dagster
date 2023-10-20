@@ -959,9 +959,7 @@ def test_status_in_code_schedule(instance: DagsterInstance, executor: ThreadPool
         with pendulum.test(freeze_datetime):
             workspace_context._location_entry_dict[  # noqa: SLF001
                 "test_location"
-            ] = workspace_context._location_entry_dict[  # noqa: SLF001
-                "test_location"
-            ]._replace(
+            ] = workspace_context._location_entry_dict["test_location"]._replace(  # noqa: SLF001
                 code_location=None,
                 load_error=SerializableErrorInfo("error", [], "error"),
             )
@@ -2018,7 +2016,10 @@ class TestSchedulerRun:
 
             assert bad_ticks[0].status == TickStatus.FAILURE
 
-            assert "Error occurred during the execution of should_execute for schedule bad_should_execute_on_odd_days_schedule" in bad_ticks[0].error.message  # type: ignore  # (possible none)
+            assert (
+                "Error occurred during the execution of should_execute for schedule bad_should_execute_on_odd_days_schedule"
+                in bad_ticks[0].error.message  # type: ignore  # (possible none)
+            )
 
             unloadable_ticks = scheduler_instance.get_ticks(
                 unloadable_origin.get_id(), "fake_selector"
@@ -2150,8 +2151,7 @@ class TestSchedulerRun:
 
             assert (
                 "Could not find repository invalid_repo_name in location test_location to run"
-                " schedule simple_schedule"
-                in caplog.text
+                " schedule simple_schedule" in caplog.text
             )
 
     @pytest.mark.parametrize("executor", get_schedule_executors())
@@ -2252,8 +2252,7 @@ class TestSchedulerRun:
 
             assert (
                 "Schedule simple_schedule was started from a location missing_location that can no"
-                " longer be found in the workspace"
-                in caplog.text
+                " longer be found in the workspace" in caplog.text
             )
 
     @pytest.mark.parametrize("executor", get_schedule_executors())

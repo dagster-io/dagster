@@ -28,14 +28,16 @@ from dagster._core.workspace.workspace import (
 
 
 @asset
-def asset1(): ...
+def asset1():
+    ...
 
 
 defs1 = Definitions(assets=[asset1])
 
 
 @asset
-def asset2(): ...
+def asset2():
+    ...
 
 
 defs2 = Definitions(assets=[asset2])
@@ -53,7 +55,8 @@ downstream_defs = Definitions(assets=[asset1_source, downstream])
 
 
 @asset(deps=[asset1])
-def downstream_non_arg_dep(): ...
+def downstream_non_arg_dep():
+    ...
 
 
 downstream_defs_no_source = Definitions(assets=[downstream_non_arg_dep])

@@ -72,7 +72,8 @@ def get_celery_engine_job_config(image_pull_policy=None, additional_env_config_m
                     "job_namespace": {"env": "DAGSTER_K8S_PIPELINE_RUN_NAMESPACE"},
                     "env_config_maps": [
                         {"env": "DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP"},
-                    ] + (additional_env_config_maps if additional_env_config_maps else []),
+                    ]
+                    + (additional_env_config_maps if additional_env_config_maps else []),
                 },
                 (
                     {

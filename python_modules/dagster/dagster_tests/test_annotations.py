@@ -223,7 +223,8 @@ def test_deprecated_classmethod(decorators):
 def test_deprecated_abstractmethod(decorators):
     class Foo:
         @compose_decorators(*decorators)
-        def bar(self): ...
+        def bar(self):
+            ...
 
     assert is_deprecated(Foo.bar)  # __dict__ access to get descriptor
 
@@ -231,7 +232,8 @@ def test_deprecated_abstractmethod(decorators):
 def test_deprecated_class():
     @deprecated_bound
     class Foo:
-        def bar(self): ...
+        def bar(self):
+            ...
 
     assert is_deprecated(Foo)
 
@@ -257,7 +259,8 @@ def test_deprecated_namedtuple_class():
 def test_deprecated_resource():
     @deprecated_bound
     @resource
-    def foo(): ...
+    def foo():
+        ...
 
     assert is_deprecated(foo)
 
@@ -367,7 +370,8 @@ def test_deprecated_param_classmethod(decorators):
 def test_deprecated_param_abstractmethod(decorators):
     class Foo:
         @compose_decorators(*decorators)
-        def bar(self, baz=None): ...
+        def bar(self, baz=None):
+            ...
 
     assert is_deprecated_param(Foo.bar, "baz")
 
@@ -375,7 +379,8 @@ def test_deprecated_param_abstractmethod(decorators):
 def test_deprecated_param_class():
     @deprecated_param_bound
     class Foo:
-        def __init__(self, baz=None): ...
+        def __init__(self, baz=None):
+            ...
 
     assert is_deprecated_param(Foo, "baz")
 
@@ -389,7 +394,8 @@ def test_deprecated_param_class():
 def test_deprecated_param_named_tuple_class():
     @deprecated_param_bound
     class Foo(NamedTuple("_", [("baz", str)])):
-        def __new__(cls, baz=None): ...
+        def __new__(cls, baz=None):
+            ...
 
     assert is_deprecated_param(Foo, "baz")
 
@@ -513,7 +519,8 @@ def test_experimental_classmethod(decorators):
 def test_experimental_abstractmethod(decorators):
     class Foo:
         @compose_decorators(*decorators)
-        def bar(self): ...
+        def bar(self):
+            ...
 
     assert is_experimental(Foo.bar)
 
@@ -521,7 +528,8 @@ def test_experimental_abstractmethod(decorators):
 def test_experimental_class():
     @experimental
     class Foo:
-        def bar(self): ...
+        def bar(self):
+            ...
 
     assert is_experimental(Foo)
 
@@ -597,7 +605,8 @@ def test_experimental_namedtuple_class():
 def test_experimental_resource():
     @experimental
     @resource
-    def foo(): ...
+    def foo():
+        ...
 
     assert is_experimental(foo)
 
@@ -695,7 +704,8 @@ def test_experimental_param_classmethod(decorators):
 def test_experimental_param_abstractmethod(decorators):
     class Foo:
         @compose_decorators(*decorators)
-        def bar(self, baz=None): ...
+        def bar(self, baz=None):
+            ...
 
     assert is_experimental_param(Foo.bar, "baz")
 
@@ -703,7 +713,8 @@ def test_experimental_param_abstractmethod(decorators):
 def test_experimental_param_class():
     @experimental_param(param="baz")
     class Foo:
-        def __init__(self, baz=None): ...
+        def __init__(self, baz=None):
+            ...
 
     assert is_experimental_param(Foo, "baz")
 
@@ -717,7 +728,8 @@ def test_experimental_param_class():
 def test_experimental_param_named_tuple_class():
     @experimental_param(param="baz")
     class Foo(NamedTuple("_", [("baz", str)])):
-        def __new__(cls, baz=None): ...
+        def __new__(cls, baz=None):
+            ...
 
     assert is_experimental_param(Foo, "baz")
 

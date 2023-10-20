@@ -179,7 +179,8 @@ class SensorLaunchContext:
                 cursor = self._tick.cursor
 
             marked_timestamp = max(
-                self._tick.timestamp, state.instigator_data.last_tick_start_timestamp or 0  # type: ignore  # (possible none)
+                self._tick.timestamp,
+                state.instigator_data.last_tick_start_timestamp or 0,  # type: ignore  # (possible none)
             )
             self._instance.update_instigator_state(
                 state.with_data(  # type: ignore  # (possible none)
@@ -796,7 +797,11 @@ def _evaluate_sensor(
 
     for raw_run_request in sensor_runtime_data.run_requests:
         if raw_run_request.stale_assets_only:
-            stale_assets = resolve_stale_or_missing_assets(workspace_process_context, raw_run_request, external_sensor)  # type: ignore
+            stale_assets = resolve_stale_or_missing_assets(
+                workspace_process_context,  # type: ignore
+                raw_run_request,
+                external_sensor,
+            )
             # asset selection is empty set after filtering for stale
             if len(stale_assets) == 0:
                 continue

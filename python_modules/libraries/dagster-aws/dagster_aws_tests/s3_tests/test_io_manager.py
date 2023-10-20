@@ -229,10 +229,12 @@ def test_s3_pickle_io_manager_asset_execution(mock_s3_bucket):
 
 def test_nothing(mock_s3_bucket):
     @asset
-    def asset1() -> None: ...
+    def asset1() -> None:
+        ...
 
     @asset(deps=[asset1])
-    def asset2() -> None: ...
+    def asset2() -> None:
+        ...
 
     result = materialize(
         with_resources(

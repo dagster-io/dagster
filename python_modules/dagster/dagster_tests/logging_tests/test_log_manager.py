@@ -108,14 +108,16 @@ def test_construct_log_string_with_error():
         error = serializable_error_info_from_exc_info(sys.exc_info())
 
     log_string = make_log_string(error)
-    expected_start = textwrap.dedent("""
+    expected_start = textwrap.dedent(
+        """
         my_job - f79a8a93-27f1-41b5-b465-b35d0809b26d - 54348 - STEP_FAILURE - Execution of step "op2" failed.
 
         ValueError: some error
 
         Stack Trace:
           File "
-        """).strip()
+        """
+    ).strip()
     assert log_string.startswith(expected_start)
 
 
@@ -130,7 +132,8 @@ def test_construct_log_string_with_user_code_error():
         error = serializable_error_info_from_exc_info(sys.exc_info())
 
     log_string = make_log_string(error, error_source=ErrorSource.USER_CODE_ERROR)
-    expected_start = textwrap.dedent("""
+    expected_start = textwrap.dedent(
+        """
         my_job - f79a8a93-27f1-41b5-b465-b35d0809b26d - 54348 - STEP_FAILURE - Execution of step "op2" failed.
 
         dagster._core.errors.DagsterUserCodeExecutionError: Error occurred while eating a banana:
@@ -139,7 +142,8 @@ def test_construct_log_string_with_user_code_error():
 
         Stack Trace:
           File "
-        """).strip()
+        """
+    ).strip()
 
     assert log_string.startswith(expected_start)
 
@@ -158,34 +162,40 @@ def test_construct_log_string_with_error_raise_from():
         error = serializable_error_info_from_exc_info(sys.exc_info())
 
     log_string = make_log_string(error)
-    expected_start = textwrap.dedent("""
+    expected_start = textwrap.dedent(
+        """
         my_job - f79a8a93-27f1-41b5-b465-b35d0809b26d - 54348 - STEP_FAILURE - Execution of step "op2" failed.
 
         ValueError: outer error
 
         Stack Trace:
           File "
-        """).strip()
+        """
+    ).strip()
 
     assert log_string.startswith(expected_start)
 
-    expected_cause_substr = textwrap.dedent("""
+    expected_cause_substr = textwrap.dedent(
+        """
         The above exception was caused by the following exception:
         ValueError: middle error
 
         Stack Trace:
           File "
-        """).strip()
+        """
+    ).strip()
 
     assert expected_cause_substr in log_string
 
-    expected_context_substr = textwrap.dedent("""
+    expected_context_substr = textwrap.dedent(
+        """
         The above exception occurred during handling of the following exception:
         ValueError: inner error
 
         Stack Trace:
           File "
-        """).strip()
+        """
+    ).strip()
 
     assert expected_context_substr in log_string
 

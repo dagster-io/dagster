@@ -206,13 +206,13 @@ def get_assets_latest_info(
         for asset_record in asset_records
     }
 
-    latest_run_ids_by_asset: Dict[AssetKey, str] = (
-        {  # last_run_id column is written to upon run creation (via ASSET_MATERIALIZATION_PLANNED event)
-            asset_record.asset_entry.asset_key: asset_record.asset_entry.last_run_id
-            for asset_record in asset_records
-            if asset_record.asset_entry.last_run_id
-        }
-    )
+    latest_run_ids_by_asset: Dict[
+        AssetKey, str
+    ] = {  # last_run_id column is written to upon run creation (via ASSET_MATERIALIZATION_PLANNED event)
+        asset_record.asset_entry.asset_key: asset_record.asset_entry.last_run_id
+        for asset_record in asset_records
+        if asset_record.asset_entry.last_run_id
+    }
 
     run_records_by_run_id = {}
     in_progress_records = []

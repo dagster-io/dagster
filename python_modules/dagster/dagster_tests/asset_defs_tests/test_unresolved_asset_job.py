@@ -442,13 +442,16 @@ def test_define_selection_job(job_selection, expected_assets, use_multi, prefixe
 
 def test_define_selection_job_assets_definition_selection():
     @asset
-    def asset1(): ...
+    def asset1():
+        ...
 
     @asset
-    def asset2(): ...
+    def asset2():
+        ...
 
     @asset
-    def asset3(): ...
+    def asset3():
+        ...
 
     all_assets = [asset1, asset2, asset3]
 

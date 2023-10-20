@@ -364,8 +364,7 @@ def get_external_sensor_execution(
             with user_code_error_boundary(
                 SensorExecutionError,
                 lambda: (
-                    "Error occurred during the execution of evaluation_fn for sensor {sensor_name}"
-                    .format(sensor_name=sensor_def.name)
+                    f"Error occurred during the execution of evaluation_fn for sensor {sensor_def.name}"
                 ),
             ):
                 return sensor_def.evaluate_tick(sensor_context)
@@ -554,11 +553,9 @@ def get_partition_set_execution_param_data(
             for key in partition_keys:
 
                 def _error_message_fn(partition_name: str):
-                    return (
-                        lambda: (
-                            "Error occurred during the partition config and tag generation for"
-                            f" '{partition_name}' in partitioned config on job '{job_def.name}'"
-                        )
+                    return lambda: (
+                        "Error occurred during the partition config and tag generation for"
+                        f" '{partition_name}' in partitioned config on job '{job_def.name}'"
                     )
 
                 with user_code_error_boundary(PartitionExecutionError, _error_message_fn(key)):

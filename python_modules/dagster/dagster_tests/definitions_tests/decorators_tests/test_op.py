@@ -1628,7 +1628,8 @@ def test_none_annotated_input():
     with pytest.raises(DagsterInvalidDefinitionError, match="is annotated with Nothing"):
 
         @op
-        def op1(input1: None): ...
+        def op1(input1: None):
+            ...
 
 
 def test_default_code_version():

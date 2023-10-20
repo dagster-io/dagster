@@ -1024,9 +1024,9 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 replaced_freshness_policy = self.freshness_policies_by_key.get(key)
 
             if replaced_freshness_policy:
-                replaced_freshness_policies_by_key[output_asset_key_replacements.get(key, key)] = (
-                    replaced_freshness_policy
-                )
+                replaced_freshness_policies_by_key[
+                    output_asset_key_replacements.get(key, key)
+                ] = replaced_freshness_policy
 
         if auto_materialize_policy:
             auto_materialize_policy_conflicts = (

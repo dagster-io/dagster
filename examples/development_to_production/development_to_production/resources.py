@@ -8,14 +8,17 @@ class HNClient(ABC):
     """Base class for a Hacker News Client."""
 
     @abstractmethod
-    def fetch_item_by_id(self, item_id: int) -> Optional[Dict[str, Any]]: ...
+    def fetch_item_by_id(self, item_id: int) -> Optional[Dict[str, Any]]:
+        ...
 
     @abstractmethod
-    def fetch_max_item_id(self) -> int: ...
+    def fetch_max_item_id(self) -> int:
+        ...
 
     @property
     @abstractmethod
-    def item_field_names(self) -> Sequence[str]: ...
+    def item_field_names(self) -> Sequence[str]:
+        ...
 
 
 class HNAPIClient(HNClient):

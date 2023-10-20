@@ -22,7 +22,8 @@ from dagster._core.test_utils import instance_for_test
 
 def test_single_asset():
     @asset(io_manager_key="my_io_manager", metadata={"a": "b"})
-    def asset1(): ...
+    def asset1():
+        ...
 
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
@@ -123,7 +124,8 @@ def test_resource_dependencies_and_config():
         return MyIOManager()
 
     @asset(io_manager_key="my_io_manager")
-    def asset1(): ...
+    def asset1():
+        ...
 
     @repository
     def repo():
@@ -166,10 +168,12 @@ def test_two_io_managers_same_resource_dep():
         return "apple"
 
     @asset(io_manager_key="io_manager1")
-    def asset1(): ...
+    def asset1():
+        ...
 
     @asset(io_manager_key="io_manager2")
-    def asset2(): ...
+    def asset2():
+        ...
 
     @repository
     def repo():
@@ -225,7 +229,8 @@ def test_partition_key():
         return MyIOManager()
 
     @asset(partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"))
-    def asset1(): ...
+    def asset1():
+        ...
 
     @repository
     def repo():
@@ -275,7 +280,8 @@ def test_io_manager_with_config():
         return MyIOManager(context.resource_config["key"])
 
     @asset
-    def asset1(): ...
+    def asset1():
+        ...
 
     @repository
     def repo():
@@ -304,7 +310,8 @@ def test_io_manager_resource_with_config():
         return MyIOManager()
 
     @asset
-    def asset1(): ...
+    def asset1():
+        ...
 
     @repository
     def repo():
@@ -341,7 +348,8 @@ def test_nested_resource_deps():
         return "bar"
 
     @asset(io_manager_key="the_io_manager")
-    def asset1(): ...
+    def asset1():
+        ...
 
     @repository
     def repo():

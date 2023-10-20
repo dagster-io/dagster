@@ -138,12 +138,12 @@ class MultiAssetSensorContextCursor:
                 break
             else:
                 partition_key, event_id, trailing_unconsumed_partitioned_event_ids = cursor_list
-                self._cursor_component_by_asset_key[str_asset_key] = (
-                    MultiAssetSensorAssetCursorComponent(
-                        latest_consumed_event_partition=partition_key,
-                        latest_consumed_event_id=event_id,
-                        trailing_unconsumed_partitioned_event_ids=trailing_unconsumed_partitioned_event_ids,
-                    )
+                self._cursor_component_by_asset_key[
+                    str_asset_key
+                ] = MultiAssetSensorAssetCursorComponent(
+                    latest_consumed_event_partition=partition_key,
+                    latest_consumed_event_id=event_id,
+                    trailing_unconsumed_partitioned_event_ids=trailing_unconsumed_partitioned_event_ids,
                 )
 
                 self.initial_latest_consumed_event_ids_by_asset_key[str_asset_key] = event_id
@@ -255,7 +255,9 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             self._partitions_def_by_asset_key[asset_key] = (
                 assets_def.partitions_def
                 if assets_def
-                else source_asset_def.partitions_def if source_asset_def else None
+                else source_asset_def.partitions_def
+                if source_asset_def
+                else None
             )
 
         # Cursor object with utility methods for updating and retrieving cursor information.
@@ -405,9 +407,9 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
                 and record.asset_entry.last_materialization_record.storage_id
                 > (self._get_cursor(record.asset_entry.asset_key).latest_consumed_event_id or 0)
             ):
-                asset_event_records[record.asset_entry.asset_key] = (
-                    record.asset_entry.last_materialization_record
-                )
+                asset_event_records[
+                    record.asset_entry.asset_key
+                ] = record.asset_entry.last_materialization_record
 
         return asset_event_records
 
@@ -791,9 +793,9 @@ class MultiAssetSensorCursorAdvances:
             if materialization:
                 self._advanced_record_ids_by_key[asset_key].add(materialization.storage_id)
 
-                self._partition_key_by_record_id[materialization.storage_id] = (
-                    materialization.partition_key
-                )
+                self._partition_key_by_record_id[
+                    materialization.storage_id
+                ] = materialization.partition_key
 
     def get_cursor_with_advances(
         self,
@@ -879,7 +881,8 @@ class MultiAssetSensorCursorAdvances:
                 latest_unconsumed_record_by_partition.pop(latest_consumed_partition_in_tick)
 
             if len(latest_unconsumed_record_by_partition.keys()) >= MAX_NUM_UNCONSUMED_EVENTS:
-                raise DagsterInvariantViolationError(f"""
+                raise DagsterInvariantViolationError(
+                    f"""
                     You have reached the maximum number of trailing unconsumed events
                     ({MAX_NUM_UNCONSUMED_EVENTS}) for asset {asset_key} and no more events can be
                     added. You can access the unconsumed events by calling the
@@ -888,7 +891,8 @@ class MultiAssetSensorCursorAdvances:
 
                     Otherwise, you can clear all unconsumed events and reset the cursor to the latest
                     materialization for each asset by calling `advance_all_cursors`.
-                    """)
+                    """
+                )
 
         return MultiAssetSensorAssetCursorComponent(
             latest_consumed_event_partition=(

@@ -130,9 +130,6 @@ setup(
             "yamllint",
             "morefs[asynclocal]; python_version>='3.8'",
         ],
-        "black": [
-            "black[jupyter]==23.9.1",
-        ],
         "mypy": [
             "mypy==0.991",
         ],
@@ -161,7 +158,7 @@ setup(
             "types-toml",  # version will be resolved against toml
         ],
         "ruff": [
-            "ruff==0.0.289",
+            "ruff==0.1.1",
         ],
     },
     entry_points={

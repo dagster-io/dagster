@@ -65,8 +65,7 @@ def test_double_job():
         loadable_targets_from_python_file(double_job_path)
 
     assert (
-        str(exc_info.value)
-        == 'No repository and more than one job found in "double_job". '
+        str(exc_info.value) == 'No repository and more than one job found in "double_job". '
         "If you load a file or module directly it must have only one job "
         "in scope. Found jobs defined in variables or decorated "
         "functions: ['pipe_one', 'pipe_two']."
@@ -95,8 +94,7 @@ def test_double_graph():
         loadable_targets_from_python_file(double_job_path)
 
     assert (
-        str(exc_info.value)
-        == 'More than one graph found in "double_graph". '
+        str(exc_info.value) == 'More than one graph found in "double_graph". '
         "If you load a file or module directly and it has no repositories, jobs, or "
         "pipelines in scope, it must have no more than one graph in scope. "
         "Found graphs defined in variables or decorated functions: ['graph_one', 'graph_two']."

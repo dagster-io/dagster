@@ -338,8 +338,10 @@ def test_lots() -> None:
                     PartitionKeyRange("2022-01-11", "2022-01-14")
                 )  # encompasses materialized subset
                 .with_partition_keys(["2022-01-20"])  # at end materialized subset
-                .with_partition_keys(["2022-01-22", "2022-01-24"])
-            ),  # multiple overlaps within same materialized range
+                .with_partition_keys(
+                    ["2022-01-22", "2022-01-24"]
+                )  # multiple overlaps within same materialized range
+            ),
             PartitionRangeStatus.MATERIALIZING: empty_subset,
         },
         [

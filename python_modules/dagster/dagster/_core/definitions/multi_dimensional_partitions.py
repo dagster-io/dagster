@@ -400,8 +400,9 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
             if isinstance(dim.partitions_def, TimeWindowPartitionsDefinition)
         ]
         if len(time_dimensions) == 1:
-            primary_dimension, secondary_dimension = time_dimensions[0], next(
-                iter([dim for dim in self.partitions_defs if dim != time_dimensions[0]])
+            primary_dimension, secondary_dimension = (
+                time_dimensions[0],
+                next(iter([dim for dim in self.partitions_defs if dim != time_dimensions[0]])),
             )
         else:
             primary_dimension, secondary_dimension = (

@@ -25,10 +25,9 @@ branch_name = safe_getenv("BUILDKITE_BRANCH")
 
 def build_repo_wide_steps() -> List[BuildkiteStep]:
     # Other linters may be run in per-package environments because they rely on the dependencies of
-    # the target. `black`, `check-manifest`, and `ruff` are run for the whole repo at once.
+    # the target. `check-manifest`, `pyright`, and `ruff` are run for the whole repo at once.
     return [
         *build_check_changelog_steps(),
-        *build_repo_wide_black_steps(),
         *build_repo_wide_check_manifest_steps(),
         *build_repo_wide_pyright_steps(),
         *build_repo_wide_ruff_steps(),
@@ -56,19 +55,6 @@ def build_dagster_steps() -> List[BuildkiteStep]:
         steps += build_test_project_steps()
 
     return steps
-
-
-def build_repo_wide_black_steps() -> List[CommandStep]:
-    return [
-        CommandStepBuilder(":python-black: black")
-        .run(
-            "pip install -e python_modules/dagster[black] -e python_modules/dagster-pipes",
-            "make check_black",
-        )
-        .with_skip(skip_if_no_python_changes())
-        .on_test_image(AvailablePythonVersion.get_default())
-        .build(),
-    ]
 
 
 def build_repo_wide_ruff_steps() -> List[CommandStep]:

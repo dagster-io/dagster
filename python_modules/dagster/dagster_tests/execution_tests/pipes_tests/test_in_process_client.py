@@ -185,8 +185,7 @@ def test_wrong_asset_check_name() -> None:
         execute_asset_through_def(an_asset, resources={"inprocess_client": InProcessPipesClient()})
     assert (
         "Received unexpected AssetCheckResult. No checks currently being evaluated target asset"
-        " 'an_asset' and have name 'wrong_name'"
-        in str(exc_info.value)
+        " 'an_asset' and have name 'wrong_name'" in str(exc_info.value)
     )
     assert called["yes"]
 
@@ -211,8 +210,7 @@ def test_forget_to_return_materialize_result() -> None:
     assert (
         "If using `<PipesClient>.run`, you should always return"
         " `<PipesClient>.run(...).get_results()` or"
-        " `<PipesClient>.run(...).get_materialize_result()"
-        in str(exc_info.value)
+        " `<PipesClient>.run(...).get_materialize_result()" in str(exc_info.value)
     )
 
 

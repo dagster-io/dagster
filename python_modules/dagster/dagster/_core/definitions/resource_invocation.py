@@ -29,9 +29,7 @@ def resource_invocation_result(
 
     resource_fn = resource_def.resource_fn
     val_or_gen = (
-        resource_fn(_init_context)
-        if has_at_least_one_parameter(resource_fn)
-        else resource_fn()  # type: ignore  # (strict type guard)
+        resource_fn(_init_context) if has_at_least_one_parameter(resource_fn) else resource_fn()  # type: ignore  # (strict type guard)
     )
     if inspect.isgenerator(val_or_gen):
 

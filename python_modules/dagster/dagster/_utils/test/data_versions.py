@@ -127,7 +127,8 @@ def materialize_asset(
     partition_key: Optional[str] = ...,
     run_config: Optional[Union[RunConfig, Mapping[str, Any]]] = ...,
     tags: Optional[Mapping[str, str]] = ...,
-) -> MaterializationTable: ...
+) -> MaterializationTable:
+    ...
 
 
 @overload
@@ -140,7 +141,8 @@ def materialize_asset(
     partition_key: Optional[str] = ...,
     run_config: Optional[Union[RunConfig, Mapping[str, Any]]] = ...,
     tags: Optional[Mapping[str, str]] = ...,
-) -> AssetMaterialization: ...
+) -> AssetMaterialization:
+    ...
 
 
 # Use only for AssetsDefinition with one asset

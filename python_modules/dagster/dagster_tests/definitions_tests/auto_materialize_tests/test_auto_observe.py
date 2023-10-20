@@ -12,7 +12,8 @@ from pytest import fixture
 
 def test_single_observable_source_asset_no_auto_observe():
     @observable_source_asset
-    def asset1(): ...
+    def asset1():
+        ...
 
     asset_graph = AssetGraph.from_assets([asset1])
 
@@ -44,7 +45,8 @@ def test_single_observable_source_asset_no_auto_observe():
 @fixture
 def single_auto_observe_source_asset_graph():
     @observable_source_asset(auto_observe_interval_minutes=30)
-    def asset1(): ...
+    def asset1():
+        ...
 
     asset_graph = AssetGraph.from_assets([asset1])
     return asset_graph
@@ -96,7 +98,8 @@ def test_single_observable_source_asset_prior_recent_observe_requests(
 
 def test_reconcile():
     @observable_source_asset(auto_observe_interval_minutes=30)
-    def asset1(): ...
+    def asset1():
+        ...
 
     asset_graph = AssetGraph.from_assets([asset1])
     instance = DagsterInstance.ephemeral()

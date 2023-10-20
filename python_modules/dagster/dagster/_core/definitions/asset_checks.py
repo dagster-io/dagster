@@ -67,7 +67,7 @@ class AssetChecksDefinition(ResourceAddable, RequiresResources):
         node_def: NodeDefinition,
         resource_defs: Mapping[str, ResourceDefinition],
         specs: Sequence[AssetCheckSpec],
-        input_output_props: AssetChecksDefinitionInputOutputProps
+        input_output_props: AssetChecksDefinitionInputOutputProps,
         # if adding new fields, make sure to handle them in the get_attributes_dict method
     ):
         self._node_def = node_def
@@ -109,8 +109,7 @@ class AssetChecksDefinition(ResourceAddable, RequiresResources):
         if len(self._specs_by_output_name) > 1:
             check.failed(
                 "Tried to retrieve single-check property from a checks definition with multiple"
-                " checks: "
-                + ", ".join(spec.name for spec in self._specs_by_output_name.values()),
+                " checks: " + ", ".join(spec.name for spec in self._specs_by_output_name.values()),
             )
 
         return next(iter(self.specs))

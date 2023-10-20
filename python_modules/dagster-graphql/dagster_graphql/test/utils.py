@@ -15,10 +15,12 @@ from dagster_graphql.schema import create_schema
 
 class GqlResult(Protocol):
     @property
-    def data(self) -> Mapping[str, Any]: ...
+    def data(self) -> Mapping[str, Any]:
+        ...
 
     @property
-    def errors(self) -> Optional[Sequence[str]]: ...
+    def errors(self) -> Optional[Sequence[str]]:
+        ...
 
 
 Selector: TypeAlias = Dict[str, Any]

@@ -679,13 +679,15 @@ def job_def_from_pointer(pointer: CodePointer) -> "JobDefinition":
 def repository_def_from_target_def(
     target: Union["RepositoryDefinition", "JobDefinition", "GraphDefinition"],
     repository_load_data: Optional["RepositoryLoadData"] = None,
-) -> "RepositoryDefinition": ...
+) -> "RepositoryDefinition":
+    ...
 
 
 @overload
 def repository_def_from_target_def(
     target: object, repository_load_data: Optional["RepositoryLoadData"] = None
-) -> None: ...
+) -> None:
+    ...
 
 
 def repository_def_from_target_def(
