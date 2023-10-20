@@ -266,14 +266,13 @@ export function walkTreeDownwards(
   console.log({nodeId, graphData, callback});
 }
 
-// Prefix group nodes in the Dagre layout so that an asset and an asset
-// group cannot have the same name.
-export const GROUP_NODE_PREFIX = 'group__';
+export const isGroupId = (str: string) => /^[^@:]+@[^@:]+:[^@:]+$/.test(str);
 
 export const groupIdForNode = (node: GraphNode) =>
   [
-    GROUP_NODE_PREFIX,
-    node.definition.repository.location.name,
     node.definition.repository.name,
+    '@',
+    node.definition.repository.location.name,
+    ':',
     node.definition.groupName,
-  ].join('__');
+  ].join('');

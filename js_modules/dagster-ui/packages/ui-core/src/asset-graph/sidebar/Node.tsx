@@ -140,6 +140,11 @@ export const Node = ({
               <div style={{width: 18}} />
             )}
             <GrayOnHoverBox
+              onDoubleClick={() => {
+                if (!isOpen) {
+                  toggleOpen();
+                }
+              }}
               flex={{
                 direction: 'row',
                 alignItems: 'center',
@@ -345,6 +350,7 @@ const ExpandMore = styled.div``;
 const GrayOnHoverBox = styled(Box)`
   border-radius: 8px;
   cursor: pointer;
+  user-select: none;
   &:hover {
     background: ${Colors.Gray100};
     transition: background 100ms linear;

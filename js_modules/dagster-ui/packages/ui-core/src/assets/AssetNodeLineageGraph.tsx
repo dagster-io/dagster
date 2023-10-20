@@ -5,8 +5,8 @@ import styled from 'styled-components';
 
 import {AssetEdges} from '../asset-graph/AssetEdges';
 import {MINIMAL_SCALE} from '../asset-graph/AssetGraphExplorer';
-import {AssetGroupNode} from '../asset-graph/AssetGroupNode';
 import {AssetNodeMinimal, AssetNode} from '../asset-graph/AssetNode';
+import {ExpandedGroupNode} from '../asset-graph/ExpandedGroupNode';
 import {AssetNodeLink} from '../asset-graph/ForeignNode';
 import {GraphData, toGraphId} from '../asset-graph/Utils';
 import {DEFAULT_MAX_ZOOM, SVGViewport} from '../graph/SVGViewport';
@@ -84,7 +84,7 @@ export const AssetNodeLineageGraph: React.FC<{
             .sort((a, b) => a.id.length - b.id.length)
             .map((group) => (
               <foreignObject {...group.bounds} key={group.id}>
-                <AssetGroupNode group={group} scale={scale} />
+                <ExpandedGroupNode group={group} scale={scale} />
               </foreignObject>
             ))}
 

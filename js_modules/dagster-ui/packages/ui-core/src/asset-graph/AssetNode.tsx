@@ -229,13 +229,7 @@ export const AssetNodeMinimal: React.FC<{
             $background={background}
             $border={border}
           >
-            <div
-              style={{
-                top: '50%',
-                position: 'absolute',
-                transform: 'translate(8px, -16px)',
-              }}
-            >
+            <div style={{top: '50%', position: 'absolute', transform: 'translate(8px, -16px)'}}>
               <AssetLatestRunSpinner liveData={liveData} purpose="section" />
             </div>
             <MinimalName style={{fontSize: 30}} $isSource={isSource}>

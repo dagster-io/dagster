@@ -1,9 +1,8 @@
 import * as dagre from 'dagre';
-import groupBy from 'lodash/groupBy';
 
 import {IBounds, IPoint} from '../graph/common';
 
-import {GraphData, GraphNode, GraphId, groupIdForNode, GROUP_NODE_PREFIX} from './Utils';
+import {GraphData, GraphNode, GraphId, groupIdForNode, isGroupId} from './Utils';
 
 export interface AssetLayout {
   id: GraphId;
@@ -15,7 +14,6 @@ export interface GroupLayout {
   groupName: string;
   repositoryName: string;
   repositoryLocationName: string;
-  repositoryDisambiguationRequired: boolean;
   bounds: IBounds; // Overall frame of the box relative to 0,0 on the graph
   expanded: boolean;
 }
@@ -92,7 +90,6 @@ export const layoutAssetGraph = (
         groupName: node.definition.groupName,
         repositoryName: node.definition.repository.name,
         repositoryLocationName: node.definition.repository.location.name,
-        repositoryDisambiguationRequired: false,
         bounds: {x: 0, y: 0, width: 0, height: 0},
       };
     }
@@ -153,6 +150,9 @@ export const layoutAssetGraph = (
       ) {
         v = groupIdForAssetId[upstreamId]!;
       }
+      if (v === w) {
+        return;
+      }
 
       g.setEdge({v, w}, {weight: 1});
 
@@ -189,7 +189,7 @@ export const layoutAssetGraph = (
       width: dagreNode.width,
       height: dagreNode.height,
     };
-    if (!id.startsWith(GROUP_NODE_PREFIX)) {
+    if (!isGroupId(id)) {
       nodes[id] = {id, bounds};
     } else if (!expandedGroups.includes(id)) {
       const group = groups[id]!;
@@ -215,20 +215,10 @@ export const layoutAssetGraph = (
     }
     for (const group of Object.values(groups)) {
       if (group.expanded) {
-        group.bounds = padBounds(group.bounds, {x: 15, top: 70, bottom: -10});
+        group.bounds = padBounds(group.bounds, {x: 15, top: 85, bottom: 10});
       }
     }
   }
-
-  // Annotate groups that require disambiguation (same group name appears twice)
-  Object.values(groupBy(Object.values(groups), (g) => g.groupName))
-    .filter((set) => set.length > 1)
-    .flat()
-    .forEach((group) => {
-      group.bounds.y -= 18;
-      group.bounds.height += 18;
-      group.repositoryDisambiguationRequired = true;
-    });
 
   const edges: AssetLayoutEdge[] = [];
 

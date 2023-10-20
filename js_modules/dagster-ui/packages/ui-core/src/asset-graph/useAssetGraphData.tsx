@@ -73,13 +73,12 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     [fullGraphQueryItems],
   );
 
-  const {assetGraphData, graphAssetKeys, allAssetKeys, applyingEmptyDefault} = React.useMemo(() => {
+  const {assetGraphData, graphAssetKeys, allAssetKeys} = React.useMemo(() => {
     if (repoFilteredNodes === undefined || graphQueryItems === undefined) {
       return {
         graphAssetKeys: [],
         graphQueryItems: [],
         assetGraphData: null,
-        applyingEmptyDefault: false,
       };
     }
 
@@ -87,7 +86,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     // In the future it might be ideal to move this server-side, but we currently
     // get to leverage the useQuery cache almost 100% of the time above, making this
     // super fast after the first load vs a network fetch on every page view.
-    const {all, applyingEmptyDefault} = filterByQuery(graphQueryItems, opsQuery);
+    const {all} = filterByQuery(graphQueryItems, opsQuery || '*');
 
     // Assemble the response into the data structure used for layout, traversal, etc.
     const assetGraphData = buildGraphData(all.map((n) => n.node));
@@ -100,13 +99,11 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
       graphAssetKeys: all.map((n) => ({path: n.node.assetKey.path})),
       assetGraphData,
       graphQueryItems,
-      applyingEmptyDefault,
     };
   }, [repoFilteredNodes, graphQueryItems, opsQuery, options.hideEdgesToNodesOutsideQuery]);
 
   // Used to avoid showing "query error"
   const [isCalculating, setIsCalculating] = React.useState<boolean>(true);
-  const [isCached, setIsCached] = React.useState<boolean>(false);
   const [assetGraphDataMaybeCached, setAssetGraphDataMaybeCached] =
     React.useState<GraphData | null>(null);
 
@@ -114,12 +111,11 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
 
   React.useLayoutEffect(() => {
     setAssetGraphDataMaybeCached(null);
-    setIsCached(false);
     setIsCalculating(true);
     let cancel = false;
     (async () => {
       let fullAssetGraphData = null;
-      if (applyingEmptyDefault && repoFilteredNodes && !flagDisableDAGCache) {
+      if (repoFilteredNodes && !flagDisableDAGCache) {
         // build the graph data anyways to check if it's cached
         const {all} = filterByQuery(graphQueryItems, '*');
         fullAssetGraphData = buildGraphData(all.map((n) => n.node));
@@ -133,14 +129,12 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
           }
           if (isCached) {
             setAssetGraphDataMaybeCached(fullAssetGraphData);
-            setIsCached(true);
             setIsCalculating(false);
             return;
           }
         }
       }
       setAssetGraphDataMaybeCached(assetGraphData);
-      setIsCached(false);
       setIsCalculating(false);
     })();
 
@@ -148,7 +142,6 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
       cancel = true;
     };
   }, [
-    applyingEmptyDefault,
     graphQueryItems,
     options.hideEdgesToNodesOutsideQuery,
     repoFilteredNodes,
@@ -163,7 +156,6 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     graphQueryItems,
     graphAssetKeys,
     allAssetKeys,
-    applyingEmptyDefault: applyingEmptyDefault && !isCached,
     isCalculating,
   };
 }

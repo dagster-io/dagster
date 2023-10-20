@@ -217,6 +217,7 @@ export function useAssetLayout(_graphData: GraphData, expandedGroups: string[]) 
     }
   }, [cacheKey, graphData, runAsync, flags, opts]);
 
+  console.log(state.cacheKey, cacheKey);
   return {
     loading: state.loading || !state.layout || state.cacheKey !== cacheKey,
     async: runAsync,
