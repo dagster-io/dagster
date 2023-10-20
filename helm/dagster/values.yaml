@@ -403,7 +403,8 @@ dagster-user-deployments:
         periodSeconds: 20
         timeoutSeconds: 10
         successThreshold: 1
-        failureThreshold: 15  # Allow roughly 300 seconds to start up by default
+        # Allow roughly 300 seconds to start up by default
+        failureThreshold: 1
 
       # As of 0.14.0, liveness probes are disabled by default. If you want to enable them, it's recommended to also
       # enable startup probes.
@@ -413,33 +414,6 @@ dagster-user-deployments:
 
       service:
         annotations: {}
-
-####################################################################################################
-# Pipeline Run: Configuration for user code containers.
-#
-# `DAGSTER_K8S_PIPELINE_RUN_IMAGE` environment variable will point to the image specified below.
-# The run config for the celery executor can set `job_image` to fetch from environment variable
-# `DAGSTER_K8S_PIPELINE_RUN_IMAGE`, so that celery workers will launch k8s jobs with said image.
-#
-####################################################################################################
-pipelineRun:
-  image:
-    # When a tag is not supplied for a Dagster provided image,
-    # it will default as the Helm chart version.
-    repository: "docker.io/dagster/user-code-example"
-    tag: ~
-    pullPolicy: Always
-
-  # Additional environment variables to set.
-  # A Kubernetes ConfigMap will be created with these environment variables. See:
-  # https://kubernetes.io/docs/concepts/configuration/configmap/
-  #
-  # Example:
-  #
-  # env:
-  #   ENV_ONE: one
-  #   ENV_TWO: two
-  env: {}
 
 ####################################################################################################
 # Scheduler: Configuration for the scheduler
@@ -1346,3 +1320,27 @@ retention:
 #     run_tags:
 #       key: value
 additionalInstanceConfig: {}
+
+####################################################################################################
+# [DEPRECATED] Pipeline Run
+#
+# This config can now be set with dagster-user-deployments.
+####################################################################################################
+pipelineRun:
+  image:
+    # When a tag is not supplied for a Dagster provided image,
+    # it will default as the Helm chart version.
+    repository: "docker.io/dagster/user-code-example"
+    tag: ~
+    pullPolicy: Always
+
+  # Additional environment variables to set.
+  # A Kubernetes ConfigMap will be created with these environment variables. See:
+  # https://kubernetes.io/docs/concepts/configuration/configmap/
+  #
+  # Example:
+  #
+  # env:
+  #   ENV_ONE: one
+  #   ENV_TWO: two
+  env: {}
