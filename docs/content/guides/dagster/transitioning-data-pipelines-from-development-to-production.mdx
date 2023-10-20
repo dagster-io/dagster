@@ -290,8 +290,10 @@ from typing import Any, Dict, Optional
 
 import requests
 
+from dagster import ConfigurableResource
 
-class HNAPIClient:
+
+class HNAPIClient(ConfigurableResource):
     """Hacker News client that fetches live data."""
 
     def fetch_item_by_id(self, item_id: int) -> Optional[Dict[str, Any]]:
@@ -304,6 +306,11 @@ class HNAPIClient:
         return requests.get(
             "https://hacker-news.firebaseio.com/v0/maxitem.json", timeout=5
         ).json()
+
+    @property
+    def item_field_names(self) -> list:
+        # ommitted for brevity, see full code example for implementation
+        return []
 ```
 
 We'll also need to update the `items` asset to use this client as a resource:
@@ -312,19 +319,19 @@ We'll also need to update the `items` asset to use this client as a resource:
 # assets.py
 
 
+class ItemsConfig(Config):
+    base_item_id: int
+
+
 @asset(
-    config_schema={"N": int},
-    required_resource_keys={"hn_client"},
     io_manager_key="snowflake_io_manager",
 )
-def items(context) -> pd.DataFrame:
+def items(config: ItemsConfig, hn_client: HNAPIClient) -> pd.DataFrame:
     """Items from the Hacker News API: each is a story or a comment on a story."""
-    hn_client = context.resources.hn_client
-
     max_id = hn_client.fetch_max_item_id()
     rows = []
     # Hacker News API is 1-indexed, so adjust range by 1
-    for item_id in range(max_id - context.op_config["N"] + 1, max_id + 1):
+    for item_id in range(max_id - config.base_item_id + 1, max_id + 1):
         rows.append(hn_client.fetch_item_by_id(item_id))
 
     result = pd.DataFrame(rows, columns=hn_client.item_field_names).drop_duplicates(
@@ -342,7 +349,7 @@ def items(context) -> pd.DataFrame:
   </a> on GitHub.
 </Note>
 
-We'll also need to add an instance of `HNApiClient` to `resources` in our `Definitions` object.
+We'll also need to add an instance of `HNAPIClient` to `resources` in our `Definitions` object.
 
 ```python file=/guides/dagster/development_to_production/repository/repository_v3.py startafter=start_hn_resource endbefore=end_hn_resource
 resource_defs = {
@@ -358,7 +365,7 @@ Now we can write a stubbed version of the Hacker News resource. We want to make 
 # resources.py
 
 
-class StubHNClient:
+class StubHNClient(ConfigurableResource):
     """Hacker News Client that returns fake data."""
 
     def __init__(self):
@@ -379,7 +386,7 @@ class StubHNClient:
         return 2
 
     @property
-    def item_field_names(self):
+    def item_field_names(self) -> list:
         return ["id", "type", "title", "by"]
 ```
 
@@ -400,11 +407,10 @@ Now we can use the stub Hacker News resource to test that the `items` asset tran
 
 
 def test_items():
-    context = build_op_context(
-        resources={"hn_client": StubHNClient()},
-        op_config={"N": StubHNClient().fetch_max_item_id()},
+    hn_dataset = items(
+        config=ItemsConfig(base_item_id=StubHNClient().fetch_max_item_id()),
+        hn_client=StubHNClient(),
     )
-    hn_dataset = items(context)
     assert isinstance(hn_dataset, pd.DataFrame)
 
     expected_data = pd.DataFrame(StubHNClient().data.values()).rename(
