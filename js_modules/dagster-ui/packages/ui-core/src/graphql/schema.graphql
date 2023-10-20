@@ -1499,6 +1499,7 @@ union TerminateRunResult =
     TerminateRunSuccess
   | TerminateRunFailure
   | RunNotFoundError
+  | UnauthorizedError
   | PythonError
 
 type TerminateRunSuccess implements TerminatePipelineExecutionSuccess {

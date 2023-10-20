@@ -4224,7 +4224,8 @@ export type TerminateRunResult =
   | PythonError
   | RunNotFoundError
   | TerminateRunFailure
-  | TerminateRunSuccess;
+  | TerminateRunSuccess
+  | UnauthorizedError;
 
 export type TerminateRunSuccess = TerminatePipelineExecutionSuccess & {
   __typename: 'TerminateRunSuccess';

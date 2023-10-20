@@ -102,6 +102,7 @@ def terminate_pipeline_execution(
     )
 
     if not record:
+        assert_permission(graphene_info, Permissions.TERMINATE_PIPELINE_EXECUTION)
         return GrapheneRunNotFoundError(run_id)
 
     run = record.dagster_run
@@ -194,6 +195,7 @@ def delete_pipeline_run(
 
     run = instance.get_run_by_id(run_id)
     if not run:
+        assert_permission(graphene_info, Permissions.DELETE_PIPELINE_RUN)
         return GrapheneRunNotFoundError(run_id)
 
     location_name = run.external_job_origin.location_name if run.external_job_origin else None

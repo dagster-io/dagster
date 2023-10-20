@@ -231,6 +231,9 @@ export const TERMINATE_MUTATION = gql`
           ... on RunNotFoundError {
             message
           }
+          ... on UnauthorizedError {
+            message
+          }
           ... on TerminateRunFailure {
             message
           }
