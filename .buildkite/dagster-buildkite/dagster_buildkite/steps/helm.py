@@ -33,11 +33,10 @@ def build_helm_steps() -> List[BuildkiteStep]:
     steps += _build_lint_steps(package_spec)
     pkg_steps = package_spec.build_steps()
     assert len(pkg_steps) == 1
-    pkg_step = pkg_steps[0]
-    if is_command_step(pkg_step):
-        steps.append(pkg_step)
-    else:
-        steps += pkg_step["steps"]  # type: ignore  # (strict type guard)
+    # We're only testing the latest python version, so we only expect one step.
+    # Otherwise we'd be putting a group in a group which isn't supported.
+    assert is_command_step(pkg_steps[0])
+    steps.append(pkg_steps[0])
 
     return [
         GroupStep(
