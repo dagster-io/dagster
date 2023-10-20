@@ -106,7 +106,7 @@ def test_can_deserialize_default_changed_to_unpartitioned(serialized_default_sub
 @pytest.mark.parametrize(
     "serialized_time_subset,is_deserializable",
     [
-        (serialized_subset, False)
+        (serialized_subset, True if version in ("2", "current") else False)
         for version, serialized_subset in get_serialized_time_subsets_by_version()[1].items()
     ],
     ids=list(get_serialized_time_subsets_by_version()[1].keys()),
@@ -139,10 +139,11 @@ def test_can_deserialize_time_subset_changed_to_static(
     )
 
 
+# Only time window subsets of version 2+ can be deserialized
 @pytest.mark.parametrize(
     "serialized_time_subset,is_deserializable",
     [
-        (serialized_subset, False)
+        (serialized_subset, True if version in ("2", "current") else False)
         for version, serialized_subset in get_serialized_time_subsets_by_version()[1].items()
     ],
     ids=list(get_serialized_time_subsets_by_version()[1].keys()),

@@ -341,6 +341,7 @@ class AssetBackfillData(NamedTuple):
         serialized: str,
         asset_graph: AssetGraph,
         backfill_start_timestamp: float,
+        error_on_partitions_def_changes: bool = True,
     ) -> "AssetBackfillData":
         storage_dict = json.loads(serialized)
 
@@ -348,19 +349,23 @@ class AssetBackfillData(NamedTuple):
             target_subset=AssetGraphSubset.from_storage_dict(
                 storage_dict["serialized_target_subset"],
                 asset_graph,
+                error_on_partitions_def_changes=error_on_partitions_def_changes,
             ),
             requested_runs_for_target_roots=storage_dict["requested_runs_for_target_roots"],
             requested_subset=AssetGraphSubset.from_storage_dict(
                 storage_dict["serialized_requested_subset"],
                 asset_graph,
+                error_on_partitions_def_changes=error_on_partitions_def_changes,
             ),
             materialized_subset=AssetGraphSubset.from_storage_dict(
                 storage_dict["serialized_materialized_subset"],
                 asset_graph,
+                error_on_partitions_def_changes=error_on_partitions_def_changes,
             ),
             failed_and_downstream_subset=AssetGraphSubset.from_storage_dict(
                 storage_dict["serialized_failed_subset"],
                 asset_graph,
+                error_on_partitions_def_changes=error_on_partitions_def_changes,
             ),
             latest_storage_id=storage_dict["latest_storage_id"],
             backfill_start_time=utc_datetime_from_timestamp(backfill_start_timestamp),

@@ -1590,11 +1590,17 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
 
     @classmethod
     def _deserialize(
-        cls, serialized: str, partitions_def: TimeWindowPartitionsDefinition
+        cls, serialized: str, partitions_def: Optional[TimeWindowPartitionsDefinition]
     ) -> Tuple[TimeWindowPartitionsDefinition, Sequence[TimeWindow], int]:
         loaded = json.loads(serialized)
 
         if isinstance(loaded, list):
+            if partitions_def is None:
+                check.failed(
+                    "Cannot deserialize time partitions subset serialized as a list without a"
+                    " partitions definition"
+                )
+
             # backwards compatibility
             time_windows = cls.tuples_to_time_windows(partitions_def, loaded)
             num_partitions = sum(
@@ -1606,6 +1612,12 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
 
             version = loaded.get("version")
             if version is None or version == 1:
+                if partitions_def is None:
+                    check.failed(
+                        f"Cannot deserialize time partitions subset of version '{version}' without"
+                        " a partitions definition"
+                    )
+
                 time_windows = cls.tuples_to_time_windows(partitions_def, loaded["time_windows"])
                 num_partitions = loaded["num_partitions"]
             elif version == 2:
@@ -1650,6 +1662,31 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
             and data.get("time_windows") is not None
             and data.get("num_partitions") is not None
         )
+
+    @classmethod
+    def deserialize_on_partitions_def_change(cls, serialized: str) -> "PartitionsSubset":
+        partitions_def, time_windows, num_partitions = cls._deserialize(serialized, None)
+        check.invariant(partitions_def is not None)
+
+        return TimeWindowPartitionsSubset(
+            partitions_def, num_partitions=num_partitions, included_time_windows=time_windows
+        )
+
+    @classmethod
+    def serialization_contains_time_partitions_def(cls, serialized: str) -> bool:
+        data = json.loads(serialized)
+
+        if isinstance(data, list):
+            return False
+
+        check.invariant(isinstance(data, dict))
+
+        if data.get("version", 0) < 2:  # Serialization version with time partitions def
+            return False
+
+        check.invariant(data.get("time_partitions_def") is not None)
+
+        return True
 
     @classmethod
     def empty_subset(cls, partitions_def: PartitionsDefinition) -> "PartitionsSubset":

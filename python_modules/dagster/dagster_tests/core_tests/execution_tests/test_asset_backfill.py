@@ -36,7 +36,10 @@ from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
-from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.errors import (
+    DagsterDefinitionChangedDeserializationError,
+    DagsterInvariantViolationError,
+)
 from dagster._core.execution.asset_backfill import (
     AssetBackfillData,
     AssetBackfillIterationResult,
@@ -679,10 +682,27 @@ def external_asset_graph_from_assets_by_repo_name(
     )
 
 
+def assert_deserializable_on_partitions_def_change(
+    serialized: str, asset_graph: AssetGraph
+) -> None:
+    dummy_timestamp = pendulum.datetime(2023, 10, 5, 0, 0, 0).timestamp()
+
+    with pytest.raises(DagsterDefinitionChangedDeserializationError):
+        AssetBackfillData.from_serialized(serialized, asset_graph, dummy_timestamp)
+
+    AssetBackfillData.from_serialized(
+        serialized,
+        asset_graph,
+        dummy_timestamp,
+        error_on_partitions_def_changes=False,
+    )
+
+
 @pytest.mark.parametrize(
-    "static_serialization",
+    "static_backfill_deserializable,static_serialization",
     [
         (
+            False,
             r'{"requested_runs_for_target_roots": false, "serialized_target_subset":'
             r' {"partitions_subsets_by_asset_key": {"static_asset": "{\"version\": 1, \"subset\":'
             r' [\"b\", \"d\", \"c\", \"a\", \"e\", \"f\"]}"}, "non_partitioned_asset_keys": []},'
@@ -690,31 +710,34 @@ def external_asset_graph_from_assets_by_repo_name(
             r' {"partitions_subsets_by_asset_key": {}, "non_partitioned_asset_keys": []},'
             r' "serialized_materialized_subset": {"partitions_subsets_by_asset_key": {},'
             r' "non_partitioned_asset_keys": []}, "serialized_failed_subset":'
-            r' {"partitions_subsets_by_asset_key": {}, "non_partitioned_asset_keys": []}}'
+            r' {"partitions_subsets_by_asset_key": {}, "non_partitioned_asset_keys": []}}',
         ),
         (
+            False,
             r'{"requested_runs_for_target_roots": false, "serialized_target_subset":'
             r' {"partitions_subsets_by_asset_key": {"static_asset": "{\"version\": 1, \"subset\":'
-            r' [\"f\", \"b\", \"e\", \"c\", \"d\", \"a\"]}"},'
-            r' "serializable_partitions_ids_by_asset_key": {"static_asset":'
-            r' "7c2047f8b02e90a69136c1a657bd99ad80b433a2"}, "subset_types_by_asset_key":'
-            r' {"static_asset": "DEFAULT"}, "non_partitioned_asset_keys": []}, "latest_storage_id":'
-            r' null, "serialized_requested_subset": {"partitions_subsets_by_asset_key": {},'
-            r' "serializable_partitions_ids_by_asset_key": {}, "subset_types_by_asset_key": {},'
-            r' "non_partitioned_asset_keys": []}, "serialized_materialized_subset":'
-            r' {"partitions_subsets_by_asset_key": {},'
-            r' "serializable_partitions_ids_by_asset_key": {},'
-            r' "subset_types_by_asset_key": {}, "non_partitioned_asset_keys": []},'
+            r' [\"a\"]}"}, "serializable_partitions_def_ids_by_asset_key": {"static_asset":'
+            r' "6b38d42036dacdcf081b8d1d0ee0c97b407c56c6"},'
+            r' "partitions_def_class_names_by_asset_key": {"static_asset": "StaticPartitionsDefinition"},'
+            r' "non_partitioned_asset_keys": []}, "latest_storage_id": null,'
+            r' "serialized_requested_subset": {"partitions_subsets_by_asset_key": {},'
+            r' "serializable_partitions_def_ids_by_asset_key": {},'
+            r' "partitions_def_class_names_by_asset_key": {}, "non_partitioned_asset_keys": []},'
+            r' "serialized_materialized_subset": {"partitions_subsets_by_asset_key": {},'
+            r' "serializable_partitions_def_ids_by_asset_key": {},'
+            r' "partitions_def_class_names_by_asset_key": {}, "non_partitioned_asset_keys": []},'
             r' "serialized_failed_subset": {"partitions_subsets_by_asset_key": {},'
-            r' "serializable_partitions_ids_by_asset_key": {}, "subset_types_by_asset_key": {},'
-            r' "non_partitioned_asset_keys": []}}'
+            r' "serializable_partitions_def_ids_by_asset_key": {},'
+            r' "partitions_def_class_names_by_asset_key": {}, "non_partitioned_asset_keys": []}}',
         ),
     ],
 )
 @pytest.mark.parametrize(
-    "time_window_serialization",
+    "time_backfill_deserializable,time_window_serialization",
     [
         (
+            # No partitions def UID or class name
+            False,
             r'{"requested_runs_for_target_roots": false, "serialized_target_subset":'
             r' {"partitions_subsets_by_asset_key": {"daily_asset": "{\"version\": 1,'
             r" \"time_windows\":"
@@ -724,9 +747,11 @@ def external_asset_graph_from_assets_by_repo_name(
             r' {"partitions_subsets_by_asset_key": {}, "non_partitioned_asset_keys": []},'
             r' "serialized_materialized_subset": {"partitions_subsets_by_asset_key": {},'
             r' "non_partitioned_asset_keys": []}, "serialized_failed_subset":'
-            r' {"partitions_subsets_by_asset_key": {}, "non_partitioned_asset_keys": []}}'
+            r' {"partitions_subsets_by_asset_key": {}, "non_partitioned_asset_keys": []}}',
         ),
         (
+            # Partitions def class name and UID added
+            False,
             r'{"requested_runs_for_target_roots": true, "serialized_target_subset":'
             r' {"partitions_subsets_by_asset_key": {"daily_asset": "{\"version\": 1,'
             r' \"time_windows\": [[1571356800.0, 1571529600.0]], \"num_partitions\": 2}"},'
@@ -746,11 +771,42 @@ def external_asset_graph_from_assets_by_repo_name(
             r' "partitions_def_class_names_by_asset_key": {}, "non_partitioned_asset_keys": []},'
             r' "serialized_failed_subset": {"partitions_subsets_by_asset_key": {},'
             r' "serializable_partitions_def_ids_by_asset_key": {},'
-            r' "partitions_def_class_names_by_asset_key": {}, "non_partitioned_asset_keys": []}}'
+            r' "partitions_def_class_names_by_asset_key": {}, "non_partitioned_asset_keys": []}}',
+        ),
+        (
+            # Time window partitions def serialization added
+            True,
+            r'{"requested_runs_for_target_roots": false, "serialized_target_subset":'
+            r' {"partitions_subsets_by_asset_key": {"daily_asset": "{\"version\": 2,'
+            r" \"time_windows\":"
+            r" [[1696118400.0, 1696377600.0]], \"num_partitions\": 3, \"time_partitions_def\":"
+            r" \"{\\\"__class__\\\": \\\"TimeWindowPartitionsDefinition\\\", \\\"cron_schedule\\\":"
+            r" \\\"0 0 * * *\\\", \\\"end\\\": null, \\\"end_offset\\\": 0, \\\"fmt\\\":"
+            r' \\\"%Y-%m-%d\\\", \\\"start\\\": 1696118400.0, \\\"timezone\\\": \\\"UTC\\\"}\"}"},'
+            r' "serializable_partitions_def_ids_by_asset_key": {"daily_asset":'
+            r' "1e8eb6a14ced5ccc160adebee12a9ee665ef3e6a"},'
+            r' "partitions_def_class_names_by_asset_key": {"daily_asset":'
+            r' "TimeWindowPartitionsDefinition"}, "non_partitioned_asset_keys": []},'
+            r' "latest_storage_id": null, "serialized_requested_subset":'
+            r' {"partitions_subsets_by_asset_key": {},'
+            r' "serializable_partitions_def_ids_by_asset_key": {},'
+            r' "partitions_def_class_names_by_asset_key": {}, "non_partitioned_asset_keys": []},'
+            r' "serialized_materialized_subset": {"partitions_subsets_by_asset_key": {},'
+            r' "serializable_partitions_def_ids_by_asset_key": {},'
+            r' "partitions_def_class_names_by_asset_key": {}, "non_partitioned_asset_keys": []},'
+            r' "serialized_failed_subset": {"partitions_subsets_by_asset_key": {},'
+            r' "serializable_partitions_def_ids_by_asset_key": {},'
+            r' "partitions_def_class_names_by_asset_key": {}, "non_partitioned_asset_keys": []}}',
         ),
     ],
+    ids=["no_uid_class_name", "uid_class_name_added", "time_window_partitions_def_added"],
 )
-def test_serialization(static_serialization, time_window_serialization):
+def test_serialization(
+    static_backfill_deserializable,
+    static_serialization,
+    time_backfill_deserializable,
+    time_window_serialization,
+):
     time_window_partitions = DailyPartitionsDefinition(start_date="2015-05-05")
 
     @asset(partitions_def=time_window_partitions)
@@ -771,23 +827,60 @@ def test_serialization(static_serialization, time_window_serialization):
     assert AssetBackfillData.can_deserialize(time_window_serialization, asset_graph) is True
     assert AssetBackfillData.can_deserialize(static_serialization, asset_graph) is True
 
+    # Test can_deserialize when time partitions def switched to static
+    # and static partitions def switched to time
     daily_asset._partitions_def = static_partitions  # noqa: SLF001
     static_asset._partitions_def = time_window_partitions  # noqa: SLF001
-
     asset_graph = external_asset_graph_from_assets_by_repo_name(
         {"repo": [daily_asset, static_asset]}
     )
 
-    assert AssetBackfillData.can_deserialize(time_window_serialization, asset_graph) is False
-    assert AssetBackfillData.can_deserialize(static_serialization, asset_graph) is False
+    assert (
+        AssetBackfillData.can_deserialize(time_window_serialization, asset_graph)
+        is time_backfill_deserializable
+    )
+    assert (
+        AssetBackfillData.can_deserialize(static_serialization, asset_graph)
+        is static_backfill_deserializable
+    )
 
+    if time_backfill_deserializable:
+        assert_deserializable_on_partitions_def_change(time_window_serialization, asset_graph)
+
+    if static_backfill_deserializable:
+        assert_deserializable_on_partitions_def_change(static_serialization, asset_graph)
+
+    # Test can_deserialize when partitions def is removed
+    daily_asset._partitions_def = None  # noqa: SLF001
+    static_asset._partitions_def = None  # noqa: SLF001
+    asset_graph = external_asset_graph_from_assets_by_repo_name(
+        {"repo": [daily_asset, static_asset]}
+    )
+
+    assert (
+        AssetBackfillData.can_deserialize(time_window_serialization, asset_graph)
+        is time_backfill_deserializable
+    )
+    assert (
+        AssetBackfillData.can_deserialize(static_serialization, asset_graph)
+        is static_backfill_deserializable
+    )
+
+    if time_backfill_deserializable:
+        assert_deserializable_on_partitions_def_change(time_window_serialization, asset_graph)
+
+    if static_backfill_deserializable:
+        assert_deserializable_on_partitions_def_change(static_serialization, asset_graph)
+
+    # Test original asset graph can deserialize
     static_asset._partitions_def = StaticPartitionsDefinition(keys + ["x"])  # noqa: SLF001
-
+    daily_asset._partitions_def = time_window_partitions  # noqa: SLF001
     asset_graph = external_asset_graph_from_assets_by_repo_name(
         {"repo": [daily_asset, static_asset]}
     )
 
     assert AssetBackfillData.can_deserialize(static_serialization, asset_graph) is True
+    assert AssetBackfillData.can_deserialize(time_window_serialization, asset_graph) is True
 
 
 def test_asset_backfill_status_counts():
@@ -1172,3 +1265,51 @@ def test_asset_backfill_target_asset_and_differently_partitioned_grandchild():
         "fake_id", asset_backfill_data, asset_graph, instance, assets_by_repo_name
     )
     assert asset_backfill_data.requested_subset == asset_backfill_data.target_subset
+
+
+def test_asset_backfill_time_partitioning_switched_to_static():
+    instance = DagsterInstance.ephemeral()
+
+    @asset(partitions_def=DailyPartitionsDefinition("2023-10-01"), key="foo")
+    def time():
+        pass
+
+    @asset(partitions_def=StaticPartitionsDefinition(["a"]), key="foo")
+    def static():
+        pass
+
+    time_repo = {"repo": [time]}
+    static_repo = {"repo": [static]}
+    time_asset_graph = get_asset_graph(time_repo)
+    static_asset_graph = get_asset_graph(static_repo)
+
+    asset_selection = [AssetKey("foo")]
+
+    backfill_start_time = pendulum.datetime(2023, 10, 4, 0, 0, 0)
+    asset_backfill_data = AssetBackfillData.from_asset_partitions(
+        asset_graph=time_asset_graph,
+        partition_names=None,
+        asset_selection=asset_selection,
+        dynamic_partitions_store=MagicMock(),
+        all_partitions=True,
+        backfill_start_time=backfill_start_time,
+    )
+    serialization = asset_backfill_data.serialize(instance)
+
+    with pytest.raises(DagsterDefinitionChangedDeserializationError):
+        AssetBackfillData.from_serialized(
+            serialization,
+            static_asset_graph,
+            backfill_start_time.timestamp(),
+        )
+
+    deserialized = AssetBackfillData.from_serialized(
+        serialization,
+        static_asset_graph,
+        backfill_start_time.timestamp(),
+        error_on_partitions_def_changes=False,
+    )
+
+    assert deserialized.target_subset.get_partitions_subset(
+        AssetKey("foo")
+    ).get_partition_keys() == ["2023-10-01", "2023-10-02", "2023-10-03"]

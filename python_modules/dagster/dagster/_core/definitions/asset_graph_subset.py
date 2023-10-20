@@ -232,7 +232,7 @@ class AssetGraphSubset:
         cls,
         serialized_dict: Mapping[str, Any],
         asset_graph: AssetGraph,
-        allow_partial: bool = False,
+        error_on_partitions_def_changes: bool = True,
     ) -> "AssetGraphSubset":
         serializable_partitions_ids = serialized_dict.get(
             "serializable_partitions_def_ids_by_asset_key", {}
@@ -246,7 +246,7 @@ class AssetGraphSubset:
             asset_key = AssetKey.from_user_string(key)
 
             if asset_key not in asset_graph.all_asset_keys:
-                if not allow_partial:
+                if error_on_partitions_def_changes:
                     raise DagsterDefinitionChangedDeserializationError(
                         f"Asset {key} existed at storage-time, but no longer does"
                     )
@@ -255,7 +255,7 @@ class AssetGraphSubset:
             partitions_def = asset_graph.get_partitions_def(asset_key)
 
             if partitions_def is None:
-                if not allow_partial:
+                if error_on_partitions_def_changes:
                     raise DagsterDefinitionChangedDeserializationError(
                         f"Asset {key} had a PartitionsDefinition at storage-time, but no longer"
                         " does"
@@ -270,7 +270,7 @@ class AssetGraphSubset:
                     key
                 ),
             ):
-                if not allow_partial:
+                if error_on_partitions_def_changes:
                     raise DagsterDefinitionChangedDeserializationError(
                         f"Cannot deserialize stored partitions subset for asset {key}. This likely"
                         " indicates that the partitions definition has changed since this was"
@@ -282,6 +282,7 @@ class AssetGraphSubset:
                 partitions_def,
                 value,
                 partitions_def_class_names_by_asset_key.get(key),
+                error_on_partitions_def_changes=error_on_partitions_def_changes,
             )
 
             partitions_subsets_by_asset_key[asset_key] = partitions_subset

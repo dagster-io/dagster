@@ -1072,7 +1072,7 @@ def can_deserialize(
     serialized_partitions_def_unique_id: Optional[str],
     serialized_partitions_def_class_name: Optional[str],
 ) -> bool:
-    from .time_window_partitions import TimeWindowPartitionsDefinition
+    from .time_window_partitions import TimeWindowPartitionsDefinition, TimeWindowPartitionsSubset
 
     DEFAULT_PARTITIONS_SUBSET_PARTITIONS_DEFS = get_default_partitions_subset_partitions_defs()
     TIME_PARTITIONS_SUBSET_PARTITIONS_DEFS = get_time_window_partitions_subset_partitions_defs()
@@ -1096,7 +1096,7 @@ def can_deserialize(
         if partitions_def and isinstance(partitions_def, DEFAULT_PARTITIONS_SUBSET_PARTITIONS_DEFS):
             return True
 
-        # In the next PRs, default partitions subsets will always be deserializable
+        # In the next PR, default partitions subsets will always be deserializable
         return False
 
     elif serialized_partitions_def_class_name in [
@@ -1105,8 +1105,8 @@ def can_deserialize(
         if partitions_def and isinstance(partitions_def, TimeWindowPartitionsDefinition):
             return True
 
-        # In the next PRs, handle time partitions subsets whose partitions defs have changed
-        return False
+        else:  # No partitions def, or partitions def is not TimeWindowPartitionsDefinition
+            return TimeWindowPartitionsSubset.serialization_contains_time_partitions_def(serialized)
 
     else:
         check.failed("should not reach")
@@ -1116,8 +1116,9 @@ def from_serialized(
     partitions_def: Optional[PartitionsDefinition[T_str]],
     serialized: str,
     serialized_partitions_def_class_name: Optional[str],
+    error_on_partitions_def_changes: bool = True,
 ) -> "PartitionsSubset":
-    from .time_window_partitions import TimeWindowPartitionsDefinition
+    from .time_window_partitions import TimeWindowPartitionsDefinition, TimeWindowPartitionsSubset
 
     DEFAULT_PARTITIONS_SUBSET_PARTITIONS_DEFS = get_default_partitions_subset_partitions_defs()
     TIME_PARTITIONS_SUBSET_PARTITIONS_DEFS = get_time_window_partitions_subset_partitions_defs()
@@ -1131,6 +1132,14 @@ def from_serialized(
             ):
                 return partitions_def.deserialize_subset(serialized)
 
+            if error_on_partitions_def_changes:
+                raise DagsterDefinitionChangedDeserializationError(
+                    "Cannot deserialize partitions subset. The partitions definition has changed"
+                    " since storage-time. \n Storage-time partitions definition was an instance of"
+                    f" '{serialized_partitions_def_class_name}' but now is a"
+                    f" '{partitions_def.__class__.__name__}'"
+                )
+
             # In the next PR, default partitions subsets will always be deserializable
             raise DagsterDefinitionChangedDeserializationError(
                 f"Cannot deserialize partitions subset. The partitions definition has changed to {partitions_def}"
@@ -1141,6 +1150,18 @@ def from_serialized(
         ]:
             if isinstance(partitions_def, TimeWindowPartitionsDefinition):
                 return partitions_def.deserialize_subset(serialized)
+
+            if error_on_partitions_def_changes:
+                raise DagsterDefinitionChangedDeserializationError(
+                    "Cannot deserialize partitions subset. The partitions definition has changed"
+                    " since storage-time. \n Storage-time partitions definition was an instance of"
+                    f" '{serialized_partitions_def_class_name}' but now is a"
+                    f" '{partitions_def.__class__.__name__}'"
+                )
+
+            if TimeWindowPartitionsSubset.serialization_contains_time_partitions_def(serialized):
+                # No longer a TimeWindowPartitionsDefinition
+                return TimeWindowPartitionsSubset.deserialize_on_partitions_def_change(serialized)
 
             raise DagsterDefinitionChangedDeserializationError(
                 "Cannot deserialize partitions subset. The partitions definition has changed from"
