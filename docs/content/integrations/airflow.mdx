@@ -7,18 +7,24 @@ description: The dagster-airflow package allows you to import Airflow DAGs into 
 
 <CodeReferenceLink filePath="examples/with_airflow" />
 
-The [`dagster-airflow`](/\_apidocs/libraries/dagster-airflow) package provides interoperability between Dagster and Airflow. The main scenarios for using the Dagster Airflow integration are:
+The [`dagster-airflow`](/\_apidocs/libraries/dagster-airflow) library provides interoperability between Dagster and Airflow. The main scenarios for using the Dagster Airflow integration are:
 
-- You want to do a lift-and-shift migration of all your existing Airflow DAGs into Dagster Jobs/SDAs
+- You want to do a lift-and-shift migration of all your existing Airflow DAGs into Dagster jobs/Software-defined Assets (SDAs)
 - You want to trigger Dagster job runs from Airflow
 
-This integration is designed to help support users who have existing Airflow usage and are looking to explore using Dagster.
+This integration is designed to help support users who have existing Airflow usage and are interested in exploring Dagster.
 
 ---
 
-## Airflow vs Dagster concept map
+## Migrating to Dagster
 
-While Airflow and Dagster have some significant differences, there are many concepts that overlap. To ease the transition, we recommend using this cheatsheet to understand how Airflow concepts map to Dagster.
+Interested in migrating from Airflow to Dagster? Check out the [migration guide](/integrations/airflow/migrating-to-dagster) for a step-by-step walkthrough.
+
+If you're not sure how to map Airflow concepts to Dagster, check out the cheatsheet in the next section before you begin.
+
+### Mapping Airflow concepts to Dagster
+
+While Airflow and Dagster have some significant differences, there are many concepts that overlap. Use this cheatsheet to understand how Airflow concepts map to Dagster.
 
 <table
   className="table"
@@ -142,10 +148,11 @@ While Airflow and Dagster have some significant differences, there are many conc
         >
           depend on earlier partitions of itself
         </a>
-        . When this is the case,{" "}
-        <a href="/concepts/partitions-schedules-sensors/backfills">backfills</a>{" "}
-        and <a href="/concepts/assets/asset-auto-execution">auto-materialize</a>{" "}
-        will only materialize later partitions after earlier partitions have
+        . When this is the case, <a href="/concepts/partitions-schedules-sensors/backfills">
+          backfills
+        </a> and <a href="/concepts/assets/asset-auto-execution">
+          auto-materialize
+        </a> will only materialize later partitions after earlier partitions have
         completed.
       </td>
     </tr>
@@ -272,3 +279,18 @@ While Airflow and Dagster have some significant differences, there are many conc
     </tr>
   </tbody>
 </table>
+
+---
+
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    title="Migrating from Airflow to Dagster"
+    href="/integrations/airflow/migrating-to-dagster"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Airflow integration reference"
+    href="/integrations/airflow/reference"
+  ></ArticleListItem>
+</ArticleList>
