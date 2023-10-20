@@ -20,24 +20,255 @@ This integration is designed to help support users who have existing Airflow usa
 
 While Airflow and Dagster have some significant differences, there are many concepts that overlap. To ease the transition, we recommend using this cheatsheet to understand how Airflow concepts map to Dagster.
 
-| Airflow concept       | Dagster concept                                                                                                                                                                                                                                                                                                                                    | Notes                                                                                                                                                                                                 |
-| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| DAG                   | [Job](/concepts/ops-jobs-graphs/jobs)                                                                                                                                                                                                                                                                                                              |                                                                                                                                                                                                       |
-| Task                  | [Op](/concepts/ops-jobs-graphs/ops)                                                                                                                                                                                                                                                                                                                |                                                                                                                                                                                                       |
-| Operator              | None                                                                                                                                                                                                                                                                                                                                               | Dagster uses normal Python functions instead of framework-specific operator classes. For off-the-shelf functionality with third-party tools, Dagster provides [integration libraries](/integrations). |
-| Scheduler             | [Scheduler](/concepts/partitions-schedules-sensors/schedules)                                                                                                                                                                                                                                                                                      |                                                                                                                                                                                                       |
-| Executor              | [Executor](/deployment/executors)                                                                                                                                                                                                                                                                                                                  |                                                                                                                                                                                                       |
-| DagBag                | [Code Locations](/concepts/code-locations)                                                                                                                                                                                                                                                                                                         | Multiple isolated code locations with different system and Python dependencies can exist within the same Dagster instance.                                                                            |
-| Instance              | [Instance](/deployment/dagster-instance)                                                                                                                                                                                                                                                                                                           |                                                                                                                                                                                                       |
-| SubDAGs / TaskGroups  | [Graphs](/concepts/ops-jobs-graphs/graphs), [Tags](/concepts/ops-jobs-graphs/metadata-tags#tags) and [grouped assets](/concepts/assets/software-defined-assets#grouping-assets)                                                                                                                                                                    | Dagster provides rich, searchable [metadata and tagging](/concepts/ops-jobs-graphs/metadata-tags) support well beyond what’s offered by Airflow.                                                      |
-| Hooks                 | [Resources](/concepts/resources)                                                                                                                                                                                                                                                                                                                   | Dagster [resources](/concepts/resources) contain a superset of the functionality of hooks and have much stronger composition guarantees.                                                              |
-| Pools                 | [Run Coordinator](/deployment/run-coordinator)                                                                                                                                                                                                                                                                                                     |                                                                                                                                                                                                       |
-| XComs                 | [IO Manager](/concepts/io-management/io-managers)                                                                                                                                                                                                                                                                                                  | I/O managers are more powerful than XComs and allow the passing large datasets between jobs.                                                                                                          |
-| Trigger               | [Launchpad](/concepts/webserver/ui)                                                                                                                                                                                                                                                                                                                | Triggering and configuring ad-hoc runs is easier in Dagster which allows them to be initiated through the Dagster UI, the GraphQL API, or the CLI.                                                    |
-| Sensor                | [Sensor](/concepts/partitions-schedules-sensors/sensors)                                                                                                                                                                                                                                                                                           |                                                                                                                                                                                                       |
-| DAG run               | Job run                                                                                                                                                                                                                                                                                                                                            |                                                                                                                                                                                                       |
-| Plugins/Providers     | [Integrations](/integrations)                                                                                                                                                                                                                                                                                                                      |                                                                                                                                                                                                       |
-| Datasets              | [Software-defined assets (SDAs)](/concepts/assets/software-defined-assets)                                                                                                                                                                                                                                                                         | SDAs are more powerful and mature than datasets and include support for things like partitioning.                                                                                                     |
-| Connections/Variables | [Run config](/concepts/configuration/config-schema), [Configured API](/concepts/configuration/configured) and [environment variables](/guides/dagster/using-environment-variables-and-secrets) (Dagster Cloud only)                                                                                                                                |                                                                                                                                                                                                       |
-| `depends_on_past`     | An asset can [depend on earlier partitions of itself](https://github.com/dagster-io/dagster/discussions/11829). When this is the case, [backfills](/concepts/partitions-schedules-sensors/backfills) and [auto-materialize](/concepts/assets/asset-auto-execution) will only materialize later partitions after earlier partitions have completed. |                                                                                                                                                                                                       |
-| `task_concurrency`    | [Op/asset-level concurrency limits](/guides/limiting-concurrency-in-data-pipelines#limiting-opasset-concurrency-across-runs) ]                                                                                                                                                                                                                     |                                                                                                                                                                                                       |
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <thead>
+    <tr>
+      <th
+        style={{
+          width: "25%",
+        }}
+      >
+        Airflow concept
+      </th>
+      <th
+        style={{
+          width: "30%",
+        }}
+      >
+        Dagster concept
+      </th>
+      <th>Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Directed Acyclic Graphs (DAG)</td>
+      <td>
+        <a href="/concepts/ops-jobs-graphs/jobs">Jobs</a>
+      </td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Task</td>
+      <td>
+        <a href="/concepts/ops-jobs-graphs/ops">Ops</a>
+      </td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Datasets</td>
+      <td>
+        <a href="/concepts/assets/software-defined-assets">
+          Software-defined Assets (SDAs)
+        </a>
+      </td>
+      <td>
+        SDAs are more powerful and mature than datasets and include support for
+        things like{" "}
+        <a href="/concepts/partitions-schedules-sensors">partitioning</a>.
+      </td>
+    </tr>
+    <tr>
+      <td>Connections/Variables</td>
+      <td>
+        <ul style={{ marginTop: "0em" }}>
+          <li style={{ marginTop: "0em" }}>
+            <a href="/concepts/configuration/config-schema">
+              Run configuration
+            </a>
+          </li>
+          <li>
+            <a href="/concepts/configuration/configured">Configured API</a>{" "}
+            (Legacy)
+          </li>
+          <li>
+            <a href="/guides/dagster/using-environment-variables-and-secrets">
+              Environment variables
+            </a>{" "}
+            (Dagster Cloud only)
+          </li>
+        </ul>
+      </td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>DagBags</td>
+      <td>
+        <a href="/concepts/code-locations">Code locations</a>
+      </td>
+      <td>
+        Multiple isolated code locations with different system and Python
+        dependencies can exist within the same Dagster instance.
+      </td>
+    </tr>
+    <tr>
+      <td>DAG runs</td>
+      <td>Job runs</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>
+        <code>depends_on_past</code>
+      </td>
+      <td>
+        <ul style={{ marginTop: "0em" }}>
+          <li style={{ marginTop: "0em" }}>
+            <a href="/concepts/partitions-schedules-sensors/partitions">
+              Partitions
+            </a>
+          </li>
+          <li>
+            <a href="/concepts/partitions-schedules-sensors/backfills">
+              Backfills
+            </a>
+          </li>
+          <li>
+            <a href="/concepts/assets/asset-auto-execution">
+              Auto-materialization
+            </a>
+          </li>
+        </ul>
+      </td>
+      <td>
+        An asset can{" "}
+        <a
+          href="https://github.com/dagster-io/dagster/discussions/11829"
+          target="new"
+        >
+          depend on earlier partitions of itself
+        </a>
+        . When this is the case,{" "}
+        <a href="/concepts/partitions-schedules-sensors/backfills">backfills</a>{" "}
+        and <a href="/concepts/assets/asset-auto-execution">auto-materialize</a>{" "}
+        will only materialize later partitions after earlier partitions have
+        completed.
+      </td>
+    </tr>
+    <tr>
+      <td>Executors</td>
+      <td>
+        <a href="/deployment/executors">Executors</a>
+      </td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Hooks</td>
+      <td>
+        <a href="/concepts/resources">Resources</a>
+      </td>
+      <td>
+        Dagster <a href="/concepts/resources">resource</a> contain a superset of
+        the functionality of hooks and have much stronger composition
+        guarantees.
+      </td>
+    </tr>
+    <tr>
+      <td>Instances</td>
+      <td>
+        <a href="/deployment/dagster-instance">Instances</a>
+      </td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Operators</td>
+      <td>None</td>
+      <td>
+        Dagster uses normal Python functions instead of framework-specific
+        operator classes. For off-the-shelf functionality with third-party
+        tools, Dagster provides{" "}
+        <a href="/integrations">integration libraries</a>.
+      </td>
+    </tr>
+    <tr>
+      <td>Pools</td>
+      <td>
+        <a href="/deployment/run-coordinator">Run coordinators</a>
+      </td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Plugins/Providers</td>
+      <td>
+        <a href="/integrations">Integrations</a>
+      </td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Schedulers</td>
+      <td>
+        <a href="/concepts/partitions-schedules-sensors/schedules">Schedules</a>
+      </td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Sensors</td>
+      <td>
+        <a href="/concepts/partitions-schedules-sensors/sensors">Sensors</a>
+      </td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>SubDAGs/TaskGroups</td>
+      <td>
+        <ul style={{ marginTop: "0em" }}>
+          <li style={{ marginTop: "0em" }}>
+            <a href="/concepts/ops-jobs-graphs/graphs">Graphs</a>
+          </li>
+          <li>
+            <a href="/concepts/ops-jobs-graphs/metadata-tags">Tags</a>
+          </li>
+          <li>
+            <a href="/concepts/assets/software-defined-assets#grouping-assets">
+              Asset groups
+            </a>
+          </li>
+        </ul>
+      </td>
+      <td>
+        Dagster provides rich, searchable{" "}
+        <a href="/concepts/ops-jobs-graphs/metadata-tags">
+          metadata and tagging
+        </a>{" "}
+        support beyond what’s offered by Airflow.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <code>task_concurrency</code>
+      </td>
+      <td>
+        <a href="/guides/limiting-concurrency-in-data-pipelines#limiting-opasset-concurrency-across-runs">
+          Asset/op-level concurrency limits
+        </a>
+      </td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Trigger</td>
+      <td>
+        <a href="/concepts/webserver/ui">Dagster UI Launchpad</a>
+      </td>
+      <td>
+        Triggering and configuring ad-hoc runs is easier in Dagster which allows
+        them to be initiated through the{" "}
+        <a href="/concepts/webserver/ui">Dagster UI</a>, the{" "}
+        <a href="/concepts/webserver/graphql">GraphQL API</a>, or the CLI.
+      </td>
+    </tr>
+    <tr>
+      <td>XComs</td>
+      <td>
+        <a href="/concepts/io-management/io-managers">I/O managers</a>
+      </td>
+      <td>
+        I/O managers are more powerful than XComs and allow the passing large
+        datasets between jobs.
+      </td>
+    </tr>
+  </tbody>
+</table>
