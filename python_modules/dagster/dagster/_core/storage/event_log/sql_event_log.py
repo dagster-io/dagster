@@ -1855,7 +1855,7 @@ class SqlEventLogStorage(EventLogStorage):
         return dict(latest_tags_by_partition)
 
     def get_latest_asset_partition_materialization_attempts_without_materializations(
-        self, asset_key: AssetKey
+        self, asset_key: AssetKey, after_storage_id: Optional[int] = None
     ) -> Mapping[str, Tuple[str, int]]:
         """Fetch the latest materialzation and materialization planned events for each partition of the given asset.
         Return the partitions that have a materialization planned event but no matching (same run) materialization event.
@@ -1872,6 +1872,7 @@ class SqlEventLogStorage(EventLogStorage):
                 DagsterEventType.ASSET_MATERIALIZATION,
                 DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
             ],
+            after_cursor=after_storage_id,
         )
 
         latest_events_subquery = db_subquery(
