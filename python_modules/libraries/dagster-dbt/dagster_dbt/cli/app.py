@@ -39,8 +39,8 @@ DBT_PROFILES_YML_NAME = "profiles.yml"
 def validate_dagster_project_name(project_name: str) -> str:
     if not project_name.isidentifier():
         raise typer.BadParameter(
-            "The project name must be a valid Python identifier containing only letters, digits, or"
-            " underscores."
+            f"The project name `{project_name}` is not a valid Python identifier containing only"
+            " letters, digits, or underscores. Please specify a valid project name."
         )
 
     return project_name
