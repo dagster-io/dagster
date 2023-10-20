@@ -182,6 +182,26 @@ def test_launch_asset_backfill_read_only_context():
                 == "LaunchBackfillSuccess"
             )
 
+            # assets that aren't in the asset graph at all fail permissions check
+            # because they can't be mapped to a particular code location
+            launch_backfill_result = execute_dagster_graphql(
+                read_only_context,
+                LAUNCH_PARTITION_BACKFILL_MUTATION,
+                variables={
+                    "backfillParams": {
+                        "partitionNames": ["a", "b"],
+                        "assetSelection": [{"path": ["doesnot", "exist"]}],
+                    }
+                },
+            )
+            assert launch_backfill_result
+            assert launch_backfill_result.data
+
+            assert (
+                launch_backfill_result.data["launchPartitionBackfill"]["__typename"]
+                == "UnauthorizedError"
+            )
+
 
 def test_launch_asset_backfill_all_partitions():
     repo = get_repo()
