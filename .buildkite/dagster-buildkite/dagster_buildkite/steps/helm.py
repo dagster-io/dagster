@@ -9,6 +9,7 @@ from ..utils import (
     BuildkiteStep,
     CommandStep,
     GroupStep,
+    has_helm_changes,
     is_command_step,
     skip_if_no_helm_changes,
 )
@@ -25,11 +26,14 @@ def build_helm_steps() -> List[BuildkiteStep]:
         ],
         name="dagster-helm",
         retries=2,
+        always_run_if=has_helm_changes,
     )
 
     steps: List[BuildkiteLeafStep] = []
     steps += _build_lint_steps(package_spec)
-    pkg_step = package_spec.build_steps()[0]
+    pkg_steps = package_spec.build_steps()
+    assert len(pkg_steps) == 1
+    pkg_step = pkg_steps[0]
     if is_command_step(pkg_step):
         steps.append(pkg_step)
     else:
