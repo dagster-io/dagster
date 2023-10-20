@@ -73,6 +73,7 @@ const buildSidebarQueryMock = (
         description: null,
         configField: null,
         metadataEntries: [],
+        assetChecks: [],
         jobNames: ['test_job'],
         autoMaterializePolicy: null,
         freshnessPolicy: null,
