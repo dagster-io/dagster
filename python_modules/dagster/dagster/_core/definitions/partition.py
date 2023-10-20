@@ -1030,6 +1030,66 @@ class PartitionsSubset(ABC, Generic[T_str]):
         ...
 
 
+class DefinitionChangedPartitionsSubset(PartitionsSubset):
+    def __init__(self, serialized_partitions_def_class_name: str, partition_keys: Set[str]):
+        self._serialized_partitions_def_class_name = serialized_partitions_def_class_name
+        self._partition_keys = partition_keys
+
+    def get_partition_keys_not_in_subset(
+        self,
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> Iterable[str]:
+        raise NotImplementedError()
+
+    def get_partition_keys(self, current_time: Optional[datetime] = None) -> Iterable[str]:
+        return self._partition_keys
+
+    def get_partition_key_ranges(
+        self,
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> Sequence[PartitionKeyRange]:
+        raise NotImplementedError()
+
+    def with_partition_keys(self, partition_keys: Iterable[str]) -> "PartitionsSubset":
+        raise NotImplementedError()
+
+    def with_partition_key_range(
+        self,
+        partition_key_range: PartitionKeyRange,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> "PartitionsSubset":
+        raise NotImplementedError()
+
+    def serialize(self) -> str:
+        raise NotImplementedError()
+
+    @property
+    def partitions_def(self) -> "PartitionsDefinition":
+        raise NotImplementedError()
+
+    def __len__(self) -> int:
+        return len(self._partition_keys)
+
+    def __contains__(self, value) -> bool:
+        return value in self._partition_keys
+
+    @classmethod
+    def from_serialized(
+        cls, partitions_def: "PartitionsDefinition", serialized: str
+    ) -> "PartitionsSubset":
+        raise NotImplementedError()
+
+    @classmethod
+    def can_deserialize(cls, partitions_def: "PartitionsDefinition", serialized: str) -> bool:
+        raise NotImplementedError()
+
+    @classmethod
+    def empty_subset(cls, partitions_def: "PartitionsDefinition") -> "PartitionsSubset":
+        raise NotImplementedError()
+
+
 def get_default_partitions_subset_partitions_defs():
     from .multi_dimensional_partitions import MultiPartitionsDefinition
 
@@ -1093,11 +1153,7 @@ def can_deserialize(
     elif serialized_partitions_def_class_name in [
         partitions_def.__name__ for partitions_def in DEFAULT_PARTITIONS_SUBSET_PARTITIONS_DEFS
     ]:
-        if partitions_def and isinstance(partitions_def, DEFAULT_PARTITIONS_SUBSET_PARTITIONS_DEFS):
-            return True
-
-        # In the next PR, default partitions subsets will always be deserializable
-        return False
+        return True  # Can always deserialize a default partitions subset
 
     elif serialized_partitions_def_class_name in [
         partitions_def.__name__ for partitions_def in TIME_PARTITIONS_SUBSET_PARTITIONS_DEFS
@@ -1145,9 +1201,8 @@ def from_serialized(
                     f" '{partitions_def.__class__.__name__}'"
                 )
 
-            # In the next PR, default partitions subsets will always be deserializable
-            raise DagsterDefinitionChangedDeserializationError(
-                f"Cannot deserialize partitions subset. The partitions definition has changed to {partitions_def}"
+            return DefaultPartitionsSubset.deserialize_on_partitions_def_change(
+                serialized, serialized_partitions_def_class_name
             )
 
         elif serialized_partitions_def_class_name in [
@@ -1313,6 +1368,15 @@ class DefaultPartitionsSubset(PartitionsSubset[T_str]):
         return cls(
             subset=cls._get_partition_keys_from_serialized(serialized),
             partitions_def=partitions_def,
+        )
+
+    @classmethod
+    def deserialize_on_partitions_def_change(
+        cls, serialized: str, serialized_partitions_def_class_name
+    ) -> DefinitionChangedPartitionsSubset:
+        return DefinitionChangedPartitionsSubset(
+            serialized_partitions_def_class_name,
+            cls._get_partition_keys_from_serialized(serialized),
         )
 
     @classmethod

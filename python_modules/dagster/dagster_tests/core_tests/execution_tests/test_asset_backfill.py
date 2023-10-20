@@ -713,7 +713,7 @@ def assert_deserializable_on_partitions_def_change(
             r' {"partitions_subsets_by_asset_key": {}, "non_partitioned_asset_keys": []}}',
         ),
         (
-            False,
+            True,
             r'{"requested_runs_for_target_roots": false, "serialized_target_subset":'
             r' {"partitions_subsets_by_asset_key": {"static_asset": "{\"version\": 1, \"subset\":'
             r' [\"a\"]}"}, "serializable_partitions_def_ids_by_asset_key": {"static_asset":'

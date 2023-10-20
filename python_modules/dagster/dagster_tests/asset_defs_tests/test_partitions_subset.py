@@ -3,6 +3,7 @@ from dagster import DailyPartitionsDefinition, MultiPartitionsDefinition, Static
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsSubset
 from dagster._core.definitions.partition import (
     DefaultPartitionsSubset,
+    DefinitionChangedPartitionsSubset,
     can_deserialize,
     from_serialized,
 )
@@ -11,6 +12,7 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsSubset,
 )
 from dagster._core.errors import (
+    DagsterDefinitionChangedDeserializationError,
     DagsterInvalidDeserializationVersionError,
 )
 
@@ -85,6 +87,23 @@ def test_can_deserialize_default_changed_to_time(serialized_default_subset: str)
         is False
     )
 
+    with pytest.raises(DagsterDefinitionChangedDeserializationError):
+        from_serialized(
+            time_window_partitions_def,
+            serialized_default_subset,
+            StaticPartitionsDefinition.__name__,
+            error_on_partitions_def_changes=True,
+        )
+
+    deserialized = from_serialized(
+        time_window_partitions_def,
+        serialized_default_subset,
+        StaticPartitionsDefinition.__name__,
+        error_on_partitions_def_changes=False,
+    )
+    assert isinstance(deserialized, DefinitionChangedPartitionsSubset)
+    assert deserialized.get_partition_keys() == {"baz", "foo"}
+
 
 @pytest.mark.parametrize(
     "serialized_default_subset",
@@ -96,11 +115,38 @@ def test_can_deserialize_default_changed_to_unpartitioned(serialized_default_sub
         can_deserialize(
             None,
             serialized_default_subset,
+            serialized_partitions_def_unique_id=static_partitions_def.get_serializable_unique_identifier(),
+            serialized_partitions_def_class_name=StaticPartitionsDefinition.__name__,
+        )
+        is True
+    )
+
+    assert (
+        can_deserialize(
+            None,
+            serialized_default_subset,
             serialized_partitions_def_unique_id=None,
             serialized_partitions_def_class_name=None,
         )
         is False
     )
+
+    with pytest.raises(DagsterDefinitionChangedDeserializationError):
+        from_serialized(
+            None,
+            serialized_default_subset,
+            StaticPartitionsDefinition.__name__,
+            error_on_partitions_def_changes=True,
+        )
+
+    deserialized = from_serialized(
+        None,
+        serialized_default_subset,
+        StaticPartitionsDefinition.__name__,
+        error_on_partitions_def_changes=False,
+    )
+    assert isinstance(deserialized, DefinitionChangedPartitionsSubset)
+    assert deserialized.get_partition_keys() == {"baz", "foo"}
 
 
 @pytest.mark.parametrize(
