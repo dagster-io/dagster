@@ -162,7 +162,8 @@ def test_selections(
 @pytest.mark.parametrize("name", [None, "custom"])
 def test_with_custom_name(name: Optional[str]) -> None:
     @dbt_assets(manifest=manifest, name=name)
-    def my_dbt_assets(): ...
+    def my_dbt_assets():
+        ...
 
     expected_name = name or "my_dbt_assets"
 
