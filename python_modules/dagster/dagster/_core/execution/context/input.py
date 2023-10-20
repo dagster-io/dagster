@@ -688,13 +688,7 @@ class KeyRangeNoPartitionsDefPartitionsSubset(PartitionsSubset):
         raise NotImplementedError()
 
     @classmethod
-    def can_deserialize(
-        cls,
-        partitions_def: "PartitionsDefinition",
-        serialized: str,
-        serialized_partitions_def_unique_id: Optional[str],
-        serialized_partitions_def_class_name: Optional[str],
-    ) -> bool:
+    def can_deserialize(cls, partitions_def: "PartitionsDefinition", serialized: str) -> bool:
         raise NotImplementedError()
 
     @classmethod

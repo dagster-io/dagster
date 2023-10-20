@@ -44,6 +44,7 @@ from dagster._utils.warnings import (
 )
 
 from ..errors import (
+    DagsterDefinitionChangedDeserializationError,
     DagsterInvalidDefinitionError,
     DagsterInvalidDeserializationVersionError,
     DagsterInvalidInvocationError,
@@ -242,15 +243,8 @@ class PartitionsDefinition(ABC, Generic[T_str]):
     def can_deserialize_subset(
         self,
         serialized: str,
-        serialized_partitions_def_unique_id: Optional[str],
-        serialized_partitions_def_class_name: Optional[str],
     ) -> bool:
-        return self.partitions_subset_class.can_deserialize(
-            self,
-            serialized,
-            serialized_partitions_def_unique_id,
-            serialized_partitions_def_class_name,
-        )
+        return self.partitions_subset_class.can_deserialize(self, serialized)
 
     def get_serializable_unique_identifier(
         self, dynamic_partitions_store: Optional[DynamicPartitionsStore] = None
@@ -1014,13 +1008,7 @@ class PartitionsSubset(ABC, Generic[T_str]):
 
     @classmethod
     @abstractmethod
-    def can_deserialize(
-        cls,
-        partitions_def: PartitionsDefinition,
-        serialized: str,
-        serialized_partitions_def_unique_id: Optional[str],
-        serialized_partitions_def_class_name: Optional[str],
-    ) -> bool:
+    def can_deserialize(cls, partitions_def: PartitionsDefinition, serialized: str) -> bool:
         ...
 
     @property
@@ -1040,6 +1028,133 @@ class PartitionsSubset(ABC, Generic[T_str]):
     @abstractmethod
     def empty_subset(cls, partitions_def: PartitionsDefinition[T_str]) -> "PartitionsSubset[T_str]":
         ...
+
+
+def get_default_partitions_subset_partitions_defs():
+    from .multi_dimensional_partitions import MultiPartitionsDefinition
+
+    DEFAULT_PARTITIONS_SUBSET_PARTITIONS_DEFS = tuple(
+        [
+            StaticPartitionsDefinition,
+            DynamicPartitionsDefinition,
+            MultiPartitionsDefinition,
+        ]
+    )
+    return DEFAULT_PARTITIONS_SUBSET_PARTITIONS_DEFS
+
+
+def get_time_window_partitions_subset_partitions_defs():
+    from .time_window_partitions import (
+        DailyPartitionsDefinition,
+        HourlyPartitionsDefinition,
+        MonthlyPartitionsDefinition,
+        TimeWindowPartitionsDefinition,
+        WeeklyPartitionsDefinition,
+    )
+
+    # TODO Check if all asset evaluations are constructed from external asset graphs
+    # If they are, we only need to check for TimeWindowPartitionsDefinition
+    TIME_WINDOW_PARTITIONS_SUBSET_PARTITIONS_DEFS = tuple(
+        [
+            TimeWindowPartitionsDefinition,
+            HourlyPartitionsDefinition,
+            DailyPartitionsDefinition,
+            WeeklyPartitionsDefinition,
+            MonthlyPartitionsDefinition,
+        ]
+    )
+    return TIME_WINDOW_PARTITIONS_SUBSET_PARTITIONS_DEFS
+
+
+def can_deserialize(
+    partitions_def: Optional[PartitionsDefinition[T_str]],
+    serialized: str,
+    serialized_partitions_def_unique_id: Optional[str],
+    serialized_partitions_def_class_name: Optional[str],
+) -> bool:
+    from .time_window_partitions import TimeWindowPartitionsDefinition
+
+    DEFAULT_PARTITIONS_SUBSET_PARTITIONS_DEFS = get_default_partitions_subset_partitions_defs()
+    TIME_PARTITIONS_SUBSET_PARTITIONS_DEFS = get_time_window_partitions_subset_partitions_defs()
+
+    # These fields are serialized together in:
+    # (1) SerializedPartitionSubset
+    # (2) AssetBackfillData starting 1.1.20 (https://github.com/dagster-io/dagster/commit/49fb47f53e89bcec2fa0ecc314efb14fa01624b5)
+    if serialized_partitions_def_class_name is None or serialized_partitions_def_unique_id is None:
+        # Only asset backfills pre 1.1.20 should hit this case
+        check.invariant(
+            serialized_partitions_def_unique_id is None
+            and serialized_partitions_def_class_name is None
+        )
+
+        # If the partitions def has been removed, we can't deserialize the subset
+        return partitions_def.can_deserialize_subset(serialized) if partitions_def else False
+
+    elif serialized_partitions_def_class_name in [
+        partitions_def.__name__ for partitions_def in DEFAULT_PARTITIONS_SUBSET_PARTITIONS_DEFS
+    ]:
+        if partitions_def and isinstance(partitions_def, DEFAULT_PARTITIONS_SUBSET_PARTITIONS_DEFS):
+            return True
+
+        # In the next PRs, default partitions subsets will always be deserializable
+        return False
+
+    elif serialized_partitions_def_class_name in [
+        partitions_def.__name__ for partitions_def in TIME_PARTITIONS_SUBSET_PARTITIONS_DEFS
+    ]:
+        if partitions_def and isinstance(partitions_def, TimeWindowPartitionsDefinition):
+            return True
+
+        # In the next PRs, handle time partitions subsets whose partitions defs have changed
+        return False
+
+    else:
+        check.failed("should not reach")
+
+
+def from_serialized(
+    partitions_def: Optional[PartitionsDefinition[T_str]],
+    serialized: str,
+    serialized_partitions_def_class_name: Optional[str],
+) -> "PartitionsSubset":
+    from .time_window_partitions import TimeWindowPartitionsDefinition
+
+    DEFAULT_PARTITIONS_SUBSET_PARTITIONS_DEFS = get_default_partitions_subset_partitions_defs()
+    TIME_PARTITIONS_SUBSET_PARTITIONS_DEFS = get_time_window_partitions_subset_partitions_defs()
+
+    if serialized_partitions_def_class_name:
+        if serialized_partitions_def_class_name in [
+            partitions_def.__name__ for partitions_def in DEFAULT_PARTITIONS_SUBSET_PARTITIONS_DEFS
+        ]:
+            if partitions_def and isinstance(
+                partitions_def, DEFAULT_PARTITIONS_SUBSET_PARTITIONS_DEFS
+            ):
+                return partitions_def.deserialize_subset(serialized)
+
+            # In the next PR, default partitions subsets will always be deserializable
+            raise DagsterDefinitionChangedDeserializationError(
+                f"Cannot deserialize partitions subset. The partitions definition has changed to {partitions_def}"
+            )
+
+        elif serialized_partitions_def_class_name in [
+            partitions_def.__name__ for partitions_def in TIME_PARTITIONS_SUBSET_PARTITIONS_DEFS
+        ]:
+            if isinstance(partitions_def, TimeWindowPartitionsDefinition):
+                return partitions_def.deserialize_subset(serialized)
+
+            raise DagsterDefinitionChangedDeserializationError(
+                "Cannot deserialize partitions subset. The partitions definition has changed from"
+                f" a TimeWindowPartitionsDefinition to a {partitions_def.__class__.__name__}."
+            )
+        else:
+            check.failed("should not reach")
+    else:
+        if partitions_def:
+            return partitions_def.deserialize_subset(serialized)
+        else:
+            raise DagsterDefinitionChangedDeserializationError(
+                "Cannot deserialize partitions subset. The partitions definition has been removed."
+            )
 
 
 @whitelist_for_serdes
@@ -1064,14 +1179,11 @@ class SerializedPartitionsSubset(NamedTuple):
         )
 
     def can_deserialize(self, partitions_def: Optional[PartitionsDefinition]) -> bool:
-        if not partitions_def:
-            # Asset had a partitions definition at storage time, but no longer does
-            return False
-
-        return partitions_def.can_deserialize_subset(
+        return can_deserialize(
+            partitions_def,
             self.serialized_subset,
-            serialized_partitions_def_unique_id=self.serialized_partitions_def_unique_id,
-            serialized_partitions_def_class_name=self.serialized_partitions_def_class_name,
+            self.serialized_partitions_def_unique_id,
+            self.serialized_partitions_def_class_name,
         )
 
     def deserialize(self, partitions_def: PartitionsDefinition) -> PartitionsSubset:
@@ -1153,37 +1265,37 @@ class DefaultPartitionsSubset(PartitionsSubset[T_str]):
         )
 
     @classmethod
-    def from_serialized(
-        cls, partitions_def: PartitionsDefinition[T_str], serialized: str
-    ) -> "PartitionsSubset[T_str]":
+    def _get_partition_keys_from_serialized(cls, serialized: str) -> Set[str]:
         # Check the version number, so only valid versions can be deserialized.
         data = json.loads(serialized)
 
         if isinstance(data, list):
             # backwards compatibility
-            return cls(subset=set(data), partitions_def=partitions_def)
+            return set(data)
         else:
             if data.get("version") != cls.SERIALIZATION_VERSION:
                 raise DagsterInvalidDeserializationVersionError(
                     f"Attempted to deserialize partition subset with version {data.get('version')},"
                     f" but only version {cls.SERIALIZATION_VERSION} is supported."
                 )
-            return cls(subset=set(data.get("subset")), partitions_def=partitions_def)
+            return set(data.get("subset"))
 
     @classmethod
-    def can_deserialize(
-        cls,
-        partitions_def: PartitionsDefinition[T_str],
-        serialized: str,
-        serialized_partitions_def_unique_id: Optional[str],
-        serialized_partitions_def_class_name: Optional[str],
-    ) -> bool:
-        if serialized_partitions_def_class_name is not None:
-            return serialized_partitions_def_class_name == partitions_def.__class__.__name__
+    def from_serialized(
+        cls, partitions_def: PartitionsDefinition[T_str], serialized: str
+    ) -> "PartitionsSubset[T_str]":
+        return cls(
+            subset=cls._get_partition_keys_from_serialized(serialized),
+            partitions_def=partitions_def,
+        )
 
+    @classmethod
+    def can_deserialize(cls, partitions_def: PartitionsDefinition[T_str], serialized: str) -> bool:
         data = json.loads(serialized)
-        return isinstance(data, list) or (
-            data.get("subset") is not None and data.get("version") == cls.SERIALIZATION_VERSION
+        return (isinstance(data, list) and all(isinstance(val, str) for val in data)) or (
+            isinstance(data, dict)
+            and data.get("subset") is not None
+            and data.get("version") == cls.SERIALIZATION_VERSION
         )
 
     @property

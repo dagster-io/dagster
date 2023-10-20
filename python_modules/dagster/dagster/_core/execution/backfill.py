@@ -131,9 +131,9 @@ class PartitionBackfill(
             return self.tags.get(USER_TAG)
         return None
 
-    def is_valid_serialization(self, workspace: IWorkspace) -> bool:
+    def can_deserialize(self, workspace: IWorkspace) -> bool:
         if self.serialized_asset_backfill_data is not None:
-            return AssetBackfillData.is_valid_serialization(
+            return AssetBackfillData.can_deserialize(
                 self.serialized_asset_backfill_data, ExternalAssetGraph.from_workspace(workspace)
             )
         else:
@@ -145,7 +145,7 @@ class PartitionBackfill(
         """Returns a sequence of backfill statuses for each targeted asset key in the asset graph,
         in topological order.
         """
-        if not self.is_valid_serialization(workspace):
+        if not self.can_deserialize(workspace):
             return []
 
         if self.serialized_asset_backfill_data is not None:
@@ -165,7 +165,7 @@ class PartitionBackfill(
     def get_target_root_partitions_subset(
         self, workspace: IWorkspace
     ) -> Optional[PartitionsSubset]:
-        if not self.is_valid_serialization(workspace):
+        if not self.can_deserialize(workspace):
             return None
 
         if self.serialized_asset_backfill_data is not None:
@@ -183,7 +183,7 @@ class PartitionBackfill(
             return None
 
     def get_num_partitions(self, workspace: IWorkspace) -> Optional[int]:
-        if not self.is_valid_serialization(workspace):
+        if not self.can_deserialize(workspace):
             return 0
 
         if self.serialized_asset_backfill_data is not None:
@@ -204,7 +204,7 @@ class PartitionBackfill(
             return len(self.partition_names)
 
     def get_partition_names(self, workspace: IWorkspace) -> Optional[Sequence[str]]:
-        if not self.is_valid_serialization(workspace):
+        if not self.can_deserialize(workspace):
             return []
 
         if self.serialized_asset_backfill_data is not None:

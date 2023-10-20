@@ -329,7 +329,7 @@ class AssetBackfillData(NamedTuple):
         )
 
     @classmethod
-    def is_valid_serialization(cls, serialized: str, asset_graph: AssetGraph) -> bool:
+    def can_deserialize(cls, serialized: str, asset_graph: AssetGraph) -> bool:
         storage_dict = json.loads(serialized)
         return AssetGraphSubset.can_deserialize(
             storage_dict["serialized_target_subset"], asset_graph
@@ -337,23 +337,30 @@ class AssetBackfillData(NamedTuple):
 
     @classmethod
     def from_serialized(
-        cls, serialized: str, asset_graph: AssetGraph, backfill_start_timestamp: float
+        cls,
+        serialized: str,
+        asset_graph: AssetGraph,
+        backfill_start_timestamp: float,
     ) -> "AssetBackfillData":
         storage_dict = json.loads(serialized)
 
         return cls(
             target_subset=AssetGraphSubset.from_storage_dict(
-                storage_dict["serialized_target_subset"], asset_graph
+                storage_dict["serialized_target_subset"],
+                asset_graph,
             ),
             requested_runs_for_target_roots=storage_dict["requested_runs_for_target_roots"],
             requested_subset=AssetGraphSubset.from_storage_dict(
-                storage_dict["serialized_requested_subset"], asset_graph
+                storage_dict["serialized_requested_subset"],
+                asset_graph,
             ),
             materialized_subset=AssetGraphSubset.from_storage_dict(
-                storage_dict["serialized_materialized_subset"], asset_graph
+                storage_dict["serialized_materialized_subset"],
+                asset_graph,
             ),
             failed_and_downstream_subset=AssetGraphSubset.from_storage_dict(
-                storage_dict["serialized_failed_subset"], asset_graph
+                storage_dict["serialized_failed_subset"],
+                asset_graph,
             ),
             latest_storage_id=storage_dict["latest_storage_id"],
             backfill_start_time=utc_datetime_from_timestamp(backfill_start_timestamp),

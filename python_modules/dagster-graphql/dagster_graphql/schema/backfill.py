@@ -262,7 +262,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         return max_end_time
 
     def resolve_isValidSerialization(self, _graphene_info: ResolveInfo) -> bool:
-        return self._backfill_job.is_valid_serialization(_graphene_info.context)
+        return self._backfill_job.can_deserialize(_graphene_info.context)
 
     def resolve_partitionNames(self, _graphene_info: ResolveInfo) -> Optional[Sequence[str]]:
         return self._backfill_job.get_partition_names(_graphene_info.context)

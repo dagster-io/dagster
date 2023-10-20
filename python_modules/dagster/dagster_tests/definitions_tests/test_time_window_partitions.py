@@ -981,11 +981,7 @@ def test_time_window_partitions_subset_deserialization():
     _, serialized_time_subsets_by_version = get_serialized_time_subsets_by_version()
 
     for serialized in serialized_time_subsets_by_version.values():
-        assert partitions_def.can_deserialize_subset(
-            serialized,
-            partitions_def.get_serializable_unique_identifier(),
-            TimeWindowPartitionsDefinition.__name__,
-        )
+        assert partitions_def.can_deserialize_subset(serialized)
 
         deserialized = partitions_def.deserialize_subset(serialized)
         assert deserialized.get_partition_keys() == ["2015-01-02", "2015-01-04"]
