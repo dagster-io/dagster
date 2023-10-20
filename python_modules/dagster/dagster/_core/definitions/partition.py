@@ -1102,7 +1102,12 @@ def can_deserialize(
     elif serialized_partitions_def_class_name in [
         partitions_def.__name__ for partitions_def in TIME_PARTITIONS_SUBSET_PARTITIONS_DEFS
     ]:
-        if partitions_def and isinstance(partitions_def, TimeWindowPartitionsDefinition):
+        if (
+            partitions_def
+            and isinstance(partitions_def, TimeWindowPartitionsDefinition)
+            and partitions_def.get_serializable_unique_identifier()
+            == serialized_partitions_def_unique_id
+        ):
             return True
 
         else:  # No partitions def, or partitions def is not TimeWindowPartitionsDefinition

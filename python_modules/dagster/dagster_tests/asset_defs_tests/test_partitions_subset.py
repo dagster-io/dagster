@@ -138,6 +138,14 @@ def test_can_deserialize_time_subset_changed_to_static(
         is is_deserializable
     )
 
+    if is_deserializable:
+        from_serialized(
+            None,
+            serialized_time_subset,
+            TimeWindowPartitionsDefinition.__name__,
+            error_on_partitions_def_changes=False,
+        )
+
 
 # Only time window subsets of version 2+ can be deserialized
 @pytest.mark.parametrize(
@@ -167,6 +175,52 @@ def test_can_deserialize_time_subset_changed_to_unpartitioned(
             None,
             serialized_time_subset,
             TimeWindowPartitionsDefinition.__name__,
+            error_on_partitions_def_changes=False,
+        )
+
+    # If no partitions definition and no class name/uid, then we can't deserialize
+    assert (
+        can_deserialize(
+            None,
+            serialized_time_subset,
+            serialized_partitions_def_unique_id=None,
+            serialized_partitions_def_class_name=None,
+        )
+        is False
+    )
+
+
+# Only time window subsets of version 2+ can be deserialized
+@pytest.mark.parametrize(
+    "serialized_time_subset,is_deserializable",
+    [
+        (serialized_subset, True if version in ("2", "current") else False)
+        for version, serialized_subset in get_serialized_time_subsets_by_version()[1].items()
+    ],
+    ids=list(get_serialized_time_subsets_by_version()[1].keys()),
+)
+def test_can_deserialize_time_subset_changed_to_different_time_partitions_def(
+    serialized_time_subset: str, is_deserializable: bool
+):
+    partitions_def, _ = get_serialized_time_subsets_by_version()
+
+    new_time_partitions_def = DailyPartitionsDefinition("2023-01-01")
+
+    deserializable = can_deserialize(
+        new_time_partitions_def,
+        serialized_time_subset,
+        serialized_partitions_def_unique_id=partitions_def.get_serializable_unique_identifier(),
+        serialized_partitions_def_class_name=TimeWindowPartitionsDefinition.__name__,
+    )
+
+    assert deserializable == is_deserializable
+
+    if deserializable:
+        from_serialized(
+            None,
+            serialized_time_subset,
+            TimeWindowPartitionsDefinition.__name__,
+            error_on_partitions_def_changes=False,
         )
 
     # If no partitions definition and no class name/uid, then we can't deserialize
