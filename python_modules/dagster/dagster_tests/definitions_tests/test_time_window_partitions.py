@@ -1,6 +1,6 @@
 import random
 from datetime import datetime
-from typing import Optional, Sequence, cast
+from typing import Mapping, Optional, Sequence, Tuple, cast
 
 import pendulum.parser
 import pytest
@@ -938,37 +938,58 @@ def test_time_window_partitions_subset_non_utc_timezone():
     assert set(subset.get_partition_keys()) == set(with_keys)
 
 
-def test_time_window_partiitons_deserialize_backwards_compatible():
-    serialized = "[[1420156800.0, 1420243200.0], [1420329600.0, 1420416000.0]]"
+def get_serialized_time_subsets_by_version() -> (
+    Tuple[TimeWindowPartitionsDefinition, Mapping[str, str]]
+):
+    # Targets ["2015-01-02", "2015-01-04"] in the following partitions def
     partitions_def = DailyPartitionsDefinition(start_date="2015-01-01")
-    deserialized = partitions_def.deserialize_subset(serialized)
-    assert deserialized.get_partition_keys() == ["2015-01-02", "2015-01-04"]
-    assert "2015-01-02" in deserialized
 
-    serialized = (
+    LIST_NO_VERSION = "[[1420156800.0, 1420243200.0], [1420329600.0, 1420416000.0]]"
+    DICT_NO_VERSION = (
         '{"time_windows": [[1420156800.0, 1420243200.0], [1420329600.0, 1420416000.0]],'
         ' "num_partitions": 2}'
     )
-    deserialized = partitions_def.deserialize_subset(serialized)
-    assert deserialized.get_partition_keys() == ["2015-01-02", "2015-01-04"]
-    assert "2015-01-02" in deserialized
-
-
-def test_current_time_window_partitions_serialization():
-    partitions_def = DailyPartitionsDefinition(start_date="2015-01-01")
-    serialized = (
-        partitions_def.empty_subset().with_partition_keys(["2015-01-02", "2015-01-04"]).serialize()
-    )
-    deserialized = partitions_def.deserialize_subset(serialized)
-    assert partitions_def.deserialize_subset(serialized)
-    assert deserialized.get_partition_keys() == ["2015-01-02", "2015-01-04"]
-
-    serialized = (
+    VERSION_1 = (
         '{"version": 1, "time_windows": [[1420156800.0, 1420243200.0], [1420329600.0,'
         ' 1420416000.0]], "num_partitions": 2}'
     )
-    assert partitions_def.deserialize_subset(serialized)
-    assert deserialized.get_partition_keys() == ["2015-01-02", "2015-01-04"]
+    VERSION_2 = (
+        r'{"version": 2, "time_windows": [[1420156800.0, 1420243200.0], [1420329600.0,'
+        r' 1420416000.0]], "num_partitions": 2, "time_partitions_def": "{\"__class__\":'
+        r" \"TimeWindowPartitionsDefinition\", \"cron_schedule\": \"0 0 * * *\", \"end\": null,"
+        r" \"end_offset\": 0, \"fmt\": \"%Y-%m-%d\", \"start\": 1420070400.0, \"timezone\":"
+        r' \"UTC\"}"}'
+    )
+    CURRENT = (
+        partitions_def.empty_subset().with_partition_keys(["2015-01-02", "2015-01-04"]).serialize()
+    )
+
+    return partitions_def, {
+        "list_no_version": LIST_NO_VERSION,
+        "dict_no_version": DICT_NO_VERSION,
+        "1": VERSION_1,
+        "2": VERSION_2,
+        "current": CURRENT,  # Not actually a version, but the current serialization format
+    }
+
+
+def test_time_window_partitions_subset_deserialization():
+    partitions_def = DailyPartitionsDefinition(
+        start_date="2015-01-01"
+    )  # Partitions definition used to serialize
+
+    _, serialized_time_subsets_by_version = get_serialized_time_subsets_by_version()
+
+    for serialized in serialized_time_subsets_by_version.values():
+        assert partitions_def.can_deserialize_subset(
+            serialized,
+            partitions_def.get_serializable_unique_identifier(),
+            TimeWindowPartitionsDefinition.__name__,
+        )
+
+        deserialized = partitions_def.deserialize_subset(serialized)
+        assert deserialized.get_partition_keys() == ["2015-01-02", "2015-01-04"]
+        assert "2015-01-02" in deserialized
 
 
 def test_time_window_partitions_contains():

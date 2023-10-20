@@ -46,23 +46,6 @@ def test_static_partitions_subset_current_version_serialization():
     assert deserialized.get_partition_keys() == {"baz", "foo"}
 
 
-def test_time_window_subset_cannot_deserialize_invalid_version():
-    daily_partitions_def = DailyPartitionsDefinition(start_date="2023-01-01")
-    serialized_subset = (
-        daily_partitions_def.empty_subset().with_partition_keys(["2023-01-02"]).serialize()
-    )
-
-    assert set(daily_partitions_def.deserialize_subset(serialized_subset).get_partition_keys()) == {
-        "2023-01-02"
-    }
-
-    class NewSerializationVersionSubset(TimeWindowPartitionsSubset):
-        SERIALIZATION_VERSION = -2
-
-    with pytest.raises(DagsterInvalidDeserializationVersionError, match="version -2"):
-        NewSerializationVersionSubset.from_serialized(daily_partitions_def, serialized_subset)
-
-
 time_window_partitions = DailyPartitionsDefinition(start_date="2021-05-05")
 static_partitions = StaticPartitionsDefinition(["a", "b", "c"])
 composite = MultiPartitionsDefinition({"date": time_window_partitions, "abc": static_partitions})

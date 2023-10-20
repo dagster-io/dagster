@@ -64,9 +64,7 @@ class TimeWindow(NamedTuple):
 
 
 class DatetimeFieldSerializer(FieldSerializer):
-    """TODO add docstring."""
-
-    # TODO test this
+    """Serializes datetime objects to and from floats."""
 
     def pack(self, datetime: Optional[datetime], **_kwargs) -> Optional[float]:
         return datetime.timestamp() if datetime else None
@@ -1676,6 +1674,7 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
         return cls(partitions_def, 0, [], set())
 
     def serialize(self) -> str:
+        partitions_def = cast(TimeWindowPartitionsDefinition, self.partitions_def)
         return json.dumps(
             {
                 "version": self.SERIALIZATION_VERSION,
@@ -1687,7 +1686,14 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
                 ],
                 "num_partitions": self._num_partitions,
                 "time_partitions_def": serialize_value(
-                    cast(TimeWindowPartitionsDefinition, self.partitions_def)
+                    TimeWindowPartitionsDefinition(
+                        start=partitions_def.start,
+                        fmt=partitions_def.fmt,
+                        timezone=partitions_def.timezone,
+                        end=partitions_def.end,
+                        end_offset=partitions_def.end_offset,
+                        cron_schedule=partitions_def.cron_schedule,
+                    )
                 ),
             }
         )
