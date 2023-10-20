@@ -1676,7 +1676,6 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
         return cls(partitions_def, 0, [], set())
 
     def serialize(self) -> str:
-        partitions_def = cast(TimeWindowPartitionsDefinition, self.partitions_def)
         return json.dumps(
             {
                 "version": self.SERIALIZATION_VERSION,
@@ -1688,14 +1687,7 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
                 ],
                 "num_partitions": self._num_partitions,
                 "time_partitions_def": serialize_value(
-                    TimeWindowPartitionsDefinition(
-                        start=partitions_def.start,
-                        fmt=partitions_def.fmt,
-                        timezone=partitions_def.timezone,
-                        end=partitions_def.end,
-                        end_offset=partitions_def.end_offset,
-                        cron_schedule=partitions_def.cron_schedule,
-                    )
+                    cast(TimeWindowPartitionsDefinition, self.partitions_def)
                 ),
             }
         )
