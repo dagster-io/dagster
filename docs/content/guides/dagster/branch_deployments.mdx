@@ -20,7 +20,7 @@ Here’s an overview of the main concepts we’ll be using:
 - [Ops](/concepts/ops-jobs-graphs/ops) - We'll define two ops that query Snowflake: the first will clone a database, and the second will drop database clones.
 - [Graphs](/concepts/ops-jobs-graphs/graphs) - We'll build graphs that define the order our ops should run.
 - [Jobs](/concepts/assets/asset-jobs) - We'll define jobs by binding our graphs to resources.
-- [Resources](/concepts/resources) - We'll use the [Snowflake resource](/\_apidocs/libraries/dagster-snowflake#dagster_snowflake.snowflake_resource) to swap in different Snowflake connections to our jobs depending on environment.
+- [Resources](/concepts/resources) - We'll use the [Snowflake resource](/\_apidocs/libraries/dagster-snowflake#dagster_snowflake.SnowflakeResource) to swap in different Snowflake connections to our jobs depending on environment.
 - [I/O managers](/concepts/io-management/io-managers) - We'll use a Snowflake I/O manager to persist asset outputs to Snowflake.
 
 ---
@@ -179,26 +179,30 @@ Refer to the [Dagster Cloud environment variables documentation](/dagster-cloud/
 We’ll first need to define a job that clones our `PRODUCTION` database for each branch deployment. Later, in our GitHub actions workflow, we can trigger this job to run upon each redeploy. Each clone will be named `PRODUCTION_CLONE_<ID>` with `<ID>` representing the pull request ID, ensuring each branch deployment has a unique clone. This job will drop a database clone if it exists and then reclone from production, ensuring each redeployment has a fresh clone of `PRODUCTION`:
 
 ```python file=/guides/dagster/development_to_production/branch_deployments/clone_and_drop_db.py startafter=start_clone_db endbefore=end_clone_db
-from dagster_snowflake import SnowflakeConnection
+from dagster_snowflake import SnowflakeResource
 
-from dagster import In, Nothing, ResourceParam, graph, op
+from dagster import In, Nothing, graph, op
 
 
-@op(required_resource_keys={"snowflake"})
-def drop_database_clone(snowflake: ResourceParam[SnowflakeConnection]):
-    snowflake.execute_query(
-        "DROP DATABASE IF EXISTS"
-        f" PRODUCTION_CLONE_{os.environ['DAGSTER_CLOUD_PULL_REQUEST_ID']}"
-    )
+@op
+def drop_database_clone(snowflake: SnowflakeResource):
+    with snowflake.get_connection() as conn:
+        cur = conn.cursor()
+        cur.execute(
+            "DROP DATABASE IF EXISTS"
+            f" PRODUCTION_CLONE_{os.environ['DAGSTER_CLOUD_PULL_REQUEST_ID']}"
+        )
 
 
 @op(ins={"start": In(Nothing)})
-def clone_production_database(snowflake: ResourceParam[SnowflakeConnection]):
-    snowflake.execute_query(
-        "CREATE DATABASE"
-        f" PRODUCTION_CLONE_{os.environ['DAGSTER_CLOUD_PULL_REQUEST_ID']} CLONE"
-        ' "PRODUCTION"'
-    )
+def clone_production_database(snowflake: SnowflakeResource):
+    with snowflake.get_connection() as conn:
+        cur = conn.cursor()
+        cur.execute(
+            "CREATE DATABASE"
+            f" PRODUCTION_CLONE_{os.environ['DAGSTER_CLOUD_PULL_REQUEST_ID']} CLONE"
+            ' "PRODUCTION"'
+        )
 
 
 @graph
@@ -211,7 +215,7 @@ def drop_prod_clone():
     drop_database_clone()
 ```
 
-We’ve defined `drop_database_clone` and `clone_production_database` to utilize the [Snowflake resource](/\_apidocs/libraries/dagster-snowflake#dagster_snowflake.snowflake_resource). The Snowflake resource will use the same configuration as the Snowflake I/O manager to generate a connection to Snowflake. However, while our I/O manager writes outputs to Snowflake, the Snowflake resource executes queries against Snowflake.
+We’ve defined `drop_database_clone` and `clone_production_database` to utilize the [Snowflake resource](/\_apidocs/libraries/dagster-snowflake#dagster_snowflake.SnowflakeResource). The Snowflake resource will use the same configuration as the Snowflake I/O manager to generate a connection to Snowflake. However, while our I/O manager writes outputs to Snowflake, the Snowflake resource executes queries against Snowflake.
 
 We now need to define resources that configure our jobs to the current environment. We can modify the resource mapping by environment as follows:
 
@@ -222,13 +226,9 @@ resources = {
             **snowflake_config,
             database=f"PRODUCTION_CLONE_{os.getenv('DAGSTER_CLOUD_PULL_REQUEST_ID')}",
         ),
-        "snowflake": snowflake_resource.configured(
-            {
-                **snowflake_config,
-                "database": (
-                    f"PRODUCTION_CLONE_{os.getenv('DAGSTER_CLOUD_PULL_REQUEST_ID')}"
-                ),
-            }
+        "snowflake": SnowflakeResource(
+            **snowflake_config,
+            database=f"PRODUCTION_CLONE_{os.getenv('DAGSTER_CLOUD_PULL_REQUEST_ID')}",
         ),
     },
     "prod": {
@@ -236,9 +236,7 @@ resources = {
             **snowflake_config,
             database="PRODUCTION",
         ),
-        "snowflake": snowflake_resource.configured(
-            {**snowflake_config, "database": "PRODUCTION"}
-        ),
+        "snowflake": SnowflakeResource(**snowflake_config, database="PRODUCTION"),
     },
 }
 ```
