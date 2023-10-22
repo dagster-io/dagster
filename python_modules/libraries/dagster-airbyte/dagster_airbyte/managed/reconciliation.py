@@ -14,7 +14,7 @@ from typing import (
 
 import dagster._check as check
 from dagster import AssetKey
-from dagster._annotations import experimental, public
+from dagster._annotations import deprecated, experimental, public
 from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
@@ -635,7 +635,14 @@ def reconcile_connections_post(
                 )
 
 
-@experimental
+@deprecated(
+    breaking_version="1.6",
+    additional_warn_text=(
+        "Managed elementl reconciler will be eliminated after 1.6. For managing Airbyte with"
+        " infrastructure-as-code, we recommend Terraform or Pulumi. We also recommend looking at"
+        " the Dagster's embedded ETL library for data movement capabilities."
+    ),
+)
 class AirbyteManagedElementReconciler(ManagedElementReconciler):
     """Reconciles Python-specified Airbyte connections with an Airbyte instance.
 
