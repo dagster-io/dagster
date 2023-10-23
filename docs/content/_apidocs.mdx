@@ -8,55 +8,271 @@ These docs aim to cover the entire public surface of the core `dagster` APIs, as
 
 Dagster follows [SemVer](https://semver.org/). We attempt to isolate breaking changes to the public APIs to minor versions (on a roughly 12-week cadence) and will announce deprecations in Slack and in the release notes to patch versions (on a roughly weekly cadence).
 
+---
+
 ## Core
 
 APIs from the core `dagster` package, divided roughly by topic:
 
-- [Software-Defined Assets](/\_apidocs/assets). An asset is an object in persistent storage, such as a table, file, or persisted machine learning model. A software-defined asset is a Dagster object that couples an asset to the function and upstream assets that are used to produce its contents.
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <thead>
+    <tr>
+      <th
+        style={{
+          width: "25%",
+        }}
+      >
+        Topic
+      </th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        <a href="/_apidocs/assets">Software-defined Assets</a>
+      </td>
+      <td>
+        APIs to define data asset's using Dagster's{" "}
+        <a href="/concepts/assets/software-defined-assets">
+          Software-defined Assets
+        </a>
+        .
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <a href="/_apidocs/asset-checks">Asset checks</a> <Experimental />
+      </td>
+      <td>
+        APIs to define <a href="/concepts/assets/asset-checks">checks</a> that
+        can be run on assets.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <a href="/_apidocs/schedules-sensors">Schedules & Sensors</a>
+      </td>
+      <td>
+        APIs to define{" "}
+        <a href="/concepts/partitions-schedules-sensors/schedules">schedules</a>{" "}
+        and <a href="/concepts/partitions-schedules-sensors/sensors">sensors</a>{" "}
+        that initiate job execution, as well as some built-in helpers for common
+        cases.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <a href="/_apidocs/partitions">Partitions</a>
+      </td>
+      <td>
+        APIs to define{" "}
+        <a href="/concepts/partitions-schedules-sensors/partitions">
+          partitions
+        </a>{" "}
+        of the config space over which job runs can be backfilled.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <a href="/_apidocs/definitions">Definitions</a> (Code locations)
+      </td>
+      <td>
+        APIs to collect definitions so that tools like the Dagster CLI or
+        Dagster UI can load them as{" "}
+        <a href="/concepts/code-locations">code locations</a>.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <a href="/_apidocs/resources">Resources</a>
+      </td>
+      <td>
+        APIs to define <a href="/concepts/resources">resources</a>, which are
+        typically used to model external services, tools, and storage for use
+        within jobs.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <a href="/_apidocs/config">Config</a>
+      </td>
+      <td>
+        The types available to describe{" "}
+        <a href="/concepts/configuration/config-schema">config schemas</a>.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <a href="/_apidocs/loggers">Loggers</a>
+      </td>
+      <td>
+        APIs to define how <a href="/concepts/logging/loggers">logs</a> are
+        stored.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <a href="/_apidocs/ops">Ops</a>
+      </td>
+      <td>
+        APIs to define or decorate functions as{" "}
+        <a href="/concepts/ops-jobs-graphs/ops">ops</a>, declare their inputs
+        and outputs, compose ops with each other, as well as the datatypes that
+        op execution can return or yield.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <a href="/_apidocs/hooks">Hooks</a>
+      </td>
+      <td>
+        APIs to define Dagster <a href="/concepts/ops-jobs-graphs">hooks</a>,
+        which can be triggered on specific Dagster events.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <a href="/_apidocs/graphs">Op graphs</a>
+      </td>
+      <td>
+        APIs to define{" "}
+        <a href="/concepts/ops-jobs-graphs/graphs">
+          a set of interconnected ops
+        </a>
+        .
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <a href="/_apidocs/dynamic">Dynamic mapping and collect</a>
+      </td>
+      <td>
+        APIs that allow{" "}
+        <a href="/concepts/ops-jobs-graphs/dynamic-graphs">
+          graph structures to be determined at run time
+        </a>
+        .
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <a href="/_apidocs/jobs">Jobs</a>
+      </td>
+      <td>
+        APIs to define jobs that execute a set of ops with specific parameters.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <a href="/_apidocs/execution">Execution</a>
+      </td>
+      <td>
+        APIs to{" "}
+        <a href="/concepts/ops-jobs-graphs/job-execution">
+          execute and test jobs and individual ops
+        </a>
+        , the execution context available to ops, job configuration, and the
+        default executors available for executing jobs.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <a href="/_apidocs/memoization">Job-level versioning & memoization</a>{" "}
+        <Deprecated />
+      </td>
+      <td>
+        <strong>
+          Deprecated in favor of{" "}
+          <a href="/concepts/assets/software-defined-assets#asset-code-versions">
+            asset versioning
+          </a>
+        </strong>
+        . Code versioning and memoization of previous outputs based upon that
+        versioning.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <a href="/_apidocs/io-managers">I/O managers</a>
+      </td>
+      <td>
+        APIs to define how{" "}
+        <a href="/concepts/io-management/io-managers">
+          inputs and outputs are handled and loaded
+        </a>
+        .
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <a href="/_apidocs/types">Types</a>
+      </td>
+      <td>
+        The types available for use with the{" "}
+        <a href="/concepts/types">Dagster Type system</a>, which helps describe
+        and verify at runtime the values that ops accept and produce.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <a href="/_apidocs/pipes">Pipes</a>
+      </td>
+      <td>
+        APIs for working with the{" "}
+        <a href="/guides/dagster-pipes">Dagster Pipes protocol</a> from the
+        orchestration side.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <a href="/_apidocs/repositories">Repositories</a> <Legacy />
+      </td>
+      <td>
+        APIs to define collections of jobs and other definitions that tools like
+        the Dagster CLI or Dagster UI can load. <strong>Note:</strong>{" "}
+        <a href="/_apidocs/definitions">Definitions</a> have replaced
+        repositories and are now considered best practice.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <a href="/_apidocs/cli">Dagster CLI</a>
+      </td>
+      <td>Browse repositories and execute jobs from the command line.</td>
+    </tr>
+    <tr>
+      <td>
+        <a href="/_apidocs/errors">Errors</a>
+      </td>
+      <td>Classes for errors thrown by the Dagster framework.</td>
+    </tr>
+    <tr>
+      <td>
+        <a href="/_apidocs/utilities">Utilities</a>
+      </td>
+      <td>Miscellaneous helpers used by Dagster.</td>
+    </tr>
+    <tr>
+      <td>
+        <a href="/_apidocs/internals">Internals</a>
+      </td>
+      <td>
+        Core internal APIs that are important if you are interested in
+        understanding how Dagster works with an eye towards extending it:
+        logging, executors, system storage, the Dagster instance and plugin
+        machinery, storage, schedulers.
+      </td>
+    </tr>
+  </tbody>
+</table>
 
-- [Jobs](/\_apidocs/jobs) APIs to define jobs that execute a set of ops with specific parameters.
-
-- [Definitions](/\_apidocs/definitions) APIs to collect definitions so that tools like the Dagster CLI or UI can load them as code locations.
-
-- [Ops](/\_apidocs/ops) APIs to define or decorate functions as ops, declare their inputs and outputs, compose ops with each other, as well as the datatypes that op execution can return or yield.
-
-- [Graphs](/\_apidocs/graphs) APIs to define a logical structure of ops.
-
-- [Resources](/\_apidocs/resources) APIs to define resources which can provide specific implementations of certain functionality within a job.
-
-- [Loggers](/\_apidocs/loggers) APIs to define where logs go.
-
-- [Config](/\_apidocs/config) The types available to describe config schemas.
-
-- [Types](/\_apidocs/types) The Dagster type system helps describe and verify at runtime the values that ops accept and produce.
-
-- [Dagster CLI](/\_apidocs/cli) Browse repositories and execute jobs from the command line
-
-- [Schedules & Sensors](/\_apidocs/schedules-sensors) APIs to define schedules and sensors that initiate job execution, as well as some built-in helpers for common cases.
-
-- [Partitions](/\_apidocs/partitions) APIs to define partitions of the config space over which job runs can be backfilled.
-
-- [Errors](/\_apidocs/errors) Errors thrown by the Dagster framework.
-
-- [Execution](/\_apidocs/execution) APIs to execute and test jobs and individual ops, the execution context available to ops, job configuration, and the default executors available for executing jobs.
-
-- [Hooks](/\_apidocs/hooks) APIs to define Dagster hooks, which can be triggered on specific Dagster events.
-
-- [IO Managers](/\_apidocs/io-managers) APIs to define how inputs and outputs are handled and loaded.
-
-- [Dynamic Mapping & Collect](/\_apidocs/dynamic) APIs that allow graph structures to be determined at run time.
-
-- [Asset Checks (Experimental)](/\_apidocs/asset-checks) APIs to define checks that can be run on assets.
-
-- [Job-Level Versioning & Memoization](/\_apidocs/memoization) (Deprecated) Code versioning and memoization of previous outputs based upon that versioning.
-
-- [Repositories](/\_apidocs/repositories) Older APIs to define collections of jobs and other definitions that tools like the Dagster CLI or UI can load.
-
-- [Utilities](/\_apidocs/utilities) Miscellaneous helpers used by Dagster that may be useful to users.
-
-- [Pipes](/\_apidocs/pipes) APIs for working with the Dagster Pipes protocol from the orchestration side.
-
-- [Internals](/\_apidocs/internals) Core internal APIs that are important if you are interested in understanding how Dagster works with an eye towards extending it: logging, executors, system storage, the Dagster instance & plugin machinery, storage, schedulers.
+---
 
 ## Libraries
 
