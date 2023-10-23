@@ -45,6 +45,7 @@ from .pydantic_compat_layer import (
     model_config,
     model_fields,
 )
+from .type_check_utils import is_literal
 from .typing_utils import BaseConfigMeta
 
 try:
@@ -211,13 +212,6 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
         for key, value in config_dict.items():
             field = model_fields(self).get(key)
 
-            # This is useful in Pydantic 2.x when reconstructing a config object from a dict
-            # e.g. when instantiating a resource at runtime from its config dict
-            # In Pydantic 1.x, this is a no-op, since a non-required field without a
-            # value provided will default to None (required & optional are the same in 1.x)
-            if field and not field.is_required() and value is None:
-                continue
-
             if field and field.discriminator:
                 nested_dict = value
 
@@ -225,7 +219,7 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
                 if isinstance(value, Config):
                     nested_dict = _discriminated_union_config_dict_to_selector_config_dict(
                         discriminator_key,
-                        value._get_non_none_public_field_values(),  # noqa: SLF001
+                        value._get_non_default_public_field_values(),  # noqa: SLF001
                     )
 
                 nested_items = list(check.is_dict(nested_dict).items())
@@ -257,15 +251,15 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
         Inner fields are recursively converted to dictionaries, meaning nested config objects
         or EnvVars will be converted to the appropriate dictionary representation.
         """
-        public_fields = self._get_non_none_public_field_values()
+        public_fields = self._get_non_default_public_field_values()
         return {
             k: _config_value_to_dict_representation(model_fields(self).get(k), v)
             for k, v in public_fields.items()
         }
 
-    def _get_non_none_public_field_values(self) -> Mapping[str, Any]:
+    def _get_non_default_public_field_values(self) -> Mapping[str, Any]:
         """Returns a dictionary representation of this config object,
-        ignoring any private fields, and any optional fields that are None.
+        ignoring any private fields, and any defaulted fields which are equal to the default value.
 
         Inner fields are returned as-is in the dictionary,
         meaning any nested config objects will be returned as config objects, not dictionaries.
@@ -277,6 +271,9 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
             field = model_fields(self).get(key)
 
             if field:
+                if not is_literal(field.annotation) and value == field.default:
+                    continue
+
                 resolved_field_name = field.alias or key
                 output[resolved_field_name] = value
             else:
