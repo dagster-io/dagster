@@ -1,9 +1,8 @@
 from typing import Optional
 
 import pytest
-from dagster import Definitions, asset, job, op
+from dagster import job, op
 from dagster._config.pythonic_config import Config, ConfigurableResource
-from dagster._core.errors import DagsterResourceFunctionError
 from pydantic import ValidationError, validator
 
 
@@ -48,40 +47,3 @@ def test_validator_default_contract_nested() -> None:
     assert executed["my_op"]
 
     executed.clear()
-
-
-def test_validator_default_contract_runtime_config() -> None:
-    # as above, runtime resource configuration
-    class InnerConfig(Config):
-        name: Optional[str] = None
-
-        @validator("name")
-        def name_must_not_be_provided(cls, name):
-            raise ValueError("Inner always errors with a non-default value!")
-
-    class MyResource(ConfigurableResource):
-        inner: InnerConfig
-        name: Optional[str] = None
-
-        @validator("name")
-        def name_must_not_be_provided(cls, name):
-            raise ValueError("Resource always errors with a non-default value!")
-
-    executed = {}
-
-    @asset
-    def hello_world_asset(my_resource: MyResource):
-        executed["hello_world_asset"] = True
-
-    defs = Definitions(
-        assets=[hello_world_asset],
-        resources={"my_resource": MyResource.configure_at_launch()},
-    )
-
-    defs.get_implicit_global_asset_job_def().execute_in_process()
-    assert executed["hello_world_asset"]
-
-    with pytest.raises(DagsterResourceFunctionError):
-        defs.get_implicit_global_asset_job_def().execute_in_process(
-            {"resources": {"my_resource": {"config": {"name": None}}}}
-        )

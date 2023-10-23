@@ -450,7 +450,10 @@ class ConfigurableResourceFactory(
         # Since Resource extends BaseModel and is a dataclass, we know that the
         # signature of any __init__ method will always consist of the fields
         # of this class. We can therefore safely pass in the values as kwargs.
-        out = self.__class__(**{**self._get_non_default_public_field_values(), **values})
+        to_populate = self.__class__._get_non_default_public_field_values_cls(  # noqa: SLF001
+            {**self._get_non_default_public_field_values(), **values}
+        )
+        out = self.__class__(**to_populate)
         out._state__internal__ = out._state__internal__._replace(  # noqa: SLF001
             resource_context=self._state__internal__.resource_context
         )
@@ -728,8 +731,11 @@ class PartialResource(Generic[TResValue], AllowDelayedDependencies, MakeConfigCa
         MakeConfigCacheable.__init__(self, data=data, resource_cls=resource_cls)  # type: ignore  # extends BaseModel, takes kwargs
 
         def resource_fn(context: InitResourceContext):
+            to_populate = resource_cls._get_non_default_public_field_values_cls(  # noqa: SLF001
+                {**data, **context.resource_config}
+            )
             instantiated = resource_cls(
-                **{**data, **context.resource_config}
+                **to_populate
             )  # So that collisions are resolved in favor of the latest provided run config
             return instantiated._get_initialize_and_run_fn()(context)  # noqa: SLF001
 
