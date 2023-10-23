@@ -23,6 +23,7 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
     TimeWindowPartitionsSubset,
 )
+from dagster._serdes import deserialize_value, serialize_value
 from dagster._seven.compat.pendulum import create_pendulum_time
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 
@@ -990,6 +991,29 @@ def test_time_window_partitions_subset_deserialization():
         deserialized = partitions_def.deserialize_subset(serialized)
         assert deserialized.get_partition_keys() == ["2015-01-02", "2015-01-04"]
         assert "2015-01-02" in deserialized
+
+
+@pytest.mark.parametrize(
+    "partitions_def",
+    [
+        (DailyPartitionsDefinition("2023-01-01", timezone="America/New_York")),
+        (DailyPartitionsDefinition("2023-01-01", timezone="America/New_York")),
+    ],
+)
+def test_time_window_partitions_def_serialization(partitions_def):
+    time_window_partitions_def = TimeWindowPartitionsDefinition(
+        start=partitions_def.start,
+        end=partitions_def.end,
+        cron_schedule="0 0 * * *",
+        fmt="%Y-%m-%d",
+        timezone=partitions_def.timezone,
+        end_offset=partitions_def.end_offset,
+    )
+
+    deserialized = deserialize_value(
+        serialize_value(time_window_partitions_def), TimeWindowPartitionsDefinition
+    )
+    assert deserialized == time_window_partitions_def
 
 
 def test_time_window_partitions_contains():

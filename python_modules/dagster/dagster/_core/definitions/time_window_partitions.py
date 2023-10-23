@@ -67,6 +67,10 @@ class DatetimeFieldSerializer(FieldSerializer):
     """Serializes datetime objects to and from floats."""
 
     def pack(self, datetime: Optional[datetime], **_kwargs) -> Optional[float]:
+        if datetime:
+            check.invariant(datetime.tzinfo is not None)
+
+        # Get the timestamp in UTC
         return datetime.timestamp() if datetime else None
 
     def unpack(
@@ -141,6 +145,12 @@ class TimeWindowPartitionsDefinition(
 
         if isinstance(start, datetime):
             start_dt = pendulum.instance(start, tz=timezone)
+
+            if start.tzinfo:
+                # Pendulum.instance does not override the timezone of the datetime object,
+                # so we convert it to the provided timezone
+                start_dt = start_dt.in_tz(tz=timezone)
+
         else:
             start_dt = pendulum.instance(datetime.strptime(start, fmt), tz=timezone)
 
