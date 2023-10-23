@@ -431,7 +431,7 @@ def test_get_downstream_with_current_time(
             DailyPartitionsDefinition(start_date="2021-05-05", timezone="US/Central"),
             HourlyPartitionsDefinition(start_date="2021-05-05-00:00", timezone="US/Central"),
             [],
-            ["2021-05-05-23:00"],
+            ["2021-05-05-22:00"],
             datetime(2021, 5, 6, 4, tzinfo=timezone.utc),  # 2021-05-05-23:00 in US/Central
             ["2021-05-05"],
         ),

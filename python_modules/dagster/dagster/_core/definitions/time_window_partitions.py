@@ -423,7 +423,7 @@ class TimeWindowPartitionsDefinition(
         else:
             return prev_window
 
-    @functools.lru_cache(maxsize=5)
+    @functools.lru_cache(maxsize=256)
     def _get_first_partition_window(self, *, current_time: datetime) -> Optional[TimeWindow]:
         current_timestamp = current_time.timestamp()
 
@@ -469,7 +469,7 @@ class TimeWindowPartitionsDefinition(
         )
         return self._get_first_partition_window(current_time=current_time)
 
-    @functools.lru_cache(maxsize=5)
+    @functools.lru_cache(maxsize=256)
     def _get_last_partition_window(self, *, current_time: datetime) -> Optional[TimeWindow]:
         if self.get_first_partition_window(current_time) is None:
             return None
