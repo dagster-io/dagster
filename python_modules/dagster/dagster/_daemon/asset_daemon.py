@@ -424,6 +424,7 @@ class AssetDaemon(IntervalDaemon):
                     pipeline_and_execution_plan_cache,
                     self._logger,
                     debug_crash_flags,
+                    i,
                 )
 
                 tick_context.add_run_info(run_id=submitted_run.run_id)
@@ -469,6 +470,7 @@ def submit_asset_run(
     pipeline_and_execution_plan_cache: Dict[int, Tuple[ExternalJob, ExternalExecutionPlan]],
     logger: logging.Logger,
     debug_crash_flags: SingleInstigatorDebugCrashFlags,
+    run_request_index: int,
 ) -> DagsterRun:
     check.invariant(
         not run_request.run_config, "Asset materialization run requests have no custom run config"
@@ -536,6 +538,7 @@ def submit_asset_run(
             )
 
         check_for_debug_crash(debug_crash_flags, "EXECUTION_PLAN_CREATED")
+        check_for_debug_crash(debug_crash_flags, f"EXECUTION_PLAN_CREATED_{run_request_index}")
 
         external_job, external_execution_plan = pipeline_and_execution_plan_cache[selector_id]
 
@@ -562,10 +565,12 @@ def submit_asset_run(
         )
 
     check_for_debug_crash(debug_crash_flags, "RUN_CREATED")
+    check_for_debug_crash(debug_crash_flags, f"RUN_CREATED_{run_request_index}")
 
     instance.submit_run(run_to_submit.run_id, workspace)
 
     check_for_debug_crash(debug_crash_flags, "RUN_SUBMITTED")
+    check_for_debug_crash(debug_crash_flags, f"RUN_SUBMITTED_{run_request_index}")
 
     asset_key_str = ", ".join([asset_key.to_user_string() for asset_key in asset_keys])
 
