@@ -7,6 +7,7 @@ from typing import (
     Iterator,
     List,
     Mapping,
+    NamedTuple,
     Optional,
     Sequence,
     Set,
@@ -15,7 +16,7 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._annotations import deprecated, experimental, public
+from dagster._annotations import PublicAttr, deprecated, experimental, public
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.assets import AssetsDefinition
@@ -1301,9 +1302,101 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
         self._step_execution_context.set_requires_typed_event_stream(error_message=error_message)
 
 
+##############################
+####### AssetExecutionContext
+##############################
+
+
+class AssetInfo(
+    NamedTuple(
+        "_AssetInfo",
+        [
+            ("key", PublicAttr[AssetKey]),
+            ("assets_def", PublicAttr[Optional[AssetsDefinition]]),
+            ("code_version", PublicAttr[Optional[str]]),
+            ("provenance", PublicAttr[Optional[DataProvenance]]),
+        ],
+    )
+):
+    def __new__(
+        cls,
+        key: AssetKey,
+        code_version: Optional[str] = None,
+        provenance: Optional[DataProvenance] = None,
+        assets_def: Optional[AssetsDefinition] = None,
+    ):
+        super(AssetInfo, cls).__new__(
+            cls, key=key, code_version=code_version, provenance=provenance, assets_def=assets_def
+        )
+
+
+class RunInfo(
+    NamedTuple(
+        "_RunInfo",
+        [
+            ("run_id", PublicAttr[str]),
+            ("dagster_run", PublicAttr[DagsterRun]),
+            ("run_config", PublicAttr[Mapping[str, object]]),
+            ("retry_number", PublicAttr[int]),
+        ],
+    )
+):
+    def __new__(
+        cls,
+        run_id: str,
+        dagster_run: DagsterRun,
+        run_config: Mapping[str, object],
+        retry_number: int,
+    ):
+        super(RunInfo, cls).__new__(
+            cls,
+            run_id=run_id,
+            dagster_run=dagster_run,
+            run_config=run_config,
+            retry_number=retry_number,
+        )
+
+
 class AssetExecutionContext(OpExecutionContext):
     def __init__(self, step_execution_context: StepExecutionContext):
         super().__init__(step_execution_context=step_execution_context)
+        self._asset_info = AssetInfo(
+            key=self.asset_key,
+            assets_def=self.assets_def,
+            code_version=self.assets_def.code_versions_by_key[self.asset_key],
+            provenance=self.get_asset_provenance(self.asset_key),
+        )
+        self._run_info = RunInfo(
+            run_id=self.run_id,
+            dagster_run=self.run,
+            run_config=self.run_config,
+            retry_number=self.retry_number,
+        )
+
+        self._asset_info_by_key = None
+
+    @property
+    def asset_info(self):
+        return self._asset_info
+
+    @property
+    def asset_info_by_key(self):
+        if self._asset_info_by_key:
+            return self._asset_info_by_key
+
+        self._asset_info_by_key = {}
+        for asset_key in self.selected_asset_keys:
+            self._asset_info_by_key[asset_key] = AssetInfo(
+                key=asset_key,
+                code_version=self.assets_def.code_versions_by_key[asset_key],
+                provenance=self.get_asset_provenance(asset_key),
+            )
+
+        return self._asset_info_by_key
+
+    @property
+    def run_info(self):
+        return self._run_info
 
 
 def build_execution_context(
