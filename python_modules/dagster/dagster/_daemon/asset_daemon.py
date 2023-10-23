@@ -172,10 +172,9 @@ class AutoMaterializeLaunchContext:
             "Tick must be in a terminal state when the AutoMaterializeLaunchContext is closed",
         )
 
-        # Update the cursor if we are not going to retry the tick
-        if self._tick.tick_data.cursor and (
-            self._tick.status != TickStatus.FAILURE or self._tick.failure_count > self._max_retries
-        ):
+        # Update the cursor if we made it far enough in the tick to generate
+        # a new cursor
+        if self._tick.tick_data.cursor:
             self._instance.daemon_cursor_storage.set_cursor_values(
                 {CURSOR_KEY: self._tick.tick_data.cursor}
             )
@@ -271,7 +270,7 @@ class AssetDaemon(IntervalDaemon):
         )
 
         raw_cursor = _get_raw_cursor(instance)
-        cursor = (
+        stored_cursor = (
             AssetDaemonCursor.from_serialized(raw_cursor, asset_graph)
             if raw_cursor
             else AssetDaemonCursor.empty()
@@ -314,7 +313,7 @@ class AssetDaemon(IntervalDaemon):
                     status=TickStatus.STARTED,
                     timestamp=evaluation_time.timestamp(),
                     selector_id=FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
-                    auto_materialize_evaluation_id=cursor.evaluation_id + 1,
+                    auto_materialize_evaluation_id=stored_cursor.evaluation_id + 1,
                 )
             )
 
@@ -354,7 +353,7 @@ class AssetDaemon(IntervalDaemon):
                     asset_graph=asset_graph,
                     target_asset_keys=target_asset_keys,
                     instance=instance,
-                    cursor=cursor,
+                    cursor=stored_cursor,
                     materialize_run_tags={
                         **instance.auto_materialize_run_tags,
                     },

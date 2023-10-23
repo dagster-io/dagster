@@ -176,6 +176,8 @@ def test_error_daemon_tick(daemon_not_paused_instance):
     execution_time = error_asset_scenario.current_time
     error_asset_scenario = error_asset_scenario._replace(current_time=None)
 
+    last_cursor = None
+
     for trial_num in range(3):
         test_time = execution_time.add(seconds=15 * trial_num)
         with pendulum.test(test_time):
@@ -208,14 +210,12 @@ def test_error_daemon_tick(daemon_not_paused_instance):
                 error_asset_scenario.expected_run_requests, ticks[0].tick_data.run_requests
             )
 
-            # Cursor doesn't update until the last trial, since we know we will no longer retry the
-            # tick anymore
-            cursor = _get_raw_cursor(instance)
+            # Same cursor due to the retry
+            retry_cursor = _get_raw_cursor(instance)
+            if trial_num > 0:
+                assert retry_cursor == last_cursor
 
-            if trial_num == 2:
-                assert cursor
-            else:
-                assert not cursor
+            last_cursor = retry_cursor
 
     # TODO include a test case that verifies that if the failure happens during run launching,
     # subsequent ticks that retry don't cause runs to loop
@@ -224,7 +224,7 @@ def test_error_daemon_tick(daemon_not_paused_instance):
     # number of retries
     test_time = execution_time.add(seconds=45)
     with pendulum.test(test_time):
-        debug_crash_flags = {"EVALUATIONS_FINISHED": Exception("Oops new tick")}
+        debug_crash_flags = {"RUN_REQUESTS_CREATED": Exception("Oops new tick")}
         with pytest.raises(Exception, match="Oops new tick"):
             error_asset_scenario.do_daemon_scenario(
                 instance,
@@ -246,6 +246,10 @@ def test_error_daemon_tick(daemon_not_paused_instance):
         assert "Oops new tick" in str(ticks[0].tick_data.error)
 
         assert ticks[0].tick_data.failure_count == 1  # starts over
+
+        # Cursor has moved on
+        moved_on_cursor = _get_raw_cursor(instance)
+        assert moved_on_cursor != last_cursor
 
 
 spawn_ctx = multiprocessing.get_context("spawn")
