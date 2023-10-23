@@ -206,6 +206,7 @@ def load_assets_from_current_module(
         freshness_policy=freshness_policy,
         auto_materialize_policy=auto_materialize_policy,
         backfill_policy=backfill_policy,
+        source_key_prefix=source_key_prefix,
     )
 
 
@@ -333,6 +334,7 @@ def load_assets_from_package_name(
         freshness_policy=freshness_policy,
         auto_materialize_policy=auto_materialize_policy,
         backfill_policy=backfill_policy,
+        source_key_prefix=source_key_prefix,
     )
 
 
