@@ -265,7 +265,7 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
         meaning any nested config objects will be returned as config objects, not dictionaries.
         """
         output = {}
-        for key, value in self.__dict__.items():
+        for key, value in dict(self).items():
             if self._is_field_internal(key):
                 continue
             field = model_fields(self).get(key)

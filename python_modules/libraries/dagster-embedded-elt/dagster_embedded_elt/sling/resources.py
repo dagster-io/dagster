@@ -125,8 +125,9 @@ class SlingResource(ConfigurableResource):
     @contextlib.contextmanager
     def _setup_config(self) -> Generator[None, None, None]:
         """Uses environment variables to set the Sling source and target connections."""
-        sling_source = self.source_connection.dict()
-        sling_target = self.target_connection.dict()
+        sling_source = dict(self.source_connection)
+        sling_target = dict(self.target_connection)
+
         if self.source_connection.connection_string:
             sling_source["url"] = self.source_connection.connection_string
         if self.target_connection.connection_string:
