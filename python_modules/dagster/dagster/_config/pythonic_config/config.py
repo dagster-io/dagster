@@ -271,10 +271,13 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
             field = model_fields(self).get(key)
 
             if field:
+                resolved_field_name = field.alias or key
+                print(
+                    resolved_field_name, field.annotation, is_literal(field.annotation)
+                )
                 if not is_literal(field.annotation) and value == field.default:
                     continue
 
-                resolved_field_name = field.alias or key
                 output[resolved_field_name] = value
             else:
                 output[key] = value
@@ -317,7 +320,9 @@ def _config_value_to_dict_representation(field: Optional[ModelFieldCompat], valu
     from dagster._config.field_utils import EnvVar, IntEnvVar
 
     if isinstance(value, dict):
-        return {k: _config_value_to_dict_representation(None, v) for k, v in value.items()}
+        return {
+            k: _config_value_to_dict_representation(None, v) for k, v in value.items()
+        }
     elif isinstance(value, list):
         return [_config_value_to_dict_representation(None, v) for v in value]
     elif isinstance(value, EnvVar):
@@ -334,7 +339,9 @@ def _config_value_to_dict_representation(field: Optional[ModelFieldCompat], valu
                 ).items()
             }
         else:
-            return {k: v for k, v in value._convert_to_config_dictionary().items()}  # noqa: SLF001
+            return {
+                k: v for k, v in value._convert_to_config_dictionary().items()
+            }  # noqa: SLF001
     elif isinstance(value, Enum):
         return value.name
 
@@ -403,7 +410,9 @@ def infer_schema_from_config_class(
         ):
             continue
 
-        resolved_field_name = pydantic_field_info.alias if pydantic_field_info.alias else key
+        resolved_field_name = (
+            pydantic_field_info.alias if pydantic_field_info.alias else key
+        )
         if key not in fields_to_omit:
             if isinstance(pydantic_field_info.default, DagsterField):
                 raise DagsterInvalidDefinitionError(
@@ -413,7 +422,9 @@ def infer_schema_from_config_class(
                 )
 
             try:
-                fields[resolved_field_name] = _convert_pydantic_field(pydantic_field_info)
+                fields[resolved_field_name] = _convert_pydantic_field(
+                    pydantic_field_info
+                )
             except DagsterInvalidConfigDefinitionError as e:
                 raise DagsterInvalidPythonicConfigDefinitionError(
                     config_class=model_cls,
