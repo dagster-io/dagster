@@ -4,7 +4,10 @@ import tempfile
 
 from dagster import asset, file_relative_path, materialize
 from dagster_embedded_elt.sling import SlingMode, SlingResource
-from dagster_embedded_elt.sling.resources import SlingSourceConnection, SlingTargetConnection
+from dagster_embedded_elt.sling.resources import (
+    SlingSourceConnection,
+    SlingTargetConnection,
+)
 
 
 def test_simple_resource_connection():

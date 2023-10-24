@@ -20,7 +20,7 @@ def build_sling_asset(
     target_object: str,
     mode: SlingMode = SlingMode.FULL_REFRESH,
     primary_key: Optional[Union[str, List[str]]] = None,
-    update_key: Optional[Union[str, List[str]]] = None,
+    update_key: Optional[str] = None,
     source_options: Optional[Dict[str, Any]] = None,
     target_options: Optional[Dict[str, Any]] = None,
     sling_resource_key: str = "sling",
@@ -33,7 +33,7 @@ def build_sling_asset(
         target_object (str): The target object to sync to. This can be a table, or a path.
         mode (SlingMode, optional): The sync mode to use when syncing. Defaults to SlingMode.FULL_REFRESH.
         primary_key (Optional[Union[str, List[str]]], optional): The optional primary key to use when syncing.
-        update_key (Optional[Union[str, List[str]]], optional): The optional update key to use when syncing.
+        update_key (Optional[str], optional): The optional update key to use when syncing.
         source_options (Optional[Dict[str, Any]], optional): Any optional Sling source options to use when syncing.
         target_options (Optional[Dict[str, Any]], optional): Any optional target options to use when syncing.
         sling_resource_key (str, optional): The resource key for the SlingResource. Defaults to "sling".
@@ -68,9 +68,6 @@ def build_sling_asset(
     """
     if primary_key is not None and not isinstance(primary_key, list):
         primary_key = [primary_key]
-
-    if update_key is not None and not isinstance(update_key, list):
-        update_key = [update_key]
 
     @multi_asset(
         name=asset_spec.key.to_python_identifier(),
