@@ -1079,6 +1079,8 @@ def execute_asset_backfill_iteration_inner(
             asset_backfill_data.get_target_root_asset_partitions(instance_queryer)
         )
 
+        yield None
+
         next_latest_storage_id = instance_queryer.get_latest_storage_id_for_event_type(
             event_type=DagsterEventType.ASSET_MATERIALIZATION
         )
