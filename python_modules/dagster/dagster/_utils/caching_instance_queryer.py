@@ -865,7 +865,6 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         to be considered up to date.
         """
         # Self partition mappings impose constraints on all historical partitions
-        # TODO: add more filters
         return asset_key == upstream_asset_key
 
     @cached_method
