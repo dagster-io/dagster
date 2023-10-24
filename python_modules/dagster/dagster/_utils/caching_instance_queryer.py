@@ -855,7 +855,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         return updated_parents
 
     def have_ignorable_partition_mapping_for_outdated(
-        self, asset_key: AssetKey, in_asset_key: AssetKey
+        self, asset_key: AssetKey, upstream_asset_key: AssetKey
     ) -> bool:
         """Returns whether the given assets have a partition mapping between them which can be
         ignored in the context of calculating if an asset is outdated or not.
@@ -865,14 +865,16 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         to be considered up to date.
         """
         # Self partition mappings impose constraints on all historical partitions
-        if asset_key == in_asset_key:
+        if asset_key == upstream_asset_key:
             return True
         # Unpartitioned children of partitioned parents impose constraints on all upstream
         # partitions if they have the default AllPartitionMapping
         if not self.asset_graph.is_partitioned(asset_key) and self.asset_graph.is_partitioned(
-            in_asset_key
+            upstream_asset_key
         ):
-            partition_mapping = self.asset_graph.get_partition_mapping(asset_key, in_asset_key)
+            partition_mapping = self.asset_graph.get_partition_mapping(
+                asset_key, upstream_asset_key
+            )
             return isinstance(partition_mapping, AllPartitionMapping)
         return False
 
