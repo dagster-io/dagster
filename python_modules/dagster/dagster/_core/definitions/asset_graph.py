@@ -41,7 +41,11 @@ from .events import AssetKey, AssetKeyPartitionKey
 from .freshness_policy import FreshnessPolicy
 from .partition import PartitionsDefinition, PartitionsSubset
 from .partition_key_range import PartitionKeyRange
-from .partition_mapping import PartitionMapping, UpstreamPartitionsResult, infer_partition_mapping
+from .partition_mapping import (
+    PartitionMapping,
+    UpstreamPartitionsResult,
+    infer_partition_mapping,
+)
 from .source_asset import SourceAsset
 from .time_window_partitions import (
     get_time_partition_key,

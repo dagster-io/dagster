@@ -476,6 +476,10 @@ class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOut
             for parent in context.get_parents_that_will_not_be_materialized_on_current_tick(
                 asset_partition=candidate
             ):
+                if context.instance_queryer.have_ignorable_partition_mapping_for_outdated(
+                    candidate.asset_key, parent.asset_key
+                ):
+                    continue
                 outdated_ancestors.update(
                     context.instance_queryer.get_outdated_ancestors(asset_partition=parent)
                 )
