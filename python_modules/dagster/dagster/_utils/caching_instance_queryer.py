@@ -29,7 +29,7 @@ from dagster._core.definitions.data_version import (
 )
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.partition import DynamicPartitionsDefinition, PartitionsSubset
-from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
+from dagster._core.definitions.partition_mapping import AllPartitionMapping
 from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsDefinition,
     get_time_partition_key,
@@ -854,6 +854,28 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             )
         return updated_parents
 
+    def have_ignorable_partition_mapping_for_outdated_check(
+        self, asset_key: AssetKey, in_asset_key: AssetKey
+    ) -> bool:
+        """Returns whether the given assets have a partition mapping between them which can be
+        ignored in the context of the skip_on_parent_outdated rule.
+
+        These mappings are ignored in cases where respecting them would require an unrealistic
+        number of upstream partitions to be in a good state before allowing the downstream asset to
+        be materialized.
+        """
+        # Self partition mappings impose constraints on all historical partitions
+        if asset_key == in_asset_key:
+            return True
+        # Unpartitioned children of partitioned parents impose constraints on all upstream
+        # partitions if they have the default AllPartitionMapping
+        if not self.asset_graph.is_partitioned(asset_key) and self.asset_graph.is_partitioned(
+            in_asset_key
+        ):
+            partition_mapping = self.asset_graph.get_partition_mapping(asset_key, in_asset_key)
+            return isinstance(partition_mapping, AllPartitionMapping)
+        return False
+
     @cached_method
     def get_outdated_ancestors(
         self, *, asset_partition: AssetKeyPartitionKey
@@ -872,16 +894,10 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         ignored_parent_keys = {
             parent
             for parent in self.asset_graph.get_parents(asset_partition.asset_key)
-            if parent == asset_partition.asset_key
-            or (
-                self.asset_graph.is_partitioned(parent)
-                and not isinstance(
-                    self.asset_graph.get_partition_mapping(asset_partition.asset_key, parent),
-                    IdentityPartitionMapping,
-                )
+            if self.have_ignorable_partition_mapping_for_outdated_check(
+                asset_partition.asset_key, parent
             )
         }
-        print(asset_partition, "IGNORED", ignored_parent_keys)
 
         updated_parents = self.get_parent_asset_partitions_updated_after_child(
             asset_partition=asset_partition,
