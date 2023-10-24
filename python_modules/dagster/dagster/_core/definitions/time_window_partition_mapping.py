@@ -151,7 +151,7 @@ class TimeWindowPartitionMapping(
         from_partitions_subset: PartitionsSubset,
         start_offset: int,
         end_offset: int,
-        current_time: Optional[datetime] = None,
+        current_time: Optional[datetime],
     ) -> UpstreamPartitionsResult:
         """Maps the partitions in from_partitions_subset to partitions in to_partitions_def.
 
@@ -224,8 +224,7 @@ class TimeWindowPartitionMapping(
 
             # Align the windows to partition boundaries in the target PartitionsDefinition
             if (from_partitions_def.cron_schedule == to_partitions_def.cron_schedule) or (
-                from_partitions_def.cron_schedule == "0 0 * * *"
-                and to_partitions_def.cron_schedule == "0 * * * *"
+                from_partitions_def.is_basic_daily and to_partitions_def.is_basic_hourly
             ):
                 # If the above conditions hold true, then we're confident that the partition
                 # boundaries in the PartitionsDefinition that we're mapping from match up with
@@ -307,7 +306,7 @@ class TimeWindowPartitionMapping(
         from_partitions_subset: TimeWindowPartitionsSubset,
         start_offset: int,
         end_offset: int,
-        current_time: Optional[datetime] = None,
+        current_time: Optional[datetime],
     ) -> Optional[UpstreamPartitionsResult]:
         """The main partition-mapping logic relies heavily on expensive cron iteration operations.
 
@@ -344,8 +343,8 @@ class TimeWindowPartitionMapping(
         from_last_partition_window = from_partitions_def.get_last_partition_window(current_time)
         to_last_partition_window = to_partitions_def.get_last_partition_window(current_time)
         if (
-            from_partitions_def.cron_schedule == "0 0 * * *"
-            and to_partitions_def.cron_schedule == "0 * * * *"
+            from_partitions_def.is_basic_daily
+            and to_partitions_def.is_basic_hourly
             and (
                 from_partitions_def.start >= to_partitions_def.start
                 or from_partitions_subset.first_start >= to_partitions_def.start
@@ -390,8 +389,10 @@ class TimeWindowPartitionMapping(
 def _offsetted_datetime(
     partitions_def: TimeWindowPartitionsDefinition, dt: datetime, offset: int
 ) -> datetime:
-    if partitions_def.cron_schedule == "0 0 * * *" and offset != 0:
+    if partitions_def.is_basic_daily and offset != 0:
         result = dt + timedelta(days=offset)
+    elif partitions_def.is_basic_hourly and offset != 0:
+        result = dt + timedelta(hours=offset)
     else:
         result = dt
         for _ in range(abs(offset)):

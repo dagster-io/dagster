@@ -369,7 +369,7 @@ class TimeWindowPartitionsDefinition(
         partition_key_dt = pendulum.instance(
             datetime.strptime(partition_key, self.fmt), tz=self.timezone
         )
-        if self.cron_schedule == "0 * * * *" or self.cron_schedule == "0 0 * * *":
+        if self.is_basic_hourly or self.is_basic_daily:
             return partition_key_dt
         # the datetime format might not include granular components, so we need to recover them,
         # e.g. if cron_schedule="0 7 * * *" and fmt="%Y-%m-%d".
@@ -415,13 +415,12 @@ class TimeWindowPartitionsDefinition(
     ) -> Optional[TimeWindow]:
         windows_iter = iter(self._reverse_iterate_time_windows(start_dt))
         prev_window = next(windows_iter)
-        first_partition_window = self.get_first_partition_window()
-        if respect_bounds and (
-            first_partition_window is None or prev_window.start < first_partition_window.start
-        ):
-            return None
-        else:
-            return prev_window
+        if respect_bounds:
+            first_partition_window = self.get_first_partition_window()
+            if first_partition_window is None or prev_window.start < first_partition_window.start:
+                return None
+
+        return prev_window
 
     @functools.lru_cache(maxsize=256)
     def _get_first_partition_window(self, *, current_time: datetime) -> Optional[TimeWindow]:
@@ -795,6 +794,14 @@ class TimeWindowPartitionsDefinition(
             and self.cron_schedule == other.cron_schedule
             and self.end_offset == other.end_offset
         )
+
+    @property
+    def is_basic_daily(self) -> bool:
+        return self.cron_schedule == "0 0 * * *"
+
+    @property
+    def is_basic_hourly(self) -> bool:
+        return self.cron_schedule == "0 * * * *"
 
 
 class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
@@ -1455,7 +1462,7 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
             # enough that the end time can't put them past dt, then we know that the end time is
             # earlier than dt.
             if (self._partitions_def.cron_schedule == dt_cron_schedule) or (
-                self._partitions_def.cron_schedule == "0 * * * *"
+                self._partitions_def.is_basic_hourly
                 and dt_cron_schedule in ["0 0 * * *", "0 * * * *"]
             ):
                 return (
