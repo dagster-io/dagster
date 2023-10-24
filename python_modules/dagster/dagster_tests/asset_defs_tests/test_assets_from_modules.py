@@ -249,11 +249,6 @@ def _load_assets_from_module_with_assets(**kwargs):
     ],
 )
 def test_source_key_prefix(load_fn):
-    from . import asset_package
-    from .asset_package import module_with_assets
-
-    print(asset_package.__name__, module_with_assets.__name__)
-
     prefix = ["foo", "my_cool_prefix"]
     assets_without_prefix_sources = load_fn(key_prefix=prefix)
     assert get_source_asset_with_key(assets_without_prefix_sources, AssetKey(["elvis_presley"]))
