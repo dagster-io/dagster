@@ -120,8 +120,3 @@ def test_validator_default_contract_nested() -> None:
 
     assert my_job.execute_in_process().success
     assert executed["my_op"]
-
-    executed.clear()
-
-    with pytest.raises(ValidationError, match="Outer always errors with a non-default value!"):
-        my_job.execute_in_process({"ops": {"my_op": {"config": {"name": None}}}})

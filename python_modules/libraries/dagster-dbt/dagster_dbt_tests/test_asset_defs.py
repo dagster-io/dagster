@@ -175,7 +175,7 @@ def test_fail_immediately(
     if isinstance(good_dbt, DbtCliClientResource):
         assert (
             good_dbt.with_replaced_resource_context(build_init_resource_context())
-            .get_dbt_client()  # type: ignore
+            .get_dbt_client()
             .get_run_results_json()
         )
     elif isinstance(good_dbt, DbtCliResource):
