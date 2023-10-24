@@ -9,7 +9,6 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
-    Set,
     Union,
     cast,
 )
@@ -601,25 +600,42 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
     @public
     @property
     def selected_output_names(self) -> AbstractSet[str]:
-        """Get the output names that correspond to the current selection of assets this execution is expected to materialize."""
+        """Get the output names that correspond to the current selection of assets and asset checks
+        this execution is expected to materialize.
+        """
         # map selected asset keys to the output names they correspond to
-        selected_asset_keys = self.selected_asset_keys
-        selected_outputs: Set[str] = set()
-        for output_name in self.op.output_dict.keys():
+
+        def _output_is_selected(output_name: str) -> bool:
             asset_info = self.job_def.asset_layer.asset_info_for_output(
                 self.node_handle, output_name
             )
-            if any(  #  For graph-backed assets, check if a downstream asset is selected
+            if asset_info and asset_info.key in self.selected_asset_keys:
+                return True
+
+            #  For graph-backed assets, check if a downstream asset is selected
+            if any(
                 [
-                    asset_key in selected_asset_keys
+                    asset_key in self.selected_asset_keys
                     for asset_key in self.job_def.asset_layer.downstream_dep_assets(
                         self.node_handle, output_name
                     )
                 ]
-            ) or (asset_info and asset_info.key in selected_asset_keys):
-                selected_outputs.add(output_name)
+            ):
+                return True
 
-        return selected_outputs
+            if (
+                self.job_def.asset_layer.asset_check_key_for_output(self.node_handle, output_name)
+                in self.selected_asset_check_keys
+            ):
+                return True
+
+            return False
+
+        return {
+            output_name
+            for output_name in self.op.output_dict.keys()
+            if _output_is_selected(output_name)
+        }
 
     @public
     def asset_key_for_output(self, output_name: str = "result") -> AssetKey:

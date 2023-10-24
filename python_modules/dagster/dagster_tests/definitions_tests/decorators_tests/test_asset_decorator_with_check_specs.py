@@ -569,6 +569,12 @@ def test_can_subset_no_selection() -> None:
             AssetCheckKey(AssetKey("asset1"), "check1"),
             AssetCheckKey(AssetKey("asset2"), "check2"),
         }
+        assert context.selected_output_names == {
+            "asset1",
+            "asset2",
+            "asset1_check1",
+            "asset2_check2",
+        }
 
         yield Output(value=None, output_name="asset1")
         yield AssetCheckResult(asset_key="asset1", check_name="check1", passed=True)
@@ -595,6 +601,7 @@ def test_can_subset() -> None:
     def foo(context: AssetExecutionContext):
         assert context.selected_asset_keys == {AssetKey("asset1")}
         assert context.selected_asset_check_keys == {AssetCheckKey(AssetKey("asset1"), "check1")}
+        assert context.selected_output_names == {"asset1", "asset1_check1"}
 
         yield Output(value=None, output_name="asset1")
         yield AssetCheckResult(asset_key="asset1", check_name="check1", passed=True)
@@ -621,6 +628,7 @@ def test_can_subset_result_for_unselected_check() -> None:
     def foo(context: AssetExecutionContext):
         assert context.selected_asset_keys == {AssetKey("asset1")}
         assert context.selected_asset_check_keys == {AssetCheckKey(AssetKey("asset1"), "check1")}
+        assert context.selected_output_names == {"asset1", "asset1_check1"}
 
         yield Output(value=None, output_name="asset1")
         yield AssetCheckResult(asset_key="asset1", check_name="check1", passed=True)
@@ -642,6 +650,7 @@ def test_can_subset_select_only_asset() -> None:
     def foo(context: AssetExecutionContext):
         assert context.selected_asset_keys == {AssetKey("asset1")}
         assert context.selected_asset_check_keys == set()
+        assert context.selected_output_names == {"asset1"}
 
         yield Output(value=None, output_name="asset1")
 
@@ -669,6 +678,7 @@ def test_can_subset_select_only_check() -> None:
     def foo(context: AssetExecutionContext):
         assert context.selected_asset_keys == set()
         assert context.selected_asset_check_keys == {AssetCheckKey(AssetKey("asset1"), "check1")}
+        assert context.selected_output_names == {"asset1_check1"}
 
         yield AssetCheckResult(asset_key="asset1", check_name="check1", passed=True)
 
