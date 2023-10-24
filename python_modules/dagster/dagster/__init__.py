@@ -218,6 +218,12 @@ from dagster._core.definitions.input import (
     InputMapping as InputMapping,
 )
 from dagster._core.definitions.job_definition import JobDefinition as JobDefinition
+from dagster._core.definitions.load_asset_checks_from_modules import (
+    load_asset_checks_from_current_module as load_asset_checks_from_current_module,
+    load_asset_checks_from_modules as load_asset_checks_from_modules,
+    load_asset_checks_from_package_module as load_asset_checks_from_package_module,
+    load_asset_checks_from_package_name as load_asset_checks_from_package_name,
+)
 from dagster._core.definitions.load_assets_from_modules import (
     load_assets_from_current_module as load_assets_from_current_module,
     load_assets_from_modules as load_assets_from_modules,
