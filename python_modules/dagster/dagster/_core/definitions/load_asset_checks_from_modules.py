@@ -1,5 +1,8 @@
+import inspect
 from types import ModuleType
 from typing import Iterable, Optional, Sequence
+
+import dagster._check as check
 
 from .asset_checks import AssetChecksDefinition
 from .events import (
@@ -53,3 +56,32 @@ def load_asset_checks_from_modules(
     )
 
     return _checks_with_attributes(_checks_from_modules(modules), asset_key_prefix=asset_key_prefix)
+
+
+def load_asset_checks_from_current_module(
+    asset_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+) -> Sequence[AssetChecksDefinition]:
+    """Constructs a list of asset checks from the module where this function is called. This is most often used in conjunction
+    with a call to `load_assets_from_current_module`.
+
+    Args:
+        asset_key_prefix (Optional[Union[str, Sequence[str]]]):
+            The prefix for the asset keys targeted by the loaded checks. This should match the key_prefix
+            argument to load_assets_from_modules.
+
+    Returns:
+        Sequence[AssetChecksDefinition]:
+            A list containing asset checks defined in the current module.
+    """
+    caller = inspect.stack()[1]
+    module = inspect.getmodule(caller[0])
+    if module is None:
+        check.failed("Could not find a module for the caller")
+
+    asset_key_prefix = check_opt_coercible_to_asset_key_prefix_param(
+        asset_key_prefix, "asset_key_prefix"
+    )
+
+    return _checks_with_attributes(
+        _checks_from_modules([module]), asset_key_prefix=asset_key_prefix
+    )
