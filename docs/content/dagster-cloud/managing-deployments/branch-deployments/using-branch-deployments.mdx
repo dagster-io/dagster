@@ -112,7 +112,9 @@ After the above has occurred:
        --api-token $DAGSTER_CLOUD_API_TOKEN \
        --location-file $LOCATION_FILE \
        --location-name $LOCATION_NAME \
-       --image "${LOCATION_REGISTRY_URL}:${IMAGE_TAG}"
+       --image "${LOCATION_REGISTRY_URL}:${IMAGE_TAG}" \
+       --commit-hash "${COMMIT_SHA}" \
+       --git-url "${GIT_URL}"
    ```
 
    Refer to the [Code location guide](/dagster-cloud/managing-deployments/code-locations) for more info on how a location's details are specified.
