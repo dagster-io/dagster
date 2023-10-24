@@ -1360,12 +1360,7 @@ class RunInfo(
 class AssetExecutionContext(OpExecutionContext):
     def __init__(self, step_execution_context: StepExecutionContext):
         super().__init__(step_execution_context=step_execution_context)
-        self._asset_info = AssetInfo(
-            key=self.asset_key,
-            assets_def=self.assets_def,
-            code_version=self.assets_def.code_versions_by_key[self.asset_key],
-            provenance=self.get_asset_provenance(self.asset_key),
-        )
+
         self._run_info = RunInfo(
             run_id=self.run_id,
             dagster_run=self.run,
@@ -1373,14 +1368,29 @@ class AssetExecutionContext(OpExecutionContext):
             retry_number=self.retry_number,
         )
 
+        self._asset_info = None
         self._asset_info_by_key = None
 
     @property
-    def asset_info(self):
+    def asset_info(self) -> AssetInfo:
+        if len(self.assets_def.keys_by_output_name.keys()) > 1:
+            raise DagsterInvariantViolationError(
+                "Cannot call `context.asset_info` in a multi_asset with more than one asset. Use"
+                " `context.asset_info_by_key` instead."
+            )
+        if self._asset_info:
+            return self._asset_info
+
+        self._asset_info = AssetInfo(
+            key=self.asset_key,
+            assets_def=self.assets_def,
+            code_version=self.assets_def.code_versions_by_key[self.asset_key],
+            provenance=self.get_asset_provenance(self.asset_key),
+        )
         return self._asset_info
 
     @property
-    def asset_info_by_key(self):
+    def asset_info_by_key(self) -> Mapping[AssetKey, AssetInfo]:
         if self._asset_info_by_key:
             return self._asset_info_by_key
 
@@ -1395,7 +1405,7 @@ class AssetExecutionContext(OpExecutionContext):
         return self._asset_info_by_key
 
     @property
-    def run_info(self):
+    def run_info(self) -> RunInfo:
         return self._run_info
 
 
