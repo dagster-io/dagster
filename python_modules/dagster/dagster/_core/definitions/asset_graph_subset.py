@@ -42,7 +42,9 @@ class AssetGraphSubset:
 
     @property
     def asset_keys(self) -> AbstractSet[AssetKey]:
-        return self.partitions_subsets_by_asset_key.keys() | self._non_partitioned_asset_keys
+        return {
+            key for key, subset in self.partitions_subsets_by_asset_key.items() if len(subset) > 0
+        } | self._non_partitioned_asset_keys
 
     @property
     def num_partitions_and_non_partitioned_assets(self):
@@ -148,6 +150,11 @@ class AssetGraphSubset:
         self, other: Union["AssetGraphSubset", AbstractSet[AssetKeyPartitionKey]]
     ) -> "AssetGraphSubset":
         return self._oper(other, operator.sub)
+
+    def __and__(
+        self, other: Union["AssetGraphSubset", AbstractSet[AssetKeyPartitionKey]]
+    ) -> "AssetGraphSubset":
+        return self._oper(other, operator.and_)
 
     def filter_asset_keys(self, asset_keys: AbstractSet[AssetKey]) -> "AssetGraphSubset":
         return AssetGraphSubset(
