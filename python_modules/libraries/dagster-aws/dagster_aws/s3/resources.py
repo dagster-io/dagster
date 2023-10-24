@@ -47,7 +47,7 @@ class ResourceWithS3Configuration(ConfigurableResource):
     aws_secret_access_key: Optional[str] = Field(
         default=None, description="AWS secret access key to use when creating the boto3 session."
     )
-    aws_session_token: str = Field(
+    aws_session_token: Optional[str] = Field(
         default=None, description="AWS session token to use when creating the boto3 session."
     )
 
