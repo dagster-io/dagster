@@ -96,6 +96,21 @@ def experimental_warning(
 
 
 # ########################
+# ##### Config arg warning
+# ########################
+
+
+def config_argument_warning(
+    param_name: str, function_name: str
+) -> None:
+    warnings.warn(
+        f"Parameter '{param_name}' on op/asset function '{function_name}' was annotated as"
+        " a dagster.Config type. Did you mean to name this parameter 'config'"
+        " instead?",
+        SyntaxWarning,
+    )
+
+# ########################
 # ##### DISABLE DAGSTER WARNINGS
 # ########################
 

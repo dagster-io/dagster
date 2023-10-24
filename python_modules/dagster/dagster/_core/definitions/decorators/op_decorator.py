@@ -31,7 +31,7 @@ from dagster._core.definitions.resource_annotation import (
 )
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.types.dagster_type import DagsterTypeKind
-from dagster._utils.warnings import normalize_renamed_param
+from dagster._utils.warnings import normalize_renamed_param, config_argument_warning
 
 from ..input import In, InputDefinition
 from ..output import Out
@@ -311,11 +311,8 @@ class DecoratedOpFunction(NamedTuple):
         positional_inputs = self.positional_inputs()
         for param in get_function_params(self.decorated_fn):
             if safe_is_subclass(param.annotation, Config) and param.name in positional_inputs:
-                raise DagsterInvalidDefinitionError(
-                    f"Parameter '{param.name}' on op/asset function '{self.name}' was annotated as"
-                    " a dagster.Config type. Did you mean to name this parameter 'config'"
-                    " instead?",
-                )
+                config_argument_warning(param.name, self.name)
+               
 
     def get_config_arg(self) -> Parameter:
         for param in get_function_params(self.decorated_fn):
