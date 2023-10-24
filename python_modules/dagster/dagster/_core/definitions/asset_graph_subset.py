@@ -151,6 +151,11 @@ class AssetGraphSubset:
     ) -> "AssetGraphSubset":
         return self._oper(other, operator.sub)
 
+    def __and__(
+        self, other: Union["AssetGraphSubset", AbstractSet[AssetKeyPartitionKey]]
+    ) -> "AssetGraphSubset":
+        return self._oper(other, operator.and_)
+
     def filter_asset_keys(self, asset_keys: AbstractSet[AssetKey]) -> "AssetGraphSubset":
         return AssetGraphSubset(
             self.asset_graph,

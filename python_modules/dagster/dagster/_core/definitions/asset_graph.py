@@ -597,7 +597,10 @@ class AssetGraph:
                     if child_partitions_def:
                         if partitions_subset is None:
                             child_partitions_subset = (
-                                child_partitions_def.subset_with_all_partitions()
+                                child_partitions_def.subset_with_all_partitions(
+                                    current_time=current_time,
+                                    dynamic_partitions_store=dynamic_partitions_store,
+                                )
                             )
                             queued_subsets_by_asset_key[child] = child_partitions_subset
                         else:

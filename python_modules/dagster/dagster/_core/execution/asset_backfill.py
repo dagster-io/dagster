@@ -179,20 +179,20 @@ class AssetBackfillData(NamedTuple):
         self, instance_queryer: CachingInstanceQueryer
     ) -> Iterable[AssetKeyPartitionKey]:
         def _get_self_and_downstream_targeted_subset(
-            asset_partitions: Iterable[AssetKeyPartitionKey],
+            initial_subset: AssetGraphSubset,
         ) -> AssetGraphSubset:
-            return AssetGraphSubset.from_asset_partition_set(
-                self.target_subset.asset_graph.bfs_filter_asset_partitions(
-                    instance_queryer,
-                    lambda asset_partitions, _: any(
-                        asset_partition in self.target_subset
-                        for asset_partition in asset_partitions
-                    ),
-                    asset_partitions,
-                    evaluation_time=instance_queryer.evaluation_time,
-                ),
-                self.target_subset.asset_graph,
-            )
+            self_and_downstream = initial_subset
+            for asset_key in initial_subset.asset_keys:
+                self_and_downstream = self_and_downstream | (
+                    self.target_subset.asset_graph.bfs_filter_subsets(
+                        instance_queryer,
+                        lambda asset_key, _: asset_key in self.target_subset,
+                        initial_subset.filter_asset_keys({asset_key}),
+                        current_time=instance_queryer.evaluation_time,
+                    )
+                    & self.target_subset
+                )
+            return self_and_downstream
 
         assets_with_no_parents_in_target_subset = {
             asset_key
@@ -204,12 +204,14 @@ class AssetBackfillData(NamedTuple):
             )
         }
 
-        root_partitions = set(
-            self.target_subset.filter_asset_keys(
-                assets_with_no_parents_in_target_subset
-            ).iterate_asset_partitions()
-        )
-        root_and_downstream_partitions = _get_self_and_downstream_targeted_subset(root_partitions)
+        # The partitions that do not have any parents in the target subset
+        root_subset = self.target_subset.filter_asset_keys(assets_with_no_parents_in_target_subset)
+
+        # Partitions in root_subset and their downstreams within the target subset
+        root_and_downstream_partitions = _get_self_and_downstream_targeted_subset(root_subset)
+
+        # The result of the root_and_downstream_partitions on the previous iteration, used to
+        # determine when no new partitions are targeted so we can early exit
         previous_root_and_downstream_partitions = None
 
         while (
@@ -217,22 +219,26 @@ class AssetBackfillData(NamedTuple):
             and root_and_downstream_partitions
             != previous_root_and_downstream_partitions  # Check against previous iteration result to exit if no new partitions are targeted
         ):
+            # Find the asset graph subset is not yet targeted by the backfill
             unreachable_targets = self.target_subset - root_and_downstream_partitions
 
-            unreachable_target_root_partitions = set(
-                unreachable_targets.filter_asset_keys(
-                    AssetSelection.keys(*unreachable_targets.asset_keys)
-                    .sources()
-                    .resolve(unreachable_targets.asset_graph)
-                ).iterate_asset_partitions()
+            # Find the root assets of the unreachable targets. Any targeted partition in these
+            # assets becomes part of the root subset
+            unreachable_target_root_subset = unreachable_targets.filter_asset_keys(
+                AssetSelection.keys(*unreachable_targets.asset_keys)
+                .sources()
+                .resolve(unreachable_targets.asset_graph)
             )
+            root_subset = root_subset | unreachable_target_root_subset
 
-            root_partitions = root_partitions | unreachable_target_root_partitions
-
+            # Track the previous value of root_and_downstream_partitions.
+            # If the values are the same, we know no new partitions have been targeted.
             previous_root_and_downstream_partitions = root_and_downstream_partitions
+
+            # Update root_and_downstream_partitions to include downstreams of the new root subset
             root_and_downstream_partitions = (
                 root_and_downstream_partitions
-                | _get_self_and_downstream_targeted_subset(unreachable_target_root_partitions)
+                | _get_self_and_downstream_targeted_subset(unreachable_target_root_subset)
             )
 
         if root_and_downstream_partitions == previous_root_and_downstream_partitions:
@@ -243,7 +249,7 @@ class AssetBackfillData(NamedTuple):
                 " This is likely a system error. Please report this issue to the Dagster team."
             )
 
-        return list(root_partitions)
+        return list(root_subset.iterate_asset_partitions())
 
     def get_target_root_partitions_subset(self) -> PartitionsSubset:
         """Returns the most upstream partitions subset that was targeted by the backfill."""
