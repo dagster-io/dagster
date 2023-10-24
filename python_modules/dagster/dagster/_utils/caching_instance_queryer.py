@@ -865,18 +865,8 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         to be considered up to date.
         """
         # Self partition mappings impose constraints on all historical partitions
-        if asset_key == upstream_asset_key:
-            return True
-        # Unpartitioned children of partitioned parents impose constraints on all upstream
-        # partitions if they have the default AllPartitionMapping
-        if not self.asset_graph.is_partitioned(asset_key) and self.asset_graph.is_partitioned(
-            upstream_asset_key
-        ):
-            partition_mapping = self.asset_graph.get_partition_mapping(
-                asset_key, upstream_asset_key
-            )
-            return isinstance(partition_mapping, AllPartitionMapping)
-        return False
+        # TODO: add more filters
+        return asset_key == upstream_asset_key
 
     @cached_method
     def get_outdated_ancestors(

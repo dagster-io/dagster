@@ -691,25 +691,6 @@ auto_materialize_policy_scenarios = {
         ],
         expected_run_requests=[run_request(["unpartitioned2"])],
     ),
-    "test_allow_outdated_partitioned_parent": AssetReconciliationScenario(
-        assets=two_partitioned_to_three_unpartitioned,
-        asset_selection=AssetSelection.keys("unpartitioned1", "unpartitioned2", "unpartitioned3"),
-        unevaluated_runs=[
-            # fully backfill
-            run(["partitioned1", "partitioned2"], partition_key="a"),
-            run(["partitioned1", "partitioned2"], partition_key="b"),
-            run(["unpartitioned1", "unpartitioned2", "unpartitioned3"]),
-            # now partitioned2 is outdated...
-            run(["partitioned1"], partition_key="b"),
-            # ...and unpartitioned1 has been updated
-            run(["unpartitioned1"]),
-        ],
-        expected_run_requests=[
-            # unpartitioned2/unpartitioned3 should be able to materialize even though partitioned2
-            # is outdated
-            run_request(["unpartitioned2", "unpartitioned3"]),
-        ],
-    ),
     "test_dont_allow_outdated_unpartitioned_parent": AssetReconciliationScenario(
         assets=two_partitioned_to_three_unpartitioned,
         asset_selection=AssetSelection.keys("unpartitioned3"),
