@@ -46,8 +46,7 @@ class MSTeamsResource(ConfigurableResource):
             )
     """
 
-    hook_url: Optional[str] = Field(
-        default=None,
+    hook_url: str = Field(
         description=(
             "To send messages to MS Teams channel, an incoming webhook has to be created. The"
             " incoming webhook url must be given as a part of the resource config to the"
