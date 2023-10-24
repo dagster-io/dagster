@@ -301,7 +301,7 @@ Unlike Hybrid, Serverless Deployments on Dagster Cloud require direct access to 
 
 ## Whitelisting Dagster's IP addresses
 
-To communicate with Dagster Cloud, you may need to whitelist the following static IP addresses:
+Serverless code will make requests from one of the following IP addresses. You may need to whitelist them for services your code interacts with.
 
 ```plain
 34.216.9.66

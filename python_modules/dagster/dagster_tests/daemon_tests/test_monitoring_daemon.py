@@ -415,7 +415,6 @@ def test_long_running_termination_failure(
         event = run_failure_events[0].dagster_event
         assert event
         assert (
-            event.message
-            == "This job is being forcibly marked as failed. The "
+            event.message == "This job is being forcibly marked as failed. The "
             "computational resources created by the run may not have been fully cleaned up."
         )

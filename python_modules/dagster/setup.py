@@ -130,14 +130,11 @@ setup(
             "yamllint",
             "morefs[asynclocal]; python_version>='3.8'",
         ],
-        "black": [
-            "black[jupyter]==23.9.1",
-        ],
         "mypy": [
             "mypy==0.991",
         ],
         "pyright": [
-            "pyright==1.1.327",
+            "pyright==1.1.332",
             ### Stub packages
             "pandas-stubs",  # version will be resolved against pandas
             "types-backports",  # version will be resolved against backports
@@ -161,7 +158,7 @@ setup(
             "types-toml",  # version will be resolved against toml
         ],
         "ruff": [
-            "ruff==0.0.289",
+            "ruff==0.1.1",
         ],
     },
     entry_points={

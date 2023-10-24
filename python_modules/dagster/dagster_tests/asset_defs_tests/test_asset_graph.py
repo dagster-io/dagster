@@ -68,16 +68,20 @@ def asset_graph_from_assets_fixture(request) -> Callable[[List[AssetsDefinition]
 
 def test_basics(asset_graph_from_assets):
     @asset(code_version="1")
-    def asset0(): ...
+    def asset0():
+        ...
 
     @asset(partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"))
-    def asset1(asset0): ...
+    def asset1(asset0):
+        ...
 
     @asset(partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"))
-    def asset2(asset0): ...
+    def asset2(asset0):
+        ...
 
     @asset(partitions_def=HourlyPartitionsDefinition(start_date="2022-01-01-00:00"))
-    def asset3(asset1, asset2): ...
+    def asset3(asset1, asset2):
+        ...
 
     assets = [asset0, asset1, asset2, asset3]
     asset_graph = asset_graph_from_assets(assets)
@@ -97,10 +101,12 @@ def test_basics(asset_graph_from_assets):
 
 def test_get_children_partitions_unpartitioned_parent_partitioned_child(asset_graph_from_assets):
     @asset
-    def parent(): ...
+    def parent():
+        ...
 
     @asset(partitions_def=StaticPartitionsDefinition(["a", "b"]))
-    def child(parent): ...
+    def child(parent):
+        ...
 
     with instance_for_test() as instance:
         current_time = pendulum.now("UTC")
@@ -113,10 +119,12 @@ def test_get_children_partitions_unpartitioned_parent_partitioned_child(asset_gr
 
 def test_get_parent_partitions_unpartitioned_child_partitioned_parent(asset_graph_from_assets):
     @asset(partitions_def=StaticPartitionsDefinition(["a", "b"]))
-    def parent(): ...
+    def parent():
+        ...
 
     @asset
-    def child(parent): ...
+    def child(parent):
+        ...
 
     with instance_for_test() as instance:
         current_time = pendulum.now("UTC")
@@ -131,10 +139,12 @@ def test_get_parent_partitions_unpartitioned_child_partitioned_parent(asset_grap
 
 def test_get_children_partitions_fan_out(asset_graph_from_assets):
     @asset(partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"))
-    def parent(): ...
+    def parent():
+        ...
 
     @asset(partitions_def=HourlyPartitionsDefinition(start_date="2022-01-01-00:00"))
-    def child(parent): ...
+    def child(parent):
+        ...
 
     asset_graph = asset_graph_from_assets([parent, child])
     with instance_for_test() as instance:
@@ -152,10 +162,12 @@ def test_get_children_partitions_fan_out(asset_graph_from_assets):
 
 def test_get_parent_partitions_fan_in(asset_graph_from_assets):
     @asset(partitions_def=HourlyPartitionsDefinition(start_date="2022-01-01-00:00"))
-    def parent(): ...
+    def parent():
+        ...
 
     @asset(partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"))
-    def child(parent): ...
+    def child(parent):
+        ...
 
     asset_graph = asset_graph_from_assets([parent, child])
 
@@ -174,10 +186,12 @@ def test_get_parent_partitions_fan_in(asset_graph_from_assets):
 
 def test_get_parent_partitions_non_default_partition_mapping(asset_graph_from_assets):
     @asset(partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"))
-    def parent(): ...
+    def parent():
+        ...
 
     @asset(ins={"parent": AssetIn(partition_mapping=LastPartitionMapping())})
-    def child(parent): ...
+    def child(parent):
+        ...
 
     asset_graph = asset_graph_from_assets([parent, child])
 
@@ -224,7 +238,8 @@ def test_custom_unsupported_partition_mapping():
             raise NotImplementedError()
 
     @asset(partitions_def=StaticPartitionsDefinition(["1", "2", "3"]))
-    def parent(): ...
+    def parent():
+        ...
 
     with pytest.warns(
         DeprecationWarning,
@@ -239,7 +254,8 @@ def test_custom_unsupported_partition_mapping():
             partitions_def=StaticPartitionsDefinition(["1", "2", "3"]),
             ins={"parent": AssetIn(partition_mapping=TrailingWindowPartitionMapping())},
         )
-        def child(parent): ...
+        def child(parent):
+            ...
 
     internal_asset_graph = AssetGraph.from_assets([parent, child])
     external_asset_graph = to_external_asset_graph([parent, child])
@@ -262,7 +278,8 @@ def test_custom_unsupported_partition_mapping():
 
 def test_required_multi_asset_sets_non_subsettable_multi_asset(asset_graph_from_assets):
     @multi_asset(outs={"a": AssetOut(dagster_type=None), "b": AssetOut(dagster_type=None)})
-    def non_subsettable_multi_asset(): ...
+    def non_subsettable_multi_asset():
+        ...
 
     asset_graph = asset_graph_from_assets([non_subsettable_multi_asset])
     for asset_key in non_subsettable_multi_asset.keys:
@@ -275,7 +292,8 @@ def test_required_multi_asset_sets_subsettable_multi_asset(asset_graph_from_asse
     @multi_asset(
         outs={"a": AssetOut(dagster_type=None), "b": AssetOut(dagster_type=None)}, can_subset=True
     )
-    def subsettable_multi_asset(): ...
+    def subsettable_multi_asset():
+        ...
 
     asset_graph = asset_graph_from_assets([subsettable_multi_asset])
     for asset_key in subsettable_multi_asset.keys:
@@ -305,7 +323,8 @@ def test_required_multi_asset_sets_graph_backed_multi_asset(asset_graph_from_ass
 
 def test_required_multi_asset_sets_same_op_in_different_assets(asset_graph_from_assets):
     @op
-    def op1(): ...
+    def op1():
+        ...
 
     asset1 = AssetsDefinition.from_op(op1, keys_by_output_name={"result": AssetKey("a")})
     asset2 = AssetsDefinition.from_op(op1, keys_by_output_name={"result": AssetKey("b")})
@@ -356,16 +375,20 @@ def test_bfs_filter_asset_subsets(asset_graph_from_assets):
     daily_partitions_def = DailyPartitionsDefinition(start_date="2022-01-01")
 
     @asset(partitions_def=daily_partitions_def)
-    def asset0(): ...
+    def asset0():
+        ...
 
     @asset(partitions_def=daily_partitions_def)
-    def asset1(asset0): ...
+    def asset1(asset0):
+        ...
 
     @asset(partitions_def=daily_partitions_def)
-    def asset2(asset0): ...
+    def asset2(asset0):
+        ...
 
     @asset(partitions_def=HourlyPartitionsDefinition(start_date="2022-01-01-00:00"))
-    def asset3(asset1, asset2): ...
+    def asset3(asset1, asset2):
+        ...
 
     asset_graph = asset_graph_from_assets([asset0, asset1, asset2, asset3])
 
@@ -441,10 +464,12 @@ def test_bfs_filter_asset_subsets_different_mappings(asset_graph_from_assets):
     daily_partitions_def = DailyPartitionsDefinition(start_date="2022-01-01")
 
     @asset(partitions_def=daily_partitions_def)
-    def asset0(): ...
+    def asset0():
+        ...
 
     @asset(partitions_def=daily_partitions_def)
-    def asset1(asset0): ...
+    def asset1(asset0):
+        ...
 
     @asset(
         partitions_def=daily_partitions_def,
@@ -454,10 +479,12 @@ def test_bfs_filter_asset_subsets_different_mappings(asset_graph_from_assets):
             )
         },
     )
-    def asset2(asset0): ...
+    def asset2(asset0):
+        ...
 
     @asset(partitions_def=daily_partitions_def)
-    def asset3(asset1, asset2): ...
+    def asset3(asset1, asset2):
+        ...
 
     asset_graph = asset_graph_from_assets([asset0, asset1, asset2, asset3])
 
@@ -499,16 +526,20 @@ def test_asset_graph_subset_contains(asset_graph_from_assets) -> None:
     daily_partitions_def = DailyPartitionsDefinition(start_date="2022-01-01")
 
     @asset(partitions_def=daily_partitions_def)
-    def partitioned1(): ...
+    def partitioned1():
+        ...
 
     @asset(partitions_def=daily_partitions_def)
-    def partitioned2(): ...
+    def partitioned2():
+        ...
 
     @asset
-    def unpartitioned1(): ...
+    def unpartitioned1():
+        ...
 
     @asset
-    def unpartitioned2(): ...
+    def unpartitioned2():
+        ...
 
     asset_graph = asset_graph_from_assets(
         [partitioned1, partitioned2, unpartitioned1, unpartitioned2]
@@ -538,16 +569,20 @@ def test_asset_graph_difference(asset_graph_from_assets):
     daily_partitions_def = DailyPartitionsDefinition(start_date="2022-01-01")
 
     @asset(partitions_def=daily_partitions_def)
-    def partitioned1(): ...
+    def partitioned1():
+        ...
 
     @asset(partitions_def=daily_partitions_def)
-    def partitioned2(): ...
+    def partitioned2():
+        ...
 
     @asset
-    def unpartitioned1(): ...
+    def unpartitioned1():
+        ...
 
     @asset
-    def unpartitioned2(): ...
+    def unpartitioned2():
+        ...
 
     asset_graph = asset_graph_from_assets(
         [partitioned1, partitioned2, unpartitioned1, unpartitioned2]
@@ -607,36 +642,45 @@ def test_asset_graph_partial_deserialization(asset_graph_from_assets):
 
     def get_ag1() -> AssetGraph:
         @asset(partitions_def=daily_partitions_def)
-        def partitioned1(): ...
+        def partitioned1():
+            ...
 
         @asset(partitions_def=daily_partitions_def)
-        def partitioned2(): ...
+        def partitioned2():
+            ...
 
         @asset
-        def unpartitioned1(): ...
+        def unpartitioned1():
+            ...
 
         @asset
-        def unpartitioned2(): ...
+        def unpartitioned2():
+            ...
 
         return asset_graph_from_assets([partitioned1, partitioned2, unpartitioned1, unpartitioned2])
 
     def get_ag2() -> AssetGraph:
         @asset(partitions_def=daily_partitions_def)
-        def partitioned1(): ...
+        def partitioned1():
+            ...
 
         # new partitions_def
         @asset(partitions_def=static_partitions_def)
-        def partitioned2(): ...
+        def partitioned2():
+            ...
 
         # new asset
         @asset(partitions_def=static_partitions_def)
-        def partitioned3(): ...
+        def partitioned3():
+            ...
 
         @asset
-        def unpartitioned2(): ...
+        def unpartitioned2():
+            ...
 
         @asset
-        def unpartitioned3(): ...
+        def unpartitioned3():
+            ...
 
         return asset_graph_from_assets(
             [partitioned1, partitioned2, partitioned3, unpartitioned2, unpartitioned3]
@@ -679,10 +723,12 @@ def test_asset_graph_partial_deserialization(asset_graph_from_assets):
 
 def test_required_assets_and_checks_by_key_check_decorator(asset_graph_from_assets):
     @asset
-    def asset0(): ...
+    def asset0():
+        ...
 
     @asset_check(asset=asset0)
-    def check0(): ...
+    def check0():
+        ...
 
     asset_graph = asset_graph_from_assets([asset0], asset_checks=[check0])
     assert asset_graph.get_required_asset_and_check_keys(asset0.key) == set()
@@ -694,10 +740,12 @@ def test_required_assets_and_checks_by_key_asset_decorator(asset_graph_from_asse
     bar_check = AssetCheckSpec(name="bar", asset="asset0")
 
     @asset(check_specs=[foo_check, bar_check])
-    def asset0(): ...
+    def asset0():
+        ...
 
     @asset_check(asset=asset0)
-    def check0(): ...
+    def check0():
+        ...
 
     asset_graph = asset_graph_from_assets([asset0], asset_checks=[check0])
 
@@ -715,7 +763,8 @@ def test_required_assets_and_checks_by_key_multi_asset(asset_graph_from_assets):
     @multi_asset(
         outs={"asset0": AssetOut(), "asset1": AssetOut()}, check_specs=[foo_check, bar_check]
     )
-    def asset_fn(): ...
+    def asset_fn():
+        ...
 
     biz_check = AssetCheckSpec(name="bar", asset="subsettable_asset0")
 
@@ -724,7 +773,8 @@ def test_required_assets_and_checks_by_key_multi_asset(asset_graph_from_assets):
         check_specs=[biz_check],
         can_subset=True,
     )
-    def subsettable_asset_fn(): ...
+    def subsettable_asset_fn():
+        ...
 
     asset_graph = asset_graph_from_assets([asset_fn, subsettable_asset_fn])
 
@@ -745,7 +795,8 @@ def test_required_assets_and_checks_by_key_multi_asset_single_asset(asset_graph_
         check_specs=[foo_check, bar_check],
         can_subset=True,
     )
-    def asset_fn(): ...
+    def asset_fn():
+        ...
 
     asset_graph = asset_graph_from_assets([asset_fn])
 

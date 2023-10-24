@@ -197,7 +197,7 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
 
   return (
     <SplitPanelContainer
-      identifier="explorer"
+      identifier="graph-explorer"
       firstInitialPercent={70}
       first={
         <ErrorBoundary region="op graph">

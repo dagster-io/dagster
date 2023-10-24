@@ -73,7 +73,10 @@ def build_sling_asset(
         update_key = [update_key]
 
     @multi_asset(
-        compute_kind="sling", specs=[asset_spec], required_resource_keys={sling_resource_key}
+        name=asset_spec.key.to_python_identifier(),
+        compute_kind="sling",
+        specs=[asset_spec],
+        required_resource_keys={sling_resource_key},
     )
     def sync(context: AssetExecutionContext) -> MaterializeResult:
         sling: SlingResource = getattr(context.resources, sling_resource_key)

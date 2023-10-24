@@ -22,15 +22,18 @@ from dagster._core.storage.dagster_run import DagsterRun
 class ExecutionResult(ABC):
     @property
     @abstractmethod
-    def job_def(self) -> JobDefinition: ...
+    def job_def(self) -> JobDefinition:
+        ...
 
     @property
     @abstractmethod
-    def dagster_run(self) -> DagsterRun: ...
+    def dagster_run(self) -> DagsterRun:
+        ...
 
     @property
     @abstractmethod
-    def all_events(self) -> Sequence[DagsterEvent]: ...
+    def all_events(self) -> Sequence[DagsterEvent]:
+        ...
 
     @property
     @abstractmethod

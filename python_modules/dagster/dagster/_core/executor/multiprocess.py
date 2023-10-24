@@ -321,8 +321,9 @@ class MultiprocessExecutor(Executor):
         if timer_result:
             yield DagsterEvent.engine_event(
                 plan_context,
-                "Multiprocess executor: parent process exiting after {duration} (pid: {pid})"
-                .format(duration=format_duration(timer_result.millis), pid=os.getpid()),
+                "Multiprocess executor: parent process exiting after {duration} (pid: {pid})".format(
+                    duration=format_duration(timer_result.millis), pid=os.getpid()
+                ),
                 event_specific_data=EngineEventData.multiprocess(os.getpid()),
             )
 

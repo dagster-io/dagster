@@ -271,7 +271,8 @@ def snap_from_config_type(config_type: ConfigType) -> ConfigTypeSnap:
         ),
         enum_values=(
             [
-                ConfigEnumValueSnap(ev.config_value, ev.description) for ev in config_type.enum_values  # type: ignore
+                ConfigEnumValueSnap(ev.config_value, ev.description)
+                for ev in config_type.enum_values  # type: ignore
             ]
             if config_type.kind == ConfigTypeKind.ENUM
             else None

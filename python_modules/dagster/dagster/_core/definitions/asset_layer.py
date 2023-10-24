@@ -204,9 +204,9 @@ def _get_dependency_node_output_handles(
     if node_output_handle in dep_node_output_handles_by_node_output_handle:
         return dep_node_output_handles_by_node_output_handle[node_output_handle]
 
-    dependency_node_output_handles: List[NodeOutputHandle] = (
-        []
-    )  # first node in list is node output handle that outputs the asset
+    dependency_node_output_handles: List[
+        NodeOutputHandle
+    ] = []  # first node in list is node output handle that outputs the asset
 
     if curr_node_handle not in outputs_by_graph_handle:
         dependency_node_output_handles.append(node_output_handle)
@@ -233,9 +233,9 @@ def _get_dependency_node_output_handles(
         )
 
     if curr_node_handle not in outputs_by_graph_handle:
-        dep_node_output_handles_by_node_output_handle[node_output_handle] = (
-            dependency_node_output_handles
-        )
+        dep_node_output_handles_by_node_output_handle[
+            node_output_handle
+        ] = dependency_node_output_handles
 
     return dependency_node_output_handles
 
@@ -296,13 +296,13 @@ def asset_key_to_dep_node_handles(
     dep_node_outputs_by_asset_key: Dict[AssetKey, List[NodeOutputHandle]] = {}
 
     for node_handle, assets_defs in assets_defs_by_node_handle.items():
-        dep_node_output_handles_by_node: Dict[NodeOutputHandle, Sequence[NodeOutputHandle]] = (
-            {}
-        )  # memoized map of node output handles to all node output handle dependencies that are from ops
+        dep_node_output_handles_by_node: Dict[
+            NodeOutputHandle, Sequence[NodeOutputHandle]
+        ] = {}  # memoized map of node output handles to all node output handle dependencies that are from ops
         for output_name, asset_key in assets_defs.keys_by_output_name.items():
-            dep_nodes_by_asset_key[asset_key] = (
-                []
-            )  # first element in list is node that outputs asset
+            dep_nodes_by_asset_key[
+                asset_key
+            ] = []  # first element in list is node that outputs asset
 
             dep_node_outputs_by_asset_key[asset_key] = []
 
@@ -445,9 +445,9 @@ class AssetLayer(NamedTuple):
 
                 partition_mapping = assets_def.get_partition_mapping_for_input(input_name)
                 if partition_mapping is not None:
-                    partition_mappings_by_asset_dep[(node_handle, resolved_asset_key)] = (
-                        partition_mapping
-                    )
+                    partition_mappings_by_asset_dep[
+                        (node_handle, resolved_asset_key)
+                    ] = partition_mapping
 
             for output_name, asset_key in assets_def.node_keys_by_output_name.items():
                 # resolve graph output to the op output it comes from
@@ -495,10 +495,11 @@ class AssetLayer(NamedTuple):
                 check_names_by_asset_key_by_node_handle[node_handle] = defaultdict(set)
 
                 for output_name, check_spec in assets_def.check_specs_by_output_name.items():
-                    inner_output_def, inner_node_handle = (
-                        assets_def.node_def.resolve_output_to_origin(
-                            output_name, handle=node_handle
-                        )
+                    (
+                        inner_output_def,
+                        inner_node_handle,
+                    ) = assets_def.node_def.resolve_output_to_origin(
+                        output_name, handle=node_handle
                     )
                     node_output_handle = NodeOutputHandle(
                         check.not_none(inner_node_handle), inner_output_def.name
@@ -912,7 +913,10 @@ def _subset_assets_defs(
     assets: Iterable["AssetsDefinition"],
     selected_asset_keys: AbstractSet[AssetKey],
     selected_asset_check_keys: Optional[AbstractSet[AssetCheckKey]],
-) -> Tuple[Sequence["AssetsDefinition"], Sequence["AssetsDefinition"],]:
+) -> Tuple[
+    Sequence["AssetsDefinition"],
+    Sequence["AssetsDefinition"],
+]:
     """Given a list of asset key selection queries, generate a set of AssetsDefinition objects
     representing the included/excluded definitions.
     """

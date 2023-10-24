@@ -372,6 +372,14 @@ const Experimental = () => {
   );
 };
 
+const Deprecated = () => {
+  return (
+    <div className="deprecated-tag">
+      <span className="hidden">(</span>Deprecated<span className="hidden">)</span>
+    </div>
+  );
+};
+
 const Legacy = () => {
   return (
     <div className="legacy-tag">
@@ -755,6 +763,7 @@ export default {
   TODO,
   PlaceholderImage,
   Experimental,
+  Deprecated,
   Legacy,
   Icons,
   ReferenceTable,

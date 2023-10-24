@@ -1,27 +1,4 @@
 # ########################
-# ##### BLACK
-# ########################
-
-# [Docs root]
-#   https://black.readthedocs.io/en/stable/
-# [Config option reference]
-#   https://black.readthedocs.io/en/stable/usage_and_configuration/the_basics.html#command-line-options
-
-[tool.black]
-line-length = 100
-
-# Enable "preview" mode-- this adds style rules likely to be incorporated into black's next major
-# release. The reason for enabling this, as of 2022-12-04, is to turn on formatting of long string
-# literals.
-preview = true
-
-# Black will refuse to run if it's not this version.
-required-version = "23.9.1"
-
-# Ensure black's output will be compatible with all listed versions.
-target-versions = ['py38', 'py39', 'py310', 'py311']
-
-# ########################
 # ##### PYRIGHT
 # ########################
 
@@ -149,8 +126,8 @@ ignore = [
   # warnings.filterwarings calls before imports.
   "E402",
 
-  # (line too long): This fires for comments, which black won't wrap.
-  # Disabling until there is an autoformat solution available for comments.
+  # (line too long): This fires for comments, which the ruff formatter won't auto-wrap. Disabling
+  # until there is an autoformat solution available for comments.
   "E501",
 
   # (no type comparison): There are a few places where we use `== type(None)` which are more clear
@@ -160,7 +137,7 @@ ignore = [
   # (bare exception): There are many places where we want to catch a maximally generic exception.
   'E722',
 
-  # (no assign lambda): existing code assigns lambdas in a few places. With black formatting
+  # (no assign lambda): existing code assigns lambdas in a few places. With ruff formatting
   # requiring extra empty lines between defs, disallowing lambda assignment can make code less
   # readable.
   "E731",
@@ -188,7 +165,8 @@ ignore = [
   "PERF402",  # (manual-list-copy)
 ]
 
-# Match black. Note that this also checks comment line length, but black does not format comments.
+# Codebase-wide default line length. Override in package-specific pyproject.toml where a different
+# length is desired.
 line-length = 100
 
 # By default, ruff only uses all "E" (pycodestyle) and "F" (pyflakes) rules.
@@ -253,7 +231,7 @@ select = [
 ]
 
 # Fail if Ruff is not running this version.
-required-version = "0.0.289"
+required-version = "0.1.1"
 
 [tool.ruff.flake8-builtins]
 

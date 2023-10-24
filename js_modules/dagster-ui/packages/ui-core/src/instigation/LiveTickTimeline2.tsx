@@ -42,6 +42,7 @@ const timestampFormat = memoize((timezone: string) => {
     second: '2-digit',
     hourCycle: 'h23',
     timeZone: timezone === 'Automatic' ? browserTimezone() : timezone,
+    timeZoneName: 'short',
   });
 });
 export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTickFragment>({
@@ -75,7 +76,7 @@ export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTick
   }, [exactRange, isPaused]);
 
   const maxX = exactRange?.[1] ? exactRange[1] * 1000 : now + timeAfter;
-  const minX = exactRange?.[0] ? Math.min(exactRange[0] * 1000, maxX - timeRange) : now - timeRange;
+  const minX = exactRange?.[0] ? exactRange[0] * 1000 : now - timeRange;
 
   const fullRange = maxX - minX;
 
@@ -91,8 +92,10 @@ export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTick
       const startX = getX(1000 * tick.timestamp!, viewport.width, minX, fullRange);
       const endTimestamp = isOldTickWithoutEndtimestamp(tick)
         ? tick.timestamp
-        : tick.endTimestamp ?? now;
-      const endX = 'endTimestamp' in tick ? getX(endTimestamp, viewport.width, minX, fullRange) : 0;
+        : tick.endTimestamp
+        ? tick.endTimestamp * 1000
+        : now;
+      const endX = getX(endTimestamp, viewport.width, minX, fullRange);
       return {
         ...tick,
         width: Math.max(endX - startX, MIN_WIDTH),

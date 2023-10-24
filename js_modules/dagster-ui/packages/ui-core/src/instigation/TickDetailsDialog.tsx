@@ -187,7 +187,13 @@ export function TickDetailSummary({tick}: {tick: HistoryTickFragment | AssetDaem
         </Box>
         <Box flex={{direction: 'column', gap: 4}}>
           <Subtitle2>Timestamp</Subtitle2>
-          <div>{tick ? <Timestamp timestamp={{unix: tick.timestamp}} /> : '–'}</div>
+          <div>
+            {tick ? (
+              <Timestamp timestamp={{unix: tick.timestamp}} timeFormat={{showTimezone: true}} />
+            ) : (
+              '–'
+            )}
+          </div>
         </Box>
         <Box flex={{direction: 'column', gap: 4}}>
           <Subtitle2>Duration</Subtitle2>

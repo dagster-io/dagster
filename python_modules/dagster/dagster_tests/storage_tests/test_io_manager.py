@@ -966,10 +966,12 @@ def test_nothing_output_nothing_input():
     my_io_manager = MyIOManager()
 
     @op(out=Out(Nothing))
-    def op1(): ...
+    def op1():
+        ...
 
     @op(ins={"input1": In(Nothing)})
-    def op2(): ...
+    def op2():
+        ...
 
     @job(resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(my_io_manager)})
     def job1():
@@ -995,10 +997,12 @@ def test_nothing_output_something_input():
     my_io_manager = MyIOManager()
 
     @op(out=Out(Nothing))
-    def op1(): ...
+    def op1():
+        ...
 
     @op
-    def op2(_input1): ...
+    def op2(_input1):
+        ...
 
     @job(resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(my_io_manager)})
     def job1():

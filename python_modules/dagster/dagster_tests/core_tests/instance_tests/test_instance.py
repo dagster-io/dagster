@@ -143,12 +143,10 @@ def test_unified_storage_env_var(tmpdir):
         ) as instance:
             assert _runs_directory(str(tmpdir)) in instance.run_storage._conn_string  # noqa: SLF001
             assert (
-                _event_logs_directory(str(tmpdir))
-                == instance.event_log_storage._base_dir + "/"  # noqa: SLF001
+                _event_logs_directory(str(tmpdir)) == instance.event_log_storage._base_dir + "/"  # noqa: SLF001
             )
             assert (
-                _schedule_directory(str(tmpdir))
-                in instance.schedule_storage._conn_string  # noqa: SLF001
+                _schedule_directory(str(tmpdir)) in instance.schedule_storage._conn_string  # noqa: SLF001
             )
 
 
@@ -615,8 +613,7 @@ def test_dagster_env_vars_from_dotenv_file():
 
                 with get_instance_for_cli() as instance:
                     assert (
-                        _runs_directory(str(storage_dir))
-                        in instance.run_storage._conn_string  # noqa: SLF001
+                        _runs_directory(str(storage_dir)) in instance.run_storage._conn_string  # noqa: SLF001
                     )
 
 

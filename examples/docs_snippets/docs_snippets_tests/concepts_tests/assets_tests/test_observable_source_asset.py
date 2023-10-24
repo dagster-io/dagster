@@ -27,9 +27,7 @@ def test_observable_source_asset_job():
         Definitions(
             assets=[foo_source_asset],
             jobs=[observation_job],
-        ).get_job_def(
-            "observation_job"
-        ).execute_in_process(instance=instance)
+        ).get_job_def("observation_job").execute_in_process(instance=instance)
 
         record = instance.get_latest_data_version_record(foo_source_asset.key)
         assert record

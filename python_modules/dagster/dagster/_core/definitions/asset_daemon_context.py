@@ -1,6 +1,7 @@
 import datetime
 import itertools
 import logging
+import os
 from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
@@ -122,6 +123,10 @@ class AssetDaemonContext:
                 for key in self.target_asset_keys_and_parents
                 if not self.asset_graph.is_source(key)
             ]
+        )
+
+        self._verbose_log_fn = (
+            self._logger.info if os.getenv("ASSET_DAEMON_VERBOSE_LOGS") else self._logger.debug
         )
 
     @property
@@ -335,7 +340,7 @@ class AssetDaemonContext:
         for materialize_rule in auto_materialize_policy.materialize_rules:
             rule_snapshot = materialize_rule.to_snapshot()
 
-            self._logger.debug(f"Evaluating materialize rule: {rule_snapshot}")
+            self._verbose_log_fn(f"Evaluating materialize rule: {rule_snapshot}")
             for evaluation_data, asset_partitions in materialize_rule.evaluate_for_asset(
                 materialize_context
             ):
@@ -347,15 +352,15 @@ class AssetDaemonContext:
                         asset_partitions,
                     )
                 )
-                self._logger.debug(f"Rule returned {len(asset_partitions)} partitions")
+                self._verbose_log_fn(f"Rule returned {len(asset_partitions)} partitions")
                 to_materialize.update(asset_partitions)
-            self._logger.debug("Done evaluating materialize rule")
+            self._verbose_log_fn("Done evaluating materialize rule")
 
         skip_context = materialize_context._replace(candidates=to_materialize)
 
         for skip_rule in auto_materialize_policy.skip_rules:
             rule_snapshot = skip_rule.to_snapshot()
-            self._logger.debug(f"Evaluating skip rule: {rule_snapshot}")
+            self._verbose_log_fn(f"Evaluating skip rule: {rule_snapshot}")
             for evaluation_data, asset_partitions in skip_rule.evaluate_for_asset(skip_context):
                 all_results.append(
                     (
@@ -365,9 +370,9 @@ class AssetDaemonContext:
                         asset_partitions,
                     )
                 )
-                self._logger.debug(f"Rule returned {len(asset_partitions)} partitions")
+                self._verbose_log_fn(f"Rule returned {len(asset_partitions)} partitions")
                 to_skip.update(asset_partitions)
-            self._logger.debug("Done evaluating skip rule")
+            self._verbose_log_fn("Done evaluating skip rule")
         to_materialize.difference_update(to_skip)
 
         # this is treated separately from other rules, for now
@@ -377,7 +382,7 @@ class AssetDaemonContext:
             )
             rule_snapshot = rule.to_snapshot()
 
-            self._logger.debug(f"Evaluating discard rule: {rule_snapshot}")
+            self._verbose_log_fn(f"Evaluating discard rule: {rule_snapshot}")
 
             for evaluation_data, asset_partitions in rule.evaluate_for_asset(
                 skip_context._replace(candidates=to_materialize)
@@ -390,9 +395,9 @@ class AssetDaemonContext:
                         asset_partitions,
                     )
                 )
-                self._logger.debug(f"Discard rule returned {len(asset_partitions)} partitions")
+                self._verbose_log_fn(f"Discard rule returned {len(asset_partitions)} partitions")
                 to_discard.update(asset_partitions)
-            self._logger.debug("Done evaluating discard rule")
+            self._verbose_log_fn("Done evaluating discard rule")
 
         to_materialize.difference_update(to_discard)
         to_skip.difference_update(to_discard)
@@ -439,13 +444,13 @@ class AssetDaemonContext:
                 continue
 
             num_checked_assets = num_checked_assets + 1
-            self._logger.debug(
+            self._verbose_log_fn(
                 "Evaluating asset"
                 f" {asset_key.to_user_string()} ({num_checked_assets}/{num_target_asset_keys})"
             )
 
             if asset_key in visited_multi_asset_keys:
-                self._logger.debug(f"Asset {asset_key.to_user_string()} already visited")
+                self._verbose_log_fn(f"Asset {asset_key.to_user_string()} already visited")
                 continue
 
             (evaluation, to_materialize_for_asset, to_discard_for_asset) = self.evaluate_asset(
@@ -512,7 +517,11 @@ class AssetDaemonContext:
 
     def evaluate(
         self,
-    ) -> Tuple[Sequence[RunRequest], AssetDaemonCursor, Sequence[AutoMaterializeAssetEvaluation],]:
+    ) -> Tuple[
+        Sequence[RunRequest],
+        AssetDaemonCursor,
+        Sequence[AutoMaterializeAssetEvaluation],
+    ]:
         observe_request_timestamp = pendulum.now().timestamp()
         auto_observe_run_requests = (
             get_auto_observe_run_requests(

@@ -41,7 +41,11 @@ from dagster._core.storage.tags import (
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._core.workspace.workspace import IWorkspace
 from dagster._daemon.daemon import DaemonIterator, IntervalDaemon
-from dagster._utils import hash_collection
+from dagster._utils import (
+    SingleInstigatorDebugCrashFlags,
+    check_for_debug_crash,
+    hash_collection,
+)
 from dagster._utils.error import serializable_error_info_from_exc_info
 
 CURSOR_KEY = "ASSET_DAEMON_CURSOR"
@@ -156,6 +160,16 @@ class AssetDaemon(IntervalDaemon):
         self,
         workspace_process_context: IWorkspaceProcessContext,
     ) -> DaemonIterator:
+        yield from self._run_iteration_impl(
+            workspace_process_context,
+            debug_crash_flags={},
+        )
+
+    def _run_iteration_impl(
+        self,
+        workspace_process_context: IWorkspaceProcessContext,
+        debug_crash_flags: SingleInstigatorDebugCrashFlags,
+    ) -> DaemonIterator:
         instance = workspace_process_context.instance
 
         if get_auto_materialize_paused(instance):
@@ -251,6 +265,8 @@ class AssetDaemon(IntervalDaemon):
                 f" {len(evaluations)} asset evaluation{'s' if len(evaluations) != 1 else ''} for"
                 f" evaluation ID {new_cursor.evaluation_id}"
             )
+
+            check_for_debug_crash(debug_crash_flags, "RUN_REQUESTS_CREATED")
 
             evaluations_by_asset_key = {
                 evaluation.asset_key: evaluation for evaluation in evaluations

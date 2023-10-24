@@ -35,6 +35,7 @@ from starlette.types import Message
 from .external_assets import (
     handle_report_asset_check_request,
     handle_report_asset_materialization_request,
+    handle_report_asset_observation_request,
 )
 from .graphql import GraphQLServer
 from .version import __version__
@@ -88,12 +89,14 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                 csp_template = f.read()
                 return csp_template.replace("NONCE-PLACEHOLDER", nonce)
         except FileNotFoundError:
-            raise Exception("""
+            raise Exception(
+                """
                 CSP configuration file could not be found.
                 If you are using dagster-webserver, then probably it's a corrupted installation or a bug.
                 However, if you are developing dagster-webserver locally, your problem can be fixed by running
                 "make rebuild_ui" in the project root.
-                """)
+                """
+            )
 
     async def webserver_info_endpoint(self, _request: Request):
         return JSONResponse(
@@ -209,6 +212,10 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
         context = self.make_request_context(request)
         return await handle_report_asset_check_request(context, request)
 
+    async def report_asset_observation_endpoint(self, request: Request) -> JSONResponse:
+        context = self.make_request_context(request)
+        return await handle_report_asset_observation_request(context, request)
+
     def index_html_endpoint(self, request: Request):
         """Serves root html."""
         index_path = self.relative_path("webapp/build/index.html")
@@ -240,12 +247,14 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                     )
                 return HTMLResponse(content, headers=headers)
         except FileNotFoundError:
-            raise Exception("""
+            raise Exception(
+                """
                 Can't find webapp files.
                 If you are using dagster-webserver, then probably it's a corrupted installation or a bug.
                 However, if you are developing dagster-webserver locally, your problem can be fixed by running
                 "make rebuild_ui" in the project root.
-                """)
+                """
+            )
 
     def build_static_routes(self):
         def _static_file(path, file_path):
@@ -331,6 +340,11 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                 Route(
                     "/report_asset_check/{asset_key:path}",
                     self.report_asset_check_endpoint,
+                    methods=["POST"],
+                ),
+                Route(
+                    "/report_asset_observation/{asset_key:path}",
+                    self.report_asset_observation_endpoint,
                     methods=["POST"],
                 ),
                 Route("/{path:path}", self.index_html_endpoint),

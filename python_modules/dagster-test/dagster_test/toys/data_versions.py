@@ -25,11 +25,13 @@ non_observable_source = SourceAsset("non_observable_source")
 
 
 @asset(code_version="1", deps=[observable_different_version])
-def has_code_version1(context): ...
+def has_code_version1(context):
+    ...
 
 
 @asset(code_version="1", deps=[observable_same_version])
-def has_code_version2(): ...
+def has_code_version2():
+    ...
 
 
 @asset(
@@ -40,11 +42,13 @@ def has_code_version2(): ...
     ],
     code_version="1",
 )
-def has_code_version_multiple_deps(): ...
+def has_code_version_multiple_deps():
+    ...
 
 
 @asset(code_version="1", deps=[has_code_version1])
-def downstream_of_code_versioned(): ...
+def downstream_of_code_versioned():
+    ...
 
 
 @asset
@@ -53,7 +57,8 @@ def root_asset_no_code_version(context):
 
 
 @asset(deps=[root_asset_no_code_version])
-def downstream_of_no_code_version(): ...
+def downstream_of_no_code_version():
+    ...
 
 
 @multi_asset(
@@ -69,4 +74,5 @@ def code_versioned_multi_asset():
 
 
 @asset(deps=["code_versioned_multi_asset2"])
-def downstream_of_code_versioned_multi_asset(): ...
+def downstream_of_code_versioned_multi_asset():
+    ...

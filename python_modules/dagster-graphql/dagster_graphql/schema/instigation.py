@@ -149,7 +149,10 @@ class DynamicPartitionsRequestMixin:
 
     def get_dynamic_partitions_request(
         self,
-    ) -> Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest,]:
+    ) -> Union[
+        AddDynamicPartitionsRequest,
+        DeleteDynamicPartitionsRequest,
+    ]:
         raise NotImplementedError()
 
     def resolve_partitionKeys(self, _graphene_info: ResolveInfo):
@@ -181,7 +184,10 @@ class GrapheneDynamicPartitionsRequest(DynamicPartitionsRequestMixin, graphene.O
 
     def get_dynamic_partitions_request(
         self,
-    ) -> Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest,]:
+    ) -> Union[
+        AddDynamicPartitionsRequest,
+        DeleteDynamicPartitionsRequest,
+    ]:
         return self._dynamic_partitions_request
 
 

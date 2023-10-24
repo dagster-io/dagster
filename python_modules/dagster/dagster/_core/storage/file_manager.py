@@ -224,7 +224,8 @@ def local_file_manager(init_context: InitResourceContext) -> "LocalFileManager":
     """
     return LocalFileManager(
         base_dir=init_context.resource_config.get(
-            "base_dir", os.path.join(init_context.instance.storage_directory(), "file_manager")  # type: ignore  # (possible none)
+            "base_dir",
+            os.path.join(init_context.instance.storage_directory(), "file_manager"),  # type: ignore  # (possible none)
         )
     )
 

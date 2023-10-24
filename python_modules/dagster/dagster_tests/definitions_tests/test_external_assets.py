@@ -89,7 +89,8 @@ def test_invalid_external_asset_creation() -> None:
 
 def test_normal_asset_materializeable() -> None:
     @asset
-    def an_asset() -> None: ...
+    def an_asset() -> None:
+        ...
 
     assert an_asset.is_asset_executable(AssetKey(["an_asset"])) is True
 

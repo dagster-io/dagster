@@ -23,9 +23,7 @@ def _get_migration_error(
         return GrapheneAutoMaterializeAssetEvaluationNeedsMigrationError(
             message="Instance does not have schedule storage configured, cannot fetch evaluations."
         )
-    if (
-        not graphene_info.context.instance.schedule_storage.supports_auto_materialize_asset_evaluations
-    ):
+    if not graphene_info.context.instance.schedule_storage.supports_auto_materialize_asset_evaluations:
         return GrapheneAutoMaterializeAssetEvaluationNeedsMigrationError(
             message=(
                 "Auto materialize evaluations are not getting logged. Run `dagster instance"

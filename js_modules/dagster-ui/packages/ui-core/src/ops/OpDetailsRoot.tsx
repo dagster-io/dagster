@@ -91,6 +91,6 @@ const USED_SOLID_DETAILS_QUERY = gql`
 `;
 
 export const OpDetailScrollContainer = styled.div`
-  overflow: scroll;
+  overflow-y: scroll;
   flex: 1;
 `;

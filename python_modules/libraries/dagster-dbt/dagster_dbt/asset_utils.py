@@ -646,7 +646,9 @@ def get_asset_deps(
     Dict[str, List[str]],
     Dict[str, Dict[str, Any]],
 ]:
-    from .dagster_dbt_translator import DbtManifestWrapper
+    from .dagster_dbt_translator import DbtManifestWrapper, validate_translator
+
+    dagster_dbt_translator = validate_translator(dagster_dbt_translator)
 
     asset_deps: Dict[AssetKey, Set[AssetKey]] = {}
     asset_ins: Dict[AssetKey, Tuple[str, In]] = {}

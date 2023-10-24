@@ -39,9 +39,9 @@ def to_dagster_type(
     check.inst_param(pipeline_snapshot, "pipeline_snapshot", JobSnapshot)
     check.str_param(dagster_type_key, "dagster_type_key")
 
-    dagster_type_meta: DagsterTypeSnap = (
-        pipeline_snapshot.dagster_type_namespace_snapshot.get_dagster_type_snap(dagster_type_key)
-    )
+    dagster_type_meta: (
+        DagsterTypeSnap
+    ) = pipeline_snapshot.dagster_type_namespace_snapshot.get_dagster_type_snap(dagster_type_key)
 
     base_args: Dict[str, Any] = dict(
         key=dagster_type_meta.key,

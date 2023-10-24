@@ -449,7 +449,9 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         # type ignored because `get_event_records` does not accept None. Unclear which type
         # annotation is wrong.
         return self._storage.event_log_storage.get_event_records(
-            event_records_filter, limit, ascending  # type: ignore
+            event_records_filter,  # type: ignore
+            limit,
+            ascending,
         )
 
     def get_asset_records(
@@ -517,10 +519,10 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         )
 
     def get_latest_asset_partition_materialization_attempts_without_materializations(
-        self, asset_key: "AssetKey"
+        self, asset_key: "AssetKey", after_storage_id: Optional[int] = None
     ) -> Mapping[str, Tuple[str, int]]:
         return self._storage.event_log_storage.get_latest_asset_partition_materialization_attempts_without_materializations(
-            asset_key
+            asset_key, after_storage_id
         )
 
     def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:

@@ -287,7 +287,8 @@ class BaseMultiPartitionMapping(ABC):
         self,
         upstream_partitions_def: PartitionsDefinition,
         downstream_partitions_def: PartitionsDefinition,
-    ) -> Sequence[DimensionDependency]: ...
+    ) -> Sequence[DimensionDependency]:
+        ...
 
     def get_partitions_def(
         self, partitions_def: PartitionsDefinition, dimension_name: Optional[str]
@@ -326,9 +327,9 @@ class BaseMultiPartitionMapping(ABC):
 
         # Maps the dimension name and key of a partition in a_partitions_def to the list of
         # partition keys in b_partitions_def that are dependencies of that partition
-        dep_b_keys_by_a_dim_and_key: Dict[Optional[str], Dict[Optional[str], List[str]]] = (
-            defaultdict(lambda: defaultdict(list))
-        )
+        dep_b_keys_by_a_dim_and_key: Dict[
+            Optional[str], Dict[Optional[str], List[str]]
+        ] = defaultdict(lambda: defaultdict(list))
         required_but_nonexistent_upstream_partitions = set()
 
         b_dimension_partitions_def_by_name: Dict[Optional[str], PartitionsDefinition] = (

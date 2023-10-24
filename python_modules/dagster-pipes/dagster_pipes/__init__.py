@@ -505,7 +505,8 @@ class PipesBlobStoreMessageWriter(PipesMessageWriter[T_BlobStoreMessageWriterCha
             yield channel
 
     @abstractmethod
-    def make_channel(self, params: PipesParams) -> T_BlobStoreMessageWriterChannel: ...
+    def make_channel(self, params: PipesParams) -> T_BlobStoreMessageWriterChannel:
+        ...
 
 
 class PipesBlobStoreMessageWriterChannel(PipesMessageWriterChannel):
@@ -526,7 +527,8 @@ class PipesBlobStoreMessageWriterChannel(PipesMessageWriterChannel):
         return items
 
     @abstractmethod
-    def upload_messages_chunk(self, payload: StringIO, index: int) -> None: ...
+    def upload_messages_chunk(self, payload: StringIO, index: int) -> None:
+        ...
 
     @contextmanager
     def buffered_upload_loop(self) -> Iterator[None]:

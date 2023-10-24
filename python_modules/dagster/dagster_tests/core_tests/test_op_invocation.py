@@ -711,9 +711,7 @@ def test_invalid_properties_on_bound_context(property_or_method_name: str, val_t
         result = getattr(context, property_or_method_name)
         (  # for the case where property_or_method_name is a method, getting an attribute won't cause
             # an error, but invoking the method should.
-            result(val_to_pass)
-            if val_to_pass
-            else result()
+            result(val_to_pass) if val_to_pass else result()
         )
 
     with pytest.raises(DagsterInvalidPropertyError):

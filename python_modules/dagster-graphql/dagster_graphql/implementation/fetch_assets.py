@@ -511,9 +511,7 @@ def get_2d_run_length_encoded_partitions(
             partition_key.keys_by_dimension[primary_dim.name]
         ] = dim2_materialized_partition_subset_by_dim1[
             partition_key.keys_by_dimension[primary_dim.name]
-        ].with_partition_keys(
-            [partition_key.keys_by_dimension[secondary_dim.name]]
-        )
+        ].with_partition_keys([partition_key.keys_by_dimension[secondary_dim.name]])
 
     dim2_failed_partition_subset_by_dim1: Dict[str, PartitionsSubset] = defaultdict(
         lambda: secondary_dim.partitions_def.empty_subset()
@@ -521,11 +519,11 @@ def get_2d_run_length_encoded_partitions(
     for partition_key in cast(
         Sequence[MultiPartitionKey], failed_partitions_subset.get_partition_keys()
     ):
-        dim2_failed_partition_subset_by_dim1[partition_key.keys_by_dimension[primary_dim.name]] = (
-            dim2_failed_partition_subset_by_dim1[
-                partition_key.keys_by_dimension[primary_dim.name]
-            ].with_partition_keys([partition_key.keys_by_dimension[secondary_dim.name]])
-        )
+        dim2_failed_partition_subset_by_dim1[
+            partition_key.keys_by_dimension[primary_dim.name]
+        ] = dim2_failed_partition_subset_by_dim1[
+            partition_key.keys_by_dimension[primary_dim.name]
+        ].with_partition_keys([partition_key.keys_by_dimension[secondary_dim.name]])
 
     dim2_in_progress_partition_subset_by_dim1: Dict[str, PartitionsSubset] = defaultdict(
         lambda: secondary_dim.partitions_def.empty_subset()
@@ -537,9 +535,7 @@ def get_2d_run_length_encoded_partitions(
             partition_key.keys_by_dimension[primary_dim.name]
         ] = dim2_in_progress_partition_subset_by_dim1[
             partition_key.keys_by_dimension[primary_dim.name]
-        ].with_partition_keys(
-            [partition_key.keys_by_dimension[secondary_dim.name]]
-        )
+        ].with_partition_keys([partition_key.keys_by_dimension[secondary_dim.name]])
 
     materialized_2d_ranges = []
 

@@ -10,7 +10,6 @@ from typing import (
     Tuple,
 )
 
-import dagster._check as check
 from dagster import (
     AssetCheckSpec,
     AssetKey,
@@ -30,7 +29,7 @@ from .asset_utils import (
     default_code_version_fn,
     get_deps,
 )
-from .dagster_dbt_translator import DagsterDbtTranslator, DbtManifestWrapper
+from .dagster_dbt_translator import DagsterDbtTranslator, DbtManifestWrapper, validate_translator
 from .dbt_manifest import DbtManifestParam, validate_manifest
 from .utils import (
     ASSET_RESOURCE_TYPES,
@@ -45,6 +44,7 @@ def dbt_assets(
     manifest: DbtManifestParam,
     select: str = "fqn:*",
     exclude: Optional[str] = None,
+    name: Optional[str] = None,
     io_manager_key: Optional[str] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     dagster_dbt_translator: DagsterDbtTranslator = DagsterDbtTranslator(),
@@ -65,6 +65,7 @@ def dbt_assets(
             to include. Defaults to ``fqn:*``.
         exclude (Optional[str]): A dbt selection string for the models in a project that you want
             to exclude. Defaults to "".
+        name (Optional[str]): The name of the op.
         io_manager_key (Optional[str]): The IO manager key that will be set on each of the returned
             assets. When other ops are downstream of the loaded assets, the IOManager specified
             here determines how the inputs to those ops are loaded. Defaults to "io_manager".
@@ -249,15 +250,7 @@ def dbt_assets(
                 yield from dbt.cli(dbt_build_args, context=context).stream()
 
     """
-    check.inst_param(
-        dagster_dbt_translator,
-        "dagster_dbt_translator",
-        DagsterDbtTranslator,
-        additional_message=(
-            "Ensure that the argument is an instantiated class that subclasses"
-            " DagsterDbtTranslator."
-        ),
-    )
+    dagster_dbt_translator = validate_translator(dagster_dbt_translator)
     manifest = validate_manifest(manifest)
 
     unique_ids = select_unique_ids_from_manifest(
@@ -303,6 +296,7 @@ def dbt_assets(
     def inner(fn) -> AssetsDefinition:
         asset_definition = multi_asset(
             outs=outs,
+            name=name,
             internal_asset_deps=internal_asset_deps,
             deps=non_argument_deps,
             compute_kind="dbt",

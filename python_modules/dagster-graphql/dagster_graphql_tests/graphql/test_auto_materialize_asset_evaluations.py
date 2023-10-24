@@ -727,19 +727,25 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
 
         assert len(results.data["autoMaterializeAssetEvaluationsOrError"]["records"]) == 1
         assert (
-            results.data["autoMaterializeAssetEvaluationsOrError"]["records"][0]["numRequested"]
-        ) == 2
+            (results.data["autoMaterializeAssetEvaluationsOrError"]["records"][0]["numRequested"])
+            == 2
+        )
         assert (
-            results.data["autoMaterializeAssetEvaluationsOrError"]["records"][0]["numSkipped"]
-        ) == 0
+            (results.data["autoMaterializeAssetEvaluationsOrError"]["records"][0]["numSkipped"])
+            == 0
+        )
         assert (
-            results.data["autoMaterializeAssetEvaluationsOrError"]["records"][0]["numDiscarded"]
-        ) == 0
+            (results.data["autoMaterializeAssetEvaluationsOrError"]["records"][0]["numDiscarded"])
+            == 0
+        )
         assert (
-            results.data["autoMaterializeAssetEvaluationsOrError"]["records"][0][
-                "rulesWithRuleEvaluations"
-            ][0]["rule"]["decisionType"]
-        ) == "MATERIALIZE"
+            (
+                results.data["autoMaterializeAssetEvaluationsOrError"]["records"][0][
+                    "rulesWithRuleEvaluations"
+                ][0]["rule"]["decisionType"]
+            )
+            == "MATERIALIZE"
+        )
         assert set(
             results.data["autoMaterializeAssetEvaluationsOrError"]["records"][0][
                 "rulesWithRuleEvaluations"

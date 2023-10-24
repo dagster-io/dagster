@@ -45,7 +45,8 @@ DEFAULT_POOL_RECYCLE = 3600  # 1 hr
 
 @click.command(
     name="dagster-webserver",
-    help=textwrap.dedent(f"""
+    help=textwrap.dedent(
+        f"""
         Run dagster-webserver. Loads a code location.
 
         {WORKSPACE_TARGET_WARNING}
@@ -71,7 +72,8 @@ DEFAULT_POOL_RECYCLE = 3600  # 1 hr
         Options can also provide arguments via environment variables prefixed with DAGSTER_WEBSERVER.
 
         For example, DAGSTER_WEBSERVER_PORT=3333 dagster-webserver
-    """),
+    """
+    ),
 )
 @workspace_target_argument
 @click.option(

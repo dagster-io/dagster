@@ -412,8 +412,9 @@ def expand_map(original_root: object, the_dict: Mapping[object, object], stack: 
             original_root,
             the_dict,
             stack,
-            "Map must have a single value and contain a valid type i.e. {{str: int}}. Got item {}"
-            .format(repr(the_dict[key])),
+            "Map must have a single value and contain a valid type i.e. {{str: int}}. Got item {}".format(
+                repr(the_dict[key])
+            ),
         )
 
     return Map(key_type, inner_type)

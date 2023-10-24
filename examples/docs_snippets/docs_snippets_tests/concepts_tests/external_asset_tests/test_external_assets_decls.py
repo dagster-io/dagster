@@ -5,16 +5,16 @@ from dagster import AssetKey, Definitions
 
 
 def test_docs_snippets_concepts_external_asset_single_decl() -> None:
-    single_decl_defs: Definitions = (
-        docs_snippets.concepts.assets.external_assets.single_declaration.defs
-    )
+    single_decl_defs: (
+        Definitions
+    ) = docs_snippets.concepts.assets.external_assets.single_declaration.defs
     assert single_decl_defs.get_assets_def("file_in_s3")
 
 
 def test_docs_snippets_concepts_external_asset_external_asset_deps() -> None:
-    defs_with_deps: Definitions = (
-        docs_snippets.concepts.assets.external_assets.external_asset_deps.defs
-    )
+    defs_with_deps: (
+        Definitions
+    ) = docs_snippets.concepts.assets.external_assets.external_asset_deps.defs
     assert defs_with_deps.get_assets_def("raw_logs")
     assert defs_with_deps.get_assets_def("processed_logs")
     assert defs_with_deps.get_assets_def("processed_logs").asset_deps[
@@ -23,9 +23,7 @@ def test_docs_snippets_concepts_external_asset_external_asset_deps() -> None:
 
 
 def test_docs_snippets_normal_assets_dep_on_external() -> None:
-    defs: Definitions = (
-        docs_snippets.concepts.assets.external_assets.normal_asset_depending_on_external.defs
-    )
+    defs: Definitions = docs_snippets.concepts.assets.external_assets.normal_asset_depending_on_external.defs
 
     from docs_snippets.concepts.assets.external_assets.normal_asset_depending_on_external import (
         aggregated_logs,

@@ -54,7 +54,8 @@ class SlingSourceConnection(PermissiveConfig):
 
     type: str = Field(description="Type of the source connection. Use 'file' for local storage.")
     connection_string: Optional[str] = Field(
-        description="The connection string for the source database."
+        description="The connection string for the source database.",
+        default=None,
     )
 
 
@@ -89,7 +90,8 @@ class SlingTargetConnection(PermissiveConfig):
         description="Type of the destination connection. Use 'file' for local storage."
     )
     connection_string: Optional[str] = Field(
-        description="The connection string for the target database."
+        description="The connection string for the target database.",
+        default=None,
     )
 
 
@@ -173,6 +175,7 @@ class SlingResource(ConfigurableResource):
 
         with self._setup_config():
             config = {
+                "mode": mode,
                 "source": {
                     "conn": "SLING_SOURCE",
                     "stream": source_stream,
