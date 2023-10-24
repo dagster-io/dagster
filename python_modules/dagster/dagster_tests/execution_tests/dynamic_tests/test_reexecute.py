@@ -321,11 +321,8 @@ def test_reexec_dynamic_with_transitive_optional_output_job_3():
                 step_selection=["echo[0]"],
             ),
         )
-        # when all the previous runs have skipped yielding the source,
-        # run would fail because of run_id returns None
-        # FIXME: https://github.com/dagster-io/dagster/issues/3511
-        # ideally it should skip the step because all its previous runs have skipped and finish the run successfully
-        assert not re_result.success
+
+        assert re_result.success
 
 
 def test_reexec_all_steps_issue():
@@ -643,3 +640,42 @@ def test_assets():
             "mapped_fail_asset.echo",
             "echo_mapped",
         }
+
+
+@op(out={"enable_a": Out(is_required=False), "enable_b": Out(is_required=False)})
+def if_op():
+    yield Output(0, "enable_a")
+
+
+@op
+def a(_enable, arg):
+    return arg
+
+
+@op
+def b(_enable, arg):
+    return arg
+
+
+@job(executor_def=in_process_executor)
+def conditional_job():
+    arg = fail_once(emit_ten())
+    enable_a, enable_b = if_op()
+    a(enable_a, arg)
+    b(enable_b, arg)
+
+
+def test_conditional():
+    with instance_for_test() as instance:
+        parent_result = execute_job(reconstructable(conditional_job), instance=instance)
+        parent_run_id = parent_result.run_id
+
+        with execute_job(
+            reconstructable(conditional_job),
+            instance=instance,
+            reexecution_options=ReexecutionOptions.from_failure(
+                run_id=parent_run_id,
+                instance=instance,
+            ),
+        ) as reexec_result:
+            assert reexec_result.success

@@ -198,6 +198,16 @@ class ActiveExecution:
             ),
         )
 
+    def _output_in_this_or_lineage_run(self, output_handle: StepOutputHandle) -> bool:
+        if output_handle in self._step_outputs:
+            return True
+        past_exec = self._plan.known_state.parent_state
+        while past_exec:
+            if output_handle in past_exec.produced_outputs:
+                return True
+            past_exec = past_exec.get_parent_state()
+        return False
+
     def _update(self) -> None:
         """Moves steps from _pending to _executable / _pending_skip / _pending_retry
         as a function of what has been _completed.
@@ -234,8 +244,7 @@ class ActiveExecution:
                     missing_source_handles = [
                         source_handle
                         for source_handle in step_input.get_step_output_handle_dependencies()
-                        if source_handle.step_key in requirements
-                        and source_handle not in self._step_outputs
+                        if not self._output_in_this_or_lineage_run(source_handle)
                     ]
                     if missing_source_handles:
                         if len(missing_source_handles) == len(

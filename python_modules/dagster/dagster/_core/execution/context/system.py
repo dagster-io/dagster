@@ -842,14 +842,10 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         # computations. for example, in backfills, with fixed path io manager, we allow users to
         # "re-execute" runs with steps where the outputs weren't previously stored by dagster.
 
-        # Warn about this special case because it will also reach here when all previous runs have
-        # skipped yielding this output. From the logs, we have no easy way to differentiate the fixed
-        # path case and the skipping case, until we record the skipping info in KnownExecutionState,
-        # i.e. resolve https://github.com/dagster-io/dagster/issues/3511
         self.log.warning(
             f"No previously stored outputs found for source {step_output_handle}. "
             "This is either because you are using an IO Manager that does not depend on run ID, "
-            "or because all the previous runs have skipped the output in conditional execution."
+            "or this step was incorrectly not skipped despite being downstream of an optional output."
         )
         return None
 
