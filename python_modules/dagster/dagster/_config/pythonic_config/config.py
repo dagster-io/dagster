@@ -280,7 +280,11 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
             field = model_fields(cls).get(key)
 
             if field:
-                if not is_literal(field.annotation) and value == field.default:
+                if (
+                    not is_literal(field.annotation)
+                    and not safe_is_subclass(field.annotation, Enum)
+                    and value == field.default
+                ):
                     continue
 
                 resolved_field_name = field.alias or key
