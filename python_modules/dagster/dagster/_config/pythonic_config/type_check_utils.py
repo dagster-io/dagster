@@ -1,5 +1,4 @@
 from typing import Any, Literal, Type, Union
-
 from typing_extensions import Literal as ExtLiteral
 
 try:
