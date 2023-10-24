@@ -1,5 +1,5 @@
 import logging
-from collections import defaultdict, deque
+from collections import defaultdict
 from datetime import datetime
 from typing import (
     TYPE_CHECKING,
@@ -20,7 +20,7 @@ from typing import (
 import pendulum
 
 import dagster._check as check
-from dagster._core.definitions.asset_graph import AssetGraph, ToposortedPriorityQueue
+from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.data_version import (
     DATA_VERSION_TAG,
@@ -29,6 +29,7 @@ from dagster._core.definitions.data_version import (
 )
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.partition import DynamicPartitionsDefinition, PartitionsSubset
+from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
 from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsDefinition,
     get_time_partition_key,
@@ -81,7 +82,6 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
 
         self._evaluation_time = evaluation_time if evaluation_time else pendulum.now("UTC")
 
-        self._outdated_ancestors_cache: Dict[AssetKeyPartitionKey, Set[AssetKey]] = {}
         self._respect_materialization_data_versions = (
             self._instance.auto_materialize_respect_materialization_data_versions
         )
@@ -854,82 +854,48 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             )
         return updated_parents
 
+    @cached_method
     def get_outdated_ancestors(
         self, *, asset_partition: AssetKeyPartitionKey
     ) -> AbstractSet[AssetKey]:
-        """Return the set of assets that are ancestors of the given asset partition and have parents
-        that have been updated more recently than they have.
-
-        If two ancestors would be returned, but one of them is an ancestor of the other one, then
-        only the most upstream ancestor is included.
-        """
-        if asset_partition in self._outdated_ancestors_cache:
-            return self._outdated_ancestors_cache[asset_partition]
-
         if self.asset_graph.is_source(asset_partition.asset_key):
             return set()
 
-        # First traverse upwards and gather any candidates that have not been previously added
-        # to the cache
-        visited: set[AssetKeyPartitionKey] = set()
+        parent_asset_partitions = self.asset_graph.get_parents_partitions(
+            dynamic_partitions_store=self,
+            current_time=self._evaluation_time,
+            asset_key=asset_partition.asset_key,
+            partition_key=asset_partition.partition_key,
+        ).parent_partitions
 
-        queue: deque[AssetKeyPartitionKey] = deque()
-        queue.append(asset_partition)
+        # the set of parent keys which we don't need to check
+        ignored_parent_keys = {
+            parent
+            for parent in self.asset_graph.get_parents(asset_partition.asset_key)
+            if parent == asset_partition.asset_key
+            or (
+                self.asset_graph.is_partitioned(parent)
+                and not isinstance(
+                    self.asset_graph.get_partition_mapping(asset_partition.asset_key, parent),
+                    IdentityPartitionMapping,
+                )
+            )
+        }
+        print(asset_partition, "IGNORED", ignored_parent_keys)
 
-        while queue:
-            current_partition = queue.popleft()
-            visited.add(current_partition)
-
-            if self.asset_graph.is_source(current_partition.asset_key):
-                continue
-
-            parent_asset_partitions = self.asset_graph.get_parents_partitions(
-                dynamic_partitions_store=self,
-                current_time=self._evaluation_time,
-                asset_key=current_partition.asset_key,
-                partition_key=current_partition.partition_key,
-            ).parent_partitions
-
-            for parent in parent_asset_partitions:
-                if (
-                    parent not in visited
-                    and parent not in self._outdated_ancestors_cache
-                    # do not evaluate self-dependency asset partitions
-                    and parent.asset_key != current_partition.asset_key
-                ):
-                    queue.append(parent)
-
-        # Toposort them so that at each iteration we can count on the cache being full for
-        # all of your parents, then update the cache for each node based on the parent's results
-        toposort_queue = ToposortedPriorityQueue(
-            self.asset_graph, visited, include_required_multi_assets=False
+        updated_parents = self.get_parent_asset_partitions_updated_after_child(
+            asset_partition=asset_partition,
+            parent_asset_partitions=parent_asset_partitions,
+            respect_materialization_data_versions=self._respect_materialization_data_versions,
+            ignored_parent_keys=ignored_parent_keys,
         )
 
-        while len(toposort_queue) > 0:
-            candidates_unit = toposort_queue.dequeue()
-            for current_partition in candidates_unit:
-                parent_asset_partitions = self.asset_graph.get_parents_partitions(
-                    dynamic_partitions_store=self,
-                    current_time=self._evaluation_time,
-                    asset_key=current_partition.asset_key,
-                    partition_key=current_partition.partition_key,
-                ).parent_partitions
+        root_unreconciled_ancestors = {asset_partition.asset_key} if updated_parents else set()
 
-                updated_parents: AbstractSet[
-                    AssetKeyPartitionKey
-                ] = self.get_parent_asset_partitions_updated_after_child(
-                    asset_partition=current_partition,
-                    parent_asset_partitions=parent_asset_partitions,
-                    respect_materialization_data_versions=self._respect_materialization_data_versions,
-                    # ignore self-dependency asset partitions
-                    ignored_parent_keys={current_partition.asset_key},
-                )
+        # recurse over parents
+        for parent in set(parent_asset_partitions) - updated_parents:
+            if parent.asset_key in ignored_parent_keys:
+                continue
+            root_unreconciled_ancestors.update(self.get_outdated_ancestors(asset_partition=parent))
 
-                outdated_ancestors = {current_partition.asset_key} if updated_parents else set()
-
-                for parent in set(parent_asset_partitions) - updated_parents:
-                    outdated_ancestors.update(self._outdated_ancestors_cache.get(parent, set()))
-
-                self._outdated_ancestors_cache[current_partition] = outdated_ancestors
-
-        return self._outdated_ancestors_cache[asset_partition]
+        return root_unreconciled_ancestors

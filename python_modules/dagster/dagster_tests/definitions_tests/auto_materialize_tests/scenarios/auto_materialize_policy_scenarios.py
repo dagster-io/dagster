@@ -127,6 +127,14 @@ partitioned_to_unpartitioned_allow_missing_parent = [
     ),
 ]
 
+two_partitioned_to_three_unpartitioned = [
+    asset_def("partitioned1", partitions_def=two_partitions_partitions_def),
+    asset_def("partitioned2", ["partitioned1"], partitions_def=two_partitions_partitions_def),
+    asset_def("unpartitioned1", ["partitioned2"]),
+    asset_def("unpartitioned2", ["unpartitioned1"]),
+    asset_def("unpartitioned3", ["unpartitioned2"]),
+]
+
 # Asset that triggers an error within the daemon when you try to generate
 # a plan to materialize it
 error_asset = [
@@ -682,6 +690,40 @@ auto_materialize_policy_scenarios = {
             run(["unpartitioned1"]),
         ],
         expected_run_requests=[run_request(["unpartitioned2"])],
+    ),
+    "test_allow_outdated_partitioned_parent": AssetReconciliationScenario(
+        assets=two_partitioned_to_three_unpartitioned,
+        asset_selection=AssetSelection.keys("unpartitioned1", "unpartitioned2", "unpartitioned3"),
+        unevaluated_runs=[
+            # fully backfill
+            run(["partitioned1", "partitioned2"], partition_key="a"),
+            run(["partitioned1", "partitioned2"], partition_key="b"),
+            run(["unpartitioned1", "unpartitioned2", "unpartitioned3"]),
+            # now partitioned2 is outdated...
+            run(["partitioned1"], partition_key="b"),
+            # ...and unpartitioned1 has been updated
+            run(["unpartitioned1"]),
+        ],
+        expected_run_requests=[
+            # unpartitioned2/unpartitioned3 should be able to materialize even though partitioned2
+            # is outdated
+            run_request(["unpartitioned2", "unpartitioned3"]),
+        ],
+    ),
+    "test_dont_allow_outdated_unpartitioned_parent": AssetReconciliationScenario(
+        assets=two_partitioned_to_three_unpartitioned,
+        asset_selection=AssetSelection.keys("unpartitioned3"),
+        unevaluated_runs=[
+            # fully backfill
+            run(["partitioned1", "partitioned2"], partition_key="a"),
+            run(["partitioned1", "partitioned2"], partition_key="b"),
+            run(["unpartitioned1", "unpartitioned2", "unpartitioned3"]),
+            # now unpartitioned2 is outdated...
+            run(["unpartitioned1"]),
+        ],
+        # unpartioned3 cannot run even though unpartitioned2 updated because unpartitioned2 is
+        # outdated
+        expected_run_requests=[],
     ),
     "test_wait_for_all_parents_updated": AssetReconciliationScenario(
         assets=with_auto_materialize_policy(
