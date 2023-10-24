@@ -1,5 +1,5 @@
-from typing import Tuple
 import warnings
+from typing import Tuple
 
 import pytest
 from dagster import (
@@ -459,19 +459,33 @@ def test_config_named_wrong_thing() -> None:
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
 
-
         class DoSomethingConfig(Config):
             a_str: str
+
         assert len(w) == 0
 
-    
         @op
         def my_op(config_named_wrong: DoSomethingConfig):
             pass
-        assert len(w) == 1
 
+        assert len(w) == 1
+        assert (
+            w[0]
+            .message.args[0]  # type: ignore
+            .startswith(
+                "Parameter 'config_named_wrong' on op/asset function 'my_op' was annotated as a dagster.Config type. Did you mean to name this parameter 'config' instead?"
+            )
+        )
 
         @asset
         def my_asset(config_named_wrong: DoSomethingConfig):
             pass
+
         assert len(w) == 2
+        assert (
+            w[1]
+            .message.args[0]  # type: ignore
+            .startswith(
+                "Parameter 'config_named_wrong' on op/asset function 'my_asset' was annotated as a dagster.Config type. Did you mean to name this parameter 'config' instead?"
+            )
+        )

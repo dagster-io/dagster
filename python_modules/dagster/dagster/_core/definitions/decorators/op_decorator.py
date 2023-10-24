@@ -31,7 +31,7 @@ from dagster._core.definitions.resource_annotation import (
 )
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.types.dagster_type import DagsterTypeKind
-from dagster._utils.warnings import normalize_renamed_param, config_argument_warning
+from dagster._utils.warnings import config_argument_warning, normalize_renamed_param
 
 from ..input import In, InputDefinition
 from ..output import Out
@@ -306,13 +306,12 @@ class DecoratedOpFunction(NamedTuple):
 
     def validate_malformed_config(self) -> None:
         from dagster._config.pythonic_config.config import Config
-        from dagster._config.pythonic_config.inheritance_utils import safe_is_subclass
+        from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
 
         positional_inputs = self.positional_inputs()
         for param in get_function_params(self.decorated_fn):
             if safe_is_subclass(param.annotation, Config) and param.name in positional_inputs:
                 config_argument_warning(param.name, self.name)
-               
 
     def get_config_arg(self) -> Parameter:
         for param in get_function_params(self.decorated_fn):

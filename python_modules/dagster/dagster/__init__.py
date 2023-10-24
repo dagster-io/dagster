@@ -574,7 +574,10 @@ from dagster._utils.alert import (
 )
 from dagster._utils.dagster_type import check_dagster_type as check_dagster_type
 from dagster._utils.log import get_dagster_logger as get_dagster_logger
-from dagster._utils.warnings import ExperimentalWarning as ExperimentalWarning
+from dagster._utils.warnings import (
+    ConfigArgumentWarning as ConfigArgumentWarning,
+    ExperimentalWarning as ExperimentalWarning,
+)
 from dagster.version import __version__ as __version__
 
 # ruff: isort: split
