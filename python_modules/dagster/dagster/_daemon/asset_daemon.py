@@ -489,6 +489,10 @@ def submit_asset_run(
             logger.warn(
                 f"Run {run_id} already submitted on a previously interrupted tick, skipping"
             )
+
+            check_for_debug_crash(debug_crash_flags, "RUN_SUBMITTED")
+            check_for_debug_crash(debug_crash_flags, f"RUN_SUBMITTED_{run_request_index}")
+
             return existing_run
         else:
             logger.warn(

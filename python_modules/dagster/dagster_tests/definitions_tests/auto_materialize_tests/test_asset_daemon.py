@@ -168,9 +168,19 @@ def test_daemon_ticks(daemon_paused_instance):
         assert ticks[0].tick_data.run_requests == []
 
 
-def test_error_loop_daemon_tick(
-    daemon_not_paused_instance,
-):
+@pytest.mark.parametrize(
+    "crash_location",
+    [
+        "RUN_REQUESTS_CREATED",
+        "RUN_IDS_ADDED_TO_EVALUATIONS",
+        "RUN_CREATED",
+        "RUN_SUBMITTED",
+        "EXECUTION_PLAN_CREATED_1",
+        "RUN_CREATED_1",
+        "RUN_SUBMITTED_1",
+    ],
+)
+def test_error_loop_daemon_tick(daemon_not_paused_instance, crash_location):
     instance = daemon_not_paused_instance
     error_asset_scenario = daemon_scenarios[
         "auto_materialize_policy_max_materializations_not_exceeded"
@@ -183,7 +193,7 @@ def test_error_loop_daemon_tick(
     for trial_num in range(3):
         test_time = execution_time.add(seconds=15 * trial_num)
         with pendulum.test(test_time):
-            debug_crash_flags = {"EXECUTION_PLAN_CREATED_1": Exception(f"Oops {trial_num}")}
+            debug_crash_flags = {crash_location: Exception(f"Oops {trial_num}")}
 
             with pytest.raises(Exception, match=f"Oops {trial_num}"):
                 error_asset_scenario.do_daemon_scenario(
