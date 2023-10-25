@@ -183,7 +183,7 @@ export const ModuleOrPackageOrFile: React.FC<{metadata: WorkspaceDisplayMetadata
   return null;
 };
 
-const LocationStatus: React.FC<{
+export const LocationStatus: React.FC<{
   location: string;
   locationOrError: WorkspaceRepositoryLocationNode;
 }> = (props) => {
@@ -242,7 +242,7 @@ const LocationStatus: React.FC<{
   );
 };
 
-const ReloadButton: React.FC<{location: string}> = ({location}) => {
+export const ReloadButton: React.FC<{location: string}> = ({location}) => {
   return (
     <ReloadRepositoryLocationButton
       location={location}
