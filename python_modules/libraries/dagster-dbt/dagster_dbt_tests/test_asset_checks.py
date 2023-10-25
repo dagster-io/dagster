@@ -12,6 +12,7 @@ from dagster_dbt.core.resources_v2 import DbtCliResource
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 from dbt.version import __version__ as dbt_version
 from packaging import version
+from pytest_mock import MockerFixture
 
 pytest.importorskip("dbt.version", minversion="1.4")
 
@@ -146,8 +147,12 @@ def test_enable_asset_checks_with_custom_translator() -> None:
     ],
 )
 def test_asset_check_execution(
-    dbt_commands: List[List[str]], selection: Optional[AssetSelection]
+    mocker: MockerFixture, dbt_commands: List[List[str]], selection: Optional[AssetSelection]
 ) -> None:
+    mock_context = mocker.MagicMock()
+    mock_context.assets_def = None
+    mock_context.has_assets_def = True
+
     dbt = DbtCliResource(project_dir=os.fspath(test_asset_checks_dbt_project_dir))
 
     @dbt_assets(manifest=manifest, dagster_dbt_translator=dagster_dbt_translator_with_checks)
@@ -172,6 +177,8 @@ def test_asset_check_execution(
             dbt_command,
             manifest=manifest,
             dagster_dbt_translator=dagster_dbt_translator_with_checks,
+            context=mock_context,
+            target_path=Path("target"),
         )
 
         events += list(dbt_cli_invocation.stream())
