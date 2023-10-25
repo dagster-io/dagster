@@ -909,6 +909,13 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
     run_ids: Set[str] = set()
     rule_snapshots: Optional[Sequence[AutoMaterializeRuleSnapshot]] = None
 
+    @property
+    def is_empty(self) -> bool:
+        return (
+            sum([self.num_requested, self.num_skipped, self.num_discarded]) == 0
+            and len(self.partition_subsets_by_condition) == 0
+        )
+
     @staticmethod
     def from_rule_evaluation_results(
         asset_graph: AssetGraph,
@@ -1052,9 +1059,8 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
         potentially have different string values.
         """
         if stored_evaluation is None:
-            return False
-        sorted_results = sorted(self.partition_subsets_by_condition)
-        sorted_stored_results = sorted(stored_evaluation.partition_subsets_by_condition)
+            # empty evaluations are not stored on the cursor
+            return self.is_empty
         return (
             self.asset_key == stored_evaluation.asset_key
             and set(self.rule_snapshots or []) == set(stored_evaluation.rule_snapshots or [])
@@ -1063,22 +1069,10 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
             and stored_evaluation.num_requested == 0
             and stored_evaluation.num_discarded == 0
             and stored_evaluation.num_skipped == self.num_skipped
-            and len(sorted_results) == len(sorted_stored_results)
-            and (
-                # first is a quick check for the equality of the string representations of the
-                # partition subsets
-                sorted_results == [tuple(x) for x in sorted_stored_results]
-                # however, not all identical partition subsets are serialized to the same string,
-                # so sometimes we need to deserialize the keys to be sure
-                or [
-                    self._deserialize_rule_evaluation_result(re, ss, asset_graph)
-                    for re, ss in sorted_results
-                ]
-                == [
-                    self._deserialize_rule_evaluation_result(re, ss, asset_graph)
-                    for re, ss in sorted_stored_results
-                ]
-            )
+            # when rule evaluation results are deserialized from json, they are lists instead of
+            # tuples, so we must convert them before comparing
+            and sorted(self.partition_subsets_by_condition)
+            == sorted([tuple(x) for x in stored_evaluation.partition_subsets_by_condition])
         )
 
 
