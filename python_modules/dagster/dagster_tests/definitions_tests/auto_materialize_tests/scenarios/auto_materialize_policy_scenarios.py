@@ -245,6 +245,7 @@ auto_materialize_policy_scenarios = {
                 )
             ],
             expected_evaluations=[
+                AssetEvaluationSpec.empty("daily"),
                 AssetEvaluationSpec(
                     asset_key="hourly",
                     rule_evaluations=[
@@ -269,7 +270,7 @@ auto_materialize_policy_scenarios = {
                     ],
                     num_requested=48,
                     num_discarded=4,
-                )
+                ),
             ],
         )
     ),
@@ -331,6 +332,7 @@ auto_materialize_policy_scenarios = {
             run_request(["hourly"], partition_key="2013-01-05-04:00"),
         ],
         expected_evaluations=[
+            AssetEvaluationSpec.empty("daily"),
             AssetEvaluationSpec(
                 asset_key="hourly",
                 rule_evaluations=[
@@ -355,7 +357,7 @@ auto_materialize_policy_scenarios = {
                 ],
                 num_requested=1,
                 num_discarded=4,
-            )
+            ),
         ],
     ),
     "auto_materialize_policy_max_materializations_not_exceeded": AssetReconciliationScenario(
@@ -375,6 +377,7 @@ auto_materialize_policy_scenarios = {
             run_request(["hourly"], partition_key="2013-01-05-00:00"),
         ],
         expected_evaluations=[
+            AssetEvaluationSpec.empty("daily"),
             AssetEvaluationSpec(
                 asset_key="hourly",
                 rule_evaluations=[
@@ -389,7 +392,7 @@ auto_materialize_policy_scenarios = {
                     ),
                 ],
                 num_requested=5,
-            )
+            ),
         ],
     ),
     "auto_materialize_policy_daily_to_unpartitioned_freshness": AssetReconciliationScenario(
@@ -409,6 +412,8 @@ auto_materialize_policy_scenarios = {
         unevaluated_runs=[run(["asset1", "asset2", "asset3", "asset4"]), run(["asset1", "asset2"])],
         expected_run_requests=[run_request(asset_keys=["asset3", "asset4"])],
         expected_evaluations=[
+            AssetEvaluationSpec.empty("asset1"),
+            AssetEvaluationSpec.empty("asset2"),
             AssetEvaluationSpec(
                 asset_key="asset3",
                 rule_evaluations=[
@@ -565,6 +570,7 @@ auto_materialize_policy_scenarios = {
                 ],
                 expected_run_requests=[],
                 expected_evaluations=[
+                    AssetEvaluationSpec.empty("C"),
                     AssetEvaluationSpec(
                         asset_key="D",
                         rule_evaluations=[
@@ -851,6 +857,8 @@ auto_materialize_policy_scenarios = {
         current_time=create_pendulum_time(year=2023, month=1, day=1, hour=4),
         expected_run_requests=[run_request(["asset3"], "2023-01-01-03:00")],
         expected_evaluations=[
+            AssetEvaluationSpec.empty("asset1"),
+            AssetEvaluationSpec.empty("asset2"),
             AssetEvaluationSpec(
                 asset_key="asset3",
                 rule_evaluations=[
@@ -924,6 +932,8 @@ auto_materialize_policy_scenarios = {
             run_request(["asset3"], "2023-01-01-03:00"),
         ],
         expected_evaluations=[
+            AssetEvaluationSpec.empty("asset1"),
+            AssetEvaluationSpec.empty("asset2"),
             AssetEvaluationSpec(
                 asset_key="asset3",
                 rule_evaluations=[
@@ -981,7 +991,7 @@ auto_materialize_policy_scenarios = {
         # can now run C because the skip rule is no longer true
         expected_run_requests=[run_request(["C"])],
     ),
-    "skipped_subset_partitioned": AssetReconciliationScenario(
+    "skipped_on_last_tick_subset_partitioned": AssetReconciliationScenario(
         assets=partitioned_vee,
         asset_selection=AssetSelection.keys("C"),
         cursor_from=AssetReconciliationScenario(
@@ -998,7 +1008,7 @@ auto_materialize_policy_scenarios = {
         # can now run C[a] because the skip rule is no longer true
         expected_run_requests=[run_request(["C"], partition_key="a")],
     ),
-    "skipped_subset_partitioned2": AssetReconciliationScenario(
+    "skipped_on_last_tick_subset_partitioned2": AssetReconciliationScenario(
         assets=partitioned_vee,
         asset_selection=AssetSelection.keys("C"),
         cursor_from=AssetReconciliationScenario(
