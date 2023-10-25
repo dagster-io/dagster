@@ -2,6 +2,7 @@ jest.useFakeTimers();
 
 import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import {render, act, waitFor} from '@testing-library/react';
+import {GraphQLError} from 'graphql/error';
 import React from 'react';
 
 import {AssetKey, AssetKeyInput, buildAssetKey} from '../../graphql/types';
@@ -349,5 +350,70 @@ describe('AssetLiveDataProvider', () => {
     await waitFor(() => {
       expect(resultFn3).toHaveBeenCalled();
     });
+  });
+
+  it('Skips over asset keys that fail to fetch', async () => {
+    const assetKeys = [buildAssetKey({path: ['key1']})];
+    const mockedQuery = buildMockedAssetGraphLiveQuery(assetKeys, undefined, [
+      new GraphQLError('timeout'),
+    ]);
+    const mockedQuery2 = buildMockedAssetGraphLiveQuery(assetKeys, undefined, [
+      new GraphQLError('timeout'),
+    ]);
+
+    const resultFn = getMockResultFn(mockedQuery);
+    const resultFn2 = getMockResultFn(mockedQuery2);
+
+    const hookResult = jest.fn();
+    const hookResult2 = jest.fn();
+
+    const {rerender} = render(
+      <Test mocks={[mockedQuery, mockedQuery2]} hooks={[{keys: assetKeys, hookResult}]} />,
+    );
+
+    // Initially an empty object
+    expect(resultFn).toHaveBeenCalledTimes(0);
+    expect(hookResult.mock.calls[0]!.value).toEqual(undefined);
+
+    act(() => {
+      jest.runOnlyPendingTimers();
+    });
+
+    expect(resultFn).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(hookResult.mock.calls[1]!.value).not.toEqual({});
+    });
+    expect(resultFn2).not.toHaveBeenCalled();
+
+    // Re-render with the same asset keys and expect no fetches to be made
+
+    rerender(
+      <Test
+        mocks={[mockedQuery, mockedQuery2]}
+        hooks={[{keys: assetKeys, hookResult: hookResult2}]}
+      />,
+    );
+
+    // Initially an empty object
+    expect(resultFn2).not.toHaveBeenCalled();
+    expect(hookResult2.mock.calls[0][0]).toEqual({});
+    act(() => {
+      jest.runOnlyPendingTimers();
+    });
+
+    // Not called because they failed to fetch recently
+    expect(resultFn2).not.toHaveBeenCalled();
+    expect(hookResult2.mock.calls[1]).toEqual(hookResult.mock.calls[1]);
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    // After the poll interval we retry the previously failed assets
+    act(() => {
+      jest.advanceTimersByTime(SUBSCRIPTION_IDLE_POLL_RATE + 1);
+    });
+    expect(resultFn2).toHaveBeenCalled();
+    expect(hookResult2.mock.calls[1]).toEqual(hookResult.mock.calls[1]);
   });
 });
