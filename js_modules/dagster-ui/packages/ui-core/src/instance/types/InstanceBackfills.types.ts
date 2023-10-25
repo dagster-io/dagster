@@ -36,6 +36,7 @@ export type InstanceHealthForBackfillsQuery = {
 };
 
 export type InstanceBackfillsQueryVariables = Types.Exact<{
+  status?: Types.InputMaybe<Types.BulkActionStatus>;
   cursor?: Types.InputMaybe<Types.Scalars['String']>;
   limit?: Types.InputMaybe<Types.Scalars['Int']>;
 }>;
