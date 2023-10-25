@@ -1,7 +1,6 @@
 from typing import Any, Dict, List, Mapping, Optional, Sequence, cast
 
 import dagster._check as check
-from dagster_graphql.implementation.asset_checks_loader import AssetChecksLoader
 import graphene
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
@@ -21,6 +20,7 @@ from dagster._core.scheduler.instigation import (
 )
 from dagster._core.workspace.permissions import Permissions
 
+from dagster_graphql.implementation.asset_checks_loader import AssetChecksLoader
 from dagster_graphql.implementation.fetch_auto_materialize_asset_evaluations import (
     fetch_auto_materialize_asset_evaluations,
     fetch_auto_materialize_asset_evaluations_for_evaluation_id,

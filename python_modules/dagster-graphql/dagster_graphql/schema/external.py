@@ -1,6 +1,5 @@
 import asyncio
 from typing import TYPE_CHECKING, Dict, List
-from dagster_graphql.implementation.asset_checks_loader import AssetChecksLoader
 
 import graphene
 from dagster import (
@@ -29,6 +28,7 @@ from dagster._core.workspace.workspace import (
     CodeLocationLoadStatus,
 )
 
+from dagster_graphql.implementation.asset_checks_loader import AssetChecksLoader
 from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
 from dagster_graphql.implementation.loader import (
     RepositoryScopedBatchLoader,

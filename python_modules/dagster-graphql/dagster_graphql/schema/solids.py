@@ -2,7 +2,6 @@ from functools import lru_cache
 from typing import TYPE_CHECKING, List, Mapping, Optional, Sequence, Union
 
 import dagster._check as check
-from dagster_graphql.implementation.asset_checks_loader import AssetChecksLoader
 import graphene
 from dagster._core.definitions import NodeHandle
 from dagster._core.host_representation import RepresentedJob
@@ -12,6 +11,7 @@ from dagster._core.snap import DependencyStructureIndex, GraphDefSnap, OpDefSnap
 from dagster._core.snap.node import InputMappingSnap, OutputMappingSnap
 from dagster._core.storage.dagster_run import RunsFilter
 
+from dagster_graphql.implementation.asset_checks_loader import AssetChecksLoader
 from dagster_graphql.implementation.events import iterate_metadata_entries
 from dagster_graphql.schema.logs.events import GrapheneRunStepStats
 from dagster_graphql.schema.metadata import GrapheneMetadataEntry

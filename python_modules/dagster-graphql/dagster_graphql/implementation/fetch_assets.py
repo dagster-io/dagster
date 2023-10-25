@@ -61,8 +61,6 @@ from dagster_graphql.implementation.loader import (
     StaleStatusLoader,
 )
 
-from .asset_checks_loader import AssetChecksLoader
-
 if TYPE_CHECKING:
     from ..schema.asset_graph import GrapheneAssetNode, GrapheneAssetNodeDefinitionCollision
     from ..schema.errors import GrapheneAssetNotFoundError
@@ -188,6 +186,7 @@ def get_asset_nodes_by_asset_key(
     has an op.
     """
     from ..schema.asset_graph import GrapheneAssetNode
+    from .asset_checks_loader import AssetChecksLoader
 
     depended_by_loader = CrossRepoAssetDependedByLoader(context=graphene_info.context)
 
@@ -202,8 +201,10 @@ def get_asset_nodes_by_asset_key(
         AssetKey, Tuple[CodeLocation, ExternalRepository, ExternalAssetNode]
     ] = {}
     for repo_loc, repo, external_asset_node in asset_node_iter(graphene_info):
-        preexisting_node_tuple = asset_nodes_by_asset_key.get(external_asset_node.asset_key)
-        if preexisting_node_tuple is None or preexisting_node_tuple[2].is_source:
+        _, _, preexisting_asset_node = asset_nodes_by_asset_key.get(
+            external_asset_node.asset_key, (None, None, None)
+        )
+        if preexisting_asset_node is None or preexisting_asset_node.is_source:
             asset_nodes_by_asset_key[external_asset_node.asset_key] = (
                 repo_loc,
                 repo,
