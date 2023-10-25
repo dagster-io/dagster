@@ -1,15 +1,18 @@
-from dagster import AssetKey, load_assets_from_modules
-from dagster._core.definitions.load_asset_checks_from_modules import load_asset_checks_from_modules
+from dagster import AssetKey, asset_check, load_assets_from_modules
+from dagster._core.definitions.load_asset_checks_from_modules import (
+    load_asset_checks_from_current_module,
+    load_asset_checks_from_modules,
+)
 
 from dagster_tests.definitions_tests.decorators_tests.test_asset_check_decorator import (
     execute_assets_and_checks,
 )
 
-from . import checks_module
-from .checks_module import asset_check_1
-
 
 def test_load_asset_checks_from_modules():
+    from . import checks_module
+    from .checks_module import asset_check_1
+
     checks = load_asset_checks_from_modules([checks_module])
     assert len(checks) == 1
 
@@ -28,6 +31,9 @@ def test_load_asset_checks_from_modules():
 
 
 def test_load_asset_checks_from_modules_prefix():
+    from . import checks_module
+    from .checks_module import asset_check_1
+
     checks = load_asset_checks_from_modules([checks_module], asset_key_prefix="foo")
     assert len(checks) == 1
 
@@ -43,3 +49,15 @@ def test_load_asset_checks_from_modules_prefix():
     assert result.get_asset_check_evaluations()[0].passed
     assert result.get_asset_check_evaluations()[0].asset_key == AssetKey(["foo", "asset_1"])
     assert result.get_asset_check_evaluations()[0].check_name == "asset_check_1"
+
+
+@asset_check(asset=AssetKey("asset_1"))
+def check_in_current_module():
+    pass
+
+
+def test_load_asset_checks_from_current_module():
+    checks = load_asset_checks_from_current_module(asset_key_prefix="foo")
+    assert len(checks) == 1
+    assert checks[0].name == "check_in_current_module"
+    assert checks[0].asset_key == AssetKey(["foo", "asset_1"])
