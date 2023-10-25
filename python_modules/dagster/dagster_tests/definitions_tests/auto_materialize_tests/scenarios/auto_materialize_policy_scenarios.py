@@ -69,6 +69,11 @@ vee = [
     asset_def("B"),
     asset_def("C", ["A", "B"]),
 ]
+partitioned_vee = [
+    asset_def("A", partitions_def=two_partitions_partitions_def),
+    asset_def("B", partitions_def=two_partitions_partitions_def),
+    asset_def("C", ["A", "B"], partitions_def=two_partitions_partitions_def),
+]
 lopsided_vee = [
     asset_def("root1"),
     asset_def("root2"),
@@ -240,6 +245,7 @@ auto_materialize_policy_scenarios = {
                 )
             ],
             expected_evaluations=[
+                AssetEvaluationSpec.empty("daily"),
                 AssetEvaluationSpec(
                     asset_key="hourly",
                     rule_evaluations=[
@@ -264,7 +270,7 @@ auto_materialize_policy_scenarios = {
                     ],
                     num_requested=48,
                     num_discarded=4,
-                )
+                ),
             ],
         )
     ),
@@ -326,6 +332,7 @@ auto_materialize_policy_scenarios = {
             run_request(["hourly"], partition_key="2013-01-05-04:00"),
         ],
         expected_evaluations=[
+            AssetEvaluationSpec.empty("daily"),
             AssetEvaluationSpec(
                 asset_key="hourly",
                 rule_evaluations=[
@@ -350,7 +357,7 @@ auto_materialize_policy_scenarios = {
                 ],
                 num_requested=1,
                 num_discarded=4,
-            )
+            ),
         ],
     ),
     "auto_materialize_policy_max_materializations_not_exceeded": AssetReconciliationScenario(
@@ -370,6 +377,7 @@ auto_materialize_policy_scenarios = {
             run_request(["hourly"], partition_key="2013-01-05-00:00"),
         ],
         expected_evaluations=[
+            AssetEvaluationSpec.empty("daily"),
             AssetEvaluationSpec(
                 asset_key="hourly",
                 rule_evaluations=[
@@ -384,7 +392,7 @@ auto_materialize_policy_scenarios = {
                     ),
                 ],
                 num_requested=5,
-            )
+            ),
         ],
     ),
     "auto_materialize_policy_daily_to_unpartitioned_freshness": AssetReconciliationScenario(
@@ -404,6 +412,8 @@ auto_materialize_policy_scenarios = {
         unevaluated_runs=[run(["asset1", "asset2", "asset3", "asset4"]), run(["asset1", "asset2"])],
         expected_run_requests=[run_request(asset_keys=["asset3", "asset4"])],
         expected_evaluations=[
+            AssetEvaluationSpec.empty("asset1"),
+            AssetEvaluationSpec.empty("asset2"),
             AssetEvaluationSpec(
                 asset_key="asset3",
                 rule_evaluations=[
@@ -560,6 +570,7 @@ auto_materialize_policy_scenarios = {
                 ],
                 expected_run_requests=[],
                 expected_evaluations=[
+                    AssetEvaluationSpec.empty("C"),
                     AssetEvaluationSpec(
                         asset_key="D",
                         rule_evaluations=[
@@ -846,6 +857,8 @@ auto_materialize_policy_scenarios = {
         current_time=create_pendulum_time(year=2023, month=1, day=1, hour=4),
         expected_run_requests=[run_request(["asset3"], "2023-01-01-03:00")],
         expected_evaluations=[
+            AssetEvaluationSpec.empty("asset1"),
+            AssetEvaluationSpec.empty("asset2"),
             AssetEvaluationSpec(
                 asset_key="asset3",
                 rule_evaluations=[
@@ -919,6 +932,8 @@ auto_materialize_policy_scenarios = {
             run_request(["asset3"], "2023-01-01-03:00"),
         ],
         expected_evaluations=[
+            AssetEvaluationSpec.empty("asset1"),
+            AssetEvaluationSpec.empty("asset2"),
             AssetEvaluationSpec(
                 asset_key="asset3",
                 rule_evaluations=[
@@ -961,5 +976,52 @@ auto_materialize_policy_scenarios = {
                 num_discarded=0,
             ),
         ],
+    ),
+    "skipped_subset_unpartitioned": AssetReconciliationScenario(
+        assets=vee,
+        asset_selection=AssetSelection.keys("C"),
+        cursor_from=AssetReconciliationScenario(
+            assets=vee,
+            asset_selection=AssetSelection.keys("C"),
+            unevaluated_runs=[run(["A"])],
+            # C must wait for B to be materialized
+            expected_run_requests=[],
+        ),
+        unevaluated_runs=[run(["B"])],
+        # can now run C because the skip rule is no longer true
+        expected_run_requests=[run_request(["C"])],
+    ),
+    "skipped_on_last_tick_subset_partitioned": AssetReconciliationScenario(
+        assets=partitioned_vee,
+        asset_selection=AssetSelection.keys("C"),
+        cursor_from=AssetReconciliationScenario(
+            assets=partitioned_vee,
+            asset_selection=AssetSelection.keys("C"),
+            unevaluated_runs=[
+                run(["A"], partition_key="a"),
+                run(["A"], partition_key="b"),
+            ],
+            # C must wait for B to be materialized
+            expected_run_requests=[],
+        ),
+        unevaluated_runs=[run(["B"], partition_key="a")],
+        # can now run C[a] because the skip rule is no longer true
+        expected_run_requests=[run_request(["C"], partition_key="a")],
+    ),
+    "skipped_on_last_tick_subset_partitioned2": AssetReconciliationScenario(
+        assets=partitioned_vee,
+        asset_selection=AssetSelection.keys("C"),
+        cursor_from=AssetReconciliationScenario(
+            assets=partitioned_vee,
+            asset_selection=AssetSelection.keys("C"),
+            unevaluated_runs=[
+                run(["A"], partition_key="a"),
+                run(["A"], partition_key="b"),
+            ],
+            # C must wait for B to be materialized
+            expected_run_requests=[],
+        ),
+        expected_run_requests=[],
+        unevaluated_runs=[],
     ),
 }

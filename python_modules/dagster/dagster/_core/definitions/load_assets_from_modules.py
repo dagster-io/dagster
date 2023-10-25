@@ -228,7 +228,7 @@ def assets_from_package_module(
             defined in the given modules.
     """
     return assets_from_modules(
-        _find_modules_in_package(package_module), extra_source_assets=extra_source_assets
+        find_modules_in_package(package_module), extra_source_assets=extra_source_assets
     )
 
 
@@ -338,14 +338,14 @@ def load_assets_from_package_name(
     )
 
 
-def _find_modules_in_package(package_module: ModuleType) -> Iterable[ModuleType]:
+def find_modules_in_package(package_module: ModuleType) -> Iterable[ModuleType]:
     yield package_module
     package_path = package_module.__file__
     if package_path:
         for _, modname, is_pkg in pkgutil.walk_packages([os.path.dirname(package_path)]):
             submodule = import_module(f"{package_module.__name__}.{modname}")
             if is_pkg:
-                yield from _find_modules_in_package(submodule)
+                yield from find_modules_in_package(submodule)
             else:
                 yield submodule
     else:

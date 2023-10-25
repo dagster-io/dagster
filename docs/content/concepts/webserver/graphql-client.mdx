@@ -59,7 +59,7 @@ If you are using Dagster Cloud, you can configure your client against the Dagste
 
 ```python file=/concepts/webserver/graphql/client_example.py startafter=start_cloud_usage endbefore=end_cloud_usage
 url = "yourorg.dagster.cloud/prod"  # Your deployment-scoped url
-user_token = (  # a User Token generated from the Cloud Settings page in Dagster Cloud.
+user_token = (  # a User Token generated from the Organization Settings page in Dagster Cloud.
     "your_token_here"
 )
 client = DagsterGraphQLClient(url, headers={"Dagster-Cloud-Api-Token": user_token})
