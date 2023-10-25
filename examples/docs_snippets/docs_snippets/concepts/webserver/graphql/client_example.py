@@ -104,7 +104,7 @@ else:
 
 # start_cloud_usage
 url = "yourorg.dagster.cloud/prod"  # Your deployment-scoped url
-user_token = (  # a User Token generated from the Cloud Settings page in Dagster Cloud.
+user_token = (  # a User Token generated from the Organization Settings page in Dagster Cloud.
     "your_token_here"
 )
 client = DagsterGraphQLClient(url, headers={"Dagster-Cloud-Api-Token": user_token})

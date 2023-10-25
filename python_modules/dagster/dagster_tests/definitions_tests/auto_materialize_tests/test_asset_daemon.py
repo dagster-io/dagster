@@ -458,7 +458,9 @@ def test_daemon(scenario_item, daemon_not_paused_instance):
             [spec.num_requested for spec in scenario.expected_evaluations]
         )
         assert tick.requested_asset_keys == {
-            AssetKey.from_coercible(spec.asset_key) for spec in scenario.expected_evaluations
+            AssetKey.from_coercible(spec.asset_key)
+            for spec in scenario.expected_evaluations
+            if spec.num_requested > 0
         }
 
 
@@ -583,9 +585,14 @@ def test_run_ids():
             assert set(run.asset_selection) == set(expected_run_request.asset_selection)
             assert run.tags.get(PARTITION_NAME_TAG) == expected_run_request.partition_key
 
-        evaluations = instance.schedule_storage.get_auto_materialize_asset_evaluations(
-            asset_key=AssetKey("asset4"), limit=100
+        evaluations = sorted(
+            instance.schedule_storage.get_auto_materialize_asset_evaluations(
+                asset_key=AssetKey("asset4"), limit=100
+            ),
+            key=lambda evaluation: evaluation.evaluation_id,
         )
-        assert len(evaluations) == 1
+        assert len(evaluations) == 2
         assert evaluations[0].evaluation.asset_key == AssetKey("asset4")
-        assert evaluations[0].evaluation.run_ids == {run.run_id for run in sorted_runs}
+        assert evaluations[0].evaluation.run_ids == set()
+        assert evaluations[1].evaluation.asset_key == AssetKey("asset4")
+        assert evaluations[1].evaluation.run_ids == {run.run_id for run in sorted_runs}
