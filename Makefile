@@ -29,7 +29,7 @@ ruff:
 	ruff format .
 
 check_ruff:
-	-ruff .
+	ruff .
 	ruff format --check .
 
 yamllint:
