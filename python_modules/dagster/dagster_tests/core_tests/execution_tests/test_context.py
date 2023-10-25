@@ -7,6 +7,7 @@ from dagster import (
     AssetExecutionContext,
     AssetKey,
     AssetOut,
+    AssetSpec,
     DagsterInstance,
     Definitions,
     GraphDefinition,
@@ -423,3 +424,18 @@ def test_asset_context_with_subobjects():
         # context.deps_info_by_key[my_asset.key]
 
     materialize([my_asset, downstream])
+
+    @multi_asset(outs={"out1": AssetOut(), "out2": AssetOut()})
+    def my_multi_asset(context: AssetExecutionContext):
+        context.asset_info_by_key[AssetKey("out1")]
+        context.asset_info_by_key[AssetKey("out2")]
+
+    spec1 = AssetSpec(key="spec1")
+    spec2 = AssetSpec(key="spec2")
+
+    @multi_asset(specs=[spec1, spec2])
+    def my_multi_asset_with_specs(context: AssetExecutionContext):
+        spec1_info = context.asset_info_by_key[spec1.key]
+        spec2_info = context.asset_info_by_key[spec2.key]
+
+    materialize([my_multi_asset, my_multi_asset_with_specs])
