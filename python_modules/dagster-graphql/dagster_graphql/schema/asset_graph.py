@@ -30,8 +30,9 @@ from dagster._core.snap.node import GraphDefSnap, OpDefSnap
 from dagster._core.workspace.permissions import Permissions
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
+from dagster_graphql.implementation.asset_checks_loader import AssetChecksLoader
 from dagster_graphql.implementation.events import iterate_metadata_entries
-from dagster_graphql.implementation.fetch_asset_checks import fetch_asset_checks, has_asset_checks
+from dagster_graphql.implementation.fetch_asset_checks import has_asset_checks
 from dagster_graphql.implementation.fetch_assets import (
     get_asset_materializations,
     get_asset_observations,
@@ -59,7 +60,10 @@ from ..implementation.loader import (
     CrossRepoAssetDependedByLoader,
     StaleStatusLoader,
 )
-from ..schema.asset_checks import GrapheneAssetCheck, GrapheneAssetChecks
+from ..schema.asset_checks import (
+    GrapheneAssetCheck,
+    GrapheneAssetChecks,
+)
 from . import external
 from .asset_key import GrapheneAssetKey
 from .auto_materialize_policy import GrapheneAutoMaterializePolicy
@@ -1097,9 +1101,15 @@ class GrapheneAssetNode(graphene.ObjectType):
         return has_asset_checks(graphene_info, self._external_asset_node.asset_key)
 
     def resolve_assetChecks(self, graphene_info: ResolveInfo) -> List[GrapheneAssetCheck]:
-        res = fetch_asset_checks(graphene_info, self._external_asset_node.asset_key)
+        # use the batched loader with a single asset
+        asset_key = self._external_asset_node.asset_key
+        loader = AssetChecksLoader(
+            context=graphene_info.context, asset_keys=[self._external_asset_node.asset_key]
+        )
+        res = loader.get_checks_for_asset(asset_key)
         if not isinstance(res, GrapheneAssetChecks):
             return []
+
         return res.checks
 
 
