@@ -175,6 +175,14 @@ class GraphenePartitionsByAssetSelector(graphene.InputObjectType):
         name = "PartitionsByAssetSelector"
 
 
+class GrapheneAssetBackfillPreviewParams(graphene.InputObjectType):
+    partitionNames = graphene.InputField(non_null_list(graphene.String))
+    assetSelection = graphene.InputField(non_null_list(GrapheneAssetKeyInput))
+
+    class Meta:
+        name = "AssetBackfillPreviewParams"
+
+
 class GrapheneLaunchBackfillParams(graphene.InputObjectType):
     selector = graphene.InputField(GraphenePartitionSetSelector)
     partitionNames = graphene.List(graphene.NonNull(graphene.String))

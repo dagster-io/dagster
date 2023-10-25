@@ -254,3 +254,4 @@ class ExecutionMetadata(
 
 
 BackfillParams: TypeAlias = Mapping[str, Any]
+AssetBackfillPreviewParams: TypeAlias = Mapping[str, Any]
