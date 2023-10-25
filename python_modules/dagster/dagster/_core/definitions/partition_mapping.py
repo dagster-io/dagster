@@ -448,7 +448,9 @@ class BaseMultiPartitionMapping(ABC):
                     ]
                 ),
                 *[
-                    b_dimension_partitions_def_by_name[dim_name].get_partition_keys()
+                    b_dimension_partitions_def_by_name[dim_name].get_partition_keys(
+                        dynamic_partitions_store=dynamic_partitions_store, current_time=current_time
+                    )
                     for dim_name in unmapped_b_dim_names
                 ],
             ):

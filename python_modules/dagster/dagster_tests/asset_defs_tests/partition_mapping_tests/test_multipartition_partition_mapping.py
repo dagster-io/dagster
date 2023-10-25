@@ -5,6 +5,7 @@ from dagster import (
     AllPartitionMapping,
     AssetExecutionContext,
     AssetKey,
+    DagsterInstance,
     DailyPartitionsDefinition,
     DynamicPartitionsDefinition,
     IdentityPartitionMapping,
@@ -901,3 +902,25 @@ def test_multi_partition_mapping_with_asset_deps():
         AssetKey("asset_1"): asset_1_partition_mapping,
         AssetKey("asset_2"): asset_2_partition_mapping,
     }
+
+
+def test_dynamic_dimension_multipartition_mapping():
+    instance = DagsterInstance.ephemeral()
+
+    foo = DynamicPartitionsDefinition(name="foo")
+    foo_bar = MultiPartitionsDefinition(
+        {
+            "foo": foo,
+            "bar": DynamicPartitionsDefinition(name="bar"),
+        }
+    )
+
+    instance.add_dynamic_partitions("foo", ["a", "b", "c"])
+    instance.add_dynamic_partitions("bar", ["1", "2"])
+
+    result = MultiToSingleDimensionPartitionMapping().get_upstream_mapped_partitions_result_for_partitions(
+        downstream_partitions_subset=foo.empty_subset().with_partition_keys(["a"]),
+        upstream_partitions_def=foo_bar,
+        dynamic_partitions_store=instance,
+    )
+    assert result.partitions_subset == foo_bar.empty_subset().with_partition_keys(["2|a", "1|a"])
