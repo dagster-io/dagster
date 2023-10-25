@@ -246,6 +246,7 @@ class GrapheneTerminateRunResult(graphene.Union):
             GrapheneTerminateRunSuccess,
             GrapheneTerminateRunFailure,
             GrapheneRunNotFoundError,
+            GrapheneUnauthorizedError,
             GraphenePythonError,
         )
         name = "TerminateRunResult"
