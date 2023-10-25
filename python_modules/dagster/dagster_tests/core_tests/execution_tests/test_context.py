@@ -5,6 +5,7 @@ import pytest
 from dagster import (
     AssetCheckResult,
     AssetExecutionContext,
+    AssetKey,
     AssetOut,
     DagsterInstance,
     Definitions,
@@ -405,3 +406,20 @@ def test_error_on_invalid_context_annotation():
         @asset
         def the_asset(context: int):
             pass
+
+
+def test_asset_context_with_subobjects():
+    @asset
+    def my_asset(context: AssetExecutionContext):
+        assert context.asset_info.key == AssetKey("my_asset")
+        # annoying to need to manually make the AssetKey to access into the dict
+        assert context.asset_info_by_key[AssetKey("my_asset")] == context.asset_info
+
+    @asset(deps=[my_asset])
+    def downstream(context: AssetExecutionContext):
+        assert context.asset_info.key == AssetKey("downstream")
+        # it'd be nice to be able to get info about the upstream assets
+        # maybe
+        # context.deps_info_by_key[my_asset.key]
+
+    materialize([my_asset, downstream])

@@ -1325,7 +1325,7 @@ class AssetInfo(
         provenance: Optional[DataProvenance] = None,
         assets_def: Optional[AssetsDefinition] = None,
     ):
-        super(AssetInfo, cls).__new__(
+        return super(AssetInfo, cls).__new__(
             cls, key=key, code_version=code_version, provenance=provenance, assets_def=assets_def
         )
 
@@ -1348,7 +1348,7 @@ class RunInfo(
         run_config: Mapping[str, object],
         retry_number: int,
     ):
-        super(RunInfo, cls).__new__(
+        return super(RunInfo, cls).__new__(
             cls,
             run_id=run_id,
             dagster_run=dagster_run,
@@ -1400,6 +1400,7 @@ class AssetExecutionContext(OpExecutionContext):
                 key=asset_key,
                 code_version=self.assets_def.code_versions_by_key[asset_key],
                 provenance=self.get_asset_provenance(asset_key),
+                assets_def=self.assets_def,
             )
 
         return self._asset_info_by_key
