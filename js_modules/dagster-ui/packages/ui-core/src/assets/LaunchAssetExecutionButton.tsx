@@ -694,9 +694,13 @@ const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = gql`
     assetKey {
       path
     }
-    assetChecks {
-      name
-      canExecuteIndividually
+    assetChecksOrError {
+      ... on AssetChecks {
+        checks {
+          name
+          canExecuteIndividually
+        }
+      }
     }
     dependencyKeys {
       path

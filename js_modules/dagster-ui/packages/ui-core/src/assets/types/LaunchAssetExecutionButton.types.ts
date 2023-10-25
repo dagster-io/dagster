@@ -36,11 +36,18 @@ export type LaunchAssetExecutionAssetNodeFragment = {
     }>;
   } | null;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
-  assetChecks: Array<{
-    __typename: 'AssetCheck';
-    name: string;
-    canExecuteIndividually: Types.AssetCheckCanExecuteIndividually;
-  }>;
+  assetChecksOrError:
+    | {__typename: 'AssetCheckNeedsAgentUpgradeError'}
+    | {__typename: 'AssetCheckNeedsMigrationError'}
+    | {__typename: 'AssetCheckNeedsUserCodeUpgrade'}
+    | {
+        __typename: 'AssetChecks';
+        checks: Array<{
+          __typename: 'AssetCheck';
+          name: string;
+          canExecuteIndividually: Types.AssetCheckCanExecuteIndividually;
+        }>;
+      };
   dependencyKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
   repository: {
     __typename: 'Repository';
@@ -631,11 +638,18 @@ export type LaunchAssetLoaderQuery = {
       }>;
     } | null;
     assetKey: {__typename: 'AssetKey'; path: Array<string>};
-    assetChecks: Array<{
-      __typename: 'AssetCheck';
-      name: string;
-      canExecuteIndividually: Types.AssetCheckCanExecuteIndividually;
-    }>;
+    assetChecksOrError:
+      | {__typename: 'AssetCheckNeedsAgentUpgradeError'}
+      | {__typename: 'AssetCheckNeedsMigrationError'}
+      | {__typename: 'AssetCheckNeedsUserCodeUpgrade'}
+      | {
+          __typename: 'AssetChecks';
+          checks: Array<{
+            __typename: 'AssetCheck';
+            name: string;
+            canExecuteIndividually: Types.AssetCheckCanExecuteIndividually;
+          }>;
+        };
     dependencyKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
     repository: {
       __typename: 'Repository';

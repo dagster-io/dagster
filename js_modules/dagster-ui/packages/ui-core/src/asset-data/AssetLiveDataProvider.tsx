@@ -501,17 +501,21 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
     assetObservations(limit: 1) {
       ...AssetNodeLiveObservation
     }
-    assetChecks {
-      name
-      canExecuteIndividually
-      executionForLatestMaterialization {
-        id
-        runId
-        status
-        timestamp
-        stepKey
-        evaluation {
-          severity
+    assetChecksOrError {
+      ... on AssetChecks {
+        checks {
+          name
+          canExecuteIndividually
+          executionForLatestMaterialization {
+            id
+            runId
+            status
+            timestamp
+            stepKey
+            evaluation {
+              severity
+            }
+          }
         }
       }
     }

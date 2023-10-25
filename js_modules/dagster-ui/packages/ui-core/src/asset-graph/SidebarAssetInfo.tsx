@@ -275,9 +275,13 @@ const SIDEBAR_ASSET_FRAGMENT = gql`
     requiredResources {
       resourceKey
     }
-    assetChecks {
-      name
-      ...ExecuteChecksButtonCheckFragment
+    assetChecksOrError {
+      ... on AssetChecks {
+        checks {
+          name
+          ...ExecuteChecksButtonCheckFragment
+        }
+      }
     }
 
     ...AssetNodeConfigFragment

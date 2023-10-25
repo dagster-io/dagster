@@ -61,8 +61,8 @@ from ..implementation.loader import (
     StaleStatusLoader,
 )
 from ..schema.asset_checks import (
-    GrapheneAssetCheck,
-    GrapheneAssetChecks,
+    AssetChecksOrErrorUnion,
+    GrapheneAssetChecksOrError,
 )
 from . import external
 from .asset_key import GrapheneAssetKey
@@ -272,7 +272,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     # the acutal checks are listed in the assetChecksOrError resolver. We use this boolean
     # to show/hide the checks tab. We plan to remove this field once we always show the checks tab.
     hasAssetChecks = graphene.NonNull(graphene.Boolean)
-    assetChecks = non_null_list(GrapheneAssetCheck)
+    assetChecksOrError = graphene.NonNull(GrapheneAssetChecksOrError)
 
     class Meta:
         name = "AssetNode"
@@ -1100,17 +1100,14 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_hasAssetChecks(self, graphene_info: ResolveInfo) -> bool:
         return has_asset_checks(graphene_info, self._external_asset_node.asset_key)
 
-    def resolve_assetChecks(self, graphene_info: ResolveInfo) -> List[GrapheneAssetCheck]:
+    def resolve_assetChecksOrError(self, graphene_info: ResolveInfo) -> AssetChecksOrErrorUnion:
         # use the batched loader with a single asset
+
         asset_key = self._external_asset_node.asset_key
         loader = AssetChecksLoader(
             context=graphene_info.context, asset_keys=[self._external_asset_node.asset_key]
         )
-        res = loader.get_checks_for_asset(asset_key)
-        if not isinstance(res, GrapheneAssetChecks):
-            return []
-
-        return res.checks
+        return loader.get_checks_for_asset(asset_key)
 
 
 class GrapheneAssetGroup(graphene.ObjectType):
