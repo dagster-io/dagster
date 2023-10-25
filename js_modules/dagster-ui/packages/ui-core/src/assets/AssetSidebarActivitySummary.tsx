@@ -50,6 +50,8 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
 
   const grouped = useGroupedEvents(xAxis, materializations, observations, loadedPartitionKeys);
   const displayedEvent = isSourceAsset ? observations[0] : materializations[0];
+  const assetChecks =
+    asset.assetChecksOrError.__typename === 'AssetChecks' ? asset.assetChecks : [];
 
   React.useEffect(() => {
     refetch();
@@ -160,16 +162,16 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
           columnCount={1}
         />
       </SidebarSection>
-      {asset.assetChecks.length > 0 && (
+      {assetChecks.length > 0 && (
         <SidebarSection title="Checks">
           <Box padding={{horizontal: 24, vertical: 12}} flex={{gap: 12, alignItems: 'center'}}>
-            <ExecuteChecksButton assetNode={asset} checks={asset.assetChecks} />
+            <ExecuteChecksButton assetNode={asset} checks={assetChecks} />
             <Link to={assetDetailsPathForKey(asset.assetKey, {view: 'checks'})}>
               View all check details
             </Link>
           </Box>
 
-          {asset.assetChecks.slice(0, 10).map((check) => {
+          {assetChecks.slice(0, 10).map((check) => {
             const execution =
               liveData &&
               liveData.assetChecks?.find((c) => c.name === check.name)
@@ -197,13 +199,13 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
               </Box>
             );
           })}
-          {asset.assetChecks.length > 10 && (
+          {assetChecks.length > 10 && (
             <Box
               padding={{vertical: 12, right: 12, left: 24}}
               border={{side: 'top', width: 1, color: Colors.KeylineGray}}
             >
               <Link to={assetDetailsPathForKey(asset.assetKey, {view: 'checks'})}>
-                View {asset.assetChecks.length - 10} more…
+                View {assetChecks.length - 10} more…
               </Link>
             </Box>
           )}
