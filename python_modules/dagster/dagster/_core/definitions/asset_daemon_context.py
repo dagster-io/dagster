@@ -714,7 +714,7 @@ def _build_run_requests_with_backfill_policy(
 ) -> Sequence[RunRequest]:
     run_requests = []
     partition_subset = partitions_def.subset_with_partition_keys(partition_keys)
-    partition_key_ranges = partition_subset.get_partition_key_ranges()
+    partition_key_ranges = partition_subset.get_partition_key_ranges(partitions_def)
     for partition_key_range in partition_key_ranges:
         # We might resolve more than one partition key range for the given partition keys.
         # We can only apply chunking on individual partition key ranges.

@@ -92,7 +92,7 @@ class CachingDataTimeResolver:
         if not isinstance(partition_subset, BaseTimeWindowPartitionsSubset):
             check.failed(f"Invalid partition subset {type(partition_subset)}")
 
-        sorted_time_windows = sorted(partition_subset.included_time_windows)
+        sorted_time_windows = sorted(partition_subset.get_included_time_windows())
         # no time windows, no data
         if len(sorted_time_windows) == 0:
             return None

@@ -934,6 +934,12 @@ class GrapheneAssetNode(graphene.ObjectType):
         if not self._dynamic_partitions_loader:
             check.failed("dynamic_partitions_loader must be provided to get partition keys")
 
+        partitions_def = (
+            self._external_asset_node.partitions_def_data.get_partitions_definition()
+            if self._external_asset_node.partitions_def_data
+            else None
+        )
+
         (
             materialized_partition_subset,
             failed_partition_subset,
@@ -942,11 +948,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             graphene_info.context.instance,
             asset_key,
             self._dynamic_partitions_loader,
-            (
-                self._external_asset_node.partitions_def_data.get_partitions_definition()
-                if self._external_asset_node.partitions_def_data
-                else None
-            ),
+            partitions_def,
         )
 
         return build_partition_statuses(
@@ -954,6 +956,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             materialized_partition_subset,
             failed_partition_subset,
             in_progress_subset,
+            partitions_def,
         )
 
     def resolve_partitionStats(

@@ -613,6 +613,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                         child_partitions_subset = (
                             partition_mapping.get_downstream_partitions_for_partitions(
                                 partitions_subset,
+                                partitions_def,
                                 downstream_partitions_def=child_partitions_def,
                                 dynamic_partitions_store=self,
                                 current_time=self.evaluation_time,

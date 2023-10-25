@@ -108,6 +108,7 @@ class TimeWindowPartitionMapping(
     def get_upstream_mapped_partitions_result_for_partitions(
         self,
         downstream_partitions_subset: Optional[PartitionsSubset],
+        downstream_partitions_def: Optional[PartitionsDefinition],
         upstream_partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
@@ -127,6 +128,7 @@ class TimeWindowPartitionMapping(
     def get_downstream_partitions_for_partitions(
         self,
         upstream_partitions_subset: PartitionsSubset,
+        upstream_partitions_def: PartitionsDefinition,
         downstream_partitions_def: Optional[PartitionsDefinition],
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
@@ -137,7 +139,7 @@ class TimeWindowPartitionMapping(
         if not provided.
         """
         return self._map_partitions(
-            upstream_partitions_subset.partitions_def,
+            upstream_partitions_def,
             downstream_partitions_def,
             upstream_partitions_subset,
             end_offset=-self.start_offset,
@@ -200,7 +202,7 @@ class TimeWindowPartitionMapping(
         last_window = to_partitions_def.get_last_partition_window(current_time=current_time)
 
         time_windows = []
-        for from_partition_time_window in from_partitions_subset.included_time_windows:
+        for from_partition_time_window in from_partitions_subset.get_included_time_windows():
             from_start_dt, from_end_dt = from_partition_time_window
 
             offsetted_start_dt = _offsetted_datetime(
@@ -363,7 +365,7 @@ class TimeWindowPartitionMapping(
                 TimeWindowPartitionsSubset(
                     partitions_def=to_partitions_def,
                     num_partitions=None,
-                    included_time_windows=from_partitions_subset.included_time_windows,
+                    included_time_windows=from_partitions_subset.get_included_time_windows(),
                 ),
                 [],
             )
@@ -377,7 +379,7 @@ class TimeWindowPartitionMapping(
             else:
                 required_but_nonexistent_partition_keys = [
                     pk
-                    for time_window in from_partitions_subset.included_time_windows
+                    for time_window in from_partitions_subset.get_included_time_windows()
                     for pk in to_partitions_def.get_partition_keys_in_time_window(
                         time_window=time_window
                     )

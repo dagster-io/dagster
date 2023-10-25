@@ -77,6 +77,7 @@ class AssetDaemonCursor(NamedTuple):
         )
 
         return handled_subset.get_partition_keys_not_in_subset(
+            partitions_def=partitions_def,
             current_time=current_time,
             dynamic_partitions_store=dynamic_partitions_store,
         )
@@ -231,7 +232,7 @@ class AssetDaemonCursor(NamedTuple):
                     and isinstance(partitions_def, TimeWindowPartitionsDefinition)
                     and any(
                         time_window.start < partitions_def.start
-                        for time_window in subset.included_time_windows
+                        for time_window in subset.get_included_time_windows()
                     )
                 ):
                     subset = partitions_def.empty_subset()

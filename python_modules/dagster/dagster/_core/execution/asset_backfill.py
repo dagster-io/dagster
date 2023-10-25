@@ -270,9 +270,10 @@ class AssetBackfillData(NamedTuple):
             .sources()
             .resolve(self.target_subset.asset_graph)
         )
+        asset_key = next(iter(root_partitioned_asset_keys))
 
         # Return the targeted partitions for the root partitioned asset keys
-        return self.target_subset.get_partitions_subset(next(iter(root_partitioned_asset_keys)))
+        return self.target_subset.get_partitions_subset(asset_key)
 
     def get_num_partitions(self) -> Optional[int]:
         """Only valid when the same number of partitions are targeted in every asset.

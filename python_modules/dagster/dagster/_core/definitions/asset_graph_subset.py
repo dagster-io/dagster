@@ -94,14 +94,18 @@ class AssetGraphSubset:
                 for key, value in self.partitions_subsets_by_asset_key.items()
             },
             "serializable_partitions_def_ids_by_asset_key": {
-                key.to_user_string(): value.partitions_def.get_serializable_unique_identifier(
+                key.to_user_string(): check.not_none(
+                    self._asset_graph.get_partitions_def(key)
+                ).get_serializable_unique_identifier(
                     dynamic_partitions_store=dynamic_partitions_store
                 )
-                for key, value in self.partitions_subsets_by_asset_key.items()
+                for key, _ in self.partitions_subsets_by_asset_key.items()
             },
             "partitions_def_class_names_by_asset_key": {
-                key.to_user_string(): value.partitions_def.__class__.__name__
-                for key, value in self.partitions_subsets_by_asset_key.items()
+                key.to_user_string(): check.not_none(
+                    self._asset_graph.get_partitions_def(key)
+                ).__class__.__name__
+                for key, _ in self.partitions_subsets_by_asset_key.items()
             },
             "non_partitioned_asset_keys": [
                 key.to_user_string() for key in self._non_partitioned_asset_keys

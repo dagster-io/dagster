@@ -1101,8 +1101,19 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     def asset_partition_key_range_for_input(self, input_name: str) -> PartitionKeyRange:
         subset = self.asset_partitions_subset_for_input(input_name)
+
+        # TODO refactor upstream_asset_partitions_def as method
+        asset_layer = self.job_def.asset_layer
+        upstream_asset_key = asset_layer.asset_key_for_input(self.node_handle, input_name)
+        check.not_none(upstream_asset_key)
+        upstream_asset_partitions_def = asset_layer.partitions_def_for_asset(
+            cast(AssetKey, upstream_asset_key)
+        )
+        check.not_none(upstream_asset_partitions_def)
+
         partition_key_ranges = subset.get_partition_key_ranges(
-            dynamic_partitions_store=self.instance
+            partitions_def=cast(PartitionsDefinition, upstream_asset_partitions_def),
+            dynamic_partitions_store=self.instance,
         )
 
         if len(partition_key_ranges) != 1:
@@ -1127,7 +1138,9 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                 partitions_def = assets_def.partitions_def if assets_def else None
                 partitions_subset = (
                     partitions_def.empty_subset().with_partition_key_range(
-                        self.asset_partition_key_range, dynamic_partitions_store=self.instance
+                        partitions_def,
+                        self.asset_partition_key_range,
+                        dynamic_partitions_store=self.instance,
                     )
                     if partitions_def
                     else None
@@ -1142,6 +1155,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                 mapped_partitions_result = (
                     partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
                         partitions_subset,
+                        partitions_def,
                         upstream_asset_partitions_def,
                         dynamic_partitions_store=self.instance,
                     )
