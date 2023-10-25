@@ -122,6 +122,7 @@ class GrapheneAssetDependency(graphene.ObjectType):
         external_repository: ExternalRepository,
         input_name: Optional[str],
         asset_key: AssetKey,
+        asset_checks_loader: AssetChecksLoader,
         materialization_loader: Optional[BatchMaterializationLoader] = None,
         depended_by_loader: Optional[CrossRepoAssetDependedByLoader] = None,
     ):
@@ -132,6 +133,9 @@ class GrapheneAssetDependency(graphene.ObjectType):
             external_repository, "external_repository", ExternalRepository
         )
         self._asset_key = check.inst_param(asset_key, "asset_key", AssetKey)
+        self._asset_checks_loader = check.inst_param(
+            asset_checks_loader, "asset_checks_loader", AssetChecksLoader
+        )
         self._latest_materialization_loader = check.opt_inst_param(
             materialization_loader, "materialization_loader", BatchMaterializationLoader
         )
@@ -150,7 +154,8 @@ class GrapheneAssetDependency(graphene.ObjectType):
             self._repository_location,
             self._external_repository,
             asset_node,
-            self._latest_materialization_loader,
+            asset_checks_loader=self._asset_checks_loader,
+            materialization_loader=self._latest_materialization_loader,
         )
 
 
@@ -191,6 +196,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     _external_repository: ExternalRepository
     _latest_materialization_loader: Optional[BatchMaterializationLoader]
     _stale_status_loader: Optional[StaleStatusLoader]
+    _asset_checks_loader: AssetChecksLoader
 
     # NOTE: properties/resolvers are listed alphabetically
     assetKey = graphene.NonNull(GrapheneAssetKey)
@@ -282,6 +288,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         repository_location: CodeLocation,
         external_repository: ExternalRepository,
         external_asset_node: ExternalAssetNode,
+        asset_checks_loader: AssetChecksLoader,
         materialization_loader: Optional[BatchMaterializationLoader] = None,
         depended_by_loader: Optional[CrossRepoAssetDependedByLoader] = None,
         stale_status_loader: Optional[StaleStatusLoader] = None,
@@ -313,6 +320,9 @@ class GrapheneAssetNode(graphene.ObjectType):
         )
         self._dynamic_partitions_loader = check.opt_inst_param(
             dynamic_partitions_loader, "dynamic_partitions_loader", CachingDynamicPartitionsLoader
+        )
+        self._asset_checks_loader = check.inst_param(
+            asset_checks_loader, "asset_checks_loader", AssetChecksLoader
         )
         self._external_job = None  # lazily loaded
         self._node_definition_snap = None  # lazily loaded
@@ -715,6 +725,10 @@ class GrapheneAssetNode(graphene.ObjectType):
             instance=graphene_info.context.instance,
             asset_keys=[dep.downstream_asset_key for dep in depended_by_asset_nodes],
         )
+        asset_checks_loader = AssetChecksLoader(
+            context=graphene_info.context,
+            asset_keys=[dep.downstream_asset_key for dep in depended_by_asset_nodes],
+        )
 
         return [
             GrapheneAssetDependency(
@@ -722,6 +736,7 @@ class GrapheneAssetNode(graphene.ObjectType):
                 external_repository=self._external_repository,
                 input_name=dep.input_name,
                 asset_key=dep.downstream_asset_key,
+                asset_checks_loader=asset_checks_loader,
                 materialization_loader=materialization_loader,
                 depended_by_loader=_depended_by_loader,
             )
@@ -764,6 +779,10 @@ class GrapheneAssetNode(graphene.ObjectType):
             instance=graphene_info.context.instance,
             asset_keys=[dep.upstream_asset_key for dep in self._external_asset_node.dependencies],
         )
+        asset_checks_loader = AssetChecksLoader(
+            context=graphene_info.context,
+            asset_keys=[dep.upstream_asset_key for dep in self._external_asset_node.dependencies],
+        )
         return [
             GrapheneAssetDependency(
                 repository_location=self._repository_location,
@@ -771,6 +790,7 @@ class GrapheneAssetNode(graphene.ObjectType):
                 input_name=dep.input_name,
                 asset_key=dep.upstream_asset_key,
                 materialization_loader=materialization_loader,
+                asset_checks_loader=asset_checks_loader,
             )
             for dep in self._external_asset_node.dependencies
         ]
@@ -1102,9 +1122,7 @@ class GrapheneAssetNode(graphene.ObjectType):
 
     def resolve_assetChecks(self, graphene_info: ResolveInfo) -> List[GrapheneAssetCheck]:
         # use the batched loader with a single asset
-        asset_key = self._external_asset_node.asset_key
-        loader = AssetChecksLoader(context=graphene_info.context, asset_keys=[asset_key])
-        res = loader.get_checks_for_asset(asset_key)
+        res = self._asset_checks_loader.get_checks_for_asset(self._external_asset_node.asset_key)
         if not isinstance(res, GrapheneAssetChecks):
             return []
 

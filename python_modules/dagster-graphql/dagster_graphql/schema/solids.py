@@ -2,6 +2,7 @@ from functools import lru_cache
 from typing import TYPE_CHECKING, List, Mapping, Optional, Sequence, Union
 
 import dagster._check as check
+from dagster_graphql.implementation.asset_checks_loader import AssetChecksLoader
 import graphene
 from dagster._core.definitions import NodeHandle
 from dagster._core.host_representation import RepresentedJob
@@ -431,7 +432,13 @@ class ISolidDefinitionMixin:
                 for node in ext_repo.get_external_asset_nodes()
                 if node.op_name == self.solid_def_name
             ]
-            return [GrapheneAssetNode(location, ext_repo, node) for node in nodes]
+            asset_checks_loader = AssetChecksLoader(
+                context=graphene_info.context, asset_keys=[node.asset_key for node in nodes]
+            )
+            return [
+                GrapheneAssetNode(location, ext_repo, node, asset_checks_loader=asset_checks_loader)
+                for node in nodes
+            ]
 
 
 class GrapheneSolidDefinition(graphene.ObjectType, ISolidDefinitionMixin):

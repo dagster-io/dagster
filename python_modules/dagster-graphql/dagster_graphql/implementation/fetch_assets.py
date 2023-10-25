@@ -61,6 +61,8 @@ from dagster_graphql.implementation.loader import (
     StaleStatusLoader,
 )
 
+from .asset_checks_loader import AssetChecksLoader
+
 if TYPE_CHECKING:
     from ..schema.asset_graph import GrapheneAssetNode, GrapheneAssetNodeDefinitionCollision
     from ..schema.errors import GrapheneAssetNotFoundError
@@ -196,20 +198,35 @@ def get_asset_nodes_by_asset_key(
 
     dynamic_partitions_loader = CachingDynamicPartitionsLoader(graphene_info.context.instance)
 
-    asset_nodes_by_asset_key: Dict[AssetKey, GrapheneAssetNode] = {}
+    asset_nodes_by_asset_key: Dict[
+        AssetKey, Tuple[CodeLocation, ExternalRepository, ExternalAssetNode]
+    ] = {}
     for repo_loc, repo, external_asset_node in asset_node_iter(graphene_info):
-        preexisting_node = asset_nodes_by_asset_key.get(external_asset_node.asset_key)
-        if preexisting_node is None or preexisting_node.external_asset_node.is_source:
-            asset_nodes_by_asset_key[external_asset_node.asset_key] = GrapheneAssetNode(
+        preexisting_node_tuple = asset_nodes_by_asset_key.get(external_asset_node.asset_key)
+        if preexisting_node_tuple is None or preexisting_node_tuple[2].is_source:
+            asset_nodes_by_asset_key[external_asset_node.asset_key] = (
                 repo_loc,
                 repo,
                 external_asset_node,
-                depended_by_loader=depended_by_loader,
-                stale_status_loader=stale_status_loader,
-                dynamic_partitions_loader=dynamic_partitions_loader,
             )
 
-    return asset_nodes_by_asset_key
+    asset_checks_loader = AssetChecksLoader(
+        context=graphene_info.context,
+        asset_keys=asset_nodes_by_asset_key.keys(),
+    )
+
+    return {
+        external_asset_node.asset_key: GrapheneAssetNode(
+            repo_loc,
+            repo,
+            external_asset_node,
+            asset_checks_loader=asset_checks_loader,
+            depended_by_loader=depended_by_loader,
+            stale_status_loader=stale_status_loader,
+            dynamic_partitions_loader=dynamic_partitions_loader,
+        )
+        for repo_loc, repo, external_asset_node in asset_nodes_by_asset_key.values()
+    }
 
 
 def get_asset_nodes(graphene_info: "ResolveInfo"):

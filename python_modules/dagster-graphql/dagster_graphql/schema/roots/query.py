@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Mapping, Optional, Sequence, cast
 
 import dagster._check as check
+from dagster_graphql.implementation.asset_checks_loader import AssetChecksLoader
 import graphene
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
@@ -847,12 +848,17 @@ class GrapheneQuery(graphene.ObjectType):
             repo_loc = graphene_info.context.get_code_location(repo_sel.location_name)
             repo = repo_loc.get_repository(repo_sel.repository_name)
             external_asset_nodes = repo.get_external_asset_nodes()
+            asset_checks_loader = AssetChecksLoader(
+                context=graphene_info.context,
+                asset_keys=[node.asset_key for node in external_asset_nodes],
+            )
             results = (
                 [
                     GrapheneAssetNode(
                         repo_loc,
                         repo,
                         asset_node,
+                        asset_checks_loader=asset_checks_loader,
                         dynamic_partitions_loader=dynamic_partitions_loader,
                     )
                     for asset_node in external_asset_nodes
@@ -867,12 +873,17 @@ class GrapheneQuery(graphene.ObjectType):
             repo_loc = graphene_info.context.get_code_location(repo_sel.location_name)
             repo = repo_loc.get_repository(repo_sel.repository_name)
             external_asset_nodes = repo.get_external_asset_nodes(job_name)
+            asset_checks_loader = AssetChecksLoader(
+                context=graphene_info.context,
+                asset_keys=[node.asset_key for node in external_asset_nodes],
+            )
             results = (
                 [
                     GrapheneAssetNode(
                         repo_loc,
                         repo,
                         asset_node,
+                        asset_checks_loader=asset_checks_loader,
                         dynamic_partitions_loader=dynamic_partitions_loader,
                     )
                     for asset_node in external_asset_nodes
@@ -897,6 +908,10 @@ class GrapheneQuery(graphene.ObjectType):
             instance=graphene_info.context.instance,
             asset_keys=[node.assetKey for node in results],
         )
+        asset_checks_loader = AssetChecksLoader(
+            context=graphene_info.context,
+            asset_keys=[node.assetKey for node in results],
+        )
 
         depended_by_loader = CrossRepoAssetDependedByLoader(context=graphene_info.context)
 
@@ -916,6 +931,7 @@ class GrapheneQuery(graphene.ObjectType):
                 node.repository_location,
                 node.external_repository,
                 node.external_asset_node,
+                asset_checks_loader=asset_checks_loader,
                 materialization_loader=materialization_loader,
                 depended_by_loader=depended_by_loader,
                 stale_status_loader=stale_status_loader,
