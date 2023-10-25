@@ -74,15 +74,14 @@ export const RepositoryLocationsList = ({loading, codeLocations, searchValue}: P
         <Container ref={parentRef}>
           <Inner $totalHeight={totalHeight}>
             <DynamicRowContainer $start={items[0]?.start ?? 0}>
-              {items.map(({index, key}) => {
+              {items.map(({index, key, measureElement}) => {
                 const row: CodeLocationRowType = codeLocations[index]!;
                 if (row.type === 'error') {
                   return (
                     <VirtualizedCodeLocationErrorRow
                       key={key}
-                      data-index={index}
                       locationNode={row.node}
-                      measure={rowVirtualizer.measure}
+                      measure={measureElement}
                     />
                   );
                 }
@@ -90,10 +89,9 @@ export const RepositoryLocationsList = ({loading, codeLocations, searchValue}: P
                 return (
                   <VirtualizedCodeLocationRow
                     key={key}
-                    data-index={index}
                     codeLocation={row.codeLocation}
                     repository={row.repository}
-                    measure={rowVirtualizer.measure}
+                    measure={measureElement}
                   />
                 );
               })}
