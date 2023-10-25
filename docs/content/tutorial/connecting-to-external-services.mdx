@@ -56,7 +56,7 @@ from .resources import DataGeneratorResource
 datagen = DataGeneratorResource()  # Make the resource
 
 defs = Definitions(
-    assets=[*all_assets],
+    assets=all_assets,
     schedules=[hackernews_schedule],
     resources={
         "io_manager": io_manager,
@@ -88,7 +88,7 @@ height={610}
 
 On this page, you might notice that the **Uses** value for the `hackernews_api` resource is `0`. This is because you've defined the resource but have yet to use it.
 
-In your `assets.py`, make a new asset called `signups`. In this asset, you'll use your newly made resource to get the simulated data and return back the signups.
+In your `assets.py`, make a new asset called `signups`. In this asset, you'll use your newly made resource to fetch data from a simulated external service and save the signups.
 
 Copy and paste the code below into the appropriate sections of your `asset.py`.
 
@@ -99,12 +99,12 @@ from .resources import DataGeneratorResource
 
 
 @asset
-def signups(
-    context: AssetExecutionContext, hackernews_api: DataGeneratorResource
-) -> pd.DataFrame:
+def signups(hackernews_api: DataGeneratorResource) -> MaterializeResult:
     signups = pd.DataFrame(hackernews_api.get_signups())
 
-    context.add_output_metadata(
+    signups.to_csv("data/signups.csv")
+
+    return MaterializeResult(
         metadata={
             "Record Count": len(signups),
             "Preview": MetadataValue.md(signups.head().to_markdown()),
@@ -112,8 +112,6 @@ def signups(
             "Latest Signup": signups["registered_at"].max(),
         }
     )
-
-    return signups
 ```
 
 Verify this new asset works by reloading your definitions and materializing the `signups` asset. If you navigate to the `hackernews_api`'s resource page from earlier, you’ll notice its **Uses** value now says `2`: one for the asset using it and another for the job using this asset. Click on the number and ensure that your `signups` asset uses the `hackernews_api` resource.
