@@ -358,7 +358,7 @@ async function _batchedQueryAssets(
       };
     });
 
-    setTimeout(doNextFetch, 5000);
+    setTimeout(doNextFetch, Math.min(pollRate, 5000));
   }
 }
 
