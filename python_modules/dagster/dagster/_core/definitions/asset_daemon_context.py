@@ -424,7 +424,7 @@ class AssetDaemonContext:
         AbstractSet[AssetKeyPartitionKey],
     ]:
         """Returns a mapping from asset key to the AutoMaterializeAssetEvaluation for that key, as
-        well as a set of all asset partitions that should be materialized this tick.
+        well as sets of all asset partitions that should be materialized or discarded this tick.
         """
         evaluations_by_key: Dict[AssetKey, AutoMaterializeAssetEvaluation] = {}
         will_materialize_mapping: Dict[AssetKey, AbstractSet[AssetKeyPartitionKey]] = defaultdict(
@@ -435,7 +435,6 @@ class AssetDaemonContext:
         visited_multi_asset_keys = set()
 
         num_checked_assets = 0
-
         num_target_asset_keys = len(self.target_asset_keys)
 
         for asset_key in itertools.chain(*self.asset_graph.toposort_asset_keys()):
@@ -453,9 +452,11 @@ class AssetDaemonContext:
                 self._verbose_log_fn(f"Asset {asset_key.to_user_string()} already visited")
                 continue
 
-            (evaluation, to_materialize_for_asset, to_discard_for_asset) = self.evaluate_asset(
-                asset_key, will_materialize_mapping, expected_data_time_mapping
-            )
+            (
+                evaluation,
+                to_materialize_for_asset,
+                to_discard_for_asset,
+            ) = self.evaluate_asset(asset_key, will_materialize_mapping, expected_data_time_mapping)
 
             log_fn = (
                 self._logger.info
@@ -479,6 +480,7 @@ class AssetDaemonContext:
             evaluations_by_key[asset_key] = evaluation
             will_materialize_mapping[asset_key] = to_materialize_for_asset
             to_discard.update(to_discard_for_asset)
+
             expected_data_time = get_expected_data_time_for_asset_key(
                 self.asset_graph,
                 asset_key,
@@ -500,28 +502,29 @@ class AssetDaemonContext:
                     if auto_materialize_policy is None:
                         check.failed(f"Expected auto materialize policy on asset {asset_key}")
 
+                    to_materialize_for_neighbor = {
+                        ap._replace(asset_key=neighbor_key) for ap in to_materialize_for_asset
+                    }
+                    to_discard_for_neighbor = {
+                        ap._replace(asset_key=neighbor_key) for ap in to_discard_for_asset
+                    }
+
                     evaluations_by_key[neighbor_key] = evaluation._replace(
                         asset_key=neighbor_key,
                         rule_snapshots=auto_materialize_policy.rule_snapshots,  # Neighbors can have different rule snapshots
                     )
-                    will_materialize_mapping[neighbor_key] = {
-                        ap._replace(asset_key=neighbor_key) for ap in to_materialize_for_asset
-                    }
-                    to_discard.update(
-                        {ap._replace(asset_key=neighbor_key) for ap in to_discard_for_asset}
-                    )
+                    will_materialize_mapping[neighbor_key] = to_materialize_for_neighbor
+                    to_discard.update(to_discard_for_neighbor)
+
                     expected_data_time_mapping[neighbor_key] = expected_data_time
                     visited_multi_asset_keys.add(neighbor_key)
 
-        return evaluations_by_key, set().union(*will_materialize_mapping.values()), to_discard
+        to_materialize = set().union(*will_materialize_mapping.values())
+        return (evaluations_by_key, to_materialize, to_discard)
 
     def evaluate(
         self,
-    ) -> Tuple[
-        Sequence[RunRequest],
-        AssetDaemonCursor,
-        Sequence[AutoMaterializeAssetEvaluation],
-    ]:
+    ) -> Tuple[Sequence[RunRequest], AssetDaemonCursor, Sequence[AutoMaterializeAssetEvaluation]]:
         observe_request_timestamp = pendulum.now().timestamp()
         auto_observe_run_requests = (
             get_auto_observe_run_requests(
@@ -534,7 +537,11 @@ class AssetDaemonContext:
             else []
         )
 
-        evaluations, to_materialize, to_discard = self.get_auto_materialize_asset_evaluations()
+        (
+            evaluations_by_asset_key,
+            to_materialize,
+            to_discard,
+        ) = self.get_auto_materialize_asset_evaluations()
 
         run_requests = [
             *build_run_requests(
@@ -566,11 +573,12 @@ class AssetDaemonContext:
                     for asset_key in cast(Sequence[AssetKey], run_request.asset_selection)
                 ],
                 observe_request_timestamp=observe_request_timestamp,
+                evaluations=list(evaluations_by_asset_key.values()),
             ),
             # only record evaluations where something happened
             [
                 evaluation
-                for evaluation in evaluations.values()
+                for evaluation in evaluations_by_asset_key.values()
                 if sum([evaluation.num_requested, evaluation.num_skipped, evaluation.num_discarded])
                 > 0
             ],
