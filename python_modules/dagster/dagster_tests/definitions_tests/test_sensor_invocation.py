@@ -1034,6 +1034,31 @@ def test_multi_asset_sensor_after_cursor_partition_flag():
         after_cursor_partitions_asset_sensor(ctx)
 
 
+def test_multi_asset_sensor_can_start_from_asset_sensor_cursor():
+    @asset
+    def my_asset():
+        return Output(99)
+
+    @multi_asset_sensor(monitored_assets=[my_asset.key])
+    def my_multi_asset_sensor(context):
+        ctx.advance_all_cursors()
+
+    with instance_for_test() as instance:
+        cursor_from_previously_an_asset_sensor = "1234"
+
+        ctx = build_multi_asset_sensor_context(
+            monitored_assets=[my_asset.key],
+            instance=instance,
+            repository_def=my_repo,
+            cursor=cursor_from_previously_an_asset_sensor
+        )
+
+        materialize([my_asset], instance=instance)
+        my_multi_asset_sensor(ctx)
+
+        assert ctx.cursor == "{\"AssetKey(['my_asset'])\": [null, 3, {}]}"
+
+
 def test_multi_asset_sensor_all_partitions_materialized():
     @multi_asset_sensor(monitored_assets=[july_asset.key])
     def asset_sensor(context):
