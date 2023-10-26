@@ -136,16 +136,16 @@ def most_frequent_words() -> None:
 
 ## Step 3: Educating users with metadata
 
-Up until now, you've annotated your asset functions with `None`, meaning the asset doesn't return anything. In this section, you'll learn about the `MaterializeResult` object, which lets you record metadata about your asset.
+Up until now, you've annotated your asset functions with `None`, meaning the asset doesn't return anything. In this section, you'll learn about the <PyObject object="MaterializeResult" /> object, which lets you record metadata about your asset.
 
-Software-defined assets can be enriched with different types of metadata. Anything can be used as metadata for an asset. Common details to add are:
+Software-defined Assets can be enriched with different types of metadata. Anything can be used as metadata for an asset. Common details to add are:
 
 - Statistics about the data, such as row counts or other data profiling
 - Test results or assertions about the data
 - Images or tabular previews of the asset
 - Information about who owns the asset, where it's stored, and links to external documentation
 
-The following code adds a row count and a preview of the `topstories` asset. Update your code for the `topstories` asset to match the changes below. The `None` type annotation is replaced with `MaterializeResult` from the `dagster` module, which allows you to add metadata to the materialization of your asset.
+The following code adds a row count and a preview of the `topstories` asset. Update your code for the `topstories` asset to match the changes below. The `None` type annotation is replaced with <PyObject object="MaterializeResult" /> from the `dagster` module, which allows you to add metadata to the materialization of your asset.
 
 ```python file=/tutorial/building_an_asset_graph/assets_with_metadata.py startafter=start_topstories_asset_with_metadata endbefore=end_topstories_asset_with_metadata
 import base64
