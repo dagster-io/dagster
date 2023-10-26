@@ -37,7 +37,7 @@ from .resources import DataGeneratorResource
 datagen = DataGeneratorResource()  # Make the resource
 
 defs = Definitions(
-    assets=[*all_assets],
+    assets=all_assets,
     schedules=[hackernews_schedule],
     resources={
         "io_manager": io_manager,
