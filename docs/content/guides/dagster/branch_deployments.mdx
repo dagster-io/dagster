@@ -179,12 +179,12 @@ Refer to the [Dagster Cloud environment variables documentation](/dagster-cloud/
 We’ll first need to define a job that clones our `PRODUCTION` database for each branch deployment. Later, in our GitHub actions workflow, we can trigger this job to run upon each redeploy. Each clone will be named `PRODUCTION_CLONE_<ID>` with `<ID>` representing the pull request ID, ensuring each branch deployment has a unique clone. This job will drop a database clone if it exists and then reclone from production, ensuring each redeployment has a fresh clone of `PRODUCTION`:
 
 <Note>
-  Why use ops and jobs instead of assets? We'll be writing ops to clone the
-  production database for each branch deployment and drop the clone once the
-  branch is merged. In this case, we chose to use ops since we are primarily
-  interested in the task that's being performed: cloning or dropping the
-  database. Additionally, we don't need asset-specific features for these tasks,
-  like viewing them in the Global Asset Graph.
+  <strong> Why use ops and jobs instead of assets? </strong> We'll be writing
+  ops to clone the production database for each branch deployment and drop the
+  clone once the branch is merged. In this case, we chose to use ops since we
+  are primarily interested in the task that's being performed: cloning or
+  dropping the database. Additionally, we don't need asset-specific features for
+  these tasks, like viewing them in the Global Asset Graph.
 </Note>
 
 ```python file=/guides/dagster/development_to_production/branch_deployments/clone_and_drop_db.py startafter=start_clone_db endbefore=end_clone_db
