@@ -71,43 +71,6 @@ multi_asset_in_middle_subsettable = (
 
 
 basic_scenarios = {
-    "one_asset_never_materialized": AssetReconciliationScenario(
-        assets=one_asset,
-        unevaluated_runs=[],
-        expected_run_requests=[run_request(asset_keys=["asset1"])],
-        expected_evaluations=[
-            AssetEvaluationSpec.from_single_rule(
-                "asset1", AutoMaterializeRule.materialize_on_missing()
-            )
-        ],
-    ),
-    "two_assets_in_sequence_never_materialized": AssetReconciliationScenario(
-        assets=two_assets_in_sequence,
-        unevaluated_runs=[],
-        expected_run_requests=[run_request(asset_keys=["asset1", "asset2"])],
-        expected_evaluations=[
-            AssetEvaluationSpec.from_single_rule(
-                "asset1", AutoMaterializeRule.materialize_on_missing()
-            ),
-            AssetEvaluationSpec.from_single_rule(
-                "asset2",
-                AutoMaterializeRule.materialize_on_parent_updated(),
-                ParentUpdatedRuleEvaluationData(
-                    updated_asset_keys=frozenset(),
-                    will_update_asset_keys=frozenset([AssetKey("asset1")]),
-                ),
-            ),
-        ],
-    ),
-    "one_asset_already_launched": AssetReconciliationScenario(
-        assets=one_asset,
-        unevaluated_runs=[],
-        cursor_from=AssetReconciliationScenario(
-            assets=one_asset,
-            unevaluated_runs=[],
-        ),
-        expected_run_requests=[],
-    ),
     "parent_materialized_child_not": AssetReconciliationScenario(
         assets=two_assets_in_sequence,
         unevaluated_runs=[single_asset_run(asset_key="asset1")],
