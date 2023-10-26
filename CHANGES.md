@@ -1,5 +1,42 @@
 # Changelog
 
+# 1.5.5 / 0.21.5 (libraries)
+
+### New
+
+- Dagster now supports using Pydantic 2 models for Config and Resources. Pydantic 1.10 continues to be supported.
+- Added  a `report_asset_observation` REST API endpoint for runless external asset observation events
+- Dramatically improved the performance of partition-mapping, for basic hourly and daily partitions definitions
+- [ui] When viewing a list of runs, you can quickly add the tag in the “Launched by” column as a filter on the list view. Hover over the tag to see the “Add to filter” button.
+- [helm] The env vars `DAGSTER_K8S_PG_PASSWORD_SECRET` and `DAGSTER_K8S_INSTANCE_CONFIG_MAP` will no longer be set in all pods.
+- [dagster-pyspark] `build_pyspark_zip` now takes an `exclude` parameter that can be used to customize the set of excluded files.
+- [ui] Links beginning with http://, https:// in unstructured run logs (via context.log) are automatically converted to clickable links
+
+### Bugfixes
+
+- Fixed an asset backfill bug where certain asset partitions with no targeted parents would hang indefinitely.
+- Fixed a bug where the `source_key_prefix` argument to `load_assets_from_current_module` and `load_assets_from_package_name` was ignored
+- Fixed two bugs in `dagster_embedded_elt` where the mode parameter was not being passed to Sling, and only one asset could be created at a time
+- Fixed a bug with handing default values for Pydantic validators on Windows
+- [ui] Clicking an asset with checks shows them in the asset graph sidebar, even if live data on the page is still loading.
+- [ui] Reported materialization events are presented more clearly in the asset graph sidebar and in other parts of the Dagster UI.
+
+### Deprecations
+
+- [helm] The `pipelineRun` configuration in the Helm chart is now deprecated. The same config can be set under `dagster-user-deployments`
+
+### Community Contributions
+
+- Added `setup_for_execution` and `teardown_after_execution` calls to the inner IOManagers of the `BranchingIOManager` - thank you @danielgafni!
+- The `S3FakeResource.upload_fileobj()` signature is now consistent with `boto3 S3.Client.upload_fileobj()` - thank you @jeanineharb!
+- `dbt_assets` now have an optional name parameter - thank you @AlexanderVR!
+
+### Documentation
+
+- Added a link to Dagster University to the [docs landing page](https://docs.dagster.io) 🎓
+- Improved readability of [API docs landing page](https://docs.dagster.io/_apidocs)
+- Removed straggling mention of Dagit from the [Kubernetes OSS deployment guide](https://docs.dagster.io/deployment/guides/kubernetes/deploying-with-helm)
+
 # 1.5.4 / 0.21.4 (libraries)
 
 ### New
