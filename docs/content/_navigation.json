@@ -511,7 +511,7 @@
                   },
                   {
                     "title": "PingOne",
-                    "path": "dagster-cloud/account/authentication/setting-up-pingone-saml-sso"
+                    "path": "/dagster-cloud/account/authentication/setting-up-pingone-saml-sso"
                   }
                 ]
               }
@@ -557,7 +557,7 @@
                 ]
               },
               {
-                "title": "Branch deployments",
+                "title": "Branch deployments (CI)",
                 "path": "/dagster-cloud/managing-deployments/branch-deployments",
                 "children": [
                   {
@@ -885,6 +885,10 @@
                 "path": "/guides/dagster-pipes/subprocess/reference"
               }
             ]
+          },
+          {
+            "title": "Details and customization",
+            "path": "/guides/dagster-pipes/dagster-pipes-details-and-customization"
           }
         ]
       },
@@ -1047,6 +1051,10 @@
           {
             "title": "Asset checks (Experimental)",
             "path": "/_apidocs/asset-checks"
+          },
+          {
+            "title": "External Assets (Experimental)",
+            "path": "/_apidocs/external-assets"
           },
           {
             "title": "Job versioning & memoization (Deprecated)",

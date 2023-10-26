@@ -80,7 +80,7 @@ from dagster_cloud.dagster_insights import (
 )
 
 snowflake_insights_definitions = create_snowflake_insights_asset_and_schedule(
-    "2023-10-5",
+    start_date="2023-10-5-00:00",
     snowflake_resource_key="snowflake_insights",
 )
 

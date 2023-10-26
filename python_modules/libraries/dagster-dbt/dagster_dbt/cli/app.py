@@ -32,6 +32,8 @@ project_app = typer.Typer(
 )
 app.add_typer(project_app)
 
+console = Console()
+
 DBT_PROJECT_YML_NAME = "dbt_project.yml"
 DBT_PROFILES_YML_NAME = "profiles.yml"
 
@@ -39,8 +41,8 @@ DBT_PROFILES_YML_NAME = "profiles.yml"
 def validate_dagster_project_name(project_name: str) -> str:
     if not project_name.isidentifier():
         raise typer.BadParameter(
-            "The project name must be a valid Python identifier containing only letters, digits, or"
-            " underscores."
+            f"The project name `{project_name}` is not a valid Python identifier containing only"
+            " letters, digits, or underscores. Please specify a valid project name."
         )
 
     return project_name
@@ -56,6 +58,34 @@ def validate_dbt_project_dir(dbt_project_dir: Path) -> Path:
         )
 
     return dbt_project_dir
+
+
+def find_dbt_profiles_path(dbt_project_dir: Path) -> Path:
+    dot_dbt_dir = Path.home().joinpath(".dbt")
+
+    candidate_dbt_profiles_paths = [
+        # profiles.yml in project directory
+        dbt_project_dir.joinpath(DBT_PROFILES_YML_NAME),
+        # profiles.yml in ~/.dbt
+        dot_dbt_dir.joinpath(DBT_PROFILES_YML_NAME),
+    ]
+    existing_profiles_paths = [path for path in candidate_dbt_profiles_paths if path.exists()]
+
+    if not existing_profiles_paths:
+        console.print(
+            f"A {DBT_PROJECT_YML_NAME} file was not found in either {dbt_project_dir} or "
+            f"{dot_dbt_dir}. Please ensure that a valid {DBT_PROJECT_YML_NAME} exists in your "
+            "environment."
+        )
+        raise typer.Exit(1)
+
+    dbt_profiles_path, *_ = existing_profiles_paths
+
+    console.print(
+        f"Using {DBT_PROFILES_YML_NAME} found in [bold green]{dbt_profiles_path}[/bold green]."
+    )
+
+    return dbt_profiles_path
 
 
 def dbt_adapter_pypi_package_for_target_type(target_type: str) -> str:
@@ -77,14 +107,11 @@ def copy_scaffold(
     dbt_project_dir: Path,
     use_dbt_project_package_data_dir: bool,
 ) -> None:
-    shutil.copytree(src=STARTER_PROJECT_PATH, dst=dagster_project_dir)
-    dagster_project_dir.joinpath("__init__.py").unlink()
-
     dbt_project_yaml_path = dbt_project_dir.joinpath(DBT_PROJECT_YML_NAME)
     dbt_project_yaml: Dict[str, Any] = yaml.safe_load(dbt_project_yaml_path.read_bytes())
     dbt_project_name: str = dbt_project_yaml["name"]
 
-    dbt_profiles_path = dbt_project_dir.joinpath(DBT_PROFILES_YML_NAME)
+    dbt_profiles_path = find_dbt_profiles_path(dbt_project_dir=dbt_project_dir)
     dbt_profiles_yaml: Dict[str, Any] = yaml.safe_load(dbt_profiles_path.read_bytes())
 
     # Remove config from profiles.yml
@@ -95,6 +122,9 @@ def copy_scaffold(
         for profile in dbt_profiles_yaml.values()
         for target in profile["outputs"].values()
     ]
+
+    shutil.copytree(src=STARTER_PROJECT_PATH, dst=dagster_project_dir)
+    dagster_project_dir.joinpath("__init__.py").unlink()
 
     if use_dbt_project_package_data_dir:
         dbt_project_dir = dagster_project_dir.joinpath("dbt-project")
@@ -139,7 +169,7 @@ def copy_scaffold(
 def _check_and_error_on_package_conflicts(project_name: str) -> None:
     package_check_result = check_if_pypi_package_conflict_exists(project_name)
     if package_check_result.request_error_msg:
-        typer.echo(
+        console.print(
             f"An error occurred while checking if project name '{project_name}' conflicts with"
             f" an existing PyPI package: {package_check_result.request_error_msg}."
             " \n\nConflicting package names will cause import errors in your project if the"
@@ -215,7 +245,6 @@ def project_scaffold_command(
     if not ignore_package_conflict:
         _check_and_error_on_package_conflicts(project_name)
 
-    console = Console()
     console.print(
         f"Running with dagster-dbt version: [bold green]{dagster_dbt_version}[/bold green]."
     )

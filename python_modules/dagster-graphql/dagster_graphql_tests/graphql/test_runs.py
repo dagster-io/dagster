@@ -13,7 +13,7 @@ from dagster._utils import Counter, traced_counter
 from dagster_graphql.test.utils import (
     define_out_of_process_context,
     execute_dagster_graphql,
-    infer_pipeline_selector,
+    infer_job_selector,
 )
 
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
@@ -294,7 +294,7 @@ class TestGetRuns(ExecutingGraphQLContextTestMatrix):
         # other code in this file which reads itself to load a repo
         from .utils import sync_execute_get_run_log_data
 
-        selector = infer_pipeline_selector(graphql_context, "required_resource_job")
+        selector = infer_job_selector(graphql_context, "required_resource_job")
 
         payload_one = sync_execute_get_run_log_data(
             context=graphql_context,
@@ -397,7 +397,7 @@ class TestGetRuns(ExecutingGraphQLContextTestMatrix):
         # other code in this file which reads itself to load a repo
         from .utils import sync_execute_get_run_log_data
 
-        selector = infer_pipeline_selector(graphql_context, "required_resource_job")
+        selector = infer_job_selector(graphql_context, "required_resource_job")
 
         sync_execute_get_run_log_data(
             context=graphql_context,

@@ -36,10 +36,19 @@ def _assert_permission_for_asset_graph(
     asset_selection: Optional[Sequence[AssetKey]],
     permission: str,
 ) -> None:
-    if asset_selection:
-        repo_handles = [
-            asset_graph.get_repository_handle(asset_key) for asset_key in asset_selection
-        ]
+    asset_keys = set(asset_selection or [])
+
+    # If any of the asset keys don't map to a location (e.g. because they are no longer in the
+    # graph) need deployment-wide permissions - no valid code location to check
+    if asset_keys.difference(asset_graph.repository_handles_by_key.keys()):
+        assert_permission(
+            graphene_info,
+            permission,
+        )
+        return
+
+    if asset_keys:
+        repo_handles = [asset_graph.get_repository_handle(asset_key) for asset_key in asset_keys]
     else:
         repo_handles = asset_graph.repository_handles_by_key.values()
 
@@ -117,8 +126,9 @@ def create_and_launch_partition_backfill(
 
         check.invariant(
             len(matches) == 1,
-            "Partition set names must be unique: found {num} matches for {partition_set_name}"
-            .format(num=len(matches), partition_set_name=partition_set_name),
+            "Partition set names must be unique: found {num} matches for {partition_set_name}".format(
+                num=len(matches), partition_set_name=partition_set_name
+            ),
         )
         external_partition_set = next(iter(matches))
 

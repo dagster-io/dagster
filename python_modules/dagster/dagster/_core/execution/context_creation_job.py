@@ -316,9 +316,7 @@ def orchestration_context_event_generator(
         dagster_error = cast(DagsterUserCodeExecutionError, dagster_error)
         user_facing_exc_info = (
             # pylint does not know original_exc_info exists is is_user_code_error is true
-            dagster_error.original_exc_info
-            if dagster_error.is_user_code_error
-            else sys.exc_info()
+            dagster_error.original_exc_info if dagster_error.is_user_code_error else sys.exc_info()
         )
         error_info = serializable_error_info_from_exc_info(user_facing_exc_info)
 

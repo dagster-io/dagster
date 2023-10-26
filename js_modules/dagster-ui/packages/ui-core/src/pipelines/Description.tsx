@@ -6,6 +6,7 @@ import {Markdown} from '../ui/Markdown';
 interface IDescriptionProps {
   description: string | null;
   maxHeight?: number;
+  fontSize?: string | number;
 }
 
 interface IDescriptionState {
@@ -80,6 +81,7 @@ export class Description extends React.Component<IDescriptionProps, IDescription
         }}
         style={{
           maxHeight: expanded ? undefined : this.props.maxHeight || DEFAULT_MAX_HEIGHT,
+          fontSize: this.props.fontSize || '0.8rem',
         }}
       >
         {!expanded && hasMore && <Mask />}
@@ -99,7 +101,6 @@ export class Description extends React.Component<IDescriptionProps, IDescription
 
 const Container = styled.div`
   overflow: hidden;
-  font-size: 0.8rem;
   position: relative;
   p:last-child {
     margin-bottom: 0;

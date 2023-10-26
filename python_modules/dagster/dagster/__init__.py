@@ -218,6 +218,12 @@ from dagster._core.definitions.input import (
     InputMapping as InputMapping,
 )
 from dagster._core.definitions.job_definition import JobDefinition as JobDefinition
+from dagster._core.definitions.load_asset_checks_from_modules import (
+    load_asset_checks_from_current_module as load_asset_checks_from_current_module,
+    load_asset_checks_from_modules as load_asset_checks_from_modules,
+    load_asset_checks_from_package_module as load_asset_checks_from_package_module,
+    load_asset_checks_from_package_name as load_asset_checks_from_package_name,
+)
 from dagster._core.definitions.load_assets_from_modules import (
     load_assets_from_current_module as load_assets_from_current_module,
     load_assets_from_modules as load_assets_from_modules,
@@ -489,10 +495,10 @@ from dagster._core.pipes.context import (
 from dagster._core.pipes.subprocess import PipesSubprocessClient as PipesSubprocessClient
 from dagster._core.pipes.utils import (
     PipesBlobStoreMessageReader as PipesBlobStoreMessageReader,
-    PipesBlobStoreStdioReader as PipesBlobStoreStdioReader,
     PipesEnvContextInjector as PipesEnvContextInjector,
     PipesFileContextInjector as PipesFileContextInjector,
     PipesFileMessageReader as PipesFileMessageReader,
+    PipesLogReader as PipesLogReader,
     PipesTempFileContextInjector as PipesTempFileContextInjector,
     PipesTempFileMessageReader as PipesTempFileMessageReader,
     open_pipes_session as open_pipes_session,

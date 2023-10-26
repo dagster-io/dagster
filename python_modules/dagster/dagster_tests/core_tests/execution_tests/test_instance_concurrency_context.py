@@ -2,7 +2,8 @@ import time
 
 import pytest
 from dagster._core.execution.plan.instance_concurrency_context import (
-    DEFAULT_CONCURRENCY_CLAIM_BLOCKED_INTERVAL,
+    INITIAL_INTERVAL_VALUE,
+    STEP_UP_BASE,
     InstanceConcurrencyContext,
 )
 from dagster._core.utils import make_new_run_id
@@ -82,9 +83,35 @@ def test_default_interval(concurrency_instance):
         # we have not waited long enough to query the db again
         assert concurrency_instance.event_log_storage.get_check_calls("b") == call_count
 
-        time.sleep(DEFAULT_CONCURRENCY_CLAIM_BLOCKED_INTERVAL)
+        time.sleep(INITIAL_INTERVAL_VALUE)
         context.claim("foo", "b")
         assert concurrency_instance.event_log_storage.get_check_calls("b") == call_count + 1
+
+
+def test_backoff_interval(concurrency_instance):
+    run_id = make_new_run_id()
+    concurrency_instance.event_log_storage.set_concurrency_slots("foo", 1)
+
+    with InstanceConcurrencyContext(concurrency_instance, run_id) as context:
+        assert context.claim("foo", "a")
+        assert not context.claim("foo", "b")
+        call_count = concurrency_instance.event_log_storage.get_check_calls("b")
+
+        context.claim("foo", "b")
+        # we have not waited long enough to query the db again
+        assert concurrency_instance.event_log_storage.get_check_calls("b") == call_count
+
+        time.sleep(INITIAL_INTERVAL_VALUE)
+        context.claim("foo", "b")
+        assert concurrency_instance.event_log_storage.get_check_calls("b") == call_count + 1
+
+        # sleeping another second will not incur another check call, there's an exponential backoff
+        time.sleep(INITIAL_INTERVAL_VALUE)
+        context.claim("foo", "b")
+        assert concurrency_instance.event_log_storage.get_check_calls("b") == call_count + 1
+        time.sleep(STEP_UP_BASE - INITIAL_INTERVAL_VALUE)
+        context.claim("foo", "b")
+        assert concurrency_instance.event_log_storage.get_check_calls("b") == call_count + 2
 
 
 def test_custom_interval(concurrency_custom_sleep_instance):
@@ -101,13 +128,13 @@ def test_custom_interval(concurrency_custom_sleep_instance):
         # we have not waited long enough to query the db again
         assert storage.get_check_calls("b") == call_count
 
-        assert DEFAULT_CONCURRENCY_CLAIM_BLOCKED_INTERVAL < CUSTOM_SLEEP_INTERVAL
-        time.sleep(DEFAULT_CONCURRENCY_CLAIM_BLOCKED_INTERVAL)
+        assert INITIAL_INTERVAL_VALUE < CUSTOM_SLEEP_INTERVAL
+        time.sleep(INITIAL_INTERVAL_VALUE)
         context.claim("foo", "b")
         # we have waited the default interval, but not the custom interval
         assert storage.get_check_calls("b") == call_count
 
-        interval_to_custom = CUSTOM_SLEEP_INTERVAL - DEFAULT_CONCURRENCY_CLAIM_BLOCKED_INTERVAL
+        interval_to_custom = CUSTOM_SLEEP_INTERVAL - INITIAL_INTERVAL_VALUE
         time.sleep(interval_to_custom)
         context.claim("foo", "b")
         assert storage.get_check_calls("b") == call_count + 1

@@ -14,6 +14,14 @@ from .attach_other_object_to_context import (
     IAttachDifferentObjectToOpContext as IAttachDifferentObjectToOpContext,
 )
 
+PydanticUndefined = None
+try:
+    from pydantic_core import PydanticUndefined as _PydanticUndefined  # type: ignore
+
+    PydanticUndefined = _PydanticUndefined
+except:
+    pass
+
 if TYPE_CHECKING:
     from pydantic.fields import ModelField
 

@@ -28,6 +28,7 @@ def test_asset_reconciliation_cursor_evaluation_id_backcompat():
         {AssetKey("my_asset"): partitions.empty_subset().with_partition_keys(["a"])},
         0,
         {},
+        {},
     )
 
     c2 = c.with_updates(
@@ -38,8 +39,9 @@ def test_asset_reconciliation_cursor_evaluation_id_backcompat():
         {AssetKey("my_asset"): {"a"}},
         1,
         asset_graph,
-        {},
+        [],
         0,
+        [],
     )
 
     serdes_c2 = AssetDaemonCursor.from_serialized(c2.serialize(), asset_graph)
@@ -53,10 +55,12 @@ def test_asset_reconciliation_cursor_auto_observe_backcompat():
     partitions_def = StaticPartitionsDefinition(["a", "b", "c"])
 
     @asset(partitions_def=partitions_def)
-    def asset1(): ...
+    def asset1():
+        ...
 
     @asset
-    def asset2(): ...
+    def asset2():
+        ...
 
     handled_root_partitions_by_asset_key = {
         asset1.key: partitions_def.subset_with_partition_keys(["a", "b"])

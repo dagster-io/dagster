@@ -78,6 +78,7 @@ export function buildAssetNodeStatusContent({
 }
 
 export function _buildSourceAssetNodeStatusContent({
+  assetKey,
   definition,
   liveData,
   expanded,
@@ -101,7 +102,7 @@ export function _buildSourceAssetNodeStatusContent({
             Observing...
           </span>
           {expanded && <SpacerDot />}
-          <AssetRunLink runId={materializingRunId} />
+          <AssetRunLink assetKey={assetKey} runId={materializingRunId} />
         </>
       ),
     };
@@ -118,6 +119,7 @@ export function _buildSourceAssetNodeStatusContent({
           {expanded && <SpacerDot />}
           <span style={{textAlign: 'right', overflow: 'hidden'}}>
             <AssetRunLink
+              assetKey={assetKey}
               runId={liveData.lastObservation.runId}
               event={{
                 stepKey: stepKeyForAsset(definition),
@@ -210,7 +212,7 @@ export function _buildAssetNodeStatusContent({
           </span>
           {expanded && <SpacerDot />}
           {!numMaterializing || numMaterializing === 1 ? (
-            <AssetRunLink runId={materializingRunId} />
+            <AssetRunLink assetKey={assetKey} runId={materializingRunId} />
           ) : undefined}
         </>
       ),
@@ -222,14 +224,14 @@ export function _buildAssetNodeStatusContent({
     const numMissing = numPartitions - numFailed - numMaterialized;
     const {background, foreground, border} =
       StyleForAssetPartitionStatus[
-        overdue || numFailed
+        overdue || numFailed || checksFailed
           ? AssetPartitionStatus.FAILED
           : numMissing
           ? AssetPartitionStatus.MISSING
           : AssetPartitionStatus.MATERIALIZED
       ];
     const statusCase =
-      overdue || numFailed
+      overdue || numFailed || checksFailed
         ? (StatusCase.PARTITIONS_FAILED as const)
         : numMissing
         ? (StatusCase.PARTITIONS_MISSING as const)
@@ -265,6 +267,7 @@ export function _buildAssetNodeStatusContent({
   const lastMaterializationLink = lastMaterialization ? (
     <span style={{overflow: 'hidden'}}>
       <AssetRunLink
+        assetKey={assetKey}
         runId={lastMaterialization.runId}
         event={{stepKey: stepKeyForAsset(definition), timestamp: lastMaterialization.timestamp}}
       >
@@ -302,15 +305,17 @@ export function _buildAssetNodeStatusContent({
             </OverdueLineagePopover>
           ) : runWhichFailedToMaterialize ? (
             <span style={{color: Colors.Red700}}>Failed</span>
-          ) : (
+          ) : lastMaterialization ? (
             <span style={{color: Colors.Red700}}>Materialized</span>
+          ) : (
+            <span style={{color: Colors.Red700}}>Never materialized</span>
           )}
 
           {expanded && <SpacerDot />}
 
           {runWhichFailedToMaterialize ? (
             <span style={{overflow: 'hidden'}}>
-              <AssetRunLink runId={runWhichFailedToMaterialize.id}>
+              <AssetRunLink assetKey={assetKey} runId={runWhichFailedToMaterialize.id}>
                 <TimestampDisplay
                   timestamp={Number(runWhichFailedToMaterialize.endTime)}
                   timeFormat={{showSeconds: false, showTimezone: false}}

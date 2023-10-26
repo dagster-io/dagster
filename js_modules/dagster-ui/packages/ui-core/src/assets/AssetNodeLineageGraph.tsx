@@ -11,6 +11,7 @@ import {AssetNodeLink} from '../asset-graph/ForeignNode';
 import {GraphData, toGraphId} from '../asset-graph/Utils';
 import {DEFAULT_MAX_ZOOM, SVGViewport} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
+import {isNodeOffscreen} from '../graph/common';
 import {AssetKeyInput} from '../graphql/types';
 import {getJSONForKey} from '../hooks/useStateWithStorage';
 
@@ -79,6 +80,7 @@ export const AssetNodeLineageGraph: React.FC<{
           />
 
           {Object.values(layout.groups)
+            .filter((node) => !isNodeOffscreen(node.bounds, viewportRect))
             .sort((a, b) => a.id.length - b.id.length)
             .map((group) => (
               <foreignObject {...group.bounds} key={group.id}>
@@ -86,39 +88,41 @@ export const AssetNodeLineageGraph: React.FC<{
               </foreignObject>
             ))}
 
-          {Object.values(layout.nodes).map(({id, bounds}) => {
-            const graphNode = assetGraphData.nodes[id];
-            const path = JSON.parse(id);
+          {Object.values(layout.nodes)
+            .filter((node) => !isNodeOffscreen(node.bounds, viewportRect))
+            .map(({id, bounds}) => {
+              const graphNode = assetGraphData.nodes[id];
+              const path = JSON.parse(id);
 
-            return (
-              <foreignObject
-                {...bounds}
-                key={id}
-                style={{overflow: 'visible'}}
-                onMouseEnter={() => setHighlighted(id)}
-                onMouseLeave={() => setHighlighted(null)}
-                onClick={() => onClickAsset({path})}
-                onDoubleClick={(e) => {
-                  viewportEl.current?.zoomToSVGBox(bounds, true, 1.2);
-                  e.stopPropagation();
-                }}
-              >
-                {!graphNode ? (
-                  <AssetNodeLink assetKey={{path}} />
-                ) : scale < MINIMAL_SCALE ? (
-                  <AssetNodeMinimal
-                    definition={graphNode.definition}
-                    selected={graphNode.id === assetGraphId}
-                  />
-                ) : (
-                  <AssetNode
-                    definition={graphNode.definition}
-                    selected={graphNode.id === assetGraphId}
-                  />
-                )}
-              </foreignObject>
-            );
-          })}
+              return (
+                <foreignObject
+                  {...bounds}
+                  key={id}
+                  style={{overflow: 'visible'}}
+                  onMouseEnter={() => setHighlighted(id)}
+                  onMouseLeave={() => setHighlighted(null)}
+                  onClick={() => onClickAsset({path})}
+                  onDoubleClick={(e) => {
+                    viewportEl.current?.zoomToSVGBox(bounds, true, 1.2);
+                    e.stopPropagation();
+                  }}
+                >
+                  {!graphNode ? (
+                    <AssetNodeLink assetKey={{path}} />
+                  ) : scale < MINIMAL_SCALE ? (
+                    <AssetNodeMinimal
+                      definition={graphNode.definition}
+                      selected={graphNode.id === assetGraphId}
+                    />
+                  ) : (
+                    <AssetNode
+                      definition={graphNode.definition}
+                      selected={graphNode.id === assetGraphId}
+                    />
+                  )}
+                </foreignObject>
+              );
+            })}
         </SVGContainer>
       )}
     </SVGViewport>

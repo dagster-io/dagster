@@ -1,5 +1,6 @@
 import operator
 from collections import defaultdict
+from datetime import datetime
 from typing import AbstractSet, Any, Callable, Dict, Iterable, Mapping, Optional, Set, Union, cast
 
 from dagster import _check as check
@@ -41,7 +42,9 @@ class AssetGraphSubset:
 
     @property
     def asset_keys(self) -> AbstractSet[AssetKey]:
-        return self.partitions_subsets_by_asset_key.keys() | self._non_partitioned_asset_keys
+        return {
+            key for key, subset in self.partitions_subsets_by_asset_key.items() if len(subset) > 0
+        } | self._non_partitioned_asset_keys
 
     @property
     def num_partitions_and_non_partitioned_assets(self):
@@ -147,6 +150,11 @@ class AssetGraphSubset:
         self, other: Union["AssetGraphSubset", AbstractSet[AssetKeyPartitionKey]]
     ) -> "AssetGraphSubset":
         return self._oper(other, operator.sub)
+
+    def __and__(
+        self, other: Union["AssetGraphSubset", AbstractSet[AssetKeyPartitionKey]]
+    ) -> "AssetGraphSubset":
+        return self._oper(other, operator.and_)
 
     def filter_asset_keys(self, asset_keys: AbstractSet[AssetKey]) -> "AssetGraphSubset":
         return AssetGraphSubset(
@@ -291,10 +299,16 @@ class AssetGraphSubset:
 
     @classmethod
     def all(
-        cls, asset_graph: AssetGraph, dynamic_partitions_store: DynamicPartitionsStore
+        cls,
+        asset_graph: AssetGraph,
+        dynamic_partitions_store: DynamicPartitionsStore,
+        current_time: datetime,
     ) -> "AssetGraphSubset":
         return cls.from_asset_keys(
-            asset_graph.materializable_asset_keys, asset_graph, dynamic_partitions_store
+            asset_graph.materializable_asset_keys,
+            asset_graph,
+            dynamic_partitions_store,
+            current_time,
         )
 
     @classmethod
@@ -303,6 +317,7 @@ class AssetGraphSubset:
         asset_keys: Iterable[AssetKey],
         asset_graph: AssetGraph,
         dynamic_partitions_store: DynamicPartitionsStore,
+        current_time: datetime,
     ) -> "AssetGraphSubset":
         partitions_subsets_by_asset_key: Dict[AssetKey, PartitionsSubset] = {}
         non_partitioned_asset_keys: Set[AssetKey] = set()
@@ -314,7 +329,7 @@ class AssetGraphSubset:
                     asset_key
                 ] = partitions_def.empty_subset().with_partition_keys(
                     partitions_def.get_partition_keys(
-                        dynamic_partitions_store=dynamic_partitions_store
+                        dynamic_partitions_store=dynamic_partitions_store, current_time=current_time
                     )
                 )
             else:

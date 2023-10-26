@@ -32,6 +32,7 @@ from typing import (
     TypeVar,
     Union,
     cast,
+    final,
     get_args,
 )
 
@@ -63,6 +64,14 @@ def _make_message(method: str, params: Optional[Mapping[str, Any]]) -> "PipesMes
 
 # Can't use a constant for TypedDict key so this value is repeated in `ExtMessage` defn.
 PIPES_PROTOCOL_VERSION_FIELD = "__dagster_pipes_version"
+
+
+class PipesOpenedData(TypedDict):
+    """Payload generated on startup of the external-side `PipesMessageWriter` containing arbitrary
+    information about the external process.
+    """
+
+    extras: Mapping[str, Any]
 
 
 class PipesMessage(TypedDict):
@@ -443,6 +452,26 @@ class PipesMessageWriter(ABC, Generic[T_MessageChannel]):
             PipesMessageWriterChannel: Channel for writing messagse back to Dagster.
         """
 
+    @final
+    def get_opened_payload(self) -> PipesOpenedData:
+        """Return a payload containing information about the external process to be passed back to
+        the the orchestration process. This should contain information that cannot be known before
+        the external process is launched.
+
+        This method should not be overridden by users. Instead, users should
+        override `get_opened_extras` to inject custom data.
+        """
+        return {"extras": self.get_opened_extras()}
+
+    def get_opened_extras(self) -> PipesExtras:
+        """Return arbitary reader-specific information to be passed back to the orchestration
+        process under the `extras` key of the initialization payload.
+
+        Returns:
+            PipesExtras: A dict of arbitrary data to be passed back to the orchestration process.
+        """
+        return {}
+
 
 class PipesMessageWriterChannel(ABC, Generic[T_MessageChannel]):
     """Object that writes messages back to the Dagster orchestration process."""
@@ -505,7 +534,8 @@ class PipesBlobStoreMessageWriter(PipesMessageWriter[T_BlobStoreMessageWriterCha
             yield channel
 
     @abstractmethod
-    def make_channel(self, params: PipesParams) -> T_BlobStoreMessageWriterChannel: ...
+    def make_channel(self, params: PipesParams) -> T_BlobStoreMessageWriterChannel:
+        ...
 
 
 class PipesBlobStoreMessageWriterChannel(PipesMessageWriterChannel):
@@ -526,28 +556,31 @@ class PipesBlobStoreMessageWriterChannel(PipesMessageWriterChannel):
         return items
 
     @abstractmethod
-    def upload_messages_chunk(self, payload: StringIO, index: int) -> None: ...
+    def upload_messages_chunk(self, payload: StringIO, index: int) -> None:
+        ...
 
     @contextmanager
     def buffered_upload_loop(self) -> Iterator[None]:
         thread = None
-        is_task_complete = Event()
+        is_session_closed = Event()
         try:
-            thread = Thread(target=self._upload_loop, args=(is_task_complete,), daemon=True)
+            thread = Thread(target=self._upload_loop, args=(is_session_closed,), daemon=True)
             thread.start()
             yield
         finally:
-            is_task_complete.set()
+            is_session_closed.set()
             if thread:
                 thread.join(timeout=60)
 
-    def _upload_loop(self, is_task_complete: Event) -> None:
+    def _upload_loop(self, is_session_closed: Event) -> None:
         start_or_last_upload = datetime.datetime.now()
         while True:
             now = datetime.datetime.now()
-            if self._buffer.empty() and is_task_complete.is_set():
+            if self._buffer.empty() and is_session_closed.is_set():
                 break
-            elif is_task_complete.is_set() or (now - start_or_last_upload).seconds > self._interval:
+            elif (
+                is_session_closed.is_set() or (now - start_or_last_upload).seconds > self._interval
+            ):
                 payload = "\n".join([json.dumps(message) for message in self.flush_messages()])
                 if len(payload) > 0:
                     self.upload_messages_chunk(StringIO(payload), self._counter)
@@ -688,6 +721,24 @@ class PipesEnvVarParamsLoader(PipesParamsLoader):
 # ########################
 
 
+class PipesS3ContextLoader(PipesContextLoader):
+    """Context loader that reads context from a JSON file on S3.
+
+    Args:
+        client (Any): A boto3.client("s3") object.
+    """
+
+    def __init__(self, client: Any):
+        self._client = client
+
+    @contextmanager
+    def load_context(self, params: PipesParams) -> Iterator[PipesContextData]:
+        bucket = _assert_env_param_type(params, "bucket", str, self.__class__)
+        key = _assert_env_param_type(params, "key", str, self.__class__)
+        obj = self._client.get_object(Bucket=bucket, Key=key)
+        yield json.loads(obj["Body"].read().decode("utf-8"))
+
+
 class PipesS3MessageWriter(PipesBlobStoreMessageWriter):
     """Message writer that writes messages by periodically writing message chunks to an S3 bucket.
 
@@ -773,6 +824,48 @@ class PipesDbfsMessageWriter(PipesBlobStoreMessageWriter):
             path=os.path.join("/dbfs", unmounted_path.lstrip("/")),
             interval=self.interval,
         )
+
+    def get_opened_extras(self) -> PipesExtras:
+        # Extract the cluster log location from the SparkSession. This requires
+        # digging into the databricks `clusterUsageTags` config. This is set
+        # automatically by Databricks in the spark session that is created
+        # prior to job execution. Here are some sparse docs on cluster log
+        # delivery:
+        #   https://docs.databricks.com/en/clusters/configure.html#cluster-log-delivery
+        #
+        # It is not clear whether official docs exist for the config set in
+        # `spark.databricks.clusterUsageTags`, but you can see the full spark config for a job by
+        # selecting the "Spark UI" tab and then "Environment" on the job details page in the
+        # Databricks UI.
+        try:
+            from py4j.protocol import Py4JJavaError
+            from pyspark.sql import SparkSession
+        except ImportError as e:
+            raise DagsterPipesError(
+                "`PipesDbfsMessageWriter` requires pyspark and py4j to be available for import."
+            ) from e
+
+        spark = SparkSession.getActiveSession()
+        if spark is None:
+            raise DagsterPipesError(
+                "`PipesDbfsMessageWriter` expects an active `SparkSession` pre-configured by Databricks. Did not detect an active spark session."
+            )
+        try:
+            if spark.conf.get("spark.databricks.clusterUsageTags.clusterLogDeliveryEnabled"):
+                cluster_log_destination = spark.conf.get(
+                    "spark.databricks.clusterUsageTags.clusterLogDestination"
+                )
+                cluster_id = spark.conf.get("spark.databricks.clusterUsageTags.clusterId")
+                return {"cluster_driver_log_root": f"{cluster_log_destination}/{cluster_id}/driver"}
+            else:
+                return {}
+        except Py4JJavaError as e:
+            warnings.warn(
+                "A Py4JJavaError was thrown while reading the spark config to extract cluster logging information."
+                f" Log forwarding disabled. Error:\n  {e}",
+                category=DagsterPipesWarning,
+            )
+            return {}
 
 
 # ########################
@@ -868,7 +961,8 @@ class PipesContext:
         self._io_stack = ExitStack()
         self._data = self._io_stack.enter_context(context_loader.load_context(context_params))
         self._message_channel = self._io_stack.enter_context(message_writer.open(messages_params))
-        self._message_channel.write_message(_make_message("opened", {}))
+        opened_payload = message_writer.get_opened_payload()
+        self._message_channel.write_message(_make_message("opened", opened_payload))
         self._logger = _PipesLogger(self)
         self._materialized_assets: Set[str] = set()
         self._closed: bool = False

@@ -73,6 +73,7 @@ const buildSidebarQueryMock = (
         description: null,
         configField: null,
         metadataEntries: [],
+        assetChecks: [],
         jobNames: ['test_job'],
         autoMaterializePolicy: null,
         freshnessPolicy: null,
@@ -147,7 +148,7 @@ const buildSidebarQueryMock = (
   },
 });
 
-const EventsMock: MockedResponse<AssetEventsQuery> = {
+const buildEventsMock = ({reported}: {reported: boolean}): MockedResponse<AssetEventsQuery> => ({
   request: {
     query: ASSET_EVENTS_QUERY,
     variables: {
@@ -172,28 +173,30 @@ const EventsMock: MockedResponse<AssetEventsQuery> = {
           {
             __typename: 'MaterializationEvent',
             description: '1234',
-            runId: '12345',
             metadataEntries: [],
             partition: null,
-            timestamp: '12345678654',
+            timestamp: '1234567865400',
             assetLineage: [],
             label: null,
             stepKey: 'op',
             tags: [],
-            runOrError: {
-              __typename: 'Run',
-              pipelineName: '__ASSET_JOB_1',
-              mode: 'default',
-              pipelineSnapshotId: null,
-              id: '12345',
-              status: RunStatus.SUCCESS,
-              repositoryOrigin: {
-                __typename: 'RepositoryOrigin',
-                id: 'test.py',
-                repositoryLocationName: 'repo',
-                repositoryName: 'test.py',
-              },
-            },
+            runId: reported ? '' : '12345',
+            runOrError: reported
+              ? {__typename: 'RunNotFoundError'}
+              : {
+                  __typename: 'Run',
+                  pipelineName: '__ASSET_JOB_1',
+                  mode: 'default',
+                  pipelineSnapshotId: null,
+                  id: '12345',
+                  status: RunStatus.SUCCESS,
+                  repositoryOrigin: {
+                    __typename: 'RepositoryOrigin',
+                    id: 'test.py',
+                    repositoryLocationName: 'repo',
+                    repositoryName: 'test.py',
+                  },
+                },
           },
         ],
         assetObservations: [
@@ -203,7 +206,7 @@ const EventsMock: MockedResponse<AssetEventsQuery> = {
             runId: '12345',
             metadataEntries: [],
             partition: null,
-            timestamp: '12345678654',
+            timestamp: '1234567865400',
             label: null,
             stepKey: 'op',
             tags: [],
@@ -226,7 +229,7 @@ const EventsMock: MockedResponse<AssetEventsQuery> = {
       },
     },
   },
-};
+});
 
 const TestContainer: React.FC<{
   mocks?: MockedResponse<Record<string, any>>[];
@@ -236,7 +239,7 @@ const TestContainer: React.FC<{
     cache={createAppCache()}
     mocks={
       mocks || [
-        EventsMock,
+        buildEventsMock({reported: false}),
         buildPartitionHealthMock(MockAssetKey.path[0]!),
         buildSidebarQueryMock(),
       ]
@@ -248,9 +251,23 @@ const TestContainer: React.FC<{
   </MockedProvider>
 );
 
-export const AssetWithMaterializations = () => {
+export const AssetWithMaterialization = () => {
   return (
     <TestContainer>
+      <SidebarAssetInfo graphNode={buildGraphNodeMock({})} />
+    </TestContainer>
+  );
+};
+
+export const AssetWithReportedMaterialization = () => {
+  return (
+    <TestContainer
+      mocks={[
+        buildEventsMock({reported: true}),
+        buildPartitionHealthMock(MockAssetKey.path[0]!),
+        buildSidebarQueryMock(),
+      ]}
+    >
       <SidebarAssetInfo graphNode={buildGraphNodeMock({})} />
     </TestContainer>
   );
@@ -260,7 +277,7 @@ export const AssetWithPolicies = () => {
   return (
     <TestContainer
       mocks={[
-        EventsMock,
+        buildEventsMock({reported: false}),
         buildPartitionHealthMock(MockAssetKey.path[0]!),
         buildSidebarQueryMock({
           autoMaterializePolicy: buildAutoMaterializePolicy({

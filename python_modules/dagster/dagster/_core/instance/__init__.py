@@ -279,9 +279,11 @@ class MayHaveInstanceWeakref(Generic[T_DagsterInstance]):
 
     def register_instance(self, instance: T_DagsterInstance) -> None:
         check.invariant(
-            # Backcompat with custom subclasses that don't call super().__init__()
-            # in their own __init__ implementations
-            (not hasattr(self, "_instance_weakref") or self._instance_weakref is None),
+            (
+                # Backcompat with custom subclasses that don't call super().__init__()
+                # in their own __init__ implementations
+                not hasattr(self, "_instance_weakref") or self._instance_weakref is None
+            ),
             "Must only call initialize once",
         )
 
@@ -292,10 +294,12 @@ class MayHaveInstanceWeakref(Generic[T_DagsterInstance]):
 @runtime_checkable
 class DynamicPartitionsStore(Protocol):
     @abstractmethod
-    def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]: ...
+    def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
+        ...
 
     @abstractmethod
-    def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool: ...
+    def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
+        ...
 
 
 class DagsterInstance(DynamicPartitionsStore):
@@ -351,9 +355,9 @@ class DagsterInstance(DynamicPartitionsStore):
 
     # Stores TemporaryDirectory instances that were created for DagsterInstance.local_temp() calls
     # to be removed once the instance is garbage collected.
-    _TEMP_DIRS: "weakref.WeakKeyDictionary[DagsterInstance, TemporaryDirectory]" = (
-        weakref.WeakKeyDictionary()
-    )
+    _TEMP_DIRS: (
+        "weakref.WeakKeyDictionary[DagsterInstance, TemporaryDirectory]"
+    ) = weakref.WeakKeyDictionary()
 
     def __init__(
         self,
@@ -1301,9 +1305,10 @@ class DagsterInstance(DynamicPartitionsStore):
                     if asset_key:
                         # Logs and stores asset_materialization_planned event
                         partition_tag = dagster_run.tags.get(PARTITION_NAME_TAG)
-                        partition_range_start, partition_range_end = dagster_run.tags.get(
-                            ASSET_PARTITION_RANGE_START_TAG
-                        ), dagster_run.tags.get(ASSET_PARTITION_RANGE_END_TAG)
+                        partition_range_start, partition_range_end = (
+                            dagster_run.tags.get(ASSET_PARTITION_RANGE_START_TAG),
+                            dagster_run.tags.get(ASSET_PARTITION_RANGE_END_TAG),
+                        )
 
                         if partition_tag and (partition_range_start or partition_range_end):
                             raise DagsterInvariantViolationError(
@@ -1461,7 +1466,11 @@ class DagsterInstance(DynamicPartitionsStore):
         check.opt_set_param(asset_selection, "asset_selection", of_type=AssetKey)
         check.opt_set_param(asset_check_selection, "asset_check_selection", of_type=AssetCheckKey)
 
-        if asset_selection is not None or asset_check_selection is not None:
+        # asset_selection will always be None on an op job, but asset_check_selection may be
+        # None or []. This is because [] and None are different for asset checks: None means
+        # include all asset checks on selected assets, while [] means include no asset checks.
+        # In an op job (which has no asset checks), these two are equivalent.
+        if asset_selection is not None or asset_check_selection:
             check.invariant(
                 op_selection is None,
                 "Cannot pass op_selection with either of asset_selection or asset_check_selection",
@@ -1545,9 +1554,7 @@ class DagsterInstance(DynamicPartitionsStore):
             external_job.tags,
             (
                 # these can differ from external_job.tags if tags were added at launch time
-                parent_run.tags
-                if use_parent_run_tags
-                else {}
+                parent_run.tags if use_parent_run_tags else {}
             ),
             extra_tags or {},
             {

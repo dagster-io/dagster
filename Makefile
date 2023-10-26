@@ -2,30 +2,9 @@
 
 # Makefile oddities:
 # - Commands must start with literal tab characters (\t), not spaces.
-# - Multi-command rules (like `black` below) by default terminate as soon as a command has a non-0
+# - Multi-command rules (like `ruff` below) by default terminate as soon as a command has a non-0
 #   exit status. Prefix the command with "-" to instruct make to continue to the next command
 #   regardless of the preceding command's exit status.
-
-# NOTE: See pyproject.toml [tool.black] for majority of black config. Only include/exclude options
-# and format targets should be specified here. Note there are separate pyproject.toml for the root
-# and examples/docs_snippets.
-#
-# NOTE: Use `extend-exclude` instead of `exclude`. If `exclude` is provided, it stops black from
-# reading gitignore. `extend-exclude` is layered on top of gitignore. See:
-#   https://black.readthedocs.io/en/stable/usage_and_configuration/file_collection_and_discovery.html#gitignore
-black:
-	black --fast \
-    --extend-exclude="examples/docs_snippets|snapshots" \
-    docs examples integration_tests helm python_modules .buildkite
-	black --fast \
-    examples/docs_snippets
-
-check_black:
-	black --check --fast \
-    --extend-exclude="examples/docs_snippets|snapshots" \
-    docs examples integration_tests helm python_modules .buildkite
-	black --check --fast \
-    examples/docs_snippets
 
 pyright:
 	python scripts/run-pyright.py --all
@@ -46,10 +25,12 @@ unannotated_pyright:
 	python scripts/run-pyright.py --unannotated
 
 ruff:
-	ruff --fix .
+	-ruff --fix .
+	ruff format .
 
 check_ruff:
 	ruff .
+	ruff format --check .
 
 yamllint:
 	yamllint -c .yamllint.yaml --strict \
@@ -71,7 +52,7 @@ sanity_check:
 #NOTE:  fails on nonPOSIX-compliant shells (e.g. CMD, powershell)
 #NOTE:  dagster-hex is an external package
 	@echo Checking for prod installs - if any are listed below reinstall with 'pip -e'
-	@! (pip list --exclude-editable | grep -e dagster | grep -v dagster-hex)
+	@! (pip list --exclude-editable | grep -e dagster | grep -v dagster-hex | grep -v dagster-hightouch)
 
 rebuild_ui: sanity_check
 	cd js_modules/dagster-ui/; yarn install && yarn build

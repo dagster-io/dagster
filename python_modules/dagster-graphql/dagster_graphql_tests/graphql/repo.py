@@ -108,7 +108,7 @@ from dagster._seven import get_system_temp_directory
 from dagster._utils import file_relative_path, segfault
 from dagster_graphql.test.utils import (
     define_out_of_process_context,
-    infer_pipeline_selector,
+    infer_job_selector,
     main_repo_location_name,
     main_repo_name,
 )
@@ -962,7 +962,7 @@ def basic_job():
 def get_retry_multi_execution_params(
     graphql_context: WorkspaceRequestContext, should_fail: bool, retry_id: Optional[str] = None
 ) -> Mapping[str, Any]:
-    selector = infer_pipeline_selector(graphql_context, "retry_multi_output_job")
+    selector = infer_job_selector(graphql_context, "retry_multi_output_job")
     return {
         "mode": "default",
         "selector": selector,

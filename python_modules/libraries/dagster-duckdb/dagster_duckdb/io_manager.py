@@ -154,7 +154,7 @@ class DuckDBIOManager(ConfigurableIOManagerFactory):
             # my_table will just contain the data from column "a"
             ...
 
-    Set DuckDB configuration options using the config field. See
+    Set DuckDB configuration options using the connection_config field. See
     https://duckdb.org/docs/sql/configuration.html for all available settings.
 
     .. code-block:: python
@@ -162,20 +162,27 @@ class DuckDBIOManager(ConfigurableIOManagerFactory):
         defs = Definitions(
             assets=[my_table],
             resources={"io_manager": MyDuckDBIOManager(database="my_db.duckdb",
-                                                       config={"arrow_large_buffer_size": True})}
+                                                       connection_config={"arrow_large_buffer_size": True})}
         )
 
     """
 
     database: str = Field(description="Path to the DuckDB database.")
-    config: Dict[str, Any] = Field(description="DuckDB configuration options.", default={})
+    connection_config: Dict[str, Any] = Field(
+        description=(
+            "DuckDB connection configuration options. See"
+            " https://duckdb.org/docs/sql/configuration.html"
+        ),
+        default={},
+    )
     schema_: Optional[str] = Field(
         default=None, alias="schema", description="Name of the schema to use."
     )  # schema is a reserved word for pydantic
 
     @staticmethod
     @abstractmethod
-    def type_handlers() -> Sequence[DbTypeHandler]: ...
+    def type_handlers() -> Sequence[DbTypeHandler]:
+        ...
 
     @staticmethod
     def default_load_type() -> Optional[Type]:
@@ -224,7 +231,7 @@ class DuckDbClient(DbClient):
             kwargs={
                 "database": context.resource_config["database"],
                 "read_only": False,
-                "config": context.resource_config["config"],
+                "config": context.resource_config["connection_config"],
             },
             max_retries=10,
         )

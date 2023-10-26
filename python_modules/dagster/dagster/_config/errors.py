@@ -250,8 +250,7 @@ def create_field_not_defined_error(context: ContextData, received_field: str) ->
         stack=context.stack,
         reason=DagsterEvaluationErrorReason.FIELD_NOT_DEFINED,
         message=(
-            'Received unexpected config entry "{received}" {path_msg}. Expected: "{type_name}".'
-            .format(
+            'Received unexpected config entry "{received}" {path_msg}. Expected: "{type_name}".'.format(
                 path_msg=get_friendly_path_msg(context.stack),
                 type_name=print_config_type_key_to_string(
                     context.config_schema_snapshot, context.config_type_key, with_lines=False

@@ -4,6 +4,7 @@ import keyBy from 'lodash/keyBy';
 import reject from 'lodash/reject';
 import React from 'react';
 
+import {useFeatureFlags} from '../app/Flags';
 import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
 import {AssetKey} from '../assets/types';
 import {asyncGetFullAssetLayoutIndexDB} from '../graph/asyncGraphLayout';
@@ -109,13 +110,16 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
   const [assetGraphDataMaybeCached, setAssetGraphDataMaybeCached] =
     React.useState<GraphData | null>(null);
 
+  const {flagDisableDAGCache} = useFeatureFlags();
+
   React.useLayoutEffect(() => {
     setAssetGraphDataMaybeCached(null);
     setIsCached(false);
     setIsCalculating(true);
+    let cancel = false;
     (async () => {
       let fullAssetGraphData = null;
-      if (applyingEmptyDefault && repoFilteredNodes) {
+      if (applyingEmptyDefault && repoFilteredNodes && !flagDisableDAGCache) {
         // build the graph data anyways to check if it's cached
         const {all} = filterByQuery(graphQueryItems, '*');
         fullAssetGraphData = buildGraphData(all.map((n) => n.node));
@@ -124,6 +128,9 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
         }
         if (fullAssetGraphData) {
           const isCached = await asyncGetFullAssetLayoutIndexDB.isCached(fullAssetGraphData);
+          if (cancel) {
+            return;
+          }
           if (isCached) {
             setAssetGraphDataMaybeCached(fullAssetGraphData);
             setIsCached(true);
@@ -136,12 +143,17 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
       setIsCached(false);
       setIsCalculating(false);
     })();
+
+    return () => {
+      cancel = true;
+    };
   }, [
     applyingEmptyDefault,
     graphQueryItems,
     options.hideEdgesToNodesOutsideQuery,
     repoFilteredNodes,
     assetGraphData,
+    flagDisableDAGCache,
   ]);
 
   return {

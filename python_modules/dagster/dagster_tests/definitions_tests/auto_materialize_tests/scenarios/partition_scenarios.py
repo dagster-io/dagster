@@ -27,6 +27,7 @@ from ..base_scenario import (
     run,
     run_request,
     single_asset_run,
+    with_auto_materialize_policy,
 )
 
 daily_partitions_def = DailyPartitionsDefinition("2013-01-05")
@@ -409,5 +410,126 @@ partition_scenarios = {
         current_time=create_pendulum_time(year=2020, month=1, day=3, hour=1),
         unevaluated_runs=[run(["asset2"])],
         expected_run_requests=[run_request(["asset3"], partition_key="2020-01-02")],
+    ),
+    "test_skip_on_backfill_in_progress": AssetReconciliationScenario(
+        assets=with_auto_materialize_policy(
+            hourly_to_daily_partitions,
+            AutoMaterializePolicy.eager(max_materializations_per_minute=None).without_rules(
+                # Remove some rules to simplify the test
+                AutoMaterializeRule.skip_on_parent_outdated(),
+                AutoMaterializeRule.skip_on_required_but_nonexistent_parents(),
+            ),
+        ),
+        active_backfill_targets=[
+            {
+                AssetKey("hourly"): TimeWindowPartitionsSubset(
+                    hourly_partitions_def,
+                    num_partitions=1,
+                    included_partition_keys={"2013-01-05-04:00"},
+                )
+            }
+        ],
+        unevaluated_runs=[],
+        current_time=create_pendulum_time(year=2013, month=1, day=5, hour=5),
+        expected_run_requests=[
+            run_request(["hourly"], partition_key="2013-01-05-00:00"),
+            run_request(["hourly"], partition_key="2013-01-05-01:00"),
+            run_request(["hourly"], partition_key="2013-01-05-02:00"),
+            run_request(["hourly"], partition_key="2013-01-05-03:00"),
+        ],
+        expected_evaluations=[
+            AssetEvaluationSpec(
+                asset_key="hourly",
+                rule_evaluations=[
+                    (
+                        AutoMaterializeRuleEvaluation(
+                            AutoMaterializeRule.materialize_on_missing().to_snapshot(),
+                            evaluation_data=None,
+                        ),
+                        [
+                            "2013-01-05-00:00",
+                            "2013-01-05-01:00",
+                            "2013-01-05-02:00",
+                            "2013-01-05-03:00",
+                            "2013-01-05-04:00",
+                        ],
+                    ),
+                    (
+                        AutoMaterializeRuleEvaluation(
+                            AutoMaterializeRule.skip_on_backfill_in_progress().to_snapshot(),
+                            evaluation_data=None,
+                        ),
+                        [
+                            "2013-01-05-04:00",
+                        ],
+                    ),
+                ],
+                num_requested=4,
+                num_skipped=1,
+            ),
+            AssetEvaluationSpec.empty("daily"),
+        ],
+    ),
+    "test_skip_entire_asset_on_backfill_in_progress": AssetReconciliationScenario(
+        assets=with_auto_materialize_policy(
+            hourly_to_daily_partitions,
+            AutoMaterializePolicy.eager(max_materializations_per_minute=None)
+            .without_rules(
+                # Remove some rules to simplify the test
+                AutoMaterializeRule.skip_on_parent_outdated(),
+                AutoMaterializeRule.skip_on_required_but_nonexistent_parents(),
+            )
+            .with_rules(AutoMaterializeRule.skip_on_backfill_in_progress(all_partitions=True)),
+        ),
+        active_backfill_targets=[
+            {
+                AssetKey("hourly"): TimeWindowPartitionsSubset(
+                    hourly_partitions_def,
+                    num_partitions=1,
+                    included_partition_keys={"2013-01-05-04:00"},
+                )
+            }
+        ],
+        unevaluated_runs=[],
+        current_time=create_pendulum_time(year=2013, month=1, day=5, hour=5),
+        expected_run_requests=[],
+        expected_evaluations=[
+            AssetEvaluationSpec(
+                asset_key="hourly",
+                rule_evaluations=[
+                    (
+                        AutoMaterializeRuleEvaluation(
+                            AutoMaterializeRule.materialize_on_missing().to_snapshot(),
+                            evaluation_data=None,
+                        ),
+                        [
+                            "2013-01-05-00:00",
+                            "2013-01-05-01:00",
+                            "2013-01-05-02:00",
+                            "2013-01-05-03:00",
+                            "2013-01-05-04:00",
+                        ],
+                    ),
+                    (
+                        AutoMaterializeRuleEvaluation(
+                            AutoMaterializeRule.skip_on_backfill_in_progress(
+                                all_partitions=True
+                            ).to_snapshot(),
+                            evaluation_data=None,
+                        ),
+                        [
+                            "2013-01-05-00:00",
+                            "2013-01-05-01:00",
+                            "2013-01-05-02:00",
+                            "2013-01-05-03:00",
+                            "2013-01-05-04:00",
+                        ],
+                    ),
+                ],
+                num_requested=0,
+                num_skipped=5,
+            ),
+            AssetEvaluationSpec.empty("daily"),
+        ],
     ),
 }

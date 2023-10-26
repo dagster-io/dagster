@@ -18,10 +18,15 @@ export type SelectedTickQuery = {
           id: string;
           status: Types.InstigationTickStatus;
           timestamp: number;
+          endTimestamp: number | null;
+          cursor: string | null;
+          instigationType: Types.InstigationType;
           skipReason: string | null;
           runIds: Array<string>;
           originRunIds: Array<string>;
+          logKey: Array<string> | null;
           runKeys: Array<string>;
+          runs: Array<{__typename: 'Run'; id: string; status: Types.RunStatus}>;
           error: {
             __typename: 'PythonError';
             message: string;
@@ -32,6 +37,13 @@ export type SelectedTickQuery = {
               error: {__typename: 'PythonError'; message: string; stack: Array<string>};
             }>;
           } | null;
+          dynamicPartitionsRequestResults: Array<{
+            __typename: 'DynamicPartitionsRequestResult';
+            partitionsDefName: string;
+            partitionKeys: Array<string> | null;
+            skippedPartitionKeys: Array<string>;
+            type: Types.DynamicPartitionsRequestType;
+          }>;
         } | null;
       }
     | {__typename: 'InstigationStateNotFoundError'}

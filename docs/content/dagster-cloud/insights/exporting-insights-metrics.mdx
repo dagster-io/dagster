@@ -73,7 +73,7 @@ query AssetMetrics($metricName: String, $after: Float, $before: Float) {
 
 def get_client():
     url = "YOUR_ORG.dagster.cloud/prod"  # Your deployment-scoped url
-    user_token = "YOUR_TOKEN"  # A token generated from Cloud Settings -> Tokens
+    user_token = "YOUR_TOKEN"  # A token generated from Organization Settings > Tokens
     return DagsterGraphQLClient(url, headers={"Dagster-Cloud-Api-Token": user_token})
 
 
@@ -99,7 +99,7 @@ To use this example yourself, replace the values of `url` and `user_token` in th
 ```python
 def get_client():
     url = "YOUR_ORG.dagster.cloud/prod"  # Your deployment-scoped url
-    user_token = "YOUR_TOKEN"  # A token generated from Cloud Settings -> Tokens
+    user_token = "YOUR_TOKEN"  # A token generated from Organization Settings > Tokens
     return DagsterGraphQLClient(url, headers={"Dagster-Cloud-Api-Token": user_token})
 ```
 

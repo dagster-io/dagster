@@ -18,6 +18,7 @@ from typing import (
     Union,
 )
 
+import dagster._check as check
 import mock
 import pendulum
 import pytest
@@ -77,6 +78,7 @@ from dagster._core.test_utils import (
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._daemon.asset_daemon import AssetDaemon
+from dagster._utils import SingleInstigatorDebugCrashFlags
 
 
 class RunSpec(NamedTuple):
@@ -92,6 +94,16 @@ class AssetEvaluationSpec(NamedTuple):
     num_requested: int = 0
     num_skipped: int = 0
     num_discarded: int = 0
+
+    @staticmethod
+    def empty(asset_key: str) -> "AssetEvaluationSpec":
+        return AssetEvaluationSpec(
+            asset_key=asset_key,
+            rule_evaluations=[],
+            num_requested=0,
+            num_skipped=0,
+            num_discarded=0,
+        )
 
     @staticmethod
     def from_single_rule(
@@ -418,7 +430,12 @@ class AssetReconciliationScenario(
 
         return run_requests, cursor, evaluations
 
-    def do_daemon_scenario(self, instance, scenario_name):
+    def do_daemon_scenario(
+        self,
+        instance,
+        scenario_name,
+        debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags] = None,
+    ):
         assert bool(self.assets) != bool(
             self.code_locations
         ), "Must specify either assets or code_locations"
@@ -457,7 +474,9 @@ class AssetReconciliationScenario(
                     )
                 else:
                     all_assets = [
-                        asset for assets in self.code_locations.values() for asset in assets
+                        asset
+                        for assets in check.not_none(self.code_locations).values()
+                        for asset in assets
                     ]
                     do_run(
                         asset_keys=run.asset_keys,
@@ -494,7 +513,11 @@ class AssetReconciliationScenario(
                 ), workspace.get_code_location_error("test_location")
 
                 try:
-                    list(AssetDaemon(interval_seconds=42).run_iteration(workspace_context))
+                    list(
+                        AssetDaemon(interval_seconds=42)._run_iteration_impl(  # noqa: SLF001
+                            workspace_context, debug_crash_flags or {}
+                        )
+                    )
 
                     if self.expected_error_message:
                         raise Exception(

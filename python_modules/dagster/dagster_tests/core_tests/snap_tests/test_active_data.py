@@ -66,10 +66,11 @@ def test_external_repository_data(snapshot):
 
     now = pendulum.now()
 
-    assert job_partition_set_data.external_partitions_data.get_partitions_definition().get_partition_keys(
-        now
-    ) == my_partitioned_config.partitions_def.get_partition_keys(
-        now
+    assert (
+        job_partition_set_data.external_partitions_data.get_partitions_definition().get_partition_keys(
+            now
+        )
+        == my_partitioned_config.partitions_def.get_partition_keys(now)
     )
 
     snapshot.assert_match(serialize_pp(external_repo_data))

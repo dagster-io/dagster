@@ -18,7 +18,10 @@ import {DependsOnSelfBanner} from '../assets/DependsOnSelfBanner';
 import {PartitionHealthSummary} from '../assets/PartitionHealthSummary';
 import {UnderlyingOpsOrGraph} from '../assets/UnderlyingOpsOrGraph';
 import {Version} from '../assets/Version';
-import {EXECUTE_CHECKS_BUTTON_ASSET_NODE_FRAGMENT} from '../assets/asset-checks/ExecuteChecksButton';
+import {
+  EXECUTE_CHECKS_BUTTON_ASSET_NODE_FRAGMENT,
+  EXECUTE_CHECKS_BUTTON_CHECK_FRAGMENT,
+} from '../assets/asset-checks/ExecuteChecksButton';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {
   healthRefreshHintFromLiveData,
@@ -43,7 +46,7 @@ export const SidebarAssetInfo: React.FC<{
   graphNode: GraphNode;
 }> = ({graphNode}) => {
   const {assetKey, definition} = graphNode;
-  const liveData = useAssetLiveData(assetKey);
+  const {liveData} = useAssetLiveData(assetKey);
   const partitionHealthRefreshHint = healthRefreshHintFromLiveData(liveData);
   const partitionHealthData = usePartitionHealthData(
     [assetKey],
@@ -272,6 +275,10 @@ const SIDEBAR_ASSET_FRAGMENT = gql`
     requiredResources {
       resourceKey
     }
+    assetChecks {
+      name
+      ...ExecuteChecksButtonCheckFragment
+    }
 
     ...AssetNodeConfigFragment
     ...AssetNodeOpMetadataFragment
@@ -282,6 +289,7 @@ const SIDEBAR_ASSET_FRAGMENT = gql`
   ${METADATA_ENTRY_FRAGMENT}
   ${ASSET_NODE_OP_METADATA_FRAGMENT}
   ${EXECUTE_CHECKS_BUTTON_ASSET_NODE_FRAGMENT}
+  ${EXECUTE_CHECKS_BUTTON_CHECK_FRAGMENT}
 `;
 
 export const SIDEBAR_ASSET_QUERY = gql`

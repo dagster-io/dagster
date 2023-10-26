@@ -57,7 +57,8 @@ from ..utils import DEFAULT_IO_MANAGER_KEY, DEFAULT_OUTPUT, NoValueSentinel
 @overload
 def asset(
     compute_fn: Callable,
-) -> AssetsDefinition: ...
+) -> AssetsDefinition:
+    ...
 
 
 @overload
@@ -88,7 +89,8 @@ def asset(
     key: Optional[CoercibleToAssetKey] = None,
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = ...,
     check_specs: Optional[Sequence[AssetCheckSpec]] = ...,
-) -> Callable[[Callable[..., Any]], AssetsDefinition]: ...
+) -> Callable[[Callable[..., Any]], AssetsDefinition]:
+    ...
 
 
 @experimental_param(param="resource_defs")
@@ -956,7 +958,8 @@ def build_asset_ins(
 @overload
 def graph_asset(
     compose_fn: Callable,
-) -> AssetsDefinition: ...
+) -> AssetsDefinition:
+    ...
 
 
 @overload
@@ -976,7 +979,8 @@ def graph_asset(
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = ...,
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
     key: Optional[CoercibleToAssetKey] = None,
-) -> Callable[[Callable[..., Any]], AssetsDefinition]: ...
+) -> Callable[[Callable[..., Any]], AssetsDefinition]:
+    ...
 
 
 def graph_asset(
@@ -1020,7 +1024,7 @@ def graph_asset(
             If a dictionary is provided, then it will be used as the default run config for the
             graph. This means it must conform to the config schema of the underlying nodes. Note
             that the values provided will be viewable and editable in the Dagster UI, so be careful
-            with secrets. its constituent nodes.
+            with secrets.
 
             If no value is provided, then the config schema for the graph is the default (derived
             from the underlying nodes).
@@ -1049,7 +1053,7 @@ def graph_asset(
                 ...
 
             @op
-            def store_files_in_table(files) -> None:
+            def store_files(files) -> None:
                 files.to_sql(name="slack_files", con=create_db_connection())
 
             @graph_asset
@@ -1180,6 +1184,7 @@ def graph_multi_asset(
     can_subset: bool = False,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
+    config: Optional[Union[ConfigMapping, Mapping[str, Any]]] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a combined definition of multiple assets that are computed using the same graph of
     ops, and the same upstream assets.
@@ -1199,6 +1204,20 @@ def graph_multi_asset(
             group name will be applied to all assets produced by this multi_asset.
         can_subset (bool): Whether this asset's computation can emit a subset of the asset
             keys based on the context.selected_assets argument. Defaults to False.
+        config (Optional[Union[ConfigMapping], Mapping[str, Any]):
+            Describes how the graph underlying the asset is configured at runtime.
+
+            If a :py:class:`ConfigMapping` object is provided, then the graph takes on the config
+            schema of this object. The mapping will be applied at runtime to generate the config for
+            the graph's constituent nodes.
+
+            If a dictionary is provided, then it will be used as the default run config for the
+            graph. This means it must conform to the config schema of the underlying nodes. Note
+            that the values provided will be viewable and editable in the Dagster UI, so be careful
+            with secrets.
+
+            If no value is provided, then the config schema for the graph is the default (derived
+                from the underlying nodes).
     """
 
     def inner(fn: Callable) -> AssetsDefinition:
@@ -1229,6 +1248,7 @@ def graph_multi_asset(
         op_graph = graph(
             name=name or fn.__name__,
             out=combined_outs_by_output_name,
+            config=config,
         )(fn)
 
         # source metadata from the AssetOuts (if any)

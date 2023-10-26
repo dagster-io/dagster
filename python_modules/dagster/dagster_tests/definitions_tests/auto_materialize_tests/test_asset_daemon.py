@@ -1,6 +1,11 @@
+import multiprocessing
+from typing import TYPE_CHECKING
+
 import pendulum
 import pytest
 from dagster import AssetKey
+from dagster._core.instance import DagsterInstance
+from dagster._core.instance.ref import InstanceRef
 from dagster._core.instance_for_test import instance_for_test
 from dagster._core.scheduler.instigation import (
     InstigatorType,
@@ -9,6 +14,9 @@ from dagster._core.scheduler.instigation import (
 )
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import PARTITION_NAME_TAG
+from dagster._core.test_utils import (
+    cleanup_test_instance,
+)
 from dagster._daemon.asset_daemon import (
     FIXED_AUTO_MATERIALIZATION_INSTIGATOR_NAME,
     FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
@@ -16,6 +24,7 @@ from dagster._daemon.asset_daemon import (
     get_current_evaluation_id,
     set_auto_materialize_paused,
 )
+from dagster._utils import SingleInstigatorDebugCrashFlags, get_terminate_signal
 
 from .scenarios.auto_materialize_policy_scenarios import (
     auto_materialize_policy_scenarios,
@@ -23,6 +32,9 @@ from .scenarios.auto_materialize_policy_scenarios import (
 from .scenarios.auto_observe_scenarios import auto_observe_scenarios
 from .scenarios.multi_code_location_scenarios import multi_code_location_scenarios
 from .scenarios.scenarios import ASSET_RECONCILIATION_SCENARIOS
+
+if TYPE_CHECKING:
+    from pendulum.datetime import DateTime
 
 
 @pytest.fixture
@@ -168,6 +180,90 @@ def test_error_daemon_tick(daemon_not_paused_instance):
         assert ticks[0].tick_data.auto_materialize_evaluation_id == 1
         assert ticks[0].tick_data.run_requests == []
         assert error_asset_scenario.expected_error_message in str(ticks[0].tick_data.error)
+
+
+spawn_ctx = multiprocessing.get_context("spawn")
+
+
+def _test_asset_daemon_in_subprocess(
+    scenario_name,
+    instance_ref: InstanceRef,
+    execution_datetime: "DateTime",
+    debug_crash_flags: SingleInstigatorDebugCrashFlags,
+) -> None:
+    scenario = daemon_scenarios[scenario_name]
+    with DagsterInstance.from_ref(instance_ref) as instance:
+        try:
+            with pendulum.test(execution_datetime):
+                scenario.do_daemon_scenario(
+                    instance, scenario_name=scenario_name, debug_crash_flags=debug_crash_flags
+                )
+        finally:
+            cleanup_test_instance(instance)
+
+
+def test_asset_daemon_failure_recovery(daemon_not_paused_instance):
+    # Verifies that if we crash after creating run requests, the tick can retry and continue
+    # on without issue
+    instance = daemon_not_paused_instance
+    freeze_datetime = pendulum.now("UTC")
+    scenario = daemon_scenarios["auto_materialize_policy_lazy_freshness_missing"]
+
+    # Run a tick where the daemon crashes after run requests are created
+    asset_daemon_process = spawn_ctx.Process(
+        target=_test_asset_daemon_in_subprocess,
+        args=[
+            "auto_materialize_policy_lazy_freshness_missing",
+            instance.get_ref(),
+            freeze_datetime,
+            {"RUN_REQUESTS_CREATED": get_terminate_signal()},
+        ],
+    )
+    asset_daemon_process.start()
+    asset_daemon_process.join(timeout=60)
+
+    ticks = instance.get_ticks(
+        origin_id=FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
+        selector_id=FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
+    )
+
+    assert len(ticks) == 1
+    assert ticks[0]
+    assert ticks[0].status == TickStatus.STARTED
+    assert ticks[0].timestamp == freeze_datetime.timestamp()
+    assert not ticks[0].tick_data.end_timestamp == freeze_datetime.timestamp()
+    assert not len(ticks[0].tick_data.run_ids)
+    assert ticks[0].tick_data.auto_materialize_evaluation_id == 1
+
+    freeze_datetime = pendulum.now("UTC").add(seconds=1)
+
+    # Run another tick with no crash, daemon continues on and succeeds
+    asset_daemon_process = spawn_ctx.Process(
+        target=_test_asset_daemon_in_subprocess,
+        args=[
+            "auto_materialize_policy_lazy_freshness_missing",
+            instance.get_ref(),
+            freeze_datetime,
+            None,  # No crash this time
+        ],
+    )
+    asset_daemon_process.start()
+    asset_daemon_process.join(timeout=60)
+
+    ticks = instance.get_ticks(
+        origin_id=FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
+        selector_id=FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
+    )
+
+    assert len(ticks) == 2
+
+    assert ticks[0]
+    assert ticks[0].status == TickStatus.SUCCESS
+    assert ticks[0].timestamp == freeze_datetime.timestamp()
+    assert ticks[0].tick_data.end_timestamp == freeze_datetime.timestamp()
+    assert len(ticks[0].tick_data.run_ids) == 1
+    assert ticks[0].tick_data.auto_materialize_evaluation_id == 1
+    assert ticks[0].tick_data.run_requests == scenario.expected_run_requests
 
 
 @pytest.fixture
@@ -362,7 +458,9 @@ def test_daemon(scenario_item, daemon_not_paused_instance):
             [spec.num_requested for spec in scenario.expected_evaluations]
         )
         assert tick.requested_asset_keys == {
-            AssetKey.from_coercible(spec.asset_key) for spec in scenario.expected_evaluations
+            AssetKey.from_coercible(spec.asset_key)
+            for spec in scenario.expected_evaluations
+            if spec.num_requested > 0
         }
 
 
@@ -487,9 +585,14 @@ def test_run_ids():
             assert set(run.asset_selection) == set(expected_run_request.asset_selection)
             assert run.tags.get(PARTITION_NAME_TAG) == expected_run_request.partition_key
 
-        evaluations = instance.schedule_storage.get_auto_materialize_asset_evaluations(
-            asset_key=AssetKey("asset4"), limit=100
+        evaluations = sorted(
+            instance.schedule_storage.get_auto_materialize_asset_evaluations(
+                asset_key=AssetKey("asset4"), limit=100
+            ),
+            key=lambda evaluation: evaluation.evaluation_id,
         )
-        assert len(evaluations) == 1
+        assert len(evaluations) == 2
         assert evaluations[0].evaluation.asset_key == AssetKey("asset4")
-        assert evaluations[0].evaluation.run_ids == {run.run_id for run in sorted_runs}
+        assert evaluations[0].evaluation.run_ids == set()
+        assert evaluations[1].evaluation.asset_key == AssetKey("asset4")
+        assert evaluations[1].evaluation.run_ids == {run.run_id for run in sorted_runs}

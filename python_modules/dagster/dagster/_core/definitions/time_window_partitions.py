@@ -369,8 +369,11 @@ class TimeWindowPartitionsDefinition(
         partition_key_dt = pendulum.instance(
             datetime.strptime(partition_key, self.fmt), tz=self.timezone
         )
-        # the datetime format might not include granular components, so we need to recover them
-        # we make the assumption that the parsed partition key is <= the start datetime
+        if self.is_basic_hourly or self.is_basic_daily:
+            return partition_key_dt
+        # the datetime format might not include granular components, so we need to recover them,
+        # e.g. if cron_schedule="0 7 * * *" and fmt="%Y-%m-%d".
+        # we make the assumption that the parsed partition key is <= the start datetime.
         return next(iter(self._iterate_time_windows(partition_key_dt))).start
 
     def get_next_partition_key(
@@ -392,29 +395,34 @@ class TimeWindowPartitionsDefinition(
             return start_time.strftime(self.fmt)
 
     def get_next_partition_window(
-        self, end_dt: datetime, current_time: Optional[datetime] = None
+        self, end_dt: datetime, current_time: Optional[datetime] = None, respect_bounds: bool = True
     ) -> Optional[TimeWindow]:
-        last_partition_window = self.get_last_partition_window(current_time)
-        if last_partition_window is None:
-            return None
-
         windows_iter = iter(self._iterate_time_windows(end_dt))
         next_window = next(windows_iter)
-        if next_window.start >= last_partition_window.end:
-            return None
-        else:
-            return next_window
 
-    def get_prev_partition_window(self, start_dt: datetime) -> Optional[TimeWindow]:
+        if respect_bounds:
+            last_partition_window = self.get_last_partition_window(current_time)
+            if last_partition_window is None:
+                return None
+
+            if next_window.start >= last_partition_window.end:
+                return None
+
+        return next_window
+
+    def get_prev_partition_window(
+        self, start_dt: datetime, respect_bounds: bool = True
+    ) -> Optional[TimeWindow]:
         windows_iter = iter(self._reverse_iterate_time_windows(start_dt))
         prev_window = next(windows_iter)
-        first_partition_window = self.get_first_partition_window()
-        if first_partition_window is None or prev_window.start < first_partition_window.start:
-            return None
-        else:
-            return prev_window
+        if respect_bounds:
+            first_partition_window = self.get_first_partition_window()
+            if first_partition_window is None or prev_window.start < first_partition_window.start:
+                return None
 
-    @functools.lru_cache(maxsize=5)
+        return prev_window
+
+    @functools.lru_cache(maxsize=256)
     def _get_first_partition_window(self, *, current_time: datetime) -> Optional[TimeWindow]:
         current_timestamp = current_time.timestamp()
 
@@ -460,7 +468,7 @@ class TimeWindowPartitionsDefinition(
         )
         return self._get_first_partition_window(current_time=current_time)
 
-    @functools.lru_cache(maxsize=5)
+    @functools.lru_cache(maxsize=256)
     def _get_last_partition_window(self, *, current_time: datetime) -> Optional[TimeWindow]:
         if self.get_first_partition_window(current_time) is None:
             return None
@@ -775,6 +783,25 @@ class TimeWindowPartitionsDefinition(
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> bool:
         return bool(self._get_validated_time_window_for_partition_key(partition_key, current_time))
+
+    def equal_except_for_start_or_end(self, other: "TimeWindowPartitionsDefinition") -> bool:
+        """Returns True iff this is identical to other, except they're allowed to have different
+        start and end datetimes.
+        """
+        return (
+            self.timezone == other.timezone
+            and self.fmt == other.fmt
+            and self.cron_schedule == other.cron_schedule
+            and self.end_offset == other.end_offset
+        )
+
+    @property
+    def is_basic_daily(self) -> bool:
+        return self.cron_schedule == "0 0 * * *"
+
+    @property
+    def is_basic_hourly(self) -> bool:
+        return self.cron_schedule == "0 * * * *"
 
 
 class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
@@ -1373,7 +1400,7 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
     def __init__(
         self,
         partitions_def: TimeWindowPartitionsDefinition,
-        num_partitions: int,
+        num_partitions: Optional[int],
         included_time_windows: Optional[Sequence[TimeWindow]] = None,
         included_partition_keys: Optional[AbstractSet[str]] = None,
     ):
@@ -1383,10 +1410,6 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
         self._included_time_windows = included_time_windows
         self._num_partitions = num_partitions
 
-        check.param_invariant(
-            not (included_partition_keys and included_time_windows),
-            "Cannot specify both included_partition_keys and included_time_windows",
-        )
         self._included_time_windows = check.opt_nullable_sequence_param(
             included_time_windows, "included_time_windows", of_type=TimeWindow
         )
@@ -1405,6 +1428,64 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
             )
             self._included_time_windows = result_time_windows
         return self._included_time_windows
+
+    @property
+    def first_start(self) -> datetime:
+        """The start datetime of the earliest partition in the subset."""
+        if (
+            self._included_time_windows is None
+            and self._included_partition_keys
+            and len(self._included_partition_keys) == 1
+        ):
+            # Avoid expensive conversion from partition keys to time windows if possible
+            return self._partitions_def.start_time_for_partition_key(
+                next(iter(self._included_partition_keys))
+            )
+        else:
+            return self.included_time_windows[0].start
+
+    def cheap_ends_before(self, dt: datetime, dt_cron_schedule: str) -> bool:
+        """Performs a cheap calculation that checks whether the latest window in this subset ends
+        before the given dt. If this returns True, then it means the latest window definitely ends
+        before the given dt. If this returns False, it means it may or may not end before the given
+        dt.
+
+        Args:
+            dt_cron_schedule (str): A cron schedule that dt is on one of the ticks of.
+        """
+        if self._included_time_windows is not None:
+            return self._included_time_windows[-1].end <= dt
+        elif self._included_partition_keys and len(self._included_partition_keys) == 1:
+            # Getting just the partition start time is cheaper than invoking croniter to get the
+            # full window.
+            # If we know that the start time is earlier than dt and that the partitions are slim
+            # enough that the end time can't put them past dt, then we know that the end time is
+            # earlier than dt.
+            if (self._partitions_def.cron_schedule == dt_cron_schedule) or (
+                self._partitions_def.is_basic_hourly
+                and dt_cron_schedule in ["0 0 * * *", "0 * * * *"]
+            ):
+                return (
+                    self._partitions_def.start_time_for_partition_key(
+                        next(iter(self._included_partition_keys))
+                    )
+                    < dt
+                )
+
+        return False
+
+    @property
+    def num_partitions(self) -> int:
+        if self._num_partitions is None:
+            if self._included_partition_keys is not None:
+                self._num_partitions = len(self._included_partition_keys)
+            else:
+                self._num_partitions = sum(
+                    len(self._partitions_def.get_partition_keys_in_time_window(time_window))
+                    for time_window in self.included_time_windows
+                )
+
+        return self._num_partitions
 
     def _get_partition_time_windows_not_in_subset(
         self,
@@ -1551,7 +1632,7 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
 
         return TimeWindowPartitionsSubset(
             self._partitions_def,
-            num_partitions=self._num_partitions + added_partitions,
+            num_partitions=self.num_partitions + added_partitions,
             included_time_windows=result_windows,
         )
 
@@ -1637,12 +1718,29 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
         return json.dumps(
             {
                 "version": self.SERIALIZATION_VERSION,
+                # included_time_windows is already sorted, so no need to sort here to guarantee
+                # stable serialization between identical subsets
                 "time_windows": [
                     (window.start.timestamp(), window.end.timestamp())
                     for window in self.included_time_windows
                 ],
                 "num_partitions": self._num_partitions,
             }
+        )
+
+    def with_partitions_def(
+        self, partitions_def: TimeWindowPartitionsDefinition
+    ) -> "TimeWindowPartitionsSubset":
+        check.invariant(
+            partitions_def.cron_schedule == self._partitions_def.cron_schedule,
+            "num_partitions would become inaccurate if the partitions_defs had different cron"
+            " schedules",
+        )
+        return TimeWindowPartitionsSubset(
+            partitions_def=partitions_def,
+            num_partitions=self.num_partitions,
+            included_time_windows=self._included_time_windows,
+            included_partition_keys=self._included_partition_keys,
         )
 
     @property
@@ -1665,7 +1763,7 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
         )
 
     def __len__(self) -> int:
-        return self._num_partitions
+        return self.num_partitions
 
     def __contains__(self, partition_key: str) -> bool:
         if self._included_partition_keys is not None:

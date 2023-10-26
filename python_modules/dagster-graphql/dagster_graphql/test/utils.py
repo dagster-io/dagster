@@ -15,10 +15,12 @@ from dagster_graphql.schema import create_schema
 
 class GqlResult(Protocol):
     @property
-    def data(self) -> Mapping[str, Any]: ...
+    def data(self) -> Mapping[str, Any]:
+        ...
 
     @property
-    def errors(self) -> Optional[Sequence[str]]: ...
+    def errors(self) -> Optional[Sequence[str]]:
+        ...
 
 
 Selector: TypeAlias = Dict[str, Any]
@@ -172,9 +174,9 @@ def infer_repository_selector(graphql_context: WorkspaceRequestContext) -> Selec
     }
 
 
-def infer_job_or_pipeline_selector(
+def infer_job_selector(
     graphql_context: WorkspaceRequestContext,
-    pipeline_name: str,
+    job_name: str,
     op_selection: Optional[Sequence[str]] = None,
     asset_selection: Optional[Sequence[GqlAssetKey]] = None,
     asset_check_selection: Optional[Sequence[GqlAssetCheckHandle]] = None,
@@ -182,25 +184,10 @@ def infer_job_or_pipeline_selector(
     selector = infer_repository_selector(graphql_context)
     selector.update(
         {
-            "pipelineName": pipeline_name,
+            "pipelineName": job_name,
             "solidSelection": op_selection,
             "assetSelection": asset_selection,
             "assetCheckSelection": asset_check_selection,
-        }
-    )
-    return selector
-
-
-def infer_pipeline_selector(
-    graphql_context: WorkspaceRequestContext,
-    pipeline_name: str,
-    op_selection: Optional[Sequence[str]] = None,
-) -> Selector:
-    selector = infer_repository_selector(graphql_context)
-    selector.update(
-        {
-            "pipelineName": pipeline_name,
-            "solidSelection": op_selection,
         }
     )
     return selector

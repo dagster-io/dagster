@@ -1,15 +1,15 @@
 import {
-  AssetGraphLiveQuery,
-  AssetGraphLiveQueryVariables,
-} from '../../asset-graph/types/useLiveDataForAssetKeys.types';
-import {ASSETS_GRAPH_LIVE_QUERY} from '../../asset-graph/useLiveDataForAssetKeys';
-import {
   AssetKeyInput,
   buildAssetNode,
   buildAssetKey,
   buildAssetLatestInfo,
 } from '../../graphql/types';
 import {buildQueryMock} from '../../testing/mocking';
+import {ASSETS_GRAPH_LIVE_QUERY} from '../AssetLiveDataProvider';
+import {
+  AssetGraphLiveQuery,
+  AssetGraphLiveQueryVariables,
+} from '../types/AssetLiveDataProvider.types';
 
 export function buildMockedAssetGraphLiveQuery(assetKeys: AssetKeyInput[]) {
   return buildQueryMock<AssetGraphLiveQuery, AssetGraphLiveQueryVariables>({

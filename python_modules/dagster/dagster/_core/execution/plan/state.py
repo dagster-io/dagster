@@ -342,7 +342,8 @@ def _derive_state_of_past_run(
                 ):
                     for resolved_handle in to_retry[retrying_key]:
                         _update_tracking_dict(
-                            to_retry, step_handle.resolve(resolved_handle.mapping_key)  # type: ignore  # (must be ResolvedFromDynamicStepHandle)
+                            to_retry,
+                            step_handle.resolve(resolved_handle.mapping_key),  # type: ignore  # (must be ResolvedFromDynamicStepHandle)
                         )
 
                 else:

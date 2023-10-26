@@ -3,7 +3,7 @@ import json
 import os
 import shutil
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import List, Optional, Union, cast
 
 import pytest
 from dagster import (
@@ -37,6 +37,10 @@ pytest.importorskip("dbt.version", minversion="1.4")
 manifest_path = Path(TEST_PROJECT_DIR).joinpath("manifest.json")
 manifest = json.loads(manifest_path.read_bytes())
 
+test_exception_messages_dbt_project_dir = (
+    Path(__file__).joinpath("..", "..", "dbt_projects", "test_dagster_exceptions").resolve()
+)
+
 
 @pytest.mark.parametrize("global_config_flags", [[], ["--quiet"]])
 @pytest.mark.parametrize("command", ["run", "parse"])
@@ -48,6 +52,21 @@ def test_dbt_cli(global_config_flags: List[str], command: str) -> None:
     assert dbt_cli_invocation.is_successful()
     assert dbt_cli_invocation.process.returncode == 0
     assert dbt_cli_invocation.target_path.joinpath("dbt.log").exists()
+
+
+def test_dbt_cli_executable() -> None:
+    dbt_executable = cast(str, shutil.which("dbt"))
+    dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR, dbt_executable=dbt_executable)
+
+    assert dbt.cli(["run"], manifest=manifest).is_successful()
+
+    dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR, dbt_executable=Path(dbt_executable))  # type: ignore
+
+    assert dbt.cli(["run"], manifest=manifest).is_successful()
+
+    # dbt executable must exist
+    with pytest.raises(ValidationError, match="does not exist"):
+        DbtCliResource(project_dir=TEST_PROJECT_DIR, dbt_executable="nonexistent")
 
 
 @pytest.mark.parametrize("manifest", [None, manifest, manifest_path, os.fspath(manifest_path)])
@@ -73,15 +92,27 @@ def test_dbt_cli_project_dir_path() -> None:
 
 
 def test_dbt_cli_failure() -> None:
-    dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR)
+    dbt = DbtCliResource(project_dir=os.fspath(test_exception_messages_dbt_project_dir))
     dbt_cli_invocation = dbt.cli(["run", "--selector", "nonexistent"])
 
-    with pytest.raises(DagsterDbtCliRuntimeError):
+    with pytest.raises(
+        DagsterDbtCliRuntimeError, match="Could not find selector named nonexistent"
+    ):
         dbt_cli_invocation.wait()
 
     assert not dbt_cli_invocation.is_successful()
     assert dbt_cli_invocation.process.returncode == 2
     assert dbt_cli_invocation.target_path.joinpath("dbt.log").exists()
+
+    dbt = DbtCliResource(
+        project_dir=os.fspath(test_exception_messages_dbt_project_dir),
+        target="error_dev",
+    )
+
+    with pytest.raises(
+        DagsterDbtCliRuntimeError, match="Env var required but not provided: 'DBT_DUCKDB_THREADS'"
+    ):
+        dbt.cli(["parse"]).wait()
 
 
 def test_dbt_cli_subprocess_cleanup(caplog: pytest.LogCaptureFixture) -> None:
@@ -184,8 +215,8 @@ def test_dbt_profile_configuration() -> None:
     assert dbt_cli_invocation.is_successful()
 
 
-@pytest.mark.parametrize("profiles_dir", [TEST_PROJECT_DIR, Path(TEST_PROJECT_DIR)])
-def test_dbt_profile_dir_configuration(profiles_dir: Union[str, Path]) -> None:
+@pytest.mark.parametrize("profiles_dir", [None, TEST_PROJECT_DIR, Path(TEST_PROJECT_DIR)])
+def test_dbt_profiles_dir_configuration(profiles_dir: Union[str, Path]) -> None:
     dbt = DbtCliResource(
         project_dir=TEST_PROJECT_DIR,
         profiles_dir=profiles_dir,  # type: ignore
@@ -231,15 +262,39 @@ def test_dbt_with_partial_parse() -> None:
     original_target_path = Path(TEST_PROJECT_DIR, "target", PARTIAL_PARSE_FILE_NAME)
 
     original_target_path.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy(partial_parse_file_path, Path(TEST_PROJECT_DIR, "target", PARTIAL_PARSE_FILE_NAME))
+    shutil.copy(partial_parse_file_path, original_target_path)
 
     # Assert that partial parsing was used.
     dbt_cli_compile_with_partial_parse_invocation = dbt.cli(["compile"])
+    partial_parse_original_st_mtime = (
+        dbt_cli_compile_with_partial_parse_invocation.target_path.joinpath(PARTIAL_PARSE_FILE_NAME)
+        .stat()
+        .st_mtime
+    )
 
     assert dbt_cli_compile_with_partial_parse_invocation.is_successful()
     assert not any(
         "Unable to do partial parsing" in event.raw_event["info"]["msg"]
         for event in dbt_cli_compile_with_partial_parse_invocation.stream_raw_events()
+    )
+
+    # Assert that partial parsing is continues to happen when the target directory is reused.
+    dbt_cli_compile_with_reused_partial_parse_invocation = dbt.cli(
+        ["compile"], target_path=dbt_cli_compile_with_partial_parse_invocation.target_path
+    )
+    partial_parse_new_st_mtime = (
+        dbt_cli_compile_with_reused_partial_parse_invocation.target_path.joinpath(
+            PARTIAL_PARSE_FILE_NAME
+        )
+        .stat()
+        .st_mtime
+    )
+
+    assert partial_parse_original_st_mtime == partial_parse_new_st_mtime
+    assert dbt_cli_compile_with_reused_partial_parse_invocation.is_successful()
+    assert not any(
+        "Unable to do partial parsing" in event.raw_event["info"]["msg"]
+        for event in dbt_cli_compile_with_reused_partial_parse_invocation.stream_raw_events()
     )
 
 

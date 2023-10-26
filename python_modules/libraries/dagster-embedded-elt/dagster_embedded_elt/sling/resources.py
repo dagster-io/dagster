@@ -54,7 +54,8 @@ class SlingSourceConnection(PermissiveConfig):
 
     type: str = Field(description="Type of the source connection. Use 'file' for local storage.")
     connection_string: Optional[str] = Field(
-        description="The connection string for the source database."
+        description="The connection string for the source database.",
+        default=None,
     )
 
 
@@ -89,7 +90,8 @@ class SlingTargetConnection(PermissiveConfig):
         description="Type of the destination connection. Use 'file' for local storage."
     )
     connection_string: Optional[str] = Field(
-        description="The connection string for the target database."
+        description="The connection string for the target database.",
+        default=None,
     )
 
 
@@ -123,8 +125,9 @@ class SlingResource(ConfigurableResource):
     @contextlib.contextmanager
     def _setup_config(self) -> Generator[None, None, None]:
         """Uses environment variables to set the Sling source and target connections."""
-        sling_source = self.source_connection.dict()
-        sling_target = self.target_connection.dict()
+        sling_source = dict(self.source_connection)
+        sling_target = dict(self.target_connection)
+
         if self.source_connection.connection_string:
             sling_source["url"] = self.source_connection.connection_string
         if self.target_connection.connection_string:
@@ -173,6 +176,7 @@ class SlingResource(ConfigurableResource):
 
         with self._setup_config():
             config = {
+                "mode": mode,
                 "source": {
                     "conn": "SLING_SOURCE",
                     "stream": source_stream,

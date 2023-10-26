@@ -1,4 +1,6 @@
-from typing import Any, Type, Union
+from typing import Any, Literal, Type, Union
+
+from typing_extensions import Literal as ExtLiteral
 
 try:
     # this type only exists in python 3.10+
@@ -48,3 +50,7 @@ def is_optional(annotation: Type) -> bool:
         return len(get_args(annotation)) == 2 and type(None) in get_args(annotation)
 
     return False
+
+
+def is_literal(annotation: Type) -> bool:
+    return get_origin(annotation) in (Literal, ExtLiteral)

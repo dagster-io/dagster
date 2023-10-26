@@ -1,29 +1,14 @@
 import {gql, useQuery} from '@apollo/client';
-import {
-  Box,
-  Colors,
-  Subtitle2,
-  Caption,
-  Tag,
-  Button,
-  Dialog,
-  DialogBody,
-  DialogFooter,
-  ButtonLink,
-  Icon,
-  Spinner,
-} from '@dagster-io/ui-components';
+import {Box, Colors, Subtitle2, Caption, Icon, Spinner} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {PythonErrorInfo} from '../../app/PythonErrorInfo';
-import {formatElapsedTime} from '../../app/Util';
 import {Timestamp} from '../../app/time/Timestamp';
-import {PythonErrorFragment} from '../../app/types/PythonErrorFragment.types';
 import {tokenForAssetKey} from '../../asset-graph/Utils';
 import {AssetKeyInput, InstigationTickStatus} from '../../graphql/types';
+import {TickDetailSummary} from '../../instigation/TickDetailsDialog';
 import {HeaderCell, Inner, Row, RowCell} from '../../ui/VirtualizedTable';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../../workspace/workspacePath';
@@ -143,20 +128,6 @@ export const AutomaterializationTickDetailDialog = React.memo(
       );
     }, [assetKeyToPartitionsMap, filteredAssetKeys, items, queryString, tick, totalHeight]);
 
-    const intent = React.useMemo(() => {
-      switch (tick?.status) {
-        case InstigationTickStatus.FAILURE:
-          return 'danger';
-        case InstigationTickStatus.STARTED:
-          return 'primary';
-        case InstigationTickStatus.SUCCESS:
-          return 'success';
-      }
-      return undefined;
-    }, [tick]);
-
-    const [showPythonError, setShowPythonError] = React.useState<PythonErrorFragment | null>(null);
-
     return (
       <AssetKeysDialog
         isOpen={isOpen}
@@ -167,7 +138,7 @@ export const AutomaterializationTickDetailDialog = React.memo(
             title={
               tick ? (
                 <div>
-                  <Timestamp timestamp={{unix: tick.timestamp}} />
+                  <Timestamp timestamp={{unix: tick.timestamp}} timeFormat={{showTimezone: true}} />
                 </div>
               ) : (
                 ''
@@ -187,68 +158,8 @@ export const AutomaterializationTickDetailDialog = React.memo(
               height: '100%',
             }}
           >
-            {showPythonError ? (
-              <Dialog
-                title="Error"
-                isOpen={!!showPythonError}
-                onClose={() => {
-                  setShowPythonError(null);
-                }}
-                style={{width: '80vw'}}
-              >
-                <DialogBody>
-                  <PythonErrorInfo error={showPythonError} />
-                </DialogBody>
-                <DialogFooter topBorder>
-                  <Button
-                    intent="primary"
-                    onClick={() => {
-                      setShowPythonError(null);
-                    }}
-                  >
-                    Close
-                  </Button>
-                </DialogFooter>
-              </Dialog>
-            ) : null}
             <Box padding={{vertical: 12, horizontal: 24}} border="bottom">
-              <div
-                style={{display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12}}
-              >
-                <Box flex={{direction: 'column', gap: 4}}>
-                  <Subtitle2>Status</Subtitle2>
-                  <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-                    <Tag intent={intent}>
-                      {tick?.status === InstigationTickStatus.STARTED ? (
-                        'Evaluating…'
-                      ) : (
-                        <>{tick?.requestedAssetMaterializationCount ?? 0} requested</>
-                      )}
-                    </Tag>
-                    {tick?.error ? (
-                      <ButtonLink
-                        onClick={() => {
-                          setShowPythonError(tick.error!);
-                        }}
-                      >
-                        View error
-                      </ButtonLink>
-                    ) : null}
-                  </Box>
-                </Box>
-                <Box flex={{direction: 'column', gap: 4}}>
-                  <Subtitle2>Timestamp</Subtitle2>
-                  <div>{tick ? <Timestamp timestamp={{unix: tick.timestamp}} /> : '–'}</div>
-                </Box>
-                <Box flex={{direction: 'column', gap: 4}}>
-                  <Subtitle2>Duration</Subtitle2>
-                  <div>
-                    {tick?.endTimestamp
-                      ? formatElapsedTime(tick.endTimestamp * 1000 - tick.timestamp * 1000)
-                      : '–'}
-                  </div>
-                </Box>
-              </div>
+              {tick ? <TickDetailSummary tick={tick} /> : null}
             </Box>
             {tick?.status === InstigationTickStatus.STARTED ? null : (
               <>
@@ -340,7 +251,7 @@ const RowGrid = styled(Box)`
   grid-template-columns: ${TEMPLATE_COLUMNS};
   height: 100%;
   > * {
-    padding-top: 26px 0px;
+    justify-content: center;
   }
 `;
 

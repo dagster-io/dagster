@@ -11,7 +11,7 @@ from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._grpc.types import CancelExecutionRequest
 from dagster._utils import file_relative_path, safe_tempfile_path
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
-from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
+from dagster_graphql.test.utils import execute_dagster_graphql, infer_job_selector
 
 from .graphql_context_test_suite import (
     GraphQLContextVariant,
@@ -115,7 +115,7 @@ QueuedRunCoordinatorTestSuite: Any = make_graphql_context_test_suite(
 
 class TestQueuedRunTermination(QueuedRunCoordinatorTestSuite):
     def test_cancel_queued_run(self, graphql_context: WorkspaceRequestContext):
-        selector = infer_pipeline_selector(graphql_context, "infinite_loop_job")
+        selector = infer_job_selector(graphql_context, "infinite_loop_job")
         with safe_tempfile_path() as path:
             result = execute_dagster_graphql(
                 graphql_context,
@@ -147,7 +147,7 @@ class TestQueuedRunTermination(QueuedRunCoordinatorTestSuite):
             ), str(result.data)
 
     def test_cancel_runs(self, graphql_context: WorkspaceRequestContext):
-        selector = infer_pipeline_selector(graphql_context, "infinite_loop_job")
+        selector = infer_job_selector(graphql_context, "infinite_loop_job")
         with safe_tempfile_path() as path:
             result = execute_dagster_graphql(
                 graphql_context,
@@ -190,7 +190,7 @@ class TestQueuedRunTermination(QueuedRunCoordinatorTestSuite):
             )
 
     def test_force_cancel_queued_run(self, graphql_context: WorkspaceRequestContext):
-        selector = infer_pipeline_selector(graphql_context, "infinite_loop_job")
+        selector = infer_job_selector(graphql_context, "infinite_loop_job")
         with safe_tempfile_path() as path:
             result = execute_dagster_graphql(
                 graphql_context,
@@ -281,7 +281,7 @@ class TestTerminationReadonly(ReadonlyGraphQLContextTestMatrix):
 
 class TestRunVariantTermination(RunTerminationTestSuite):
     def test_basic_termination(self, graphql_context: WorkspaceRequestContext):
-        selector = infer_pipeline_selector(graphql_context, "infinite_loop_job")
+        selector = infer_job_selector(graphql_context, "infinite_loop_job")
         with safe_tempfile_path() as path:
             result = execute_dagster_graphql(
                 graphql_context,
@@ -314,7 +314,7 @@ class TestRunVariantTermination(RunTerminationTestSuite):
             assert result.data["terminatePipelineExecution"]["__typename"] == "TerminateRunSuccess"
 
     def test_force_termination(self, graphql_context: WorkspaceRequestContext):
-        selector = infer_pipeline_selector(graphql_context, "infinite_loop_job")
+        selector = infer_job_selector(graphql_context, "infinite_loop_job")
         with safe_tempfile_path() as path:
             result = execute_dagster_graphql(
                 graphql_context,
@@ -374,7 +374,7 @@ class TestRunVariantTermination(RunTerminationTestSuite):
     def test_terminate_failed(
         self, graphql_context: WorkspaceRequestContext, new_terminate_method, terminate_result
     ):
-        selector = infer_pipeline_selector(graphql_context, "infinite_loop_job")
+        selector = infer_job_selector(graphql_context, "infinite_loop_job")
         with safe_tempfile_path() as path:
             old_terminate = graphql_context.instance.run_launcher.terminate
             graphql_context.instance.run_launcher.terminate = new_terminate_method
@@ -472,7 +472,7 @@ class TestRunVariantTermination(RunTerminationTestSuite):
             )
 
     def test_backcompat_termination(self, graphql_context: WorkspaceRequestContext):
-        selector = infer_pipeline_selector(graphql_context, "infinite_loop_job")
+        selector = infer_job_selector(graphql_context, "infinite_loop_job")
         with safe_tempfile_path() as path:
             result = execute_dagster_graphql(
                 graphql_context,

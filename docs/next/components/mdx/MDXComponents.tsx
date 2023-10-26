@@ -372,6 +372,14 @@ const Experimental = () => {
   );
 };
 
+const Deprecated = () => {
+  return (
+    <div className="deprecated-tag">
+      <span className="hidden">(</span>Deprecated<span className="hidden">)</span>
+    </div>
+  );
+};
+
 const Legacy = () => {
   return (
     <div className="legacy-tag">
@@ -625,7 +633,7 @@ const TabGroup: React.FC<{children: any; persistentKey?: string}> = ({children, 
                   'w-full py-3 text-sm font-bold leading-5',
                   'focus:outline-none border-gray-200',
                   selected
-                    ? 'border-b-2 border-primary-500 text-primary-500'
+                    ? 'border-b-2 border-primary-500 text-primary-500 bg-gray-150'
                     : 'border-b hover:border-gray-500 hover:text-gray-700',
                 )
               }
@@ -755,6 +763,7 @@ export default {
   TODO,
   PlaceholderImage,
   Experimental,
+  Deprecated,
   Legacy,
   Icons,
   ReferenceTable,

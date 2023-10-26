@@ -176,10 +176,12 @@ const EMPTY_RESPONSE = {queryString: '', results: []};
  * A `terminate` function is provided, but it's probably not necessary to use it.
  */
 export const useGlobalSearch = () => {
-  const primarySearch = React.useRef<WorkerSearchResult>();
-  const secondarySearch = React.useRef<WorkerSearchResult>();
+  const primarySearch = React.useRef<WorkerSearchResult | null>(null);
+  const secondarySearch = React.useRef<WorkerSearchResult | null>(null);
 
   const primary = useLazyQuery<SearchPrimaryQuery>(SEARCH_PRIMARY_QUERY, {
+    // Try to make aggressive use of workspace values from the Apollo cache.
+    fetchPolicy: 'cache-first',
     onCompleted: (data: SearchPrimaryQuery) => {
       const results = primaryDataToSearchResults({data});
       if (!primarySearch.current) {
@@ -190,6 +192,8 @@ export const useGlobalSearch = () => {
   });
 
   const secondary = useLazyQuery<SearchSecondaryQuery>(SEARCH_SECONDARY_QUERY, {
+    // As above, try to aggressively use asset information from Apollo cache if possible.
+    fetchPolicy: 'cache-first',
     onCompleted: (data: SearchSecondaryQuery) => {
       const results = secondaryDataToSearchResults({data});
       if (!secondarySearch.current) {
@@ -202,9 +206,14 @@ export const useGlobalSearch = () => {
   const [performPrimaryLazyQuery, primaryResult] = primary;
   const [performSecondaryLazyQuery, secondaryResult] = secondary;
 
+  // If we already have WebWorkers set up, initialization is complete and this will be a no-op.
   const initialize = React.useCallback(async () => {
-    performPrimaryLazyQuery();
-    performSecondaryLazyQuery();
+    if (!primarySearch.current) {
+      performPrimaryLazyQuery();
+    }
+    if (!secondarySearch.current) {
+      performSecondaryLazyQuery();
+    }
   }, [performPrimaryLazyQuery, performSecondaryLazyQuery]);
 
   const searchPrimary = React.useCallback(async (queryString: string) => {
@@ -215,9 +224,14 @@ export const useGlobalSearch = () => {
     return secondarySearch.current ? secondarySearch.current.search(queryString) : EMPTY_RESPONSE;
   }, []);
 
+  // Terminate the workers. Be careful with this: for users with very large workspaces, we should
+  // avoid constantly re-querying and restarting the threads. It should only be used when we know
+  // that there is fresh data to repopulate search.
   const terminate = React.useCallback(() => {
     primarySearch.current?.terminate();
+    primarySearch.current = null;
     secondarySearch.current?.terminate();
+    secondarySearch.current = null;
   }, []);
 
   return {

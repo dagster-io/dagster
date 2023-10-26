@@ -377,9 +377,9 @@ class _PlanBuilder:
                 )
                 step = self.get_step_by_node_handle(check.not_none(resolved_handle))
                 if isinstance(step, (ExecutionStep, UnresolvedCollectExecutionStep)):
-                    step_output_handle: Union[StepOutputHandle, UnresolvedStepOutputHandle] = (
-                        StepOutputHandle(step.key, resolved_output_def.name)
-                    )
+                    step_output_handle: Union[
+                        StepOutputHandle, UnresolvedStepOutputHandle
+                    ] = StepOutputHandle(step.key, resolved_output_def.name)
                 elif isinstance(step, UnresolvedMappedExecutionStep):
                     step_output_handle = UnresolvedStepOutputHandle(
                         step.handle,
@@ -1459,9 +1459,9 @@ def _compute_step_maps(
     past_mappings = known_state.dynamic_mappings if known_state else {}
 
     executable_map: Dict[str, Union[StepHandle, ResolvedFromDynamicStepHandle]] = {}
-    resolvable_map: Dict[FrozenSet[str], List[Union[StepHandle, UnresolvedStepHandle]]] = (
-        defaultdict(list)
-    )
+    resolvable_map: Dict[
+        FrozenSet[str], List[Union[StepHandle, UnresolvedStepHandle]]
+    ] = defaultdict(list)
     for handle in step_handles_to_execute:
         step = step_dict[handle]
         if isinstance(step, ExecutionStep):

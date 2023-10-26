@@ -47,7 +47,8 @@ def test_io_manager_add_input_metadata():
             return 1
 
     @asset
-    def before(): ...
+    def before():
+        ...
 
     @asset
     def after(before):

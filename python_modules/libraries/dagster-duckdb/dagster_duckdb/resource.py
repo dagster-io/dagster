@@ -34,7 +34,13 @@ class DuckDBResource(ConfigurableResource):
             " database "
         )
     )
-    config: Dict[str, Any] = Field(description="DuckDB configuration options.", default={})
+    connection_config: Dict[str, Any] = Field(
+        description=(
+            "DuckDB connection configuration options. See"
+            " https://duckdb.org/docs/sql/configuration.html"
+        ),
+        default={},
+    )
 
     @classmethod
     def _is_dagster_maintained(cls) -> bool:
@@ -45,7 +51,11 @@ class DuckDBResource(ConfigurableResource):
         conn = backoff(
             fn=duckdb.connect,
             retry_on=(RuntimeError, duckdb.IOException),
-            kwargs={"database": self.database, "read_only": False, "config": self.config},
+            kwargs={
+                "database": self.database,
+                "read_only": False,
+                "config": self.connection_config,
+            },
             max_retries=10,
         )
 

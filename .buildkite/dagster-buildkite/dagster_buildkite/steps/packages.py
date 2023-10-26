@@ -361,7 +361,8 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         pytest_tox_factors=[
             "api_tests",
             "cli_tests",
-            "core_tests",
+            "core_tests_pydantic1",
+            "core_tests_pydantic2",
             "storage_tests_sqlalchemy_1_3",
             "storage_tests_sqlalchemy_1_4",
             "daemon_sensor_tests",
@@ -451,6 +452,15 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "dbt_14X",
             "dbt_15X",
             "dbt_16X",
+            "dbt_14X_pydantic1",
+            "dbt_14X_legacy_pydantic1",
+        ],
+    ),
+    PackageSpec(
+        "python_modules/libraries/dagster-snowflake",
+        pytest_tox_factors=[
+            "pydantic1",
+            "pydantic2",
         ],
     ),
     PackageSpec(
@@ -516,6 +526,10 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         unsupported_python_versions=[
             # pyspark not supported on 3.11
             AvailablePythonVersion.V3_11,
+        ],
+        pytest_tox_factors=[
+            "pydantic1",
+            "pydantic2",
         ],
     ),
     PackageSpec(

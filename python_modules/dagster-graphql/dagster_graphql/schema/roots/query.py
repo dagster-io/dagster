@@ -506,6 +506,8 @@ class GrapheneQuery(graphene.ObjectType):
         limit=graphene.Int(),
         cursor=graphene.String(),
         statuses=graphene.List(graphene.NonNull(GrapheneInstigationTickStatus)),
+        beforeTimestamp=graphene.Float(),
+        afterTimestamp=graphene.Float(),
         description="Fetch the history of auto-materialization ticks",
     )
 
@@ -668,7 +670,9 @@ class GrapheneQuery(graphene.ObjectType):
 
     @capture_error
     def resolve_unloadableInstigationStatesOrError(
-        self, graphene_info: ResolveInfo, instigationType: Optional[GrapheneInstigationType] = None  # type: ignore (idk)
+        self,
+        graphene_info: ResolveInfo,
+        instigationType: Optional[GrapheneInstigationType] = None,  # type: ignore (idk)
     ):
         instigation_type = InstigatorType(instigationType) if instigationType else None
         return get_unloadable_instigator_states_or_error(graphene_info, instigation_type)
@@ -907,7 +911,7 @@ class GrapheneQuery(graphene.ObjectType):
             asset_graph=load_asset_graph,
         )
 
-        return [
+        nodes = [
             GrapheneAssetNode(
                 node.repository_location,
                 node.external_repository,
@@ -919,6 +923,7 @@ class GrapheneQuery(graphene.ObjectType):
             )
             for node in results
         ]
+        return sorted(nodes, key=lambda node: node.id)
 
     def resolve_assetNodeOrError(self, graphene_info: ResolveInfo, assetKey: GrapheneAssetKeyInput):
         asset_key_input = cast(Mapping[str, Sequence[str]], assetKey)
@@ -1052,7 +1057,15 @@ class GrapheneQuery(graphene.ObjectType):
         )
 
     def resolve_autoMaterializeTicks(
-        self, graphene_info, dayRange=None, dayOffset=None, limit=None, cursor=None, statuses=None
+        self,
+        graphene_info,
+        dayRange=None,
+        dayOffset=None,
+        limit=None,
+        cursor=None,
+        statuses=None,
+        beforeTimestamp=None,
+        afterTimestamp=None,
     ):
         from dagster._daemon.asset_daemon import (
             FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
@@ -1070,6 +1083,8 @@ class GrapheneQuery(graphene.ObjectType):
             limit=limit,
             cursor=cursor,
             status_strings=statuses,
+            before=beforeTimestamp,
+            after=afterTimestamp,
         )
 
     def resolve_assetChecksOrError(

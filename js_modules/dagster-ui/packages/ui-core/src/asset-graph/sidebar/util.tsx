@@ -53,54 +53,23 @@ export function StatusCaseDot({statusCase}: {statusCase: StatusCase}) {
 
   switch (type) {
     case 'loading':
-      return (
-        <LoadingDot
-          style={{
-            width: '10px',
-            height: '10px',
-            borderRadius: '50%',
-          }}
-        />
-      );
+      return <LoadingDot />;
     case 'missing':
       return (
         <Tooltip content="Missing" position="top">
-          <div
-            style={{
-              width: '12px',
-              height: '12px',
-              border: `2px solid ${Colors.Gray500}`,
-              borderRadius: '50%',
-            }}
-          />
+          <Dot style={{border: `2px solid ${Colors.Gray500}`}} />
         </Tooltip>
       );
     case 'failed':
       return (
         <Tooltip content="Failed" position="top">
-          <div
-            style={{
-              backgroundColor: Colors.Red500,
-              width: '10px',
-              height: '10px',
-              borderRadius: '50%',
-            }}
-          />
+          <Dot style={{backgroundColor: Colors.Red500}} />
         </Tooltip>
       );
     case 'inprogress':
-      return <Spinner purpose="body-text" />;
+      return <Spinner purpose="caption-text" />;
     case 'successful':
-      return (
-        <div
-          style={{
-            backgroundColor: Colors.Green500,
-            width: '10px',
-            height: '10px',
-            borderRadius: '50%',
-          }}
-        />
-      );
+      return <Dot style={{backgroundColor: Colors.Green500}} />;
   }
 }
 
@@ -118,6 +87,14 @@ const pulse = keyframes`
   }
 `;
 
-const LoadingDot = styled.div`
+// 1px margin for 12px total width (matches <Spinner /> size)
+const Dot = styled.div`
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin: 0 1px;
+`;
+
+const LoadingDot = styled(Dot)`
   animation: ${pulse} 1s ease-out infinite;
 `;

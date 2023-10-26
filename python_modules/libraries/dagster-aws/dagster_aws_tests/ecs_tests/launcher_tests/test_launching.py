@@ -1143,6 +1143,24 @@ def test_status(
     assert not started_health_check.transient
     assert started_health_check.run_worker_id == "abcdef"
 
+    task["stoppedReason"] = "Timeout waiting for EphemeralStorage provisioning to complete."
+
+    started_health_check = instance.run_launcher.check_run_worker_health(run)
+    assert started_health_check.status == WorkerStatus.FAILED
+    assert not started_health_check.transient
+    assert started_health_check.run_worker_id == "abcdef"
+
+    task["stoppedReason"] = (
+        "CannotPullContainerError: pull image manifest has been retried 5 time(s): Get"
+        ' "https://myfakeimage:myfakemanifest":'
+        " dial tcp 12.345.678.78:443: i/o timeout"
+    )
+
+    started_health_check = instance.run_launcher.check_run_worker_health(run)
+    assert started_health_check.status == WorkerStatus.FAILED
+    assert not started_health_check.transient
+    assert started_health_check.run_worker_id == "abcdef"
+
     # STARTING runs with these errors are considered a transient failure that can be retried
     starting_run = instance.create_run_for_job(
         job,

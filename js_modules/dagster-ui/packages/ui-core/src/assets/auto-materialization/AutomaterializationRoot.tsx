@@ -1,4 +1,4 @@
-import {useQuery} from '@apollo/client';
+import {useLazyQuery} from '@apollo/client';
 import {
   Alert,
   Box,
@@ -11,7 +11,7 @@ import {
   PageHeader,
   Table,
 } from '@dagster-io/ui-components';
-import React from 'react';
+import React, {useLayoutEffect} from 'react';
 
 import {useConfirmation} from '../../app/CustomConfirmationProvider';
 import {useUnscopedPermissions} from '../../app/Permissions';
@@ -20,10 +20,11 @@ import {useTrackPageView} from '../../app/analytics';
 import {InstigationTickStatus} from '../../graphql/types';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {LiveTickTimeline} from '../../instigation/LiveTickTimeline2';
+import {isOldTickWithoutEndtimestamp} from '../../instigation/util';
 import {OverviewTabs} from '../../overview/OverviewTabs';
 import {useAutomaterializeDaemonStatus} from '../AutomaterializeDaemonStatusTag';
 
-import {ASSET_DAMEON_TICKS_QUERY} from './AssetDaemonTicksQuery';
+import {ASSET_DAEMON_TICKS_QUERY} from './AssetDaemonTicksQuery';
 import {AutomaterializationEvaluationHistoryTable} from './AutomaterializationEvaluationHistoryTable';
 import {AutomaterializationTickDetailDialog} from './AutomaterializationTickDetailDialog';
 import {AutomaterializeRunHistoryTable} from './AutomaterializeRunHistoryTable';
@@ -45,11 +46,32 @@ export const AutomaterializationRoot = () => {
 
   const {permissions: {canToggleAutoMaterialize} = {}} = useUnscopedPermissions();
 
-  const queryResult = useQuery<AssetDaemonTicksQuery, AssetDaemonTicksQueryVariables>(
-    ASSET_DAMEON_TICKS_QUERY,
+  const [fetch, queryResult] = useLazyQuery<AssetDaemonTicksQuery, AssetDaemonTicksQueryVariables>(
+    ASSET_DAEMON_TICKS_QUERY,
   );
   const [isPaused, setIsPaused] = React.useState(false);
-  useQueryRefreshAtInterval(queryResult, isPaused ? Infinity : 2 * 1000);
+  const [statuses, setStatuses] = React.useState<undefined | InstigationTickStatus[]>(undefined);
+  const [timeRange, setTimerange] = React.useState<undefined | [number, number]>(undefined);
+  const variables: AssetDaemonTicksQueryVariables = React.useMemo(() => {
+    if (timeRange || statuses) {
+      return {
+        afterTimestamp: timeRange?.[0],
+        beforeTimestamp: timeRange?.[1],
+        statuses,
+      };
+    }
+    return {
+      afterTimestamp: (Date.now() - TWENTY_MINUTES) / 1000,
+    };
+  }, [statuses, timeRange]);
+  function fetchData() {
+    fetch({
+      variables,
+    });
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useLayoutEffect(fetchData, [variables]);
+  useQueryRefreshAtInterval(queryResult, 2 * 1000, !isPaused && !timeRange && !statuses, fetchData);
 
   const [selectedTick, setSelectedTick] = React.useState<AssetDaemonTickFragment | null>(null);
 
@@ -66,9 +88,9 @@ export const AutomaterializationRoot = () => {
     ),
   );
 
-  const ids = queryResult.data
-    ? queryResult.data.autoMaterializeTicks.map((tick) => `${tick.id}:${tick.status}`)
-    : [];
+  const data = queryResult.data ?? queryResult.previousData;
+
+  const ids = data ? data.autoMaterializeTicks.map((tick) => `${tick.id}:${tick.status}`) : [];
   while (ids.length < 100) {
     // Super hacky but we need to keep the memo args length the same...
     // And the memo below prevents us from changing the ticks reference every second
@@ -77,13 +99,13 @@ export const AutomaterializationRoot = () => {
   }
   const ticks = React.useMemo(
     () => {
-      const ticks = queryResult.data?.autoMaterializeTicks;
+      const ticks = data?.autoMaterializeTicks;
       return (
         ticks?.map((tick, index) => {
-          // For ticks that get stuck in "Started" state without an endtimestamp.
-          if (!tick.endTimestamp && index !== ticks.length - 1) {
+          // For ticks that get stuck in "Started" state without an endTimestamp.
+          if (index !== 0 && !isOldTickWithoutEndtimestamp(tick) && !tick.endTimestamp) {
             const copy = {...tick};
-            copy.endTimestamp = ticks[index + 1]!.timestamp;
+            copy.endTimestamp = ticks[index - 1]!.timestamp;
             copy.status = InstigationTickStatus.FAILURE;
             return copy;
           }
@@ -94,7 +116,6 @@ export const AutomaterializationRoot = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [...ids.slice(0, 100)],
   );
-
   const onHoverTick = React.useCallback(
     (tick: AssetDaemonTickFragment | undefined) => {
       setIsPaused(!!tick);
@@ -113,7 +134,21 @@ export const AutomaterializationRoot = () => {
         <Alert
           intent="info"
           title="[Experimental] Dagster can automatically materialize assets when criteria are met."
-          description="Auto-materialization enables a declarative approach to asset scheduling – instead of defining imperative workflows to materialize your assets, you just describe the conditions under which they should be materialized. Learn more about auto-materialization here."
+          description={
+            <>
+              Auto-materialization enables a declarative approach to asset scheduling – instead of
+              defining imperative workflows to materialize your assets, you just describe the
+              conditions under which they should be materialized.{' '}
+              <a
+                href="https://docs.dagster.io/concepts/assets/asset-auto-execution"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Learn more about auto-materialization here
+              </a>
+              .
+            </>
+          }
         />
       </Box>
       <Table>
@@ -152,7 +187,7 @@ export const AutomaterializationRoot = () => {
       <Box padding={{vertical: 12, horizontal: 24}} border="bottom">
         <Subtitle2>Evaluation timeline</Subtitle2>
       </Box>
-      {!queryResult.data ? (
+      {!data ? (
         <Box padding={{vertical: 48}}>
           <Spinner purpose="page" />
         </Box>
@@ -162,6 +197,7 @@ export const AutomaterializationRoot = () => {
             ticks={ticks}
             onHoverTick={onHoverTick}
             onSelectTick={setSelectedTick}
+            exactRange={timeRange}
             timeRange={TWENTY_MINUTES}
             tickGrid={FIVE_MINUTES}
             timeAfter={THREE_MINUTES}
@@ -178,6 +214,8 @@ export const AutomaterializationRoot = () => {
             <AutomaterializationEvaluationHistoryTable
               setSelectedTick={setSelectedTick}
               setTableView={setTableView}
+              setParentStatuses={setStatuses}
+              setTimerange={setTimerange}
             />
           ) : (
             <AutomaterializeRunHistoryTable setTableView={setTableView} />

@@ -105,13 +105,10 @@ class ColumnConstraintViolationException(ConstraintViolationException):
         super(ColumnConstraintViolationException, self).__init__(self.construct_message())
 
     def construct_message(self):
-        base_message = (
-            'Violated "{constraint_name}" for column "{column_name}" - {constraint_description}'
-            .format(
-                constraint_name=self.constraint_name,
-                constraint_description=self.constraint_description,
-                column_name=self.column_name,
-            )
+        base_message = 'Violated "{constraint_name}" for column "{column_name}" - {constraint_description}'.format(
+            constraint_name=self.constraint_name,
+            constraint_description=self.constraint_description,
+            column_name=self.column_name,
         )
         if self.offending_rows is not None:
             base_message += "The offending (index, row values) are the following: {}".format(

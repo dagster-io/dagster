@@ -700,60 +700,61 @@ class TestScheduleStorage:
         if not self.can_store_auto_materialize_asset_evaluations():
             pytest.skip("Storage cannot store auto materialize asset evaluations")
 
-        storage.add_auto_materialize_asset_evaluations(
-            evaluation_id=10,
-            asset_evaluations=[
-                AutoMaterializeAssetEvaluation(
-                    asset_key=AssetKey("asset_one"),
-                    partition_subsets_by_condition=[],
-                    num_requested=0,
-                    num_skipped=0,
-                    num_discarded=0,
-                ),
-                AutoMaterializeAssetEvaluation(
-                    asset_key=AssetKey("asset_two"),
-                    partition_subsets_by_condition=[
-                        (
-                            AutoMaterializeRuleEvaluation(
-                                rule_snapshot=AutoMaterializeRule.materialize_on_missing().to_snapshot(),
-                                evaluation_data=None,
-                            ),
-                            None,
-                        )
-                    ],
-                    num_requested=1,
-                    num_skipped=0,
-                    num_discarded=0,
-                ),
-            ],
-        )
+        for _ in range(2):  # test idempotency
+            storage.add_auto_materialize_asset_evaluations(
+                evaluation_id=10,
+                asset_evaluations=[
+                    AutoMaterializeAssetEvaluation(
+                        asset_key=AssetKey("asset_one"),
+                        partition_subsets_by_condition=[],
+                        num_requested=0,
+                        num_skipped=0,
+                        num_discarded=0,
+                    ),
+                    AutoMaterializeAssetEvaluation(
+                        asset_key=AssetKey("asset_two"),
+                        partition_subsets_by_condition=[
+                            (
+                                AutoMaterializeRuleEvaluation(
+                                    rule_snapshot=AutoMaterializeRule.materialize_on_missing().to_snapshot(),
+                                    evaluation_data=None,
+                                ),
+                                None,
+                            )
+                        ],
+                        num_requested=1,
+                        num_skipped=0,
+                        num_discarded=0,
+                    ),
+                ],
+            )
 
-        res = storage.get_auto_materialize_asset_evaluations(
-            asset_key=AssetKey("asset_one"), limit=100
-        )
-        assert len(res) == 1
-        assert res[0].evaluation.asset_key == AssetKey("asset_one")
-        assert res[0].evaluation_id == 10
-        assert res[0].evaluation.num_requested == 0
+            res = storage.get_auto_materialize_asset_evaluations(
+                asset_key=AssetKey("asset_one"), limit=100
+            )
+            assert len(res) == 1
+            assert res[0].evaluation.asset_key == AssetKey("asset_one")
+            assert res[0].evaluation_id == 10
+            assert res[0].evaluation.num_requested == 0
 
-        res = storage.get_auto_materialize_asset_evaluations(
-            asset_key=AssetKey("asset_two"), limit=100
-        )
-        assert len(res) == 1
-        assert res[0].evaluation.asset_key == AssetKey("asset_two")
-        assert res[0].evaluation_id == 10
-        assert res[0].evaluation.num_requested == 1
+            res = storage.get_auto_materialize_asset_evaluations(
+                asset_key=AssetKey("asset_two"), limit=100
+            )
+            assert len(res) == 1
+            assert res[0].evaluation.asset_key == AssetKey("asset_two")
+            assert res[0].evaluation_id == 10
+            assert res[0].evaluation.num_requested == 1
 
-        res = storage.get_auto_materialize_evaluations_for_evaluation_id(evaluation_id=10)
+            res = storage.get_auto_materialize_evaluations_for_evaluation_id(evaluation_id=10)
 
-        assert len(res) == 2
-        assert res[0].evaluation.asset_key == AssetKey("asset_one")
-        assert res[0].evaluation_id == 10
-        assert res[0].evaluation.num_requested == 0
+            assert len(res) == 2
+            assert res[0].evaluation.asset_key == AssetKey("asset_one")
+            assert res[0].evaluation_id == 10
+            assert res[0].evaluation.num_requested == 0
 
-        assert res[1].evaluation.asset_key == AssetKey("asset_two")
-        assert res[1].evaluation_id == 10
-        assert res[1].evaluation.num_requested == 1
+            assert res[1].evaluation.asset_key == AssetKey("asset_two")
+            assert res[1].evaluation_id == 10
+            assert res[1].evaluation.num_requested == 1
 
         storage.add_auto_materialize_asset_evaluations(
             evaluation_id=11,
@@ -786,6 +787,47 @@ class TestScheduleStorage:
         )
         assert len(res) == 1
         assert res[0].evaluation_id == 10
+
+        # add a mix of keys - one that already is using the unique index and one that is not
+
+        eval_one = AutoMaterializeAssetEvaluation(
+            asset_key=AssetKey("asset_one"),
+            partition_subsets_by_condition=[],
+            num_requested=1,
+            num_skipped=2,
+            num_discarded=3,
+        )
+
+        eval_asset_three = AutoMaterializeAssetEvaluation(
+            asset_key=AssetKey("asset_three"),
+            partition_subsets_by_condition=[],
+            num_requested=1,
+            num_skipped=2,
+            num_discarded=3,
+        )
+
+        storage.add_auto_materialize_asset_evaluations(
+            evaluation_id=11,
+            asset_evaluations=[
+                eval_one,
+                eval_asset_three,
+            ],
+        )
+
+        res = storage.get_auto_materialize_asset_evaluations(
+            asset_key=AssetKey("asset_one"), limit=100
+        )
+        assert len(res) == 2
+        assert res[0].evaluation_id == 11
+        assert res[0].evaluation == eval_one
+
+        res = storage.get_auto_materialize_asset_evaluations(
+            asset_key=AssetKey("asset_three"), limit=100
+        )
+
+        assert len(res) == 1
+        assert res[0].evaluation_id == 11
+        assert res[0].evaluation == eval_asset_three
 
     def test_auto_materialize_asset_evaluations_with_partitions(self, storage):
         if not self.can_store_auto_materialize_asset_evaluations():

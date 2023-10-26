@@ -136,7 +136,7 @@ export const OpsRoot: React.FC<Props> = (props) => {
   });
 
   return (
-    <div style={{height: '100%'}}>
+    <div style={{flex: 1, minHeight: 0}}>
       <Loading queryResult={queryResult}>
         {({repositoryOrError}) => {
           if (repositoryOrError?.__typename === 'Repository' && repositoryOrError.usedSolids) {

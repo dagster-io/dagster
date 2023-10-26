@@ -738,9 +738,9 @@ class PartitionedConfig(Generic[T_PartitionsDefinition]):
 
         system_tags = {
             **self.partitions_def.get_tags_for_partition_key(partition_key),
+            # `PartitionSetDefinition` has been deleted but we still need to attach this special tag in
+            # order for reexecution against partitions to work properly.
             **(
-                # `PartitionSetDefinition` has been deleted but we still need to attach this special tag in
-                # order for reexecution against partitions to work properly.
                 {PARTITION_SET_TAG: external_partition_set_name_for_job_name(job_name)}
                 if job_name
                 else {}
@@ -951,21 +951,25 @@ class PartitionsSubset(ABC, Generic[T_str]):
         self,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> Iterable[T_str]: ...
+    ) -> Iterable[T_str]:
+        ...
 
     @abstractmethod
     @public
-    def get_partition_keys(self, current_time: Optional[datetime] = None) -> Iterable[T_str]: ...
+    def get_partition_keys(self, current_time: Optional[datetime] = None) -> Iterable[T_str]:
+        ...
 
     @abstractmethod
     def get_partition_key_ranges(
         self,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> Sequence[PartitionKeyRange]: ...
+    ) -> Sequence[PartitionKeyRange]:
+        ...
 
     @abstractmethod
-    def with_partition_keys(self, partition_keys: Iterable[str]) -> "PartitionsSubset[T_str]": ...
+    def with_partition_keys(self, partition_keys: Iterable[str]) -> "PartitionsSubset[T_str]":
+        ...
 
     def with_partition_key_range(
         self,
@@ -998,13 +1002,15 @@ class PartitionsSubset(ABC, Generic[T_str]):
         )
 
     @abstractmethod
-    def serialize(self) -> str: ...
+    def serialize(self) -> str:
+        ...
 
     @classmethod
     @abstractmethod
     def from_serialized(
         cls, partitions_def: PartitionsDefinition[T_str], serialized: str
-    ) -> "PartitionsSubset[T_str]": ...
+    ) -> "PartitionsSubset[T_str]":
+        ...
 
     @classmethod
     @abstractmethod
@@ -1014,23 +1020,26 @@ class PartitionsSubset(ABC, Generic[T_str]):
         serialized: str,
         serialized_partitions_def_unique_id: Optional[str],
         serialized_partitions_def_class_name: Optional[str],
-    ) -> bool: ...
+    ) -> bool:
+        ...
 
     @property
     @abstractmethod
-    def partitions_def(self) -> PartitionsDefinition[T_str]: ...
+    def partitions_def(self) -> PartitionsDefinition[T_str]:
+        ...
 
     @abstractmethod
-    def __len__(self) -> int: ...
+    def __len__(self) -> int:
+        ...
 
     @abstractmethod
-    def __contains__(self, value) -> bool: ...
+    def __contains__(self, value) -> bool:
+        ...
 
     @classmethod
     @abstractmethod
-    def empty_subset(
-        cls, partitions_def: PartitionsDefinition[T_str]
-    ) -> "PartitionsSubset[T_str]": ...
+    def empty_subset(cls, partitions_def: PartitionsDefinition[T_str]) -> "PartitionsSubset[T_str]":
+        ...
 
 
 @whitelist_for_serdes
@@ -1135,7 +1144,13 @@ class DefaultPartitionsSubset(PartitionsSubset[T_str]):
     def serialize(self) -> str:
         # Serialize version number, so attempting to deserialize old versions can be handled gracefully.
         # Any time the serialization format changes, we should increment the version number.
-        return json.dumps({"version": self.SERIALIZATION_VERSION, "subset": list(self._subset)})
+        return json.dumps(
+            {
+                "version": self.SERIALIZATION_VERSION,
+                # sort to ensure that equivalent partition subsets have identical serialized forms
+                "subset": sorted(list(self._subset)),
+            }
+        )
 
     @classmethod
     def from_serialized(

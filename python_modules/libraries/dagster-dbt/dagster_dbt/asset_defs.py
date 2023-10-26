@@ -63,7 +63,7 @@ from dagster_dbt.core.resources import DbtCliClient
 from dagster_dbt.core.resources_v2 import DbtCliResource
 from dagster_dbt.core.types import DbtCliOutput
 from dagster_dbt.core.utils import build_command_args_from_flags, execute_cli
-from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
+from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_opt_translator
 from dagster_dbt.errors import DagsterDbtError
 from dagster_dbt.types import DbtOutput
 from dagster_dbt.utils import (
@@ -348,7 +348,9 @@ def _get_dbt_op(
         if partition_key_to_vars_fn:
             kwargs["vars"] = partition_key_to_vars_fn(context.partition_key)
         # merge in any additional kwargs from the config
-        kwargs = deep_merge_dicts(kwargs, context.op_config)
+        kwargs = deep_merge_dicts(
+            kwargs, {k: v for k, v in context.op_config.items() if v is not None}
+        )
 
         if _can_stream_events(dbt_resource):
             yield from _stream_event_iterator(
@@ -596,6 +598,7 @@ def load_assets_from_dbt_project(
     target_dir = check.opt_str_param(target_dir, "target_dir", os.path.join(project_dir, "target"))
     select = check.opt_str_param(select, "select", "fqn:*")
     exclude = check.opt_str_param(exclude, "exclude", "")
+    dagster_dbt_translator = validate_opt_translator(dagster_dbt_translator)
 
     _raise_warnings_for_deprecated_args(
         "load_assets_from_dbt_manifest",
@@ -796,6 +799,8 @@ def load_assets_from_dbt_manifest(
             this flag to False is advised to reduce the size of the resulting snapshot. Deprecated:
             instead, provide a custom DagsterDbtTranslator that overrides node_info_to_description.
     """
+    dagster_dbt_translator = validate_opt_translator(dagster_dbt_translator)
+
     manifest = normalize_renamed_param(
         manifest,
         "manifest",

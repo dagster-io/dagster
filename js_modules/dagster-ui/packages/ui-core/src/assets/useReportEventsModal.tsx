@@ -49,12 +49,14 @@ export function useReportEventsModal(asset: Asset | null, onEventReported: () =>
   const dropdownOptions = React.useMemo(
     () => [
       {
-        label: 'Report materialization event',
+        label: asset?.isPartitioned
+          ? 'Report materialization events'
+          : 'Report materialization event',
         icon: <Icon name="asset_non_sda" />,
         onClick: () => setIsOpen(true),
       },
     ],
-    [],
+    [asset?.isPartitioned],
   );
 
   const element = asset ? (
@@ -196,7 +198,7 @@ const ReportEventDialogBody: React.FC<{
             <Box
               key={range.dimension.name}
               border="bottom"
-              padding={{vertical: 12, horizontal: 24}}
+              padding={{vertical: 12, horizontal: 20}}
             >
               <Box as={Subheading} flex={{alignItems: 'center', gap: 8}}>
                 <Icon name="partition" />

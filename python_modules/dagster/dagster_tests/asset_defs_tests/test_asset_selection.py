@@ -336,7 +336,8 @@ def test_self_dep(partitions_def, partition_mapping):
         partitions_def=partitions_def,
         ins={"a": AssetIn(partition_mapping=partition_mapping)},
     )
-    def a(a): ...
+    def a(a):
+        ...
 
     assert AssetSelection.keys("a").resolve([a]) == {a.key}
     assert AssetSelection.keys("a").upstream().resolve([a]) == {a.key}
@@ -347,10 +348,12 @@ def test_self_dep(partitions_def, partition_mapping):
 
 def test_from_coercible_multi_asset():
     @multi_asset(outs={"asset1": AssetOut(), "asset2": AssetOut()})
-    def my_multi_asset(): ...
+    def my_multi_asset():
+        ...
 
     @asset
-    def other_asset(): ...
+    def other_asset():
+        ...
 
     assert (
         AssetSelection.from_coercible([my_multi_asset]).resolve([my_multi_asset, other_asset])
@@ -360,10 +363,12 @@ def test_from_coercible_multi_asset():
 
 def test_from_coercible_tuple():
     @asset
-    def foo(): ...
+    def foo():
+        ...
 
     @asset
-    def bar(): ...
+    def bar():
+        ...
 
     assert AssetSelection.from_coercible((foo, bar)).resolve([foo, bar]) == {
         AssetKey("foo"),

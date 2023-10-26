@@ -15,14 +15,16 @@ manifest = json.loads(manifest_path.read_bytes())
 
 
 @dbt_assets(manifest=manifest)
-def my_dbt_assets(): ...
+def my_dbt_assets():
+    ...
 
 
 def test_asset_downstream_of_dbt_asset() -> None:
     upstream_asset_key = AssetKey(["orders"])
 
     @asset(deps=[get_asset_key_for_model([my_dbt_assets], "orders")])
-    def downstream_python_asset(): ...
+    def downstream_python_asset():
+        ...
 
     assert upstream_asset_key in my_dbt_assets.keys_by_output_name.values()
     assert set(downstream_python_asset.keys_by_input_name.values()) == {upstream_asset_key}

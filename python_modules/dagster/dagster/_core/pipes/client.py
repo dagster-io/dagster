@@ -6,6 +6,7 @@ from dagster_pipes import (
     DagsterPipesError,
     PipesContextData,
     PipesExtras,
+    PipesOpenedData,
     PipesParams,
 )
 
@@ -134,6 +135,14 @@ class PipesMessageReader(ABC):
         Yields:
             PipesParams: A dict of parameters that can be used by the external process to determine
             where to write messages.
+        """
+
+    def on_opened(self, opened_payload: PipesOpenedData) -> None:
+        """Hook called when the external process has successfully launched and returned an opened
+        payload.
+
+        By default this is a no-op. Specific message readers can override this to action information
+        that can only be obtained from the external process.
         """
 
     @abstractmethod

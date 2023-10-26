@@ -154,9 +154,7 @@ class OptType(SchemaType):
     def annotation(
         self, scope: Optional[str] = None, quote: bool = False, hide_default: bool = False
     ):
-        return (
-            f"Optional[{self.inner.annotation(scope, quote, hide_default)}]{' = None' if not hide_default else ''}"
-        )
+        return f"Optional[{self.inner.annotation(scope, quote, hide_default)}]{' = None' if not hide_default else ''}"
 
     def get_check(self, name: str, scope: Optional[str] = None):
         inner_check = self.inner.get_check(name, scope)
@@ -591,7 +589,7 @@ from dagster._annotations import public
                 if failure[0] not in EXPECTED_FAILURES:
                     raise failure[1]
 
-            subprocess.call(["black", out_file])
+            subprocess.call(["ruff", "format", out_file])
 
 
 if __name__ == "__main__":

@@ -39,13 +39,23 @@ const GROUP_NODE_PREFIX = 'group__';
 
 const MARGIN = 100;
 
-export type LayoutAssetGraphOptions = {horizontalDAGs: boolean};
+export type LayoutAssetGraphOptions = {
+  horizontalDAGs: boolean;
+  tightTree: boolean;
+  longestPath: boolean;
+};
 
 export const layoutAssetGraph = (
   graphData: GraphData,
   opts: LayoutAssetGraphOptions,
 ): AssetGraphLayout => {
   const g = new dagre.graphlib.Graph({compound: true});
+
+  const ranker = opts.tightTree
+    ? 'tight-tree'
+    : opts.longestPath
+    ? 'longest-path'
+    : 'network-simplex';
 
   g.setGraph(
     opts.horizontalDAGs
@@ -56,6 +66,7 @@ export const layoutAssetGraph = (
           nodesep: -10,
           edgesep: 90,
           ranksep: 60,
+          ranker,
         }
       : {
           rankdir: 'TB',
@@ -64,6 +75,7 @@ export const layoutAssetGraph = (
           nodesep: 40,
           edgesep: 10,
           ranksep: 10,
+          ranker,
         },
   );
   g.setDefaultEdgeLabel(() => ({}));

@@ -502,7 +502,8 @@ def test_default_load_type():
     output_context = build_output_context(asset_key=asset_key, resource_config=resource_config)
 
     @asset
-    def asset1(): ...
+    def asset1():
+        ...
 
     input_context = MagicMock(
         upstream_output=output_context,

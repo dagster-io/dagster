@@ -16,7 +16,8 @@ export const FeatureFlag = {
   flagDisableAutoLoadDefaults: 'flagDisableAutoLoadDefaults' as const,
   flagDAGSidebar: 'flagDAGSidebar' as const,
   flagDisableDAGCache: 'flagDisableDAGCache' as const,
-  flagEnableAMPTimeline: 'flagEnableAMPTimeline' as const,
+  flagTightTreeDag: 'flagTightTreeDag' as const,
+  flagLongestPathDag: 'flagLongestPathDag' as const,
 };
 export type FeatureFlagType = keyof typeof FeatureFlag;
 

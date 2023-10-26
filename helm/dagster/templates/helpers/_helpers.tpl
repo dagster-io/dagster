@@ -196,8 +196,6 @@ This includes the Dagster webserver, Celery Workers, Run Worker, and Step Worker
 */}}
 {{- define "dagster.shared_env" -}}
 DAGSTER_HOME: {{ .Values.global.dagsterHome | quote }}
-DAGSTER_K8S_PG_PASSWORD_SECRET: {{ include "dagster.postgresql.secretName" . | quote }}
-DAGSTER_K8S_INSTANCE_CONFIG_MAP: "{{ template "dagster.fullname" .}}-instance"
 DAGSTER_K8S_PIPELINE_RUN_NAMESPACE: "{{ .Release.Namespace }}"
 DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP: "{{ template "dagster.fullname" . }}-pipeline-env"
 DAGSTER_K8S_PIPELINE_RUN_IMAGE: {{ include "dagster.dagsterImage.name" (list $ .Values.pipelineRun.image) | quote }}

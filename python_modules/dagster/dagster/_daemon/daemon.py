@@ -232,7 +232,8 @@ class IntervalDaemon(DagsterDaemon[TContext], ABC):
             yield None
 
     @abstractmethod
-    def run_iteration(self, workspace_process_context: TContext) -> DaemonIterator: ...
+    def run_iteration(self, workspace_process_context: TContext) -> DaemonIterator:
+        ...
 
 
 class SchedulerDaemon(DagsterDaemon):

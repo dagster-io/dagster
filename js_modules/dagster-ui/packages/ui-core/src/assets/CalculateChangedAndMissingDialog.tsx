@@ -145,7 +145,7 @@ export const CalculateChangedAndMissingDialog = React.memo(
                           flex={{alignItems: 'center', gap: 4}}
                           style={{cursor: 'pointer'}}
                         >
-                          <Box flex={{shrink: 1}}>
+                          <Box style={{overflow: 'hidden'}}>
                             <MiddleTruncate text={displayNameForAssetKey(item)} />
                           </Box>
                           <Link to={assetDetailsPathForKey(item)} target="_blank">

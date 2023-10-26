@@ -455,7 +455,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
             }
           >
             <Box
-              padding={{vertical: 12, horizontal: 24}}
+              padding={{vertical: 12, horizontal: 20}}
               data-testid={testId('pure-all-partitions-only')}
             >
               <Alert
@@ -482,7 +482,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
             {target.type === 'pureWithAnchorAsset' && (
               <Box
                 flex={{alignItems: 'center', gap: 8}}
-                padding={{top: 12, horizontal: 24}}
+                padding={{top: 12, horizontal: 20}}
                 data-testid={testId('anchor-asset-label')}
               >
                 <Icon name="asset" />
@@ -493,7 +493,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
               <Box
                 key={range.dimension.name}
                 border="bottom"
-                padding={{vertical: 12, horizontal: 24}}
+                padding={{vertical: 12, horizontal: 20}}
               >
                 <Box as={Subheading} flex={{alignItems: 'center', gap: 8}}>
                   <Icon name="partition" />
@@ -552,7 +552,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
           }
           isInitiallyOpen={false}
         >
-          <Box padding={{vertical: 16, horizontal: 24}} flex={{direction: 'column', gap: 12}}>
+          <Box padding={{vertical: 16, horizontal: 20}} flex={{direction: 'column', gap: 12}}>
             <TagEditor
               tagsFromSession={tags}
               onChange={setTags}
@@ -586,7 +586,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
           isInitiallyOpen={true}
         >
           {target.type === 'job' && (
-            <Box padding={{vertical: 16, horizontal: 24}} flex={{direction: 'column', gap: 12}}>
+            <Box padding={{vertical: 16, horizontal: 20}} flex={{direction: 'column', gap: 12}}>
               <Checkbox
                 data-testid={testId('missing-only-checkbox')}
                 label="Backfill only failed and missing partitions within selection"
@@ -634,7 +634,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
           )}
         </ToggleableSection>
 
-        <Box padding={{horizontal: 24}}>
+        <Box padding={{horizontal: 20}}>
           {previewCount > 0 && (
             <Box
               margin={{top: 16}}
@@ -864,7 +864,7 @@ const Warnings: React.FC<{
         </Box>
       }
     >
-      <Box flex={{direction: 'column', gap: 16}} padding={{vertical: 12, horizontal: 24}}>
+      <Box flex={{direction: 'column', gap: 16}} padding={{vertical: 12, horizontal: 20}}>
         {alerts}
       </Box>
     </ToggleableSection>

@@ -46,6 +46,7 @@ def _default_sort_key(step: ExecutionStep) -> float:
 
 
 CONCURRENCY_CLAIM_BLOCKED_INTERVAL = 1
+CONCURRENCY_CLAIM_MESSAGE_INTERVAL = 300
 
 
 class ActiveExecution:
@@ -106,6 +107,7 @@ class ActiveExecution:
         self._pending_retry: List[str] = []
         self._pending_abandon: List[str] = []
         self._waiting_to_retry: Dict[str, float] = {}
+        self._messaged_concurrency_slots: Dict[str, float] = {}
 
         # then are considered _in_flight when vended via get_steps_to_*
         self._in_flight: Set[str] = set()
@@ -637,3 +639,25 @@ class ActiveExecution:
             self.get_steps_to_execute()
 
         return [self.get_step_by_key(step_key) for step_key in self._in_flight]
+
+    def concurrency_event_iterator(
+        self, plan_context: Union[PlanExecutionContext, PlanOrchestrationContext]
+    ) -> Iterator[DagsterEvent]:
+        if not self._instance_concurrency_context:
+            return
+
+        pending_claims = self._instance_concurrency_context.pending_claim_steps()
+        for step_key in pending_claims:
+            last_messaged_timestamp = self._messaged_concurrency_slots.get(step_key)
+            if (
+                not last_messaged_timestamp
+                or time.time() - last_messaged_timestamp > CONCURRENCY_CLAIM_MESSAGE_INTERVAL
+            ):
+                step = self.get_step_by_key(step_key)
+                step_context = plan_context.for_step(step)
+                step_concurrency_key = cast(str, step.tags.get(GLOBAL_CONCURRENCY_TAG))
+                self._messaged_concurrency_slots[step_key] = time.time()
+                is_initial_message = last_messaged_timestamp is None
+                yield DagsterEvent.step_concurrency_blocked(
+                    step_context, step_concurrency_key, initial=is_initial_message
+                )

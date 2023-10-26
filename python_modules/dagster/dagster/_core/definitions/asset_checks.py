@@ -14,7 +14,10 @@ from typing import (
 from dagster import _check as check
 from dagster._annotations import experimental, public
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
-from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.events import (
+    AssetKey,
+    CoercibleToAssetKeyPrefix,
+)
 from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.resource_requirement import (
@@ -35,6 +38,20 @@ class AssetChecksDefinitionInputOutputProps(NamedTuple):
     asset_check_keys_by_output_name: Mapping[str, AssetCheckKey]
     asset_keys_by_input_name: Mapping[str, AssetKey]
 
+    def with_asset_key_prefix(
+        self, prefix: CoercibleToAssetKeyPrefix
+    ) -> "AssetChecksDefinitionInputOutputProps":
+        return self._replace(
+            asset_check_keys_by_output_name={
+                output_name: check_key.with_asset_key_prefix(prefix)
+                for output_name, check_key in self.asset_check_keys_by_output_name.items()
+            },
+            asset_keys_by_input_name={
+                input_name: asset_key.with_prefix(prefix)
+                for input_name, asset_key in self.asset_keys_by_input_name.items()
+            },
+        )
+
 
 @experimental
 class AssetChecksDefinition(ResourceAddable, RequiresResources):
@@ -50,7 +67,7 @@ class AssetChecksDefinition(ResourceAddable, RequiresResources):
         node_def: NodeDefinition,
         resource_defs: Mapping[str, ResourceDefinition],
         specs: Sequence[AssetCheckSpec],
-        input_output_props: AssetChecksDefinitionInputOutputProps
+        input_output_props: AssetChecksDefinitionInputOutputProps,
         # if adding new fields, make sure to handle them in the get_attributes_dict method
     ):
         self._node_def = node_def
@@ -92,8 +109,7 @@ class AssetChecksDefinition(ResourceAddable, RequiresResources):
         if len(self._specs_by_output_name) > 1:
             check.failed(
                 "Tried to retrieve single-check property from a checks definition with multiple"
-                " checks: "
-                + ", ".join(spec.name for spec in self._specs_by_output_name.values()),
+                " checks: " + ", ".join(spec.name for spec in self._specs_by_output_name.values()),
             )
 
         return next(iter(self.specs))
@@ -143,6 +159,21 @@ class AssetChecksDefinition(ResourceAddable, RequiresResources):
             specs=self._specs,
             input_output_props=self._input_output_props,
         )
+
+    def with_attributes(
+        self,
+        asset_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    ) -> "AssetChecksDefinition":
+        attributes_dict = self.get_attributes_dict()
+        if asset_key_prefix is not None:
+            attributes_dict["specs"] = [
+                spec.with_asset_key_prefix(asset_key_prefix) for spec in self._specs
+            ]
+            attributes_dict["input_output_props"] = self._input_output_props.with_asset_key_prefix(
+                asset_key_prefix
+            )
+
+        return AssetChecksDefinition(**attributes_dict)
 
 
 @experimental

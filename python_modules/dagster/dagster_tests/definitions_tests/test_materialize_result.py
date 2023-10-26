@@ -319,6 +319,67 @@ def test_materialize_result_output_typing():
         resources={"io_manager": TestingIOManager()},
     ).success
 
+    @asset(
+        check_specs=[
+            AssetCheckSpec(name="check_one", asset="with_checks"),
+            AssetCheckSpec(name="check_two", asset="with_checks"),
+        ]
+    )
+    def with_checks(context: AssetExecutionContext) -> MaterializeResult:
+        return MaterializeResult(
+            check_results=[
+                AssetCheckResult(
+                    check_name="check_one",
+                    passed=True,
+                ),
+                AssetCheckResult(
+                    check_name="check_two",
+                    passed=True,
+                ),
+            ]
+        )
+
+    assert materialize(
+        [with_checks],
+        resources={"io_manager": TestingIOManager()},
+    ).success
+
+    @multi_asset(
+        specs=[
+            AssetSpec("asset_one"),
+            AssetSpec("asset_two"),
+        ],
+        check_specs=[
+            AssetCheckSpec(name="check_one", asset="asset_one"),
+            AssetCheckSpec(name="check_two", asset="asset_two"),
+        ],
+    )
+    def multi_checks(context: AssetExecutionContext) -> Tuple[MaterializeResult, MaterializeResult]:
+        return MaterializeResult(
+            asset_key="asset_one",
+            check_results=[
+                AssetCheckResult(
+                    check_name="check_one",
+                    passed=True,
+                    asset_key="asset_one",
+                ),
+            ],
+        ), MaterializeResult(
+            asset_key="asset_two",
+            check_results=[
+                AssetCheckResult(
+                    check_name="check_two",
+                    passed=True,
+                    asset_key="asset_two",
+                ),
+            ],
+        )
+
+    assert materialize(
+        [multi_checks],
+        resources={"io_manager": TestingIOManager()},
+    ).success
+
 
 @pytest.mark.skip(
     "Generator return types are interpreted as Any. See"
