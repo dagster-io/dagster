@@ -27,7 +27,7 @@ A software-defined asset includes the following:
 - A set of upstream asset keys, which refer to assets that the contents of the software-defined asset are derived from.
 - A Python function, which is responsible for computing the contents of the asset from its upstream dependencies.
 
-  **Note**: Behind-the-scenes, the Python function is an [op](/concepts/ops-jobs-graphs/ops). Ops are an advanced topic that isn't required to get started with Dagster. A crucial distinction between Software-Defined Assets and ops is that Software-Defined Assets know about their dependencies, while ops do not. Ops aren't connected to dependencies until they're placed inside a [graph](/concepts/ops-jobs-graphs/graphs).
+  **Note**: Behind-the-scenes, the Python function is an [op](/concepts/ops-jobs-graphs/ops). Ops are an advanced topic that isn't required to get started with Dagster. A crucial distinction between Software-defined Assets and ops is that Software-defined Assets know about their dependencies, while ops do not. Ops aren't connected to dependencies until they're placed inside a [graph](/concepts/ops-jobs-graphs/graphs).
 
 **Materializing** an asset is the act of running its function and saving the results to persistent storage. You can initiate materializations from [the Dagster UI](/concepts/webserver/ui) or by invoking Python APIs. By default, assets are materialized to pickle files on your local filesystem, but materialization behavior is fully customizable using [I/O managers](/concepts/io-management/io-managers#applying-io-managers-to-assets). It's possible to materialize an asset in multiple storage environments, such as production and staging.
 
@@ -547,7 +547,7 @@ def test_uses_resource() -> None:
     assert result == {"foo": "bar"}
 ```
 
-If you use a context object in your function, you can use <PyObject object="build_asset_context" /> to generate the `context` object, because under the hood the function decorated by `@asset` is an op.
+If you use a context object in your function, you can use <PyObject object="build_asset_context" /> to generate the `context` object.
 
 Consider the following asset that uses a context object:
 
