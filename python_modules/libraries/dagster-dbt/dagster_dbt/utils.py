@@ -311,9 +311,8 @@ def select_unique_ids_from_manifest(
     parsed_spec: SelectionSpec = graph_cli.parse_union([select], True)
 
     if exclude:
-        parsed_spec = graph_cli.SelectionDifference(
-            components=[parsed_spec, graph_cli.parse_union([exclude], True)]
-        )
+        parsed_exclude_spec = graph_cli.parse_union([exclude], False)
+        parsed_spec = graph_cli.SelectionDifference(components=[parsed_spec, parsed_exclude_spec])
 
     # execute this selection against the graph
     selector = graph_selector.NodeSelector(graph, manifest, previous_state=previous_state)
