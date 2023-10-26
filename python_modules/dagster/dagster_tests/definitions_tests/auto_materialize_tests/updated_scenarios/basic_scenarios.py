@@ -1,11 +1,11 @@
-from dagster import AutoMaterializeRule, AssetSpec
+from dagster import AssetSpec, AutoMaterializeRule
 from dagster._core.definitions.auto_materialize_rule import ParentUpdatedRuleEvaluationData
+
 from ..asset_daemon_scenario import (
     AssetDaemonScenario,
     AssetDaemonScenarioState,
     AssetRuleEvaluationSpec,
 )
-from ..base_scenario import run_request
 from ..asset_daemon_scenario_states import (
     diamond,
     one_asset,
@@ -14,6 +14,7 @@ from ..asset_daemon_scenario_states import (
     two_assets_depend_on_one,
     two_assets_in_sequence,
 )
+from ..base_scenario import run_request
 
 basic_scenarios = [
     AssetDaemonScenario(

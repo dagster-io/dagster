@@ -1,6 +1,7 @@
 import pytest
-from .updated_scenarios.basic_scenarios import basic_scenarios
+
 from .asset_daemon_scenario import AssetDaemonScenario
+from .updated_scenarios.basic_scenarios import basic_scenarios
 
 all_scenarios = basic_scenarios
 

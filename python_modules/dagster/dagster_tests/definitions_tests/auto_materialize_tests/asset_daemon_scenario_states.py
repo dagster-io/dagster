@@ -1,4 +1,5 @@
 from dagster import AssetSpec
+
 from .asset_daemon_scenario import AssetDaemonScenarioState
 
 diamond = AssetDaemonScenarioState(
