@@ -69,7 +69,7 @@ In the code above, a `print` statement is used to show progress while fetching s
 
 Dagster's logger can be accessed through the `context` argument, which is available through any asset-decorated function if the first keyword argument in it is named `context`. The `context` argument contains the logger, information about the current run, and other Dagster-specific utilities.
 
-The Dagster framework uses Python type hints, such as how the `context` argument is of type <PyObject module="dagster" object="AssetExecutionContext" displayText="AssetExecutionContext"/>. By annotating the `context` argument, your IDE will inform you of the methods available on the `context` object, such as `context.log.info` logging method.
+The Dagster framework uses Python type hints, such as how the `context` argument is of type <PyObject module="dagster" object="AssetExecutionContext" displayText="AssetExecutionContext"/>. By annotating the `context` argument, most code editors will enable autocomplete for the methods available on the `context` object, such as `context.log.info`.
 
 The code below replaces the `print` statement with the Dagster logger:
 
