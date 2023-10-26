@@ -355,10 +355,10 @@ describe('AssetLiveDataProvider', () => {
   it('Skips over asset keys that fail to fetch', async () => {
     const assetKeys = [buildAssetKey({path: ['key1']})];
     const mockedQuery = buildMockedAssetGraphLiveQuery(assetKeys, undefined, [
-      new GraphQLError('timeout'),
+      new GraphQLError('500'),
     ]);
     const mockedQuery2 = buildMockedAssetGraphLiveQuery(assetKeys, undefined, [
-      new GraphQLError('timeout'),
+      new GraphQLError('500'),
     ]);
 
     const resultFn = getMockResultFn(mockedQuery);
