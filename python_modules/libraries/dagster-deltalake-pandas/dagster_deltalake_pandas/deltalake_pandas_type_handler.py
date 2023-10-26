@@ -1,4 +1,4 @@
-from typing import Optional, Sequence, Type
+from typing import Any, Dict, Optional, Sequence, Tuple, Type
 
 import pandas as pd
 import pyarrow as pa
@@ -18,8 +18,8 @@ class DeltaLakePandasTypeHandler(DeltalakeBaseArrowTypeHandler[pd.DataFrame]):
     ) -> pd.DataFrame:
         return obj.read_pandas()
 
-    def to_arrow(self, obj: pd.DataFrame) -> pa.RecordBatchReader:
-        return pa.Table.from_pandas(obj).to_reader()
+    def to_arrow(self, obj: pd.DataFrame) -> Tuple[pa.RecordBatchReader, Dict[str, Any]]:
+        return pa.Table.from_pandas(obj).to_reader(), {}
 
     @property
     def supported_types(self) -> Sequence[Type[object]]:

@@ -1,11 +1,28 @@
 from abc import abstractmethod
-from typing import Generic, Iterable, List, Optional, Sequence, Type, TypeVar, Union, cast
+from typing import (
+    Any,
+    Dict,
+    Generic,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 
 import pyarrow as pa
 import pyarrow.compute as pc
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
 from dagster._core.definitions.time_window_partitions import TimeWindow
-from dagster._core.storage.db_io_manager import DbTypeHandler, TablePartitionDimension, TableSlice
+from dagster._core.storage.db_io_manager import (
+    DbTypeHandler,
+    TablePartitionDimension,
+    TableSlice,
+)
 from deltalake import DeltaTable, write_deltalake
 from deltalake.schema import (
     Field as DeltaField,
@@ -26,7 +43,7 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
         pass
 
     @abstractmethod
-    def to_arrow(self, obj: T) -> pa.RecordBatchReader:
+    def to_arrow(self, obj: T) -> Tuple[pa.RecordBatchReader, Dict[str, Any]]:
         pass
 
     def handle_output(
@@ -37,7 +54,7 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
         connection: TableConnection,
     ):
         """Stores pyarrow types in Delta table."""
-        reader = self.to_arrow(obj=obj)
+        reader, delta_params = self.to_arrow(obj=obj)
         delta_schema = Schema.from_pyarrow(reader.schema)
 
         partition_filters = None
@@ -59,12 +76,12 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
             mode="overwrite",
             partition_filters=partition_filters,
             partition_by=partition_columns,
+            **delta_params,
         )
 
         # TODO make stats computation configurable on type handler
         dt = DeltaTable(connection.table_uri, storage_options=connection.storage_options)
         try:
-            # TODO investigate where null come from .. empty table?
             _table, stats = _get_partition_stats(dt=dt, partition_filters=partition_filters)
         except Exception as e:
             context.log.warn(f"error while computing table stats: {e}")
@@ -119,10 +136,10 @@ class DeltaLakePyArrowTypeHandler(DeltalakeBaseArrowTypeHandler[ArrowTypes]):
             return obj.read_all()
         return obj
 
-    def to_arrow(self, obj: ArrowTypes) -> pa.RecordBatchReader:
+    def to_arrow(self, obj: ArrowTypes) -> Tuple[pa.RecordBatchReader, Dict[str, Any]]:
         if isinstance(obj, pa.Table):
             return obj.to_reader()
-        return obj
+        return obj, {}
 
     @property
     def supported_types(self) -> Sequence[Type[object]]:
