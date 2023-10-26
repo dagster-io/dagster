@@ -462,8 +462,7 @@ export type AssetPartitionStatuses =
 export type AssetPartitions = {
   __typename: 'AssetPartitions';
   assetKey: AssetKey;
-  partitionKeys: Maybe<Array<Scalars['String']>>;
-  partitionRanges: Maybe<Array<PartitionKeyRange>>;
+  partitions: Maybe<AssetBackfillTargetPartitions>;
 };
 
 export type AssetPartitionsStatusCounts = {
@@ -5305,10 +5304,12 @@ export const buildAssetPartitions = (
         : relationshipsToOmit.has('AssetKey')
         ? ({} as AssetKey)
         : buildAssetKey({}, relationshipsToOmit),
-    partitionKeys:
-      overrides && overrides.hasOwnProperty('partitionKeys') ? overrides.partitionKeys! : [],
-    partitionRanges:
-      overrides && overrides.hasOwnProperty('partitionRanges') ? overrides.partitionRanges! : [],
+    partitions:
+      overrides && overrides.hasOwnProperty('partitions')
+        ? overrides.partitions!
+        : relationshipsToOmit.has('AssetBackfillTargetPartitions')
+        ? ({} as AssetBackfillTargetPartitions)
+        : buildAssetBackfillTargetPartitions({}, relationshipsToOmit),
   };
 };
 

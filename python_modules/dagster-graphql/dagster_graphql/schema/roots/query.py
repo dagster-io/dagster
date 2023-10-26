@@ -100,6 +100,7 @@ from ..asset_graph import (
     GrapheneAssetNodeOrError,
 )
 from ..backfill import (
+    GrapheneAssetPartitions,
     GrapheneBulkActionStatus,
     GraphenePartitionBackfillOrError,
     GraphenePartitionBackfillsOrError,
@@ -139,7 +140,6 @@ from ..logs.compute_logs import (
     from_captured_log_data,
 )
 from ..partition_sets import (
-    GrapheneAssetPartitions,
     GraphenePartitionSetOrError,
     GraphenePartitionSetsOrError,
 )

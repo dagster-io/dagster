@@ -29,12 +29,12 @@ if TYPE_CHECKING:
     from dagster_graphql.schema.util import ResolveInfo
 
     from ...schema.backfill import (
+        GrapheneAssetPartitions,
         GrapheneCancelBackfillSuccess,
         GrapheneLaunchBackfillSuccess,
         GrapheneResumeBackfillSuccess,
     )
     from ...schema.errors import GraphenePartitionSetNotFoundError
-    from ...schema.partition_sets import GrapheneAssetPartitions
 
 
 def _assert_permission_for_asset_graph(
@@ -76,7 +76,7 @@ def _assert_permission_for_asset_graph(
 def get_asset_backfill_preview(
     graphene_info: "ResolveInfo", backfill_preview_params: AssetBackfillPreviewParams
 ) -> Sequence["GrapheneAssetPartitions"]:
-    from ...schema.partition_sets import GrapheneAssetPartitions
+    from ...schema.backfill import GrapheneAssetPartitions
 
     asset_graph = ExternalAssetGraph.from_workspace(graphene_info.context)
 

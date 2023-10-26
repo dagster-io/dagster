@@ -93,10 +93,12 @@ query assetBackfillPreview($params: AssetBackfillPreviewParams!) {
     assetKey {
       path
     }
-    partitionKeys
-    partitionRanges {
-      start
-      end
+    partitions {
+      partitionKeys
+      ranges {
+        start
+        end
+      }
     }
   }
 }
@@ -722,20 +724,19 @@ def test_asset_backfill_preview_time_partitioned():
 
             # Assert toposorted
             assert target_asset_partitions[0]["assetKey"] == {"path": ["hourly"]}
-            assert target_asset_partitions[0]["partitionRanges"] == [
+            assert target_asset_partitions[0]["partitions"]["ranges"] == [
                 {"start": "2020-01-02-22:00", "end": "2020-01-03-00:00"}
             ]
-            assert target_asset_partitions[0]["partitionKeys"] == None
+            assert target_asset_partitions[0]["partitions"]["partitionKeys"] is None
 
             assert target_asset_partitions[1]["assetKey"] == {"path": ["daily"]}
-            assert target_asset_partitions[1]["partitionRanges"] == [
+            assert target_asset_partitions[1]["partitions"]["ranges"] == [
                 {"start": "2020-01-02", "end": "2020-01-03"}
             ]
-            assert target_asset_partitions[1]["partitionKeys"] == None
+            assert target_asset_partitions[1]["partitions"]["partitionKeys"] is None
 
             assert target_asset_partitions[2]["assetKey"] == {"path": ["non_partitioned"]}
-            assert target_asset_partitions[2]["partitionRanges"] == None
-            assert target_asset_partitions[2]["partitionKeys"] == None
+            assert target_asset_partitions[2]["partitions"] is None
 
 
 def test_asset_backfill_preview_static_partitioned():
@@ -761,16 +762,19 @@ def test_asset_backfill_preview_static_partitioned():
 
             # Assert toposorted
             assert target_asset_partitions[0]["assetKey"] == {"path": ["asset1"]}
-            assert target_asset_partitions[0]["partitionRanges"] == None
-            assert set(target_asset_partitions[0]["partitionKeys"]) == set(partition_keys)
+            assert target_asset_partitions[0]["partitions"]["ranges"] is None
+            assert set(target_asset_partitions[0]["partitions"]["partitionKeys"]) == set(
+                partition_keys
+            )
 
             assert target_asset_partitions[1]["assetKey"] == {"path": ["asset2"]}
-            assert target_asset_partitions[1]["partitionRanges"] == None
-            assert set(target_asset_partitions[1]["partitionKeys"]) == set(partition_keys)
+            assert target_asset_partitions[1]["partitions"]["ranges"] is None
+            assert set(target_asset_partitions[1]["partitions"]["partitionKeys"]) == set(
+                partition_keys
+            )
 
             assert target_asset_partitions[2]["assetKey"] == {"path": ["asset3"]}
-            assert target_asset_partitions[2]["partitionRanges"] == None
-            assert target_asset_partitions[2]["partitionKeys"] == None
+            assert target_asset_partitions[2]["partitions"] is None
 
 
 def _get_backfill_data(

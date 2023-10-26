@@ -3246,8 +3246,7 @@ type BackfillNotFoundError implements Error {
 
 type AssetPartitions {
   assetKey: AssetKey!
-  partitionKeys: [String!]
-  partitionRanges: [PartitionKeyRange!]
+  partitions: AssetBackfillTargetPartitions
 }
 
 input AssetBackfillPreviewParams {

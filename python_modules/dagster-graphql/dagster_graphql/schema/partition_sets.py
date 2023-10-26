@@ -2,9 +2,7 @@ from typing import Optional, cast
 
 import dagster._check as check
 import graphene
-from dagster import AssetKey, MultiPartitionsDefinition
-from dagster._core.definitions.partition import PartitionsSubset
-from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsSubset
+from dagster import MultiPartitionsDefinition
 from dagster._core.host_representation import ExternalPartitionSet, RepositoryHandle
 from dagster._core.host_representation.external_data import (
     ExternalDynamicPartitionsDefinitionData,
@@ -492,41 +490,6 @@ class GrapheneDimensionPartitionKeys(graphene.ObjectType):
 
     class Meta:
         name = "DimensionPartitionKeys"
-
-
-# TODO replace this with GrapheneAssetBackfillTargetPartitions
-# once https://github.com/dagster-io/dagster/pull/17244 merges
-class GrapheneAssetPartitions(graphene.ObjectType):
-    assetKey = graphene.NonNull(GrapheneAssetKey)
-    partitionKeys = graphene.List(graphene.NonNull(graphene.String))
-    partitionRanges = graphene.List(
-        graphene.NonNull("dagster_graphql.schema.partition_sets.GraphenePartitionKeyRange")
-    )
-
-    class Meta:
-        name = "AssetPartitions"
-
-    def __init__(self, asset_key: AssetKey, partitions_subset: Optional[PartitionsSubset]):
-        from dagster_graphql.schema.partition_sets import GraphenePartitionKeyRange
-
-        if partitions_subset is None:
-            ranges = None
-            partition_keys = None
-        elif isinstance(partitions_subset, TimeWindowPartitionsSubset):
-            ranges = [
-                GraphenePartitionKeyRange(start, end)
-                for start, end in partitions_subset.get_partition_key_ranges()
-            ]
-            partition_keys = None
-        else:  # Default partitions subset
-            ranges = None
-            partition_keys = partitions_subset.get_partition_keys()
-
-        super().__init__(
-            assetKey=GrapheneAssetKey(path=asset_key.path),
-            partitionRanges=ranges,
-            partitionKeys=partition_keys,
-        )
 
 
 types = [
