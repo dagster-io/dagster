@@ -23,40 +23,40 @@ class AzureConfig(Config):
     account_name: str
     """Storage account name"""
 
-    client_id: Optional[str]
+    client_id: Optional[str] = None
     """Client ID for ID / secret based authentication."""
 
-    client_secret: Optional[str]
+    client_secret: Optional[str] = None
     """Client secret for ID / secret based authentication."""
 
-    tenant_id: Optional[str]
+    tenant_id: Optional[str] = None
     """Tenant ID for ID / secret based authentication."""
 
-    federated_token_file: Optional[str]
+    federated_token_file: Optional[str] = None
     """File containing federated credential token"""
 
-    account_key: Optional[str]
+    account_key: Optional[str] = None
     """Storage account master key"""
 
-    sas_key: Optional[str]
+    sas_key: Optional[str] = None
     """Shared access signature"""
 
-    token: Optional[str]
+    token: Optional[str] = None
     """Hard-coded bearer token"""
 
-    use_azure_cli: Optional[bool]
+    use_azure_cli: Optional[bool] = None
     """Use azure cli for acquiring access token"""
 
-    use_fabric_endpoint: Optional[bool]
+    use_fabric_endpoint: Optional[bool] = None
     """Use object store with url scheme account.dfs.fabric.microsoft.com"""
 
-    msi_resource_id: Optional[str]
+    msi_resource_id: Optional[str] = None
     """Msi resource id for use with managed identity authentication."""
 
-    msi_endpoint: Optional[str]
+    msi_endpoint: Optional[str] = None
     """Endpoint to request a imds managed identity token."""
 
-    container_name: Optional[str]
+    container_name: Optional[str] = None
     """Storage container name"""
 
 
@@ -101,13 +101,13 @@ class S3Config(Config):
 
     container_credentials_relative_uri: Optional[str]
     """Set the container credentials relative URI
-    
+
     https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-iam-roles.html
     """
 
     copy_if_not_exists: Optional[str]
     """Specifiy additional headers passed to strage backend, that enable 'if_not_exists' semantics.
-    
+
     https://docs.rs/object_store/0.7.0/object_store/aws/enum.S3CopyIfNotExists.html#variant.Header
     """
 
@@ -143,7 +143,7 @@ class ClientConfig(Config):
     """Skip certificate validation on https connections.
 
     ## Warning
-    
+
     You should think very carefully before using this method.
     If invalid certificates are trusted, any certificate for any site will be trusted for use.
     This includes expired certificates. This introduces significant vulnerabilities,

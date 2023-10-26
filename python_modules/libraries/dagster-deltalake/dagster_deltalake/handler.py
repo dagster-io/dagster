@@ -3,13 +3,7 @@ from typing import Generic, Iterable, List, Optional, Sequence, Type, TypeVar, U
 
 import pyarrow as pa
 import pyarrow.compute as pc
-from dagster import (
-    InputContext,
-    MetadataValue,
-    OutputContext,
-    TableColumn,
-    TableSchema,
-)
+from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.storage.db_io_manager import DbTypeHandler, TablePartitionDimension, TableSlice
 from deltalake import DeltaTable, write_deltalake
@@ -72,7 +66,8 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
         try:
             # TODO investigate where null come from .. empty table?
             _table, stats = _get_partition_stats(dt=dt, partition_filters=partition_filters)
-        except:
+        except Exception as e:
+            context.log.warn(f"error while computing table stats: {e}")
             stats = {}
 
         context.add_output_metadata(
@@ -202,11 +197,12 @@ def _get_partition_stats(dt: DeltaTable, partition_filters=None):
     files = pa.array(dt.files(partition_filters=partition_filters))
     files_table = pa.Table.from_arrays([files], names=["path"])
     actions_table = pa.Table.from_batches([dt.get_add_actions(flatten=True)])
+    actions_table = actions_table.select(["path", "size_bytes", "num_records"])
     table = files_table.join(actions_table, keys="path")
 
     stats = {
-        "size_bytes": pc.sum(table.column("size_bytes")).as_py(),
-        "num_rows": pc.sum(table.column("num_records")).as_py(),
+        "size_bytes": MetadataValue.int(pc.sum(table.column("size_bytes")).as_py()),
+        "num_rows": MetadataValue.int(pc.sum(table.column("num_records")).as_py()),
     }
 
     return table, stats
