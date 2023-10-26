@@ -26,6 +26,7 @@ setup(
         "dagster-dask",
         "dagster-deltalake",
         "dagster-deltalake-pandas",
+        "dagster-deltalake-polars",
         "dagster-duckdb",
         "dagster-duckdb-pandas",
         "dagster-embedded-elt",

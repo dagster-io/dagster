@@ -16,13 +16,13 @@ ver = get_version()
 # dont pin dev installs to avoid pip dep resolver issues
 pin = "" if ver == "1!0+dev" else f"=={ver}"
 setup(
-    name="dagster-deltalake-pandas",
+    name="dagster-deltalake-polars",
     version=ver,
     author="Elementl",
     author_email="hello@elementl.com",
     license="Apache-2.0",
-    description="Package for storing Pandas DataFrames in Delta tables.",
-    url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-deltalake-pandas",
+    description="Package for storing Polars DataFrames in Delta tables.",
+    url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-deltalake-polars",
     classifiers=[
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
@@ -32,12 +32,12 @@ setup(
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
-    packages=find_packages(exclude=["dagster_deltalake_pandas_tests*"]),
+    packages=find_packages(exclude=["dagster_deltalake_polars_tests*"]),
     include_package_data=True,
     install_requires=[
         f"dagster{pin}",
         f"dagster-deltalake{pin}",
-        "pandas",
+        "polars[pyarrow]",
     ],
     zip_safe=False,
 )
