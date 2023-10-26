@@ -495,10 +495,10 @@ from dagster._core.pipes.context import (
 from dagster._core.pipes.subprocess import PipesSubprocessClient as PipesSubprocessClient
 from dagster._core.pipes.utils import (
     PipesBlobStoreMessageReader as PipesBlobStoreMessageReader,
-    PipesBlobStoreStdioReader as PipesBlobStoreStdioReader,
     PipesEnvContextInjector as PipesEnvContextInjector,
     PipesFileContextInjector as PipesFileContextInjector,
     PipesFileMessageReader as PipesFileMessageReader,
+    PipesLogReader as PipesLogReader,
     PipesTempFileContextInjector as PipesTempFileContextInjector,
     PipesTempFileMessageReader as PipesTempFileMessageReader,
     open_pipes_session as open_pipes_session,

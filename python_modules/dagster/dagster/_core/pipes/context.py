@@ -13,6 +13,7 @@ from dagster_pipes import (
     PipesMessage,
     PipesMetadataType,
     PipesMetadataValue,
+    PipesOpenedData,
     PipesParams,
     PipesTimeWindow,
     encode_env_var,
@@ -48,20 +49,27 @@ class PipesMessageHandler:
 
     Args:
         context (OpExecutionContext): The context for the executing op/asset.
+        message_reader (PipesMessageReader): The message reader used to read messages from the
+            external process.
     """
 
-    def __init__(self, context: OpExecutionContext) -> None:
+    # In the future it may make sense to merge PipesMessageReader and PipesMessageHandler, or
+    # otherwise adjust their relationship. The current interaction between the two is a bit awkward,
+    # but it would also be awkward to have a monolith that users extend.
+    def __init__(self, context: OpExecutionContext, message_reader: "PipesMessageReader") -> None:
         self._context = context
+        self._message_reader = message_reader
         # Queue is thread-safe
         self._result_queue: Queue[PipesExecutionResult] = Queue()
         # Only read by the main thread after all messages are handled, so no need for a lock
         self._unmaterialized_assets: Set[AssetKey] = set(context.selected_asset_keys)
-        self._received_any_msg = False
+        self._received_opened_msg = False
         self._received_closed_msg = False
+        self._opened_payload: Optional[PipesOpenedData] = None
 
     @contextmanager
-    def handle_messages(self, message_reader: "PipesMessageReader") -> Iterator[PipesParams]:
-        with message_reader.read_messages(self) as params:
+    def handle_messages(self) -> Iterator[PipesParams]:
+        with self._message_reader.read_messages(self) as params:
             yield params
         for key in self._unmaterialized_assets:
             self._result_queue.put(MaterializeResult(asset_key=key))
@@ -71,8 +79,8 @@ class PipesMessageHandler:
             yield self._result_queue.get()
 
     @property
-    def received_any_message(self) -> bool:
-        return self._received_any_msg
+    def received_opened_message(self) -> bool:
+        return self._received_opened_msg
 
     @property
     def received_closed_message(self) -> bool:
@@ -124,12 +132,8 @@ class PipesMessageHandler:
         if self._received_closed_msg:
             self._context.log.warn(f"[pipes] unexpected message received after closed: `{message}`")
 
-        if not self._received_any_msg:
-            self._received_any_msg = True
-            self._context.log.info("[pipes] external process successfully opened dagster pipes.")
-
         if message["method"] == "opened":
-            pass
+            self._handle_opened(message["params"])  # type: ignore
         elif message["method"] == "closed":
             self._handle_closed()
         elif message["method"] == "report_asset_materialization":
@@ -140,6 +144,11 @@ class PipesMessageHandler:
             self._handle_log(**message["params"])  # type: ignore
         else:
             raise DagsterPipesExecutionError(f"Unknown message method: {message['method']}")
+
+    def _handle_opened(self, opened_payload: PipesOpenedData) -> None:
+        self._received_opened_msg = True
+        self._context.log.info("[pipes] external process successfully opened dagster pipes.")
+        self._message_reader.on_opened(opened_payload)
 
     def _handle_closed(self) -> None:
         self._received_closed_msg = True
