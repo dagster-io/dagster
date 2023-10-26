@@ -17,7 +17,7 @@ from ..schema.asset_checks import (
     GrapheneAssetCheckExecution,
     GrapheneAssetChecks,
 )
-from .asset_checks_loader import AssetChecksLoader
+from .asset_checks_loader import AssetChecksLoader, asset_checks_iter
 
 if TYPE_CHECKING:
     from ..schema.util import ResolveInfo
@@ -27,12 +27,10 @@ def has_asset_checks(
     graphene_info: "ResolveInfo",
     asset_key: AssetKey,
 ) -> bool:
-    for location in graphene_info.context.code_locations:
-        for repository in location.get_repositories().values():
-            for external_check in repository.external_repository_data.external_asset_checks or []:
-                if external_check.asset_key == asset_key:
-                    return True
-    return False
+    return any(
+        external_check.asset_key == asset_key
+        for _, _, external_check in asset_checks_iter(graphene_info.context)
+    )
 
 
 def fetch_asset_checks(

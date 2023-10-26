@@ -1,11 +1,13 @@
-from typing import Iterable, List, Mapping, Optional
+from typing import Iterable, Iterator, List, Mapping, Optional, Tuple
 
 from dagster import (
     _check as check,
 )
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
-from dagster._core.host_representation.external_data import ExternalAssetCheck  # noqa: TCH002
+from dagster._core.host_representation.code_location import CodeLocation
+from dagster._core.host_representation.external import ExternalRepository
+from dagster._core.host_representation.external_data import ExternalAssetCheck
 from dagster._core.storage.asset_check_execution_record import AssetCheckInstanceSupport
 from dagster._core.workspace.context import WorkspaceRequestContext
 from packaging import version
@@ -19,6 +21,16 @@ from dagster_graphql.schema.asset_checks import (
     GrapheneAssetCheckNeedsUserCodeUpgrade,
     GrapheneAssetChecks,
 )
+
+from .fetch_assets import repository_iter
+
+
+def asset_checks_iter(
+    context: WorkspaceRequestContext
+) -> Iterator[Tuple[CodeLocation, ExternalRepository, ExternalAssetCheck]]:
+    for location, repository in repository_iter(context):
+        for external_check in repository.external_repository_data.external_asset_checks or []:
+            yield (location, repository, external_check)
 
 
 class AssetChecksLoader:
@@ -55,38 +67,30 @@ class AssetChecksLoader:
         external_checks: Mapping[AssetKey, List[ExternalAssetCheck]] = {}
         errors: Mapping[AssetKey, GrapheneAssetCheckNeedsUserCodeUpgrade] = {}
 
-        for location in self._context.code_locations:
-            for repository in location.get_repositories().values():
-                for external_check in (
-                    repository.external_repository_data.external_asset_checks or []
+        for location, _, external_check in asset_checks_iter(self._context):
+            if external_check.asset_key in self._asset_keys:
+                # check if the code location is too old to support executing asset checks individually
+                code_location_version = (location.get_dagster_library_versions() or {}).get(
+                    "dagster"
+                )
+                if code_location_version and version.parse(code_location_version) < version.parse(
+                    "1.5"
                 ):
-                    if external_check.asset_key in self._asset_keys:
-                        # check if the code location is too old to support executing asset checks individually
-                        code_location_version = (location.get_dagster_library_versions() or {}).get(
-                            "dagster"
+                    errors[external_check.asset_key] = GrapheneAssetCheckNeedsUserCodeUpgrade(
+                        message=(
+                            "Asset checks require dagster>=1.5. Upgrade your dagster"
+                            " version for this code location."
                         )
-                        if code_location_version and version.parse(
-                            code_location_version
-                        ) < version.parse("1.5"):
-                            errors[
-                                external_check.asset_key
-                            ] = GrapheneAssetCheckNeedsUserCodeUpgrade(
-                                message=(
-                                    "Asset checks require dagster>=1.5. Upgrade your dagster"
-                                    " version for this code location."
-                                )
-                            )
-                        else:
-                            if not external_checks.get(external_check.asset_key):
-                                external_checks[external_check.asset_key] = []
-                            external_checks[external_check.asset_key].append(external_check)
+                    )
+                else:
+                    external_checks.setdefault(external_check.asset_key, []).append(external_check)
 
         asset_graph = ExternalAssetGraph.from_workspace(self._context)
 
-        grapehene_checks: Mapping[AssetKey, AssetChecksOrErrorUnion] = {}
+        graphene_checks: Mapping[AssetKey, AssetChecksOrErrorUnion] = {}
         for asset_key in self._asset_keys:
             if asset_key in errors:
-                grapehene_checks[asset_key] = errors[asset_key]
+                graphene_checks[asset_key] = errors[asset_key]
             else:
                 checks = []
                 for external_check in external_checks.get(asset_key, []):
@@ -106,9 +110,9 @@ class AssetChecksLoader:
                             can_execute_individually=can_execute_individually,
                         )
                     )
-                grapehene_checks[asset_key] = GrapheneAssetChecks(checks=checks)
+                graphene_checks[asset_key] = GrapheneAssetChecks(checks=checks)
 
-        return grapehene_checks
+        return graphene_checks
 
     def get_checks_for_asset(self, asset_key: AssetKey) -> AssetChecksOrErrorUnion:
         if self._checks is None:
