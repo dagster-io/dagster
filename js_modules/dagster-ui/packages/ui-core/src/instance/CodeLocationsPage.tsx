@@ -5,11 +5,11 @@ import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {ReloadAllButton} from '../workspace/ReloadAllButton';
 import {RepositoryLocationsList} from '../workspace/RepositoryLocationsList';
-import {CodeLocationRowType} from '../workspace/VirtualizedCodeLocationRow';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 
 import {InstancePageContext} from './InstancePageContext';
 import {InstanceTabs} from './InstanceTabs';
+import {flattenCodeLocationRows} from './flattenCodeLocationRows';
 
 const SEARCH_THRESHOLD = 10;
 
@@ -26,34 +26,10 @@ export const CodeLocationsPage = () => {
     setSearchValue(e.target.value);
   }, []);
 
-  // Consider each loaded repository to be a "code location".
-  const flattened = React.useMemo(() => {
-    const all: CodeLocationRowType[] = [];
-    for (const locationNode of locationEntries) {
-      const {locationOrLoadError} = locationNode;
-      if (!locationOrLoadError || locationOrLoadError?.__typename === 'PythonError') {
-        all.push({type: 'error' as const, node: locationNode});
-      } else {
-        locationOrLoadError.repositories.forEach((repo) => {
-          all.push({type: 'repository' as const, codeLocation: locationNode, repository: repo});
-        });
-      }
-    }
-    return all;
-  }, [locationEntries]);
-
   const queryString = searchValue.toLocaleLowerCase();
-  const filtered = React.useMemo(() => {
-    return flattened.filter((row) => {
-      if (row.type === 'error') {
-        return row.node.name.toLocaleLowerCase().includes(queryString);
-      }
-      return (
-        row.codeLocation.name.toLocaleLowerCase().includes(queryString) ||
-        row.repository.name.toLocaleLowerCase().includes(queryString)
-      );
-    });
-  }, [flattened, queryString]);
+  const {flattened, filtered} = React.useMemo(() => {
+    return flattenCodeLocationRows(locationEntries, queryString);
+  }, [locationEntries, queryString]);
 
   const entryCount = flattened.length;
   const showSearch = entryCount > SEARCH_THRESHOLD;
