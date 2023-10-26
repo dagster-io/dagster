@@ -1,5 +1,7 @@
 import datetime
 import logging
+import os
+import sys
 from typing import (
     Any,
     Callable,
@@ -19,11 +21,14 @@ from dagster import (
     AssetSpec,
     AutoMaterializePolicy,
     DagsterInstance,
+    Definitions,
     RunRequest,
     asset,
 )
 from dagster._core.definitions import materialize
-from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
+from dagster._core.definitions.asset_daemon_context import (
+    AssetDaemonContext,
+)
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.auto_materialize_rule import (
@@ -33,6 +38,40 @@ from dagster._core.definitions.auto_materialize_rule import (
     AutoMaterializeRuleEvaluationData,
 )
 from dagster._core.definitions.events import CoercibleToAssetKey
+from dagster._core.host_representation.origin import InProcessCodeLocationOrigin
+from dagster._core.storage.dagster_run import RunsFilter
+from dagster._core.storage.tags import PARTITION_NAME_TAG
+from dagster._core.test_utils import (
+    InProcessTestWorkspaceLoadTarget,
+    create_test_daemon_workspace_context,
+)
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._daemon.asset_daemon import CURSOR_KEY, AssetDaemon
+
+from .base_scenario import run_request
+
+_ACTIVE_TARGET = None
+
+
+def get_code_location_origin(
+    scenario_state: "AssetDaemonScenarioState", location_name=None
+) -> InProcessCodeLocationOrigin:
+    """Hacky method to allow us to point a code location at a module-scoped variable, even though
+    the variable is not defined until the scenario is run.
+    """
+    global _ACTIVE_TARGET  # noqa: PLW0603
+    _ACTIVE_TARGET = Definitions(assets=scenario_state.assets)
+    return InProcessCodeLocationOrigin(
+        loadable_target_origin=LoadableTargetOrigin(
+            executable_path=sys.executable,
+            module_name=(
+                "dagster_tests.definitions_tests.auto_materialize_tests.asset_daemon_scenario"
+            ),
+            working_directory=os.getcwd(),
+            attribute="_ACTIVE_TARGET",
+        ),
+        location_name=location_name or "test_location",
+    )
 
 
 class AssetRuleEvaluationSpec(NamedTuple):
@@ -103,6 +142,7 @@ class AssetDaemonScenarioState(NamedTuple):
     logger: logging.Logger = logging.getLogger("dagster.amp")
     # this is set by the scenario runner
     scenario_instance: Optional[DagsterInstance] = None
+    is_daemon: bool = False
 
     @property
     def instance(self) -> DagsterInstance:
@@ -145,33 +185,87 @@ class AssetDaemonScenarioState(NamedTuple):
 
     def with_runs(self, *run_requests: RunRequest) -> "AssetDaemonScenarioState":
         with pendulum.test(self.current_time):
-            for run_request in run_requests:
+            for rr in run_requests:
                 materialize(
                     assets=self.assets,
                     instance=self.instance,
-                    partition_key=run_request.partition_key,
-                    tags=run_request.tags,
+                    partition_key=rr.partition_key,
+                    tags=rr.tags,
                     raise_on_error=False,
-                    selection=run_request.asset_selection,
+                    selection=rr.asset_selection,
                 )
         return self
 
     def with_requested_runs(self) -> "AssetDaemonScenarioState":
         return self.with_runs(*self.run_requests)
 
+    def _evaluate_tick_fast(
+        self,
+    ) -> Tuple[Sequence[RunRequest], AssetDaemonCursor, Sequence[AutoMaterializeAssetEvaluation]]:
+        return AssetDaemonContext(
+            asset_graph=self.asset_graph,
+            target_asset_keys=None,
+            instance=self.instance,
+            materialize_run_tags={},
+            observe_run_tags={},
+            cursor=self.cursor,
+            auto_observe=True,
+            respect_materialization_data_versions=False,
+            logger=self.logger,
+        ).evaluate()
+
+    def _evaluate_tick_daemon(
+        self,
+    ) -> Tuple[Sequence[RunRequest], AssetDaemonCursor, Sequence[AutoMaterializeAssetEvaluation]]:
+        target = InProcessTestWorkspaceLoadTarget(get_code_location_origin(self))
+
+        with create_test_daemon_workspace_context(
+            workspace_load_target=target, instance=self.instance
+        ) as workspace_context:
+            workspace = workspace_context.create_request_context()
+            assert (
+                workspace.get_code_location_error("test_location") is None
+            ), workspace.get_code_location_error("test_location")
+
+            list(
+                AssetDaemon(interval_seconds=42)._run_iteration_impl(  # noqa: SLF001
+                    workspace_context,
+                    {},
+                )
+            )
+            new_cursor = AssetDaemonCursor.from_serialized(
+                check.not_none(
+                    self.instance.daemon_cursor_storage.get_cursor_values({CURSOR_KEY}).get(
+                        CURSOR_KEY
+                    )
+                ),
+                self.asset_graph,
+            )
+            new_run_requests = [
+                run_request(
+                    list(run.asset_selection or []), partition_key=run.tags.get(PARTITION_NAME_TAG)
+                )
+                for run in self.instance.get_runs(
+                    filters=RunsFilter(
+                        tags={"dagster/asset_evaluation_id": str(new_cursor.evaluation_id)}
+                    )
+                )
+            ]
+            new_evaluations = [
+                e.evaluation
+                for e in check.not_none(
+                    self.instance.schedule_storage
+                ).get_auto_materialize_evaluations_for_evaluation_id(new_cursor.evaluation_id)
+            ]
+        return new_run_requests, new_cursor, new_evaluations
+
     def evaluate_tick(self) -> "AssetDaemonScenarioState":
         with pendulum.test(self.current_time):
-            new_run_requests, new_cursor, new_evaluations = AssetDaemonContext(
-                asset_graph=self.asset_graph,
-                target_asset_keys=None,
-                instance=self.instance,
-                materialize_run_tags={},
-                observe_run_tags={},
-                cursor=self.cursor,
-                auto_observe=True,
-                respect_materialization_data_versions=False,
-                logger=self.logger,
-            ).evaluate()
+            if self.is_daemon:
+                new_run_requests, new_cursor, new_evaluations = self._evaluate_tick_daemon()
+            else:
+                new_run_requests, new_cursor, new_evaluations = self._evaluate_tick_fast()
+
         return self._replace(
             run_requests=new_run_requests,
             cursor=new_cursor,
@@ -286,8 +380,12 @@ class AssetDaemonScenario(NamedTuple):
     initial_state: AssetDaemonScenarioState
     execution_fn: Callable[[AssetDaemonScenarioState], AssetDaemonScenarioState]
 
-    def evaluate(self) -> None:
+    def evaluate_fast(self) -> None:
         self.initial_state.logger.setLevel(logging.DEBUG)
         self.execution_fn(
             self.initial_state._replace(scenario_instance=DagsterInstance.ephemeral())
         )
+
+    def evaluate_daemon(self, instance: DagsterInstance) -> None:
+        self.initial_state.logger.setLevel(logging.DEBUG)
+        self.execution_fn(self.initial_state._replace(scenario_instance=instance, is_daemon=True))
