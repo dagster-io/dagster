@@ -399,8 +399,11 @@ class AutoMaterializeRule(ABC):
     @public
     @staticmethod
     def materialize_on_parent_updated() -> "MaterializeOnParentUpdatedRule":
-        """Materialize an asset partition if it has not been materialized since the previous
-        cron schedule tick.
+        """Materialize an asset partition if one of its parents has been updated more recently
+        than it has.
+
+        Note: For time-partitioned or dynamic-partitioned assets downstream of an unpartitioned
+        asset, this rule will only fire for the most recent partition of the downstream.
         """
         return MaterializeOnParentUpdatedRule()
 
