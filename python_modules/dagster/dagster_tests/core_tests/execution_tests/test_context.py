@@ -435,7 +435,7 @@ def test_asset_context_with_subobjects():
 
     @multi_asset(specs=[spec1, spec2])
     def my_multi_asset_with_specs(context: AssetExecutionContext):
-        spec1_info = context.asset_info_by_key[spec1.key]
-        spec2_info = context.asset_info_by_key[spec2.key]
+        context.asset_info_by_key[spec1.key]
+        context.asset_info_by_key[spec2.key]
 
     materialize([my_multi_asset, my_multi_asset_with_specs])

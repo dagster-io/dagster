@@ -1318,6 +1318,13 @@ class AssetInfo(
         ],
     )
 ):
+    """Information relevant to an asset during materialization. Includes:
+    * The AssetKey
+    * The AssetsDefinition
+    * The code version, if set
+    * The asset provenance.
+    """
+
     def __new__(
         cls,
         key: AssetKey,
@@ -1341,6 +1348,13 @@ class RunInfo(
         ],
     )
 ):
+    """Relevant information about a run while it is executing. Contains:
+    * The run ID
+    * The DagsterRun object, which contains further information about the run
+    * The run config
+    * The retry number - how many times this step has been retried.
+    """
+
     def __new__(
         cls,
         run_id: str,
@@ -1357,7 +1371,31 @@ class RunInfo(
         )
 
 
+# AssetCheckInfo:
+# check_spec
+# checks_definition
+
+# accessed by context.asset_check_info_by_key ? is the key the check key? the asset key?
+
+
 class AssetExecutionContext(OpExecutionContext):
+    """The ``context`` object that can be made available as the first argument to the function
+    used for computing an asset.
+
+    This context object provides system information such as resources, config, and logging.
+
+    To construct an execution context for testing purposes, use :py:func:`dagster.build_asset_context`.
+
+    Example:
+        .. code-block:: python
+
+            from dagster import asset, AssetExecutionContext
+
+            @asset
+            def my_asset(context: AssetExecutionContext):
+                context.log.info("Hello, world!")
+    """
+
     def __init__(self, step_execution_context: StepExecutionContext):
         super().__init__(step_execution_context=step_execution_context)
 
@@ -1373,6 +1411,12 @@ class AssetExecutionContext(OpExecutionContext):
 
     @property
     def asset_info(self) -> AssetInfo:
+        """Returns the AssetInfo for the currently materializing asset. See AssetInfo documentation
+        for available methods.
+
+        Errors when called in a multi-asset responsible for materializing more than one asset. Use
+        asset_info_by_key instead
+        """
         if len(self.assets_def.keys_by_output_name.keys()) > 1:
             raise DagsterInvariantViolationError(
                 "Cannot call `context.asset_info` in a multi_asset with more than one asset. Use"
@@ -1391,6 +1435,9 @@ class AssetExecutionContext(OpExecutionContext):
 
     @property
     def asset_info_by_key(self) -> Mapping[AssetKey, AssetInfo]:
+        """Returns a mapping of AssetKey to AssetInfo for all of the assets being materialized by
+        this asset function. See AssetInfo documentation for available methods.
+        """
         if self._asset_info_by_key:
             return self._asset_info_by_key
 
@@ -1407,6 +1454,7 @@ class AssetExecutionContext(OpExecutionContext):
 
     @property
     def run_info(self) -> RunInfo:
+        """Returns the RunInfo for the current run. See RunInfo documentation for available methods."""
         return self._run_info
 
 
