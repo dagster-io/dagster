@@ -1,4 +1,5 @@
 import datetime
+import hashlib
 import logging
 import os
 import sys
@@ -14,7 +15,6 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._core.definitions.executor_definition import in_process_executor
 import pendulum
 from dagster import (
     AssetKey,
@@ -39,6 +39,7 @@ from dagster._core.definitions.auto_materialize_rule import (
     AutoMaterializeRuleEvaluationData,
 )
 from dagster._core.definitions.events import CoercibleToAssetKey
+from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.host_representation.origin import InProcessCodeLocationOrigin
 from dagster._core.storage.dagster_run import RunsFilter
 from dagster._core.storage.tags import PARTITION_NAME_TAG
@@ -48,7 +49,6 @@ from dagster._core.test_utils import (
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._daemon.asset_daemon import CURSOR_KEY, AssetDaemon
-import hashlib
 
 from .base_scenario import run_request
 
@@ -59,7 +59,6 @@ def get_code_location_origin(
     """Hacky method to allow us to point a code location at a module-scoped attribute, even though
     the attribute is not defined until the scenario is run.
     """
-
     attribute_name = (
         f"_asset_daemon_target_{hashlib.md5(str(scenario_state.asset_specs).encode()).hexdigest()}"
     )
