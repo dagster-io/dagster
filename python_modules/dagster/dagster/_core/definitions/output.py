@@ -196,6 +196,7 @@ def _checked_inferred_type(inferred: Any) -> DagsterType:
             # annotation, so want to map it to a DagsterType that checks for the None type
             return resolve_dagster_type(type(None))
         else:
+            a = resolve_dagster_type(inferred)
             return resolve_dagster_type(inferred)
 
     except DagsterError as e:

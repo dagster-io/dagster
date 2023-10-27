@@ -1,5 +1,7 @@
 import asyncio
-from typing import Generator, Tuple
+from typing import Any, Generator, Tuple
+from dagster._core.execution.context.input import InputContext
+from dagster._core.execution.context.output import OutputContext
 
 import pytest
 from dagster import (
@@ -23,8 +25,8 @@ from dagster._core.execution.context.invocation import build_asset_context
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 
 
-def _exec_asset(asset_def, selection=None, partition_key=None):
-    result = materialize([asset_def], selection=selection, partition_key=partition_key)
+def _exec_asset(asset_def, selection=None, partition_key=None, resources=None):
+    result = materialize([asset_def], selection=selection, partition_key=partition_key, resources=resources)
     assert result.success
     return result.asset_materializations_for_node(asset_def.node_def.name)
 
@@ -279,19 +281,21 @@ def test_materialize_result_output_typing():
 
     class TestingIOManager(IOManager):
         def handle_output(self, context, obj):
-            assert context.dagster_type.is_nothing
-            return None
+            # assert context.dagster_type.is_nothing
+            # return None
+            assert False
 
         def load_input(self, context):
-            return 1
+            # return 1
+            assert False
 
-    @asset
-    def asset_with_type_annotation() -> MaterializeResult:
-        return MaterializeResult(metadata={"foo": "bar"})
+    # @asset
+    # def asset_with_type_annotation() -> MaterializeResult:
+    #     return MaterializeResult(metadata={"foo": "bar"})
 
-    assert materialize(
-        [asset_with_type_annotation], resources={"io_manager": TestingIOManager()}
-    ).success
+    # assert materialize(
+    #     [asset_with_type_annotation], resources={"io_manager": TestingIOManager()}
+    # ).success
 
     @multi_asset(outs={"one": AssetOut(), "two": AssetOut()})
     def multi_asset_with_outs_and_type_annotation() -> Tuple[MaterializeResult, MaterializeResult]:
@@ -500,3 +504,30 @@ def test_materialize_result_with_partitions_direct_invocation():
 
     res = partitioned_asset(context)
     assert res.metadata["key"] == "red"
+
+
+def test_materialize_result_bypasses_io():
+    class TestingIOManager(IOManager):
+        def handle_output(self, context: OutputContext, obj: Any) -> None:
+            assert False
+
+        def load_input(self, context: InputContext) -> Any:
+            assert False
+
+    @asset
+    def asset_with_type_annotation() -> MaterializeResult:
+        return MaterializeResult(metadata={"foo": "bar"})
+
+    mats = _exec_asset(asset_with_type_annotation, resources={"io_manager": TestingIOManager()})
+    assert len(mats) == 1, mats
+    assert "foo" in mats[0].metadata
+    assert mats[0].metadata["foo"].value == "bar"
+
+    @asset
+    def asset_without_type_annotation():
+        return MaterializeResult(metadata={"foo": "bar"})
+
+    mats = _exec_asset(asset_without_type_annotation, resources={"io_manager": TestingIOManager()})
+    assert len(mats) == 1, mats
+    assert "foo" in mats[0].metadata
+    assert mats[0].metadata["foo"].value == "bar"

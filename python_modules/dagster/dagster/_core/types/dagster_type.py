@@ -753,6 +753,7 @@ def create_string_type(name, description=None):
     return Stringish(name=name, key=name, description=description)
 
 
+
 Any = _Any()
 Bool = _Bool()
 Float = _Float()
@@ -773,6 +774,13 @@ _PYTHON_TYPE_TO_DAGSTER_TYPE_MAPPING_REGISTRY: t.Dict[type, DagsterType] = {}
 """Python types corresponding to user-defined RunTime types created using @map_to_dagster_type or
 as_dagster_type are registered here so that we can remap the Python types to runtime types."""
 
+
+# def _materialize_result_type_check_fn()
+
+# MarerializeResultType = DagsterType(
+#     name="MarerializeResultType",
+#     type_check_fn=lambda _, value: isinstance(value, ) and value % 2 == 0,
+# )
 
 def make_python_type_usable_as_dagster_type(
     python_type: TypingType[t.Any], dagster_type: DagsterType
@@ -872,11 +880,11 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
         dynamic_out_annotation = get_args(dagster_type)[0]
         type_args = get_args(dynamic_out_annotation)
         dagster_type = type_args[0] if len(type_args) == 1 else Any
-    elif dagster_type == MaterializeResult:
-        # convert MaterializeResult type annotation to Nothing until returning
-        # scalar values via MaterializeResult is supported
-        # https://github.com/dagster-io/dagster/issues/16887
-        dagster_type = Nothing
+    # elif dagster_type == MaterializeResult:
+    #     # convert MaterializeResult type annotation to Nothing until returning
+    #     # scalar values via MaterializeResult is supported
+    #     # https://github.com/dagster-io/dagster/issues/16887
+    #     dagster_type = Nothing
 
     # Then, check to see if it is part of python's typing library
     if is_typing_type(dagster_type):

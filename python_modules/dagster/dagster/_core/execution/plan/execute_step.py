@@ -122,7 +122,7 @@ def _process_user_event(
             yield from _process_user_event(step_context, check_result)
 
         yield Output(
-            value=None,
+            value=user_event,
             output_name=output_name,
             metadata=user_event.metadata,
             data_version=user_event.data_version,
@@ -708,7 +708,7 @@ def _store_output(
     asset_key = step_output.properties.asset_key
     if step_output.properties.asset_check_key or (
         step_context.output_observes_source_asset(step_output_handle.output_name)
-    ):
+    ) or isinstance(output.value, MaterializeResult):
 
         def _no_op() -> Iterator[DagsterEvent]:
             yield from ()
