@@ -707,7 +707,7 @@ def _store_output(
     manager_materializations = []
     manager_metadata: Dict[str, MetadataValue] = {}
 
-    io_manager_key = output_def.io_manager_key
+    used_io_manager = True
 
     # don't store asset check outputs or asset observation outputs
     step_output = step_context.step.step_output_named(step_output_handle.output_name)
