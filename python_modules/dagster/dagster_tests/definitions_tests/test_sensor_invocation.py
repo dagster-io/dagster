@@ -24,6 +24,7 @@ from dagster import (
     SourceAsset,
     StaticPartitionsDefinition,
     asset,
+    asset_sensor,
     build_freshness_policy_sensor_context,
     build_multi_asset_sensor_context,
     build_run_status_sensor_context,
@@ -1039,21 +1040,35 @@ def test_multi_asset_sensor_can_start_from_asset_sensor_cursor():
     def my_asset():
         return Output(99)
 
+    @job
+    def my_job():
+        pass
+
+    @asset_sensor(asset_key=my_asset.key, job=my_job)
+    def my_asset_sensor(context):
+        return RunRequest(run_key=context.cursor, run_config={})
+
     @multi_asset_sensor(monitored_assets=[my_asset.key])
     def my_multi_asset_sensor(context):
         ctx.advance_all_cursors()
 
     with instance_for_test() as instance:
-        cursor_from_previously_an_asset_sensor = "1234"
+        ctx = build_sensor_context(
+            instance=instance,
+        )
+        materialize([my_asset], instance=instance)
+        my_asset_sensor.evaluate_tick(ctx)
 
+        assert ctx.cursor == '3'
+
+        # simulate changing a @asset_sensor to a @multi_asset_sensor with the same name and
+        # therefore inheriting the same cursor.
         ctx = build_multi_asset_sensor_context(
             monitored_assets=[my_asset.key],
             instance=instance,
             repository_def=my_repo,
-            cursor=cursor_from_previously_an_asset_sensor
+            cursor=ctx.cursor,
         )
-
-        materialize([my_asset], instance=instance)
         my_multi_asset_sensor(ctx)
 
         assert ctx.cursor == "{\"AssetKey(['my_asset'])\": [null, 3, {}]}"
