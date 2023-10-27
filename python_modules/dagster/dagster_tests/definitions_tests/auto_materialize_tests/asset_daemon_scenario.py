@@ -36,6 +36,18 @@ from dagster._core.definitions.events import CoercibleToAssetKey
 
 
 class AssetRuleEvaluationSpec(NamedTuple):
+    """Provides a convenient way to specify information about an AutoMaterializeRuleEvaluation
+    that is expected to exist within the context of a test.
+
+    Args:
+        rule (AutoMaterializeRule): The rule that will exist on the evaluation.
+        partitions (Optional[Sequence[str]]): The partition keys that this rule evaluation will
+            apply to.
+        rule_evaluation_data (Optional[AutoMaterializeRuleEvaluationData]): The specific rule
+            evaluation data that will exist on the evaluation.
+
+    """
+
     rule: AutoMaterializeRule
     partitions: Optional[Sequence[str]] = None
     rule_evaluation_data: Optional[AutoMaterializeRuleEvaluationData] = None
@@ -43,7 +55,9 @@ class AssetRuleEvaluationSpec(NamedTuple):
     def with_rule_evaluation_data(
         self, data_type: Type[AutoMaterializeRuleEvaluationData], **kwargs
     ) -> "AssetRuleEvaluationSpec":
-        # convert sets of CoercibleToAssetKey to frozensets of AssetKey (for convenience)
+        """Adds rule evaluation data of the given type to this spec. Formats keyword which are sets
+        of CoercibleToAssetKey into frozensets of AssetKey for convenience.
+        """
         transformed_kwargs = {
             key: frozenset(AssetKey.from_coercible(v) for v in value)
             if isinstance(value, set)
@@ -55,6 +69,9 @@ class AssetRuleEvaluationSpec(NamedTuple):
         )
 
     def resolve(self) -> Tuple[AutoMaterializeRuleEvaluation, Optional[Sequence[str]]]:
+        """Returns a tuple of the resolved AutoMaterializeRuleEvaluation for this spec and the
+        partitions that it applies to.
+        """
         return (
             AutoMaterializeRuleEvaluation(
                 rule_snapshot=self.rule.to_snapshot(),
@@ -65,17 +82,31 @@ class AssetRuleEvaluationSpec(NamedTuple):
 
 
 class AssetDaemonScenarioState(NamedTuple):
+    """Specifies the state of a given AssetDaemonScenario. This state can be modified by changing
+    the set of asset definitions it contains, executing runs, updating the time, evaluating ticks, etc.
+
+    At any point in time, assertions can be made about the state of the scenario. Typically, you
+    would add runs to the scenario, evaluate a tick, then make assertions about the runs that were
+    requested for that tick, or the evaluations that were stored for each asset.
+
+    Args:
+        asset_specs (Sequence[AssetSpec]): The specs describing all assets that are part of this
+            scenario.
+        current_time (datetime): The current time of the scenario.
+    """
+
     asset_specs: Sequence[AssetSpec]
     current_time: datetime.datetime = pendulum.now()
     run_requests: Sequence[RunRequest] = []
     cursor: AssetDaemonCursor = AssetDaemonCursor.empty()
     evaluations: Sequence[AutoMaterializeAssetEvaluation] = []
     logger: logging.Logger = logging.getLogger("dagster.amp")
-    internal_instance: Optional[DagsterInstance] = None
+    # this is set by the scenario runner
+    scenario_instance: Optional[DagsterInstance] = None
 
     @property
     def instance(self) -> DagsterInstance:
-        return check.not_none(self.internal_instance)
+        return check.not_none(self.scenario_instance)
 
     @property
     def assets(self) -> Sequence[AssetsDefinition]:
@@ -125,7 +156,7 @@ class AssetDaemonScenarioState(NamedTuple):
                 )
         return self
 
-    def add_requested_runs(self) -> "AssetDaemonScenarioState":
+    def with_requested_runs(self) -> "AssetDaemonScenarioState":
         return self.with_runs(*self.run_requests)
 
     def evaluate_tick(self) -> "AssetDaemonScenarioState":
@@ -156,6 +187,10 @@ class AssetDaemonScenarioState(NamedTuple):
     def assert_requested_runs(
         self, *expected_run_requests: RunRequest
     ) -> "AssetDaemonScenarioState":
+        """Asserts that the set of runs requested by the previously-evaluated tick is identical to
+        the set of runs specified in the expected_run_requests argument.
+        """
+
         def sort_run_request_key_fn(run_request) -> Tuple[AssetKey, Optional[str]]:
             return (min(run_request.asset_selection), run_request.partition_key)
 
@@ -181,7 +216,12 @@ class AssetDaemonScenarioState(NamedTuple):
         num_skipped: Optional[int] = None,
         num_discarded: Optional[int] = None,
     ) -> "AssetDaemonScenarioState":
-        """Makes an assertion about the evaluation data associated with a specific asset."""
+        """Asserts that AutoMaterializeRuleEvaluations on the AutoMaterializeAssetEvaluation for the
+        given asset key match the given expected_evaluation_specs.
+
+        If num_requested, num_skipped, or num_discarded are specified, these values will also be
+        checked against the actual evaluation.
+        """
         asset_key = AssetKey.from_coercible(key)
         actual_evaluation = next((e for e in self.evaluations if e.asset_key == asset_key), None)
         if actual_evaluation is None:
@@ -218,14 +258,14 @@ class AssetDaemonScenarioState(NamedTuple):
         expected_rule_evaluations = [ees.resolve() for ees in expected_evaluation_specs]
 
         try:
-            for (ared, aps), (ered, eps) in zip(
+            for (actual_data, actual_partitions), (expected_data, expected_partitions) in zip(
                 sorted(actual_rule_evaluations), sorted(expected_rule_evaluations)
             ):
-                assert ared.rule_snapshot == ered.rule_snapshot
-                assert aps == eps
+                assert actual_data.rule_snapshot == expected_data.rule_snapshot
+                assert actual_partitions == expected_partitions
                 # only check evaluation data if it was set on the expected evaluation spec
-                if ered.evaluation_data is not None:
-                    assert ared.evaluation_data == ered.evaluation_data
+                if expected_data.evaluation_data is not None:
+                    assert actual_data.evaluation_data == expected_data.evaluation_data
 
         except:
             self._log_assertion_error(
@@ -237,10 +277,15 @@ class AssetDaemonScenarioState(NamedTuple):
 
 
 class AssetDaemonScenario(NamedTuple):
+    """Describes a scenario that the AssetDaemon should be tested against. Consists of an id
+    describing what is to be tested, an initial state, and a scenario function which will modify
+    that state and make assertions about it along the way.
+    """
+
     id: str
     initial_state: AssetDaemonScenarioState
     scenario: Callable[[AssetDaemonScenarioState], AssetDaemonScenarioState]
 
     def evaluate(self) -> None:
         self.initial_state.logger.setLevel(logging.DEBUG)
-        self.scenario(self.initial_state._replace(internal_instance=DagsterInstance.ephemeral()))
+        self.scenario(self.initial_state._replace(scenario_instance=DagsterInstance.ephemeral()))
