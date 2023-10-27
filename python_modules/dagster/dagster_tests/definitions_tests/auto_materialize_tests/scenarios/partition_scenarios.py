@@ -9,7 +9,6 @@ from dagster._core.definitions.auto_materialize_policy import AutoMaterializePol
 from dagster._core.definitions.auto_materialize_rule import (
     AutoMaterializeRule,
     AutoMaterializeRuleEvaluation,
-    DiscardOnMaxMaterializationsExceededRule,
 )
 from dagster._core.definitions.partition import (
     DynamicPartitionsDefinition,
@@ -26,7 +25,6 @@ from ..base_scenario import (
     asset_def,
     run,
     run_request,
-    single_asset_run,
     with_auto_materialize_policy,
 )
 

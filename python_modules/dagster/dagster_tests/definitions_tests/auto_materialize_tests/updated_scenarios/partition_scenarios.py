@@ -18,13 +18,13 @@ from .asset_daemon_scenario_states import (
     daily_partitions_def,
     hourly_partitions_def,
     one_asset,
+    one_asset_depends_on_two,
     one_partitions_def,
+    static_multipartitions_def,
+    time_multipartitions_def,
     time_partitions_start,
     two_assets_in_sequence,
     two_partitions_def,
-    time_multipartitions_def,
-    static_multipartitions_def,
-    one_asset_depends_on_two,
 )
 
 hourly_to_daily = AssetDaemonScenarioState(
