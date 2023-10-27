@@ -309,14 +309,11 @@ class TimeWindowPartitionsDefinition(
         return hash(tuple(self.__repr__()))
 
     @functools.lru_cache(maxsize=100)
-    def _time_window_for_partition_key(self, *, partition_key: str) -> TimeWindow:
+    def time_window_for_partition_key(self, partition_key: str) -> TimeWindow:
         partition_key_dt = pendulum.instance(
             datetime.strptime(partition_key, self.fmt), tz=self.timezone
         )
         return next(iter(self._iterate_time_windows(partition_key_dt)))
-
-    def time_window_for_partition_key(self, partition_key: str) -> TimeWindow:
-        return self._time_window_for_partition_key(partition_key=partition_key)
 
     @functools.lru_cache(maxsize=5)
     def time_windows_for_partition_keys(
@@ -762,15 +759,6 @@ class TimeWindowPartitionsDefinition(
     def empty_subset(self) -> "PartitionsSubset":
         return self.partitions_subset_class.empty_subset(self)
 
-    def is_valid_partition_key(self, partition_key: str) -> bool:
-        try:
-            partition_time = pendulum.instance(
-                datetime.strptime(partition_key, self.fmt), tz=self.timezone
-            )
-            return partition_time >= self.start
-        except ValueError:
-            return False
-
     def get_serializable_unique_identifier(
         self, dynamic_partitions_store: Optional[DynamicPartitionsStore] = None
     ) -> str:
@@ -782,6 +770,15 @@ class TimeWindowPartitionsDefinition(
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> bool:
+        # first, a quick check for the simple case where we only need the start time of the
+        # partition key to validate if it's valid
+        if self.end is None:
+            try:
+                return self.start_time_for_partition_key(partition_key) >= self.start
+            except ValueError:
+                return False
+
+        # otherwise, must compute the full time window
         return bool(self._get_validated_time_window_for_partition_key(partition_key, current_time))
 
     def equal_except_for_start_or_end(self, other: "TimeWindowPartitionsDefinition") -> bool:
@@ -1628,9 +1625,10 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
         return result_windows, num_added_partitions
 
     def with_partition_keys(self, partition_keys: Iterable[str]) -> "TimeWindowPartitionsSubset":
-        # if we are representing things as a static set of keys, continue doing so
-        if self._included_partition_keys is not None:
-            new_partitions = {*self._included_partition_keys, *partition_keys}
+        # if we are representing things as a static set of keys, or starting with an empty subset,
+        # use the cheaper key-based representation
+        if self._included_partition_keys is not None or self._included_time_windows is None:
+            new_partitions = {*(self._included_partition_keys or []), *partition_keys}
             return TimeWindowPartitionsSubset(
                 self._partitions_def,
                 num_partitions=len(new_partitions),
