@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod, abstractproperty
 from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum
+from dagster._utils.schedules import cron_string_iterator
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -141,6 +142,11 @@ class RuleEvaluationContext:
     def previous_tick_evaluation(self) -> Optional["AutoMaterializeAssetEvaluation"]:
         """Returns the evaluation of the asset on the previous tick."""
         return self.cursor.latest_evaluation_by_asset_key.get(self.asset_key)
+
+    @property
+    def evaluation_time(self) -> datetime.datetime:
+        """Returns the time at which this rule is being evaluated."""
+        return self.instance_queryer.evaluation_time
 
     @functools.cached_property
     def previous_tick_requested_or_discarded_asset_partitions(
@@ -386,7 +392,9 @@ class AutoMaterializeRule(ABC):
                 Defaults to False.
 
         """
-        return MaterializeOnCronRule()
+        return MaterializeOnCronRule(
+            cron_schedule=cron_schedule, timezone=timezone, all_partitions=all_partitions
+        )
 
     @public
     @staticmethod
@@ -501,61 +509,68 @@ class MaterializeOnRequiredForFreshnessRule(
 
 
 @whitelist_for_serdes
-class MaterializeOnCronRule(AutoMaterializeRule, NamedTuple("_MaterializeOnCronRule", [])):
+class MaterializeOnCronRule(
+    AutoMaterializeRule,
+    NamedTuple(
+        "_MaterializeOnCronRule",
+        [("cron_schedule", str), ("timezone", str), ("all_partitions", bool)],
+    ),
+):
     @property
     def decision_type(self) -> AutoMaterializeDecisionType:
         return AutoMaterializeDecisionType.MATERIALIZE
 
     @property
     def description(self) -> str:
-        return "<TODO>"
+        # TODO
+        return str(self)
 
     def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
-        """Evaluates the set of asset partitions of this asset whose parents have been updated,
-        or will update on this tick.
-        """
-        asset_partitions_by_evaluation_data = defaultdict(set)
-
-        will_update_parents_by_asset_partition = context.get_will_update_parent_mapping()
-
-        # the set of asset partitions whose parents have been updated since last tick, or will be
-        # requested this tick.
-        has_or_will_update = context.get_asset_partitions_with_updated_parents() | set(
-            will_update_parents_by_asset_partition.keys()
-        )
-        for asset_partition in has_or_will_update:
-            parent_asset_partitions = context.asset_graph.get_parents_partitions(
-                dynamic_partitions_store=context.instance_queryer,
-                current_time=context.instance_queryer.evaluation_time,
-                asset_key=asset_partition.asset_key,
-                partition_key=asset_partition.partition_key,
-            ).parent_partitions
-
-            updated_parent_asset_partitions = context.instance_queryer.get_parent_asset_partitions_updated_after_child(
-                asset_partition,
-                parent_asset_partitions,
-                # do a precise check for updated parents, factoring in data versions, as long as
-                # we're within reasonable limits on the number of partitions to check
-                respect_materialization_data_versions=context.daemon_context.respect_materialization_data_versions
-                and len(parent_asset_partitions | has_or_will_update) < 100,
-                # ignore self-dependencies when checking for updated parents, to avoid historical
-                # rematerializations from causing a chain of materializations to be kicked off
-                ignored_parent_keys={context.asset_key},
+        previous_cron_schedule_tick = next(
+            cron_string_iterator(
+                start_timestamp=context.cursor.latest_evaluation_timestamp,
+                cron_string=self.cron_schedule,
+                execution_timezone=self.timezone,
             )
-            updated_parents = {parent.asset_key for parent in updated_parent_asset_partitions}
-            will_update_parents = will_update_parents_by_asset_partition[asset_partition]
+        )
+        current_cron_schedule_tick = next(
+            cron_string_iterator(
+                start_timestamp=context.evaluation_time.timestamp(),
+                cron_string=self.cron_schedule,
+                execution_timezone=self.timezone,
+            )
+        )
 
-            if updated_parents or will_update_parents:
-                asset_partitions_by_evaluation_data[
-                    ParentUpdatedRuleEvaluationData(
-                        updated_asset_keys=frozenset(updated_parents),
-                        will_update_asset_keys=frozenset(will_update_parents),
-                    )
-                ].add(asset_partition)
+        if current_cron_schedule_tick != previous_cron_schedule_tick:
+            partitions_def = context.asset_graph.get_partitions_def(context.asset_key)
+            if partitions_def is not None:
+                if self.all_partitions:
+                    asset_partitions = {
+                        AssetKeyPartitionKey(context.asset_key, partition)
+                        for partition in partitions_def.get_partition_keys(
+                            current_time=context.evaluation_time
+                        )
+                    }
+                else:
+                    asset_partitions = {
+                        AssetKeyPartitionKey(
+                            context.asset_key,
+                            partitions_def.get_last_partition_key(
+                                current_time=context.evaluation_time
+                            ),
+                        )
+                    }
+            else:
+                asset_partitions = {AssetKeyPartitionKey(context.asset_key, None)}
+        else:
+            asset_partitions = set()
 
         return self.add_evaluation_data_from_previous_tick(
             context,
-            asset_partitions_by_evaluation_data,
+            # TODO
+            {TextRuleEvaluationData(text=self.cron_schedule): asset_partitions}
+            if asset_partitions
+            else {},
             should_use_past_data_fn=lambda ap: not context.materialized_requested_or_discarded_since_previous_tick(
                 ap
             ),

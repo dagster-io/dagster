@@ -300,6 +300,7 @@ class AssetDaemonCursor(NamedTuple):
                     key.to_user_string(): serialize_value(evaluation)
                     for key, evaluation in self.latest_evaluation_by_asset_key.items()
                 },
+                "latest_evaluation_timestamp": self.latest_evaluation_timestamp,
             }
         )
         return serialized

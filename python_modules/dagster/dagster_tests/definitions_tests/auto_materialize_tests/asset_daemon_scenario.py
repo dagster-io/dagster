@@ -17,6 +17,8 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._core.definitions.executor_definition import in_process_executor
+from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 import pendulum
 from dagster import (
     AssetKey,
@@ -50,6 +52,7 @@ from dagster._core.test_utils import (
     create_test_daemon_workspace_context,
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+import hashlib
 from dagster._daemon.asset_daemon import CURSOR_KEY, AssetDaemon
 
 from .base_scenario import run_request
