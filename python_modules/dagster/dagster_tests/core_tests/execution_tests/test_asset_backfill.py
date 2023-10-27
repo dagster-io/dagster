@@ -65,9 +65,7 @@ from dagster._seven.compat.pendulum import create_pendulum_time
 from dagster._utils import Counter, traced_counter
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
-from dagster_tests.definitions_tests.auto_materialize_tests.base_scenario import (
-    do_run,
-)
+from dagster_tests.definitions_tests.auto_materialize_tests.base_scenario import do_run
 from dagster_tests.definitions_tests.auto_materialize_tests.scenarios.exotic_partition_mapping_scenarios import (
     multipartitioned_self_dependency,
     one_asset_self_dependency,
@@ -1295,3 +1293,62 @@ def test_connected_assets_disconnected_partitions():
         AssetKeyPartitionKey(asset_key=AssetKey(["foo_grandchild"]), partition_key="2023-10-12"),
         AssetKeyPartitionKey(asset_key=AssetKey(["foo_grandchild"]), partition_key="2023-10-10"),
     }
+
+
+def test_partition_outside_backfill_materialized():
+    """Tests the case where the PartitionsDefinition has a new partition since the backfill started,
+    and that partitions is materialized outside of the backfill.
+    """
+    instance = DagsterInstance.ephemeral()
+
+    @asset(partitions_def=DailyPartitionsDefinition("2023-10-01"))
+    def foo():
+        pass
+
+    @asset(partitions_def=DailyPartitionsDefinition("2023-10-01"), deps={foo})
+    def foo_child():
+        pass
+
+    assets_by_repo_name = {"repo1": [foo], "repo2": [foo_child]}
+    asset_graph = get_asset_graph(assets_by_repo_name)
+
+    asset_backfill_data = AssetBackfillData.from_asset_partitions(
+        asset_graph=asset_graph,
+        partition_names=["2023-10-01", "2023-10-02"],
+        asset_selection=[foo.key, foo_child.key],
+        dynamic_partitions_store=MagicMock(),
+        all_partitions=False,
+        backfill_start_time=pendulum.datetime(2023, 10, 3, 0, 0, 0),
+    )
+
+    backfill_data, _, _ = run_backfill_to_completion(
+        asset_graph, assets_by_repo_name, asset_backfill_data, [], instance
+    )
+
+    _single_backfill_iteration(
+        backfill_id="apple",
+        backfill_data=backfill_data,
+        asset_graph=asset_graph,
+        instance=instance,
+        assets_by_repo_name=assets_by_repo_name,
+    )
+
+    materialize(assets=[foo], partition_key="2023-10-03", instance=instance)
+
+    result_backfill_data = _single_backfill_iteration(
+        backfill_id="apple",
+        backfill_data=backfill_data,
+        asset_graph=asset_graph,
+        instance=instance,
+        assets_by_repo_name=assets_by_repo_name,
+    )
+
+    materialized_subset = result_backfill_data.materialized_subset
+    assert result_backfill_data.target_subset == materialized_subset
+    assert (
+        "2023-10-03" not in materialized_subset.get_partitions_subset(foo.key).get_partition_keys()
+    )
+    assert (
+        "2023-10-03"
+        not in materialized_subset.get_partitions_subset(foo_child.key).get_partition_keys()
+    )
