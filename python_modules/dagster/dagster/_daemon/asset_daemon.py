@@ -51,6 +51,11 @@ ASSET_DAEMON_PAUSED_KEY = "ASSET_DAEMON_PAUSED"
 
 EVALUATIONS_TTL_DAYS = 30
 
+# When retrying a tick, how long to wait before ignoring it and moving on to the next one
+# (To account for the rare case where the daemon is down for a long time, starts back up, and
+# there's an old in-progress tick left to finish that may no longer be correct to finish)
+MAX_TIME_TO_RESUME_TICK_SECONDS = 60 * 60 * 24
+
 FIXED_AUTO_MATERIALIZATION_ORIGIN_ID = "asset_daemon_origin"
 FIXED_AUTO_MATERIALIZATION_SELECTOR_ID = "asset_daemon_selector"
 FIXED_AUTO_MATERIALIZATION_INSTIGATOR_NAME = "asset_daemon"
@@ -87,8 +92,6 @@ class AutoMaterializeLaunchContext:
         instance: DagsterInstance,
         logger: logging.Logger,
         tick_retention_settings,
-        debug_crash_flags: SingleInstigatorDebugCrashFlags,
-        max_retries: int,
     ):
         self._tick = tick
         self._logger = logger
@@ -96,11 +99,8 @@ class AutoMaterializeLaunchContext:
 
         self._purge_settings = defaultdict(set)
 
-        self._debug_crash_flags = debug_crash_flags
         for status, day_offset in tick_retention_settings.items():
             self._purge_settings[day_offset].add(status)
-
-        self._max_retries = max_retries
 
     @property
     def status(self) -> TickStatus:
@@ -121,11 +121,8 @@ class AutoMaterializeLaunchContext:
         self,
         run_requests: Sequence[RunRequest],
         reserved_run_ids: Optional[Sequence[str]],
-        cursor: Optional[str] = None,
     ):
-        self._tick = self._tick.with_run_requests(
-            run_requests, reserved_run_ids=reserved_run_ids, cursor=cursor
-        )
+        self._tick = self._tick.with_run_requests(run_requests, reserved_run_ids=reserved_run_ids)
         return self._tick
 
     def update_state(self, status: TickStatus, **kwargs: object):
@@ -163,6 +160,7 @@ class AutoMaterializeLaunchContext:
                     )
             else:
                 error_data = serializable_error_info_from_exc_info(sys.exc_info())
+                self._logger.exception("Auto-materialize daemon caught an error")
                 self.update_state(
                     TickStatus.FAILURE, error=error_data, failure_count=self._tick.failure_count + 1
                 )
@@ -171,15 +169,6 @@ class AutoMaterializeLaunchContext:
             self._tick.status != TickStatus.STARTED,
             "Tick must be in a terminal state when the AutoMaterializeLaunchContext is closed",
         )
-
-        # Update the cursor if we made it far enough in the tick to generate
-        # a new cursor
-        if self._tick.tick_data.cursor:
-            self._instance.daemon_cursor_storage.set_cursor_values(
-                {CURSOR_KEY: self._tick.tick_data.cursor}
-            )
-
-        check_for_debug_crash(self._debug_crash_flags, "CURSOR_UPDATED")
 
         # write the new tick status to the database
 
@@ -287,23 +276,47 @@ class AssetDaemon(IntervalDaemon):
 
         max_retries = instance.get_settings("auto_materialize").get("max_tick_retries")
 
-        if latest_tick and (latest_tick.status == TickStatus.STARTED):
-            self._logger.warn("Tick was interrupted part-way through, resuming")
-            tick: InstigatorTick = check.not_none(latest_tick)
-        elif (
-            latest_tick
-            and (latest_tick.status == TickStatus.FAILURE)
-            and latest_tick.tick_data.failure_count <= max_retries
-        ):
-            self._logger.info("Retrying failed tick")
-            tick = instance.create_tick(
-                latest_tick.tick_data.with_status(
-                    TickStatus.STARTED,
-                    error=None,
-                    timestamp=evaluation_time.timestamp(),
-                    end_timestamp=None,
-                ),
-            )
+        retry_tick: Optional[InstigatorTick] = None
+
+        if latest_tick:
+            # If the previous tick matches the stored cursor's evaluation ID, check if it failed
+            # or crashed partway through execution and needs to be resumed
+            # Don't resume very old ticks though in case the daemon crashed for a long time and
+            # then restarted
+            if (
+                pendulum.now("UTC").timestamp() - latest_tick.timestamp
+                <= MAX_TIME_TO_RESUME_TICK_SECONDS
+                and latest_tick.tick_data.auto_materialize_evaluation_id
+                == stored_cursor.evaluation_id
+            ):
+                if latest_tick.status == TickStatus.STARTED:
+                    self._logger.warn("Tick was interrupted part-way through, resuming")
+                    retry_tick = latest_tick
+                elif (
+                    latest_tick.status == TickStatus.FAILURE
+                    and latest_tick.tick_data.failure_count <= max_retries
+                ):
+                    self._logger.info("Retrying failed tick")
+                    retry_tick = instance.create_tick(
+                        latest_tick.tick_data.with_status(
+                            TickStatus.STARTED,
+                            error=None,
+                            timestamp=evaluation_time.timestamp(),
+                            end_timestamp=None,
+                        ),
+                    )
+            else:
+                # (The evaluation IDs not matching indicates that the tick failed or crashed before
+                # the cursor could be written, so no runs have been launched and it's safe to
+                # re-evaluate things from scratch in a new tick without retrying anything)
+                if latest_tick.status == TickStatus.STARTED:
+                    # Old tick that won't be resumed - move it into a SKIPPED state so it isn't
+                    # dangling in STARTED
+                    latest_tick = latest_tick.with_status(status=TickStatus.SKIPPED)
+                    instance.update_tick(latest_tick)
+
+        if retry_tick:
+            tick = retry_tick
         else:
             tick = instance.create_tick(
                 TickData(
@@ -317,29 +330,24 @@ class AssetDaemon(IntervalDaemon):
                 )
             )
 
+        evaluation_id = check.not_none(tick.tick_data.auto_materialize_evaluation_id)
+
         with AutoMaterializeLaunchContext(
             tick,
             instance,
             self._logger,
             tick_retention_settings,
-            debug_crash_flags,
-            max_retries=max_retries,
         ) as tick_context:
-            if (
-                tick.tick_data.run_requests
-                and tick.tick_data.reserved_run_ids
-                and tick.tick_data.cursor
-            ):
+            if retry_tick:
                 # Unfinished or retried tick already generated evaluations and run requests and cursor, now
                 # need to finish it
-                new_cursor = AssetDaemonCursor.from_serialized(tick.tick_data.cursor, asset_graph)
-                run_requests = tick.tick_data.run_requests
-                reserved_run_ids = tick.tick_data.reserved_run_ids
+                run_requests = tick.tick_data.run_requests or []
+                reserved_run_ids = tick.tick_data.reserved_run_ids or []
 
                 if schedule_storage.supports_auto_materialize_asset_evaluations:
                     evaluation_records = (
                         schedule_storage.get_auto_materialize_evaluations_for_evaluation_id(
-                            new_cursor.evaluation_id
+                            evaluation_id
                         )
                     )
                     evaluations_by_asset_key = {
@@ -363,6 +371,8 @@ class AssetDaemon(IntervalDaemon):
                     logger=self._logger,
                 ).evaluate()
 
+                check.invariant(new_cursor.evaluation_id == evaluation_id)
+
                 check_for_debug_crash(debug_crash_flags, "EVALUATIONS_FINISHED")
 
                 evaluations_by_asset_key = {
@@ -372,28 +382,34 @@ class AssetDaemon(IntervalDaemon):
                 # Write the asset evaluations without run IDs first
                 if schedule_storage.supports_auto_materialize_asset_evaluations:
                     schedule_storage.add_auto_materialize_asset_evaluations(
-                        new_cursor.evaluation_id, list(evaluations_by_asset_key.values())
+                        evaluation_id, list(evaluations_by_asset_key.values())
                     )
                     check_for_debug_crash(debug_crash_flags, "ASSET_EVALUATIONS_ADDED")
 
                 reserved_run_ids = [make_new_run_id() for _ in range(len(run_requests))]
 
+                # Write out the tick, which ensures that if the tick crashes or raises an exception, it will retry
                 tick = tick_context.set_run_requests(
                     run_requests=run_requests,
                     reserved_run_ids=reserved_run_ids,
-                    cursor=new_cursor.serialize(),
                 )
                 tick_context.write()
+                check_for_debug_crash(debug_crash_flags, "RUN_REQUESTS_CREATED")
+
+                # Write out the persistent cursor, which ensures that future ticks will move on
+                instance.daemon_cursor_storage.set_cursor_values(
+                    {CURSOR_KEY: new_cursor.serialize()}
+                )
+
+                check_for_debug_crash(debug_crash_flags, "CURSOR_UPDATED")
 
             self._logger.info(
                 "Tick produced"
                 f" {len(run_requests)} run{'s' if len(run_requests) != 1 else ''} and"
                 f" {len(evaluations_by_asset_key)} asset"
                 f" evaluation{'s' if len(evaluations_by_asset_key) != 1 else ''} for evaluation ID"
-                f" {new_cursor.evaluation_id}"
+                f" {evaluation_id}"
             )
-
-            check_for_debug_crash(debug_crash_flags, "RUN_REQUESTS_CREATED")
 
             pipeline_and_execution_plan_cache: Dict[
                 int, Tuple[ExternalJob, ExternalExecutionPlan]
@@ -415,7 +431,7 @@ class AssetDaemon(IntervalDaemon):
                         tags={
                             **run_request.tags,
                             AUTO_MATERIALIZE_TAG: "true",
-                            ASSET_EVALUATION_ID_TAG: str(new_cursor.evaluation_id),
+                            ASSET_EVALUATION_ID_TAG: str(evaluation_id),
                         }
                     ),
                     instance,
@@ -444,7 +460,7 @@ class AssetDaemon(IntervalDaemon):
             ]
             if evaluations_to_update:
                 schedule_storage.add_auto_materialize_asset_evaluations(
-                    new_cursor.evaluation_id, evaluations_to_update
+                    evaluation_id, evaluations_to_update
                 )
 
             check_for_debug_crash(debug_crash_flags, "RUN_IDS_ADDED_TO_EVALUATIONS")

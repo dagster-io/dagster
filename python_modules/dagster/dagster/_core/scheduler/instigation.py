@@ -492,15 +492,25 @@ class TickData(
         status (TickStatus): The status of the tick, which can be updated
         timestamp (float): The timestamp at which this instigator evaluation started
         run_id (str): The run created by the tick.
+        run_keys (Sequence[str]): Unique user-specified identifiers for the runs created by this
+            instigator.
         error (SerializableErrorInfo): The error caught during execution. This is set only when
             the status is ``TickStatus.Failure``
         skip_reason (str): message for why the tick was skipped
+        cursor (Optional[str]): Cursor output by this tick.
         origin_run_ids (List[str]): The runs originated from the schedule/sensor.
         failure_count (int): The number of times this tick has failed. If the status is not
             FAILED, this is the number of previous failures before it reached the current state.
         dynamic_partitions_request_results (Sequence[DynamicPartitionsRequestResult]): The results
             of the dynamic partitions requests evaluated within the tick.
-
+        end_timestamp (Optional[float]) Time that this tick finished.
+        run_requests (Optional[Sequence[RunRequest]]) The RunRequests that were requested by this
+            tick. Currently only used by the AUTO_MATERIALIZE type.
+        auto_materialize_evaluation_id (Optinoal[int]) For AUTO_MATERIALIZE ticks, the evaluation ID
+            that can be used to index into the asset_daemon_asset_evaluations table.
+        reserved_run_ids (Optional[Sequence[str]]): A list of run IDs to use for each of the
+            run_requests. Used to ensure that if the tick fails partway through, we don't create
+            any duplicate runs for the tick. Currently only used by AUTO_MATERIALIZE ticks.
     """
 
     def __new__(

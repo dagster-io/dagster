@@ -1,11 +1,6 @@
-import multiprocessing
-from typing import TYPE_CHECKING
-
 import pendulum
 import pytest
 from dagster import AssetKey
-from dagster._core.instance import DagsterInstance
-from dagster._core.instance.ref import InstanceRef
 from dagster._core.instance_for_test import instance_for_test
 from dagster._core.scheduler.instigation import (
     InstigatorType,
@@ -14,18 +9,13 @@ from dagster._core.scheduler.instigation import (
 )
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import PARTITION_NAME_TAG
-from dagster._core.test_utils import (
-    cleanup_test_instance,
-)
 from dagster._daemon.asset_daemon import (
     FIXED_AUTO_MATERIALIZATION_INSTIGATOR_NAME,
     FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
     FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
-    _get_raw_cursor,
     get_current_evaluation_id,
     set_auto_materialize_paused,
 )
-from dagster._utils import SingleInstigatorDebugCrashFlags, get_terminate_signal
 
 from .scenarios.auto_materialize_policy_scenarios import (
     auto_materialize_policy_scenarios,
@@ -33,9 +23,6 @@ from .scenarios.auto_materialize_policy_scenarios import (
 from .scenarios.auto_observe_scenarios import auto_observe_scenarios
 from .scenarios.multi_code_location_scenarios import multi_code_location_scenarios
 from .scenarios.scenarios import ASSET_RECONCILIATION_SCENARIOS
-
-if TYPE_CHECKING:
-    from pendulum.datetime import DateTime
 
 
 def _assert_run_requests_match(
@@ -159,6 +146,7 @@ def test_daemon_ticks(daemon_paused_instance):
         )
 
         # No new runs, so tick is now skipped
+
         assert len(ticks) == 2
         assert ticks[0]
         assert ticks[0].status == TickStatus.SKIPPED
@@ -166,328 +154,6 @@ def test_daemon_ticks(daemon_paused_instance):
         assert ticks[0].tick_data.end_timestamp == freeze_datetime.timestamp()
         assert ticks[0].tick_data.auto_materialize_evaluation_id == 2
         assert ticks[0].tick_data.run_requests == []
-
-
-@pytest.mark.parametrize(
-    "crash_location",
-    [
-        "RUN_REQUESTS_CREATED",
-        "RUN_IDS_ADDED_TO_EVALUATIONS",
-        "RUN_CREATED",
-        "RUN_SUBMITTED",
-        "EXECUTION_PLAN_CREATED_1",
-        "RUN_CREATED_1",
-        "RUN_SUBMITTED_1",
-    ],
-)
-def test_error_loop_daemon_tick(daemon_not_paused_instance, crash_location):
-    instance = daemon_not_paused_instance
-    error_asset_scenario = daemon_scenarios[
-        "auto_materialize_policy_max_materializations_not_exceeded"
-    ]
-    execution_time = error_asset_scenario.current_time
-    error_asset_scenario = error_asset_scenario._replace(current_time=None)
-
-    last_cursor = None
-
-    for trial_num in range(3):
-        test_time = execution_time.add(seconds=15 * trial_num)
-        with pendulum.test(test_time):
-            debug_crash_flags = {crash_location: Exception(f"Oops {trial_num}")}
-
-            with pytest.raises(Exception, match=f"Oops {trial_num}"):
-                error_asset_scenario.do_daemon_scenario(
-                    instance,
-                    scenario_name="auto_materialize_policy_max_materializations_not_exceeded",
-                    debug_crash_flags=debug_crash_flags,
-                )
-
-            ticks = instance.get_ticks(
-                origin_id=FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
-                selector_id=FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
-            )
-
-            assert len(ticks) == trial_num + 1
-            assert ticks[0].status == TickStatus.FAILURE
-            assert ticks[0].timestamp == test_time.timestamp()
-            assert ticks[0].tick_data.end_timestamp == test_time.timestamp()
-            assert ticks[0].tick_data.auto_materialize_evaluation_id == 1
-            assert ticks[0].tick_data.failure_count == trial_num + 1
-
-            assert f"Oops {trial_num}" in str(ticks[0].tick_data.error)
-
-            # Run requests are still on the tick since they were stored there before the
-            # failure happened during run submission
-            _assert_run_requests_match(
-                error_asset_scenario.expected_run_requests, ticks[0].tick_data.run_requests
-            )
-
-            # Same cursor due to the retry
-            retry_cursor = _get_raw_cursor(instance)
-            if trial_num > 0:
-                assert retry_cursor == last_cursor
-
-            last_cursor = retry_cursor
-
-    # Next tick moves on to use the new cursor / evaluation ID since we have passed the maximum
-    # number of retries
-    test_time = execution_time.add(seconds=45)
-    with pendulum.test(test_time):
-        debug_crash_flags = {"RUN_REQUESTS_CREATED": Exception("Oops new tick")}
-        with pytest.raises(Exception, match="Oops new tick"):
-            error_asset_scenario.do_daemon_scenario(
-                instance,
-                scenario_name="auto_materialize_policy_max_materializations_not_exceeded",
-                debug_crash_flags=debug_crash_flags,
-            )
-
-        ticks = instance.get_ticks(
-            origin_id=FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
-            selector_id=FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
-        )
-
-        assert len(ticks) == 4
-        assert ticks[0].status == TickStatus.FAILURE
-        assert ticks[0].timestamp == test_time.timestamp()
-        assert ticks[0].tick_data.end_timestamp == test_time.timestamp()
-        assert ticks[0].tick_data.auto_materialize_evaluation_id == 2  # advances
-
-        assert "Oops new tick" in str(ticks[0].tick_data.error)
-
-        assert ticks[0].tick_data.failure_count == 1  # starts over
-
-        # Cursor has moved on
-        moved_on_cursor = _get_raw_cursor(instance)
-        assert moved_on_cursor != last_cursor
-
-
-spawn_ctx = multiprocessing.get_context("spawn")
-
-
-def _test_asset_daemon_in_subprocess(
-    scenario_name,
-    instance_ref: InstanceRef,
-    execution_datetime: "DateTime",
-    debug_crash_flags: SingleInstigatorDebugCrashFlags,
-) -> None:
-    scenario = daemon_scenarios[scenario_name]
-    with DagsterInstance.from_ref(instance_ref) as instance:
-        try:
-            scenario._replace(current_time=execution_datetime).do_daemon_scenario(
-                instance, scenario_name=scenario_name, debug_crash_flags=debug_crash_flags
-            )
-        finally:
-            cleanup_test_instance(instance)
-
-
-@pytest.mark.parametrize(
-    "crash_location",
-    [
-        "EVALUATIONS_FINISHED",
-        "ASSET_EVALUATIONS_ADDED",
-        "RUN_REQUESTS_CREATED",
-        "RUN_IDS_ADDED_TO_EVALUATIONS",
-        "RUN_CREATED",
-        "RUN_SUBMITTED",
-        "CURSOR_UPDATED",
-    ],
-)
-def test_asset_daemon_crash_recovery(daemon_not_paused_instance, crash_location):
-    # Verifies that if we crash at various points during the tick, the next tick recovers and
-    # produces the correct number of runs
-    instance = daemon_not_paused_instance
-    scenario = daemon_scenarios["auto_materialize_policy_max_materializations_not_exceeded"]
-
-    # Run a tick where the daemon crashes after run requests are created
-    asset_daemon_process = spawn_ctx.Process(
-        target=_test_asset_daemon_in_subprocess,
-        args=[
-            "auto_materialize_policy_max_materializations_not_exceeded",
-            instance.get_ref(),
-            scenario.current_time,
-            {crash_location: get_terminate_signal()},
-        ],
-    )
-    asset_daemon_process.start()
-    asset_daemon_process.join(timeout=60)
-
-    ticks = instance.get_ticks(
-        origin_id=FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
-        selector_id=FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
-    )
-
-    assert len(ticks) == 1
-    assert ticks[0]
-    assert ticks[0].status == TickStatus.STARTED
-    assert ticks[0].timestamp == scenario.current_time.timestamp()
-    assert not ticks[0].tick_data.end_timestamp == scenario.current_time.timestamp()
-
-    assert not len(ticks[0].tick_data.run_ids)
-    assert ticks[0].tick_data.auto_materialize_evaluation_id == 1
-
-    freeze_datetime = scenario.current_time.add(seconds=1)
-
-    cursor = _get_raw_cursor(instance)
-
-    if crash_location == "CURSOR_UPDATED":
-        assert cursor
-        assert cursor == ticks[0].tick_data.cursor
-    else:
-        assert not cursor
-
-    # Run another tick with no crash, daemon continues on and succeeds
-    asset_daemon_process = spawn_ctx.Process(
-        target=_test_asset_daemon_in_subprocess,
-        args=[
-            "auto_materialize_policy_max_materializations_not_exceeded",
-            instance.get_ref(),
-            freeze_datetime,
-            None,  # No crash this time
-        ],
-    )
-    asset_daemon_process.start()
-    asset_daemon_process.join(timeout=60)
-
-    ticks = instance.get_ticks(
-        origin_id=FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
-        selector_id=FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
-    )
-
-    assert len(ticks) == 1
-
-    assert ticks[0]
-    assert ticks[0].status == TickStatus.SUCCESS
-    assert ticks[0].timestamp == scenario.current_time.timestamp()
-    assert ticks[0].tick_data.end_timestamp == freeze_datetime.timestamp()
-    assert len(ticks[0].tick_data.run_ids) == 5
-    assert ticks[0].tick_data.auto_materialize_evaluation_id == 1
-
-    _assert_run_requests_match(scenario.expected_run_requests, ticks[0].tick_data.run_requests)
-
-    runs = instance.get_runs()
-    assert len(runs) == 5
-
-    def sort_run_key_fn(run):
-        return (min(run.asset_selection), run.tags.get(PARTITION_NAME_TAG))
-
-    sorted_runs = sorted(runs[: len(scenario.expected_run_requests)], key=sort_run_key_fn)
-
-    evaluations = instance.schedule_storage.get_auto_materialize_asset_evaluations(
-        asset_key=AssetKey("hourly"), limit=100
-    )
-    assert len(evaluations) == 1
-    assert evaluations[0].evaluation.asset_key == AssetKey("hourly")
-    assert evaluations[0].evaluation.run_ids == {run.run_id for run in sorted_runs}
-
-    cursor = _get_raw_cursor(instance)
-    assert cursor == ticks[0].tick_data.cursor
-
-
-@pytest.mark.parametrize(
-    "crash_location",
-    [
-        "EVALUATIONS_FINISHED",
-        "ASSET_EVALUATIONS_ADDED",
-        "RUN_REQUESTS_CREATED",
-        "RUN_IDS_ADDED_TO_EVALUATIONS",
-        "RUN_CREATED",
-        "RUN_SUBMITTED",
-        "RUN_CREATED_2",
-        "RUN_SUBMITTED_2",
-    ],
-)
-def test_asset_daemon_exception_recovery(daemon_not_paused_instance, crash_location):
-    # Verifies that if we crash at various points during the tick, the next tick recovers and
-    # produces the correct number of runs
-    instance = daemon_not_paused_instance
-    scenario = daemon_scenarios["auto_materialize_policy_max_materializations_not_exceeded"]
-
-    # Run a tick where the daemon crashes after run requests are created
-    asset_daemon_process = spawn_ctx.Process(
-        target=_test_asset_daemon_in_subprocess,
-        args=[
-            "auto_materialize_policy_max_materializations_not_exceeded",
-            instance.get_ref(),
-            scenario.current_time,
-            {crash_location: Exception("OOPS")},
-        ],
-    )
-    asset_daemon_process.start()
-    asset_daemon_process.join(timeout=60)
-
-    ticks = instance.get_ticks(
-        origin_id=FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
-        selector_id=FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
-    )
-
-    assert len(ticks) == 1
-    assert ticks[0]
-    assert ticks[0].status == TickStatus.FAILURE
-    assert ticks[0].timestamp == scenario.current_time.timestamp()
-    assert ticks[0].tick_data.end_timestamp == scenario.current_time.timestamp()
-
-    assert ticks[0].tick_data.auto_materialize_evaluation_id == 1
-
-    tick_data_written = crash_location not in ("EVALUATIONS_FINISHED", "ASSET_EVALUATIONS_ADDED")
-
-    cursor = _get_raw_cursor(instance)
-
-    if not tick_data_written:
-        assert not len(ticks[0].tick_data.reserved_run_ids)
-        assert not cursor
-    else:
-        assert len(ticks[0].tick_data.reserved_run_ids) == 5
-        assert cursor
-        assert cursor == ticks[0].tick_data.cursor
-
-    freeze_datetime = scenario.current_time.add(seconds=1)
-
-    # Run another tick with no failure, daemon continues on and succeeds
-    asset_daemon_process = spawn_ctx.Process(
-        target=_test_asset_daemon_in_subprocess,
-        args=[
-            "auto_materialize_policy_max_materializations_not_exceeded",
-            instance.get_ref(),
-            freeze_datetime,
-            None,  # No crash this time
-        ],
-    )
-    asset_daemon_process.start()
-    asset_daemon_process.join(timeout=60)
-
-    ticks = instance.get_ticks(
-        origin_id=FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
-        selector_id=FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
-    )
-
-    assert len(ticks) == 2
-
-    assert ticks[0]
-    assert ticks[0].status == TickStatus.SUCCESS
-    assert ticks[0].timestamp == freeze_datetime.timestamp()
-    assert ticks[0].tick_data.end_timestamp == freeze_datetime.timestamp()
-    assert len(ticks[0].tick_data.run_ids) == 5
-    assert ticks[0].tick_data.auto_materialize_evaluation_id == 1
-
-    _assert_run_requests_match(scenario.expected_run_requests, ticks[0].tick_data.run_requests)
-
-    runs = instance.get_runs()
-    assert len(runs) == 5
-
-    def sort_run_key_fn(run):
-        return (min(run.asset_selection), run.tags.get(PARTITION_NAME_TAG))
-
-    sorted_runs = sorted(runs[: len(scenario.expected_run_requests)], key=sort_run_key_fn)
-
-    evaluations = instance.schedule_storage.get_auto_materialize_asset_evaluations(
-        asset_key=AssetKey("hourly"), limit=100
-    )
-    assert len(evaluations) == 1
-    assert evaluations[0].evaluation.asset_key == AssetKey("hourly")
-    assert evaluations[0].evaluation.run_ids == {run.run_id for run in sorted_runs}
-
-    cursor = _get_raw_cursor(instance)
-    assert cursor == ticks[0].tick_data.cursor
 
 
 @pytest.fixture
