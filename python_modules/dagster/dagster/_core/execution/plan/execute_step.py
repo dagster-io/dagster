@@ -66,7 +66,7 @@ from dagster._core.execution.plan.objects import StepSuccessData, TypeCheckData
 from dagster._core.execution.plan.outputs import StepOutputData, StepOutputHandle
 from dagster._core.execution.resolve_versions import resolve_step_output_versions
 from dagster._core.storage.tags import BACKFILL_ID_TAG, MEMOIZED_RUN_TAG
-from dagster._core.types.dagster_type import DagsterType
+from dagster._core.types.dagster_type import DagsterType, Nothing
 from dagster._utils import iterate_with_context
 from dagster._utils.timing import time_execution_scope
 from dagster._utils.warnings import (
@@ -120,6 +120,10 @@ def _process_user_event(
 
         for check_result in user_event.check_results or []:
             yield from _process_user_event(step_context, check_result)
+
+        # If a MaterializeResult was returned from an asset with no type annotation, the type will be
+        # interpreted as Any. We want to switch to Nothing, so that the I/O manager gets skipped
+        assets_def.op.output_dict[output_name]._dagster_type = Nothing  # noqa: SLF001
 
         yield Output(
             value=None,
@@ -705,8 +709,15 @@ def _store_output(
 
     # don't store asset check outputs or asset observation outputs
     step_output = step_context.step.step_output_named(step_output_handle.output_name)
-    if step_output.properties.asset_check_key or (
-        step_context.output_observes_source_asset(step_output_handle.output_name)
+    asset_key = step_output.properties.asset_key
+    if (
+        step_output.properties.asset_check_key
+        or (step_context.output_observes_source_asset(step_output_handle.output_name))
+        or (
+            output_context.has_asset_key
+            and output_context.dagster_type.is_nothing
+            and output.value is None
+        )
     ):
         yield from _log_asset_materialization_events_for_asset(
             step_context=step_context,
