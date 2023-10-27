@@ -18,26 +18,50 @@ from typing import (
     Any,
     ClassVar,
     Dict,
+    FrozenSet,
     Generic,
     Iterable,
     Iterator,
-    Literal,
     Mapping,
     Optional,
     Sequence,
     Set,
     TextIO,
     Type,
-    TypedDict,
     TypeVar,
     Union,
     cast,
-    final,
-    get_args,
 )
+
+if sys.version_info >= (3, 8):
+    from typing import Literal, TypedDict, final
+else:
+    try:
+        from typing_extensions import Literal, TypedDict, final
+    except ImportError:
+        raise Exception(
+            "Error importing from `typing_extensions`. The minimum"
+            " official version for dagster-pipes is 3.8, but on lower"
+            " Python versions dagster-pipes will attempt to import "
+            " certain typing constructs using the `typing-extensions` "
+            " package. If you are using a Python version lower than 3.8,"
+            " please make sure `typing-extensions` is installed in"
+            " your environment."
+        )
+
 
 if TYPE_CHECKING:
     from unittest.mock import MagicMock
+
+
+def _literal_to_frozenset(literal: Any) -> FrozenSet[str]:
+    if sys.version_info >= (3, 8):
+        from typing import get_args
+
+        return frozenset(get_args(literal))
+    else:
+        return frozenset(literal.__values__)
+
 
 # ########################
 # ##### PROTOCOL
@@ -310,7 +334,7 @@ def _json_serialize_param(value: Any, method: str, param: str) -> str:
 
 
 _METADATA_VALUE_KEYS = frozenset(PipesMetadataValue.__annotations__.keys())
-_METADATA_TYPES = frozenset(get_args(PipesMetadataType))
+_METADATA_TYPES = _literal_to_frozenset(PipesMetadataType)
 
 
 def _normalize_param_metadata(
